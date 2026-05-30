@@ -1,0 +1,4 @@
+- [Orval query hook typing](orval-query-typing.md) — react-query v5 requires queryKey in UseQueryOptions; use `as any` to pass partial options.
+- [DB lib rebuild required](db-lib-rebuild.md) — after editing lib/db schema, must run typecheck:libs before artifact typechecks resolve new exports.
+- [Clerk Tailwind v4 fix](clerk-tailwind-fix.md) — Clerk + Tailwind v4 requires optimize:false in vite plugin and @layer order in CSS.
+- [Orval Zod schema names](orval-zod-names.md) — generated names follow OpenAPI operationId pattern (CreateStoreBody, UpdateStoreBody), not custom aliases.

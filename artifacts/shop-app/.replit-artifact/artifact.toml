@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "團購管理"
+version = "1.0.0"
+id = "artifacts/shop-app"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 22696
+
+[services.development]
+run = "pnpm --filter @workspace/shop-app run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/shop-app", "run", "build" ]
+publicDir = "artifacts/shop-app/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22696"
+BASE_PATH = "/"
