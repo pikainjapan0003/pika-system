@@ -1,28 +1,16 @@
 import { Router } from "express";
-import { getAuth } from "@clerk/express";
 import { eq } from "drizzle-orm";
-import { db, storesTable, ordersTable } from "@workspace/db";
+import { db, ordersTable } from "@workspace/db";
 import { UpdateOrderStatusBody } from "@workspace/api-zod";
+import { requireAuth, verifyStoreOwner } from "../middlewares/auth";
 
 const router = Router();
-
-const requireAuth = (req: any, res: any, next: any) => {
-  const auth = getAuth(req);
-  const userId = auth?.sessionClaims?.userId || auth?.userId;
-  if (!userId) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
-  req.userId = userId;
-  next();
-};
 
 router.get("/stores/:storeId/orders", requireAuth, async (req: any, res) => {
   const storeId = parseInt(req.params.storeId);
   if (isNaN(storeId)) return res.status(400).json({ error: "Invalid storeId" });
 
-  const store = await db.select().from(storesTable).where(eq(storesTable.id, storeId)).limit(1);
-  if (store.length === 0) return res.status(404).json({ error: "Store not found" });
-  if (store[0].merchantId !== req.userId) return res.status(403).json({ error: "Forbidden" });
+  if (!(await verifyStoreOwner(req, res, storeId))) return;
 
   const orders = await db
     .select()
@@ -37,9 +25,7 @@ router.get("/stores/:storeId/orders/export", requireAuth, async (req: any, res) 
   const storeId = parseInt(req.params.storeId);
   if (isNaN(storeId)) return res.status(400).json({ error: "Invalid storeId" });
 
-  const store = await db.select().from(storesTable).where(eq(storesTable.id, storeId)).limit(1);
-  if (store.length === 0) return res.status(404).json({ error: "Store not found" });
-  if (store[0].merchantId !== req.userId) return res.status(403).json({ error: "Forbidden" });
+  if (!(await verifyStoreOwner(req, res, storeId))) return;
 
   const orders = await db
     .select()
@@ -95,10 +81,7 @@ router.patch("/orders/:orderId/status", requireAuth, async (req: any, res) => {
   const [order] = await db.select().from(ordersTable).where(eq(ordersTable.id, orderId)).limit(1);
   if (!order) return res.status(404).json({ error: "Order not found" });
 
-  const store = await db.select().from(storesTable).where(eq(storesTable.id, order.storeId)).limit(1);
-  if (store.length === 0 || store[0].merchantId !== req.userId) {
-    return res.status(403).json({ error: "Forbidden" });
-  }
+  if (!(await verifyStoreOwner(req, res, order.storeId))) return;
 
   const [updated] = await db
     .update(ordersTable)

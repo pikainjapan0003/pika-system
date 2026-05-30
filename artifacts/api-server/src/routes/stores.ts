@@ -1,20 +1,10 @@
 import { Router } from "express";
-import { getAuth } from "@clerk/express";
 import { eq } from "drizzle-orm";
 import { db, storesTable, ordersTable } from "@workspace/db";
 import { CreateStoreBody, UpdateStoreBody } from "@workspace/api-zod";
+import { requireAuth } from "../middlewares/auth";
 
 const router = Router();
-
-const requireAuth = (req: any, res: any, next: any) => {
-  const auth = getAuth(req);
-  const userId = auth?.sessionClaims?.userId || auth?.userId;
-  if (!userId) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
-  req.userId = userId;
-  next();
-};
 
 router.get("/me/store", requireAuth, async (req: any, res) => {
   try {

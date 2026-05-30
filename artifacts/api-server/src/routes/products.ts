@@ -1,34 +1,11 @@
 import { Router } from "express";
-import { getAuth } from "@clerk/express";
 import { eq, and } from "drizzle-orm";
-import { db, storesTable, productsTable } from "@workspace/db";
+import { db, productsTable } from "@workspace/db";
 import { CreateProductBody, UpdateProductBody } from "@workspace/api-zod";
 import { randomBytes } from "crypto";
+import { requireAuth, verifyStoreOwner } from "../middlewares/auth";
 
 const router = Router();
-
-const requireAuth = (req: any, res: any, next: any) => {
-  const auth = getAuth(req);
-  const userId = auth?.sessionClaims?.userId || auth?.userId;
-  if (!userId) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
-  req.userId = userId;
-  next();
-};
-
-const verifyStoreOwner = async (req: any, res: any, storeId: number): Promise<boolean> => {
-  const store = await db.select().from(storesTable).where(eq(storesTable.id, storeId)).limit(1);
-  if (store.length === 0) {
-    res.status(404).json({ error: "Store not found" });
-    return false;
-  }
-  if (store[0].merchantId !== req.userId) {
-    res.status(403).json({ error: "Forbidden" });
-    return false;
-  }
-  return true;
-};
 
 router.get("/stores/:storeId/products", requireAuth, async (req: any, res) => {
   const storeId = parseInt(req.params.storeId);
@@ -126,11 +103,21 @@ router.delete("/stores/:storeId/products/:productId", requireAuth, async (req: a
 
   if (!(await verifyStoreOwner(req, res, storeId))) return;
 
-  await db
-    .delete(productsTable)
-    .where(and(eq(productsTable.id, productId), eq(productsTable.storeId, storeId)));
+  try {
+    await db
+      .delete(productsTable)
+      .where(and(eq(productsTable.id, productId), eq(productsTable.storeId, storeId)));
 
-  return res.status(204).send();
+    return res.status(204).send();
+  } catch (err: any) {
+    // Postgres FK violation: orders still reference this product
+    if (err?.code === "23503") {
+      return res.status(409).json({
+        error: "此商品有歷史訂單，無法刪除。請改為將商品設為下架。",
+      });
+    }
+    throw err;
+  }
 });
 
 function formatProduct(p: any) {
