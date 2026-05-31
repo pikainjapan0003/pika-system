@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { Order } from "@workspace/api-client-react";
 import { useGetPublicProduct, useSubmitOrder } from "@workspace/api-client-react";
 
 interface Props {
@@ -8,6 +9,12 @@ interface Props {
 interface Spec {
   name: string;
   values: string[];
+}
+
+function formatDate(iso: string): string {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 export default function PublicOrderPage({ shareToken }: Props) {
@@ -20,7 +27,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
   const [notes, setNotes] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [specValues, setSpecValues] = useState<Record<string, string>>({});
-  const [submitted, setSubmitted] = useState(false);
+  const [submittedOrder, setSubmittedOrder] = useState<Order | null>(null);
   const [formError, setFormError] = useState("");
 
   const specs: Spec[] = (product?.specs as Spec[]) ?? [];
@@ -42,7 +49,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
     }
 
     try {
-      await submitOrder.mutateAsync({
+      const order = await submitOrder.mutateAsync({
         shareToken,
         data: {
           buyerName: buyerName.trim(),
@@ -53,7 +60,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
           quantity,
         },
       });
-      setSubmitted(true);
+      setSubmittedOrder(order);
     } catch (err: any) {
       setFormError(err?.data?.error || "下單失敗，請稍後再試");
     }
@@ -79,7 +86,10 @@ export default function PublicOrderPage({ shareToken }: Props) {
     );
   }
 
-  if (submitted) {
+  if (submittedOrder) {
+    const productName = submittedOrder.productName ?? product.name;
+    const totalPrice = Number(submittedOrder.totalPrice).toLocaleString();
+
     return (
       <div className="flex min-h-[100dvh] items-center justify-center bg-background px-5">
         <div className="text-center max-w-sm w-full">
@@ -92,11 +102,16 @@ export default function PublicOrderPage({ shareToken }: Props) {
             感謝您的訂購！
           </p>
           <div className="mt-6 bg-white rounded-2xl p-4 border border-border text-left space-y-2">
-            <SummaryRow label="商品" value={product.name} />
-            <SummaryRow label="數量" value={`x${quantity}`} />
-            <SummaryRow label="金額" value={`NT$ ${(Number(product.price) * quantity).toLocaleString()}`} bold />
-            <SummaryRow label="取貨方式" value={pickupMethod} />
+            <SummaryRow label="訂單編號" value={`#${submittedOrder.id}`} />
+            <SummaryRow label="商品" value={productName} />
+            <SummaryRow label="數量" value={`x${submittedOrder.quantity}`} />
+            <SummaryRow label="金額" value={`NT$ ${totalPrice}`} bold />
+            <SummaryRow label="取貨方式" value={submittedOrder.pickupMethod} />
+            <SummaryRow label="下單時間" value={formatDate(submittedOrder.createdAt)} />
           </div>
+          <p className="text-xs text-muted-foreground mt-4 leading-relaxed">
+            請截圖保留此頁面作為訂購憑證
+          </p>
         </div>
       </div>
     );
