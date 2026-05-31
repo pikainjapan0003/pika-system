@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { ClerkProvider, SignIn, SignUp, Show, useClerk, useUser } from "@clerk/react";
+import { ClerkProvider, SignIn, SignUp, Show, useAuth, useClerk, useUser } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadcn } from "@clerk/themes";
 import { Switch, Route, Redirect, useLocation, Router as WouterRouter } from "wouter";
 import { QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { queryClient } from "@/lib/queryClient";
-import { useGetMyStore, useCreateStore, getGetMyStoreQueryKey } from "@workspace/api-client-react";
+import { useGetMyStore, useCreateStore, getGetMyStoreQueryKey, setAuthTokenGetter } from "@workspace/api-client-react";
 
 import HomePage from "@/pages/Home";
 import DashboardPage from "@/pages/Dashboard";
@@ -131,12 +131,16 @@ function MerchantPortal() {
   const { data: store, isLoading, error } = useGetMyStore({ query: { enabled: !!isSignedIn } as any });
   const { mutateAsync: createStoreMutate } = useCreateStore();
 
+  const { signOut } = useClerk();
+
   const [storeInitState, setStoreInitState] = useState<"idle" | "creating" | "failed">("idle");
   const [storeInitError, setStoreInitError] = useState("");
   const createAttemptedRef = useRef(false);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const is404 = !!error && (error as any)?.status === 404;
+  const errorStatus = (error as any)?.status as number | undefined;
+  const is404 = !!error && errorStatus === 404;
+  const isAuthError = !!error && (errorStatus === 401 || errorStatus === 403);
 
   useEffect(() => {
     if (!isSignedIn || !is404 || storeInitState !== "idle" || createAttemptedRef.current) return;
@@ -187,6 +191,23 @@ function MerchantPortal() {
             className="w-full h-11 bg-primary text-white font-semibold rounded-xl text-sm"
           >
             重試
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (isAuthError) {
+    return (
+      <div className="flex min-h-[100dvh] items-center justify-center px-5">
+        <div className="w-full max-w-sm bg-white rounded-2xl p-6 border border-border space-y-4 text-center">
+          <p className="font-medium text-foreground">登入狀態已失效</p>
+          <p className="text-sm text-muted-foreground">請重新登入後繼續使用代購系統。</p>
+          <button
+            onClick={() => void signOut({ redirectUrl: basePath || "/" })}
+            className="w-full h-11 bg-primary text-white font-semibold rounded-xl text-sm"
+          >
+            重新登入
           </button>
         </div>
       </div>
@@ -269,6 +290,19 @@ function AppRouter() {
   );
 }
 
+function ClerkTokenBridge() {
+  const { getToken } = useAuth();
+  const getTokenRef = useRef(getToken);
+  getTokenRef.current = getToken;
+
+  useEffect(() => {
+    setAuthTokenGetter(() => getTokenRef.current());
+    return () => { setAuthTokenGetter(null); };
+  }, []);
+
+  return null;
+}
+
 function ClerkProviderWithRoutes() {
   const [, setLocation] = useLocation();
 
@@ -298,6 +332,7 @@ function ClerkProviderWithRoutes() {
     >
       <QueryClientProvider client={queryClient}>
         <ClerkQueryClientCacheInvalidator />
+        <ClerkTokenBridge />
         <AppRouter />
         <Toaster />
       </QueryClientProvider>
