@@ -1,17 +1,21 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { useCreateStore } from "@workspace/api-client-react";
+import { useCreateStore, useGetMyStore, getGetMyStoreQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { getGetMyStoreQueryKey } from "@workspace/api-client-react";
 
 export default function SetupPage() {
   const [, setLocation] = useLocation();
   const qc = useQueryClient();
   const createStore = useCreateStore();
+  const { data: store, isLoading: storeLoading } = useGetMyStore();
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (store) setLocation("/settings");
+  }, [store, setLocation]);
 
   const handleNameChange = (val: string) => {
     setName(val);
@@ -27,6 +31,16 @@ export default function SetupPage() {
       .replace(/[^a-z0-9-]/g, "")
       .replace(/^-+|-+$/g, "");
   }
+
+  if (storeLoading) {
+    return (
+      <div className="flex min-h-[100dvh] items-center justify-center">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (store) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -37,6 +37,22 @@ export default function DashboardPage() {
       </header>
 
       <div className="px-5 py-5 space-y-5">
+        {/* Store info prompt card */}
+        {(store?.name === "我的代購店" || !store?.description) && (
+          <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4">
+            <p className="text-sm font-semibold text-amber-900 mb-1">完善商店資訊</p>
+            <p className="text-xs text-amber-700 leading-relaxed">
+              你的店鋪已建立，可以先新增商品開始收單。建議到設定補上店鋪名稱與介紹，讓買家更容易辨識。
+            </p>
+            <button
+              onClick={() => setLocation("/settings")}
+              className="mt-3 text-xs font-semibold text-amber-800 bg-amber-100 px-3 py-1.5 rounded-lg active:opacity-75 transition-opacity"
+            >
+              前往設定
+            </button>
+          </div>
+        )}
+
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3">
           <StatCard label="總訂單" value={stats?.totalOrders ?? 0} />

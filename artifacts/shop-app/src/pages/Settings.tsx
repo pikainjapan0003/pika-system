@@ -78,7 +78,7 @@ export default function SettingsPage() {
                 {store?.slug}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                網址代碼建立後無法修改
+                網址代碼由系統自動產生，未來將開放修改。
               </p>
             </div>
 

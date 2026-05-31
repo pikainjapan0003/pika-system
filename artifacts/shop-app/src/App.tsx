@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ClerkProvider, SignIn, SignUp, Show, useClerk, useUser } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadcn } from "@clerk/themes";
@@ -6,7 +6,7 @@ import { Switch, Route, Redirect, useLocation, Router as WouterRouter } from "wo
 import { QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { queryClient } from "@/lib/queryClient";
-import { useGetMyStore } from "@workspace/api-client-react";
+import { useGetMyStore, useCreateStore, getGetMyStoreQueryKey } from "@workspace/api-client-react";
 
 import HomePage from "@/pages/Home";
 import DashboardPage from "@/pages/Dashboard";
@@ -126,24 +126,85 @@ function ClerkQueryClientCacheInvalidator() {
 
 function MerchantPortal() {
   const { isLoaded, isSignedIn } = useUser();
+  const qc = useQueryClient();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: store, isLoading, error } = useGetMyStore({ query: { enabled: !!isSignedIn } as any });
+  const { mutateAsync: createStoreMutate } = useCreateStore();
 
-  if (!isLoaded || isLoading) {
+  const [storeInitState, setStoreInitState] = useState<"idle" | "creating" | "failed">("idle");
+  const [storeInitError, setStoreInitError] = useState("");
+  const createAttemptedRef = useRef(false);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const is404 = !!error && (error as any)?.status === 404;
+
+  useEffect(() => {
+    if (!isSignedIn || !is404 || storeInitState !== "idle" || createAttemptedRef.current) return;
+    createAttemptedRef.current = true;
+    setStoreInitState("creating");
+
+    const genSlug = () => `store-${Math.random().toString(36).slice(2, 8)}`;
+    (async () => {
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          await createStoreMutate({ data: { name: "我的代購店", slug: genSlug() } });
+          await qc.invalidateQueries({ queryKey: getGetMyStoreQueryKey() });
+          setStoreInitState("idle");
+          return;
+        } catch (err: any) {
+          if (err?.status !== 409) break;
+        }
+      }
+      setStoreInitState("failed");
+      setStoreInitError("初始化店鋪失敗，請稍後再試");
+      createAttemptedRef.current = false;
+    })();
+    // createStoreMutate and qc are stable React Query references
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSignedIn, is404, storeInitState]);
+
+  if (!isLoaded || isLoading || storeInitState === "creating" || (is404 && !!isSignedIn && storeInitState === "idle")) {
     return (
-      <div className="flex min-h-[100dvh] items-center justify-center">
+      <div className="flex min-h-[100dvh] items-center justify-center flex-col gap-3">
         <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        {storeInitState === "creating" && (
+          <p className="text-sm text-muted-foreground">正在初始化您的店鋪...</p>
+        )}
       </div>
     );
   }
 
   if (!isSignedIn) return <Redirect to="/" />;
 
-  if (error && (error as any)?.status === 404) {
-    return <Redirect to="/setup" />;
+  if (storeInitState === "failed") {
+    return (
+      <div className="flex min-h-[100dvh] items-center justify-center px-5">
+        <div className="w-full max-w-sm bg-white rounded-2xl p-6 border border-border space-y-4 text-center">
+          <p className="font-medium text-foreground">初始化店鋪失敗</p>
+          <p className="text-sm text-muted-foreground">{storeInitError}</p>
+          <button
+            onClick={() => setStoreInitState("idle")}
+            className="w-full h-11 bg-primary text-white font-semibold rounded-xl text-sm"
+          >
+            重試
+          </button>
+        </div>
+      </div>
+    );
   }
 
-  if (!store && !error) return <Redirect to="/setup" />;
+  if (error && !is404) {
+    return (
+      <div className="flex min-h-[100dvh] items-center justify-center px-5">
+        <div className="w-full max-w-sm bg-white rounded-2xl p-6 border border-border text-center">
+          <p className="font-medium text-foreground">無法載入店鋪資料</p>
+          <p className="text-sm text-muted-foreground mt-2">請確認網路連線後重新整理頁面</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!store) return null;
 
   return (
     <Switch>
