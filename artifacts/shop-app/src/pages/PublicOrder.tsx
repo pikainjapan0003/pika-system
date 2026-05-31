@@ -93,7 +93,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
     const token = submittedOrder.publicToken;
 
     const handleCopy = () => {
-      if (!token || !navigator.clipboard) return;
+      if (!navigator.clipboard) return;
       navigator.clipboard.writeText(token).then(() => {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
@@ -112,33 +112,27 @@ export default function PublicOrderPage({ shareToken }: Props) {
             感謝您的訂購！
           </p>
           <div className="mt-6 bg-white rounded-2xl p-4 border border-border text-left space-y-2">
-            {token ? (
-              <SummaryRow label="追蹤碼" value={token} mono />
-            ) : (
-              <SummaryRow label="訂單編號" value={`#${submittedOrder.id}`} />
-            )}
+            <SummaryRow label="追蹤碼" value={token} mono />
             <SummaryRow label="商品" value={productName} />
             <SummaryRow label="數量" value={`x${submittedOrder.quantity}`} />
             <SummaryRow label="金額" value={`NT$ ${totalPrice}`} bold />
             <SummaryRow label="取貨方式" value={submittedOrder.pickupMethod} />
             <SummaryRow label="下單時間" value={formatDate(submittedOrder.createdAt)} />
           </div>
-          {token && (
-            <div className="mt-4 flex flex-col gap-2">
-              <button
-                onClick={handleCopy}
-                className="w-full h-11 rounded-xl border border-border bg-white text-sm font-medium text-foreground"
-              >
-                {copied ? "已複製！" : "複製追蹤碼"}
-              </button>
-              <a
-                href={`/track/${token}`}
-                className="w-full h-11 rounded-xl bg-primary/10 text-primary text-sm font-medium flex items-center justify-center"
-              >
-                查看訂單狀態
-              </a>
-            </div>
-          )}
+          <div className="mt-4 flex flex-col gap-2">
+            <button
+              onClick={handleCopy}
+              className="w-full h-11 rounded-xl border border-border bg-white text-sm font-medium text-foreground"
+            >
+              {copied ? "已複製！" : "複製追蹤碼"}
+            </button>
+            <a
+              href={`/track/${token}`}
+              className="w-full h-11 rounded-xl bg-primary/10 text-primary text-sm font-medium flex items-center justify-center"
+            >
+              查看訂單狀態
+            </a>
+          </div>
           <p className="text-xs text-muted-foreground mt-4 leading-relaxed">
             請截圖保留此頁面作為訂購憑證
           </p>

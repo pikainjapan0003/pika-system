@@ -13,7 +13,7 @@ export const ordersTable = pgTable("orders", {
   productId: integer("product_id").notNull().references(() => productsTable.id),
   storeId: integer("store_id").notNull().references(() => storesTable.id, { onDelete: "cascade" }),
   productName: text("product_name"),
-  publicToken: text("public_token").unique(),
+  publicToken: text("public_token").notNull().unique(),
   buyerName: text("buyer_name").notNull(),
   buyerPhone: text("buyer_phone").notNull(),
   pickupMethod: text("pickup_method").notNull(),
