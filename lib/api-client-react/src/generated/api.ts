@@ -27,6 +27,7 @@ import type {
   Product,
   ProductInput,
   ProductUpdate,
+  PublicOrder,
   PublicProduct,
   Store,
   StoreInput,
@@ -1171,4 +1172,81 @@ export const useSubmitOrder = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getSubmitOrderMutationOptions(options));
     }
+
+export const getGetPublicOrderUrl = (publicToken: string,) => {
+
+
+
+
+  return `/api/orders/track/${publicToken}`
+}
+
+/**
+ * @summary Get order status by public token (no auth)
+ */
+export const getPublicOrder = async (publicToken: string, options?: RequestInit): Promise<PublicOrder> => {
+
+  return customFetch<PublicOrder>(getGetPublicOrderUrl(publicToken),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPublicOrderQueryKey = (publicToken: string,) => {
+    return [
+    `/api/orders/track/${publicToken}`
+    ] as const;
+    }
+
+
+export const getGetPublicOrderQueryOptions = <TData = Awaited<ReturnType<typeof getPublicOrder>>, TError = ErrorType<void>>(publicToken: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPublicOrder>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPublicOrderQueryKey(publicToken);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPublicOrder>>> = ({ signal }) => getPublicOrder(publicToken, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(publicToken), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPublicOrder>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPublicOrderQueryResult = NonNullable<Awaited<ReturnType<typeof getPublicOrder>>>
+export type GetPublicOrderQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get order status by public token (no auth)
+ */
+
+export function useGetPublicOrder<TData = Awaited<ReturnType<typeof getPublicOrder>>, TError = ErrorType<void>>(
+ publicToken: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPublicOrder>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPublicOrderQueryOptions(publicToken,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
 

@@ -14,6 +14,8 @@ export interface Order {
   storeId: number;
   /** @nullable */
   productName?: string | null;
+  /** @nullable */
+  publicToken?: string | null;
   buyerName: string;
   buyerPhone: string;
   pickupMethod: string;

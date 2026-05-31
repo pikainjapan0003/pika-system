@@ -29,6 +29,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
   const [specValues, setSpecValues] = useState<Record<string, string>>({});
   const [submittedOrder, setSubmittedOrder] = useState<Order | null>(null);
   const [formError, setFormError] = useState("");
+  const [copied, setCopied] = useState(false);
 
   const specs: Spec[] = (product?.specs as Spec[]) ?? [];
 
@@ -89,6 +90,15 @@ export default function PublicOrderPage({ shareToken }: Props) {
   if (submittedOrder) {
     const productName = submittedOrder.productName ?? product.name;
     const totalPrice = Number(submittedOrder.totalPrice).toLocaleString();
+    const token = submittedOrder.publicToken;
+
+    const handleCopy = () => {
+      if (!token || !navigator.clipboard) return;
+      navigator.clipboard.writeText(token).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }).catch(() => {});
+    };
 
     return (
       <div className="flex min-h-[100dvh] items-center justify-center bg-background px-5">
@@ -102,13 +112,33 @@ export default function PublicOrderPage({ shareToken }: Props) {
             感謝您的訂購！
           </p>
           <div className="mt-6 bg-white rounded-2xl p-4 border border-border text-left space-y-2">
-            <SummaryRow label="訂單編號" value={`#${submittedOrder.id}`} />
+            {token ? (
+              <SummaryRow label="追蹤碼" value={token} mono />
+            ) : (
+              <SummaryRow label="訂單編號" value={`#${submittedOrder.id}`} />
+            )}
             <SummaryRow label="商品" value={productName} />
             <SummaryRow label="數量" value={`x${submittedOrder.quantity}`} />
             <SummaryRow label="金額" value={`NT$ ${totalPrice}`} bold />
             <SummaryRow label="取貨方式" value={submittedOrder.pickupMethod} />
             <SummaryRow label="下單時間" value={formatDate(submittedOrder.createdAt)} />
           </div>
+          {token && (
+            <div className="mt-4 flex flex-col gap-2">
+              <button
+                onClick={handleCopy}
+                className="w-full h-11 rounded-xl border border-border bg-white text-sm font-medium text-foreground"
+              >
+                {copied ? "已複製！" : "複製追蹤碼"}
+              </button>
+              <a
+                href={`/track/${token}`}
+                className="w-full h-11 rounded-xl bg-primary/10 text-primary text-sm font-medium flex items-center justify-center"
+              >
+                查看訂單狀態
+              </a>
+            </div>
+          )}
           <p className="text-xs text-muted-foreground mt-4 leading-relaxed">
             請截圖保留此頁面作為訂購憑證
           </p>
@@ -268,11 +298,11 @@ export default function PublicOrderPage({ shareToken }: Props) {
   );
 }
 
-function SummaryRow({ label, value, bold }: { label: string; value: string; bold?: boolean }) {
+function SummaryRow({ label, value, bold, mono }: { label: string; value: string; bold?: boolean; mono?: boolean }) {
   return (
-    <div className="flex items-center justify-between text-sm">
-      <span className="text-muted-foreground">{label}</span>
-      <span className={`text-foreground ${bold ? "font-bold" : ""}`}>{value}</span>
+    <div className="flex items-center justify-between text-sm gap-2">
+      <span className="text-muted-foreground shrink-0">{label}</span>
+      <span className={`text-foreground text-right break-all ${bold ? "font-bold" : ""} ${mono ? "font-mono text-xs" : ""}`}>{value}</span>
     </div>
   );
 }

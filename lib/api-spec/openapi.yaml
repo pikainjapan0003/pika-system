@@ -335,6 +335,29 @@ paths:
               schema:
                 $ref: "#/components/schemas/Order"
 
+  /orders/track/{publicToken}:
+    get:
+      operationId: getPublicOrder
+      tags: [public]
+      summary: Get order status by public token (no auth)
+      parameters:
+        - name: publicToken
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Order status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicOrder"
+        "404":
+          description: Not found
+        "429":
+          description: Too many requests
+
 components:
   schemas:
     HealthStatus:
@@ -510,6 +533,8 @@ components:
           type: integer
         productName:
           type: ["string", "null"]
+        publicToken:
+          type: ["string", "null"]
         buyerName:
           type: string
         buyerPhone:
@@ -529,6 +554,32 @@ components:
         status:
           type: string
           enum: [pending, awaiting_payment, preparing, shipped, completed, cancelled]
+        createdAt:
+          type: string
+
+    PublicOrder:
+      type: object
+      required: [publicToken, quantity, unitPrice, totalPrice, pickupMethod, status, statusLabel, createdAt]
+      properties:
+        publicToken:
+          type: string
+        productName:
+          type: ["string", "null"]
+        quantity:
+          type: integer
+        unitPrice:
+          type: number
+        totalPrice:
+          type: number
+        pickupMethod:
+          type: string
+        specValues:
+          type: object
+        status:
+          type: string
+          enum: [pending, awaiting_payment, preparing, shipped, completed, cancelled]
+        statusLabel:
+          type: string
         createdAt:
           type: string
 

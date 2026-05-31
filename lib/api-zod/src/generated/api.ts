@@ -214,6 +214,7 @@ export const ListOrdersResponseItem = zod.object({
   "productId": zod.number(),
   "storeId": zod.number(),
   "productName": zod.string().nullish(),
+  "publicToken": zod.string().nullish(),
   "buyerName": zod.string(),
   "buyerPhone": zod.string(),
   "pickupMethod": zod.string(),
@@ -272,6 +273,7 @@ export const UpdateOrderStatusResponse = zod.object({
   "productId": zod.number(),
   "storeId": zod.number(),
   "productName": zod.string().nullish(),
+  "publicToken": zod.string().nullish(),
   "buyerName": zod.string(),
   "buyerPhone": zod.string(),
   "pickupMethod": zod.string(),
@@ -332,6 +334,29 @@ export const SubmitOrderBody = zod.object({
 
 }).passthrough().optional(),
   "quantity": zod.number().min(1)
+})
+
+
+/**
+ * @summary Get order status by public token (no auth)
+ */
+export const GetPublicOrderParams = zod.object({
+  "publicToken": zod.coerce.string()
+})
+
+export const GetPublicOrderResponse = zod.object({
+  "publicToken": zod.string(),
+  "productName": zod.string().nullish(),
+  "quantity": zod.number(),
+  "unitPrice": zod.number(),
+  "totalPrice": zod.number(),
+  "pickupMethod": zod.string(),
+  "specValues": zod.object({
+
+}).passthrough().optional(),
+  "status": zod.enum(['pending', 'awaiting_payment', 'preparing', 'shipped', 'completed', 'cancelled']),
+  "statusLabel": zod.string(),
+  "createdAt": zod.string()
 })
 
 

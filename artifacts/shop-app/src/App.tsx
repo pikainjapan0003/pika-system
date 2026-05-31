@@ -15,6 +15,7 @@ import ProductFormPage from "@/pages/ProductForm";
 import OrdersPage from "@/pages/Orders";
 import SetupPage from "@/pages/Setup";
 import PublicOrderPage from "@/pages/PublicOrder";
+import TrackOrderPage from "@/pages/TrackOrder";
 import NotFoundPage from "@/pages/not-found";
 
 const clerkPubKey = publishableKeyFromHost(
@@ -184,6 +185,9 @@ function AppRouter() {
       <Route path="/sign-up/*?" component={SignUpPage} />
       <Route path="/p/:shareToken">
         {(params) => <PublicOrderPage shareToken={params.shareToken} />}
+      </Route>
+      <Route path="/track/:publicToken">
+        {(params) => <TrackOrderPage publicToken={params.publicToken} />}
       </Route>
       <Route path="/setup" component={SetupRoute} />
       <Route path="/dashboard" component={MerchantPortal} />

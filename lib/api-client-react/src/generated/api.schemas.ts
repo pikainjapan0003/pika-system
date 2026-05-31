@@ -117,6 +117,8 @@ export interface Order {
   storeId: number;
   /** @nullable */
   productName?: string | null;
+  /** @nullable */
+  publicToken?: string | null;
   buyerName: string;
   buyerPhone: string;
   pickupMethod: string;
@@ -127,6 +129,34 @@ export interface Order {
   unitPrice?: number;
   totalPrice: number;
   status: OrderStatus;
+  createdAt: string;
+}
+
+export type PublicOrderSpecValues = { [key: string]: unknown };
+
+export type PublicOrderStatus = typeof PublicOrderStatus[keyof typeof PublicOrderStatus];
+
+
+export const PublicOrderStatus = {
+  pending: 'pending',
+  awaiting_payment: 'awaiting_payment',
+  preparing: 'preparing',
+  shipped: 'shipped',
+  completed: 'completed',
+  cancelled: 'cancelled',
+} as const;
+
+export interface PublicOrder {
+  publicToken: string;
+  /** @nullable */
+  productName?: string | null;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  pickupMethod: string;
+  specValues?: PublicOrderSpecValues;
+  status: PublicOrderStatus;
+  statusLabel: string;
   createdAt: string;
 }
 
