@@ -26,3 +26,13 @@ export const STATUS_STEPS = [
   "shipped",
   "completed",
 ] as const;
+
+// Valid next states per current state — mirrors backend orderStatusMachine.ts
+export const VALID_NEXT_STATUSES: Record<string, string[]> = {
+  pending: ["awaiting_payment", "cancelled"],
+  awaiting_payment: ["preparing", "cancelled"],
+  preparing: ["shipped", "cancelled"],
+  shipped: ["completed", "cancelled"],
+  completed: [],
+  cancelled: [],
+};

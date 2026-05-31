@@ -1,11 +1,10 @@
 import { useLocation } from "wouter";
 import { useGetMyStore, useGetStoreStats, useListOrders } from "@workspace/api-client-react";
-import { useUser, useClerk } from "@clerk/react";
+import { useClerk } from "@clerk/react";
 import { STATUS_LABELS, STATUS_COLORS } from "../lib/orderStatus";
 
 export default function DashboardPage() {
   const [, setLocation] = useLocation();
-  const { user } = useUser();
   const { signOut } = useClerk();
   const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -41,7 +40,7 @@ export default function DashboardPage() {
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3">
           <StatCard label="總訂單" value={stats?.totalOrders ?? 0} />
-          <StatCard label="待確認" value={stats?.pendingOrders ?? 0} accent />
+          <StatCard label="待確認" value={stats?.pendingOrders ?? 0} accent onClick={() => setLocation("/orders")} />
           <StatCard label="總金額" value={`$${(stats?.totalRevenue ?? 0).toLocaleString()}`} />
         </div>
 
@@ -141,9 +140,12 @@ export default function DashboardPage() {
   );
 }
 
-function StatCard({ label, value, accent }: { label: string; value: string | number; accent?: boolean }) {
+function StatCard({ label, value, accent, onClick }: { label: string; value: string | number; accent?: boolean; onClick?: () => void }) {
   return (
-    <div className={`rounded-2xl p-3 border ${accent ? "bg-primary/10 border-primary/20" : "bg-white border-border"}`}>
+    <div
+      onClick={onClick}
+      className={`rounded-2xl p-3 border ${accent ? "bg-primary/10 border-primary/20" : "bg-white border-border"} ${onClick ? "cursor-pointer active:opacity-75 transition-opacity" : ""}`}
+    >
       <div className={`text-xs mb-1 ${accent ? "text-primary" : "text-muted-foreground"}`}>{label}</div>
       <div className={`text-lg font-bold ${accent ? "text-primary" : "text-foreground"}`}>{value}</div>
     </div>

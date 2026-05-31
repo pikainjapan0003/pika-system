@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useGetMyStore, useListOrders, useUpdateOrderStatus, getListOrdersQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { BottomNav } from "./Dashboard";
-import { STATUS_LABELS, STATUS_COLORS, ALL_STATUSES } from "../lib/orderStatus";
+import { STATUS_LABELS, STATUS_COLORS, ALL_STATUSES, VALID_NEXT_STATUSES } from "../lib/orderStatus";
 
 export default function OrdersPage() {
   const qc = useQueryClient();
@@ -13,6 +13,10 @@ export default function OrdersPage() {
   const updateOrderStatus = useUpdateOrderStatus();
   const [filter, setFilter] = useState<string>("all");
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [statusErrors, setStatusErrors] = useState<Record<number, string>>({});
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
   const filtered = filter === "all"
     ? (orders ?? [])
@@ -21,11 +25,25 @@ export default function OrdersPage() {
   const sortedFiltered = [...filtered].reverse();
 
   const handleStatusChange = async (orderId: number, status: string) => {
-    await updateOrderStatus.mutateAsync({
-      orderId,
-      data: { status: status as any },
-    });
-    qc.invalidateQueries({ queryKey: getListOrdersQueryKey(storeId!) });
+    try {
+      await updateOrderStatus.mutateAsync({
+        orderId,
+        data: { status: status as any },
+      });
+      setStatusErrors((prev) => { const next = { ...prev }; delete next[orderId]; return next; });
+      qc.invalidateQueries({ queryKey: getListOrdersQueryKey(storeId!) });
+    } catch (err: any) {
+      const msg = err?.data?.error ?? "狀態更新失敗，請確認狀態流程是否正確";
+      setStatusErrors((prev) => ({ ...prev, [orderId]: msg }));
+    }
+  };
+
+  const copyToClipboard = (text: string, key: string) => {
+    if (!navigator.clipboard) return;
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedKey(key);
+      setTimeout(() => setCopiedKey(null), 2000);
+    }).catch(() => {});
   };
 
   const handleExport = async () => {
@@ -39,7 +57,8 @@ export default function OrdersPage() {
 
   const formatDate = (d: string) => {
     const date = new Date(d);
-    return `${date.getMonth() + 1}/${date.getDate()} ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${date.getFullYear()}/${pad(date.getMonth() + 1)}/${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
   };
 
   return (
@@ -122,17 +141,57 @@ export default function OrdersPage() {
                         />
                       )}
                     </div>
-                    <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1.5 block">更新狀態</label>
-                      <select
-                        value={o.status}
-                        onChange={(e) => handleStatusChange(o.id, e.target.value)}
-                        className="w-full h-10 px-3 rounded-xl border border-input bg-white text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+
+                    {/* Quick copy actions */}
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(o.buyerPhone, `${o.id}-phone`)}
+                        className="flex-1 h-9 rounded-xl border border-border bg-white text-xs font-medium text-foreground"
                       >
-                        {ALL_STATUSES.map((s) => (
-                          <option key={s} value={s}>{STATUS_LABELS[s]}</option>
-                        ))}
-                      </select>
+                        {copiedKey === `${o.id}-phone` ? "已複製電話" : "複製電話"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(
+                          `${window.location.origin}${basePath}/track/${o.publicToken}`,
+                          `${o.id}-link`
+                        )}
+                        className="flex-1 h-9 rounded-xl border border-border bg-white text-xs font-medium text-foreground"
+                      >
+                        {copiedKey === `${o.id}-link` ? "已複製追蹤連結" : "複製追蹤連結"}
+                      </button>
+                    </div>
+
+                    {/* Status update */}
+                    <div>
+                      {(VALID_NEXT_STATUSES[o.status]?.length ?? 0) === 0 ? (
+                        <div className="flex items-center gap-2">
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[o.status] ?? "bg-gray-100 text-gray-600"}`}>
+                            {STATUS_LABELS[o.status] ?? o.status}
+                          </span>
+                          <span className="text-xs text-muted-foreground">此訂單已結束</span>
+                        </div>
+                      ) : (
+                        <>
+                          <label className="text-xs font-medium text-muted-foreground mb-1.5 block">更新狀態</label>
+                          <select
+                            value={o.status}
+                            onChange={(e) => handleStatusChange(o.id, e.target.value)}
+                            className="w-full h-10 px-3 rounded-xl border border-input bg-white text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                          >
+                            <option value={o.status} disabled>
+                              {STATUS_LABELS[o.status] ?? o.status}（目前）
+                            </option>
+                            {VALID_NEXT_STATUSES[o.status]?.map((s) => (
+                              <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+                            ))}
+                          </select>
+                          {statusErrors[o.id] && (
+                            <p className="text-xs text-destructive mt-1">{statusErrors[o.id]}</p>
+                          )}
+                        </>
+                      )}
                     </div>
                   </div>
                 )}
