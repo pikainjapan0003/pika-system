@@ -1,24 +1,7 @@
 import { useLocation } from "wouter";
 import { useGetMyStore, useGetStoreStats, useListOrders } from "@workspace/api-client-react";
 import { useUser, useClerk } from "@clerk/react";
-
-const STATUS_LABELS: Record<string, string> = {
-  pending: "待確認",
-  awaiting_payment: "待付款",
-  preparing: "備貨中",
-  shipped: "已出貨",
-  completed: "已完成",
-  cancelled: "已取消",
-};
-
-const STATUS_COLORS: Record<string, string> = {
-  pending: "bg-amber-100 text-amber-700",
-  awaiting_payment: "bg-blue-100 text-blue-700",
-  preparing: "bg-purple-100 text-purple-700",
-  shipped: "bg-cyan-100 text-cyan-700",
-  completed: "bg-green-100 text-green-700",
-  cancelled: "bg-gray-100 text-gray-500",
-};
+import { STATUS_LABELS, STATUS_COLORS } from "../lib/orderStatus";
 
 export default function DashboardPage() {
   const [, setLocation] = useLocation();
@@ -92,6 +75,18 @@ export default function DashboardPage() {
             desc="管理所有訂單"
             icon="📋"
             onClick={() => setLocation("/orders")}
+          />
+          <ActionCard
+            label="店鋪設定"
+            desc="名稱、簡介"
+            icon="⚙"
+            onClick={() => setLocation("/settings")}
+          />
+          <ActionCard
+            label="使用說明"
+            desc="如何開始接單"
+            icon="📖"
+            onClick={() => setLocation("/guide")}
           />
         </div>
 
@@ -168,12 +163,13 @@ function ActionCard({ label, desc, icon, onClick }: { label: string; desc: strin
   );
 }
 
-export function BottomNav({ active }: { active: "dashboard" | "products" | "orders" }) {
+export function BottomNav({ active }: { active: "dashboard" | "products" | "orders" | "settings" }) {
   const [, setLocation] = useLocation();
   const items = [
     { key: "dashboard", label: "首頁", path: "/dashboard", icon: "○" },
     { key: "products", label: "商品", path: "/products", icon: "◻" },
     { key: "orders", label: "訂單", path: "/orders", icon: "≡" },
+    { key: "settings", label: "設定", path: "/settings", icon: "⊙" },
   ];
   return (
     <nav className="fixed bottom-0 left-0 right-0 max-w-[480px] mx-auto bg-white border-t border-border px-2 pb-safe">

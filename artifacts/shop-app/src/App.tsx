@@ -15,7 +15,10 @@ import ProductFormPage from "@/pages/ProductForm";
 import OrdersPage from "@/pages/Orders";
 import SetupPage from "@/pages/Setup";
 import PublicOrderPage from "@/pages/PublicOrder";
+import TrackLookupPage from "@/pages/TrackLookup";
 import TrackOrderPage from "@/pages/TrackOrder";
+import SettingsPage from "@/pages/Settings";
+import GuidePage from "@/pages/Guide";
 import NotFoundPage from "@/pages/not-found";
 
 const clerkPubKey = publishableKeyFromHost(
@@ -153,6 +156,8 @@ function MerchantPortal() {
       </Route>
       <Route path="/products" component={ProductsPage} />
       <Route path="/orders" component={OrdersPage} />
+      <Route path="/settings" component={SettingsPage} />
+      <Route path="/guide" component={GuidePage} />
       <Route component={NotFoundPage} />
     </Switch>
   );
@@ -186,6 +191,9 @@ function AppRouter() {
       <Route path="/p/:shareToken">
         {(params) => <PublicOrderPage shareToken={params.shareToken} />}
       </Route>
+      <Route path="/track">
+        {() => <TrackLookupPage />}
+      </Route>
       <Route path="/track/:publicToken">
         {(params) => <TrackOrderPage publicToken={params.publicToken} />}
       </Route>
@@ -193,6 +201,8 @@ function AppRouter() {
       <Route path="/dashboard" component={MerchantPortal} />
       <Route path="/products/*?" component={MerchantPortal} />
       <Route path="/orders" component={MerchantPortal} />
+      <Route path="/settings" component={MerchantPortal} />
+      <Route path="/guide" component={MerchantPortal} />
       <Route component={NotFoundPage} />
     </Switch>
   );

@@ -1,17 +1,11 @@
+import { useState } from "react";
+import { useLocation } from "wouter";
 import { useGetPublicOrder } from "@workspace/api-client-react";
+import { STATUS_COLORS } from "../lib/orderStatus";
 
 interface Props {
   publicToken: string;
 }
-
-const STATUS_COLORS: Record<string, string> = {
-  pending: "bg-amber-100 text-amber-700",
-  awaiting_payment: "bg-blue-100 text-blue-700",
-  preparing: "bg-purple-100 text-purple-700",
-  shipped: "bg-cyan-100 text-cyan-700",
-  completed: "bg-green-100 text-green-700",
-  cancelled: "bg-gray-100 text-gray-500",
-};
 
 function formatDate(iso: string): string {
   const d = new Date(iso);
@@ -20,7 +14,17 @@ function formatDate(iso: string): string {
 }
 
 export default function TrackOrderPage({ publicToken }: Props) {
+  const [, setLocation] = useLocation();
+  const [copied, setCopied] = useState(false);
   const { data: order, isLoading, error } = useGetPublicOrder(publicToken);
+
+  const handleCopy = (token: string) => {
+    if (!navigator.clipboard) return;
+    navigator.clipboard.writeText(token).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }).catch(() => {});
+  };
 
   if (isLoading) {
     return (
@@ -42,6 +46,12 @@ export default function TrackOrderPage({ publicToken }: Props) {
           <p className="text-muted-foreground text-sm mt-1">
             {is404 ? "請確認追蹤碼是否正確" : "請稍後再試"}
           </p>
+          <button
+            onClick={() => setLocation("/track")}
+            className="mt-5 text-sm text-primary font-medium"
+          >
+            ← 返回查詢入口
+          </button>
         </div>
       </div>
     );
@@ -53,9 +63,17 @@ export default function TrackOrderPage({ publicToken }: Props) {
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-background px-5">
       <div className="max-w-sm w-full">
-        <div className="text-center mb-6">
-          <h1 className="text-xl font-bold text-foreground">訂單追蹤</h1>
-          <p className="text-xs text-muted-foreground mt-1 font-mono break-all">{order.publicToken}</p>
+        <div className="flex items-center mb-6 gap-3">
+          <button
+            onClick={() => setLocation("/track")}
+            className="text-sm text-muted-foreground"
+          >
+            ←
+          </button>
+          <div className="flex-1 text-center">
+            <h1 className="text-xl font-bold text-foreground">訂單追蹤</h1>
+          </div>
+          <div className="w-6" />
         </div>
 
         <div className="bg-white rounded-2xl border border-border overflow-hidden">
@@ -81,6 +99,15 @@ export default function TrackOrderPage({ publicToken }: Props) {
             )}
             <InfoRow label="下單時間" value={formatDate(order.createdAt)} />
           </div>
+        </div>
+
+        <div className="mt-4 space-y-2">
+          <button
+            onClick={() => handleCopy(order.publicToken)}
+            className="w-full h-11 rounded-xl border border-border bg-white text-sm font-medium text-foreground"
+          >
+            {copied ? "已複製！" : "複製追蹤碼"}
+          </button>
         </div>
 
         <p className="text-xs text-muted-foreground text-center mt-4 leading-relaxed">
