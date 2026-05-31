@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { useGetMyStore, useGetProduct, useCreateProduct, useUpdateProduct, getListProductsQueryKey, Product } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -8,9 +8,14 @@ interface Spec {
   values: string[];
 }
 
+type UploadStatus = "idle" | "uploading" | "done" | "error";
+
 interface Props {
   productId?: number;
 }
+
+const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
 export default function ProductFormPage({ productId }: Props) {
   const [, setLocation] = useLocation();
@@ -36,6 +41,23 @@ export default function ProductFormPage({ productId }: Props) {
   const [createdProduct, setCreatedProduct] = useState<Product | null>(null);
   const [copied, setCopied] = useState(false);
 
+  // Image picker state
+  const [localPreviewUrl, setLocalPreviewUrl] = useState<string | null>(null);
+  const [uploadStatus, setUploadStatus] = useState<UploadStatus>("idle");
+  const [uploadError, setUploadError] = useState<string>("");
+  const [showUrlInput, setShowUrlInput] = useState<boolean>(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const previewObjectUrlRef = useRef<string | null>(null);
+
+  // Revoke object URL on unmount to prevent memory leak
+  useEffect(() => {
+    return () => {
+      if (previewObjectUrlRef.current) {
+        URL.revokeObjectURL(previewObjectUrlRef.current);
+      }
+    };
+  }, []);
+
   useEffect(() => {
     if (existingProduct) {
       setName(existingProduct.name);
@@ -47,13 +69,9 @@ export default function ProductFormPage({ productId }: Props) {
     }
   }, [existingProduct]);
 
-  const addSpec = () => {
-    setSpecs([...specs, { name: "", values: [""] }]);
-  };
+  const addSpec = () => setSpecs([...specs, { name: "", values: [""] }]);
 
-  const removeSpec = (i: number) => {
-    setSpecs(specs.filter((_, idx) => idx !== i));
-  };
+  const removeSpec = (i: number) => setSpecs(specs.filter((_, idx) => idx !== i));
 
   const updateSpecName = (i: number, val: string) => {
     const s = [...specs];
@@ -65,6 +83,102 @@ export default function ProductFormPage({ productId }: Props) {
     const s = [...specs];
     s[i] = { ...s[i], values: val.split(/[，,]/).map((v) => v.trim()).filter(Boolean) };
     setSpecs(s);
+  };
+
+  // Revoke current object URL and clear local preview state (shared helper)
+  const clearLocalPreview = () => {
+    if (previewObjectUrlRef.current) {
+      URL.revokeObjectURL(previewObjectUrlRef.current);
+      previewObjectUrlRef.current = null;
+    }
+    setLocalPreviewUrl(null);
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    // Reset so same file can be re-selected
+    e.target.value = "";
+    if (!file) return;
+
+    setUploadError("");
+
+    if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
+      setUploadStatus("error");
+      setUploadError("僅支援 JPG、PNG、WebP 圖片");
+      return;
+    }
+    if (file.size > MAX_IMAGE_BYTES) {
+      setUploadStatus("error");
+      setUploadError("圖片大小不可超過 5MB");
+      return;
+    }
+
+    // Show local preview immediately
+    if (previewObjectUrlRef.current) URL.revokeObjectURL(previewObjectUrlRef.current);
+    const preview = URL.createObjectURL(file);
+    previewObjectUrlRef.current = preview;
+    setLocalPreviewUrl(preview);
+    setUploadStatus("uploading");
+
+    if (!storeId) {
+      clearLocalPreview();
+      setUploadStatus("error");
+      setUploadError("無法上傳：商店尚未載入，請稍後再試");
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
+      const res = await fetch(`/api/stores/${storeId}/products/image`, {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+
+      if (res.status === 401 || res.status === 403) {
+        clearLocalPreview();
+        setUploadStatus("error");
+        setUploadError("沒有權限上傳圖片，請重新登入");
+        return;
+      }
+      if (res.status === 429) {
+        clearLocalPreview();
+        setUploadStatus("error");
+        setUploadError("上傳太頻繁，請稍後再試");
+        return;
+      }
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({})) as { error?: string };
+        clearLocalPreview();
+        setUploadStatus("error");
+        setUploadError(body.error ?? "圖片上傳失敗，請稍後再試");
+        return;
+      }
+
+      const data = await res.json() as { imageUrl?: string };
+      if (!data.imageUrl) {
+        clearLocalPreview();
+        setUploadStatus("error");
+        setUploadError("圖片上傳失敗，請稍後再試");
+        return;
+      }
+
+      setImageUrl(data.imageUrl);
+      setUploadStatus("done");
+    } catch {
+      clearLocalPreview();
+      setUploadStatus("error");
+      setUploadError("圖片上傳失敗，請稍後再試");
+    }
+  };
+
+  const handleRemoveImage = () => {
+    clearLocalPreview();
+    setImageUrl("");
+    setUploadStatus("idle");
+    setUploadError("");
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -82,12 +196,15 @@ export default function ProductFormPage({ productId }: Props) {
       return;
     }
 
+    const trimmedImageUrl = imageUrl.trim();
     const data = {
       name: name.trim(),
       description: description.trim() || undefined,
       price: priceNum,
       inventory: inventory ? parseInt(inventory) : undefined,
-      imageUrl: imageUrl.trim() || undefined,
+      // Edit mode: send "" to explicitly clear imageUrl in DB (API PATCH skips undefined but stores "")
+      // Create mode: send undefined when empty (field simply not included)
+      imageUrl: trimmedImageUrl || (isEdit ? "" : undefined),
       specs: specs.filter((s) => s.name && s.values.length > 0),
     };
 
@@ -101,8 +218,9 @@ export default function ProductFormPage({ productId }: Props) {
         qc.invalidateQueries({ queryKey: getListProductsQueryKey(storeId!) });
         setCreatedProduct(result);
       }
-    } catch (err: any) {
-      setError(err?.data?.error || "操作失敗，請稍後再試");
+    } catch (err: unknown) {
+      const apiErr = err as { data?: { error?: string } };
+      setError(apiErr?.data?.error || "操作失敗，請稍後再試");
     }
   };
 
@@ -120,6 +238,10 @@ export default function ProductFormPage({ productId }: Props) {
 
   const isPending = createProduct.isPending || updateProduct.isPending;
 
+  // Display priority: local blob preview (newly selected) > saved imageUrl
+  const displayPreview = localPreviewUrl ?? (imageUrl || null);
+
+  // ── Create success card ──────────────────────────────────────────────────────
   if (createdProduct) {
     return (
       <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-8">
@@ -169,6 +291,7 @@ export default function ProductFormPage({ productId }: Props) {
           <button
             type="button"
             onClick={() => {
+              clearLocalPreview();
               setCreatedProduct(null);
               setName("");
               setDescription("");
@@ -177,6 +300,9 @@ export default function ProductFormPage({ productId }: Props) {
               setImageUrl("");
               setSpecs([]);
               setError("");
+              setUploadStatus("idle");
+              setUploadError("");
+              setShowUrlInput(false);
             }}
             className="w-full h-10 text-sm text-primary font-medium"
           >
@@ -187,6 +313,7 @@ export default function ProductFormPage({ productId }: Props) {
     );
   }
 
+  // ── Main form ────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-8">
       <header className="bg-white border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
@@ -248,19 +375,110 @@ export default function ProductFormPage({ productId }: Props) {
           </Field>
         </div>
 
-        <Field label="商品圖片網址">
+        {/* Image picker */}
+        <div>
+          <label className="block text-sm font-medium text-foreground mb-1.5">商品圖片</label>
+
+          {/* Hidden file input */}
           <input
-            type="url"
-            value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
-            placeholder="https://..."
-            className={inputClass}
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={handleFileChange}
           />
-          <p className="text-xs text-muted-foreground mt-1">可先留空，之後再補圖片網址</p>
-          {imageUrl && (
-            <img src={imageUrl} alt="" className="mt-2 w-full h-32 object-cover rounded-xl" onError={(e) => (e.currentTarget.style.display = "none")} />
+
+          {displayPreview ? (
+            /* Preview + action buttons */
+            <div className="space-y-2">
+              <div className="relative">
+                <img
+                  src={displayPreview}
+                  alt="商品圖片預覽"
+                  className="w-full h-40 object-cover rounded-xl"
+                  onError={(e) => (e.currentTarget.style.display = "none")}
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadStatus === "uploading"}
+                  className="flex-1 h-9 text-sm font-medium bg-secondary text-foreground rounded-xl disabled:opacity-50"
+                >
+                  更換圖片
+                </button>
+                <button
+                  type="button"
+                  onClick={handleRemoveImage}
+                  disabled={uploadStatus === "uploading"}
+                  className="flex-1 h-9 text-sm font-medium text-destructive border border-destructive/30 rounded-xl disabled:opacity-50"
+                >
+                  移除圖片
+                </button>
+              </div>
+            </div>
+          ) : (
+            /* Select image button */
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadStatus === "uploading"}
+              className="w-full border-2 border-dashed border-border rounded-xl py-6 flex flex-col items-center gap-1.5 text-muted-foreground hover:border-primary/50 hover:text-primary transition-colors disabled:opacity-50"
+            >
+              <span className="text-2xl">📷</span>
+              <span className="text-sm font-medium">點此選擇圖片</span>
+              <span className="text-xs">支援 JPG、PNG、WebP，5MB 以內</span>
+            </button>
           )}
-        </Field>
+
+          {/* Upload status */}
+          {uploadStatus === "uploading" && (
+            <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
+              <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin flex-shrink-0" />
+              圖片上傳中...
+            </div>
+          )}
+          {uploadStatus === "done" && (
+            <p className="mt-2 text-sm text-green-600 font-medium">✓ 圖片已上傳</p>
+          )}
+          {uploadStatus === "error" && uploadError && (
+            <p className="mt-2 text-sm text-destructive">{uploadError}</p>
+          )}
+
+          {/* Advanced: direct URL input */}
+          <div className="mt-3">
+            <button
+              type="button"
+              onClick={() => setShowUrlInput((v) => !v)}
+              className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+            >
+              <span>進階：直接輸入圖片網址</span>
+              <span>{showUrlInput ? "▲" : "▼"}</span>
+            </button>
+            {showUrlInput && (
+              <div className="mt-2 space-y-1.5">
+                <p className="text-xs text-muted-foreground">
+                  一般情況建議直接選擇圖片；已有公開圖片網址時才使用此欄位。
+                </p>
+                <input
+                  type="url"
+                  value={imageUrl}
+                  onChange={(e) => {
+                    setImageUrl(e.target.value);
+                    // Clear local blob preview so the typed URL takes over display
+                    if (localPreviewUrl) {
+                      clearLocalPreview();
+                      setUploadStatus("idle");
+                    }
+                  }}
+                  placeholder="https://..."
+                  className={inputClass}
+                />
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* Specs */}
         <div>
@@ -316,11 +534,14 @@ export default function ProductFormPage({ productId }: Props) {
 
         <button
           type="submit"
-          disabled={isPending}
+          disabled={isPending || uploadStatus === "uploading"}
           className="w-full h-12 bg-primary text-white font-semibold rounded-xl text-base disabled:opacity-60"
         >
           {isPending ? "儲存中..." : isEdit ? "儲存變更" : "建立商品"}
         </button>
+        {uploadStatus === "uploading" && (
+          <p className="text-center text-xs text-muted-foreground -mt-3">圖片上傳中，請稍候...</p>
+        )}
       </form>
     </div>
   );
