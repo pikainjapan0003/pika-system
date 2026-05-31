@@ -1,7 +1,18 @@
 import { Router } from "express";
 import { eq } from "drizzle-orm";
+import { rateLimit } from "express-rate-limit";
 import { db, storesTable, productsTable, ordersTable } from "@workspace/db";
 import { SubmitOrderBody } from "@workspace/api-zod";
+
+const submitOrderLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  limit: 20,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  handler: (_req, res) => {
+    res.status(429).json({ error: "Too many requests, please try again later." });
+  },
+});
 
 const router = Router();
 
@@ -37,8 +48,8 @@ router.get("/p/:shareToken", async (req, res) => {
   });
 });
 
-router.post("/p/:shareToken/orders", async (req, res) => {
-  const { shareToken } = req.params;
+router.post("/p/:shareToken/orders", submitOrderLimiter, async (req, res) => {
+  const shareToken = req.params.shareToken as string;
 
   const parsed = SubmitOrderBody.safeParse(req.body);
   if (!parsed.success) {
