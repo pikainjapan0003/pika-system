@@ -1,8 +1,10 @@
 import { Router } from "express";
 import { eq } from "drizzle-orm";
 import { db, ordersTable } from "@workspace/db";
+import type { OrderStatus } from "@workspace/db";
 import { UpdateOrderStatusBody } from "@workspace/api-zod";
 import { requireAuth, verifyStoreOwner } from "../middlewares/auth";
+import { isValidTransition, getTransitionError } from "../lib/orderStatusMachine";
 
 const router = Router();
 
@@ -82,6 +84,12 @@ router.patch("/orders/:orderId/status", requireAuth, async (req: any, res) => {
   if (!order) return res.status(404).json({ error: "Order not found" });
 
   if (!(await verifyStoreOwner(req, res, order.storeId))) return;
+
+  const currentStatus = order.status as OrderStatus;
+  const nextStatus = parsed.data.status as OrderStatus;
+  if (!isValidTransition(currentStatus, nextStatus)) {
+    return res.status(422).json({ error: getTransitionError(currentStatus, nextStatus) });
+  }
 
   const [updated] = await db
     .update(ordersTable)
