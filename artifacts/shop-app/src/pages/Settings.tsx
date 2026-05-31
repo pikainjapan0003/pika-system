@@ -82,6 +82,8 @@ export default function SettingsPage() {
               </p>
             </div>
 
+            <ProductLinkInfo />
+
             <div>
               <label className="block text-sm font-medium text-foreground mb-1.5">
                 店鋪簡介（選填）
@@ -113,6 +115,27 @@ export default function SettingsPage() {
       </div>
 
       <BottomNav active="settings" />
+    </div>
+  );
+}
+
+function ProductLinkInfo() {
+  const origin = window.location.origin;
+  const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+  return (
+    <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 space-y-2">
+      <p className="text-sm font-medium text-blue-900">商品公開連結說明</p>
+      <p className="text-xs text-blue-700 leading-relaxed">
+        每個商品都有自己的下單連結，格式如下：
+      </p>
+      <div className="bg-white border border-blue-100 rounded-lg px-3 py-2">
+        <p className="text-xs text-foreground font-mono break-all">
+          {origin}{basePath}/p/&#123;商品追蹤碼&#125;
+        </p>
+      </div>
+      <p className="text-xs text-blue-700 leading-relaxed">
+        你可以在「商品管理」頁面複製每個商品的下單連結，傳給買家下單。
+      </p>
     </div>
   );
 }
