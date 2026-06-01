@@ -53,7 +53,10 @@ A mobile-first group buying / proxy order management web app for small Taiwanese
 
 ## User preferences
 
-_Populate as you build._
+- **Dev Handoff Relay**: 每次回覆後必須更新 `dev-handoff/latest.json`（見 `CLAUDE.md` 完整規則）
+- **語言**: 與使用者溝通用繁體中文
+- **Commit 規範**: commit 前確認 `.claude/` 未被 stage；`dev-handoff/` 保持 gitignored
+- **風格偏好**: 手機優先、卡片式 UI（參考樂賣代購連線）；不做桌機表格式後台
 
 ## Gotchas
 

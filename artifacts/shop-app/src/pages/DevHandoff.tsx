@@ -361,8 +361,11 @@ function WriteInstructions() {
       </button>
       {open && (
         <div className="border-t border-border px-4 py-3">
+          <p className="text-xs font-semibold text-primary mb-1">
+            Claude Code 每次回覆後都應自動更新 dev-handoff/latest.json（見 CLAUDE.md）
+          </p>
           <p className="text-xs text-muted-foreground mb-2">
-            在對話結尾，請 Claude Code 把以下 JSON 寫入：
+            格式如下，寫入後才輸出最終回覆：
           </p>
           <pre className="text-xs font-mono bg-secondary rounded-lg px-3 py-3 whitespace-pre-wrap break-words text-foreground">
 {`dev-handoff/latest.json
