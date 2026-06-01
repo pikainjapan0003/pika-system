@@ -241,51 +241,76 @@ export default function ProductFormPage({ productId }: Props) {
   // Display priority: local blob preview (newly selected) > saved imageUrl
   const displayPreview = localPreviewUrl ?? (imageUrl || null);
 
-  // ── Create success card ──────────────────────────────────────────────────────
+  // ── Create success / share page ─────────────────────────────────────────────
   if (createdProduct) {
     return (
       <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-8">
+
+        {/* Three-column header */}
         <header className="bg-white border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
-          <h1 className="text-lg font-bold text-foreground">商品已建立！</h1>
-        </header>
-        <div className="px-5 py-6 space-y-4">
-          <div className="bg-white border border-border rounded-2xl p-5 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center text-xl">✓</div>
-              <div>
-                <p className="font-semibold text-foreground">{createdProduct.name}</p>
-                <p className="text-xs text-muted-foreground">商品已成功建立</p>
-              </div>
-            </div>
-
-            <div className="bg-secondary rounded-xl px-4 py-3">
-              <p className="text-xs text-muted-foreground mb-1">商品下單連結</p>
-              <p className="text-sm text-foreground break-all font-mono">{shareUrl}</p>
-            </div>
-
+          <div className="flex items-center justify-between">
+            <span className="min-w-[3rem]" />
+            <h1 className="text-base font-bold text-foreground">商品已建立</h1>
             <button
               type="button"
-              onClick={copyShareLink}
-              className="w-full h-12 bg-primary text-white font-semibold rounded-xl text-base"
+              onClick={() => setLocation("/products")}
+              className="text-sm font-semibold text-primary min-w-[3rem] text-right"
             >
-              {copied ? "已複製連結" : "複製下單連結"}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => window.open(shareUrl, "_blank", "noopener,noreferrer")}
-              className="w-full h-12 bg-secondary text-foreground font-semibold rounded-xl text-base"
-            >
-              預覽公開頁
+              完成
             </button>
           </div>
+        </header>
 
+        <div className="px-5 py-5 space-y-4">
+
+          {/* ── 分享卡片 ─────────────────────────── */}
+          <div className="bg-white rounded-2xl border border-border overflow-hidden">
+            {/* 商品主圖 */}
+            {createdProduct.imageUrl ? (
+              <img
+                src={createdProduct.imageUrl}
+                alt={createdProduct.name}
+                className="w-full h-48 object-cover"
+              />
+            ) : (
+              <div className="w-full h-32 bg-secondary flex items-center justify-center text-4xl">
+                📦
+              </div>
+            )}
+            {/* 商品資訊 */}
+            <div className="px-5 py-4 space-y-1">
+              <p className="text-lg font-bold text-foreground leading-snug">{createdProduct.name}</p>
+              <p className="text-primary font-bold text-xl">
+                NT$ {Number(createdProduct.price).toLocaleString()}
+              </p>
+              {store?.name && (
+                <p className="text-xs text-muted-foreground mt-1">{store.name}</p>
+              )}
+            </div>
+          </div>
+
+          {/* ── 商品下單連結 ──────────────────────── */}
+          <div className="bg-white rounded-2xl border border-border px-5 py-3">
+            <p className="text-xs text-muted-foreground mb-1.5">商品下單連結</p>
+            <p className="text-xs text-foreground break-all font-mono leading-relaxed">{shareUrl}</p>
+          </div>
+
+          {/* ── 主要按鈕 ──────────────────────────── */}
           <button
             type="button"
-            onClick={() => setLocation("/products")}
-            className="w-full h-12 border border-border bg-white text-foreground font-medium rounded-xl text-base"
+            onClick={copyShareLink}
+            className="w-full h-12 bg-primary text-white font-semibold rounded-xl text-base"
           >
-            前往商品列表
+            {copied ? "✓ 已複製連結" : "複製商品連結"}
+          </button>
+
+          {/* ── 次要按鈕 ──────────────────────────── */}
+          <button
+            type="button"
+            onClick={() => window.open(shareUrl, "_blank", "noopener,noreferrer")}
+            className="w-full h-12 bg-secondary text-foreground font-semibold rounded-xl text-base"
+          >
+            預覽公開頁
           </button>
 
           <button
@@ -308,6 +333,7 @@ export default function ProductFormPage({ productId }: Props) {
           >
             再新增一個商品
           </button>
+
         </div>
       </div>
     );
