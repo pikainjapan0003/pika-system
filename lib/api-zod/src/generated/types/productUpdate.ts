@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { ProductSpec } from './productSpec';
+import type { ProductUpdateStorageTemp } from './productUpdateStorageTemp';
 
 export interface ProductUpdate {
   /** @minLength 1 */
@@ -17,4 +18,18 @@ export interface ProductUpdate {
   inventory?: number;
   imageUrl?: string;
   isActive?: boolean;
+  /** @nullable */
+  orderDeadlineAt?: Date | null;
+  /** @nullable */
+  internalNote?: string | null;
+  /** @nullable */
+  skuCode?: string | null;
+  /** @nullable */
+  storageTemp?: ProductUpdateStorageTemp;
+  /** @nullable */
+  shelfLife?: string | null;
+  /** @nullable */
+  weightKg?: number | null;
+  /** @nullable */
+  categoryId?: number | null;
 }

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@clerk/react";
-import { useGetMyStore, useGetProduct, useCreateProduct, useUpdateProduct, getListProductsQueryKey, Product } from "@workspace/api-client-react";
+import { useGetMyStore, useGetProduct, useCreateProduct, useUpdateProduct, useListProductCategories, getListProductsQueryKey, Product } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 
 interface Spec {
@@ -11,7 +11,7 @@ interface Spec {
 
 type UploadStatus = "idle" | "uploading" | "done" | "error";
 type DeadlinePreset = "tonight" | "tomorrow" | "dayafter" | "custom";
-type StorageTemp = "room" | "cold" | "frozen";
+type StorageTemp = "ambient" | "chilled" | "frozen";
 
 interface Props {
   productId?: number;
@@ -36,6 +36,8 @@ export default function ProductFormPage({ productId }: Props) {
 
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
+  const { data: categories, isError: categoriesQueryError } = useListProductCategories(storeId ?? 0, { query: { enabled: !!storeId } as any });
+  const categoriesLoadError = categoriesQueryError && !!storeId;
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -48,11 +50,11 @@ export default function ProductFormPage({ productId }: Props) {
   const [copied, setCopied] = useState(false);
   const [internalNote, setInternalNote] = useState("");
 
-  // Product metadata (UI placeholder — not sent to API)
   const [skuCode, setSkuCode] = useState("");
   const [storageTemp, setStorageTemp] = useState<StorageTemp | null>(null);
   const [shelfLife, setShelfLife] = useState("");
   const [weightKg, setWeightKg] = useState("");
+  const [categoryId, setCategoryId] = useState<number | null>(null);
 
   // Order deadline (UI placeholder — not sent to API)
   const [deadlineEnabled, setDeadlineEnabled] = useState(false);
@@ -111,6 +113,21 @@ export default function ProductFormPage({ productId }: Props) {
       setInventory(existingProduct.inventory != null ? String(existingProduct.inventory) : "");
       setImageUrl(existingProduct.imageUrl ?? "");
       setSpecs((existingProduct.specs as Spec[]) ?? []);
+      setInternalNote(existingProduct.internalNote ?? "");
+      setSkuCode(existingProduct.skuCode ?? "");
+      setStorageTemp((existingProduct.storageTemp as StorageTemp) ?? null);
+      setShelfLife(existingProduct.shelfLife ?? "");
+      setWeightKg(existingProduct.weightKg != null ? String(existingProduct.weightKg * 1000) : "");
+      setCategoryId(existingProduct.categoryId ?? null);
+      if (existingProduct.orderDeadlineAt) {
+        const dt = new Date(existingProduct.orderDeadlineAt);
+        if (!isNaN(dt.getTime())) {
+          setDeadlineEnabled(true);
+          setDeadlinePreset("custom");
+          setDeadlineDate(`${dt.getFullYear()}/${dt.getMonth() + 1}/${dt.getDate()}`);
+          setDeadlineTime(`${String(dt.getHours()).padStart(2, "0")}:${String(dt.getMinutes()).padStart(2, "0")}`);
+        }
+      }
     }
   }, [existingProduct]);
 
@@ -242,7 +259,37 @@ export default function ProductFormPage({ productId }: Props) {
     }
 
     const trimmedImageUrl = imageUrl.trim();
-    const data = {
+
+    const computeOrderDeadlineAt = (): string | null => {
+      if (!deadlineEnabled) return null;
+      let dateStr = "";
+      if (deadlinePreset === "tonight") {
+        const d = new Date();
+        dateStr = `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
+      } else if (deadlinePreset === "tomorrow") {
+        const d = new Date(); d.setDate(d.getDate() + 1);
+        dateStr = `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
+      } else if (deadlinePreset === "dayafter") {
+        const d = new Date(); d.setDate(d.getDate() + 2);
+        dateStr = `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
+      } else if (deadlinePreset === "custom") {
+        dateStr = deadlineDate;
+      }
+      if (!dateStr) return null;
+      const parts = dateStr.split("/").map(Number);
+      if (parts.length < 3 || parts.some(isNaN)) return null;
+      const [hh, mm] = deadlineTime.split(":").map(Number);
+      const dt = new Date(parts[0], parts[1] - 1, parts[2], hh, mm, 0);
+      return isNaN(dt.getTime()) ? null : dt.toISOString();
+    };
+
+    const weightKgNum = weightKg.trim() ? parseFloat(weightKg) / 1000 : null;
+    if (weightKg.trim() && (weightKgNum === null || isNaN(weightKgNum))) {
+      setError("請輸入有效的重量");
+      return;
+    }
+
+    const baseFields = {
       name: name.trim(),
       description: description.trim() || undefined,
       price: priceNum,
@@ -253,10 +300,31 @@ export default function ProductFormPage({ productId }: Props) {
 
     try {
       if (isEdit) {
+        const data = {
+          ...baseFields,
+          orderDeadlineAt: computeOrderDeadlineAt(),
+          internalNote: internalNote.trim() || null,
+          skuCode: skuCode.trim() || null,
+          storageTemp: storageTemp,
+          shelfLife: shelfLife.trim() || null,
+          weightKg: weightKgNum,
+          categoryId: categoryId,
+        };
         await updateProduct.mutateAsync({ storeId: storeId!, productId: productId!, data });
         qc.invalidateQueries({ queryKey: getListProductsQueryKey(storeId!) });
         setLocation("/products");
       } else {
+        const deadlineAt = computeOrderDeadlineAt();
+        const data = {
+          ...baseFields,
+          ...(deadlineAt ? { orderDeadlineAt: deadlineAt } : {}),
+          ...(internalNote.trim() ? { internalNote: internalNote.trim() } : {}),
+          ...(skuCode.trim() ? { skuCode: skuCode.trim() } : {}),
+          ...(storageTemp ? { storageTemp } : {}),
+          ...(shelfLife.trim() ? { shelfLife: shelfLife.trim() } : {}),
+          ...(weightKgNum != null ? { weightKg: weightKgNum } : {}),
+          ...(categoryId != null ? { categoryId } : {}),
+        };
         const result = await createProduct.mutateAsync({ storeId: storeId!, data });
         qc.invalidateQueries({ queryKey: getListProductsQueryKey(storeId!) });
         setCreatedProduct(result);
@@ -429,6 +497,11 @@ export default function ProductFormPage({ productId }: Props) {
               setStorageTemp(null);
               setShelfLife("");
               setWeightKg("");
+              setCategoryId(null);
+              setDeadlineEnabled(false);
+              setDeadlinePreset(null);
+              setDeadlineDate("");
+              setDeadlineTime("23:59");
             }}
             className="w-full h-10 text-sm text-primary font-medium"
           >
@@ -614,17 +687,31 @@ export default function ProductFormPage({ productId }: Props) {
               {/* 主分類 */}
               <div>
                 <label className="block text-xs text-muted-foreground mb-1.5">主分類</label>
-                <div className="h-12 px-4 rounded-xl border border-input bg-secondary/40 flex items-center">
-                  <span className="text-sm text-muted-foreground">尚未建立主分類</span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1.5">請先到「設定 → 主分類」新增</p>
+                {categoriesLoadError ? (
+                  <p className="text-xs text-destructive">分類載入失敗，請稍後再試</p>
+                ) : !categories || categories.length === 0 ? (
+                  <div className="h-12 px-4 rounded-xl border border-input bg-secondary/40 flex items-center">
+                    <span className="text-sm text-muted-foreground">尚未建立分類</span>
+                  </div>
+                ) : (
+                  <select
+                    value={categoryId ?? ""}
+                    onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : null)}
+                    className="w-full h-12 px-4 rounded-xl border border-input bg-white text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 text-base"
+                  >
+                    <option value="">未分類</option>
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
+                  </select>
+                )}
               </div>
               {/* 溫層 */}
               <div>
                 <label className="block text-xs text-muted-foreground mb-1.5">溫層</label>
                 <div className="flex gap-2">
-                  {(["room", "cold", "frozen"] as const).map((temp) => {
-                    const labels: Record<StorageTemp, string> = { room: "常溫", cold: "冷藏", frozen: "冷凍" };
+                  {(["ambient", "chilled", "frozen"] as const).map((temp) => {
+                    const labels: Record<StorageTemp, string> = { ambient: "常溫", chilled: "冷藏", frozen: "冷凍" };
                     return (
                       <button
                         key={temp}
@@ -653,23 +740,19 @@ export default function ProductFormPage({ productId }: Props) {
                   className={inputClass}
                 />
               </div>
-              {/* 重量 kg */}
+              {/* 重量 g (UI input in grams; converted to kg before sending to API) */}
               <div>
-                <label className="block text-xs text-muted-foreground mb-1.5">重量 kg</label>
+                <label className="block text-xs text-muted-foreground mb-1.5">重量 g</label>
                 <input
                   type="number"
                   value={weightKg}
                   onChange={(e) => setWeightKg(e.target.value)}
-                  placeholder="0.5"
+                  placeholder="例：500"
                   min="0"
-                  step="0.1"
+                  step="1"
                   className={inputClass}
                 />
               </div>
-              {/* Placeholder notice */}
-              <p className="text-[10px] text-muted-foreground/60 leading-relaxed">
-                以上欄位目前為介面預覽，尚未儲存
-              </p>
             </div>
           </div>
 
@@ -834,7 +917,7 @@ export default function ProductFormPage({ productId }: Props) {
                   </div>
                 )}
                 <p className="text-[10px] text-muted-foreground/60 leading-relaxed pt-1">
-                  此功能目前為介面預覽，尚未套用到公開頁與訂單流程
+                  收單截止時間已儲存，但尚未套用到訂單截止流程
                 </p>
               </div>
             )}
@@ -871,9 +954,6 @@ export default function ProductFormPage({ productId }: Props) {
                 rows={4}
                 className={`${inputClass} h-auto resize-none py-3`}
               />
-              <p className="text-[10px] text-muted-foreground/60 leading-relaxed mt-2">
-                此備註目前僅為介面預覽，尚未儲存
-              </p>
             </div>
           </div>
 

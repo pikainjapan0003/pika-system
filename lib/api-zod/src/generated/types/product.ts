@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { ProductSpec } from './productSpec';
+import type { ProductStorageTemp } from './productStorageTemp';
 
 export interface Product {
   id: number;
@@ -22,4 +23,18 @@ export interface Product {
   shareToken: string;
   isActive: boolean;
   createdAt: string;
+  /** @nullable */
+  orderDeadlineAt?: Date | null;
+  /** @nullable */
+  internalNote?: string | null;
+  /** @nullable */
+  skuCode?: string | null;
+  /** @nullable */
+  storageTemp?: ProductStorageTemp;
+  /** @nullable */
+  shelfLife?: string | null;
+  /** @nullable */
+  weightKg?: number | null;
+  /** @nullable */
+  categoryId?: number | null;
 }

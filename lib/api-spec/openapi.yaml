@@ -14,6 +14,8 @@ tags:
     description: Store management
   - name: products
     description: Product management
+  - name: categories
+    description: Product category management
   - name: orders
     description: Order management
   - name: public
@@ -204,6 +206,74 @@ paths:
       responses:
         "204":
           description: Deleted
+
+  /stores/{storeId}/categories:
+    get:
+      operationId: listProductCategories
+      tags: [categories]
+      summary: List product categories for a store
+      parameters:
+        - name: storeId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Category list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProductCategory"
+    post:
+      operationId: createProductCategory
+      tags: [categories]
+      summary: Create a product category
+      parameters:
+        - name: storeId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductCategoryInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductCategory"
+        "409":
+          description: Duplicate name
+
+  /stores/{storeId}/categories/{categoryId}:
+    delete:
+      operationId: deleteProductCategory
+      tags: [categories]
+      summary: Delete a product category
+      parameters:
+        - name: storeId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: categoryId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
 
   /stores/{storeId}/orders:
     get:
@@ -452,6 +522,22 @@ components:
           type: boolean
         createdAt:
           type: string
+        orderDeadlineAt:
+          type: ["string", "null"]
+          format: date-time
+        internalNote:
+          type: ["string", "null"]
+        skuCode:
+          type: ["string", "null"]
+        storageTemp:
+          type: ["string", "null"]
+          enum: [ambient, chilled, frozen, null]
+        shelfLife:
+          type: ["string", "null"]
+        weightKg:
+          type: ["number", "null"]
+        categoryId:
+          type: ["integer", "null"]
 
     ProductInput:
       type: object
@@ -473,6 +559,23 @@ components:
           type: integer
         imageUrl:
           type: string
+        orderDeadlineAt:
+          type: string
+          format: date-time
+        internalNote:
+          type: string
+        skuCode:
+          type: string
+        storageTemp:
+          type: string
+          enum: [ambient, chilled, frozen]
+        shelfLife:
+          type: string
+        weightKg:
+          type: number
+          format: float
+        categoryId:
+          type: integer
 
     ProductUpdate:
       type: object
@@ -495,6 +598,22 @@ components:
           type: string
         isActive:
           type: boolean
+        orderDeadlineAt:
+          type: ["string", "null"]
+          format: date-time
+        internalNote:
+          type: ["string", "null"]
+        skuCode:
+          type: ["string", "null"]
+        storageTemp:
+          type: ["string", "null"]
+          enum: [ambient, chilled, frozen, null]
+        shelfLife:
+          type: ["string", "null"]
+        weightKg:
+          type: ["number", "null"]
+        categoryId:
+          type: ["integer", "null"]
 
     PublicProduct:
       type: object
@@ -520,6 +639,16 @@ components:
           type: string
         shareToken:
           type: string
+        orderDeadlineAt:
+          type: ["string", "null"]
+          format: date-time
+        storageTemp:
+          type: ["string", "null"]
+          enum: [ambient, chilled, frozen, null]
+        shelfLife:
+          type: ["string", "null"]
+        weightKg:
+          type: ["number", "null"]
 
     Order:
       type: object
@@ -632,3 +761,26 @@ components:
                 type: string
               count:
                 type: integer
+
+    ProductCategory:
+      type: object
+      required: [id, storeId, name, createdAt]
+      properties:
+        id:
+          type: integer
+        storeId:
+          type: integer
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    ProductCategoryInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80

@@ -5,6 +5,7 @@
  * 團購/代購訂單管理 API
  * OpenAPI spec version: 0.1.0
  */
+import type { ProductInputStorageTemp } from './productInputStorageTemp';
 import type { ProductSpec } from './productSpec';
 
 export interface ProductInput {
@@ -16,4 +17,11 @@ export interface ProductInput {
   specs?: ProductSpec[];
   inventory?: number;
   imageUrl?: string;
+  orderDeadlineAt?: Date;
+  internalNote?: string;
+  skuCode?: string;
+  storageTemp?: ProductInputStorageTemp;
+  shelfLife?: string;
+  weightKg?: number;
+  categoryId?: number;
 }

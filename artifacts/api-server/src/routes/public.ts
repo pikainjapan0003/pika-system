@@ -65,6 +65,10 @@ router.get("/p/:shareToken", async (req, res) => {
     imageUrl: product.imageUrl,
     storeName: store?.name ?? "",
     shareToken: product.shareToken,
+    orderDeadlineAt: product.orderDeadlineAt?.toISOString() ?? null,
+    storageTemp: product.storageTemp,
+    shelfLife: product.shelfLife,
+    weightKg: product.weightKg != null ? parseFloat(product.weightKg as string) : null,
   });
 });
 
@@ -92,6 +96,13 @@ router.post("/p/:shareToken/orders", submitOrderLimiter, async (req, res) => {
         if (!product || !product.isActive) {
           const err = new Error("Product not found") as any;
           err.status = 404;
+          throw err;
+        }
+
+        if (product.orderDeadlineAt && new Date() >= product.orderDeadlineAt) {
+          const err = new Error("PRODUCT_ORDER_DEADLINE_PASSED") as any;
+          err.status = 422;
+          err.displayMessage = "此商品已截止收單，無法送出訂單。";
           throw err;
         }
 
@@ -143,6 +154,7 @@ router.post("/p/:shareToken/orders", submitOrderLimiter, async (req, res) => {
     } catch (err: any) {
       if (err.status === 404) return res.status(404).json({ error: err.message });
       if (err.status === 409) return res.status(409).json({ error: err.message });
+      if (err.status === 422) return res.status(422).json({ error: err.message, message: err.displayMessage });
       // Retry on publicToken unique collision (Postgres code 23505)
       if (err.code === "23505" && retries < 3) {
         retries++;

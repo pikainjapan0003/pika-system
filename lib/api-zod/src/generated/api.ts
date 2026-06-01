@@ -93,7 +93,14 @@ export const ListProductsResponseItem = zod.object({
   "imageUrl": zod.string().nullish(),
   "shareToken": zod.string(),
   "isActive": zod.boolean(),
-  "createdAt": zod.string()
+  "createdAt": zod.string(),
+  "orderDeadlineAt": zod.coerce.date().nullish(),
+  "internalNote": zod.string().nullish(),
+  "skuCode": zod.string().nullish(),
+  "storageTemp": zod.union([zod.literal('ambient'),zod.literal('chilled'),zod.literal('frozen'),zod.literal(null)]).nullish(),
+  "shelfLife": zod.string().nullish(),
+  "weightKg": zod.number().nullish(),
+  "categoryId": zod.number().nullish()
 })
 export const ListProductsResponse = zod.array(ListProductsResponseItem)
 
@@ -119,7 +126,14 @@ export const CreateProductBody = zod.object({
   "values": zod.array(zod.string())
 })).optional(),
   "inventory": zod.number().optional(),
-  "imageUrl": zod.string().optional()
+  "imageUrl": zod.string().optional(),
+  "orderDeadlineAt": zod.coerce.date().optional(),
+  "internalNote": zod.string().optional(),
+  "skuCode": zod.string().optional(),
+  "storageTemp": zod.enum(['ambient', 'chilled', 'frozen']).optional(),
+  "shelfLife": zod.string().optional(),
+  "weightKg": zod.number().optional(),
+  "categoryId": zod.number().optional()
 })
 
 
@@ -145,7 +159,14 @@ export const GetProductResponse = zod.object({
   "imageUrl": zod.string().nullish(),
   "shareToken": zod.string(),
   "isActive": zod.boolean(),
-  "createdAt": zod.string()
+  "createdAt": zod.string(),
+  "orderDeadlineAt": zod.coerce.date().nullish(),
+  "internalNote": zod.string().nullish(),
+  "skuCode": zod.string().nullish(),
+  "storageTemp": zod.union([zod.literal('ambient'),zod.literal('chilled'),zod.literal('frozen'),zod.literal(null)]).nullish(),
+  "shelfLife": zod.string().nullish(),
+  "weightKg": zod.number().nullish(),
+  "categoryId": zod.number().nullish()
 })
 
 
@@ -172,7 +193,14 @@ export const UpdateProductBody = zod.object({
 })).optional(),
   "inventory": zod.number().optional(),
   "imageUrl": zod.string().optional(),
-  "isActive": zod.boolean().optional()
+  "isActive": zod.boolean().optional(),
+  "orderDeadlineAt": zod.coerce.date().nullish(),
+  "internalNote": zod.string().nullish(),
+  "skuCode": zod.string().nullish(),
+  "storageTemp": zod.union([zod.literal('ambient'),zod.literal('chilled'),zod.literal('frozen'),zod.literal(null)]).nullish(),
+  "shelfLife": zod.string().nullish(),
+  "weightKg": zod.number().nullish(),
+  "categoryId": zod.number().nullish()
 })
 
 export const UpdateProductResponse = zod.object({
@@ -189,7 +217,14 @@ export const UpdateProductResponse = zod.object({
   "imageUrl": zod.string().nullish(),
   "shareToken": zod.string(),
   "isActive": zod.boolean(),
-  "createdAt": zod.string()
+  "createdAt": zod.string(),
+  "orderDeadlineAt": zod.coerce.date().nullish(),
+  "internalNote": zod.string().nullish(),
+  "skuCode": zod.string().nullish(),
+  "storageTemp": zod.union([zod.literal('ambient'),zod.literal('chilled'),zod.literal('frozen'),zod.literal(null)]).nullish(),
+  "shelfLife": zod.string().nullish(),
+  "weightKg": zod.number().nullish(),
+  "categoryId": zod.number().nullish()
 })
 
 
@@ -199,6 +234,47 @@ export const UpdateProductResponse = zod.object({
 export const DeleteProductParams = zod.object({
   "storeId": zod.coerce.number(),
   "productId": zod.coerce.number()
+})
+
+
+/**
+ * @summary List product categories for a store
+ */
+export const ListProductCategoriesParams = zod.object({
+  "storeId": zod.coerce.number()
+})
+
+export const ListProductCategoriesResponseItem = zod.object({
+  "id": zod.number(),
+  "storeId": zod.number(),
+  "name": zod.string(),
+  "createdAt": zod.coerce.date()
+})
+export const ListProductCategoriesResponse = zod.array(ListProductCategoriesResponseItem)
+
+
+/**
+ * @summary Create a product category
+ */
+export const CreateProductCategoryParams = zod.object({
+  "storeId": zod.coerce.number()
+})
+
+export const createProductCategoryBodyNameMax = 80;
+
+
+
+export const CreateProductCategoryBody = zod.object({
+  "name": zod.string().min(1).max(createProductCategoryBodyNameMax)
+})
+
+
+/**
+ * @summary Delete a product category
+ */
+export const DeleteProductCategoryParams = zod.object({
+  "storeId": zod.coerce.number(),
+  "categoryId": zod.coerce.number()
 })
 
 
@@ -308,7 +384,11 @@ export const GetPublicProductResponse = zod.object({
   "inventory": zod.number().nullish(),
   "imageUrl": zod.string().nullish(),
   "storeName": zod.string(),
-  "shareToken": zod.string()
+  "shareToken": zod.string(),
+  "orderDeadlineAt": zod.coerce.date().nullish(),
+  "storageTemp": zod.union([zod.literal('ambient'),zod.literal('chilled'),zod.literal('frozen'),zod.literal(null)]).nullish(),
+  "shelfLife": zod.string().nullish(),
+  "weightKg": zod.number().nullish()
 })
 
 

@@ -1,11 +1,20 @@
 import { Router } from "express";
 import { eq, and } from "drizzle-orm";
-import { db, productsTable } from "@workspace/db";
+import { db, productsTable, productCategoriesTable } from "@workspace/db";
 import { CreateProductBody, UpdateProductBody } from "@workspace/api-zod";
 import { randomBytes } from "crypto";
 import { requireAuth, verifyStoreOwner } from "../middlewares/auth";
 
 const router = Router();
+
+async function assertCategoryBelongsToStore(storeId: number, categoryId: number): Promise<boolean> {
+  const [cat] = await db
+    .select({ id: productCategoriesTable.id })
+    .from(productCategoriesTable)
+    .where(and(eq(productCategoriesTable.id, categoryId), eq(productCategoriesTable.storeId, storeId)))
+    .limit(1);
+  return !!cat;
+}
 
 router.get("/stores/:storeId/products", requireAuth, async (req: any, res) => {
   const storeId = parseInt(req.params.storeId);
@@ -28,6 +37,12 @@ router.post("/stores/:storeId/products", requireAuth, async (req: any, res) => {
     return res.status(400).json({ error: parsed.error.message });
   }
 
+  if (parsed.data.categoryId != null) {
+    if (!(await assertCategoryBelongsToStore(storeId, parsed.data.categoryId))) {
+      return res.status(400).json({ error: "Invalid categoryId" });
+    }
+  }
+
   const shareToken = randomBytes(12).toString("hex");
 
   const [product] = await db
@@ -42,6 +57,13 @@ router.post("/stores/:storeId/products", requireAuth, async (req: any, res) => {
       imageUrl: parsed.data.imageUrl ?? null,
       shareToken,
       isActive: true,
+      orderDeadlineAt: parsed.data.orderDeadlineAt ?? null,
+      internalNote: parsed.data.internalNote ?? null,
+      skuCode: parsed.data.skuCode ?? null,
+      storageTemp: parsed.data.storageTemp ?? null,
+      shelfLife: parsed.data.shelfLife ?? null,
+      weightKg: parsed.data.weightKg != null ? String(parsed.data.weightKg) : null,
+      categoryId: parsed.data.categoryId ?? null,
     })
     .returning();
 
@@ -77,6 +99,12 @@ router.patch("/stores/:storeId/products/:productId", requireAuth, async (req: an
     return res.status(400).json({ error: parsed.error.message });
   }
 
+  if (parsed.data.categoryId != null) {
+    if (!(await assertCategoryBelongsToStore(storeId, parsed.data.categoryId))) {
+      return res.status(400).json({ error: "Invalid categoryId" });
+    }
+  }
+
   const updateData: Record<string, unknown> = {};
   if (parsed.data.name !== undefined) updateData.name = parsed.data.name;
   if (parsed.data.description !== undefined) updateData.description = parsed.data.description;
@@ -85,6 +113,13 @@ router.patch("/stores/:storeId/products/:productId", requireAuth, async (req: an
   if (parsed.data.inventory !== undefined) updateData.inventory = parsed.data.inventory;
   if (parsed.data.imageUrl !== undefined) updateData.imageUrl = parsed.data.imageUrl;
   if (parsed.data.isActive !== undefined) updateData.isActive = parsed.data.isActive;
+  if (parsed.data.orderDeadlineAt !== undefined) updateData.orderDeadlineAt = parsed.data.orderDeadlineAt;
+  if (parsed.data.internalNote !== undefined) updateData.internalNote = parsed.data.internalNote;
+  if (parsed.data.skuCode !== undefined) updateData.skuCode = parsed.data.skuCode;
+  if (parsed.data.storageTemp !== undefined) updateData.storageTemp = parsed.data.storageTemp;
+  if (parsed.data.shelfLife !== undefined) updateData.shelfLife = parsed.data.shelfLife;
+  if (parsed.data.weightKg !== undefined) updateData.weightKg = parsed.data.weightKg != null ? String(parsed.data.weightKg) : null;
+  if (parsed.data.categoryId !== undefined) updateData.categoryId = parsed.data.categoryId;
 
   const [updated] = await db
     .update(productsTable)
@@ -124,6 +159,7 @@ function formatProduct(p: any) {
   return {
     ...p,
     price: parseFloat(p.price),
+    weightKg: p.weightKg != null ? parseFloat(p.weightKg) : null,
     specs: p.specs ?? [],
   };
 }

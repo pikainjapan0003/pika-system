@@ -42,6 +42,18 @@ export interface ProductSpec {
   values: string[];
 }
 
+/**
+ * @nullable
+ */
+export type ProductStorageTemp = typeof ProductStorageTemp[keyof typeof ProductStorageTemp] | null;
+
+
+export const ProductStorageTemp = {
+  ambient: 'ambient',
+  chilled: 'chilled',
+  frozen: 'frozen',
+} as const;
+
 export interface Product {
   id: number;
   storeId: number;
@@ -57,7 +69,30 @@ export interface Product {
   shareToken: string;
   isActive: boolean;
   createdAt: string;
+  /** @nullable */
+  orderDeadlineAt?: string | null;
+  /** @nullable */
+  internalNote?: string | null;
+  /** @nullable */
+  skuCode?: string | null;
+  /** @nullable */
+  storageTemp?: ProductStorageTemp;
+  /** @nullable */
+  shelfLife?: string | null;
+  /** @nullable */
+  weightKg?: number | null;
+  /** @nullable */
+  categoryId?: number | null;
 }
+
+export type ProductInputStorageTemp = typeof ProductInputStorageTemp[keyof typeof ProductInputStorageTemp];
+
+
+export const ProductInputStorageTemp = {
+  ambient: 'ambient',
+  chilled: 'chilled',
+  frozen: 'frozen',
+} as const;
 
 export interface ProductInput {
   /** @minLength 1 */
@@ -68,7 +103,26 @@ export interface ProductInput {
   specs?: ProductSpec[];
   inventory?: number;
   imageUrl?: string;
+  orderDeadlineAt?: string;
+  internalNote?: string;
+  skuCode?: string;
+  storageTemp?: ProductInputStorageTemp;
+  shelfLife?: string;
+  weightKg?: number;
+  categoryId?: number;
 }
+
+/**
+ * @nullable
+ */
+export type ProductUpdateStorageTemp = typeof ProductUpdateStorageTemp[keyof typeof ProductUpdateStorageTemp] | null;
+
+
+export const ProductUpdateStorageTemp = {
+  ambient: 'ambient',
+  chilled: 'chilled',
+  frozen: 'frozen',
+} as const;
 
 export interface ProductUpdate {
   /** @minLength 1 */
@@ -80,7 +134,33 @@ export interface ProductUpdate {
   inventory?: number;
   imageUrl?: string;
   isActive?: boolean;
+  /** @nullable */
+  orderDeadlineAt?: string | null;
+  /** @nullable */
+  internalNote?: string | null;
+  /** @nullable */
+  skuCode?: string | null;
+  /** @nullable */
+  storageTemp?: ProductUpdateStorageTemp;
+  /** @nullable */
+  shelfLife?: string | null;
+  /** @nullable */
+  weightKg?: number | null;
+  /** @nullable */
+  categoryId?: number | null;
 }
+
+/**
+ * @nullable
+ */
+export type PublicProductStorageTemp = typeof PublicProductStorageTemp[keyof typeof PublicProductStorageTemp] | null;
+
+
+export const PublicProductStorageTemp = {
+  ambient: 'ambient',
+  chilled: 'chilled',
+  frozen: 'frozen',
+} as const;
 
 export interface PublicProduct {
   id: number;
@@ -95,6 +175,14 @@ export interface PublicProduct {
   imageUrl?: string | null;
   storeName: string;
   shareToken: string;
+  /** @nullable */
+  orderDeadlineAt?: string | null;
+  /** @nullable */
+  storageTemp?: PublicProductStorageTemp;
+  /** @nullable */
+  shelfLife?: string | null;
+  /** @nullable */
+  weightKg?: number | null;
 }
 
 export type OrderSpecValues = { [key: string]: unknown };
@@ -200,5 +288,20 @@ export interface StoreStats {
   pendingOrders: number;
   totalRevenue: number;
   statusBreakdown: StoreStatsStatusBreakdownItem[];
+}
+
+export interface ProductCategory {
+  id: number;
+  storeId: number;
+  name: string;
+  createdAt: string;
+}
+
+export interface ProductCategoryInput {
+  /**
+     * @minLength 1
+     * @maxLength 80
+     */
+  name: string;
 }
 
