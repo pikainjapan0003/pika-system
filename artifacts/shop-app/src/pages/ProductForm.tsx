@@ -10,6 +10,7 @@ interface Spec {
 }
 
 type UploadStatus = "idle" | "uploading" | "done" | "error";
+type DeadlinePreset = "tonight" | "tomorrow" | "dayafter" | "custom";
 
 interface Props {
   productId?: number;
@@ -42,6 +43,12 @@ export default function ProductFormPage({ productId }: Props) {
   const [error, setError] = useState("");
   const [createdProduct, setCreatedProduct] = useState<Product | null>(null);
   const [copied, setCopied] = useState(false);
+
+  // Order deadline (UI placeholder — not sent to API)
+  const [deadlineEnabled, setDeadlineEnabled] = useState(false);
+  const [deadlinePreset, setDeadlinePreset] = useState<DeadlinePreset | null>(null);
+  const [deadlineDate, setDeadlineDate] = useState("");
+  const [deadlineTime, setDeadlineTime] = useState("23:59");
 
   // Image picker state
   const [localPreviewUrl, setLocalPreviewUrl] = useState<string | null>(null);
@@ -234,6 +241,12 @@ export default function ProductFormPage({ productId }: Props) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }).catch(() => {});
+  };
+
+  const getDeadlineDate = (offsetDays: number) => {
+    const d = new Date();
+    d.setDate(d.getDate() + offsetDays);
+    return `${d.getMonth() + 1}/${d.getDate()}`;
   };
 
   const isPending = createProduct.isPending || updateProduct.isPending;
@@ -593,6 +606,73 @@ export default function ProductFormPage({ productId }: Props) {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* ── 收單截止時間 ─────────────────── */}
+          <div className="bg-white rounded-2xl border border-border overflow-hidden">
+            <div className="flex items-center justify-between px-5 pt-5 pb-4">
+              <div>
+                <h2 className="text-sm font-bold text-foreground">收單截止時間</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">設定商品停止收單的時間</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDeadlineEnabled((v) => !v)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${deadlineEnabled ? "bg-primary" : "bg-input"}`}
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${deadlineEnabled ? "translate-x-6" : "translate-x-1"}`} />
+              </button>
+            </div>
+            {deadlineEnabled && (
+              <div className="px-5 pb-5 space-y-3 border-t border-border/50 pt-4">
+                <div className="grid grid-cols-4 gap-2">
+                  {(["tonight", "tomorrow", "dayafter", "custom"] as const).map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setDeadlinePreset(preset)}
+                      className={`h-[4.5rem] rounded-xl flex flex-col items-center justify-center gap-0.5 border transition-colors ${
+                        deadlinePreset === preset
+                          ? "border-primary bg-primary/5 text-primary"
+                          : "border-border bg-secondary/60 text-foreground"
+                      }`}
+                    >
+                      {preset === "tonight" && (
+                        <><span className="text-sm font-semibold">今晚</span><span className="text-[10px] text-muted-foreground">{getDeadlineDate(0)} 23:59</span></>
+                      )}
+                      {preset === "tomorrow" && (
+                        <><span className="text-sm font-semibold">明晚</span><span className="text-[10px] text-muted-foreground">{getDeadlineDate(1)} 23:59</span></>
+                      )}
+                      {preset === "dayafter" && (
+                        <><span className="text-sm font-semibold">後晚</span><span className="text-[10px] text-muted-foreground">{getDeadlineDate(2)} 23:59</span></>
+                      )}
+                      {preset === "custom" && (
+                        <span className="text-sm font-semibold">自訂</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+                {deadlinePreset === "custom" && (
+                  <div className="flex gap-2">
+                    <input
+                      type="date"
+                      value={deadlineDate}
+                      onChange={(e) => setDeadlineDate(e.target.value)}
+                      className="flex-1 h-12 px-4 rounded-xl border border-input bg-white text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 text-base"
+                    />
+                    <input
+                      type="time"
+                      value={deadlineTime}
+                      onChange={(e) => setDeadlineTime(e.target.value)}
+                      className="w-28 h-12 px-3 rounded-xl border border-input bg-white text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 text-base"
+                    />
+                  </div>
+                )}
+                <p className="text-[10px] text-muted-foreground/60 leading-relaxed pt-1">
+                  此功能目前為介面預覽，尚未套用到公開頁與訂單流程
+                </p>
+              </div>
+            )}
           </div>
 
           {/* ── 商品描述 ──────────────────────────── */}
