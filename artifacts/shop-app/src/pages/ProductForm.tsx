@@ -11,6 +11,7 @@ interface Spec {
 
 type UploadStatus = "idle" | "uploading" | "done" | "error";
 type DeadlinePreset = "tonight" | "tomorrow" | "dayafter" | "custom";
+type StorageTemp = "room" | "cold" | "frozen";
 
 interface Props {
   productId?: number;
@@ -46,6 +47,12 @@ export default function ProductFormPage({ productId }: Props) {
   const [createdProduct, setCreatedProduct] = useState<Product | null>(null);
   const [copied, setCopied] = useState(false);
   const [internalNote, setInternalNote] = useState("");
+
+  // Product metadata (UI placeholder — not sent to API)
+  const [skuCode, setSkuCode] = useState("");
+  const [storageTemp, setStorageTemp] = useState<StorageTemp | null>(null);
+  const [shelfLife, setShelfLife] = useState("");
+  const [weightKg, setWeightKg] = useState("");
 
   // Order deadline (UI placeholder — not sent to API)
   const [deadlineEnabled, setDeadlineEnabled] = useState(false);
@@ -418,6 +425,10 @@ export default function ProductFormPage({ productId }: Props) {
               setUploadError("");
               setShowUrlInput(false);
               setInternalNote("");
+              setSkuCode("");
+              setStorageTemp(null);
+              setShelfLife("");
+              setWeightKg("");
             }}
             className="w-full h-10 text-sm text-primary font-medium"
           >
@@ -577,15 +588,88 @@ export default function ProductFormPage({ productId }: Props) {
             <div className="px-5 pt-5 pb-2">
               <h2 className="text-sm font-bold text-foreground">基本資訊</h2>
             </div>
-            <div className="px-5 pb-5">
-              <label className="block text-xs text-muted-foreground mb-1.5">商品名稱 *</label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="例：日本草莓大福"
-                className={inputClass}
-              />
+            <div className="px-5 pb-5 space-y-4">
+              {/* 商品名稱 */}
+              <div>
+                <label className="block text-xs text-muted-foreground mb-1.5">商品名稱 *</label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="例：日本草莓大福"
+                  className={inputClass}
+                />
+              </div>
+              {/* 貨品編號 */}
+              <div>
+                <label className="block text-xs text-muted-foreground mb-1.5">貨品編號</label>
+                <input
+                  type="text"
+                  value={skuCode}
+                  onChange={(e) => setSkuCode(e.target.value)}
+                  placeholder="可輸入商品編號或直播編號"
+                  className={inputClass}
+                />
+              </div>
+              {/* 主分類 */}
+              <div>
+                <label className="block text-xs text-muted-foreground mb-1.5">主分類</label>
+                <div className="h-12 px-4 rounded-xl border border-input bg-secondary/40 flex items-center">
+                  <span className="text-sm text-muted-foreground">尚未建立主分類</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1.5">請先到「設定 → 主分類」新增</p>
+              </div>
+              {/* 溫層 */}
+              <div>
+                <label className="block text-xs text-muted-foreground mb-1.5">溫層</label>
+                <div className="flex gap-2">
+                  {(["room", "cold", "frozen"] as const).map((temp) => {
+                    const labels: Record<StorageTemp, string> = { room: "常溫", cold: "冷藏", frozen: "冷凍" };
+                    return (
+                      <button
+                        key={temp}
+                        type="button"
+                        onClick={() => setStorageTemp(storageTemp === temp ? null : temp)}
+                        className={`flex-1 h-10 rounded-xl text-sm font-medium border transition-colors ${
+                          storageTemp === temp
+                            ? "bg-primary text-white border-primary"
+                            : "bg-secondary/60 text-foreground border-border"
+                        }`}
+                      >
+                        {labels[temp]}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              {/* 保存期限 */}
+              <div>
+                <label className="block text-xs text-muted-foreground mb-1.5">保存期限</label>
+                <input
+                  type="text"
+                  value={shelfLife}
+                  onChange={(e) => setShelfLife(e.target.value)}
+                  placeholder="例：2026/12/31 或 30 天"
+                  className={inputClass}
+                />
+              </div>
+              {/* 重量 kg */}
+              <div>
+                <label className="block text-xs text-muted-foreground mb-1.5">重量 kg</label>
+                <input
+                  type="number"
+                  value={weightKg}
+                  onChange={(e) => setWeightKg(e.target.value)}
+                  placeholder="0.5"
+                  min="0"
+                  step="0.1"
+                  className={inputClass}
+                />
+              </div>
+              {/* Placeholder notice */}
+              <p className="text-[10px] text-muted-foreground/60 leading-relaxed">
+                以上欄位目前為介面預覽，尚未儲存
+              </p>
             </div>
           </div>
 
