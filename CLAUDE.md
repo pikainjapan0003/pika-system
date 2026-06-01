@@ -57,7 +57,7 @@ dev-handoff/latest.json
 
 ```json
 {
-  "generatedAt": "<ISO 8601 timestamp, e.g. 2026-06-01T10:00:00Z>",
+  "generatedAt": "<由 scripts/write-dev-handoff.mjs 自動設定為當下時間>",
   "rawReply": "<finalReplyText 原文，byte-for-byte exact copy，不可修改>",
   "rawReplyMode": "exact_final_reply",
   "rawReplySha256": "<由 scripts/write-dev-handoff.mjs 自動填入>",
