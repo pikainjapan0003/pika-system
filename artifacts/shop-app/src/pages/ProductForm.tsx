@@ -45,6 +45,7 @@ export default function ProductFormPage({ productId }: Props) {
   const [error, setError] = useState("");
   const [createdProduct, setCreatedProduct] = useState<Product | null>(null);
   const [copied, setCopied] = useState(false);
+  const [internalNote, setInternalNote] = useState("");
 
   // Order deadline (UI placeholder — not sent to API)
   const [deadlineEnabled, setDeadlineEnabled] = useState(false);
@@ -416,6 +417,7 @@ export default function ProductFormPage({ productId }: Props) {
               setUploadStatus("idle");
               setUploadError("");
               setShowUrlInput(false);
+              setInternalNote("");
             }}
             className="w-full h-10 text-sm text-primary font-medium"
           >
@@ -768,6 +770,26 @@ export default function ProductFormPage({ productId }: Props) {
                 rows={5}
                 className={`${inputClass} h-auto resize-none py-3`}
               />
+            </div>
+          </div>
+
+          {/* ── 內部備註 ──────────────────────────── */}
+          <div className="bg-white rounded-2xl border border-border overflow-hidden">
+            <div className="px-5 pt-5 pb-2">
+              <h2 className="text-sm font-bold text-foreground">內部備註</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">僅供賣家查看，不會顯示給買家</p>
+            </div>
+            <div className="px-5 pb-4">
+              <textarea
+                value={internalNote}
+                onChange={(e) => setInternalNote(e.target.value)}
+                placeholder="可記錄供應商、進貨狀況、直播備註..."
+                rows={4}
+                className={`${inputClass} h-auto resize-none py-3`}
+              />
+              <p className="text-[10px] text-muted-foreground/60 leading-relaxed mt-2">
+                此備註目前僅為介面預覽，尚未儲存
+              </p>
             </div>
           </div>
 
