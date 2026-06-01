@@ -72,7 +72,6 @@ export default function ProductFormPage({ productId }: Props) {
   }, [existingProduct]);
 
   const addSpec = () => setSpecs([...specs, { name: "", values: [""] }]);
-
   const removeSpec = (i: number) => setSpecs(specs.filter((_, idx) => idx !== i));
 
   const updateSpecName = (i: number, val: string) => {
@@ -87,7 +86,6 @@ export default function ProductFormPage({ productId }: Props) {
     setSpecs(s);
   };
 
-  // Revoke current object URL and clear local preview state (shared helper)
   const clearLocalPreview = () => {
     if (previewObjectUrlRef.current) {
       URL.revokeObjectURL(previewObjectUrlRef.current);
@@ -206,8 +204,6 @@ export default function ProductFormPage({ productId }: Props) {
       description: description.trim() || undefined,
       price: priceNum,
       inventory: inventory ? parseInt(inventory) : undefined,
-      // Edit mode: send "" to explicitly clear imageUrl in DB (API PATCH skips undefined but stores "")
-      // Create mode: send undefined when empty (field simply not included)
       imageUrl: trimmedImageUrl || (isEdit ? "" : undefined),
       specs: specs.filter((s) => s.name && s.values.length > 0),
     };
@@ -320,242 +316,278 @@ export default function ProductFormPage({ productId }: Props) {
   // ── Main form ────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-8">
-      <header className="bg-white border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setLocation("/products")}
-            className="w-9 h-9 flex items-center justify-center rounded-xl bg-secondary text-foreground text-lg"
-          >
-            ←
-          </button>
-          <h1 className="text-lg font-bold text-foreground">{isEdit ? "編輯商品" : "新增商品"}</h1>
-        </div>
-      </header>
+      <form onSubmit={handleSubmit}>
 
-      <form onSubmit={handleSubmit} className="px-5 py-5 space-y-5">
-        <Field label="商品名稱 *">
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="例：日本草莓大福"
-            className={inputClass}
-          />
-        </Field>
+        {/* Three-column header */}
+        <header className="bg-white border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
+          <div className="flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => setLocation("/products")}
+              className="text-sm font-medium text-muted-foreground min-w-[3rem] text-left"
+            >
+              取消
+            </button>
+            <h1 className="text-base font-bold text-foreground">
+              {isEdit ? "編輯商品" : "新增商品"}
+            </h1>
+            <button
+              type="submit"
+              disabled={isPending || uploadStatus === "uploading"}
+              className="text-sm font-semibold text-primary disabled:opacity-40 min-w-[3rem] text-right"
+            >
+              {isPending ? "儲存中…" : isEdit ? "儲存" : "建立"}
+            </button>
+          </div>
+        </header>
 
-        <Field label="商品描述">
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="詳細描述商品內容..."
-            rows={3}
-            className={`${inputClass} resize-none`}
-          />
-        </Field>
+        <div className="px-4 py-5 space-y-4">
 
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="售價 (NT$) *">
-            <input
-              type="number"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              placeholder="0"
-              min="0"
-              step="1"
-              className={inputClass}
-            />
-          </Field>
-          <Field label="庫存數量">
-            <input
-              type="number"
-              value={inventory}
-              onChange={(e) => setInventory(e.target.value)}
-              placeholder="不限"
-              min="0"
-              step="1"
-              className={inputClass}
-            />
-            <p className="text-xs text-muted-foreground mt-1">留空代表不限庫存</p>
-          </Field>
-        </div>
+          {/* Error */}
+          {error && (
+            <div className="bg-destructive/10 text-destructive text-sm px-4 py-3 rounded-2xl">
+              {error}
+            </div>
+          )}
 
-        {/* Image picker */}
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">商品圖片</label>
+          {/* ── 商品圖 ─────────────────────────────── */}
+          <div className="bg-white rounded-2xl border border-border overflow-hidden">
+            <div className="flex items-center justify-between px-5 pt-5 pb-3">
+              <h2 className="text-sm font-bold text-foreground">商品圖</h2>
+              <span className="text-[10px] text-muted-foreground/60">目前最多 1 張，第一張作為主圖</span>
+            </div>
+            <div className="px-5 pb-5 space-y-4">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={handleFileChange}
+              />
 
-          {/* Hidden file input */}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            className="hidden"
-            onChange={handleFileChange}
-          />
+              {/* Image strip */}
+              <div className="flex gap-2 items-start">
+                {displayPreview && (
+                  <div className="relative flex-shrink-0">
+                    <img
+                      src={displayPreview}
+                      alt="商品圖"
+                      className="w-24 h-24 rounded-xl object-cover"
+                      onError={(e) => (e.currentTarget.style.display = "none")}
+                    />
+                    {/* 主圖 badge */}
+                    <span className="absolute bottom-1 left-1 text-xs bg-primary text-white font-semibold px-1.5 py-0.5 rounded-md leading-none">
+                      主圖
+                    </span>
+                    {/* × remove */}
+                    <button
+                      type="button"
+                      onClick={handleRemoveImage}
+                      disabled={uploadStatus === "uploading"}
+                      className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-gray-700/80 text-white rounded-full flex items-center justify-center text-xs leading-none disabled:opacity-50"
+                    >
+                      ×
+                    </button>
+                    {/* Uploading overlay */}
+                    {uploadStatus === "uploading" && (
+                      <div className="absolute inset-0 rounded-xl bg-black/40 flex items-center justify-center">
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      </div>
+                    )}
+                  </div>
+                )}
 
-          {displayPreview ? (
-            /* Preview + action buttons */
-            <div className="space-y-2">
-              <div className="relative">
-                <img
-                  src={displayPreview}
-                  alt="商品圖片預覽"
-                  className="w-full h-40 object-cover rounded-xl"
-                  onError={(e) => (e.currentTarget.style.display = "none")}
-                />
-              </div>
-              <div className="flex gap-2">
+                {/* Add / replace photo button */}
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploadStatus === "uploading"}
-                  className="flex-1 h-9 text-sm font-medium bg-secondary text-foreground rounded-xl disabled:opacity-50"
+                  className="w-24 h-24 border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center gap-1 text-muted-foreground hover:border-primary/50 hover:text-primary transition-colors disabled:opacity-50 flex-shrink-0"
                 >
-                  更換圖片
+                  <span className="text-xl leading-none">+</span>
+                  <span className="text-xs">{displayPreview ? "更換" : "加入照片"}</span>
                 </button>
+              </div>
+
+              {/* Counter + upload status */}
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">
+                  已上傳 {displayPreview ? "1" : "0"} / 1
+                </span>
+                {uploadStatus === "done" && (
+                  <span className="text-xs text-green-600 font-medium">✓ 圖片已上傳</span>
+                )}
+                {uploadStatus === "error" && uploadError && (
+                  <span className="text-xs text-destructive">{uploadError}</span>
+                )}
+              </div>
+
+              {/* Advanced URL input */}
+              <div>
                 <button
                   type="button"
-                  onClick={handleRemoveImage}
-                  disabled={uploadStatus === "uploading"}
-                  className="flex-1 h-9 text-sm font-medium text-destructive border border-destructive/30 rounded-xl disabled:opacity-50"
+                  onClick={() => setShowUrlInput((v) => !v)}
+                  className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
                 >
-                  移除圖片
+                  <span>進階：直接輸入圖片網址</span>
+                  <span>{showUrlInput ? "▲" : "▼"}</span>
                 </button>
+                {showUrlInput && (
+                  <div className="mt-2 space-y-1.5">
+                    <p className="text-xs text-muted-foreground">
+                      一般情況建議直接選擇圖片；已有公開圖片網址時才使用此欄位。
+                    </p>
+                    <input
+                      type="url"
+                      value={imageUrl}
+                      onChange={(e) => {
+                        setImageUrl(e.target.value);
+                        if (localPreviewUrl) {
+                          clearLocalPreview();
+                          setUploadStatus("idle");
+                        }
+                      }}
+                      placeholder="https://..."
+                      className={inputClass}
+                    />
+                  </div>
+                )}
               </div>
             </div>
-          ) : (
-            /* Select image button */
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploadStatus === "uploading"}
-              className="w-full border-2 border-dashed border-border rounded-xl py-6 flex flex-col items-center gap-1.5 text-muted-foreground hover:border-primary/50 hover:text-primary transition-colors disabled:opacity-50"
-            >
-              <span className="text-2xl">📷</span>
-              <span className="text-sm font-medium">點此選擇圖片</span>
-              <span className="text-xs">支援 JPG、PNG、WebP，5MB 以內</span>
-            </button>
-          )}
+          </div>
 
-          {/* Upload status */}
-          {uploadStatus === "uploading" && (
-            <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
-              <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin flex-shrink-0" />
-              圖片上傳中...
+          {/* ── 基本資訊 ──────────────────────────── */}
+          <div className="bg-white rounded-2xl border border-border overflow-hidden">
+            <div className="px-5 pt-5 pb-2">
+              <h2 className="text-sm font-bold text-foreground">基本資訊</h2>
             </div>
-          )}
-          {uploadStatus === "done" && (
-            <p className="mt-2 text-sm text-green-600 font-medium">✓ 圖片已上傳</p>
-          )}
-          {uploadStatus === "error" && uploadError && (
-            <p className="mt-2 text-sm text-destructive">{uploadError}</p>
-          )}
+            <div className="px-5 pb-5">
+              <label className="block text-xs text-muted-foreground mb-1.5">商品名稱 *</label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="例：日本草莓大福"
+                className={inputClass}
+              />
+            </div>
+          </div>
 
-          {/* Advanced: direct URL input */}
-          <div className="mt-3">
-            <button
-              type="button"
-              onClick={() => setShowUrlInput((v) => !v)}
-              className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
-            >
-              <span>進階：直接輸入圖片網址</span>
-              <span>{showUrlInput ? "▲" : "▼"}</span>
-            </button>
-            {showUrlInput && (
-              <div className="mt-2 space-y-1.5">
-                <p className="text-xs text-muted-foreground">
-                  一般情況建議直接選擇圖片；已有公開圖片網址時才使用此欄位。
-                </p>
+          {/* ── 售價與庫存 ────────────────────────── */}
+          <div className="bg-white rounded-2xl border border-border overflow-hidden">
+            <div className="px-5 pt-5 pb-2">
+              <h2 className="text-sm font-bold text-foreground">售價與庫存</h2>
+            </div>
+            <div className="px-5 pb-5 space-y-0">
+              <div className="pb-4">
+                <label className="block text-xs text-muted-foreground mb-2">售價 *</label>
+                <div className="flex items-center gap-2">
+                  <span className="text-xl font-bold text-muted-foreground/60 select-none">NT$</span>
+                  <input
+                    type="number"
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                    placeholder="0"
+                    min="0"
+                    step="1"
+                    className="flex-1 h-16 px-4 rounded-xl border border-input bg-white text-foreground text-2xl font-bold placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  />
+                </div>
+              </div>
+              <div className="border-t border-border/50 pt-4">
+                <label className="block text-xs text-muted-foreground mb-1.5">庫存數量</label>
                 <input
-                  type="url"
-                  value={imageUrl}
-                  onChange={(e) => {
-                    setImageUrl(e.target.value);
-                    // Clear local blob preview so the typed URL takes over display
-                    if (localPreviewUrl) {
-                      clearLocalPreview();
-                      setUploadStatus("idle");
-                    }
-                  }}
-                  placeholder="https://..."
+                  type="number"
+                  value={inventory}
+                  onChange={(e) => setInventory(e.target.value)}
+                  placeholder="不限"
+                  min="0"
+                  step="1"
                   className={inputClass}
                 />
+                <p className="text-xs text-muted-foreground mt-1">留空代表不限庫存</p>
               </div>
-            )}
+            </div>
           </div>
-        </div>
 
-        {/* Specs */}
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <label className="text-sm font-medium text-foreground">規格選項</label>
-            <button
-              type="button"
-              onClick={addSpec}
-              className="text-xs text-primary font-medium"
-            >
-              + 新增規格
-            </button>
-          </div>
-          <div className="space-y-3">
-            {specs.map((spec, i) => (
-              <div key={i} className="bg-secondary/50 rounded-xl p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <input
-                    type="text"
-                    value={spec.name}
-                    onChange={(e) => updateSpecName(i, e.target.value)}
-                    placeholder="規格名稱（例：顏色）"
-                    className="flex-1 h-9 px-3 rounded-lg border border-input bg-white text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-                  />
+          {/* ── 規格設定 ──────────────────────────── */}
+          <div className="bg-white rounded-2xl border border-border overflow-hidden">
+            <div className="px-5 pt-5 pb-2">
+              <h2 className="text-sm font-bold text-foreground">規格設定</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">選填 — 例如顏色 × 尺寸</p>
+            </div>
+            <div className="px-5 pb-5">
+              {specs.length === 0 ? (
+                <div className="flex flex-col items-center gap-3 py-4">
+                  <p className="text-sm text-muted-foreground">尚未設定規格</p>
                   <button
                     type="button"
-                    onClick={() => removeSpec(i)}
-                    className="ml-2 w-9 h-9 flex items-center justify-center text-destructive text-lg"
+                    onClick={addSpec}
+                    className="h-9 px-5 bg-primary text-white text-sm font-semibold rounded-xl"
                   >
-                    ×
+                    + 新增規格
                   </button>
                 </div>
-                <input
-                  type="text"
-                  value={spec.values.join("，")}
-                  onChange={(e) => updateSpecValues(i, e.target.value)}
-                  placeholder="選項，用逗號分隔（例：紅色，藍色，白色）"
-                  className="w-full h-9 px-3 rounded-lg border border-input bg-white text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-                />
-              </div>
-            ))}
+              ) : (
+                <div className="space-y-3 pt-2">
+                  {specs.map((spec, i) => (
+                    <div key={i} className="bg-secondary/50 rounded-xl p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <input
+                          type="text"
+                          value={spec.name}
+                          onChange={(e) => updateSpecName(i, e.target.value)}
+                          placeholder="規格名稱（例：顏色）"
+                          className="flex-1 h-9 px-3 rounded-lg border border-input bg-white text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeSpec(i)}
+                          className="ml-2 w-9 h-9 flex items-center justify-center text-destructive text-lg"
+                        >
+                          ×
+                        </button>
+                      </div>
+                      <input
+                        type="text"
+                        value={spec.values.join("，")}
+                        onChange={(e) => updateSpecValues(i, e.target.value)}
+                        placeholder="選項，用逗號分隔（例：紅色，藍色，白色）"
+                        className="w-full h-9 px-3 rounded-lg border border-input bg-white text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      />
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={addSpec}
+                    className="text-sm text-primary font-medium"
+                  >
+                    + 新增規格
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-          {specs.length === 0 && (
-            <p className="text-xs text-muted-foreground">選填。例如：顏色、尺寸、口味</p>
-          )}
+
+          {/* ── 商品描述 ──────────────────────────── */}
+          <div className="bg-white rounded-2xl border border-border overflow-hidden">
+            <div className="px-5 pt-5 pb-2">
+              <h2 className="text-sm font-bold text-foreground">商品描述</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">會顯示在賣場商品詳情頁</p>
+            </div>
+            <div className="px-5 pb-5">
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="輸入商品說明..."
+                rows={5}
+                className={`${inputClass} h-auto resize-none py-3`}
+              />
+            </div>
+          </div>
+
         </div>
-
-        {error && (
-          <div className="bg-destructive/10 text-destructive text-sm px-4 py-3 rounded-xl">
-            {error}
-          </div>
-        )}
-
-        <button
-          type="submit"
-          disabled={isPending || uploadStatus === "uploading"}
-          className="w-full h-12 bg-primary text-white font-semibold rounded-xl text-base disabled:opacity-60"
-        >
-          {isPending ? "儲存中..." : isEdit ? "儲存變更" : "建立商品"}
-        </button>
-        {uploadStatus === "uploading" && (
-          <p className="text-center text-xs text-muted-foreground -mt-3">圖片上傳中，請稍候...</p>
-        )}
       </form>
-    </div>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <label className="block text-sm font-medium text-foreground mb-1.5">{label}</label>
-      {children}
     </div>
   );
 }
