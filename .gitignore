@@ -50,3 +50,6 @@ Thumbs.db
 
 # Dev handoff relay (transient, local only)
 dev-handoff/
+
+# Claude local settings (may contain tokens/keys — never commit)
+.claude/
