@@ -5,6 +5,7 @@ import productsRouter from "./products";
 import ordersRouter from "./orders";
 import publicRouter from "./public";
 import uploadRouter from "./upload";
+import devHandoffRouter from "./devHandoff";
 
 const router: IRouter = Router();
 
@@ -14,5 +15,8 @@ router.use(storesRouter);
 router.use(productsRouter);
 router.use(ordersRouter);
 router.use(uploadRouter);
+if (process.env.NODE_ENV !== "production") {
+  router.use(devHandoffRouter);
+}
 
 export default router;

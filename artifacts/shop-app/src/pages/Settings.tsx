@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
 import { useGetMyStore, useUpdateStore, getGetMyStoreQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { BottomNav } from "./Dashboard";
+
+const IS_DEV = import.meta.env.DEV;
 
 export default function SettingsPage() {
   const qc = useQueryClient();
@@ -114,7 +117,38 @@ export default function SettingsPage() {
         )}
       </div>
 
+      {IS_DEV && <DevHandoffEntry />}
+
       <BottomNav active="settings" />
+    </div>
+  );
+}
+
+function DevHandoffEntry() {
+  const [, setLocation] = useLocation();
+  return (
+    <div className="px-5 pb-3">
+      <button
+        type="button"
+        onClick={() => setLocation("/dev/handoff")}
+        className="w-full bg-white border border-border rounded-2xl px-4 py-4 flex items-center justify-between text-left hover:bg-secondary/50 transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <span className="w-9 h-9 rounded-xl bg-yellow-100 flex items-center justify-center text-lg flex-shrink-0">
+            📋
+          </span>
+          <div>
+            <p className="text-sm font-semibold text-foreground">研發中繼剪貼板</p>
+            <p className="text-xs text-muted-foreground">Claude Handoff / Codex Copy Center</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold bg-yellow-400 text-yellow-900 px-1.5 py-0.5 rounded-full">
+            DEV
+          </span>
+          <span className="text-muted-foreground text-sm">›</span>
+        </div>
+      </button>
     </div>
   );
 }

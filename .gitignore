@@ -47,3 +47,6 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# Dev handoff relay (transient, local only)
+dev-handoff/

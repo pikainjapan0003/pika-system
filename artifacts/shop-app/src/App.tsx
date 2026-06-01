@@ -19,6 +19,7 @@ import TrackLookupPage from "@/pages/TrackLookup";
 import TrackOrderPage from "@/pages/TrackOrder";
 import SettingsPage from "@/pages/Settings";
 import GuidePage from "@/pages/Guide";
+import DevHandoffPage from "@/pages/DevHandoff";
 import NotFoundPage from "@/pages/not-found";
 
 const clerkPubKey = publishableKeyFromHost(
@@ -280,6 +281,7 @@ function AppRouter() {
         {(params) => <TrackOrderPage publicToken={params.publicToken} />}
       </Route>
       <Route path="/setup" component={SetupRoute} />
+      <Route path="/dev/handoff" component={DevHandoffPage} />
       <Route path="/dashboard" component={MerchantPortal} />
       <Route path="/products/*?" component={MerchantPortal} />
       <Route path="/orders" component={MerchantPortal} />
