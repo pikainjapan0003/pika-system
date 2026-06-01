@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
+import { useAuth } from "@clerk/react";
 import { useGetMyStore, useGetProduct, useCreateProduct, useUpdateProduct, getListProductsQueryKey, Product } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -20,6 +21,7 @@ const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 export default function ProductFormPage({ productId }: Props) {
   const [, setLocation] = useLocation();
   const qc = useQueryClient();
+  const { getToken } = useAuth();
   const isEdit = !!productId;
 
   const { data: store } = useGetMyStore();
@@ -130,10 +132,12 @@ export default function ProductFormPage({ productId }: Props) {
     try {
       const formData = new FormData();
       formData.append("image", file);
+      const token = await getToken();
       const res = await fetch(`/api/stores/${storeId}/products/image`, {
         method: "POST",
         body: formData,
         credentials: "include",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
 
       if (res.status === 401 || res.status === 403) {
