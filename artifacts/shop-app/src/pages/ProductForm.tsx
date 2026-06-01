@@ -18,6 +18,8 @@ interface Props {
 
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const MINUTE_STEPS = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 59];
+const PICKER_ITEM_H = 48;
 
 export default function ProductFormPage({ productId }: Props) {
   const [, setLocation] = useLocation();
@@ -49,6 +51,14 @@ export default function ProductFormPage({ productId }: Props) {
   const [deadlinePreset, setDeadlinePreset] = useState<DeadlinePreset | null>(null);
   const [deadlineDate, setDeadlineDate] = useState("");
   const [deadlineTime, setDeadlineTime] = useState("23:59");
+  const [showDateSheet, setShowDateSheet] = useState(false);
+  const [showTimeSheet, setShowTimeSheet] = useState(false);
+  const [calViewYear, setCalViewYear] = useState(() => new Date().getFullYear());
+  const [calViewMonth, setCalViewMonth] = useState(() => new Date().getMonth());
+  const [pendingDate, setPendingDate] = useState<{ y: number; m: number; d: number } | null>(null);
+  const [pendingAmPm, setPendingAmPm] = useState<"am" | "pm">("pm");
+  const [pendingHour, setPendingHour] = useState(11);
+  const [pendingMinute, setPendingMinute] = useState(59);
 
   // Image picker state
   const [localPreviewUrl, setLocalPreviewUrl] = useState<string | null>(null);
@@ -57,6 +67,9 @@ export default function ProductFormPage({ productId }: Props) {
   const [showUrlInput, setShowUrlInput] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const previewObjectUrlRef = useRef<string | null>(null);
+  const ampmColRef = useRef<HTMLDivElement>(null);
+  const hourColRef = useRef<HTMLDivElement>(null);
+  const minuteColRef = useRef<HTMLDivElement>(null);
 
   // Revoke object URL on unmount to prevent memory leak
   useEffect(() => {
@@ -66,6 +79,17 @@ export default function ProductFormPage({ productId }: Props) {
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (!showTimeSheet) return;
+    requestAnimationFrame(() => {
+      ampmColRef.current?.scrollTo({ top: (pendingAmPm === "pm" ? 1 : 0) * PICKER_ITEM_H });
+      hourColRef.current?.scrollTo({ top: (pendingHour - 1) * PICKER_ITEM_H });
+      const idx = MINUTE_STEPS.indexOf(pendingMinute);
+      minuteColRef.current?.scrollTo({ top: (idx >= 0 ? idx : 0) * PICKER_ITEM_H });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showTimeSheet]);
 
   useEffect(() => {
     if (existingProduct) {
@@ -247,6 +271,53 @@ export default function ProductFormPage({ productId }: Props) {
     const d = new Date();
     d.setDate(d.getDate() + offsetDays);
     return `${d.getMonth() + 1}/${d.getDate()}`;
+  };
+
+  const openDateSheet = () => {
+    if (deadlineDate) {
+      const parts = deadlineDate.split("/").map(Number);
+      setCalViewYear(parts[0]);
+      setCalViewMonth(parts[1] - 1);
+      setPendingDate({ y: parts[0], m: parts[1] - 1, d: parts[2] });
+    } else {
+      const now = new Date();
+      setCalViewYear(now.getFullYear());
+      setCalViewMonth(now.getMonth());
+      setPendingDate(null);
+    }
+    setShowDateSheet(true);
+  };
+
+  const confirmDateSheet = () => {
+    if (pendingDate) {
+      setDeadlineDate(`${pendingDate.y}/${pendingDate.m + 1}/${pendingDate.d}`);
+    }
+    setShowDateSheet(false);
+  };
+
+  const openTimeSheet = () => {
+    const [hh, mm] = deadlineTime.split(":").map(Number);
+    const isPm = hh >= 12;
+    const h12 = hh === 0 ? 12 : hh > 12 ? hh - 12 : hh;
+    setPendingAmPm(isPm ? "pm" : "am");
+    setPendingHour(h12);
+    setPendingMinute(mm);
+    setShowTimeSheet(true);
+  };
+
+  const confirmTimeSheet = () => {
+    let h = pendingHour;
+    if (pendingAmPm === "am" && h === 12) h = 0;
+    else if (pendingAmPm === "pm" && h !== 12) h += 12;
+    setDeadlineTime(`${String(h).padStart(2, "0")}:${String(pendingMinute).padStart(2, "0")}`);
+    setShowTimeSheet(false);
+  };
+
+  const formatDeadlineTimeDisplay = () => {
+    const [hh, mm] = deadlineTime.split(":").map(Number);
+    const isPm = hh >= 12;
+    const h12 = hh === 0 ? 12 : hh > 12 ? hh - 12 : hh;
+    return `${isPm ? "下午" : "上午"} ${h12}:${String(mm).padStart(2, "0")}`;
   };
 
   const isPending = createProduct.isPending || updateProduct.isPending;
@@ -654,18 +725,22 @@ export default function ProductFormPage({ productId }: Props) {
                 </div>
                 {deadlinePreset === "custom" && (
                   <div className="flex gap-2">
-                    <input
-                      type="date"
-                      value={deadlineDate}
-                      onChange={(e) => setDeadlineDate(e.target.value)}
-                      className="flex-1 h-12 px-4 rounded-xl border border-input bg-white text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 text-base"
-                    />
-                    <input
-                      type="time"
-                      value={deadlineTime}
-                      onChange={(e) => setDeadlineTime(e.target.value)}
-                      className="w-28 h-12 px-3 rounded-xl border border-input bg-white text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 text-base"
-                    />
+                    <button
+                      type="button"
+                      onClick={openDateSheet}
+                      className="flex-1 h-12 rounded-xl border border-input bg-white text-sm flex items-center justify-between px-4"
+                    >
+                      <span className={deadlineDate ? "text-foreground" : "text-muted-foreground"}>{deadlineDate || "選擇日期"}</span>
+                      <span className="text-muted-foreground">›</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={openTimeSheet}
+                      className="w-36 h-12 rounded-xl border border-input bg-white text-sm flex items-center justify-between px-4"
+                    >
+                      <span className="text-foreground">{formatDeadlineTimeDisplay()}</span>
+                      <span className="text-muted-foreground">›</span>
+                    </button>
                   </div>
                 )}
                 <p className="text-[10px] text-muted-foreground/60 leading-relaxed pt-1">
@@ -694,6 +769,147 @@ export default function ProductFormPage({ productId }: Props) {
 
         </div>
       </form>
+
+      {/* ── 日期選擇 bottom sheet ── */}
+      {showDateSheet && (
+        <>
+          <div className="fixed inset-0 bg-black/40 z-40" onClick={() => setShowDateSheet(false)} />
+          <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white rounded-t-3xl z-50 pb-8">
+            <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-border">
+              <span className="min-w-[3rem]" />
+              <h2 className="text-base font-bold text-foreground">選擇日期</h2>
+              <button type="button" onClick={confirmDateSheet} className="text-sm font-semibold text-primary min-w-[3rem] text-right">完成</button>
+            </div>
+            <div className="px-4 pt-4 pb-2">
+              {/* Month navigation */}
+              <div className="flex items-center justify-between mb-3">
+                <button type="button" onClick={() => {
+                  if (calViewMonth === 0) { setCalViewMonth(11); setCalViewYear((y) => y - 1); }
+                  else setCalViewMonth((m) => m - 1);
+                }} className="w-10 h-10 flex items-center justify-center text-xl text-foreground rounded-xl hover:bg-secondary">‹</button>
+                <span className="text-sm font-semibold text-foreground">{calViewYear} 年 {calViewMonth + 1} 月</span>
+                <button type="button" onClick={() => {
+                  if (calViewMonth === 11) { setCalViewMonth(0); setCalViewYear((y) => y + 1); }
+                  else setCalViewMonth((m) => m + 1);
+                }} className="w-10 h-10 flex items-center justify-center text-xl text-foreground rounded-xl hover:bg-secondary">›</button>
+              </div>
+              {/* Weekday headers */}
+              <div className="grid grid-cols-7 mb-1">
+                {["日","一","二","三","四","五","六"].map((d) => (
+                  <div key={d} className="h-9 flex items-center justify-center text-xs text-muted-foreground font-medium">{d}</div>
+                ))}
+              </div>
+              {/* Day cells */}
+              {(() => {
+                const firstDay = new Date(calViewYear, calViewMonth, 1).getDay();
+                const daysInMonth = new Date(calViewYear, calViewMonth + 1, 0).getDate();
+                const cells: (number | null)[] = [];
+                for (let i = 0; i < firstDay; i++) cells.push(null);
+                for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+                return (
+                  <div className="grid grid-cols-7 gap-y-1">
+                    {cells.map((day, i) => (
+                      <div key={i} className="flex items-center justify-center h-10">
+                        {day !== null && (
+                          <button
+                            type="button"
+                            onClick={() => setPendingDate({ y: calViewYear, m: calViewMonth, d: day })}
+                            className={`w-9 h-9 rounded-full flex items-center justify-center text-sm transition-colors ${
+                              pendingDate?.y === calViewYear && pendingDate?.m === calViewMonth && pendingDate?.d === day
+                                ? "bg-primary text-white font-bold"
+                                : "text-foreground hover:bg-secondary"
+                            }`}
+                          >
+                            {day}
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ── 時間選擇 bottom sheet ── */}
+      {showTimeSheet && (
+        <>
+          <div className="fixed inset-0 bg-black/40 z-40" onClick={() => setShowTimeSheet(false)} />
+          <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white rounded-t-3xl z-50 pb-8">
+            <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-border">
+              <span className="min-w-[3rem]" />
+              <h2 className="text-base font-bold text-foreground">選擇時間</h2>
+              <button type="button" onClick={confirmTimeSheet} className="text-sm font-semibold text-primary min-w-[3rem] text-right">完成</button>
+            </div>
+            <div className="flex px-6 py-2 gap-1 items-center">
+              {/* AM/PM column */}
+              <div className="relative flex-shrink-0 w-20 overflow-hidden" style={{ height: 240 }}>
+                <div className="pointer-events-none absolute inset-x-0 top-[96px] h-12 bg-secondary/80 rounded-xl z-10" />
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-white to-transparent z-20" />
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-white to-transparent z-20" />
+                <div ref={ampmColRef} className="overflow-y-auto h-full" style={{ scrollSnapType: "y mandatory" }}>
+                  <div style={{ height: 96 }} />
+                  {(["am", "pm"] as const).map((v, i) => (
+                    <div
+                      key={v}
+                      onClick={() => { setPendingAmPm(v); ampmColRef.current?.scrollTo({ top: i * PICKER_ITEM_H, behavior: "smooth" }); }}
+                      style={{ scrollSnapAlign: "center", height: PICKER_ITEM_H }}
+                      className={`flex items-center justify-center cursor-pointer select-none transition-all ${pendingAmPm === v ? "text-foreground text-lg font-bold" : "text-muted-foreground/40 text-base"}`}
+                    >
+                      {v === "am" ? "上午" : "下午"}
+                    </div>
+                  ))}
+                  <div style={{ height: 96 }} />
+                </div>
+              </div>
+              {/* Hour column */}
+              <div className="relative flex-1 overflow-hidden" style={{ height: 240 }}>
+                <div className="pointer-events-none absolute inset-x-0 top-[96px] h-12 bg-secondary/80 rounded-xl z-10" />
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-white to-transparent z-20" />
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-white to-transparent z-20" />
+                <div ref={hourColRef} className="overflow-y-auto h-full" style={{ scrollSnapType: "y mandatory" }}>
+                  <div style={{ height: 96 }} />
+                  {[1,2,3,4,5,6,7,8,9,10,11,12].map((h, i) => (
+                    <div
+                      key={h}
+                      onClick={() => { setPendingHour(h); hourColRef.current?.scrollTo({ top: i * PICKER_ITEM_H, behavior: "smooth" }); }}
+                      style={{ scrollSnapAlign: "center", height: PICKER_ITEM_H }}
+                      className={`flex items-center justify-center cursor-pointer select-none transition-all ${pendingHour === h ? "text-foreground text-2xl font-bold" : "text-muted-foreground/40 text-base"}`}
+                    >
+                      {h}
+                    </div>
+                  ))}
+                  <div style={{ height: 96 }} />
+                </div>
+              </div>
+              {/* Colon separator */}
+              <div className="flex-shrink-0 text-2xl font-bold text-foreground self-center">:</div>
+              {/* Minute column */}
+              <div className="relative flex-1 overflow-hidden" style={{ height: 240 }}>
+                <div className="pointer-events-none absolute inset-x-0 top-[96px] h-12 bg-secondary/80 rounded-xl z-10" />
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-white to-transparent z-20" />
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-white to-transparent z-20" />
+                <div ref={minuteColRef} className="overflow-y-auto h-full" style={{ scrollSnapType: "y mandatory" }}>
+                  <div style={{ height: 96 }} />
+                  {MINUTE_STEPS.map((m, i) => (
+                    <div
+                      key={m}
+                      onClick={() => { setPendingMinute(m); minuteColRef.current?.scrollTo({ top: i * PICKER_ITEM_H, behavior: "smooth" }); }}
+                      style={{ scrollSnapAlign: "center", height: PICKER_ITEM_H }}
+                      className={`flex items-center justify-center cursor-pointer select-none transition-all ${pendingMinute === m ? "text-foreground text-2xl font-bold" : "text-muted-foreground/40 text-base"}`}
+                    >
+                      {String(m).padStart(2, "0")}
+                    </div>
+                  ))}
+                  <div style={{ height: 96 }} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
