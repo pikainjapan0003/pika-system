@@ -70,13 +70,17 @@ export default function ProductFormPage({ productId }: Props) {
   const ampmColRef = useRef<HTMLDivElement>(null);
   const hourColRef = useRef<HTMLDivElement>(null);
   const minuteColRef = useRef<HTMLDivElement>(null);
+  const ampmScrollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hourScrollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const minuteScrollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Revoke object URL on unmount to prevent memory leak
   useEffect(() => {
     return () => {
-      if (previewObjectUrlRef.current) {
-        URL.revokeObjectURL(previewObjectUrlRef.current);
-      }
+      if (previewObjectUrlRef.current) URL.revokeObjectURL(previewObjectUrlRef.current);
+      if (ampmScrollTimer.current) clearTimeout(ampmScrollTimer.current);
+      if (hourScrollTimer.current) clearTimeout(hourScrollTimer.current);
+      if (minuteScrollTimer.current) clearTimeout(minuteScrollTimer.current);
     };
   }, []);
 
@@ -849,14 +853,26 @@ export default function ProductFormPage({ productId }: Props) {
                 <div className="pointer-events-none absolute inset-x-0 top-[96px] h-12 bg-secondary/80 rounded-xl z-10" />
                 <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-white to-transparent z-20" />
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-white to-transparent z-20" />
-                <div ref={ampmColRef} className="overflow-y-auto h-full" style={{ scrollSnapType: "y mandatory" }}>
+                <div
+                  ref={ampmColRef}
+                  className="overflow-y-auto h-full"
+                  style={{ scrollSnapType: "y mandatory" }}
+                  onScroll={(e) => {
+                    const st = e.currentTarget.scrollTop;
+                    if (ampmScrollTimer.current) clearTimeout(ampmScrollTimer.current);
+                    ampmScrollTimer.current = setTimeout(() => {
+                      const idx = Math.max(0, Math.min(1, Math.round(st / PICKER_ITEM_H)));
+                      setPendingAmPm(idx === 0 ? "am" : "pm");
+                    }, 200);
+                  }}
+                >
                   <div style={{ height: 96 }} />
                   {(["am", "pm"] as const).map((v, i) => (
                     <div
                       key={v}
                       onClick={() => { setPendingAmPm(v); ampmColRef.current?.scrollTo({ top: i * PICKER_ITEM_H, behavior: "smooth" }); }}
                       style={{ scrollSnapAlign: "center", height: PICKER_ITEM_H }}
-                      className={`flex items-center justify-center cursor-pointer select-none transition-all ${pendingAmPm === v ? "text-foreground text-lg font-bold" : "text-muted-foreground/40 text-base"}`}
+                      className={`flex items-center justify-center cursor-pointer select-none transition-all ${pendingAmPm === v ? "text-foreground text-lg font-bold" : "text-muted-foreground/60 text-base"}`}
                     >
                       {v === "am" ? "上午" : "下午"}
                     </div>
@@ -869,14 +885,26 @@ export default function ProductFormPage({ productId }: Props) {
                 <div className="pointer-events-none absolute inset-x-0 top-[96px] h-12 bg-secondary/80 rounded-xl z-10" />
                 <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-white to-transparent z-20" />
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-white to-transparent z-20" />
-                <div ref={hourColRef} className="overflow-y-auto h-full" style={{ scrollSnapType: "y mandatory" }}>
+                <div
+                  ref={hourColRef}
+                  className="overflow-y-auto h-full"
+                  style={{ scrollSnapType: "y mandatory" }}
+                  onScroll={(e) => {
+                    const st = e.currentTarget.scrollTop;
+                    if (hourScrollTimer.current) clearTimeout(hourScrollTimer.current);
+                    hourScrollTimer.current = setTimeout(() => {
+                      const idx = Math.max(0, Math.min(11, Math.round(st / PICKER_ITEM_H)));
+                      setPendingHour(idx + 1);
+                    }, 200);
+                  }}
+                >
                   <div style={{ height: 96 }} />
                   {[1,2,3,4,5,6,7,8,9,10,11,12].map((h, i) => (
                     <div
                       key={h}
                       onClick={() => { setPendingHour(h); hourColRef.current?.scrollTo({ top: i * PICKER_ITEM_H, behavior: "smooth" }); }}
                       style={{ scrollSnapAlign: "center", height: PICKER_ITEM_H }}
-                      className={`flex items-center justify-center cursor-pointer select-none transition-all ${pendingHour === h ? "text-foreground text-2xl font-bold" : "text-muted-foreground/40 text-base"}`}
+                      className={`flex items-center justify-center cursor-pointer select-none transition-all ${pendingHour === h ? "text-foreground text-2xl font-bold" : "text-muted-foreground/60 text-base"}`}
                     >
                       {h}
                     </div>
@@ -891,14 +919,26 @@ export default function ProductFormPage({ productId }: Props) {
                 <div className="pointer-events-none absolute inset-x-0 top-[96px] h-12 bg-secondary/80 rounded-xl z-10" />
                 <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-white to-transparent z-20" />
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-white to-transparent z-20" />
-                <div ref={minuteColRef} className="overflow-y-auto h-full" style={{ scrollSnapType: "y mandatory" }}>
+                <div
+                  ref={minuteColRef}
+                  className="overflow-y-auto h-full"
+                  style={{ scrollSnapType: "y mandatory" }}
+                  onScroll={(e) => {
+                    const st = e.currentTarget.scrollTop;
+                    if (minuteScrollTimer.current) clearTimeout(minuteScrollTimer.current);
+                    minuteScrollTimer.current = setTimeout(() => {
+                      const idx = Math.max(0, Math.min(MINUTE_STEPS.length - 1, Math.round(st / PICKER_ITEM_H)));
+                      setPendingMinute(MINUTE_STEPS[idx] ?? 0);
+                    }, 200);
+                  }}
+                >
                   <div style={{ height: 96 }} />
                   {MINUTE_STEPS.map((m, i) => (
                     <div
                       key={m}
                       onClick={() => { setPendingMinute(m); minuteColRef.current?.scrollTo({ top: i * PICKER_ITEM_H, behavior: "smooth" }); }}
                       style={{ scrollSnapAlign: "center", height: PICKER_ITEM_H }}
-                      className={`flex items-center justify-center cursor-pointer select-none transition-all ${pendingMinute === m ? "text-foreground text-2xl font-bold" : "text-muted-foreground/40 text-base"}`}
+                      className={`flex items-center justify-center cursor-pointer select-none transition-all ${pendingMinute === m ? "text-foreground text-2xl font-bold" : "text-muted-foreground/60 text-base"}`}
                     >
                       {String(m).padStart(2, "0")}
                     </div>
