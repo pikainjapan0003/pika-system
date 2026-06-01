@@ -6,6 +6,9 @@ const IS_PROD = import.meta.env.PROD;
 interface HandoffData {
   generatedAt: string | null;
   rawReply?: string;
+  rawReplyMode?: string;
+  rawReplySha256?: string;
+  rawReplyLength?: number;
   summary?: string;
   filesChanged?: string[];
   gitLog?: string;
@@ -25,8 +28,10 @@ function buildCodexPayload(data: HandoffData): string {
     lines.push(`_Generated: ${data.generatedAt}_`, "");
   }
 
-  lines.push("### Context", data.rawReply?.trim() || "(no reply)", "");
-  lines.push("### What Claude changed", data.summary?.trim() || "(no summary)", "");
+  lines.push("### Full Claude Reply", "");
+  lines.push(data.rawReply || "(no reply)", "");
+  lines.push("---", "");
+  lines.push("### Summary", data.summary?.trim() || "(no summary)", "");
 
   if (data.filesChanged?.length) {
     lines.push("### Files changed");
@@ -70,6 +75,25 @@ function buildCodexPayload(data: HandoffData): string {
     ""
   );
 
+  return lines.join("\n");
+}
+
+function buildSummaryPayload(data: HandoffData): string {
+  const lines: string[] = ["## Claude Handoff for Codex (Summary)", ""];
+  if (data.generatedAt) lines.push(`_Generated: ${data.generatedAt}_`, "");
+  lines.push("### Summary", data.summary?.trim() || "(no summary)", "");
+  if (data.filesChanged?.length) {
+    lines.push("### Files changed");
+    data.filesChanged.forEach((f) => lines.push(`- ${f}`));
+    lines.push("");
+  }
+  lines.push("### Git status", "```", data.gitStatus?.trim() || "(none)", "```", "");
+  if (data.blockedDeferred?.length) {
+    lines.push("### Blocked / deferred");
+    data.blockedDeferred.forEach((f) => lines.push(`- ${f}`));
+    lines.push("");
+  }
+  lines.push("### Next task", data.nextTask?.trim() || "(not specified)", "");
   return lines.join("\n");
 }
 
@@ -177,6 +201,13 @@ function DevHandoffInner() {
   const isEmpty = !data || data.finalStatus === "empty";
 
   const codexPayload = data && !isEmpty ? buildCodexPayload(data) : "";
+  const summaryPayload = data && !isEmpty ? buildSummaryPayload(data) : "";
+  const rawReplyLen = data?.rawReply?.length ?? 0;
+  const isExactMode = data?.rawReplyMode === "exact_final_reply";
+  const hasVerification = !!data?.rawReplySha256;
+  const sha256Short = data?.rawReplySha256
+    ? `${data.rawReplySha256.slice(0, 8)}…${data.rawReplySha256.slice(-8)}`
+    : null;
 
   return (
     <div className="min-h-[100dvh] bg-background max-w-[640px] mx-auto pb-10">
@@ -271,15 +302,15 @@ function DevHandoffInner() {
                 onClick={() => copy("codex", codexPayload)}
                 className="h-12 bg-primary text-white text-sm font-semibold rounded-xl col-span-2"
               >
-                {copiedKey === "codex" ? "✓ 已複製給 Codex" : "複製給 Codex"}
+                {copiedKey === "codex" ? "✓ 已複製給 Codex（完整版）" : "複製給 Codex（完整版）"}
               </button>
               <button
                 type="button"
-                onClick={() => copy("raw", data.rawReply ?? "")}
-                disabled={!data.rawReply}
+                onClick={() => copy("summary", summaryPayload)}
+                disabled={!summaryPayload}
                 className="h-10 bg-secondary text-foreground text-sm font-medium rounded-xl disabled:opacity-40"
               >
-                {copiedKey === "raw" ? "✓ 已複製" : "複製原始回覆"}
+                {copiedKey === "summary" ? "✓ 已複製" : "複製摘要版"}
               </button>
               <button
                 type="button"
@@ -291,8 +322,37 @@ function DevHandoffInner() {
               </button>
             </div>
 
+            {/* rawReply exact-copy indicator */}
+            <div className={`rounded-xl px-3 py-2 space-y-1 text-xs ${isExactMode && hasVerification ? "bg-green-50 border border-green-200" : isExactMode ? "bg-blue-50 border border-blue-200" : "bg-yellow-50 border border-yellow-200"}`}>
+              <div className="flex items-center gap-2">
+                <span>{isExactMode && hasVerification ? "✓" : isExactMode ? "~" : "⚠"}</span>
+                <span className={`font-medium ${isExactMode && hasVerification ? "text-green-800" : isExactMode ? "text-blue-800" : "text-yellow-800"}`}>
+                  rawReply mode: {data.rawReplyMode ?? "(未設定)"}
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-muted-foreground pl-5">
+                <span>length: <strong className="text-foreground">{data.rawReplyLength ?? rawReplyLen} chars</strong></span>
+                {sha256Short ? (
+                  <span className="font-mono">sha256: <strong className="text-foreground">{sha256Short}</strong></span>
+                ) : (
+                  <span className="text-yellow-700">sha256: ⚠ 未計算 — 執行 node scripts/write-dev-handoff.mjs</span>
+                )}
+              </div>
+              {data.rawReplySha256 && (
+                <div className="pl-5 font-mono text-muted-foreground break-all">
+                  <span className="text-xs">{data.rawReplySha256}</span>
+                </div>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground px-1">
+              rawReply 應與 Claude 最終回覆原文一字不漏一致。
+            </p>
+
             {/* Sections */}
-            <Section title="原始 Claude 回覆" content={data.rawReply} />
+            <Section
+              title={`完整 Claude 回覆 (rawReply)${rawReplyLen > 0 ? ` — ${rawReplyLen} 字` : " ⚠ 空"}`}
+              content={data.rawReply}
+            />
             <Section title="修改摘要" content={data.summary} />
             <Section title="修改的檔案" content={data.filesChanged} />
             <Section title="git log (最近 5)" content={data.gitLog} mono />
@@ -364,6 +424,9 @@ function WriteInstructions() {
           <p className="text-xs font-semibold text-primary mb-1">
             Claude Code 每次回覆後都應自動更新 dev-handoff/latest.json（見 CLAUDE.md）
           </p>
+          <p className="text-xs font-semibold text-destructive mb-1">
+            rawReply 必須是終端機最終回覆原文的 exact copy，一字不漏，不可重寫、摘要或修改。
+          </p>
           <p className="text-xs text-muted-foreground mb-2">
             格式如下，寫入後才輸出最終回覆：
           </p>
@@ -372,18 +435,24 @@ function WriteInstructions() {
 
 {
   "generatedAt": "<ISO8601>",
-  "rawReply": "<Claude 完整回覆>",
+  "rawReply": "<終端機最終回覆原文 exact copy>",
+  "rawReplyMode": "exact_final_reply",
+  "rawReplySha256": "<auto by scripts/write-dev-handoff.mjs>",
+  "rawReplyLength": "<auto by scripts/write-dev-handoff.mjs>",
   "summary": "<一段摘要>",
   "filesChanged": ["path/to/file"],
   "gitLog": "<git log --oneline -5>",
   "gitStatus": "<git status --short>",
-  "stagedChanges": "<staged diff 摘要>",
+  "stagedChanges": "",
   "claudeUntracked": false,
   "acceptedFixes": ["fix 1"],
   "blockedDeferred": ["defer 1"],
   "nextTask": "下一步建議",
   "finalStatus": "completed"
-}`}
+}
+
+# 寫完 rawReply 後執行（workspace root）：
+node scripts/write-dev-handoff.mjs`}
           </pre>
         </div>
       )}

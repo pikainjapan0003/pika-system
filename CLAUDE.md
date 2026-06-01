@@ -16,13 +16,53 @@ dev-handoff/latest.json
 - 輸出規格 / 文件 → 也寫入
 - 驗收 / QA 回覆 → 也寫入
 
+### rawReply 規則（Exact Copy — 嚴格執行）
+
+`rawReply` 是終端機最終回覆原文的 **byte-for-byte exact copy**。
+
+#### 必須做到
+
+- 終端機輸出什麼，`rawReply` 就放什麼，一字不漏
+- 所有 markdown、標題、表格、清單、程式碼區塊、符號、標點、換行全部原樣保留
+- 中文、英文、數字、特殊符號全部原樣保留
+
+#### 嚴格禁止
+
+- 不可重寫（rewording）
+- 不可摘要（summarizing）
+- 不可修飾（paraphrasing）
+- 不可翻譯（translating）
+- 不可調整順序（reordering）
+- 不可改標題（changing headings）
+- 不可改標點（changing punctuation）
+- 不可刪減（omitting anything）
+- 不可補充（adding anything）
+- 不可只寫「本輪完整回覆」或類似佔位符
+
+#### 正確作法（Single Source of Truth）
+
+1. 先在 thinking 中組好完整回覆文字（`finalReplyText`）
+2. 用 Write tool 把 `finalReplyText` 原封不動寫入 `dev-handoff/latest.json` 的 `rawReply`
+3. 用 Bash tool 執行驗證 script：`node scripts/write-dev-handoff.mjs`
+   - script 自動計算 `rawReplySha256`（SHA-256 hex）
+   - script 自動計算 `rawReplyLength`（字元數）
+   - script 寫回 `latest.json`
+4. 再把 `finalReplyText` 原封不動輸出為終端機最終回覆
+
+**`rawReply` 與終端機輸出來自同一份 `finalReplyText`，不得分別手動重寫兩份。**
+
+`summary` 才是放一段話摘要的地方。違反此規則 = Codex 拿到殘缺內容 = 三方工具斷線。
+
 ### JSON 格式
 
 ```json
 {
   "generatedAt": "<ISO 8601 timestamp, e.g. 2026-06-01T10:00:00Z>",
-  "rawReply": "<本輪 Claude 完整回覆的文字摘要>",
-  "summary": "<一段話說明本輪做了什麼或回覆了什麼>",
+  "rawReply": "<finalReplyText 原文，byte-for-byte exact copy，不可修改>",
+  "rawReplyMode": "exact_final_reply",
+  "rawReplySha256": "<由 scripts/write-dev-handoff.mjs 自動填入>",
+  "rawReplyLength": "<由 scripts/write-dev-handoff.mjs 自動填入>",
+  "summary": "<一段話摘要，說明本輪做了什麼>",
   "filesChanged": ["<相對路徑>", "..."],
   "gitLog": "<git log --oneline -5 的輸出>",
   "gitStatus": "<git status --short 的輸出>",
@@ -33,6 +73,21 @@ dev-handoff/latest.json
   "nextTask": "<建議的下一步>",
   "finalStatus": "<completed | blocked | deferred | info | test>"
 }
+```
+
+### 驗證 script
+
+```bash
+# 在 workspace root 執行（寫完 rawReply 後立即執行）
+node scripts/write-dev-handoff.mjs
+```
+
+輸出範例：
+```
+[write-dev-handoff] Verification fields written:
+  rawReplyLength : 1234 chars
+  rawReplySha256 : a3f9...e7b2
+```
 ```
 
 ### 重要限制
