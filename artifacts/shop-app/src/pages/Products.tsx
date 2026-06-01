@@ -30,6 +30,7 @@ export default function ProductsPage() {
   const deleteProduct = useDeleteProduct();
 
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeFilter, setActiveFilter] = useState<"all" | "active" | "inactive">("all");
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
 
@@ -73,9 +74,13 @@ export default function ProductsPage() {
       ? Math.round(products!.reduce((sum, p) => sum + Number(p.price), 0) / totalCount)
       : 0;
 
-  const filteredProducts = (products ?? []).filter((p) =>
-    p.name.toLowerCase().includes(searchQuery.toLowerCase().trim())
-  );
+  const filteredProducts = (products ?? [])
+    .filter((p) => p.name.toLowerCase().includes(searchQuery.toLowerCase().trim()))
+    .filter((p) => {
+      if (activeFilter === "active") return p.isActive;
+      if (activeFilter === "inactive") return !p.isActive;
+      return true;
+    });
 
   return (
     <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-24">
@@ -137,6 +142,32 @@ export default function ProductsPage() {
               className="w-full h-11 px-4 rounded-xl border border-input bg-white text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
             />
 
+            {/* ── Filter bar ───────────────────────────────── */}
+            <div className="flex gap-2">
+              {(["all", "active", "inactive"] as const).map((f) => {
+                const labels: Record<typeof f, string> = {
+                  all: "全部",
+                  active: "開放下單",
+                  inactive: "已關閉",
+                };
+                const isSelected = activeFilter === f;
+                return (
+                  <button
+                    key={f}
+                    type="button"
+                    onClick={() => setActiveFilter(f)}
+                    className={`h-8 px-3 rounded-full text-sm font-medium transition-colors ${
+                      isSelected
+                        ? "bg-primary text-white"
+                        : "bg-secondary text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {labels[f]}
+                  </button>
+                );
+              })}
+            </div>
+
             {/* ── Stats ────────────────────────────────────── */}
             <div className="grid grid-cols-3 gap-2">
               <StatCard label="總商品" value={totalCount} />
@@ -147,9 +178,7 @@ export default function ProductsPage() {
             {/* ── Product list ─────────────────────────────── */}
             {filteredProducts.length === 0 ? (
               <div className="text-center py-8">
-                <p className="text-muted-foreground text-sm">
-                  找不到「{searchQuery}」的商品
-                </p>
+                <p className="text-muted-foreground text-sm">找不到符合條件的商品</p>
               </div>
             ) : (
               <div className="space-y-3">
