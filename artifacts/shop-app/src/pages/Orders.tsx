@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useAuth } from "@clerk/react";
 import { useGetMyStore, useListOrders, useUpdateOrderStatus, getListOrdersQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { BottomNav } from "./Dashboard";
@@ -6,6 +7,7 @@ import { STATUS_LABELS, STATUS_COLORS, ALL_STATUSES, VALID_NEXT_STATUSES } from 
 
 export default function OrdersPage() {
   const qc = useQueryClient();
+  const { getToken } = useAuth();
   const { data: store } = useGetMyStore();
   const storeId = store?.id;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -48,11 +50,31 @@ export default function OrdersPage() {
 
   const handleExport = async () => {
     if (!storeId) return;
-    const url = `/api/stores/${storeId}/orders/export`;
+    const token = await getToken();
+    let res: Response;
+    try {
+      res = await fetch(`/api/stores/${storeId}/orders/export`, {
+        credentials: "include",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+    } catch {
+      window.alert("匯出失敗，請確認網路連線後再試");
+      return;
+    }
+    if (!res.ok) {
+      window.alert("匯出失敗，請稍後再試");
+      return;
+    }
+    const blob = await res.blob();
+    const disposition = res.headers.get("Content-Disposition") ?? "";
+    const match = disposition.match(/filename="([^"]+)"/);
+    const filename = match?.[1] ?? "orders-export.csv";
+    const objectUrl = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url;
-    a.download = `orders_${storeId}.csv`;
+    a.href = objectUrl;
+    a.download = filename;
     a.click();
+    URL.revokeObjectURL(objectUrl);
   };
 
   const formatDate = (d: string) => {
