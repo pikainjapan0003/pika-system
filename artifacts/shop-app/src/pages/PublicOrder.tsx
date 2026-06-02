@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { Order } from "@workspace/api-client-react";
 import { useGetPublicProduct, useSubmitOrder } from "@workspace/api-client-react";
+import LaundryCountdownTimer from "../components/LaundryCountdownTimer";
 
 interface Props {
   shareToken: string;
@@ -33,9 +34,29 @@ export default function PublicOrderPage({ shareToken }: Props) {
 
   const specs: Spec[] = (product?.specs as Spec[]) ?? [];
 
+  const orderDeadlineAt = product?.orderDeadlineAt ? new Date(product.orderDeadlineAt as string) : null;
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    if (!orderDeadlineAt) return;
+    const interval = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(interval);
+  }, [!!orderDeadlineAt]);
+
+  const isOrderClosed =
+    orderDeadlineAt != null && Number.isFinite(orderDeadlineAt.getTime()) && now >= orderDeadlineAt;
+  const remainingMs = orderDeadlineAt ? Math.max(0, orderDeadlineAt.getTime() - now.getTime()) : 0;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError("");
+
+    // Re-check deadline in case time has passed since render
+    const deadline = product?.orderDeadlineAt ? new Date(product.orderDeadlineAt as string) : null;
+    if (deadline != null && Number.isFinite(deadline.getTime()) && new Date() >= deadline) {
+      setFormError("此商品已截止收單，無法送出訂單。");
+      return;
+    }
 
     if (!buyerName.trim() || !buyerPhone.trim() || !pickupMethod) {
       setFormError("請填寫姓名、電話和取貨方式");
@@ -63,7 +84,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
       });
       setSubmittedOrder(order);
     } catch (err: any) {
-      setFormError(err?.data?.error || "下單失敗，請稍後再試");
+      setFormError(err?.data?.message || err?.data?.error || "下單失敗，請稍後再試");
     }
   };
 
@@ -164,6 +185,13 @@ export default function PublicOrderPage({ shareToken }: Props) {
           </div>
           {product.inventory != null && (
             <div className="text-xs text-muted-foreground mt-1">剩餘庫存：{product.inventory}</div>
+          )}
+          {orderDeadlineAt != null && (
+            <LaundryCountdownTimer
+              remainingMs={remainingMs}
+              closed={isOrderClosed}
+              deadlineLabel={formatDate(product.orderDeadlineAt as string)}
+            />
           )}
         </div>
       </div>
@@ -282,10 +310,14 @@ export default function PublicOrderPage({ shareToken }: Props) {
 
         <button
           type="submit"
-          disabled={submitOrder.isPending}
+          disabled={submitOrder.isPending || isOrderClosed}
           className="w-full h-12 bg-primary text-white font-bold rounded-xl text-base disabled:opacity-60 sticky bottom-4"
         >
-          {submitOrder.isPending ? "送出中..." : `確認下單 · NT$ ${(Number(product.price) * quantity).toLocaleString()}`}
+          {isOrderClosed
+            ? "已截止收單"
+            : submitOrder.isPending
+            ? "送出中..."
+            : `確認下單 · NT$ ${(Number(product.price) * quantity).toLocaleString()}`}
         </button>
       </form>
     </div>
