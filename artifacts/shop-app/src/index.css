@@ -74,12 +74,12 @@
   --elevate-1: rgba(0,0,0,.03);
   --elevate-2: rgba(0,0,0,.08);
 
-  /* Warm terracotta palette */
+  /* Rose coral palette — primary #F57572 */
   --background: 36 33% 97%;
   --foreground: 20 15% 15%;
   --border: 30 15% 88%;
   --input: 30 15% 88%;
-  --ring: 18 72% 48%;
+  --ring: 1 87% 70%;
 
   --card: 36 40% 99%;
   --card-foreground: 20 15% 15%;
@@ -89,7 +89,7 @@
   --popover-foreground: 20 15% 15%;
   --popover-border: 30 15% 88%;
 
-  --primary: 18 72% 48%;
+  --primary: 1 87% 70%;
   --primary-foreground: 0 0% 100%;
 
   --secondary: 30 20% 94%;
@@ -107,13 +107,13 @@
   --sidebar: 30 20% 94%;
   --sidebar-foreground: 20 15% 15%;
   --sidebar-border: 30 15% 88%;
-  --sidebar-primary: 18 72% 48%;
+  --sidebar-primary: 1 87% 70%;
   --sidebar-primary-foreground: 0 0% 100%;
   --sidebar-accent: 38 80% 55%;
   --sidebar-accent-foreground: 20 15% 15%;
-  --sidebar-ring: 18 72% 48%;
+  --sidebar-ring: 1 87% 70%;
 
-  --chart-1: 18 72% 48%;
+  --chart-1: 1 87% 70%;
   --chart-2: 38 80% 55%;
   --chart-3: 160 50% 42%;
   --chart-4: 200 65% 50%;

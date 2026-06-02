@@ -113,7 +113,7 @@ export default function OrdersPage() {
           <h1 className="text-lg font-bold text-foreground">訂單管理</h1>
           <button
             onClick={handleExport}
-            className="h-9 px-3 text-xs font-medium text-violet-600 bg-violet-50 rounded-xl"
+            className="h-9 px-3 text-xs font-medium text-primary bg-primary/10 rounded-xl"
           >
             匯出 CSV
           </button>
@@ -125,7 +125,7 @@ export default function OrdersPage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="搜尋姓名、電話、訂單編號"
-            className="w-full h-9 px-3 rounded-xl border border-input bg-secondary/40 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-violet-400/30 focus:border-violet-400/60"
+            className="w-full h-9 px-3 rounded-xl border border-input bg-secondary/40 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
         </div>
         {/* Filter tabs */}
@@ -147,7 +147,7 @@ export default function OrdersPage() {
       <div className="px-5 py-4">
         {isLoading ? (
           <div className="flex justify-center py-12">
-            <div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
           <>
@@ -177,8 +177,8 @@ export default function OrdersPage() {
                     >
                       {/* Row 1: Order ID + Amount */}
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-bold text-violet-600">#{o.id}</span>
-                        <span className="text-base font-bold text-violet-600">NT$ {Number(o.totalPrice).toLocaleString()}</span>
+                        <span className="text-xs font-bold text-primary">#{o.id}</span>
+                        <span className="text-base font-bold text-primary">NT$ {Number(o.totalPrice).toLocaleString()}</span>
                       </div>
                       {/* Row 2: Buyer name + status */}
                       <div className="flex items-start justify-between gap-2">
@@ -218,7 +218,7 @@ export default function OrdersPage() {
                                 <button
                                   type="button"
                                   onClick={() => copyToClipboard(o.buyerPhone, `${o.id}-phone`)}
-                                  className="text-xs text-violet-600 font-medium shrink-0"
+                                  className="text-xs text-primary font-medium shrink-0"
                                 >
                                   {copiedKey === `${o.id}-phone` ? "已複製" : "複製"}
                                 </button>
@@ -337,7 +337,7 @@ function FilterTab({ label, value, active, count, onClick }: { label: string; va
     <button
       onClick={onClick}
       className={`flex-shrink-0 h-8 px-3 rounded-full text-xs font-medium transition-colors ${
-        active ? "bg-violet-600 text-white" : "bg-secondary text-muted-foreground"
+        active ? "bg-primary text-white" : "bg-secondary text-muted-foreground"
       }`}
     >
       {label}{count !== undefined && count > 0 ? ` (${count})` : ""}
@@ -348,7 +348,7 @@ function FilterTab({ label, value, active, count, onClick }: { label: string; va
 function StatCard({ label, value, urgent }: { label: string; value: string; urgent?: boolean }) {
   return (
     <div className="bg-white rounded-xl border border-border p-3 text-center">
-      <div className={`text-lg font-bold ${urgent ? "text-amber-600" : "text-violet-600"}`}>{value}</div>
+      <div className={`text-lg font-bold ${urgent ? "text-amber-600" : "text-primary"}`}>{value}</div>
       <div className="text-[10px] text-muted-foreground mt-0.5 leading-tight">{label}</div>
     </div>
   );
