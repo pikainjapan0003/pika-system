@@ -486,6 +486,8 @@ components:
           type: string
         logoUrl:
           type: ["string", "null"]
+        brandPrimaryColor:
+          type: ["string", "null"]
         createdAt:
           type: string
 
@@ -513,6 +515,8 @@ components:
         description:
           type: string
         logoUrl:
+          type: string
+        brandPrimaryColor:
           type: string
 
     ProductSpec:

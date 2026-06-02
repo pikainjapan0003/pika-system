@@ -9,6 +9,7 @@ export const storesTable = pgTable("stores", {
   description: text("description"),
   slug: text("slug").notNull().unique(),
   logoUrl: text("logo_url"),
+  brandPrimaryColor: text("brand_primary_color").default("#F57572"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 }, (t) => [

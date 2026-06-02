@@ -26,6 +26,7 @@ export const GetMyStoreResponse = zod.object({
   "description": zod.string().nullish(),
   "slug": zod.string(),
   "logoUrl": zod.string().nullish(),
+  "brandPrimaryColor": zod.string().nullish(),
   "createdAt": zod.string()
 })
 
@@ -58,7 +59,8 @@ export const UpdateStoreParams = zod.object({
 export const UpdateStoreBody = zod.object({
   "name": zod.string().min(1).optional(),
   "description": zod.string().optional(),
-  "logoUrl": zod.string().optional()
+  "logoUrl": zod.string().optional(),
+  "brandPrimaryColor": zod.string().optional()
 })
 
 export const UpdateStoreResponse = zod.object({
@@ -68,6 +70,7 @@ export const UpdateStoreResponse = zod.object({
   "description": zod.string().nullish(),
   "slug": zod.string(),
   "logoUrl": zod.string().nullish(),
+  "brandPrimaryColor": zod.string().nullish(),
   "createdAt": zod.string()
 })
 

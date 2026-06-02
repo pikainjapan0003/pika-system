@@ -18,6 +18,8 @@ export interface Store {
   slug: string;
   /** @nullable */
   logoUrl?: string | null;
+  /** @nullable */
+  brandPrimaryColor?: string | null;
   createdAt: string;
 }
 
@@ -35,6 +37,7 @@ export interface StoreUpdate {
   name?: string;
   description?: string;
   logoUrl?: string;
+  brandPrimaryColor?: string;
 }
 
 export interface ProductSpec {

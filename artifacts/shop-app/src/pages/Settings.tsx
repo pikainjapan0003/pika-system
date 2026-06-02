@@ -6,6 +6,64 @@ import { BottomNav } from "./Dashboard";
 
 const IS_DEV = import.meta.env.DEV;
 
+const DEFAULT_COLOR = "#F57572";
+
+const PRESET_COLORS = [
+  "#F57572", "#EF4444", "#F97316", "#F59E0B",
+  "#10B981", "#06B6D4", "#3B82F6", "#8B5CF6", "#111827",
+];
+
+function isValidHex(s: string): boolean {
+  return /^#[0-9A-Fa-f]{6}$/.test(s);
+}
+
+function normalizeHex(s: string): string {
+  const t = s.trim();
+  return (t.startsWith("#") ? t : `#${t}`).toUpperCase();
+}
+
+function safeHex(input: string): string {
+  const n = normalizeHex(input);
+  return isValidHex(n) ? n : DEFAULT_COLOR;
+}
+
+function hexToHsl(hex: string): string | null {
+  const m = /^#([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if (!m) return null;
+  const r = parseInt(m[1], 16) / 255;
+  const g = parseInt(m[2], 16) / 255;
+  const b = parseInt(m[3], 16) / 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  if (max === min) return `0 0% ${Math.round(l * 100)}%`;
+  const d = max - min;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  let h = 0;
+  if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+  else if (max === g) h = ((b - r) / d + 2) / 6;
+  else h = ((r - g) / d + 4) / 6;
+  return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+}
+
+function getLuminance(hex: string): number {
+  const m = /^#([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if (!m) return 0.5;
+  const r = parseInt(m[1], 16) / 255;
+  const g = parseInt(m[2], 16) / 255;
+  const b = parseInt(m[3], 16) / 255;
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function applyBrandColor(hex: string) {
+  const hsl = hexToHsl(hex);
+  if (!hsl) return;
+  document.documentElement.style.setProperty("--primary", hsl);
+  document.documentElement.style.setProperty(
+    "--primary-foreground",
+    getLuminance(hex) > 0.45 ? "20 15% 15%" : "0 0% 100%"
+  );
+}
+
 export default function SettingsPage() {
   const qc = useQueryClient();
   const { data: store, isLoading } = useGetMyStore();
@@ -16,19 +74,38 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
 
+  const [brandColor, setBrandColor] = useState(DEFAULT_COLOR);
+  const [colorError, setColorError] = useState("");
+
   useEffect(() => {
     if (store) {
       setName(store.name);
       setDescription(store.description ?? "");
+      const saved = store.brandPrimaryColor ?? DEFAULT_COLOR;
+      setBrandColor(saved);
+      applyBrandColor(saved);
     }
   }, [store]);
+
+  const handleBrandColorChange = (value: string) => {
+    setBrandColor(value);
+    setColorError("");
+    const n = normalizeHex(value);
+    if (isValidHex(n)) applyBrandColor(n);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setColorError("");
     setSaved(false);
     if (!name.trim()) {
       setError("店鋪名稱不能空白");
+      return;
+    }
+    const normalizedColor = normalizeHex(brandColor);
+    if (!isValidHex(normalizedColor)) {
+      setColorError("請輸入有效的 6 位 HEX 色碼，例如 #F57572");
       return;
     }
     if (!store) return;
@@ -38,8 +115,10 @@ export default function SettingsPage() {
         data: {
           name: name.trim(),
           description: description.trim() || undefined,
+          brandPrimaryColor: normalizedColor,
         },
       });
+      applyBrandColor(normalizedColor);
       qc.invalidateQueries({ queryKey: getGetMyStoreQueryKey() });
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
@@ -47,6 +126,9 @@ export default function SettingsPage() {
       setError(err?.data?.error ?? "儲存失敗，請稍後再試");
     }
   };
+
+  const previewHex = safeHex(brandColor);
+  const previewFg = getLuminance(previewHex) > 0.45 ? "#1a1a1a" : "#ffffff";
 
   return (
     <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-24">
@@ -98,6 +180,91 @@ export default function SettingsPage() {
                 placeholder="簡單介紹您的店鋪..."
                 className={`${inputClass} h-auto resize-none py-3`}
               />
+            </div>
+
+            {/* 品牌顏色 */}
+            <div className="bg-white rounded-2xl border border-border overflow-hidden">
+              <div className="px-5 pt-5 pb-2">
+                <h2 className="text-sm font-bold text-foreground">品牌顏色</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  設定後會影響後台主要按鈕、重點文字與公開頁品牌色。
+                </p>
+              </div>
+              <div className="px-5 pb-5 space-y-4">
+
+                {/* Current color swatch */}
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-10 h-10 rounded-xl border border-border shrink-0"
+                    style={{ backgroundColor: previewHex }}
+                  />
+                  <span className="text-sm font-mono font-medium text-foreground">{previewHex}</span>
+                </div>
+
+                {/* Preset palette */}
+                <div>
+                  <div className="text-xs text-muted-foreground mb-2">預設色盤</div>
+                  <div className="flex flex-wrap gap-2">
+                    {PRESET_COLORS.map((hex) => (
+                      <button
+                        key={hex}
+                        type="button"
+                        onClick={() => handleBrandColorChange(hex)}
+                        className="w-9 h-9 rounded-full flex items-center justify-center transition-transform hover:scale-110 shrink-0"
+                        style={{
+                          backgroundColor: hex,
+                          boxShadow: previewHex === hex
+                            ? "0 0 0 2px white, 0 0 0 4px #111827"
+                            : "0 1px 3px rgba(0,0,0,0.2)",
+                        }}
+                      >
+                        {previewHex === hex && (
+                          <span style={{ color: getLuminance(hex) > 0.45 ? "#1a1a1a" : "#ffffff", fontSize: 13, fontWeight: 700 }}>✓</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* HEX input */}
+                <div>
+                  <div className="text-xs text-muted-foreground mb-1.5">自訂 HEX 色碼</div>
+                  <input
+                    type="text"
+                    value={brandColor}
+                    onChange={(e) => handleBrandColorChange(e.target.value)}
+                    placeholder="#F57572"
+                    maxLength={7}
+                    className={inputClass}
+                  />
+                  {colorError && (
+                    <p className="text-xs text-destructive mt-1">{colorError}</p>
+                  )}
+                </div>
+
+                {/* Preview */}
+                <div>
+                  <div className="text-xs text-muted-foreground mb-2">預覽</div>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <button
+                      type="button"
+                      className="h-9 px-4 rounded-xl text-sm font-semibold"
+                      style={{ backgroundColor: previewHex, color: previewFg }}
+                    >
+                      主要按鈕
+                    </button>
+                    <span className="text-sm font-semibold" style={{ color: previewHex }}>
+                      文字連結
+                    </span>
+                    <span
+                      className="text-xs px-2.5 py-1 rounded-full font-medium"
+                      style={{ backgroundColor: previewHex + "22", color: previewHex }}
+                    >
+                      標籤
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {error && (
