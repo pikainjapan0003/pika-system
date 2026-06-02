@@ -7,6 +7,7 @@ import { QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { queryClient } from "@/lib/queryClient";
 import { useGetMyStore, useCreateStore, getGetMyStoreQueryKey, setAuthTokenGetter } from "@workspace/api-client-react";
+import { applyBrandColor, DEFAULT_BRAND_PRIMARY_COLOR } from "@/lib/brandColor";
 
 import HomePage from "@/pages/Home";
 import DashboardPage from "@/pages/Dashboard";
@@ -137,6 +138,10 @@ function MerchantPortal() {
 
   const [storeInitState, setStoreInitState] = useState<"idle" | "creating" | "failed">("idle");
   const [storeInitError, setStoreInitError] = useState("");
+
+  useEffect(() => {
+    applyBrandColor(store?.brandPrimaryColor ?? DEFAULT_BRAND_PRIMARY_COLOR);
+  }, [store?.brandPrimaryColor]);
   const createAttemptedRef = useRef(false);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

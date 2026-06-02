@@ -3,66 +3,22 @@ import { useLocation } from "wouter";
 import { useGetMyStore, useUpdateStore, getGetMyStoreQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { BottomNav } from "./Dashboard";
+import {
+  DEFAULT_BRAND_PRIMARY_COLOR,
+  isValidHex,
+  normalizeHex,
+  safeHex,
+  getLuminance,
+  getContrastForeground,
+  applyBrandColor,
+} from "@/lib/brandColor";
 
 const IS_DEV = import.meta.env.DEV;
-
-const DEFAULT_COLOR = "#F57572";
 
 const PRESET_COLORS = [
   "#F57572", "#EF4444", "#F97316", "#F59E0B",
   "#10B981", "#06B6D4", "#3B82F6", "#8B5CF6", "#111827",
 ];
-
-function isValidHex(s: string): boolean {
-  return /^#[0-9A-Fa-f]{6}$/.test(s);
-}
-
-function normalizeHex(s: string): string {
-  const t = s.trim();
-  return (t.startsWith("#") ? t : `#${t}`).toUpperCase();
-}
-
-function safeHex(input: string): string {
-  const n = normalizeHex(input);
-  return isValidHex(n) ? n : DEFAULT_COLOR;
-}
-
-function hexToHsl(hex: string): string | null {
-  const m = /^#([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  if (!m) return null;
-  const r = parseInt(m[1], 16) / 255;
-  const g = parseInt(m[2], 16) / 255;
-  const b = parseInt(m[3], 16) / 255;
-  const max = Math.max(r, g, b), min = Math.min(r, g, b);
-  const l = (max + min) / 2;
-  if (max === min) return `0 0% ${Math.round(l * 100)}%`;
-  const d = max - min;
-  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-  let h = 0;
-  if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
-  else if (max === g) h = ((b - r) / d + 2) / 6;
-  else h = ((r - g) / d + 4) / 6;
-  return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
-}
-
-function getLuminance(hex: string): number {
-  const m = /^#([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  if (!m) return 0.5;
-  const r = parseInt(m[1], 16) / 255;
-  const g = parseInt(m[2], 16) / 255;
-  const b = parseInt(m[3], 16) / 255;
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-}
-
-function applyBrandColor(hex: string) {
-  const hsl = hexToHsl(hex);
-  if (!hsl) return;
-  document.documentElement.style.setProperty("--primary", hsl);
-  document.documentElement.style.setProperty(
-    "--primary-foreground",
-    getLuminance(hex) > 0.45 ? "20 15% 15%" : "0 0% 100%"
-  );
-}
 
 export default function SettingsPage() {
   const qc = useQueryClient();
@@ -74,16 +30,16 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
 
-  const [brandColor, setBrandColor] = useState(DEFAULT_COLOR);
+  const [brandColor, setBrandColor] = useState(DEFAULT_BRAND_PRIMARY_COLOR);
   const [colorError, setColorError] = useState("");
 
   useEffect(() => {
     if (store) {
       setName(store.name);
       setDescription(store.description ?? "");
-      const saved = store.brandPrimaryColor ?? DEFAULT_COLOR;
-      setBrandColor(saved);
-      applyBrandColor(saved);
+      const savedColor = store.brandPrimaryColor ?? DEFAULT_BRAND_PRIMARY_COLOR;
+      setBrandColor(savedColor);
+      applyBrandColor(savedColor);
     }
   }, [store]);
 
@@ -128,7 +84,7 @@ export default function SettingsPage() {
   };
 
   const previewHex = safeHex(brandColor);
-  const previewFg = getLuminance(previewHex) > 0.45 ? "#1a1a1a" : "#ffffff";
+  const previewFg = getContrastForeground(previewHex);
 
   return (
     <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-24">
@@ -219,7 +175,7 @@ export default function SettingsPage() {
                         }}
                       >
                         {previewHex === hex && (
-                          <span style={{ color: getLuminance(hex) > 0.45 ? "#1a1a1a" : "#ffffff", fontSize: 13, fontWeight: 700 }}>✓</span>
+                          <span style={{ color: getContrastForeground(hex), fontSize: 13, fontWeight: 700 }}>✓</span>
                         )}
                       </button>
                     ))}
