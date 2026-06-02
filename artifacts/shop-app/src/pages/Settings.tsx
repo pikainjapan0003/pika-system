@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { useGetMyStore, useUpdateStore, getGetMyStoreQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -8,7 +8,6 @@ import {
   isValidHex,
   normalizeHex,
   safeHex,
-  getLuminance,
   getContrastForeground,
   applyBrandColor,
 } from "@/lib/brandColor";
@@ -32,9 +31,11 @@ export default function SettingsPage() {
 
   const [brandColor, setBrandColor] = useState(DEFAULT_BRAND_PRIMARY_COLOR);
   const [colorError, setColorError] = useState("");
+  const storeInitialized = useRef(false);
 
   useEffect(() => {
-    if (store) {
+    if (store && !storeInitialized.current) {
+      storeInitialized.current = true;
       setName(store.name);
       setDescription(store.description ?? "");
       const savedColor = store.brandPrimaryColor ?? DEFAULT_BRAND_PRIMARY_COLOR;
@@ -155,24 +156,6 @@ export default function SettingsPage() {
                     style={{ backgroundColor: previewHex }}
                   />
                   <span className="text-sm font-mono font-medium text-foreground">{previewHex}</span>
-                </div>
-
-                {/* 自由選色 */}
-                <div>
-                  <div className="text-xs text-muted-foreground mb-2">自由選色</div>
-                  <label className="flex items-center gap-3 h-12 px-4 rounded-xl border border-input bg-white cursor-pointer hover:bg-secondary/30 transition-colors">
-                    <div
-                      className="w-7 h-7 rounded-full border border-border shrink-0"
-                      style={{ backgroundColor: previewHex }}
-                    />
-                    <span className="text-sm text-foreground">開啟調色盤</span>
-                    <input
-                      type="color"
-                      className="sr-only"
-                      value={previewHex}
-                      onChange={(e) => handleBrandColorChange(e.target.value)}
-                    />
-                  </label>
                 </div>
 
                 {/* Preset palette */}
