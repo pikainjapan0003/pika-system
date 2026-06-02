@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import type { Order } from "@workspace/api-client-react";
 import { useGetPublicProduct, useSubmitOrder } from "@workspace/api-client-react";
 import LaundryCountdownTimer from "../components/LaundryCountdownTimer";
+import { applyBrandColor, DEFAULT_BRAND_PRIMARY_COLOR } from "@/lib/brandColor";
 
 interface Props {
   shareToken: string;
@@ -36,6 +37,10 @@ export default function PublicOrderPage({ shareToken }: Props) {
 
   const orderDeadlineAt = product?.orderDeadlineAt ? new Date(product.orderDeadlineAt as string) : null;
   const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    applyBrandColor(product?.brandPrimaryColor ?? DEFAULT_BRAND_PRIMARY_COLOR);
+  }, [product?.brandPrimaryColor]);
 
   useEffect(() => {
     if (!orderDeadlineAt) return;

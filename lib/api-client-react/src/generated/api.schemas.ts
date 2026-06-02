@@ -186,6 +186,8 @@ export interface PublicProduct {
   shelfLife?: string | null;
   /** @nullable */
   weightKg?: number | null;
+  /** @nullable */
+  brandPrimaryColor?: string | null;
 }
 
 export type OrderSpecValues = { [key: string]: unknown };

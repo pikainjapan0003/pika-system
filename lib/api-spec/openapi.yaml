@@ -685,6 +685,8 @@ components:
           type: ["string", "null"]
         weightKg:
           type: ["number", "null"]
+        brandPrimaryColor:
+          type: ["string", "null"]
 
     Order:
       type: object

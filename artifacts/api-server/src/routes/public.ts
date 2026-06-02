@@ -69,6 +69,7 @@ router.get("/p/:shareToken", async (req, res) => {
     storageTemp: product.storageTemp,
     shelfLife: product.shelfLife,
     weightKg: product.weightKg != null ? parseFloat(product.weightKg as string) : null,
+    brandPrimaryColor: store?.brandPrimaryColor ?? null,
   });
 });
 

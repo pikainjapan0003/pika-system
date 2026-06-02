@@ -415,7 +415,8 @@ export const GetPublicProductResponse = zod.object({
   "orderDeadlineAt": zod.coerce.date().nullish(),
   "storageTemp": zod.union([zod.literal('ambient'),zod.literal('chilled'),zod.literal('frozen'),zod.literal(null)]).nullish(),
   "shelfLife": zod.string().nullish(),
-  "weightKg": zod.number().nullish()
+  "weightKg": zod.number().nullish(),
+  "brandPrimaryColor": zod.string().nullish()
 })
 
 
