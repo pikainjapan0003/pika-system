@@ -23,7 +23,7 @@ waitForPort = 8080
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "PORT=22696 BASE_PATH=/ pnpm --filter @workspace/shop-app run dev"
+args = "curl -s http://localhost:22696/ > /dev/null 2>&1 && echo 'shop-app already running on port 22696, skipping' || PORT=22696 BASE_PATH=/ pnpm --filter @workspace/shop-app run dev"
 waitForPort = 22696
 
 [agent]
