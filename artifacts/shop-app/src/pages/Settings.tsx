@@ -158,6 +158,12 @@ export default function SettingsPage() {
                   <span className="text-sm font-mono font-medium text-foreground">{previewHex}</span>
                 </div>
 
+                {/* Custom color picker */}
+                <div>
+                  <div className="text-xs text-muted-foreground mb-2">自訂調色盤</div>
+                  <ColorPicker hex={brandColor} onChange={handleBrandColorChange} />
+                </div>
+
                 {/* Preset palette */}
                 <div>
                   <div className="text-xs text-muted-foreground mb-2">預設色盤</div>
@@ -294,6 +300,189 @@ function ProductLinkInfo() {
       <p className="text-xs text-blue-700 leading-relaxed">
         你可以在「商品管理」頁面複製每個商品的下單連結，傳給買家下單。
       </p>
+    </div>
+  );
+}
+
+// ---- Color picker math helpers ----
+
+function hsvToRgb(h: number, s: number, v: number): [number, number, number] {
+  const hi = Math.floor(h / 60) % 6;
+  const f = h / 60 - Math.floor(h / 60);
+  const p = v * (1 - s);
+  const q = v * (1 - f * s);
+  const t = v * (1 - (1 - f) * s);
+  let r: number, g: number, b: number;
+  if (hi === 0)      { r = v; g = t; b = p; }
+  else if (hi === 1) { r = q; g = v; b = p; }
+  else if (hi === 2) { r = p; g = v; b = t; }
+  else if (hi === 3) { r = p; g = q; b = v; }
+  else if (hi === 4) { r = t; g = p; b = v; }
+  else               { r = v; g = p; b = q; }
+  return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+}
+
+function hsvToHex(h: number, s: number, v: number): string {
+  const [r, g, b] = hsvToRgb(h, s, v);
+  return "#" + [r, g, b].map((c) => c.toString(16).padStart(2, "0")).join("").toUpperCase();
+}
+
+function hexToHsv(hex: string): { h: number; s: number; v: number } {
+  const m = /^#([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if (!m) return { h: 0, s: 0, v: 1 };
+  const r = parseInt(m[1], 16) / 255;
+  const g = parseInt(m[2], 16) / 255;
+  const b = parseInt(m[3], 16) / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const d = max - min;
+  let h = 0;
+  if (d !== 0) {
+    if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) * 60;
+    else if (max === g) h = ((b - r) / d + 2) * 60;
+    else h = ((r - g) / d + 4) * 60;
+  }
+  const s = max === 0 ? 0 : d / max;
+  return { h: Math.round(h) % 360, s, v: max };
+}
+
+// ---- ColorPicker component ----
+
+interface ColorPickerProps {
+  hex: string;
+  onChange: (hex: string) => void;
+}
+
+function ColorPicker({ hex, onChange }: ColorPickerProps) {
+  const interacting = useRef(false);
+  const [hsv, setHsv] = useState<{ h: number; s: number; v: number }>(
+    () => hexToHsv(safeHex(hex))
+  );
+  const hsvRef = useRef(hsv);
+
+  useEffect(() => {
+    if (interacting.current) return;
+    const next = hexToHsv(safeHex(hex));
+    setHsv(next);
+    hsvRef.current = next;
+  }, [hex]);
+
+  const emit = (next: { h: number; s: number; v: number }) => {
+    setHsv(next);
+    hsvRef.current = next;
+    onChange(hsvToHex(next.h, next.s, next.v));
+  };
+
+  // Saturation / Value panel
+  const calcPanel = (e: React.PointerEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const s = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const v = Math.max(0, Math.min(1, 1 - (e.clientY - rect.top) / rect.height));
+    emit({ ...hsvRef.current, s, v });
+  };
+  const onPanelDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.currentTarget.setPointerCapture(e.pointerId);
+    interacting.current = true;
+    calcPanel(e);
+  };
+  const onPanelMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!interacting.current) return;
+    calcPanel(e);
+  };
+  const onPanelUp = () => { interacting.current = false; };
+
+  // Hue bar
+  const calcHue = (e: React.PointerEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const h = Math.round(x * 360) % 360;
+    emit({ ...hsvRef.current, h });
+  };
+  const onHueDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.currentTarget.setPointerCapture(e.pointerId);
+    interacting.current = true;
+    calcHue(e);
+  };
+  const onHueMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!interacting.current) return;
+    calcHue(e);
+  };
+  const onHueUp = () => { interacting.current = false; };
+
+  const pureHueHex = hsvToHex(hsv.h, 1, 1);
+
+  return (
+    <div className="space-y-2.5">
+      {/* Saturation / Value panel */}
+      <div
+        onPointerDown={onPanelDown}
+        onPointerMove={onPanelMove}
+        onPointerUp={onPanelUp}
+        onPointerCancel={onPanelUp}
+        role="slider"
+        aria-label="選擇飽和度與明度"
+        className="relative w-full rounded-xl overflow-hidden select-none touch-none"
+        style={{ height: 140, cursor: "crosshair" }}
+      >
+        <div className="absolute inset-0" style={{ backgroundColor: pureHueHex }} />
+        <div
+          className="absolute inset-0"
+          style={{ background: "linear-gradient(to right, #ffffff, transparent)" }}
+        />
+        <div
+          className="absolute inset-0"
+          style={{ background: "linear-gradient(to bottom, transparent, #000000)" }}
+        />
+        {/* Cursor marker */}
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            left: `${hsv.s * 100}%`,
+            top: `${(1 - hsv.v) * 100}%`,
+            transform: "translate(-50%, -50%)",
+          }}
+        >
+          <div
+            className="w-4 h-4 rounded-full border-2 border-white"
+            style={{ boxShadow: "0 0 0 1.5px rgba(0,0,0,0.5)" }}
+          />
+        </div>
+      </div>
+
+      {/* Hue bar */}
+      <div
+        onPointerDown={onHueDown}
+        onPointerMove={onHueMove}
+        onPointerUp={onHueUp}
+        onPointerCancel={onHueUp}
+        role="slider"
+        aria-label="選擇色相"
+        className="relative w-full rounded-full select-none touch-none"
+        style={{
+          height: 16,
+          cursor: "pointer",
+          background:
+            "linear-gradient(to right,#ff0000,#ffff00,#00ff00,#00ffff,#0000ff,#ff00ff,#ff0000)",
+        }}
+      >
+        {/* Hue marker */}
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            left: `${(hsv.h / 360) * 100}%`,
+            top: "50%",
+            transform: "translate(-50%, -50%)",
+          }}
+        >
+          <div
+            className="w-5 h-5 rounded-full border-2 border-white"
+            style={{
+              backgroundColor: `hsl(${hsv.h},100%,50%)`,
+              boxShadow: "0 0 0 1.5px rgba(0,0,0,0.4)",
+            }}
+          />
+        </div>
+      </div>
     </div>
   );
 }
