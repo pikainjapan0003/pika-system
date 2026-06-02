@@ -10,6 +10,33 @@ const ONBOARDING_STEPS = [
   { n: "3", text: "訂單自動進來，在「訂單管理」確認並更新狀態" },
 ];
 
+const STORAGE_TEMP_LABEL: Record<string, string> = {
+  ambient: "常溫",
+  chilled: "冷藏",
+  frozen: "冷凍",
+};
+
+function formatDeadlineStatus(orderDeadlineAt: string | null | undefined): "open" | "closed" | "none" {
+  if (!orderDeadlineAt) return "none";
+  return new Date(orderDeadlineAt) > new Date() ? "open" : "closed";
+}
+
+function formatDeadlineDatetime(orderDeadlineAt: string): string {
+  const d = new Date(orderDeadlineAt);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const h = String(d.getHours()).padStart(2, "0");
+  const min = String(d.getMinutes()).padStart(2, "0");
+  return `${y}/${m}/${day} ${h}:${min}`;
+}
+
+function formatWeight(weightKg: number | null | undefined): string | null {
+  if (weightKg == null || weightKg <= 0) return null;
+  const g = Math.round(weightKg * 1000);
+  return g >= 1 ? `${g}g` : null;
+}
+
 function StatCard({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="bg-white rounded-2xl border border-border px-3 py-3 text-center">
@@ -214,6 +241,40 @@ export default function ProductsPage() {
                           <p className="text-xs text-muted-foreground mt-0.5">
                             庫存：{p.inventory ?? "不限"} · {p.isActive ? "開放下單" : "已關閉"}
                           </p>
+                          {/* SKU */}
+                          {p.skuCode && (
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              SKU: {p.skuCode}
+                            </p>
+                          )}
+                          {/* 溫層 + 重量 */}
+                          {(p.storageTemp || p.weightKg) && (
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              {[
+                                p.storageTemp ? STORAGE_TEMP_LABEL[p.storageTemp] : null,
+                                formatWeight(p.weightKg),
+                              ].filter(Boolean).join(" · ")}
+                            </p>
+                          )}
+                          {/* 收單截止 */}
+                          {p.orderDeadlineAt ? (
+                            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                              {formatDeadlineStatus(p.orderDeadlineAt) === "open" ? (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-green-50 text-green-700">
+                                  收單中
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-gray-100 text-gray-500">
+                                  已截止
+                                </span>
+                              )}
+                              <span className="text-[10px] text-muted-foreground">
+                                截止：{formatDeadlineDatetime(p.orderDeadlineAt)}
+                              </span>
+                            </div>
+                          ) : (
+                            <p className="text-[10px] text-muted-foreground/50 mt-0.5">未設定截止</p>
+                          )}
                         </div>
 
                         {/* Right: isActive switch + ⋯ menu button — fixed width prevents content squeeze */}
