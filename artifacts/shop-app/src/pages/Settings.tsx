@@ -157,6 +157,24 @@ export default function SettingsPage() {
                   <span className="text-sm font-mono font-medium text-foreground">{previewHex}</span>
                 </div>
 
+                {/* 自由選色 */}
+                <div>
+                  <div className="text-xs text-muted-foreground mb-2">自由選色</div>
+                  <label className="flex items-center gap-3 h-12 px-4 rounded-xl border border-input bg-white cursor-pointer hover:bg-secondary/30 transition-colors">
+                    <div
+                      className="w-7 h-7 rounded-full border border-border shrink-0"
+                      style={{ backgroundColor: previewHex }}
+                    />
+                    <span className="text-sm text-foreground">開啟調色盤</span>
+                    <input
+                      type="color"
+                      className="sr-only"
+                      value={previewHex}
+                      onChange={(e) => handleBrandColorChange(e.target.value)}
+                    />
+                  </label>
+                </div>
+
                 {/* Preset palette */}
                 <div>
                   <div className="text-xs text-muted-foreground mb-2">預設色盤</div>
