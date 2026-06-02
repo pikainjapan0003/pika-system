@@ -218,36 +218,37 @@ export default function ProductsPage() {
                       onClick={() => { setOpenMenuId(null); setLocation(`/products/${p.id}/edit`); }}
                       className="bg-white rounded-2xl border border-border cursor-pointer active:bg-secondary/40 transition-colors"
                     >
-                      <div className="flex items-center gap-3 p-4">
+                      <div className="flex items-start gap-3 p-4">
                         {/* Image */}
                         {p.imageUrl ? (
                           <img
                             src={p.imageUrl}
                             alt={p.name}
-                            className="w-14 h-14 rounded-xl object-cover flex-shrink-0"
+                            className="w-14 h-14 rounded-xl object-cover flex-shrink-0 mt-0.5"
                           />
                         ) : (
-                          <div className="w-14 h-14 rounded-xl bg-secondary flex items-center justify-center flex-shrink-0 text-xl">
+                          <div className="w-14 h-14 rounded-xl bg-secondary flex items-center justify-center flex-shrink-0 text-xl mt-0.5">
                             📦
                           </div>
                         )}
 
                         {/* Content */}
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-foreground text-sm line-clamp-2">{p.name}</p>
-                          <p className="text-primary font-bold text-sm mt-0.5">
+                          {/* 主要資訊 */}
+                          <p className="font-semibold text-foreground text-base line-clamp-2 leading-snug">{p.name}</p>
+                          <p className="text-primary font-bold text-base mt-0.5">
                             NT$ {Number(p.price).toLocaleString()}
                           </p>
+                          {/* SKU — monospace 與庫存行區隔 */}
+                          {p.skuCode && (
+                            <p className="font-mono text-xs text-foreground/70 mt-1">
+                              {p.skuCode}
+                            </p>
+                          )}
                           <p className="text-xs text-muted-foreground mt-0.5">
                             庫存：{p.inventory ?? "不限"} · {p.isActive ? "開放下單" : "已關閉"}
                           </p>
-                          {/* SKU */}
-                          {p.skuCode && (
-                            <p className="text-xs text-muted-foreground mt-0.5">
-                              SKU: {p.skuCode}
-                            </p>
-                          )}
-                          {/* 溫層 + 重量 */}
+                          {/* 規格資訊：溫層 + 重量 */}
                           {(p.storageTemp || p.weightKg) && (
                             <p className="text-xs text-muted-foreground mt-0.5">
                               {[
@@ -256,24 +257,24 @@ export default function ProductsPage() {
                               ].filter(Boolean).join(" · ")}
                             </p>
                           )}
-                          {/* 收單截止 */}
+                          {/* 收單截止狀態 */}
                           {p.orderDeadlineAt ? (
-                            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                            <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
                               {formatDeadlineStatus(p.orderDeadlineAt) === "open" ? (
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-green-50 text-green-700">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-primary text-white">
                                   收單中
                                 </span>
                               ) : (
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-gray-100 text-gray-500">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-gray-200 text-gray-600">
                                   已截止
                                 </span>
                               )}
-                              <span className="text-[10px] text-muted-foreground">
+                              <span className="text-xs text-muted-foreground">
                                 截止：{formatDeadlineDatetime(p.orderDeadlineAt)}
                               </span>
                             </div>
                           ) : (
-                            <p className="text-[10px] text-muted-foreground/50 mt-0.5">未設定截止</p>
+                            <p className="text-xs text-muted-foreground/50 mt-1">未設定截止</p>
                           )}
                         </div>
 
