@@ -186,6 +186,28 @@ export default function PublicOrderPage({ shareToken }: Props) {
           {product.inventory != null && (
             <div className="text-xs text-muted-foreground mt-1">剩餘庫存：{product.inventory}</div>
           )}
+          {(product.storageTemp || product.shelfLife || product.weightKg != null) && (
+            <div className="mt-4 pt-4 border-t border-border">
+              <div className="text-xs font-medium text-muted-foreground mb-2">商品規格</div>
+              <div className="flex flex-wrap gap-2">
+                {product.storageTemp && (
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-muted text-xs text-foreground">
+                    溫層：{product.storageTemp === 'ambient' ? '常溫' : product.storageTemp === 'chilled' ? '冷藏' : '冷凍'}
+                  </span>
+                )}
+                {product.shelfLife?.trim() && (
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-muted text-xs text-foreground">
+                    保存期限：{product.shelfLife.trim()}
+                  </span>
+                )}
+                {product.weightKg != null && (
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-muted text-xs text-foreground">
+                    重量：{Math.round(product.weightKg * 1000)}g
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
           {orderDeadlineAt != null && (
             <LaundryCountdownTimer
               remainingMs={remainingMs}
