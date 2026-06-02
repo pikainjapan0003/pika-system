@@ -63,6 +63,7 @@ export default function ProductFormPage({ productId }: Props) {
   const [deadlineTime, setDeadlineTime] = useState("23:59");
   const [showDateSheet, setShowDateSheet] = useState(false);
   const [showTimeSheet, setShowTimeSheet] = useState(false);
+  const [showCategorySheet, setShowCategorySheet] = useState(false);
   const [calViewYear, setCalViewYear] = useState(() => new Date().getFullYear());
   const [calViewMonth, setCalViewMonth] = useState(() => new Date().getMonth());
   const [pendingDate, setPendingDate] = useState<{ y: number; m: number; d: number } | null>(null);
@@ -686,25 +687,22 @@ export default function ProductFormPage({ productId }: Props) {
               </div>
               {/* 主分類 */}
               <div>
-                <label className="block text-xs text-muted-foreground mb-1.5">主分類</label>
-                {categoriesLoadError ? (
-                  <p className="text-xs text-destructive">分類載入失敗，請稍後再試</p>
-                ) : !categories || categories.length === 0 ? (
-                  <div className="h-12 px-4 rounded-xl border border-input bg-secondary/40 flex items-center">
-                    <span className="text-sm text-muted-foreground">尚未建立分類</span>
-                  </div>
-                ) : (
-                  <select
-                    value={categoryId ?? ""}
-                    onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : null)}
-                    className="w-full h-12 px-4 rounded-xl border border-input bg-white text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 text-base"
-                  >
-                    <option value="">未分類</option>
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>{cat.name}</option>
-                    ))}
-                  </select>
-                )}
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs text-muted-foreground">主分類</label>
+                  <a href="/categories" className="text-xs text-primary/70">管理分類</a>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowCategorySheet(true)}
+                  className="w-full h-12 px-4 rounded-xl border border-input bg-white text-foreground text-base flex items-center justify-between"
+                >
+                  <span className={categoryId == null ? "text-muted-foreground" : "text-foreground"}>
+                    {categoryId != null && categories
+                      ? (categories.find((c) => c.id === categoryId)?.name ?? "未分類")
+                      : "未分類"}
+                  </span>
+                  <span className="text-muted-foreground">›</span>
+                </button>
               </div>
               {/* 溫層 */}
               <div>
@@ -1136,7 +1134,64 @@ export default function ProductFormPage({ productId }: Props) {
           </div>
         </>
       )}
+
+      {/* ── 分類選擇 bottom sheet ── */}
+      {showCategorySheet && (
+        <>
+          <div className="fixed inset-0 bg-black/40 z-40" onClick={() => setShowCategorySheet(false)} />
+          <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white rounded-t-3xl z-50 pb-8">
+            <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-border">
+              <button type="button" onClick={() => setShowCategorySheet(false)} className="text-sm font-medium text-muted-foreground min-w-[3rem]">取消</button>
+              <h2 className="text-base font-bold text-foreground">選擇主分類</h2>
+              <span className="min-w-[3rem]" />
+            </div>
+            <div className="px-4 py-3 overflow-y-auto" style={{ maxHeight: "60vh" }}>
+              {!!storeId && !categories && !categoriesLoadError && (
+                <p className="text-sm text-muted-foreground text-center py-6">載入分類中...</p>
+              )}
+              {categoriesLoadError && (
+                <p className="text-sm text-destructive text-center py-6">分類載入失敗，請稍後再試</p>
+              )}
+              {categories != null && (
+                <>
+                  <CategoryOption
+                    label="未分類"
+                    selected={categoryId == null}
+                    onSelect={() => { setCategoryId(null); setShowCategorySheet(false); }}
+                  />
+                  {categories.length === 0 && (
+                    <p className="text-xs text-muted-foreground text-center pt-1 pb-3">尚未建立分類，仍可選擇「未分類」</p>
+                  )}
+                  {categories.map((cat) => (
+                    <CategoryOption
+                      key={cat.id}
+                      label={cat.name}
+                      selected={categoryId === cat.id}
+                      onSelect={() => { setCategoryId(cat.id); setShowCategorySheet(false); }}
+                    />
+                  ))}
+                </>
+              )}
+            </div>
+          </div>
+        </>
+      )}
     </div>
+  );
+}
+
+function CategoryOption({ label, selected, onSelect }: { label: string; selected: boolean; onSelect: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={`w-full h-14 px-4 rounded-xl flex items-center justify-between mb-1 text-base transition-colors ${
+        selected ? "bg-primary/5 text-primary font-medium" : "text-foreground"
+      }`}
+    >
+      <span>{label}</span>
+      {selected && <span className="font-bold">✓</span>}
+    </button>
   );
 }
 
