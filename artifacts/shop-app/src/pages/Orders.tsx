@@ -14,6 +14,7 @@ export default function OrdersPage() {
   const { data: orders, isLoading } = useListOrders(storeId!, { query: { enabled: !!storeId } as any });
   const updateOrderStatus = useUpdateOrderStatus();
   const [filter, setFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [statusErrors, setStatusErrors] = useState<Record<number, string>>({});
   const [loadingOrderId, setLoadingOrderId] = useState<number | null>(null);
@@ -21,11 +22,29 @@ export default function OrdersPage() {
 
   const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
-  const filtered = filter === "all"
-    ? (orders ?? [])
-    : (orders ?? []).filter((o) => o.status === filter);
+  const allOrders = orders ?? [];
 
-  const sortedFiltered = [...filtered].reverse();
+  // Status filter
+  const statusFiltered = filter === "all"
+    ? allOrders
+    : allOrders.filter((o) => o.status === filter);
+
+  // Client-side search
+  const q = searchQuery.trim().toLowerCase();
+  const searched = q
+    ? statusFiltered.filter((o) =>
+        o.buyerName.toLowerCase().includes(q) ||
+        o.buyerPhone.toLowerCase().includes(q) ||
+        String(o.id).includes(q) ||
+        (o.productName ?? "").toLowerCase().includes(q)
+      )
+    : statusFiltered;
+
+  const sortedFiltered = [...searched].reverse();
+
+  // Stats (computed from all orders, ignoring current filter)
+  const totalRevenue = allOrders.reduce((sum, o) => sum + Number(o.totalPrice), 0);
+  const pendingCount = allOrders.filter((o) => o.status === "pending").length;
 
   const handleStatusChange = async (orderId: number, status: string) => {
     setLoadingOrderId(orderId);
@@ -94,21 +113,31 @@ export default function OrdersPage() {
           <h1 className="text-lg font-bold text-foreground">訂單管理</h1>
           <button
             onClick={handleExport}
-            className="h-9 px-3 text-xs font-medium text-primary bg-primary/10 rounded-xl"
+            className="h-9 px-3 text-xs font-medium text-violet-600 bg-violet-50 rounded-xl"
           >
             匯出 CSV
           </button>
         </div>
+        {/* Search bar */}
+        <div className="mb-2.5">
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="搜尋姓名、電話、訂單編號"
+            className="w-full h-9 px-3 rounded-xl border border-input bg-secondary/40 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-violet-400/30 focus:border-violet-400/60"
+          />
+        </div>
         {/* Filter tabs */}
         <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-          <FilterTab label="全部" value="all" active={filter === "all"} count={orders?.length} onClick={() => setFilter("all")} />
+          <FilterTab label="全部" value="all" active={filter === "all"} count={allOrders.length} onClick={() => setFilter("all")} />
           {ALL_STATUSES.map((s) => (
             <FilterTab
               key={s}
               label={STATUS_LABELS[s]}
               value={s}
               active={filter === s}
-              count={(orders ?? []).filter((o) => o.status === s).length}
+              count={allOrders.filter((o) => o.status === s).length}
               onClick={() => setFilter(s)}
             />
           ))}
@@ -118,162 +147,183 @@ export default function OrdersPage() {
       <div className="px-5 py-4">
         {isLoading ? (
           <div className="flex justify-center py-12">
-            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : sortedFiltered.length === 0 ? (
-          <div className="bg-white rounded-2xl p-10 border border-border text-center">
-            <p className="text-muted-foreground text-sm">沒有符合的訂單</p>
+            <div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
-          <div className="space-y-3">
-            {sortedFiltered.map((o) => (
-              <div key={o.id} className="bg-white rounded-2xl border border-border overflow-hidden">
-                {/* Card header */}
-                <div
-                  className="p-4 cursor-pointer"
-                  onClick={() => setExpandedId(expandedId === o.id ? null : o.id)}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-foreground">{o.buyerName}</span>
-                        <span className="text-xs text-muted-foreground">{o.buyerPhone}</span>
-                      </div>
-                      <div className="text-sm text-muted-foreground mt-0.5 truncate">{o.productName} x{o.quantity}</div>
-                    </div>
-                    <div className="flex flex-col items-end gap-1">
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[o.status] ?? "bg-gray-100 text-gray-600"}`}>
-                        {STATUS_LABELS[o.status] ?? o.status}
-                      </span>
-                      <span className="text-sm font-bold text-foreground">NT$ {Number(o.totalPrice).toLocaleString()}</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between mt-2">
-                    <span className="text-xs text-muted-foreground">{formatDate(o.createdAt)}</span>
-                    <span className="text-xs text-muted-foreground">{expandedId === o.id ? "▲" : "▼"}</span>
-                  </div>
-                </div>
+          <>
+            {/* Stats cards */}
+            {allOrders.length > 0 && (
+              <div className="grid grid-cols-3 gap-2 mb-4">
+                <StatCard label="訂單筆數" value={String(allOrders.length)} />
+                <StatCard label="訂單總額" value={`NT$${totalRevenue.toLocaleString()}`} />
+                <StatCard label="待確認" value={String(pendingCount)} urgent={pendingCount > 0} />
+              </div>
+            )}
 
-                {/* Expanded detail panel */}
-                {expandedId === o.id && (
-                  <div className="border-t border-border bg-secondary/20 px-4 pt-4 pb-5 space-y-3">
-
-                    {/* 買家資訊 */}
-                    <div>
-                      <SectionLabel>買家資訊</SectionLabel>
-                      <div className="bg-white rounded-xl border border-border/50 divide-y divide-border/40">
-                        <DetailRow label="姓名" value={o.buyerName} />
-                        <div className="flex items-center justify-between px-3 py-2.5 gap-2">
-                          <span className="text-xs text-muted-foreground shrink-0">電話</span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-foreground">{o.buyerPhone}</span>
-                            <button
-                              type="button"
-                              onClick={() => copyToClipboard(o.buyerPhone, `${o.id}-phone`)}
-                              className="text-xs text-primary font-medium shrink-0"
-                            >
-                              {copiedKey === `${o.id}-phone` ? "已複製" : "複製"}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* 商品明細 */}
-                    <div>
-                      <SectionLabel>商品明細</SectionLabel>
-                      <div className="bg-white rounded-xl border border-border/50 divide-y divide-border/40">
-                        <DetailRow label="商品名稱" value={o.productName ?? "—"} />
-                        <DetailRow label="數量" value={`× ${o.quantity}`} />
-                        {o.unitPrice != null && (
-                          <DetailRow label="單價" value={`NT$ ${Number(o.unitPrice).toLocaleString()}`} />
-                        )}
-                        <DetailRow label="總金額" value={`NT$ ${Number(o.totalPrice).toLocaleString()}`} bold />
-                      </div>
-                    </div>
-
-                    {/* 取貨與備註 */}
-                    <div>
-                      <SectionLabel>取貨與備註</SectionLabel>
-                      <div className="bg-white rounded-xl border border-border/50 divide-y divide-border/40">
-                        <DetailRow label="取貨方式" value={o.pickupMethod} />
-                        {o.notes && <DetailRow label="備註" value={o.notes} />}
-                      </div>
-                    </div>
-
-                    {/* 規格 */}
-                    {o.specValues && Object.keys(o.specValues as object).length > 0 && (
-                      <div>
-                        <SectionLabel>規格</SectionLabel>
-                        <div className="bg-white rounded-xl border border-border/50 px-3 py-2.5">
-                          <span className="text-sm font-medium text-foreground">
-                            {Object.entries(o.specValues as object).map(([k, v]) => `${k}: ${v}`).join("、")}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* 訂單資訊 */}
-                    <div>
-                      <SectionLabel>訂單資訊</SectionLabel>
-                      <div className="bg-white rounded-xl border border-border/50 divide-y divide-border/40">
-                        <DetailRow label="訂單編號" value={`#${o.id}`} />
-                        <DetailRow label="下單時間" value={formatDate(o.createdAt)} />
-                        <div className="flex items-center justify-between px-3 py-2.5">
-                          <span className="text-xs text-muted-foreground">目前狀態</span>
-                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[o.status] ?? "bg-gray-100 text-gray-600"}`}>
-                            {STATUS_LABELS[o.status] ?? o.status}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* 複製追蹤連結 */}
-                    <button
-                      type="button"
-                      onClick={() => copyToClipboard(
-                        `${window.location.origin}${basePath}/track/${o.publicToken}`,
-                        `${o.id}-link`
-                      )}
-                      className="w-full h-9 rounded-xl border border-border bg-white text-xs font-medium text-foreground"
+            {sortedFiltered.length === 0 ? (
+              <div className="bg-white rounded-2xl p-10 border border-border text-center">
+                <p className="text-muted-foreground text-sm">
+                  {allOrders.length > 0 ? "找不到符合條件的訂單" : "目前沒有訂單"}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {sortedFiltered.map((o) => (
+                  <div key={o.id} className="bg-white rounded-2xl border border-border overflow-hidden">
+                    {/* Card header */}
+                    <div
+                      className="px-4 pt-3.5 pb-3 cursor-pointer"
+                      onClick={() => setExpandedId(expandedId === o.id ? null : o.id)}
                     >
-                      {copiedKey === `${o.id}-link` ? "已複製追蹤連結" : "複製追蹤連結"}
-                    </button>
-
-                    {/* 更新狀態 */}
-                    {(VALID_NEXT_STATUSES[o.status]?.length ?? 0) > 0 ? (
-                      <div>
-                        <SectionLabel>更新狀態</SectionLabel>
-                        <div className="flex flex-wrap gap-2">
-                          {VALID_NEXT_STATUSES[o.status]?.map((s) => (
-                            <button
-                              key={s}
-                              type="button"
-                              disabled={loadingOrderId === o.id}
-                              onClick={() => handleStatusChange(o.id, s)}
-                              className={`h-9 px-4 rounded-xl text-sm font-medium border transition-colors disabled:opacity-60 ${STATUS_COLORS[s] ? `border-transparent ${STATUS_COLORS[s]}` : "border-input bg-white text-foreground"}`}
-                            >
-                              {loadingOrderId === o.id ? "更新中..." : STATUS_LABELS[s]}
-                            </button>
-                          ))}
-                        </div>
-                        {statusErrors[o.id] && (
-                          <p className="text-xs text-destructive mt-1.5">{statusErrors[o.id]}</p>
-                        )}
+                      {/* Row 1: Order ID + Amount */}
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-bold text-violet-600">#{o.id}</span>
+                        <span className="text-base font-bold text-violet-600">NT$ {Number(o.totalPrice).toLocaleString()}</span>
                       </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[o.status] ?? "bg-gray-100 text-gray-600"}`}>
+                      {/* Row 2: Buyer name + status */}
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <span className="font-semibold text-foreground">{o.buyerName}</span>
+                          <span className="text-xs text-muted-foreground ml-2">{o.buyerPhone}</span>
+                        </div>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${STATUS_COLORS[o.status] ?? "bg-gray-100 text-gray-600"}`}>
                           {STATUS_LABELS[o.status] ?? o.status}
                         </span>
-                        <span className="text-xs text-muted-foreground">此訂單已結束，無法更新狀態</span>
+                      </div>
+                      {/* Row 3: Product + pickup method */}
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-xs text-muted-foreground truncate flex-1">{o.productName} × {o.quantity}</span>
+                        <span className="text-xs text-muted-foreground shrink-0">{o.pickupMethod}</span>
+                      </div>
+                      {/* Row 4: Time + expand arrow */}
+                      <div className="flex items-center justify-between mt-1.5">
+                        <span className="text-xs text-muted-foreground">{formatDate(o.createdAt)}</span>
+                        <span className="text-xs text-muted-foreground">{expandedId === o.id ? "▲" : "▼"}</span>
+                      </div>
+                    </div>
+
+                    {/* Expanded detail panel (Step 1) */}
+                    {expandedId === o.id && (
+                      <div className="border-t border-border bg-secondary/20 px-4 pt-4 pb-5 space-y-3">
+
+                        {/* 買家資訊 */}
+                        <div>
+                          <SectionLabel>買家資訊</SectionLabel>
+                          <div className="bg-white rounded-xl border border-border/50 divide-y divide-border/40">
+                            <DetailRow label="姓名" value={o.buyerName} />
+                            <div className="flex items-center justify-between px-3 py-2.5 gap-2">
+                              <span className="text-xs text-muted-foreground shrink-0">電話</span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium text-foreground">{o.buyerPhone}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => copyToClipboard(o.buyerPhone, `${o.id}-phone`)}
+                                  className="text-xs text-violet-600 font-medium shrink-0"
+                                >
+                                  {copiedKey === `${o.id}-phone` ? "已複製" : "複製"}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* 商品明細 */}
+                        <div>
+                          <SectionLabel>商品明細</SectionLabel>
+                          <div className="bg-white rounded-xl border border-border/50 divide-y divide-border/40">
+                            <DetailRow label="商品名稱" value={o.productName ?? "—"} />
+                            <DetailRow label="數量" value={`× ${o.quantity}`} />
+                            {o.unitPrice != null && (
+                              <DetailRow label="單價" value={`NT$ ${Number(o.unitPrice).toLocaleString()}`} />
+                            )}
+                            <DetailRow label="總金額" value={`NT$ ${Number(o.totalPrice).toLocaleString()}`} bold />
+                          </div>
+                        </div>
+
+                        {/* 取貨與備註 */}
+                        <div>
+                          <SectionLabel>取貨與備註</SectionLabel>
+                          <div className="bg-white rounded-xl border border-border/50 divide-y divide-border/40">
+                            <DetailRow label="取貨方式" value={o.pickupMethod} />
+                            {o.notes && <DetailRow label="備註" value={o.notes} />}
+                          </div>
+                        </div>
+
+                        {/* 規格 */}
+                        {o.specValues && Object.keys(o.specValues as object).length > 0 && (
+                          <div>
+                            <SectionLabel>規格</SectionLabel>
+                            <div className="bg-white rounded-xl border border-border/50 px-3 py-2.5">
+                              <span className="text-sm font-medium text-foreground">
+                                {Object.entries(o.specValues as object).map(([k, v]) => `${k}: ${v}`).join("、")}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 訂單資訊 */}
+                        <div>
+                          <SectionLabel>訂單資訊</SectionLabel>
+                          <div className="bg-white rounded-xl border border-border/50 divide-y divide-border/40">
+                            <DetailRow label="訂單編號" value={`#${o.id}`} />
+                            <DetailRow label="下單時間" value={formatDate(o.createdAt)} />
+                            <div className="flex items-center justify-between px-3 py-2.5">
+                              <span className="text-xs text-muted-foreground">目前狀態</span>
+                              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[o.status] ?? "bg-gray-100 text-gray-600"}`}>
+                                {STATUS_LABELS[o.status] ?? o.status}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* 複製追蹤連結 */}
+                        <button
+                          type="button"
+                          onClick={() => copyToClipboard(
+                            `${window.location.origin}${basePath}/track/${o.publicToken}`,
+                            `${o.id}-link`
+                          )}
+                          className="w-full h-9 rounded-xl border border-border bg-white text-xs font-medium text-foreground"
+                        >
+                          {copiedKey === `${o.id}-link` ? "已複製追蹤連結" : "複製追蹤連結"}
+                        </button>
+
+                        {/* 更新狀態 */}
+                        {(VALID_NEXT_STATUSES[o.status]?.length ?? 0) > 0 ? (
+                          <div>
+                            <SectionLabel>更新狀態</SectionLabel>
+                            <div className="flex flex-wrap gap-2">
+                              {VALID_NEXT_STATUSES[o.status]?.map((s) => (
+                                <button
+                                  key={s}
+                                  type="button"
+                                  disabled={loadingOrderId === o.id}
+                                  onClick={() => handleStatusChange(o.id, s)}
+                                  className={`h-9 px-4 rounded-xl text-sm font-medium border transition-colors disabled:opacity-60 ${STATUS_COLORS[s] ? `border-transparent ${STATUS_COLORS[s]}` : "border-input bg-white text-foreground"}`}
+                                >
+                                  {loadingOrderId === o.id ? "更新中..." : STATUS_LABELS[s]}
+                                </button>
+                              ))}
+                            </div>
+                            {statusErrors[o.id] && (
+                              <p className="text-xs text-destructive mt-1.5">{statusErrors[o.id]}</p>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[o.status] ?? "bg-gray-100 text-gray-600"}`}>
+                              {STATUS_LABELS[o.status] ?? o.status}
+                            </span>
+                            <span className="text-xs text-muted-foreground">此訂單已結束，無法更新狀態</span>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
-                )}
+                ))}
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
       </div>
 
@@ -287,11 +337,20 @@ function FilterTab({ label, value, active, count, onClick }: { label: string; va
     <button
       onClick={onClick}
       className={`flex-shrink-0 h-8 px-3 rounded-full text-xs font-medium transition-colors ${
-        active ? "bg-primary text-white" : "bg-secondary text-muted-foreground"
+        active ? "bg-violet-600 text-white" : "bg-secondary text-muted-foreground"
       }`}
     >
       {label}{count !== undefined && count > 0 ? ` (${count})` : ""}
     </button>
+  );
+}
+
+function StatCard({ label, value, urgent }: { label: string; value: string; urgent?: boolean }) {
+  return (
+    <div className="bg-white rounded-xl border border-border p-3 text-center">
+      <div className={`text-lg font-bold ${urgent ? "text-amber-600" : "text-violet-600"}`}>{value}</div>
+      <div className="text-[10px] text-muted-foreground mt-0.5 leading-tight">{label}</div>
+    </div>
   );
 }
 
