@@ -254,6 +254,38 @@ paths:
           description: Duplicate name
 
   /stores/{storeId}/categories/{categoryId}:
+    patch:
+      operationId: updateProductCategory
+      tags: [categories]
+      summary: Update a product category name
+      parameters:
+        - name: storeId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: categoryId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductCategoryInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductCategory"
+        "404":
+          description: Not found
+        "409":
+          description: Duplicate name
     delete:
       operationId: deleteProductCategory
       tags: [categories]

@@ -270,6 +270,30 @@ export const CreateProductCategoryBody = zod.object({
 
 
 /**
+ * @summary Update a product category name
+ */
+export const UpdateProductCategoryParams = zod.object({
+  "storeId": zod.coerce.number(),
+  "categoryId": zod.coerce.number()
+})
+
+export const updateProductCategoryBodyNameMax = 80;
+
+
+
+export const UpdateProductCategoryBody = zod.object({
+  "name": zod.string().min(1).max(updateProductCategoryBodyNameMax)
+})
+
+export const UpdateProductCategoryResponse = zod.object({
+  "id": zod.number(),
+  "storeId": zod.number(),
+  "name": zod.string(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
  * @summary Delete a product category
  */
 export const DeleteProductCategoryParams = zod.object({

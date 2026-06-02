@@ -114,8 +114,19 @@ export default function ProductsPage() {
 
       {/* Header */}
       <header className="bg-white border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
-        <h1 className="text-xl font-bold text-foreground">商品</h1>
-        <p className="text-xs text-muted-foreground mt-0.5">管理商品、定價與規格</p>
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <h1 className="text-xl font-bold text-foreground">商品</h1>
+            <p className="text-xs text-muted-foreground mt-0.5">管理商品、定價與規格</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setLocation("/categories")}
+            className="flex-shrink-0 h-8 px-3 rounded-xl border border-border bg-white text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors mt-1"
+          >
+            分類管理
+          </button>
+        </div>
       </header>
 
       {/* Backdrop — closes open menu when clicking outside */}

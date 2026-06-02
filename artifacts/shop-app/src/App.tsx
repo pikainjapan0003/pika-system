@@ -20,6 +20,7 @@ import TrackOrderPage from "@/pages/TrackOrder";
 import SettingsPage from "@/pages/Settings";
 import GuidePage from "@/pages/Guide";
 import DevHandoffPage from "@/pages/DevHandoff";
+import ProductCategoriesPage from "@/pages/ProductCategories";
 import NotFoundPage from "@/pages/not-found";
 
 const clerkPubKey = publishableKeyFromHost(
@@ -238,6 +239,7 @@ function MerchantPortal() {
         {(params) => <ProductFormPage productId={Number(params.productId)} />}
       </Route>
       <Route path="/products" component={ProductsPage} />
+      <Route path="/categories" component={ProductCategoriesPage} />
       <Route path="/orders" component={OrdersPage} />
       <Route path="/settings" component={SettingsPage} />
       <Route path="/guide" component={GuidePage} />
@@ -284,6 +286,7 @@ function AppRouter() {
       <Route path="/dev/handoff" component={DevHandoffPage} />
       <Route path="/dashboard" component={MerchantPortal} />
       <Route path="/products/*?" component={MerchantPortal} />
+      <Route path="/categories" component={MerchantPortal} />
       <Route path="/orders" component={MerchantPortal} />
       <Route path="/settings" component={MerchantPortal} />
       <Route path="/guide" component={MerchantPortal} />
