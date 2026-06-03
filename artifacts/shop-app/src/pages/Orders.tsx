@@ -240,11 +240,23 @@ export default function OrdersPage() {
                           </div>
                         </div>
 
-                        {/* 取貨與備註 */}
+                        {/* 付款資訊 */}
                         <div>
-                          <SectionLabel>取貨與備註</SectionLabel>
+                          <SectionLabel>付款資訊</SectionLabel>
+                          <div className="bg-white rounded-xl border border-border/50 divide-y divide-border/40">
+                            <PlaceholderRow label="付款方式" />
+                            <PlaceholderRow label="付款狀態" />
+                            <PlaceholderRow label="運費" />
+                          </div>
+                        </div>
+
+                        {/* 物流資訊 */}
+                        <div>
+                          <SectionLabel>物流資訊</SectionLabel>
                           <div className="bg-white rounded-xl border border-border/50 divide-y divide-border/40">
                             <DetailRow label="取貨方式" value={o.pickupMethod} />
+                            <PlaceholderRow label="出貨狀態" />
+                            <PlaceholderRow label="物流追蹤碼" />
                             {o.notes && <DetailRow label="備註" value={o.notes} />}
                           </div>
                         </div>
@@ -365,6 +377,15 @@ function DetailRow({ label, value, bold }: { label: string; value: string; bold?
     <div className="flex items-center justify-between px-3 py-2.5 gap-2">
       <span className="text-xs text-muted-foreground shrink-0">{label}</span>
       <span className={`text-sm text-right break-all ${bold ? "font-bold" : "font-medium"} text-foreground`}>{value}</span>
+    </div>
+  );
+}
+
+function PlaceholderRow({ label }: { label: string }) {
+  return (
+    <div className="flex items-center justify-between px-3 py-2.5 gap-2">
+      <span className="text-xs text-muted-foreground shrink-0">{label}</span>
+      <span className="text-xs text-muted-foreground/50 italic">尚未建立此欄位</span>
     </div>
   );
 }
