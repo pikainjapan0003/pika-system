@@ -4,6 +4,7 @@ import { useGetMyStore, useListOrders, useUpdateOrderStatus, getListOrdersQueryK
 import { useQueryClient } from "@tanstack/react-query";
 import { BottomNav } from "./Dashboard";
 import { STATUS_LABELS, STATUS_COLORS, ALL_STATUSES, VALID_NEXT_STATUSES } from "../lib/orderStatus";
+import { CreateOrderDialog } from "./CreateOrderDialog";
 
 export default function OrdersPage() {
   const qc = useQueryClient();
@@ -19,6 +20,7 @@ export default function OrdersPage() {
   const [statusErrors, setStatusErrors] = useState<Record<number, string>>({});
   const [loadingOrderId, setLoadingOrderId] = useState<number | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [showAddOrder, setShowAddOrder] = useState(false);
 
   const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -111,12 +113,21 @@ export default function OrdersPage() {
       <header className="bg-white border-b border-border px-5 pt-10 pb-3 sticky top-0 z-10">
         <div className="flex items-center justify-between mb-3">
           <h1 className="text-lg font-bold text-foreground">訂單管理</h1>
-          <button
-            onClick={handleExport}
-            className="h-9 px-3 text-xs font-medium text-primary bg-primary/10 rounded-xl"
-          >
-            匯出 CSV
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowAddOrder(true)}
+              disabled={!storeId}
+              className="h-9 px-3 text-xs font-semibold text-white bg-primary rounded-xl disabled:opacity-50"
+            >
+              ＋ 新增訂單
+            </button>
+            <button
+              onClick={handleExport}
+              className="h-9 px-3 text-xs font-medium text-primary bg-primary/10 rounded-xl"
+            >
+              匯出 CSV
+            </button>
+          </div>
         </div>
         {/* Search bar */}
         <div className="mb-2.5">
@@ -353,6 +364,14 @@ export default function OrdersPage() {
       </div>
 
       <BottomNav active="orders" />
+
+      {storeId && (
+        <CreateOrderDialog
+          storeId={storeId}
+          open={showAddOrder}
+          onClose={() => setShowAddOrder(false)}
+        />
+      )}
     </div>
   );
 }
