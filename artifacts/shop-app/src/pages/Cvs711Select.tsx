@@ -38,6 +38,12 @@ export default function Cvs711SelectPage() {
   const [selectError, setSelectError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Emap import state
+  const [emapQuery, setEmapQuery] = useState("");
+  const [emapLoading, setEmapLoading] = useState(false);
+  const [emapSuccess, setEmapSuccess] = useState<string | null>(null);
+  const [emapError, setEmapError] = useState<string | null>(null);
+
   // Load initial results (first 20 stores)
   useEffect(() => {
     doSearch("");
@@ -141,6 +147,36 @@ export default function Cvs711SelectPage() {
     }
   };
 
+  const handleEmapImport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = emapQuery.trim();
+    if (!q) return;
+    setEmapLoading(true);
+    setEmapSuccess(null);
+    setEmapError(null);
+    try {
+      const res = await fetch("/api/cvs/711/import-from-emap", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: q }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setEmapError(data?.error ?? "查詢 7-11 電子地圖失敗，請改用 LeMai 門市搜尋或稍後再試。");
+        return;
+      }
+      const imported = data.store;
+      setEmapSuccess(`已匯入 7-11 ${imported.storeName}`);
+      // Refresh search with the imported store name so it appears in results
+      setQuery(imported.storeName);
+      doSearch(imported.storeName);
+    } catch {
+      setEmapError("查詢 7-11 電子地圖失敗，請改用 LeMai 門市搜尋或稍後再試。");
+    } finally {
+      setEmapLoading(false);
+    }
+  };
+
   const formatUpdatedAt = (iso: string | null): string => {
     if (!iso) return "未記錄";
     const d = new Date(iso);
@@ -189,6 +225,38 @@ export default function Cvs711SelectPage() {
           <p className="text-xs text-amber-700 leading-relaxed">
             目前 LeMai 使用自建門市資料協助快速登記門市。此功能用於訂單門市資料登記，不會建立正式 7-11 物流單。
           </p>
+        </div>
+
+        {/* Emap import block */}
+        <div className="bg-white rounded-2xl border border-border px-4 py-3 space-y-2">
+          <div className="text-xs font-semibold text-muted-foreground/70 uppercase tracking-wide">
+            從 7-11 電子地圖查詢門市
+          </div>
+          <p className="text-[11px] text-muted-foreground/70 leading-relaxed">
+            輸入門市名稱後，可嘗試從 7-11 電子地圖查詢並匯入 LeMai 門市資料庫。此功能只用於門市資料登記，不會建立正式物流單。
+          </p>
+          <form onSubmit={handleEmapImport} className="flex gap-2">
+            <input
+              type="text"
+              value={emapQuery}
+              onChange={(e) => { setEmapQuery(e.target.value); setEmapSuccess(null); setEmapError(null); }}
+              placeholder="輸入門市名稱，例如：懷民"
+              className="flex-1 h-9 px-3 rounded-xl border border-input bg-secondary/40 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+            <button
+              type="submit"
+              disabled={emapLoading || !emapQuery.trim()}
+              className="h-9 px-3 rounded-xl bg-primary/10 text-primary text-xs font-semibold border border-primary/30 disabled:opacity-50"
+            >
+              {emapLoading ? "查詢中…" : "查詢並匯入"}
+            </button>
+          </form>
+          {emapSuccess && (
+            <p className="text-xs text-green-700 bg-green-50 px-3 py-1.5 rounded-lg">{emapSuccess}</p>
+          )}
+          {emapError && (
+            <p className="text-xs text-destructive bg-destructive/5 px-3 py-1.5 rounded-lg">{emapError}</p>
+          )}
         </div>
 
         {/* Error */}

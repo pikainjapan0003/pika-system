@@ -63,6 +63,118 @@ router.get("/cvs/stores", async (req, res) => {
   }
 });
 
+/** POST /cvs/711/import-from-emap — query 7-11 EmapSDK and upsert one store into cvs_stores */
+router.post("/cvs/711/import-from-emap", async (req, res) => {
+  const rawQuery = req.body?.query;
+  if (!rawQuery || typeof rawQuery !== "string") {
+    return res.status(400).json({ error: "query 必填" });
+  }
+  const query = rawQuery.trim().slice(0, 50);
+  if (!query) {
+    return res.status(400).json({ error: "query 不可為空" });
+  }
+
+  // Call 7-11 EmapSDK
+  let xmlText: string;
+  try {
+    const formBody = new URLSearchParams({ commandid: "SearchStore", StoreName: query });
+    const resp = await fetch("https://emap.pcsc.com.tw/EmapSDK.aspx", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: formBody.toString(),
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!resp.ok) {
+      return res.status(502).json({ error: "查詢 7-11 電子地圖失敗，請稍後再試" });
+    }
+    xmlText = await resp.text();
+  } catch {
+    return res.status(502).json({ error: "查詢 7-11 電子地圖失敗，請稍後再試" });
+  }
+
+  // Simple tag extractor (no external XML parser needed)
+  const getTag = (xml: string, tag: string): string => {
+    const m = xml.match(new RegExp(`<${tag}[^>]*>([^<]*)</${tag}>`, "i"));
+    return m ? m[1].trim() : "";
+  };
+
+  const geoMatch = xmlText.match(/<GeoPosition>([\s\S]*?)<\/GeoPosition>/i);
+  if (!geoMatch) {
+    return res.status(404).json({ error: "找不到符合的 7-11 門市" });
+  }
+
+  const geo = geoMatch[1];
+  const storeId = getTag(geo, "POIID");
+  if (!storeId) {
+    return res.status(404).json({ error: "找不到符合的 7-11 門市" });
+  }
+
+  const poiName = getTag(geo, "POIName");
+  const address = getTag(geo, "Address");
+  const telno = getTag(geo, "Telno");
+  const opTime = getTag(geo, "OP_TIME");
+  const xRaw = getTag(geo, "X");
+  const yRaw = getTag(geo, "Y");
+
+  // Append 門市 if not already present
+  const storeName = poiName.endsWith("門市") ? poiName : `${poiName}門市`;
+
+  // Coordinates: 7-11 uses integer form (multiply by 1,000,000)
+  let latitude: string | null = null;
+  let longitude: string | null = null;
+  if (xRaw && yRaw) {
+    const xNum = parseFloat(xRaw);
+    const yNum = parseFloat(yRaw);
+    if (!isNaN(xNum) && !isNaN(yNum) && xNum > 0 && yNum > 0) {
+      longitude = (xNum / 1_000_000).toFixed(7);
+      latitude = (yNum / 1_000_000).toFixed(7);
+    }
+  }
+
+  const [upserted] = await db
+    .insert(cvsStoresTable)
+    .values({
+      provider: "seven",
+      storeId,
+      storeName,
+      storeAddress: address,
+      storePhone: telno || null,
+      businessHours: opTime || null,
+      ...(latitude != null ? { latitude } : {}),
+      ...(longitude != null ? { longitude } : {}),
+      isActive: true,
+      source: "emap_sdk",
+      sourceUpdatedAt: new Date(),
+    })
+    .onConflictDoUpdate({
+      target: [cvsStoresTable.provider, cvsStoresTable.storeId],
+      set: {
+        storeName: sql`excluded.store_name`,
+        storeAddress: sql`excluded.store_address`,
+        storePhone: sql`excluded.store_phone`,
+        businessHours: sql`excluded.business_hours`,
+        latitude: sql`excluded.latitude`,
+        longitude: sql`excluded.longitude`,
+        source: sql`excluded.source`,
+        sourceUpdatedAt: sql`excluded.source_updated_at`,
+        updatedAt: sql`now()`,
+      },
+    })
+    .returning();
+
+  return res.json({
+    store: {
+      provider: upserted.provider,
+      storeId: upserted.storeId,
+      storeName: upserted.storeName,
+      storeAddress: upserted.storeAddress,
+      storePhone: upserted.storePhone ?? null,
+      businessHours: upserted.businessHours ?? null,
+      source: upserted.source,
+    },
+  });
+});
+
 function formatCvsStore(r: any) {
   return {
     provider: r.provider,
