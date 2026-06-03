@@ -57,3 +57,4 @@ dev-handoff/
 # CVS import runtime files (generated on each run, not for version control)
 data/cvs/seven-import-progress.json
 data/cvs/seven-import-report.json
+lib/db/twcoupon-emap-poc-report.json
