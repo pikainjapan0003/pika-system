@@ -3,6 +3,14 @@ import type { Order } from "@workspace/api-client-react";
 import { useGetPublicProduct, useSubmitOrder } from "@workspace/api-client-react";
 import LaundryCountdownTimer from "../components/LaundryCountdownTimer";
 import { applyBrandColor, DEFAULT_BRAND_PRIMARY_COLOR } from "@/lib/brandColor";
+import {
+  isSevenElevenMethod,
+  getShippingFee,
+  openSevenElevenMap,
+  loadCvsStore,
+  clearCvsStore,
+  type CvsStore,
+} from "@/lib/cvs711";
 
 interface Props {
   shareToken: string;
@@ -19,6 +27,17 @@ function formatDate(iso: string): string {
   return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+const ALL_PICKUP_METHODS = [
+  "面交",
+  "7-11 貨到付款",
+  "7-11 取貨（先付款）",
+  "全家貨到付款",
+  "全家取貨（先付款）",
+  "OK Mart",
+  "萊爾富物流",
+  "宅配",
+] as const;
+
 export default function PublicOrderPage({ shareToken }: Props) {
   const { data: product, isLoading, error } = useGetPublicProduct(shareToken);
   const submitOrder = useSubmitOrder();
@@ -32,11 +51,37 @@ export default function PublicOrderPage({ shareToken }: Props) {
   const [submittedOrder, setSubmittedOrder] = useState<Order | null>(null);
   const [formError, setFormError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [cvsStore, setCvsStore] = useState<CvsStore | null>(null);
 
   const specs: Spec[] = (product?.specs as Spec[]) ?? [];
-
   const orderDeadlineAt = product?.orderDeadlineAt ? new Date(product.orderDeadlineAt as string) : null;
   const [now, setNow] = useState(() => new Date());
+
+  const shippingFee = getShippingFee(pickupMethod);
+  const subtotal = Number(product?.price ?? 0) * quantity;
+  const totalDisplay = subtotal + shippingFee;
+  const needs711 = isSevenElevenMethod(pickupMethod);
+
+  // Load CVS store from localStorage when page mounts or becomes visible
+  useEffect(() => {
+    const stored = loadCvsStore(shareToken);
+    if (stored) setCvsStore(stored);
+  }, [shareToken]);
+
+  // Clear CVS store when switching away from 7-11 methods
+  useEffect(() => {
+    if (!needs711) {
+      // Don't clear localStorage, just hide from UI
+      // Data stays in localStorage so user can switch back
+      if (!isSevenElevenMethod(pickupMethod) && pickupMethod !== "") {
+        setCvsStore(null);
+      }
+    } else {
+      // Reload from localStorage when switching to 7-11
+      const stored = loadCvsStore(shareToken);
+      if (stored) setCvsStore(stored);
+    }
+  }, [pickupMethod, needs711, shareToken]);
 
   useEffect(() => {
     applyBrandColor(product?.brandPrimaryColor ?? DEFAULT_BRAND_PRIMARY_COLOR);
@@ -52,11 +97,19 @@ export default function PublicOrderPage({ shareToken }: Props) {
     orderDeadlineAt != null && Number.isFinite(orderDeadlineAt.getTime()) && now >= orderDeadlineAt;
   const remainingMs = orderDeadlineAt ? Math.max(0, orderDeadlineAt.getTime() - now.getTime()) : 0;
 
+  const handleSelectStore = () => {
+    const basePath = (import.meta as any).env?.BASE_URL?.replace(/\/$/, "") ?? "";
+    openSevenElevenMap({
+      returnPath: `${basePath}/p/${shareToken}`,
+      source: "customer",
+      shareToken,
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError("");
 
-    // Re-check deadline in case time has passed since render
     const deadline = product?.orderDeadlineAt ? new Date(product.orderDeadlineAt as string) : null;
     if (deadline != null && Number.isFinite(deadline.getTime()) && new Date() >= deadline) {
       setFormError("此商品已截止收單，無法送出訂單。");
@@ -75,19 +128,35 @@ export default function PublicOrderPage({ shareToken }: Props) {
       }
     }
 
+    if (needs711 && !cvsStore) {
+      setFormError("請先選擇 7-11 門市");
+      return;
+    }
+
     try {
-      const order = await submitOrder.mutateAsync({
-        shareToken,
-        data: {
-          buyerName: buyerName.trim(),
-          buyerPhone: buyerPhone.trim(),
-          pickupMethod,
-          notes: notes.trim() || undefined,
-          specValues: Object.keys(specValues).length > 0 ? specValues : undefined,
-          quantity,
-        },
-      });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const body: any = {
+        buyerName: buyerName.trim(),
+        buyerPhone: buyerPhone.trim(),
+        pickupMethod,
+        notes: notes.trim() || undefined,
+        specValues: Object.keys(specValues).length > 0 ? specValues : undefined,
+        quantity,
+        shippingFee: needs711 ? shippingFee : getShippingFee(pickupMethod),
+        ...(cvsStore && needs711
+          ? {
+              cvsStoreId: cvsStore.storeId,
+              cvsStoreName: cvsStore.storeName,
+              cvsStoreAddress: cvsStore.storeAddress,
+              cvsStorePhone: cvsStore.storePhone ?? null,
+              storeSelectedBy: "customer",
+            }
+          : {}),
+      };
+
+      const order = await submitOrder.mutateAsync({ shareToken, data: body });
       setSubmittedOrder(order);
+      if (needs711) clearCvsStore(shareToken);
     } catch (err: any) {
       setFormError(err?.data?.message || err?.data?.error || "下單失敗，請稍後再試");
     }
@@ -115,7 +184,8 @@ export default function PublicOrderPage({ shareToken }: Props) {
 
   if (submittedOrder) {
     const productName = submittedOrder.productName ?? product.name;
-    const totalPrice = Number(submittedOrder.totalPrice).toLocaleString();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const orderTotal = Number((submittedOrder as any).totalPrice ?? 0);
     const token = submittedOrder.publicToken;
 
     const handleCopy = () => {
@@ -141,7 +211,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
             <SummaryRow label="追蹤碼" value={token} mono />
             <SummaryRow label="商品" value={productName} />
             <SummaryRow label="數量" value={`x${submittedOrder.quantity}`} />
-            <SummaryRow label="金額" value={`NT$ ${totalPrice}`} bold />
+            <SummaryRow label="金額" value={`NT$ ${orderTotal.toLocaleString()}`} bold />
             <SummaryRow label="取貨方式" value={submittedOrder.pickupMethod} />
             <SummaryRow label="下單時間" value={formatDate(submittedOrder.createdAt)} />
           </div>
@@ -269,9 +339,6 @@ export default function PublicOrderPage({ shareToken }: Props) {
             >
               +
             </button>
-            <span className="text-sm text-muted-foreground ml-2">
-              小計：NT$ {(Number(product.price) * quantity).toLocaleString()}
-            </span>
           </div>
         </div>
 
@@ -298,15 +365,16 @@ export default function PublicOrderPage({ shareToken }: Props) {
           />
         </div>
 
+        {/* Pickup method */}
         <div>
           <label className="block text-sm font-medium text-foreground mb-2">取貨方式 *</label>
-          <div className="grid grid-cols-3 gap-2">
-            {["自取", "宅配", "其他"].map((m) => (
+          <div className="grid grid-cols-2 gap-2">
+            {ALL_PICKUP_METHODS.map((m) => (
               <button
                 key={m}
                 type="button"
                 onClick={() => setPickupMethod(m)}
-                className={`h-11 rounded-xl text-sm font-medium border transition-colors ${
+                className={`h-11 rounded-xl text-sm font-medium border transition-colors px-2 ${
                   pickupMethod === m
                     ? "bg-primary text-white border-primary"
                     : "bg-white text-foreground border-border"
@@ -318,6 +386,29 @@ export default function PublicOrderPage({ shareToken }: Props) {
           </div>
         </div>
 
+        {/* 7-11 store selector */}
+        {needs711 && (
+          <div className="space-y-2">
+            {cvsStore ? (
+              <CvsStoreCard store={cvsStore} onReselect={handleSelectStore} />
+            ) : (
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={handleSelectStore}
+                  className="w-full h-11 rounded-xl border-2 border-primary bg-primary/5 text-primary text-sm font-semibold"
+                >
+                  選擇 7-11 門市
+                </button>
+                {formError === "請先選擇 7-11 門市" && (
+                  <p className="text-xs text-destructive">請先選擇 7-11 門市</p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Notes */}
         <div>
           <label className="block text-sm font-medium text-foreground mb-1.5">備註（選填）</label>
           <textarea
@@ -329,7 +420,25 @@ export default function PublicOrderPage({ shareToken }: Props) {
           />
         </div>
 
-        {formError && (
+        {/* Price breakdown */}
+        {pickupMethod && (
+          <div className="bg-secondary/40 rounded-2xl px-4 py-3 space-y-1.5">
+            <div className="flex justify-between text-sm text-muted-foreground">
+              <span>商品小計</span>
+              <span>NT$ {subtotal.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between text-sm text-muted-foreground">
+              <span>運費</span>
+              <span>{shippingFee === 0 ? "免費" : `NT$ ${shippingFee}`}</span>
+            </div>
+            <div className="flex justify-between text-base font-bold text-foreground pt-1 border-t border-border/50">
+              <span>訂單總額</span>
+              <span className="text-primary">NT$ {totalDisplay.toLocaleString()}</span>
+            </div>
+          </div>
+        )}
+
+        {formError && formError !== "請先選擇 7-11 門市" && (
           <div className="bg-destructive/10 text-destructive text-sm px-4 py-3 rounded-xl">
             {formError}
           </div>
@@ -344,9 +453,33 @@ export default function PublicOrderPage({ shareToken }: Props) {
             ? "已截止收單"
             : submitOrder.isPending
             ? "送出中..."
-            : `確認下單 · NT$ ${(Number(product.price) * quantity).toLocaleString()}`}
+            : `確認下單 · NT$ ${totalDisplay.toLocaleString()}`}
         </button>
       </form>
+    </div>
+  );
+}
+
+function CvsStoreCard({ store, onReselect }: { store: CvsStore; onReselect: () => void }) {
+  return (
+    <div className="bg-white rounded-2xl border border-primary/30 px-4 py-3 space-y-1.5">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <div className="text-sm font-semibold text-foreground">7-11 {store.storeName}</div>
+          <div className="text-xs text-muted-foreground mt-0.5">{store.storeAddress || "地址未回傳"}</div>
+          <div className="text-xs text-muted-foreground/70 mt-0.5">門市編號：{store.storeId}</div>
+          {!store.storeAddress && (
+            <div className="text-xs text-amber-600 mt-1">地址資料未完整回傳，請確認門市資訊</div>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={onReselect}
+          className="shrink-0 text-xs font-medium text-primary border border-primary/30 px-2.5 py-1 rounded-lg"
+        >
+          重選門市
+        </button>
+      </div>
     </div>
   );
 }

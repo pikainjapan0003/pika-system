@@ -22,6 +22,8 @@ import SettingsPage from "@/pages/Settings";
 import GuidePage from "@/pages/Guide";
 import DevHandoffPage from "@/pages/DevHandoff";
 import ProductCategoriesPage from "@/pages/ProductCategories";
+import Cvs711ReturnPage from "@/pages/Cvs711Return";
+import Cvs711SelectPage from "@/pages/Cvs711Select";
 import NotFoundPage from "@/pages/not-found";
 
 const clerkPubKey = publishableKeyFromHost(
@@ -287,6 +289,8 @@ function AppRouter() {
       <Route path="/track/:publicToken">
         {(params) => <TrackOrderPage publicToken={params.publicToken} />}
       </Route>
+      <Route path="/cvs/711/select" component={Cvs711SelectPage} />
+      <Route path="/cvs/711/return" component={Cvs711ReturnPage} />
       <Route path="/setup" component={SetupRoute} />
       <Route path="/dev/handoff" component={DevHandoffPage} />
       <Route path="/dashboard" component={MerchantPortal} />

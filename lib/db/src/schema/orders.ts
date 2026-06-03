@@ -21,8 +21,16 @@ export const ordersTable = pgTable("orders", {
   specValues: jsonb("spec_values").default({}),
   quantity: integer("quantity").notNull().default(1),
   unitPrice: numeric("unit_price", { precision: 10, scale: 2 }).notNull(),
+  shippingFee: numeric("shipping_fee", { precision: 10, scale: 2 }).notNull().default("0"),
   totalPrice: numeric("total_price", { precision: 10, scale: 2 }).notNull(),
   status: text("status").notNull().default("pending"),
+  // CVS store fields (7-11, FamilyMart, etc.)
+  cvsStoreId: text("cvs_store_id"),
+  cvsStoreName: text("cvs_store_name"),
+  cvsStoreAddress: text("cvs_store_address"),
+  cvsStorePhone: text("cvs_store_phone"),
+  storeSelectedBy: text("store_selected_by"), // 'customer' | 'admin' | 'system'
+  storeSelectedAt: timestamp("store_selected_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 }, (t) => [

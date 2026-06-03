@@ -219,7 +219,9 @@ function formatOrder(o: any) {
   return {
     ...o,
     unitPrice: parseFloat(o.unitPrice),
+    shippingFee: parseFloat(o.shippingFee ?? "0"),
     totalPrice: parseFloat(o.totalPrice),
+    storeSelectedAt: o.storeSelectedAt?.toISOString() ?? null,
   };
 }
 

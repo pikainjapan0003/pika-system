@@ -5,6 +5,42 @@ import { randomBytes } from "crypto";
 import { db, storesTable, productsTable, ordersTable } from "@workspace/db";
 import { SubmitOrderBody } from "@workspace/api-zod";
 
+interface CvsOrderExtensionData {
+  shippingFee?: number;
+  cvsStoreId?: string;
+  cvsStoreName?: string;
+  cvsStoreAddress?: string;
+  cvsStorePhone?: string | null;
+  storeSelectedBy?: "customer" | "admin" | "system";
+}
+
+function parseCvsExtension(body: any): CvsOrderExtensionData {
+  return {
+    shippingFee: typeof body?.shippingFee === "number" ? body.shippingFee : undefined,
+    cvsStoreId: typeof body?.cvsStoreId === "string" ? body.cvsStoreId : undefined,
+    cvsStoreName: typeof body?.cvsStoreName === "string" ? body.cvsStoreName : undefined,
+    cvsStoreAddress: typeof body?.cvsStoreAddress === "string" ? body.cvsStoreAddress : undefined,
+    cvsStorePhone: body?.cvsStorePhone ?? null,
+    storeSelectedBy: body?.storeSelectedBy ?? "customer",
+  };
+}
+
+const SHIPPING_FEE_MAP: Record<string, number> = {
+  "面交": 0,
+  "7-11 貨到付款": 60,
+  "7-11 取貨（先付款）": 60,
+  "全家貨到付款": 60,
+  "全家取貨（先付款）": 60,
+  "OK Mart": 60,
+  "萊爾富物流": 60,
+  "宅配": 100,
+};
+
+function getShippingFee(pickupMethod: string, overrideShippingFee?: number): number {
+  if (overrideShippingFee !== undefined) return overrideShippingFee;
+  return SHIPPING_FEE_MAP[pickupMethod] ?? 0;
+}
+
 const submitOrderLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
   limit: 20,
@@ -81,6 +117,9 @@ router.post("/p/:shareToken/orders", submitOrderLimiter, async (req, res) => {
     return res.status(400).json({ error: parsed.error.message });
   }
 
+  // Extract optional CVS extension fields (these are not in the generated schema)
+  const cvsData = parseCvsExtension(req.body);
+
   let retries = 0;
   while (retries <= 3) {
     const publicToken = randomBytes(16).toString("hex");
@@ -114,7 +153,9 @@ router.post("/p/:shareToken/orders", submitOrderLimiter, async (req, res) => {
         }
 
         const unitPrice = parseFloat(product.price as string);
-        const totalPrice = unitPrice * parsed.data.quantity;
+        const shippingFee = getShippingFee(parsed.data.pickupMethod, cvsData.shippingFee);
+        const subtotal = unitPrice * parsed.data.quantity;
+        const totalPrice = subtotal + shippingFee;
 
         // Decrement inventory only when it is being tracked (not null)
         if (product.inventory !== null) {
@@ -123,6 +164,8 @@ router.post("/p/:shareToken/orders", submitOrderLimiter, async (req, res) => {
             .set({ inventory: product.inventory - parsed.data.quantity })
             .where(eq(productsTable.id, product.id));
         }
+
+        const hasCvs = !!(cvsData.cvsStoreId);
 
         const [newOrder] = await tx
           .insert(ordersTable)
@@ -138,8 +181,15 @@ router.post("/p/:shareToken/orders", submitOrderLimiter, async (req, res) => {
             specValues: parsed.data.specValues ?? {},
             quantity: parsed.data.quantity,
             unitPrice: String(unitPrice),
+            shippingFee: String(shippingFee),
             totalPrice: String(totalPrice),
             status: "pending",
+            cvsStoreId: hasCvs ? (cvsData.cvsStoreId ?? null) : null,
+            cvsStoreName: hasCvs ? (cvsData.cvsStoreName ?? null) : null,
+            cvsStoreAddress: hasCvs ? (cvsData.cvsStoreAddress ?? null) : null,
+            cvsStorePhone: hasCvs ? (cvsData.cvsStorePhone ?? null) : null,
+            storeSelectedBy: hasCvs ? (cvsData.storeSelectedBy ?? "customer") : null,
+            storeSelectedAt: hasCvs ? new Date() : null,
           })
           .returning();
 
@@ -150,7 +200,9 @@ router.post("/p/:shareToken/orders", submitOrderLimiter, async (req, res) => {
       return res.status(201).json({
         ...order,
         unitPrice: parseFloat(order.unitPrice as string),
+        shippingFee: parseFloat(order.shippingFee as string),
         totalPrice: parseFloat(order.totalPrice as string),
+        storeSelectedAt: order.storeSelectedAt?.toISOString() ?? null,
       });
     } catch (err: any) {
       if (err.status === 404) return res.status(404).json({ error: err.message });
