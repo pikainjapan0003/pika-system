@@ -21,9 +21,11 @@ import type {
 
 import type {
   HealthStatus,
+  MerchantOrderInput,
   Order,
   OrderInput,
   OrderStatusUpdate,
+  OrderUpdate,
   Product,
   ProductCategory,
   ProductCategoryInput,
@@ -1095,6 +1097,78 @@ export function useListOrders<TData = Awaited<ReturnType<typeof listOrders>>, TE
 
 
 
+export const getCreateMerchantOrderUrl = (storeId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/orders`
+}
+
+/**
+ * @summary Create an order from merchant backend
+ */
+export const createMerchantOrder = async (storeId: number,
+    merchantOrderInput: MerchantOrderInput, options?: RequestInit): Promise<Order> => {
+
+  return customFetch<Order>(getCreateMerchantOrderUrl(storeId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      merchantOrderInput,)
+  }
+);}
+
+
+
+
+export const getCreateMerchantOrderMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createMerchantOrder>>, TError,{storeId: number;data: BodyType<MerchantOrderInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createMerchantOrder>>, TError,{storeId: number;data: BodyType<MerchantOrderInput>}, TContext> => {
+
+const mutationKey = ['createMerchantOrder'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createMerchantOrder>>, {storeId: number;data: BodyType<MerchantOrderInput>}> = (props) => {
+          const {storeId,data} = props ?? {};
+
+          return  createMerchantOrder(storeId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateMerchantOrderMutationResult = NonNullable<Awaited<ReturnType<typeof createMerchantOrder>>>
+    export type CreateMerchantOrderMutationBody = BodyType<MerchantOrderInput>
+    export type CreateMerchantOrderMutationError = ErrorType<void>
+
+    /**
+ * @summary Create an order from merchant backend
+ */
+export const useCreateMerchantOrder = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createMerchantOrder>>, TError,{storeId: number;data: BodyType<MerchantOrderInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createMerchantOrder>>,
+        TError,
+        {storeId: number;data: BodyType<MerchantOrderInput>},
+        TContext
+      > => {
+      return useMutation(getCreateMerchantOrderMutationOptions(options));
+    }
+
 export const getExportOrdersUrl = (storeId: number,) => {
 
 
@@ -1248,6 +1322,78 @@ export function useGetStoreStats<TData = Awaited<ReturnType<typeof getStoreStats
 
 
 
+
+export const getUpdateOrderUrl = (orderId: number,) => {
+
+
+
+
+  return `/api/orders/${orderId}`
+}
+
+/**
+ * @summary Update order basic info (merchant)
+ */
+export const updateOrder = async (orderId: number,
+    orderUpdate: OrderUpdate, options?: RequestInit): Promise<Order> => {
+
+  return customFetch<Order>(getUpdateOrderUrl(orderId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      orderUpdate,)
+  }
+);}
+
+
+
+
+export const getUpdateOrderMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateOrder>>, TError,{orderId: number;data: BodyType<OrderUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateOrder>>, TError,{orderId: number;data: BodyType<OrderUpdate>}, TContext> => {
+
+const mutationKey = ['updateOrder'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateOrder>>, {orderId: number;data: BodyType<OrderUpdate>}> = (props) => {
+          const {orderId,data} = props ?? {};
+
+          return  updateOrder(orderId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateOrderMutationResult = NonNullable<Awaited<ReturnType<typeof updateOrder>>>
+    export type UpdateOrderMutationBody = BodyType<OrderUpdate>
+    export type UpdateOrderMutationError = ErrorType<void>
+
+    /**
+ * @summary Update order basic info (merchant)
+ */
+export const useUpdateOrder = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateOrder>>, TError,{orderId: number;data: BodyType<OrderUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateOrder>>,
+        TError,
+        {orderId: number;data: BodyType<OrderUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateOrderMutationOptions(options));
+    }
 
 export const getUpdateOrderStatusUrl = (orderId: number,) => {
 

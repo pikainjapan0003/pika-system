@@ -335,6 +335,32 @@ export const ListOrdersResponse = zod.array(ListOrdersResponseItem)
 
 
 /**
+ * @summary Create an order from merchant backend
+ */
+export const CreateMerchantOrderParams = zod.object({
+  "storeId": zod.coerce.number()
+})
+
+
+
+
+
+
+
+export const CreateMerchantOrderBody = zod.object({
+  "productId": zod.number(),
+  "buyerName": zod.string().min(1),
+  "buyerPhone": zod.string().min(1),
+  "quantity": zod.number().min(1),
+  "pickupMethod": zod.string().min(1),
+  "notes": zod.string().nullish(),
+  "specValues": zod.object({
+
+}).passthrough().optional()
+})
+
+
+/**
  * @summary Export orders as CSV
  */
 export const ExportOrdersParams = zod.object({
@@ -357,6 +383,51 @@ export const GetStoreStatsResponse = zod.object({
   "status": zod.string(),
   "count": zod.number()
 }))
+})
+
+
+/**
+ * @summary Update order basic info (merchant)
+ */
+export const UpdateOrderParams = zod.object({
+  "orderId": zod.coerce.number()
+})
+
+
+
+
+
+
+
+export const UpdateOrderBody = zod.object({
+  "buyerName": zod.string().min(1).optional(),
+  "buyerPhone": zod.string().min(1).optional(),
+  "quantity": zod.number().min(1).optional(),
+  "pickupMethod": zod.string().min(1).optional(),
+  "notes": zod.string().nullish(),
+  "specValues": zod.object({
+
+}).passthrough().optional()
+})
+
+export const UpdateOrderResponse = zod.object({
+  "id": zod.number(),
+  "productId": zod.number(),
+  "storeId": zod.number(),
+  "productName": zod.string().nullish(),
+  "publicToken": zod.string(),
+  "buyerName": zod.string(),
+  "buyerPhone": zod.string(),
+  "pickupMethod": zod.string(),
+  "notes": zod.string().nullish(),
+  "specValues": zod.object({
+
+}).passthrough().optional(),
+  "quantity": zod.number(),
+  "unitPrice": zod.number().optional(),
+  "totalPrice": zod.number(),
+  "status": zod.enum(['pending', 'awaiting_payment', 'preparing', 'shipped', 'completed', 'cancelled']),
+  "createdAt": zod.string()
 })
 
 

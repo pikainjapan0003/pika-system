@@ -15,5 +15,7 @@ export interface Store {
   slug: string;
   /** @nullable */
   logoUrl?: string | null;
+  /** @nullable */
+  brandPrimaryColor?: string | null;
   createdAt: string;
 }

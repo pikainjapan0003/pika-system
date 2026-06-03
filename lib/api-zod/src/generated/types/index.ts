@@ -7,6 +7,8 @@
  */
 
 export * from './healthStatus';
+export * from './merchantOrderInput';
+export * from './merchantOrderInputSpecValues';
 export * from './order';
 export * from './orderInput';
 export * from './orderInputSpecValues';
@@ -14,6 +16,8 @@ export * from './orderSpecValues';
 export * from './orderStatus';
 export * from './orderStatusUpdate';
 export * from './orderStatusUpdateStatus';
+export * from './orderUpdate';
+export * from './orderUpdateSpecValues';
 export * from './product';
 export * from './productCategory';
 export * from './productCategoryInput';

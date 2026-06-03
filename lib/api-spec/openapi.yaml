@@ -327,6 +327,35 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Order"
+    post:
+      operationId: createMerchantOrder
+      tags: [orders]
+      summary: Create an order from merchant backend
+      parameters:
+        - name: storeId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MerchantOrderInput"
+      responses:
+        "201":
+          description: Order created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "400":
+          description: Validation error
+        "403":
+          description: Forbidden
+        "404":
+          description: Product not found
 
   /stores/{storeId}/orders/export:
     get:
@@ -365,6 +394,39 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/StoreStats"
+
+  /orders/{orderId}:
+    patch:
+      operationId: updateOrder
+      tags: [orders]
+      summary: Update order basic info (merchant)
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "400":
+          description: Validation error
+        "403":
+          description: Forbidden
+        "404":
+          description: Order not found
+        "422":
+          description: Cannot edit completed or cancelled order
 
   /orders/{orderId}/status:
     patch:
@@ -770,6 +832,49 @@ components:
         quantity:
           type: integer
           minimum: 1
+
+    MerchantOrderInput:
+      type: object
+      required: [productId, buyerName, buyerPhone, quantity, pickupMethod]
+      properties:
+        productId:
+          type: integer
+        buyerName:
+          type: string
+          minLength: 1
+        buyerPhone:
+          type: string
+          minLength: 1
+        quantity:
+          type: integer
+          minimum: 1
+        pickupMethod:
+          type: string
+          minLength: 1
+        notes:
+          type: ["string", "null"]
+        specValues:
+          type: object
+
+    OrderUpdate:
+      type: object
+      properties:
+        buyerName:
+          type: string
+          minLength: 1
+        buyerPhone:
+          type: string
+          minLength: 1
+        quantity:
+          type: integer
+          minimum: 1
+        pickupMethod:
+          type: string
+          minLength: 1
+        notes:
+          type: ["string", "null"]
+        specValues:
+          type: object
 
     OrderStatusUpdate:
       type: object

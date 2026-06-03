@@ -29,4 +29,6 @@ export interface PublicProduct {
   shelfLife?: string | null;
   /** @nullable */
   weightKg?: number | null;
+  /** @nullable */
+  brandPrimaryColor?: string | null;
 }

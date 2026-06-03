@@ -11,4 +11,5 @@ export interface StoreUpdate {
   name?: string;
   description?: string;
   logoUrl?: string;
+  brandPrimaryColor?: string;
 }

@@ -267,6 +267,39 @@ export interface OrderInput {
   quantity: number;
 }
 
+export type MerchantOrderInputSpecValues = { [key: string]: unknown };
+
+export interface MerchantOrderInput {
+  productId: number;
+  /** @minLength 1 */
+  buyerName: string;
+  /** @minLength 1 */
+  buyerPhone: string;
+  /** @minimum 1 */
+  quantity: number;
+  /** @minLength 1 */
+  pickupMethod: string;
+  /** @nullable */
+  notes?: string | null;
+  specValues?: MerchantOrderInputSpecValues;
+}
+
+export type OrderUpdateSpecValues = { [key: string]: unknown };
+
+export interface OrderUpdate {
+  /** @minLength 1 */
+  buyerName?: string;
+  /** @minLength 1 */
+  buyerPhone?: string;
+  /** @minimum 1 */
+  quantity?: number;
+  /** @minLength 1 */
+  pickupMethod?: string;
+  /** @nullable */
+  notes?: string | null;
+  specValues?: OrderUpdateSpecValues;
+}
+
 export type OrderStatusUpdateStatus = typeof OrderStatusUpdateStatus[keyof typeof OrderStatusUpdateStatus];
 
 
