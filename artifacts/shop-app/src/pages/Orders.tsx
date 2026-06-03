@@ -107,7 +107,7 @@ export default function OrdersPage() {
   };
 
   return (
-    <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-24">
+    <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-28">
       <header className="bg-white border-b border-border px-5 pt-10 pb-3 sticky top-0 z-10">
         <div className="flex items-center justify-between mb-3">
           <h1 className="text-lg font-bold text-foreground">訂單管理</h1>
@@ -172,33 +172,46 @@ export default function OrdersPage() {
                   <div key={o.id} className="bg-white rounded-2xl border border-border overflow-hidden">
                     {/* Card header */}
                     <div
-                      className="px-4 pt-3.5 pb-3 cursor-pointer"
+                      className="px-4 pt-3.5 pb-3.5 cursor-pointer"
                       onClick={() => setExpandedId(expandedId === o.id ? null : o.id)}
                     >
-                      {/* Row 1: Order ID + Amount */}
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-bold text-primary">#{o.id}</span>
-                        <span className="text-base font-bold text-primary">NT$ {Number(o.totalPrice).toLocaleString()}</span>
+                      {/* Row 1: Order # (left) + Amount (right) */}
+                      <div className="flex items-baseline justify-between mb-1.5">
+                        <span className="text-sm font-bold text-primary tracking-wide">#{o.id}</span>
+                        <span className="text-xl font-bold text-primary">NT${Number(o.totalPrice).toLocaleString()}</span>
                       </div>
-                      {/* Row 2: Buyer name + status */}
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <span className="font-semibold text-foreground">{o.buyerName}</span>
-                          <span className="text-xs text-muted-foreground ml-2">{o.buyerPhone}</span>
-                        </div>
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${STATUS_COLORS[o.status] ?? "bg-gray-100 text-gray-600"}`}>
+                      {/* Row 2: Buyer name (left) + date (right) */}
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <span className="text-[15px] font-semibold text-foreground leading-tight">{o.buyerName}</span>
+                        <span className="text-[11px] text-muted-foreground shrink-0">{formatDate(o.createdAt)}</span>
+                      </div>
+                      {/* Row 3: Pickup method badge + order status badge */}
+                      <div className="flex items-center gap-1.5 flex-wrap mb-2">
+                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-secondary text-muted-foreground shrink-0">
+                          {o.pickupMethod}
+                        </span>
+                        <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium shrink-0 ${STATUS_COLORS[o.status] ?? "bg-gray-100 text-gray-600"}`}>
                           {STATUS_LABELS[o.status] ?? o.status}
                         </span>
                       </div>
-                      {/* Row 3: Product + pickup method */}
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-xs text-muted-foreground truncate flex-1">{o.productName} × {o.quantity}</span>
-                        <span className="text-xs text-muted-foreground shrink-0">{o.pickupMethod}</span>
-                      </div>
-                      {/* Row 4: Time + expand arrow */}
-                      <div className="flex items-center justify-between mt-1.5">
-                        <span className="text-xs text-muted-foreground">{formatDate(o.createdAt)}</span>
-                        <span className="text-xs text-muted-foreground">{expandedId === o.id ? "▲" : "▼"}</span>
+                      {/* Row 4: Item count + shipping status badge + expand arrow */}
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[11px] text-muted-foreground shrink-0">商品 {o.quantity} 件</span>
+                        {o.productName && (
+                          <span className="text-[11px] text-muted-foreground truncate flex-1 min-w-0">· {o.productName}</span>
+                        )}
+                        {o.status !== "cancelled" && (
+                          <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium shrink-0 ${
+                            o.status === "shipped" || o.status === "completed"
+                              ? "bg-cyan-100 text-cyan-700"
+                              : "bg-secondary/80 text-muted-foreground"
+                          }`}>
+                            {o.status === "shipped" || o.status === "completed" ? "已出貨" : "未出貨"}
+                          </span>
+                        )}
+                        <span className="text-muted-foreground shrink-0 ml-auto text-sm leading-none">
+                          {expandedId === o.id ? "▲" : "▼"}
+                        </span>
                       </div>
                     </div>
 
