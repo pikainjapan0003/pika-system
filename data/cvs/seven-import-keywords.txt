@@ -1,0 +1,15 @@
+# 7-11 門市匯入關鍵字清單
+# 每行一個關鍵字，# 開頭為注釋行，空行忽略
+# 執行：node scripts/import-seven-stores-from-emap.mjs --file data/cvs/seven-import-keywords.txt
+
+懷民
+民治街
+板橋
+台北車站
+信義
+中山
+中正
+大安
+萬華
+士林
+內湖
