@@ -53,3 +53,7 @@ dev-handoff/
 
 # Claude local settings (may contain tokens/keys — never commit)
 .claude/
+
+# CVS import runtime files (generated on each run, not for version control)
+data/cvs/seven-import-progress.json
+data/cvs/seven-import-report.json
