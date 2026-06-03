@@ -5,6 +5,16 @@ import { useQueryClient } from "@tanstack/react-query";
 import { BottomNav } from "./Dashboard";
 import { STATUS_LABELS, STATUS_COLORS, ALL_STATUSES, VALID_NEXT_STATUSES } from "../lib/orderStatus";
 import { isSevenElevenMethod, openSevenElevenMap } from "@/lib/cvs711";
+
+const DEPRECATED_METHODS: Record<string, string> = {
+  "OK Mart": "OK Mart",
+  "萊爾富物流": "萊爾富",
+};
+const HOME_DELIVERY_LABELS: Record<string, string> = {
+  "黑貓宅急便": "黑貓宅急便",
+  "郵局": "郵局",
+  "宅配": "宅配（已停用）",
+};
 import { CreateOrderDialog } from "./CreateOrderDialog";
 import { EditOrderDialog } from "./EditOrderDialog";
 
@@ -339,6 +349,26 @@ export default function OrdersPage() {
                                 選擇 / 修改 7-11 門市
                               </button>
                             )}
+                          </div>
+                        )}
+
+                        {/* 宅配顯示（黑貓 / 郵局） */}
+                        {HOME_DELIVERY_LABELS[o.pickupMethod] && (
+                          <div>
+                            <SectionLabel>物流方式</SectionLabel>
+                            <div className="bg-white rounded-xl border border-border/50 px-4 py-3">
+                              <span className="text-sm font-medium text-foreground">{HOME_DELIVERY_LABELS[o.pickupMethod]}</span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 已停用的取貨方式（舊訂單 backward compat） */}
+                        {DEPRECATED_METHODS[o.pickupMethod] && (
+                          <div>
+                            <SectionLabel>物流方式</SectionLabel>
+                            <div className="bg-amber-50 rounded-xl border border-amber-200 px-4 py-3">
+                              <p className="text-xs text-amber-700">已停用的取貨方式：{DEPRECATED_METHODS[o.pickupMethod]}</p>
+                            </div>
                           </div>
                         )}
 

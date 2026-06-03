@@ -11,6 +11,11 @@ import {
   clearCvsStore,
   type CvsStore,
 } from "@/lib/cvs711";
+// Official sources: downloaded from each brand's official website
+import sevenElevenLogo from "@/assets/logistics/seven-eleven-logo-official.png"; // https://www.7-11.com.tw/images/logo.png
+import familymartLogo from "@/assets/logistics/familymart-logo-official.png";    // https://www.family.com.tw/Marketing/images/logo_pc_2024.png
+import blackcatLogo from "@/assets/logistics/blackcat-logo-official.svg";        // https://www.t-cat.com.tw/images/logo.svg (台灣官方)
+import postofficeLogo from "@/assets/logistics/postoffice-logo.svg";             // Wikimedia Commons — 藍色圓形「郵」logo (256×256)
 
 interface Props {
   shareToken: string;
@@ -27,16 +32,49 @@ function formatDate(iso: string): string {
   return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-const ALL_PICKUP_METHODS = [
-  "面交",
-  "7-11 貨到付款",
+type PickupMethod =
+  | "7-11 取貨（先付款）"
+  | "7-11 貨到付款"
+  | "全家取貨（先付款）"
+  | "全家貨到付款"
+  | "黑貓宅急便"
+  | "郵局"
+  | "面交";
+
+function MeetupIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style={{ width: "3rem", height: "3rem" }}>
+      <path d="M4.5 6.375a4.125 4.125 0 1 1 8.25 0 4.125 4.125 0 0 1-8.25 0ZM14.25 8.625a3.375 3.375 0 1 1 6.75 0 3.375 3.375 0 0 1-6.75 0ZM1.5 19.125a7.125 7.125 0 0 1 14.25 0v.003l-.001.119a.75.75 0 0 1-.363.63 13.067 13.067 0 0 1-6.761 1.873c-2.472 0-4.786-.684-6.76-1.873a.75.75 0 0 1-.364-.63l-.001-.122ZM17.25 19.128l-.001.144a2.25 2.25 0 0 1-.233.96 10.088 10.088 0 0 0 5.06-1.01.75.75 0 0 0 .42-.643 4.875 4.875 0 0 0-6.957-4.611 8.586 8.586 0 0 1 1.71 5.157v.003Z" />
+    </svg>
+  );
+}
+
+interface PickupMethodConfig {
+  label: string;
+  sublabel?: string;
+  logo?: string;
+  icon?: React.ReactNode;
+}
+
+const PICKUP_METHOD_CONFIGS: Record<PickupMethod, PickupMethodConfig> = {
+  "7-11 取貨（先付款）": { logo: sevenElevenLogo, label: "7-11 取貨", sublabel: "先付款" },
+  "7-11 貨到付款":       { logo: sevenElevenLogo, label: "7-11 取貨", sublabel: "貨到付款" },
+  "全家取貨（先付款）":  { logo: familymartLogo,  label: "全家取貨", sublabel: "先付款" },
+  "全家貨到付款":        { logo: familymartLogo,  label: "全家取貨", sublabel: "貨到付款" },
+  "黑貓宅急便":          { logo: blackcatLogo,    label: "黑貓宅急便" },
+  "郵局":                { logo: postofficeLogo,  label: "郵局" },
+  "面交":                { icon: <MeetupIcon />,  label: "面交" },
+};
+
+const ALL_PICKUP_METHODS: PickupMethod[] = [
   "7-11 取貨（先付款）",
-  "全家貨到付款",
+  "7-11 貨到付款",
   "全家取貨（先付款）",
-  "OK Mart",
-  "萊爾富物流",
-  "宅配",
-] as const;
+  "全家貨到付款",
+  "黑貓宅急便",
+  "郵局",
+  "面交",
+];
 
 export default function PublicOrderPage({ shareToken }: Props) {
   const { data: product, isLoading, error } = useGetPublicProduct(shareToken);
@@ -369,20 +407,48 @@ export default function PublicOrderPage({ shareToken }: Props) {
         <div>
           <label className="block text-sm font-medium text-foreground mb-2">取貨方式 *</label>
           <div className="grid grid-cols-2 gap-2">
-            {ALL_PICKUP_METHODS.map((m) => (
-              <button
-                key={m}
-                type="button"
-                onClick={() => setPickupMethod(m)}
-                className={`h-11 rounded-xl text-sm font-medium border transition-colors px-2 ${
-                  pickupMethod === m
-                    ? "bg-primary text-white border-primary"
-                    : "bg-white text-foreground border-border"
-                }`}
-              >
-                {m}
-              </button>
-            ))}
+            {ALL_PICKUP_METHODS.map((m) => {
+              const cfg = PICKUP_METHOD_CONFIGS[m];
+              const selected = pickupMethod === m;
+              return (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => setPickupMethod(m)}
+                  className={`flex flex-col items-center justify-center gap-2 rounded-xl border transition-colors py-4 px-3 ${
+                    selected
+                      ? "bg-primary/10 border-primary ring-2 ring-primary/30"
+                      : "bg-white border-border"
+                  }`}
+                >
+                  {/* Logo / icon area — full card width so wide logos scale up */}
+                  <div className="w-full flex items-center justify-center" style={{ height: "3.5rem" }}>
+                    {cfg.logo ? (
+                      <img
+                        src={cfg.logo}
+                        alt={cfg.label}
+                        className="w-full h-auto object-contain"
+                        style={{ maxHeight: "3.5rem" }}
+                      />
+                    ) : (
+                      <div className={`flex items-center justify-center ${selected ? "text-primary" : "text-muted-foreground"}`}>
+                        {cfg.icon}
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-center">
+                    <div className={`text-xs font-semibold leading-tight ${selected ? "text-primary" : "text-foreground"}`}>
+                      {cfg.label}
+                    </div>
+                    {cfg.sublabel && (
+                      <div className={`text-[10px] leading-tight mt-0.5 ${selected ? "text-primary/80" : "text-muted-foreground"}`}>
+                        {cfg.sublabel}
+                      </div>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
 

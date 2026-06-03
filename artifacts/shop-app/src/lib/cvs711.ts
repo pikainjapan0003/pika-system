@@ -14,12 +14,15 @@ export const PICKUP_METHOD_SHIPPING_FEE: Record<string, number> = {
   "7-11 取貨（先付款）": 60,
   "全家貨到付款": 60,
   "全家取貨（先付款）": 60,
-  "OK Mart": 60,
-  "萊爾富物流": 60,
-  "宅配": 100,
+  "黑貓宅急便": 100,
+  "郵局": 80,
   // Legacy mappings
   "自取": 0,
   "其他": 0,
+  // Deprecated (kept for backward compat with old orders)
+  "宅配": 100,
+  "OK Mart": 60,
+  "萊爾富物流": 60,
 };
 
 export function isSevenElevenMethod(method: string): boolean {
