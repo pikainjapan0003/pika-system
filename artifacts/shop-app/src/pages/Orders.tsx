@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useAuth } from "@clerk/react";
-import { useGetMyStore, useListOrders, useUpdateOrderStatus, getListOrdersQueryKey } from "@workspace/api-client-react";
+import { useGetMyStore, useListOrders, useUpdateOrderStatus, getListOrdersQueryKey, type Order } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { BottomNav } from "./Dashboard";
 import { STATUS_LABELS, STATUS_COLORS, ALL_STATUSES, VALID_NEXT_STATUSES } from "../lib/orderStatus";
 import { CreateOrderDialog } from "./CreateOrderDialog";
+import { EditOrderDialog } from "./EditOrderDialog";
 
 export default function OrdersPage() {
   const qc = useQueryClient();
@@ -21,6 +22,7 @@ export default function OrdersPage() {
   const [loadingOrderId, setLoadingOrderId] = useState<number | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [showAddOrder, setShowAddOrder] = useState(false);
+  const [editingOrder, setEditingOrder] = useState<Order | null>(null);
 
   const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -312,6 +314,17 @@ export default function OrdersPage() {
                           </div>
                         </div>
 
+                        {/* 編輯訂單 */}
+                        {o.status !== "completed" && o.status !== "cancelled" && (
+                          <button
+                            type="button"
+                            onClick={() => setEditingOrder(o)}
+                            className="w-full h-9 rounded-xl border border-primary/40 bg-primary/5 text-xs font-medium text-primary"
+                          >
+                            編輯訂單
+                          </button>
+                        )}
+
                         {/* 複製追蹤連結 */}
                         <button
                           type="button"
@@ -370,6 +383,15 @@ export default function OrdersPage() {
           storeId={storeId}
           open={showAddOrder}
           onClose={() => setShowAddOrder(false)}
+        />
+      )}
+
+      {storeId && (
+        <EditOrderDialog
+          order={editingOrder}
+          storeId={storeId}
+          open={!!editingOrder}
+          onClose={() => setEditingOrder(null)}
         />
       )}
     </div>
