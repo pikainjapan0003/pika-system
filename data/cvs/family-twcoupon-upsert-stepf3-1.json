@@ -1,0 +1,503 @@
+{
+  "generatedAt": "2026-06-04T20:33:35.581Z",
+  "provider": "family",
+  "mode": "upsert-small-scope",
+  "targets": [
+    {
+      "city": "台北市",
+      "district": "大安區"
+    },
+    {
+      "city": "新北市",
+      "district": "板橋區"
+    },
+    {
+      "city": "連江縣",
+      "district": "南竿鄉"
+    }
+  ],
+  "totalRaw": 115,
+  "totalDeduped": 115,
+  "inserted": 115,
+  "updated": 0,
+  "failed": 0,
+  "dbCounts": {
+    "familyBefore": 0,
+    "familyAfter": 115,
+    "sevenBefore": 7386,
+    "sevenAfter": 7386,
+    "sevenUnchanged": true
+  },
+  "idempotencyTest": {
+    "run2_inserted": 0,
+    "run2_updated_daan": 42,
+    "run2_updated_banqiao": 70,
+    "run2_updated_nangan": 3,
+    "familyTotalAfterRun2": 115,
+    "sevenTotalAfterRun2": 7386,
+    "passed": true
+  },
+  "apiTest": {
+    "endpoint": "/api/cvs/stores?provider=family&q=...",
+    "daan": {
+      "q": "大安",
+      "count": 20,
+      "sample": "全家仁慈店 台北市大安區"
+    },
+    "banqiao": {
+      "q": "板橋",
+      "count": 20,
+      "sample": "全家板橋中勝店 新北市板橋區"
+    },
+    "mazuQingshui": {
+      "q": "馬祖清水",
+      "count": 1,
+      "sample": "全家馬祖清水店 連江縣南竿鄉 836-23744"
+    },
+    "familyProviderSupported": true
+  },
+  "districtReports": [
+    {
+      "city": "台北市",
+      "district": "大安區",
+      "rawCount": 42,
+      "dedupedCount": 42,
+      "inserted": 42,
+      "updated": 0,
+      "failed": 0,
+      "missingPhone": 0,
+      "missingAddress": 0,
+      "missingDistrict": 0,
+      "sample": [
+        {
+          "provider": "family",
+          "generatedStoreId": "family-7ddb4edd3f51",
+          "storeName": "全家大安店",
+          "storeAddress": "台北市大安區大安路一段20號",
+          "phone": "02-27117896",
+          "postalCode": "106",
+          "city": "台北市",
+          "district": "大安區",
+          "source": "twcoupon_family",
+          "sourceUrl": "https://twcoupon.com/brandshoparea-%e5%85%a8%e5%ae%b6%e4%be%bf%e5%88%a9%e5%95%86%e5%ba%97-%e5%8f%b0%e5%8c%97%e5%b8%82-%e5%a4%a7%e5%ae%89%e5%8d%80-%e9%9b%bb%e8%a9%b1-%e5%9c%b0%e5%9d%80.html"
+        },
+        {
+          "provider": "family",
+          "generatedStoreId": "family-86c736ebb837",
+          "storeName": "全家忠愛店",
+          "storeAddress": "台北市大安區仁愛路4段27巷43號",
+          "phone": "02-27314580",
+          "postalCode": "106",
+          "city": "台北市",
+          "district": "大安區",
+          "source": "twcoupon_family",
+          "sourceUrl": "https://twcoupon.com/brandshoparea-%e5%85%a8%e5%ae%b6%e4%be%bf%e5%88%a9%e5%95%86%e5%ba%97-%e5%8f%b0%e5%8c%97%e5%b8%82-%e5%a4%a7%e5%ae%89%e5%8d%80-%e9%9b%bb%e8%a9%b1-%e5%9c%b0%e5%9d%80.html"
+        },
+        {
+          "provider": "family",
+          "generatedStoreId": "family-bfc841e8e997",
+          "storeName": "全家明曜店",
+          "storeAddress": "台北市大安區仁愛路四段151巷34號.36號",
+          "phone": "02-27780326",
+          "postalCode": "106",
+          "city": "台北市",
+          "district": "大安區",
+          "source": "twcoupon_family",
+          "sourceUrl": "https://twcoupon.com/brandshoparea-%e5%85%a8%e5%ae%b6%e4%be%bf%e5%88%a9%e5%95%86%e5%ba%97-%e5%8f%b0%e5%8c%97%e5%b8%82-%e5%a4%a7%e5%ae%89%e5%8d%80-%e9%9b%bb%e8%a9%b1-%e5%9c%b0%e5%9d%80.html"
+        },
+        {
+          "provider": "family",
+          "generatedStoreId": "family-1794256ca276",
+          "storeName": "全家國泰店",
+          "storeAddress": "台北市大安區仁愛路四段266巷15弄10號1樓",
+          "phone": "02-27542056",
+          "postalCode": "106",
+          "city": "台北市",
+          "district": "大安區",
+          "source": "twcoupon_family",
+          "sourceUrl": "https://twcoupon.com/brandshoparea-%e5%85%a8%e5%ae%b6%e4%be%bf%e5%88%a9%e5%95%86%e5%ba%97-%e5%8f%b0%e5%8c%97%e5%b8%82-%e5%a4%a7%e5%ae%89%e5%8d%80-%e9%9b%bb%e8%a9%b1-%e5%9c%b0%e5%9d%80.html"
+        },
+        {
+          "provider": "family",
+          "generatedStoreId": "family-a2f34637586e",
+          "storeName": "全家吉泰店",
+          "storeAddress": "台北市大安區仁愛路四段300巷11之1號",
+          "phone": "02-27001566",
+          "postalCode": "106",
+          "city": "台北市",
+          "district": "大安區",
+          "source": "twcoupon_family",
+          "sourceUrl": "https://twcoupon.com/brandshoparea-%e5%85%a8%e5%ae%b6%e4%be%bf%e5%88%a9%e5%95%86%e5%ba%97-%e5%8f%b0%e5%8c%97%e5%b8%82-%e5%a4%a7%e5%ae%89%e5%8d%80-%e9%9b%bb%e8%a9%b1-%e5%9c%b0%e5%9d%80.html"
+        }
+      ]
+    },
+    {
+      "city": "新北市",
+      "district": "板橋區",
+      "rawCount": 70,
+      "dedupedCount": 70,
+      "inserted": 70,
+      "updated": 0,
+      "failed": 0,
+      "missingPhone": 0,
+      "missingAddress": 0,
+      "missingDistrict": 0,
+      "sample": [
+        {
+          "provider": "family",
+          "generatedStoreId": "family-e1a3e116035d",
+          "storeName": "全家板橋振興店",
+          "storeAddress": "新北市板橋區三民路一段31巷89弄3號",
+          "phone": "02-89612085",
+          "postalCode": "220",
+          "city": "新北市",
+          "district": "板橋區",
+          "source": "twcoupon_family",
+          "sourceUrl": "https://twcoupon.com/brandshoparea-%e5%85%a8%e5%ae%b6%e4%be%bf%e5%88%a9%e5%95%86%e5%ba%97-%e6%96%b0%e5%8c%97%e5%b8%82-%e6%9d%bf%e6%a9%8b%e5%8d%80-%e9%9b%bb%e8%a9%b1-%e5%9c%b0%e5%9d%80.html"
+        },
+        {
+          "provider": "family",
+          "generatedStoreId": "family-524a8578b8b3",
+          "storeName": "全家板橋富山店",
+          "storeAddress": "新北市板橋區三民路一段94號,96號",
+          "phone": "02-89641541",
+          "postalCode": "220",
+          "city": "新北市",
+          "district": "板橋區",
+          "source": "twcoupon_family",
+          "sourceUrl": "https://twcoupon.com/brandshoparea-%e5%85%a8%e5%ae%b6%e4%be%bf%e5%88%a9%e5%95%86%e5%ba%97-%e6%96%b0%e5%8c%97%e5%b8%82-%e6%9d%bf%e6%a9%8b%e5%8d%80-%e9%9b%bb%e8%a9%b1-%e5%9c%b0%e5%9d%80.html"
+        },
+        {
+          "provider": "family",
+          "generatedStoreId": "family-d9eaeb6e3757",
+          "storeName": "全家板橋長民店",
+          "storeAddress": "新北市板橋區三民路二段153巷1-3號1樓&B1",
+          "phone": "02-29558365",
+          "postalCode": "220",
+          "city": "新北市",
+          "district": "板橋區",
+          "source": "twcoupon_family",
+          "sourceUrl": "https://twcoupon.com/brandshoparea-%e5%85%a8%e5%ae%b6%e4%be%bf%e5%88%a9%e5%95%86%e5%ba%97-%e6%96%b0%e5%8c%97%e5%b8%82-%e6%9d%bf%e6%a9%8b%e5%8d%80-%e9%9b%bb%e8%a9%b1-%e5%9c%b0%e5%9d%80.html"
+        },
+        {
+          "provider": "family",
+          "generatedStoreId": "family-c9523537c3bd",
+          "storeName": "全家板橋樂福店",
+          "storeAddress": "新北市板橋區三民路二段21巷6號1樓",
+          "phone": "02-29636100",
+          "postalCode": "220",
+          "city": "新北市",
+          "district": "板橋區",
+          "source": "twcoupon_family",
+          "sourceUrl": "https://twcoupon.com/brandshoparea-%e5%85%a8%e5%ae%b6%e4%be%bf%e5%88%a9%e5%95%86%e5%ba%97-%e6%96%b0%e5%8c%97%e5%b8%82-%e6%9d%bf%e6%a9%8b%e5%8d%80-%e9%9b%bb%e8%a9%b1-%e5%9c%b0%e5%9d%80.html"
+        },
+        {
+          "provider": "family",
+          "generatedStoreId": "family-197d1bdcfc05",
+          "storeName": "全家板橋長壽店",
+          "storeAddress": "新北市板橋區三民路二段83號",
+          "phone": "02-29572584",
+          "postalCode": "220",
+          "city": "新北市",
+          "district": "板橋區",
+          "source": "twcoupon_family",
+          "sourceUrl": "https://twcoupon.com/brandshoparea-%e5%85%a8%e5%ae%b6%e4%be%bf%e5%88%a9%e5%95%86%e5%ba%97-%e6%96%b0%e5%8c%97%e5%b8%82-%e6%9d%bf%e6%a9%8b%e5%8d%80-%e9%9b%bb%e8%a9%b1-%e5%9c%b0%e5%9d%80.html"
+        }
+      ]
+    },
+    {
+      "city": "連江縣",
+      "district": "南竿鄉",
+      "rawCount": 3,
+      "dedupedCount": 3,
+      "inserted": 3,
+      "updated": 0,
+      "failed": 0,
+      "missingPhone": 0,
+      "missingAddress": 0,
+      "missingDistrict": 0,
+      "sample": [
+        {
+          "provider": "family",
+          "generatedStoreId": "family-043c532da71c",
+          "storeName": "全家馬祖清水店",
+          "storeAddress": "連江縣南竿鄉清水村117號1樓",
+          "phone": "836-23744",
+          "postalCode": "209",
+          "city": "連江縣",
+          "district": "南竿鄉",
+          "source": "twcoupon_family",
+          "sourceUrl": "https://twcoupon.com/brandshoparea-%e5%85%a8%e5%ae%b6%e4%be%bf%e5%88%a9%e5%95%86%e5%ba%97-%e9%80%a3%e6%b1%9f%e7%b8%a3-%e5%8d%97%e7%ab%bf%e9%84%89-%e9%9b%bb%e8%a9%b1-%e5%9c%b0%e5%9d%80.html"
+        },
+        {
+          "provider": "family",
+          "generatedStoreId": "family-286c5b39667e",
+          "storeName": "全家馬祖機場店",
+          "storeAddress": "連江縣南竿鄉復興村220號1樓(南竿航空站二航廈)",
+          "phone": "836-22517",
+          "postalCode": "209",
+          "city": "連江縣",
+          "district": "南竿鄉",
+          "source": "twcoupon_family",
+          "sourceUrl": "https://twcoupon.com/brandshoparea-%e5%85%a8%e5%ae%b6%e4%be%bf%e5%88%a9%e5%95%86%e5%ba%97-%e9%80%a3%e6%b1%9f%e7%b8%a3-%e5%8d%97%e7%ab%bf%e9%84%89-%e9%9b%bb%e8%a9%b1-%e5%9c%b0%e5%9d%80.html"
+        },
+        {
+          "provider": "family",
+          "generatedStoreId": "family-80b0df6a58df",
+          "storeName": "全家馬祖福運店",
+          "storeAddress": "連江縣南竿鄉福沃村69號1樓",
+          "phone": "836-23389",
+          "postalCode": "209",
+          "city": "連江縣",
+          "district": "南竿鄉",
+          "source": "twcoupon_family",
+          "sourceUrl": "https://twcoupon.com/brandshoparea-%e5%85%a8%e5%ae%b6%e4%be%bf%e5%88%a9%e5%95%86%e5%ba%97-%e9%80%a3%e6%b1%9f%e7%b8%a3-%e5%8d%97%e7%ab%bf%e9%84%89-%e9%9b%bb%e8%a9%b1-%e5%9c%b0%e5%9d%80.html"
+        }
+      ]
+    }
+  ],
+  "duplicates": [],
+  "anomalies": [],
+  "samples": [
+    {
+      "provider": "family",
+      "generatedStoreId": "family-7ddb4edd3f51",
+      "storeName": "全家大安店",
+      "storeAddress": "台北市大安區大安路一段20號",
+      "phone": "02-27117896",
+      "postalCode": "106",
+      "city": "台北市",
+      "district": "大安區",
+      "source": "twcoupon_family",
+      "sourceUrl": "https://twcoupon.com/brandshoparea-%e5%85%a8%e5%ae%b6%e4%be%bf%e5%88%a9%e5%95%86%e5%ba%97-%e5%8f%b0%e5%8c%97%e5%b8%82-%e5%a4%a7%e5%ae%89%e5%8d%80-%e9%9b%bb%e8%a9%b1-%e5%9c%b0%e5%9d%80.html"
+    },
+    {
+      "provider": "family",
+      "generatedStoreId": "family-86c736ebb837",
+      "storeName": "全家忠愛店",
+      "storeAddress": "台北市大安區仁愛路4段27巷43號",
+      "phone": "02-27314580",
+      "postalCode": "106",
+      "city": "台北市",
+      "district": "大安區",
+      "source": "twcoupon_family",
+      "sourceUrl": "https://twcoupon.com/brandshoparea-%e5%85%a8%e5%ae%b6%e4%be%bf%e5%88%a9%e5%95%86%e5%ba%97-%e5%8f%b0%e5%8c%97%e5%b8%82-%e5%a4%a7%e5%ae%89%e5%8d%80-%e9%9b%bb%e8%a9%b1-%e5%9c%b0%e5%9d%80.html"
+    },
+    {
+      "provider": "family",
+      "generatedStoreId": "family-bfc841e8e997",
+      "storeName": "全家明曜店",
+      "storeAddress": "台北市大安區仁愛路四段151巷34號.36號",
+      "phone": "02-27780326",
+      "postalCode": "106",
+      "city": "台北市",
+      "district": "大安區",
+      "source": "twcoupon_family",
+      "sourceUrl": "https://twcoupon.com/brandshoparea-%e5%85%a8%e5%ae%b6%e4%be%bf%e5%88%a9%e5%95%86%e5%ba%97-%e5%8f%b0%e5%8c%97%e5%b8%82-%e5%a4%a7%e5%ae%89%e5%8d%80-%e9%9b%bb%e8%a9%b1-%e5%9c%b0%e5%9d%80.html"
+    },
+    {
+      "provider": "family",
+      "generatedStoreId": "family-1794256ca276",
+      "storeName": "全家國泰店",
+      "storeAddress": "台北市大安區仁愛路四段266巷15弄10號1樓",
+      "phone": "02-27542056",
+      "postalCode": "106",
+      "city": "台北市",
+      "district": "大安區",
+      "source": "twcoupon_family",
+      "sourceUrl": "https://twcoupon.com/brandshoparea-%e5%85%a8%e5%ae%b6%e4%be%bf%e5%88%a9%e5%95%86%e5%ba%97-%e5%8f%b0%e5%8c%97%e5%b8%82-%e5%a4%a7%e5%ae%89%e5%8d%80-%e9%9b%bb%e8%a9%b1-%e5%9c%b0%e5%9d%80.html"
+    },
+    {
+      "provider": "family",
+      "generatedStoreId": "family-a2f34637586e",
+      "storeName": "全家吉泰店",
+      "storeAddress": "台北市大安區仁愛路四段300巷11之1號",
+      "phone": "02-27001566",
+      "postalCode": "106",
+      "city": "台北市",
+      "district": "大安區",
+      "source": "twcoupon_family",
+      "sourceUrl": "https://twcoupon.com/brandshoparea-%e5%85%a8%e5%ae%b6%e4%be%bf%e5%88%a9%e5%95%86%e5%ba%97-%e5%8f%b0%e5%8c%97%e5%b8%82-%e5%a4%a7%e5%ae%89%e5%8d%80-%e9%9b%bb%e8%a9%b1-%e5%9c%b0%e5%9d%80.html"
+    },
+    {
+      "provider": "family",
+      "generatedStoreId": "family-95fb9dd4ac16",
+      "storeName": "全家仁慈店",
+      "storeAddress": "台北市大安區仁愛路四段48巷6號",
+      "phone": "02-27089002",
+      "postalCode": "106",
+      "city": "台北市",
+      "district": "大安區",
+      "source": "twcoupon_family",
+      "sourceUrl": "https://twcoupon.com/brandshoparea-%e5%85%a8%e5%ae%b6%e4%be%bf%e5%88%a9%e5%95%86%e5%ba%97-%e5%8f%b0%e5%8c%97%e5%b8%82-%e5%a4%a7%e5%ae%89%e5%8d%80-%e9%9b%bb%e8%a9%b1-%e5%9c%b0%e5%9d%80.html"
+    },
+    {
+      "provider": "family",
+      "generatedStoreId": "family-bbc2ac7e0065",
+      "storeName": "全家安賢店",
+      "storeAddress": "台北市大安區四維路170巷4號",
+      "phone": "02-27074252",
+      "postalCode": "106",
+      "city": "台北市",
+      "district": "大安區",
+      "source": "twcoupon_family",
+      "sourceUrl": "https://twcoupon.com/brandshoparea-%e5%85%a8%e5%ae%b6%e4%be%bf%e5%88%a9%e5%95%86%e5%ba%97-%e5%8f%b0%e5%8c%97%e5%b8%82-%e5%a4%a7%e5%ae%89%e5%8d%80-%e9%9b%bb%e8%a9%b1-%e5%9c%b0%e5%9d%80.html"
+    },
+    {
+      "provider": "family",
+      "generatedStoreId": "family-97d4ebf36ce1",
+      "storeName": "全家華視店",
+      "storeAddress": "台北市大安區光復南路116巷26號",
+      "phone": "02-27310238",
+      "postalCode": "106",
+      "city": "台北市",
+      "district": "大安區",
+      "source": "twcoupon_family",
+      "sourceUrl": "https://twcoupon.com/brandshoparea-%e5%85%a8%e5%ae%b6%e4%be%bf%e5%88%a9%e5%95%86%e5%ba%97-%e5%8f%b0%e5%8c%97%e5%b8%82-%e5%a4%a7%e5%ae%89%e5%8d%80-%e9%9b%bb%e8%a9%b1-%e5%9c%b0%e5%9d%80.html"
+    },
+    {
+      "provider": "family",
+      "generatedStoreId": "family-f399e77abae8",
+      "storeName": "全家光新店",
+      "storeAddress": "台北市大安區光復南路418號",
+      "phone": "02-27849586",
+      "postalCode": "106",
+      "city": "台北市",
+      "district": "大安區",
+      "source": "twcoupon_family",
+      "sourceUrl": "https://twcoupon.com/brandshoparea-%e5%85%a8%e5%ae%b6%e4%be%bf%e5%88%a9%e5%95%86%e5%ba%97-%e5%8f%b0%e5%8c%97%e5%b8%82-%e5%a4%a7%e5%ae%89%e5%8d%80-%e9%9b%bb%e8%a9%b1-%e5%9c%b0%e5%9d%80.html"
+    },
+    {
+      "provider": "family",
+      "generatedStoreId": "family-e694a96bbc60",
+      "storeName": "全家敦安店",
+      "storeAddress": "台北市大安區安和路一段112巷27號",
+      "phone": "02-27019097",
+      "postalCode": "106",
+      "city": "台北市",
+      "district": "大安區",
+      "source": "twcoupon_family",
+      "sourceUrl": "https://twcoupon.com/brandshoparea-%e5%85%a8%e5%ae%b6%e4%be%bf%e5%88%a9%e5%95%86%e5%ba%97-%e5%8f%b0%e5%8c%97%e5%b8%82-%e5%a4%a7%e5%ae%89%e5%8d%80-%e9%9b%bb%e8%a9%b1-%e5%9c%b0%e5%9d%80.html"
+    },
+    {
+      "provider": "family",
+      "generatedStoreId": "family-e1a3e116035d",
+      "storeName": "全家板橋振興店",
+      "storeAddress": "新北市板橋區三民路一段31巷89弄3號",
+      "phone": "02-89612085",
+      "postalCode": "220",
+      "city": "新北市",
+      "district": "板橋區",
+      "source": "twcoupon_family",
+      "sourceUrl": "https://twcoupon.com/brandshoparea-%e5%85%a8%e5%ae%b6%e4%be%bf%e5%88%a9%e5%95%86%e5%ba%97-%e6%96%b0%e5%8c%97%e5%b8%82-%e6%9d%bf%e6%a9%8b%e5%8d%80-%e9%9b%bb%e8%a9%b1-%e5%9c%b0%e5%9d%80.html"
+    },
+    {
+      "provider": "family",
+      "generatedStoreId": "family-524a8578b8b3",
+      "storeName": "全家板橋富山店",
+      "storeAddress": "新北市板橋區三民路一段94號,96號",
+      "phone": "02-89641541",
+      "postalCode": "220",
+      "city": "新北市",
+      "district": "板橋區",
+      "source": "twcoupon_family",
+      "sourceUrl": "https://twcoupon.com/brandshoparea-%e5%85%a8%e5%ae%b6%e4%be%bf%e5%88%a9%e5%95%86%e5%ba%97-%e6%96%b0%e5%8c%97%e5%b8%82-%e6%9d%bf%e6%a9%8b%e5%8d%80-%e9%9b%bb%e8%a9%b1-%e5%9c%b0%e5%9d%80.html"
+    },
+    {
+      "provider": "family",
+      "generatedStoreId": "family-d9eaeb6e3757",
+      "storeName": "全家板橋長民店",
+      "storeAddress": "新北市板橋區三民路二段153巷1-3號1樓&B1",
+      "phone": "02-29558365",
+      "postalCode": "220",
+      "city": "新北市",
+      "district": "板橋區",
+      "source": "twcoupon_family",
+      "sourceUrl": "https://twcoupon.com/brandshoparea-%e5%85%a8%e5%ae%b6%e4%be%bf%e5%88%a9%e5%95%86%e5%ba%97-%e6%96%b0%e5%8c%97%e5%b8%82-%e6%9d%bf%e6%a9%8b%e5%8d%80-%e9%9b%bb%e8%a9%b1-%e5%9c%b0%e5%9d%80.html"
+    },
+    {
+      "provider": "family",
+      "generatedStoreId": "family-c9523537c3bd",
+      "storeName": "全家板橋樂福店",
+      "storeAddress": "新北市板橋區三民路二段21巷6號1樓",
+      "phone": "02-29636100",
+      "postalCode": "220",
+      "city": "新北市",
+      "district": "板橋區",
+      "source": "twcoupon_family",
+      "sourceUrl": "https://twcoupon.com/brandshoparea-%e5%85%a8%e5%ae%b6%e4%be%bf%e5%88%a9%e5%95%86%e5%ba%97-%e6%96%b0%e5%8c%97%e5%b8%82-%e6%9d%bf%e6%a9%8b%e5%8d%80-%e9%9b%bb%e8%a9%b1-%e5%9c%b0%e5%9d%80.html"
+    },
+    {
+      "provider": "family",
+      "generatedStoreId": "family-197d1bdcfc05",
+      "storeName": "全家板橋長壽店",
+      "storeAddress": "新北市板橋區三民路二段83號",
+      "phone": "02-29572584",
+      "postalCode": "220",
+      "city": "新北市",
+      "district": "板橋區",
+      "source": "twcoupon_family",
+      "sourceUrl": "https://twcoupon.com/brandshoparea-%e5%85%a8%e5%ae%b6%e4%be%bf%e5%88%a9%e5%95%86%e5%ba%97-%e6%96%b0%e5%8c%97%e5%b8%82-%e6%9d%bf%e6%a9%8b%e5%8d%80-%e9%9b%bb%e8%a9%b1-%e5%9c%b0%e5%9d%80.html"
+    },
+    {
+      "provider": "family",
+      "generatedStoreId": "family-48792c9d8085",
+      "storeName": "全家板橋大仁店",
+      "storeAddress": "新北市板橋區大仁街108之1號",
+      "phone": "02-29660911",
+      "postalCode": "220",
+      "city": "新北市",
+      "district": "板橋區",
+      "source": "twcoupon_family",
+      "sourceUrl": "https://twcoupon.com/brandshoparea-%e5%85%a8%e5%ae%b6%e4%be%bf%e5%88%a9%e5%95%86%e5%ba%97-%e6%96%b0%e5%8c%97%e5%b8%82-%e6%9d%bf%e6%a9%8b%e5%8d%80-%e9%9b%bb%e8%a9%b1-%e5%9c%b0%e5%9d%80.html"
+    },
+    {
+      "provider": "family",
+      "generatedStoreId": "family-a691cfc3f2f1",
+      "storeName": "全家板橋興安店",
+      "storeAddress": "新北市板橋區大觀路二段37巷38號1樓",
+      "phone": "02-29672852",
+      "postalCode": "220",
+      "city": "新北市",
+      "district": "板橋區",
+      "source": "twcoupon_family",
+      "sourceUrl": "https://twcoupon.com/brandshoparea-%e5%85%a8%e5%ae%b6%e4%be%bf%e5%88%a9%e5%95%86%e5%ba%97-%e6%96%b0%e5%8c%97%e5%b8%82-%e6%9d%bf%e6%a9%8b%e5%8d%80-%e9%9b%bb%e8%a9%b1-%e5%9c%b0%e5%9d%80.html"
+    },
+    {
+      "provider": "family",
+      "generatedStoreId": "family-6c8f4d7562ce",
+      "storeName": "全家板橋新光仁店",
+      "storeAddress": "新北市板橋區中山路二段25號1-5樓",
+      "phone": "02-89539335",
+      "postalCode": "220",
+      "city": "新北市",
+      "district": "板橋區",
+      "source": "twcoupon_family",
+      "sourceUrl": "https://twcoupon.com/brandshoparea-%e5%85%a8%e5%ae%b6%e4%be%bf%e5%88%a9%e5%95%86%e5%ba%97-%e6%96%b0%e5%8c%97%e5%b8%82-%e6%9d%bf%e6%a9%8b%e5%8d%80-%e9%9b%bb%e8%a9%b1-%e5%9c%b0%e5%9d%80.html"
+    },
+    {
+      "provider": "family",
+      "generatedStoreId": "family-bad599003570",
+      "storeName": "全家板橋光復店",
+      "storeAddress": "新北市板橋區中山路二段503號1樓",
+      "phone": "02-29643847",
+      "postalCode": "220",
+      "city": "新北市",
+      "district": "板橋區",
+      "source": "twcoupon_family",
+      "sourceUrl": "https://twcoupon.com/brandshoparea-%e5%85%a8%e5%ae%b6%e4%be%bf%e5%88%a9%e5%95%86%e5%ba%97-%e6%96%b0%e5%8c%97%e5%b8%82-%e6%9d%bf%e6%a9%8b%e5%8d%80-%e9%9b%bb%e8%a9%b1-%e5%9c%b0%e5%9d%80.html"
+    },
+    {
+      "provider": "family",
+      "generatedStoreId": "family-4c989d9079fd",
+      "storeName": "全家板橋大庭店",
+      "storeAddress": "新北市板橋區中正路191號",
+      "phone": "02-29670325",
+      "postalCode": "220",
+      "city": "新北市",
+      "district": "板橋區",
+      "source": "twcoupon_family",
+      "sourceUrl": "https://twcoupon.com/brandshoparea-%e5%85%a8%e5%ae%b6%e4%be%bf%e5%88%a9%e5%95%86%e5%ba%97-%e6%96%b0%e5%8c%97%e5%b8%82-%e6%9d%bf%e6%a9%8b%e5%8d%80-%e9%9b%bb%e8%a9%b1-%e5%9c%b0%e5%9d%80.html"
+    }
+  ]
+}
