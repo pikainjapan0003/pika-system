@@ -11,11 +11,11 @@ import {
   clearCvsStore,
   type CvsStore,
 } from "@/lib/cvs711";
-// Official sources: downloaded from each brand's official website
-import sevenElevenLogo from "@/assets/logistics/seven-eleven-logo-official.png"; // https://www.7-11.com.tw/images/logo.png
-import familymartLogo from "@/assets/logistics/familymart-logo-official.png";    // https://www.family.com.tw/Marketing/images/logo_pc_2024.png
-import blackcatLogo from "@/assets/logistics/blackcat-logo-official.svg";        // https://www.t-cat.com.tw/images/logo.svg (台灣官方)
-import postofficeLogo from "@/assets/logistics/postoffice-logo.svg";             // Wikimedia Commons — 藍色圓形「郵」logo (256×256)
+import sevenElevenLogo from "@/assets/logistics/seven-eleven-logo-official.png";
+import familymartLogo from "@/assets/logistics/familymart-logo-official.png";
+import blackcatLogo from "@/assets/logistics/blackcat-logo-official.svg";
+import postofficeLogo from "@/assets/logistics/postoffice-logo.svg";
+import { TAIWAN_ZIPCODE_REGIONS, getDistricts } from "@/lib/taiwanZipcodes";
 
 interface Props {
   shareToken: string;
@@ -41,30 +41,21 @@ type PickupMethod =
   | "郵局"
   | "面交";
 
-function MeetupIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style={{ width: "3rem", height: "3rem" }}>
-      <path d="M4.5 6.375a4.125 4.125 0 1 1 8.25 0 4.125 4.125 0 0 1-8.25 0ZM14.25 8.625a3.375 3.375 0 1 1 6.75 0 3.375 3.375 0 0 1-6.75 0ZM1.5 19.125a7.125 7.125 0 0 1 14.25 0v.003l-.001.119a.75.75 0 0 1-.363.63 13.067 13.067 0 0 1-6.761 1.873c-2.472 0-4.786-.684-6.76-1.873a.75.75 0 0 1-.364-.63l-.001-.122ZM17.25 19.128l-.001.144a2.25 2.25 0 0 1-.233.96 10.088 10.088 0 0 0 5.06-1.01.75.75 0 0 0 .42-.643 4.875 4.875 0 0 0-6.957-4.611 8.586 8.586 0 0 1 1.71 5.157v.003Z" />
-    </svg>
-  );
+function isFamilyMartMethod(m: string) {
+  return m === "全家取貨（先付款）" || m === "全家貨到付款";
+}
+function isHomeDeliveryMethod(m: string) {
+  return m === "黑貓宅急便" || m === "郵局";
+}
+function isMeetupMethod(m: string) {
+  return m === "面交";
 }
 
-interface PickupMethodConfig {
-  label: string;
-  sublabel?: string;
-  logo?: string;
-  icon?: React.ReactNode;
+function getShippingFeeLabel(m: string): string {
+  const fee = getShippingFee(m);
+  if (fee === 0) return "免運";
+  return `+ NT$${fee}`;
 }
-
-const PICKUP_METHOD_CONFIGS: Record<PickupMethod, PickupMethodConfig> = {
-  "7-11 取貨（先付款）": { logo: sevenElevenLogo, label: "7-11 取貨", sublabel: "先付款" },
-  "7-11 貨到付款":       { logo: sevenElevenLogo, label: "7-11 取貨", sublabel: "貨到付款" },
-  "全家取貨（先付款）":  { logo: familymartLogo,  label: "全家取貨", sublabel: "先付款" },
-  "全家貨到付款":        { logo: familymartLogo,  label: "全家取貨", sublabel: "貨到付款" },
-  "黑貓宅急便":          { logo: blackcatLogo,    label: "黑貓宅急便" },
-  "郵局":                { logo: postofficeLogo,  label: "郵局" },
-  "面交":                { icon: <MeetupIcon />,  label: "面交" },
-};
 
 const ALL_PICKUP_METHODS: PickupMethod[] = [
   "7-11 取貨（先付款）",
@@ -75,6 +66,45 @@ const ALL_PICKUP_METHODS: PickupMethod[] = [
   "郵局",
   "面交",
 ];
+
+function PickupMethodLogo({ method }: { method: string }) {
+  if (method === "7-11 取貨（先付款）" || method === "7-11 貨到付款") {
+    return (
+      <div className="w-28 h-12 flex items-center justify-center shrink-0">
+        <img src={sevenElevenLogo} alt="7-ELEVEN" className="max-h-10 w-auto object-contain" />
+      </div>
+    );
+  }
+  if (method === "全家取貨（先付款）" || method === "全家貨到付款") {
+    return (
+      <div className="w-28 h-12 flex items-center justify-center shrink-0">
+        <img src={familymartLogo} alt="FamilyMart" className="max-h-10 w-auto object-contain" />
+      </div>
+    );
+  }
+  if (method === "黑貓宅急便") {
+    return (
+      <div className="w-28 h-12 flex items-center justify-center shrink-0">
+        <img src={blackcatLogo} alt="黑貓" className="max-h-11 w-auto object-contain" />
+      </div>
+    );
+  }
+  if (method === "郵局") {
+    return (
+      <div className="w-16 h-14 flex items-center justify-center shrink-0">
+        <img src={postofficeLogo} alt="郵局" className="w-12 h-12 object-contain" />
+      </div>
+    );
+  }
+  // 面交 — person icon
+  return (
+    <div className="w-14 h-14 flex items-center justify-center shrink-0 text-muted-foreground">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-10 h-10">
+        <path d="M7.5 6.375a4.125 4.125 0 1 1 8.25 0 4.125 4.125 0 0 1-8.25 0ZM1.5 19.125a7.5 7.5 0 0 1 15 0v.003c0 .278-.034.551-.098.815a.75.75 0 0 1-.364.63 13.067 13.067 0 0 1-6.761 1.873c-2.472 0-4.786-.684-6.76-1.873a.75.75 0 0 1-.364-.63A6.75 6.75 0 0 1 1.5 19.128Z" />
+      </svg>
+    </div>
+  );
+}
 
 export default function PublicOrderPage({ shareToken }: Props) {
   const { data: product, isLoading, error } = useGetPublicProduct(shareToken);
@@ -90,6 +120,10 @@ export default function PublicOrderPage({ shareToken }: Props) {
   const [formError, setFormError] = useState("");
   const [copied, setCopied] = useState(false);
   const [cvsStore, setCvsStore] = useState<CvsStore | null>(null);
+  const [shippingCity, setShippingCity] = useState("");
+  const [shippingDistrict, setShippingDistrict] = useState("");
+  const [shippingZip, setShippingZip] = useState("");
+  const [shippingAddressLine, setShippingAddressLine] = useState("");
 
   const specs: Spec[] = (product?.specs as Spec[]) ?? [];
   const orderDeadlineAt = product?.orderDeadlineAt ? new Date(product.orderDeadlineAt as string) : null;
@@ -100,22 +134,17 @@ export default function PublicOrderPage({ shareToken }: Props) {
   const totalDisplay = subtotal + shippingFee;
   const needs711 = isSevenElevenMethod(pickupMethod);
 
-  // Load CVS store from localStorage when page mounts or becomes visible
   useEffect(() => {
     const stored = loadCvsStore(shareToken);
     if (stored) setCvsStore(stored);
   }, [shareToken]);
 
-  // Clear CVS store when switching away from 7-11 methods
   useEffect(() => {
     if (!needs711) {
-      // Don't clear localStorage, just hide from UI
-      // Data stays in localStorage so user can switch back
       if (!isSevenElevenMethod(pickupMethod) && pickupMethod !== "") {
         setCvsStore(null);
       }
     } else {
-      // Reload from localStorage when switching to 7-11
       const stored = loadCvsStore(shareToken);
       if (stored) setCvsStore(stored);
     }
@@ -134,6 +163,21 @@ export default function PublicOrderPage({ shareToken }: Props) {
   const isOrderClosed =
     orderDeadlineAt != null && Number.isFinite(orderDeadlineAt.getTime()) && now >= orderDeadlineAt;
   const remainingMs = orderDeadlineAt ? Math.max(0, orderDeadlineAt.getTime() - now.getTime()) : 0;
+
+  const availableDistricts = getDistricts(shippingCity);
+
+  const handleShippingCityChange = (city: string) => {
+    setShippingCity(city);
+    setShippingDistrict("");
+    setShippingZip("");
+  };
+
+  const handleShippingDistrictChange = (district: string) => {
+    setShippingDistrict(district);
+    const cityData = TAIWAN_ZIPCODE_REGIONS.find((r) => r.city === shippingCity);
+    const distData = cityData?.districts.find((d) => d.district === district);
+    setShippingZip(distData?.zip ?? "");
+  };
 
   const handleSelectStore = () => {
     const basePath = (import.meta as any).env?.BASE_URL?.replace(/\/$/, "") ?? "";
@@ -171,13 +215,24 @@ export default function PublicOrderPage({ shareToken }: Props) {
       return;
     }
 
+    if (isHomeDeliveryMethod(pickupMethod)) {
+      if (!shippingCity || !shippingDistrict || !shippingZip || !shippingAddressLine.trim()) {
+        setFormError("請完整填寫收件地址");
+        return;
+      }
+    }
+
+    const notesPayload = isHomeDeliveryMethod(pickupMethod)
+      ? `${shippingZip} ${shippingCity}${shippingDistrict}${shippingAddressLine.trim()}`
+      : notes.trim() || undefined;
+
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const body: any = {
         buyerName: buyerName.trim(),
         buyerPhone: buyerPhone.trim(),
         pickupMethod,
-        notes: notes.trim() || undefined,
+        notes: notesPayload,
         specValues: Object.keys(specValues).length > 0 ? specValues : undefined,
         quantity,
         shippingFee: needs711 ? shippingFee : getShippingFee(pickupMethod),
@@ -403,88 +458,197 @@ export default function PublicOrderPage({ shareToken }: Props) {
           />
         </div>
 
-        {/* Pickup method */}
+        {/* Pickup method — card button rows with inline detail */}
         <div>
           <label className="block text-sm font-medium text-foreground mb-2">取貨方式 *</label>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-3">
             {ALL_PICKUP_METHODS.map((m) => {
-              const cfg = PICKUP_METHOD_CONFIGS[m];
-              const selected = pickupMethod === m;
+              const isSelected = pickupMethod === m;
               return (
-                <button
-                  key={m}
-                  type="button"
-                  onClick={() => setPickupMethod(m)}
-                  className={`flex flex-col items-center justify-center gap-2 rounded-xl border transition-colors py-4 px-3 ${
-                    selected
-                      ? "bg-primary/10 border-primary ring-2 ring-primary/30"
-                      : "bg-white border-border"
-                  }`}
-                >
-                  {/* Logo / icon area — full card width so wide logos scale up */}
-                  <div className="w-full flex items-center justify-center" style={{ height: "3.5rem" }}>
-                    {cfg.logo ? (
-                      <img
-                        src={cfg.logo}
-                        alt={cfg.label}
-                        className="w-full h-auto object-contain"
-                        style={{ maxHeight: "3.5rem" }}
-                      />
-                    ) : (
-                      <div className={`flex items-center justify-center ${selected ? "text-primary" : "text-muted-foreground"}`}>
-                        {cfg.icon}
+                <div key={m}>
+                  {/* Card row button */}
+                  <button
+                    type="button"
+                    onClick={() => setPickupMethod(m)}
+                    className={`w-full flex items-center justify-between min-h-[96px] px-5 py-4 rounded-2xl border-2 transition-colors text-left shadow-sm ${
+                      isSelected
+                        ? "bg-primary/10 border-primary"
+                        : "bg-white border-border hover:border-primary/40 hover:bg-primary/5"
+                    }`}
+                  >
+                    {/* Left: radio + logo + label */}
+                    <div className="flex items-center gap-4 min-w-0">
+                      {/* Radio circle */}
+                      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+                        isSelected ? "border-primary" : "border-muted-foreground/40"
+                      }`}>
+                        {isSelected && <div className="w-3 h-3 rounded-full bg-primary" />}
                       </div>
-                    )}
-                  </div>
-                  <div className="text-center">
-                    <div className={`text-xs font-semibold leading-tight ${selected ? "text-primary" : "text-foreground"}`}>
-                      {cfg.label}
+                      {/* Logo / icon */}
+                      <PickupMethodLogo method={m} />
+                      <span className={`text-base font-semibold leading-snug whitespace-normal ${isSelected ? "text-primary" : "text-foreground"}`}>
+                        {m}
+                      </span>
                     </div>
-                    {cfg.sublabel && (
-                      <div className={`text-[10px] leading-tight mt-0.5 ${selected ? "text-primary/80" : "text-muted-foreground"}`}>
-                        {cfg.sublabel}
-                      </div>
-                    )}
-                  </div>
-                </button>
+                    {/* Right: shipping fee */}
+                    <span className={`text-base font-semibold shrink-0 ml-3 ${isSelected ? "text-primary" : "text-muted-foreground"}`}>
+                      {getShippingFeeLabel(m)}
+                    </span>
+                  </button>
+
+                  {/* Inline detail card — only when this row is selected */}
+                  {isSelected && (
+                    <div className="mt-2">
+
+                      {/* 7-11 detail */}
+                      {isSevenElevenMethod(m) && (
+                        <div className="bg-white border border-border rounded-2xl px-4 py-3 space-y-2">
+                          {cvsStore ? (
+                            <>
+                              <div className="flex items-start justify-between gap-2">
+                                <span className="text-sm font-semibold text-foreground">{cvsStore.storeName}</span>
+                                <button
+                                  type="button"
+                                  onClick={handleSelectStore}
+                                  className="shrink-0 text-xs font-medium text-primary border border-primary/30 px-2.5 py-1 rounded-lg"
+                                >
+                                  重選
+                                </button>
+                              </div>
+                              <div className="text-xs text-muted-foreground">{cvsStore.storeAddress || "地址未回傳"}</div>
+                              <div className="text-xs text-muted-foreground/70">門市編號：{cvsStore.storeId}</div>
+                              {!cvsStore.storeAddress && (
+                                <div className="text-xs text-amber-600">地址資料未完整回傳，請確認門市資訊</div>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              <p className="text-xs font-semibold text-foreground">7-11 門市</p>
+                              <p className="text-xs text-muted-foreground">請選擇取貨門市</p>
+                              <button
+                                type="button"
+                                onClick={handleSelectStore}
+                                className="w-full h-10 rounded-xl border-2 border-primary bg-primary/5 text-primary text-sm font-semibold"
+                              >
+                                選擇 7-11 門市
+                              </button>
+                              {formError === "請先選擇 7-11 門市" && (
+                                <p className="text-xs text-destructive">請先選擇 7-11 門市</p>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      )}
+
+                      {/* 全家 detail */}
+                      {isFamilyMartMethod(m) && (
+                        <div className="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 space-y-1">
+                          <p className="text-xs font-semibold text-amber-800">全家取貨</p>
+                          <p className="text-xs text-amber-700 leading-relaxed">
+                            全家門市選擇功能尚未開放，請先於備註填寫希望取貨門市，或改選 7-11。
+                          </p>
+                        </div>
+                      )}
+
+                      {/* 黑貓 / 郵局 detail — structured address */}
+                      {isHomeDeliveryMethod(m) && (
+                        <div className="bg-white border border-border rounded-2xl px-4 py-3 space-y-3">
+                          <p className="text-sm font-semibold text-foreground">
+                            {m === "黑貓宅急便" ? "黑貓宅急便收件資訊" : "郵局收件資訊"}
+                          </p>
+                          {/* City */}
+                          <div>
+                            <label className="block text-xs font-medium text-foreground mb-1">縣市 *</label>
+                            <select
+                              value={shippingCity}
+                              onChange={(e) => handleShippingCityChange(e.target.value)}
+                              className={selectClass}
+                            >
+                              <option value="">請選擇縣市</option>
+                              {TAIWAN_ZIPCODE_REGIONS.map((r) => (
+                                <option key={r.city} value={r.city}>{r.city}</option>
+                              ))}
+                            </select>
+                          </div>
+                          {/* District */}
+                          <div>
+                            <label className="block text-xs font-medium text-foreground mb-1">行政區 *</label>
+                            <select
+                              value={shippingDistrict}
+                              onChange={(e) => handleShippingDistrictChange(e.target.value)}
+                              disabled={!shippingCity}
+                              className={`${selectClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                            >
+                              <option value="">請選擇行政區</option>
+                              {availableDistricts.map((d) => (
+                                <option key={d.district} value={d.district}>{d.district}</option>
+                              ))}
+                            </select>
+                          </div>
+                          {/* Zipcode — readonly */}
+                          <div>
+                            <label className="block text-xs font-medium text-foreground mb-1">郵遞區號</label>
+                            <input
+                              type="text"
+                              value={shippingZip}
+                              readOnly
+                              placeholder="選行政區後自動帶入"
+                              className={`${inputClass} bg-muted/30 cursor-default`}
+                            />
+                            <p className="text-[10px] text-muted-foreground mt-0.5">郵遞區號依縣市與行政區自動帶入</p>
+                          </div>
+                          {/* Address line */}
+                          <div>
+                            <label className="block text-xs font-medium text-foreground mb-1">詳細地址 *</label>
+                            <input
+                              type="text"
+                              value={shippingAddressLine}
+                              onChange={(e) => setShippingAddressLine(e.target.value)}
+                              placeholder="路名、門牌號、樓層，例如：信義路三段100號5樓"
+                              className={inputClass}
+                            />
+                          </div>
+                          {formError === "請完整填寫收件地址" && (
+                            <p className="text-xs text-destructive">請完整填寫收件地址</p>
+                          )}
+                        </div>
+                      )}
+
+                      {/* 面交 detail */}
+                      {isMeetupMethod(m) && (
+                        <div className="bg-white border border-border rounded-2xl px-4 py-3 space-y-2">
+                          <p className="text-xs font-semibold text-muted-foreground">面交資訊（選填）</p>
+                          <textarea
+                            value={notes}
+                            onChange={(e) => setNotes(e.target.value)}
+                            placeholder="請填寫希望面交的地點與可面交時間，例如：台北車站一號出口 / 週末下午"
+                            rows={3}
+                            className={`${inputClass} h-auto resize-none py-3`}
+                          />
+                        </div>
+                      )}
+
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>
         </div>
 
-        {/* 7-11 store selector */}
-        {needs711 && (
-          <div className="space-y-2">
-            {cvsStore ? (
-              <CvsStoreCard store={cvsStore} onReselect={handleSelectStore} />
-            ) : (
-              <div className="space-y-2">
-                <button
-                  type="button"
-                  onClick={handleSelectStore}
-                  className="w-full h-11 rounded-xl border-2 border-primary bg-primary/5 text-primary text-sm font-semibold"
-                >
-                  選擇 7-11 門市
-                </button>
-                {formError === "請先選擇 7-11 門市" && (
-                  <p className="text-xs text-destructive">請先選擇 7-11 門市</p>
-                )}
-              </div>
-            )}
+        {/* General notes — only for 7-11 / 全家 / no method */}
+        {!isHomeDeliveryMethod(pickupMethod) && !isMeetupMethod(pickupMethod) && (
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1.5">備註（選填）</label>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="有任何特殊需求請填寫..."
+              rows={3}
+              className={`${inputClass} h-auto resize-none py-3`}
+            />
           </div>
         )}
-
-        {/* Notes */}
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">備註（選填）</label>
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="有任何特殊需求請填寫..."
-            rows={3}
-            className={`${inputClass} h-auto resize-none py-3`}
-          />
-        </div>
 
         {/* Price breakdown */}
         {pickupMethod && (
@@ -504,7 +668,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
           </div>
         )}
 
-        {formError && formError !== "請先選擇 7-11 門市" && (
+        {formError && formError !== "請先選擇 7-11 門市" && formError !== "請完整填寫收件地址" && (
           <div className="bg-destructive/10 text-destructive text-sm px-4 py-3 rounded-xl">
             {formError}
           </div>
@@ -526,30 +690,6 @@ export default function PublicOrderPage({ shareToken }: Props) {
   );
 }
 
-function CvsStoreCard({ store, onReselect }: { store: CvsStore; onReselect: () => void }) {
-  return (
-    <div className="bg-white rounded-2xl border border-primary/30 px-4 py-3 space-y-1.5">
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <div className="text-sm font-semibold text-foreground">7-11 {store.storeName}</div>
-          <div className="text-xs text-muted-foreground mt-0.5">{store.storeAddress || "地址未回傳"}</div>
-          <div className="text-xs text-muted-foreground/70 mt-0.5">門市編號：{store.storeId}</div>
-          {!store.storeAddress && (
-            <div className="text-xs text-amber-600 mt-1">地址資料未完整回傳，請確認門市資訊</div>
-          )}
-        </div>
-        <button
-          type="button"
-          onClick={onReselect}
-          className="shrink-0 text-xs font-medium text-primary border border-primary/30 px-2.5 py-1 rounded-lg"
-        >
-          重選門市
-        </button>
-      </div>
-    </div>
-  );
-}
-
 function SummaryRow({ label, value, bold, mono }: { label: string; value: string; bold?: boolean; mono?: boolean }) {
   return (
     <div className="flex items-center justify-between text-sm gap-2">
@@ -560,3 +700,4 @@ function SummaryRow({ label, value, bold, mono }: { label: string; value: string
 }
 
 const inputClass = "w-full h-12 px-4 rounded-xl border border-input bg-white text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 text-base";
+const selectClass = "w-full h-12 px-4 rounded-xl border border-input bg-white text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 text-base";
