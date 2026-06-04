@@ -3,7 +3,49 @@ import { eq, and, or, ilike, sql } from "drizzle-orm";
 import { db, ordersTable, cvsStoresTable } from "@workspace/db";
 import { requireAuth, verifyStoreOwner } from "../middlewares/auth";
 
+const CITY_ORDER = [
+  "台北市", "新北市", "基隆市", "桃園市", "新竹市", "新竹縣",
+  "苗栗縣", "台中市", "彰化縣", "南投縣", "雲林縣",
+  "嘉義市", "嘉義縣", "台南市", "高雄市", "屏東縣",
+  "宜蘭縣", "花蓮縣", "台東縣", "澎湖縣", "金門縣", "連江縣",
+];
+
 const router = Router();
+
+/** GET /cvs/regions — return available cities and their districts */
+router.get("/cvs/regions", async (req, res) => {
+  const provider = typeof req.query.provider === "string" ? req.query.provider : "seven";
+
+  try {
+    const rows = await db
+      .selectDistinct({ city: cvsStoresTable.city, district: cvsStoresTable.district })
+      .from(cvsStoresTable)
+      .where(and(eq(cvsStoresTable.provider, provider), eq(cvsStoresTable.isActive, true)))
+      .orderBy(cvsStoresTable.district);
+
+    const cityMap = new Map<string, string[]>();
+    for (const row of rows) {
+      if (!row.city) continue;
+      if (!cityMap.has(row.city)) cityMap.set(row.city, []);
+      if (row.district) cityMap.get(row.city)!.push(row.district);
+    }
+
+    const cities = [...cityMap.entries()]
+      .sort(([a], [b]) => {
+        const ai = CITY_ORDER.indexOf(a);
+        const bi = CITY_ORDER.indexOf(b);
+        if (ai === -1 && bi === -1) return a.localeCompare(b, "zh");
+        if (ai === -1) return 1;
+        if (bi === -1) return -1;
+        return ai - bi;
+      })
+      .map(([city, districts]) => ({ city, districts }));
+
+    return res.json({ cities });
+  } catch {
+    return res.status(500).json({ cities: [], error: "地區查詢暫時無法使用" });
+  }
+});
 
 /** GET /cvs/stores — search CVS stores */
 router.get("/cvs/stores", async (req, res) => {

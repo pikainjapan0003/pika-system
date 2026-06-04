@@ -16,7 +16,10 @@ interface CvsStoreResult {
   sourceUpdatedAt: string | null;
 }
 
-const basePath = (import.meta as any).env?.BASE_URL?.replace(/\/$/, "") ?? "";
+interface RegionCity {
+  city: string;
+  districts: string[];
+}
 
 export default function Cvs711SelectPage() {
   const rawSearch = useSearch();
@@ -30,6 +33,9 @@ export default function Cvs711SelectPage() {
   const shareToken = params.get("shareToken");
 
   const [query, setQuery] = useState("");
+  const [selectedCity, setSelectedCity] = useState("");
+  const [selectedDistrict, setSelectedDistrict] = useState("");
+  const [regions, setRegions] = useState<RegionCity[]>([]);
   const [results, setResults] = useState<CvsStoreResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
@@ -38,20 +44,27 @@ export default function Cvs711SelectPage() {
   const [selectError, setSelectError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Load initial results (first 20 stores)
   useEffect(() => {
-    doSearch("");
-    inputRef.current?.focus();
-  // run once on mount
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    fetch("/api/cvs/regions?provider=seven")
+      .then((r) => r.json())
+      .then((data) => setRegions(data.cities ?? []))
+      .catch(() => {});
   }, []);
 
-  async function doSearch(q: string) {
+  useEffect(() => {
+    doSearch("", "", "");
+    inputRef.current?.focus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function doSearch(q: string, city: string, district: string) {
     setIsLoading(true);
     setApiError(false);
     setHasSearched(true);
     try {
       const qs = new URLSearchParams({ provider: "seven", q, limit: "20" });
+      if (city) qs.set("city", city);
+      if (district) qs.set("district", district);
       const res = await fetch(`/api/cvs/stores?${qs}`);
       if (!res.ok) {
         setApiError(true);
@@ -70,7 +83,24 @@ export default function Cvs711SelectPage() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    doSearch(query.trim());
+    doSearch(query.trim(), selectedCity, selectedDistrict);
+  };
+
+  const handleCitySelect = (city: string) => {
+    setSelectedCity(city);
+    setSelectedDistrict("");
+    doSearch(query, city, "");
+  };
+
+  const handleDistrictSelect = (district: string) => {
+    setSelectedDistrict(district);
+    doSearch(query, selectedCity, district);
+  };
+
+  const handleClearFilter = () => {
+    setSelectedCity("");
+    setSelectedDistrict("");
+    doSearch(query, "", "");
   };
 
   const handleUseTestStore = () => {
@@ -101,7 +131,6 @@ export default function Cvs711SelectPage() {
     };
 
     if (source === "admin" && orderId) {
-      // Admin flow: call PATCH /api/orders/:orderId/cvs
       try {
         const token = await getToken();
         const res = await fetch(`/api/orders/${orderId}/cvs`, {
@@ -134,12 +163,13 @@ export default function Cvs711SelectPage() {
 
       setLocation(returnTo, { replace: true });
     } else {
-      // Customer flow: save to localStorage and return
       const storageKey = shareToken ?? "pending";
       saveCvsStore(storageKey, storeData);
       setLocation(returnTo, { replace: true });
     }
   };
+
+  const currentDistricts = regions.find((r) => r.city === selectedCity)?.districts ?? [];
 
   const formatUpdatedAt = (iso: string | null): string => {
     if (!iso) return "未記錄";
@@ -151,7 +181,7 @@ export default function Cvs711SelectPage() {
   return (
     <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-8">
       {/* Header */}
-      <div className="bg-white border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
+      <div className="bg-white border-b border-border px-5 pt-10 pb-3 sticky top-0 z-10">
         <div className="flex items-center gap-3 mb-3">
           <button
             type="button"
@@ -164,7 +194,7 @@ export default function Cvs711SelectPage() {
         </div>
 
         {/* Search form */}
-        <form onSubmit={handleSearch} className="flex gap-2">
+        <form onSubmit={handleSearch} className="flex gap-2 mb-2.5">
           <input
             ref={inputRef}
             type="text"
@@ -181,10 +211,41 @@ export default function Cvs711SelectPage() {
             {isLoading ? "…" : "搜尋"}
           </button>
         </form>
+
+        {/* City filter */}
+        {regions.length > 0 && (
+          <div className="flex gap-1.5 overflow-x-auto pb-1.5 no-scrollbar">
+            <FilterChip label="全部" active={!selectedCity} onClick={handleClearFilter} />
+            {regions.map((r) => (
+              <FilterChip
+                key={r.city}
+                label={r.city}
+                active={selectedCity === r.city}
+                onClick={() => handleCitySelect(r.city)}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* District filter — shown only when a city is selected */}
+        {selectedCity && currentDistricts.length > 0 && (
+          <div className="flex gap-1.5 overflow-x-auto pt-1 pb-1.5 no-scrollbar">
+            <FilterChip label="全區" active={!selectedDistrict} onClick={() => handleDistrictSelect("")} small />
+            {currentDistricts.map((d) => (
+              <FilterChip
+                key={d}
+                label={d}
+                active={selectedDistrict === d}
+                onClick={() => handleDistrictSelect(d)}
+                small
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="px-5 py-4 space-y-3">
-        {/* Error */}
+        {/* Select error */}
         {selectError && (
           <div className="bg-destructive/10 text-destructive text-sm px-4 py-3 rounded-xl">
             {selectError}
@@ -216,7 +277,12 @@ export default function Cvs711SelectPage() {
         ) : (
           <div className="space-y-2">
             {results.length > 0 && (
-              <p className="text-xs text-muted-foreground px-1">找到 {results.length} 間門市</p>
+              <p className="text-xs text-muted-foreground px-1">
+                {selectedCity
+                  ? `${selectedCity}${selectedDistrict ? ` · ${selectedDistrict}` : ""} · `
+                  : ""}
+                找到 {results.length} 間門市
+              </p>
             )}
             {results.map((store) => (
               <StoreCard
@@ -229,9 +295,36 @@ export default function Cvs711SelectPage() {
             ))}
           </div>
         )}
-
       </div>
     </div>
+  );
+}
+
+function FilterChip({
+  label,
+  active,
+  onClick,
+  small = false,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+  small?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={[
+        "flex-none rounded-full border text-xs font-medium whitespace-nowrap transition-colors",
+        small ? "px-2.5 py-0.5" : "px-3 py-1",
+        active
+          ? "bg-primary border-primary text-white"
+          : "bg-white border-border text-muted-foreground hover:border-primary/40 hover:text-foreground",
+      ].join(" ")}
+    >
+      {label}
+    </button>
   );
 }
 
