@@ -1,0 +1,1028 @@
+{
+  "runAt": "2026-06-04T07:12:41.670Z",
+  "dbTotalBefore": 4245,
+  "regions": [
+    {
+      "region": "連江縣南竿鄉",
+      "city": "連江縣",
+      "district": "南竿鄉",
+      "dbExisting": 4,
+      "tests": [
+        {
+          "label": "StoreName=短名",
+          "payload": {
+            "StoreName": "南竿"
+          },
+          "status": "連線成功",
+          "total": 1,
+          "inDb": 1,
+          "newCount": 0,
+          "crossRegion": 0,
+          "hasLimit": false,
+          "error": null,
+          "top5": [
+            {
+              "poiId": "950376",
+              "name": "南竿",
+              "address": "連江縣南竿鄉清水村100號",
+              "inDb": true
+            }
+          ]
+        },
+        {
+          "label": "StoreName=縣市+區名",
+          "payload": {
+            "StoreName": "連江"
+          },
+          "status": "連線成功",
+          "total": 0,
+          "inDb": 0,
+          "newCount": 0,
+          "crossRegion": 0,
+          "hasLimit": false,
+          "error": null,
+          "top5": []
+        },
+        {
+          "label": "address=縣市+行政區",
+          "payload": {
+            "address": "連江縣南竿"
+          },
+          "status": "(no status)",
+          "total": 0,
+          "inDb": 0,
+          "newCount": 0,
+          "crossRegion": 0,
+          "hasLimit": false,
+          "error": null,
+          "top5": []
+        },
+        {
+          "label": "address=縣市全稱",
+          "payload": {
+            "address": "連江縣"
+          },
+          "status": "(no status)",
+          "total": 0,
+          "inDb": 0,
+          "newCount": 0,
+          "crossRegion": 0,
+          "hasLimit": false,
+          "error": null,
+          "top5": []
+        },
+        {
+          "label": "city=縣市",
+          "payload": {
+            "city": "連江縣"
+          },
+          "status": "(no status)",
+          "total": 0,
+          "inDb": 0,
+          "newCount": 0,
+          "crossRegion": 0,
+          "hasLimit": false,
+          "error": null,
+          "top5": []
+        },
+        {
+          "label": "city+town=縣市+區",
+          "payload": {
+            "city": "連江縣",
+            "town": "南竿鄉"
+          },
+          "status": "連線成功",
+          "total": 6,
+          "inDb": 4,
+          "newCount": 2,
+          "crossRegion": 0,
+          "hasLimit": false,
+          "error": null,
+          "top5": [
+            {
+              "poiId": "206617",
+              "name": "山隴",
+              "address": "連江縣南竿鄉介壽村232號233號284號",
+              "inDb": false
+            },
+            {
+              "poiId": "282149",
+              "name": "中隴",
+              "address": "連江縣南竿鄉介壽村3鄰48-2號",
+              "inDb": true
+            },
+            {
+              "poiId": "950376",
+              "name": "南竿",
+              "address": "連江縣南竿鄉清水村100號",
+              "inDb": true
+            },
+            {
+              "poiId": "262824",
+              "name": "馬祖",
+              "address": "連江縣南竿鄉介壽村215號1樓",
+              "inDb": true
+            },
+            {
+              "poiId": "952512",
+              "name": "馬港",
+              "address": "連江縣南竿鄉馬祖村中山路58號60號",
+              "inDb": true
+            }
+          ]
+        },
+        {
+          "label": "city+town=縣市+區短",
+          "payload": {
+            "city": "連江縣",
+            "town": "南竿"
+          },
+          "status": "連線成功",
+          "total": 0,
+          "inDb": 0,
+          "newCount": 0,
+          "crossRegion": 0,
+          "hasLimit": false,
+          "error": null,
+          "top5": []
+        },
+        {
+          "label": "roadname=行政區",
+          "payload": {
+            "roadname": "南竿鄉"
+          },
+          "status": "(no status)",
+          "total": 0,
+          "inDb": 0,
+          "newCount": 0,
+          "crossRegion": 0,
+          "hasLimit": false,
+          "error": null,
+          "top5": []
+        },
+        {
+          "label": "leftMenuChecked=1",
+          "payload": {
+            "StoreName": "南竿",
+            "leftMenuChecked": "1"
+          },
+          "status": "連線成功",
+          "total": 0,
+          "inDb": 0,
+          "newCount": 0,
+          "crossRegion": 0,
+          "hasLimit": false,
+          "error": null,
+          "top5": []
+        },
+        {
+          "label": "SpecialStore_Kind=空",
+          "payload": {
+            "StoreName": "南竿",
+            "SpecialStore_Kind": ""
+          },
+          "status": "連線成功",
+          "total": 1,
+          "inDb": 1,
+          "newCount": 0,
+          "crossRegion": 0,
+          "hasLimit": false,
+          "error": null,
+          "top5": [
+            {
+              "poiId": "950376",
+              "name": "南竿",
+              "address": "連江縣南竿鄉清水村100號",
+              "inDb": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "region": "宜蘭縣羅東鎮",
+      "city": "宜蘭縣",
+      "district": "羅東鎮",
+      "dbExisting": 12,
+      "tests": [
+        {
+          "label": "StoreName=短名",
+          "payload": {
+            "StoreName": "羅東"
+          },
+          "status": "連線成功",
+          "total": 1,
+          "inDb": 1,
+          "newCount": 0,
+          "crossRegion": 0,
+          "hasLimit": false,
+          "error": null,
+          "top5": [
+            {
+              "poiId": "164984",
+              "name": "羅東",
+              "address": "宜蘭縣羅東鎮公正路197號1樓",
+              "inDb": true
+            }
+          ]
+        },
+        {
+          "label": "StoreName=縣市+區名",
+          "payload": {
+            "StoreName": "宜蘭羅東"
+          },
+          "status": "連線成功",
+          "total": 0,
+          "inDb": 0,
+          "newCount": 0,
+          "crossRegion": 0,
+          "hasLimit": false,
+          "error": null,
+          "top5": []
+        },
+        {
+          "label": "address=縣市+行政區",
+          "payload": {
+            "address": "宜蘭縣羅東"
+          },
+          "status": "(no status)",
+          "total": 0,
+          "inDb": 0,
+          "newCount": 0,
+          "crossRegion": 0,
+          "hasLimit": false,
+          "error": null,
+          "top5": []
+        },
+        {
+          "label": "address=縣市全稱",
+          "payload": {
+            "address": "宜蘭縣"
+          },
+          "status": "(no status)",
+          "total": 0,
+          "inDb": 0,
+          "newCount": 0,
+          "crossRegion": 0,
+          "hasLimit": false,
+          "error": null,
+          "top5": []
+        },
+        {
+          "label": "city=縣市",
+          "payload": {
+            "city": "宜蘭縣"
+          },
+          "status": "(no status)",
+          "total": 0,
+          "inDb": 0,
+          "newCount": 0,
+          "crossRegion": 0,
+          "hasLimit": false,
+          "error": null,
+          "top5": []
+        },
+        {
+          "label": "city+town=縣市+區",
+          "payload": {
+            "city": "宜蘭縣",
+            "town": "羅東鎮"
+          },
+          "status": "連線成功",
+          "total": 20,
+          "inDb": 12,
+          "newCount": 8,
+          "crossRegion": 0,
+          "hasLimit": false,
+          "error": null,
+          "top5": [
+            {
+              "poiId": "269250",
+              "name": "永鑫",
+              "address": "宜蘭縣羅東鎮中正北路171.171-1號1樓",
+              "inDb": false
+            },
+            {
+              "poiId": "236722",
+              "name": "利陶",
+              "address": "宜蘭縣羅東鎮興東南路188號",
+              "inDb": true
+            },
+            {
+              "poiId": "269744",
+              "name": "利羅莊",
+              "address": "宜蘭縣羅東鎮天祥路95.97號",
+              "inDb": false
+            },
+            {
+              "poiId": "259666",
+              "name": "宏大",
+              "address": "宜蘭縣羅東鎮羅榮路2號",
+              "inDb": false
+            },
+            {
+              "poiId": "977418",
+              "name": "宜泰",
+              "address": "宜蘭縣羅東鎮公園路100號1樓",
+              "inDb": true
+            }
+          ]
+        },
+        {
+          "label": "city+town=縣市+區短",
+          "payload": {
+            "city": "宜蘭縣",
+            "town": "羅東"
+          },
+          "status": "連線成功",
+          "total": 0,
+          "inDb": 0,
+          "newCount": 0,
+          "crossRegion": 0,
+          "hasLimit": false,
+          "error": null,
+          "top5": []
+        },
+        {
+          "label": "roadname=行政區",
+          "payload": {
+            "roadname": "羅東鎮"
+          },
+          "status": "(no status)",
+          "total": 0,
+          "inDb": 0,
+          "newCount": 0,
+          "crossRegion": 0,
+          "hasLimit": false,
+          "error": null,
+          "top5": []
+        },
+        {
+          "label": "leftMenuChecked=1",
+          "payload": {
+            "StoreName": "羅東",
+            "leftMenuChecked": "1"
+          },
+          "status": "連線成功",
+          "total": 0,
+          "inDb": 0,
+          "newCount": 0,
+          "crossRegion": 0,
+          "hasLimit": false,
+          "error": null,
+          "top5": []
+        },
+        {
+          "label": "SpecialStore_Kind=空",
+          "payload": {
+            "StoreName": "羅東",
+            "SpecialStore_Kind": ""
+          },
+          "status": "連線成功",
+          "total": 1,
+          "inDb": 1,
+          "newCount": 0,
+          "crossRegion": 0,
+          "hasLimit": false,
+          "error": null,
+          "top5": [
+            {
+              "poiId": "164984",
+              "name": "羅東",
+              "address": "宜蘭縣羅東鎮公正路197號1樓",
+              "inDb": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "region": "新北市板橋區",
+      "city": "新北市",
+      "district": "板橋區",
+      "dbExisting": 82,
+      "tests": [
+        {
+          "label": "StoreName=短名",
+          "payload": {
+            "StoreName": "板橋"
+          },
+          "status": "連線成功",
+          "total": 5,
+          "inDb": 5,
+          "newCount": 0,
+          "crossRegion": 0,
+          "hasLimit": false,
+          "error": null,
+          "top5": [
+            {
+              "poiId": "278335",
+              "name": "板橋中正",
+              "address": "新北市板橋區中正路379巷3弄1號3號",
+              "inDb": true
+            },
+            {
+              "poiId": "257475",
+              "name": "板橋金門",
+              "address": "新北市板橋區金門街415號417號419號1樓",
+              "inDb": true
+            },
+            {
+              "poiId": "285148",
+              "name": "板橋華江",
+              "address": "新北市板橋區華江九路58號60號",
+              "inDb": true
+            },
+            {
+              "poiId": "281504",
+              "name": "板橋樂群",
+              "address": "新北市板橋區樂群路152號156號",
+              "inDb": true
+            },
+            {
+              "poiId": "286325",
+              "name": "新板橋",
+              "address": "新北市板橋區文化路一段135號",
+              "inDb": true
+            }
+          ]
+        },
+        {
+          "label": "StoreName=縣市+區名",
+          "payload": {
+            "StoreName": "新北板橋"
+          },
+          "status": "連線成功",
+          "total": 0,
+          "inDb": 0,
+          "newCount": 0,
+          "crossRegion": 0,
+          "hasLimit": false,
+          "error": null,
+          "top5": []
+        },
+        {
+          "label": "address=縣市+行政區",
+          "payload": {
+            "address": "新北市板橋"
+          },
+          "status": "(no status)",
+          "total": 0,
+          "inDb": 0,
+          "newCount": 0,
+          "crossRegion": 0,
+          "hasLimit": false,
+          "error": null,
+          "top5": []
+        },
+        {
+          "label": "address=縣市全稱",
+          "payload": {
+            "address": "新北市"
+          },
+          "status": "(no status)",
+          "total": 0,
+          "inDb": 0,
+          "newCount": 0,
+          "crossRegion": 0,
+          "hasLimit": false,
+          "error": null,
+          "top5": []
+        },
+        {
+          "label": "city=縣市",
+          "payload": {
+            "city": "新北市"
+          },
+          "status": "(no status)",
+          "total": 0,
+          "inDb": 0,
+          "newCount": 0,
+          "crossRegion": 0,
+          "hasLimit": false,
+          "error": null,
+          "top5": []
+        },
+        {
+          "label": "city+town=縣市+區",
+          "payload": {
+            "city": "新北市",
+            "town": "板橋區"
+          },
+          "status": "連線成功",
+          "total": 154,
+          "inDb": 82,
+          "newCount": 72,
+          "crossRegion": 0,
+          "hasLimit": false,
+          "error": null,
+          "top5": [
+            {
+              "poiId": "211413",
+              "name": "丁煌",
+              "address": "新北市板橋區文化路二段227號、229號1樓",
+              "inDb": false
+            },
+            {
+              "poiId": "872441",
+              "name": "千群",
+              "address": "新北市板橋區東丘里民享街53號",
+              "inDb": true
+            },
+            {
+              "poiId": "243937",
+              "name": "大合宜",
+              "address": "新北市板橋區合宜路173號1樓",
+              "inDb": false
+            },
+            {
+              "poiId": "216304",
+              "name": "大庭",
+              "address": "新北市板橋區國光里6鄰國光路65號1樓",
+              "inDb": true
+            },
+            {
+              "poiId": "287971",
+              "name": "大漢",
+              "address": "新北市板橋區長江路一段375號",
+              "inDb": false
+            }
+          ]
+        },
+        {
+          "label": "city+town=縣市+區短",
+          "payload": {
+            "city": "新北市",
+            "town": "板橋"
+          },
+          "status": "連線成功",
+          "total": 0,
+          "inDb": 0,
+          "newCount": 0,
+          "crossRegion": 0,
+          "hasLimit": false,
+          "error": null,
+          "top5": []
+        },
+        {
+          "label": "roadname=行政區",
+          "payload": {
+            "roadname": "板橋區"
+          },
+          "status": "(no status)",
+          "total": 0,
+          "inDb": 0,
+          "newCount": 0,
+          "crossRegion": 0,
+          "hasLimit": false,
+          "error": null,
+          "top5": []
+        },
+        {
+          "label": "leftMenuChecked=1",
+          "payload": {
+            "StoreName": "板橋",
+            "leftMenuChecked": "1"
+          },
+          "status": "連線成功",
+          "total": 0,
+          "inDb": 0,
+          "newCount": 0,
+          "crossRegion": 0,
+          "hasLimit": false,
+          "error": null,
+          "top5": []
+        },
+        {
+          "label": "SpecialStore_Kind=空",
+          "payload": {
+            "StoreName": "板橋",
+            "SpecialStore_Kind": ""
+          },
+          "status": "連線成功",
+          "total": 5,
+          "inDb": 5,
+          "newCount": 0,
+          "crossRegion": 0,
+          "hasLimit": false,
+          "error": null,
+          "top5": [
+            {
+              "poiId": "278335",
+              "name": "板橋中正",
+              "address": "新北市板橋區中正路379巷3弄1號3號",
+              "inDb": true
+            },
+            {
+              "poiId": "257475",
+              "name": "板橋金門",
+              "address": "新北市板橋區金門街415號417號419號1樓",
+              "inDb": true
+            },
+            {
+              "poiId": "285148",
+              "name": "板橋華江",
+              "address": "新北市板橋區華江九路58號60號",
+              "inDb": true
+            },
+            {
+              "poiId": "281504",
+              "name": "板橋樂群",
+              "address": "新北市板橋區樂群路152號156號",
+              "inDb": true
+            },
+            {
+              "poiId": "286325",
+              "name": "新板橋",
+              "address": "新北市板橋區文化路一段135號",
+              "inDb": true
+            }
+          ]
+        },
+        {
+          "label": "ID=已知POIID(懷民)",
+          "payload": {
+            "ID": "278335"
+          },
+          "status": "連線成功",
+          "total": 1,
+          "inDb": 1,
+          "newCount": 0,
+          "crossRegion": 0,
+          "hasLimit": false,
+          "error": null,
+          "top5": [
+            {
+              "poiId": "278335",
+              "name": "板橋中正",
+              "address": "新北市板橋區中正路379巷3弄1號3號",
+              "inDb": true
+            }
+          ]
+        },
+        {
+          "label": "POIID=已知POIID",
+          "payload": {
+            "POIID": "278335"
+          },
+          "status": "(no status)",
+          "total": 0,
+          "inDb": 0,
+          "newCount": 0,
+          "crossRegion": 0,
+          "hasLimit": false,
+          "error": null,
+          "top5": []
+        }
+      ]
+    },
+    {
+      "region": "台南市新市區",
+      "city": "台南市",
+      "district": "新市區",
+      "dbExisting": 17,
+      "tests": [
+        {
+          "label": "StoreName=短名",
+          "payload": {
+            "StoreName": "新市"
+          },
+          "status": "連線成功",
+          "total": 4,
+          "inDb": 2,
+          "newCount": 2,
+          "crossRegion": 2,
+          "hasLimit": false,
+          "error": null,
+          "top5": [
+            {
+              "poiId": "199027",
+              "name": "新市",
+              "address": "台南市新市區華興街48號1樓",
+              "inDb": true
+            },
+            {
+              "poiId": "163523",
+              "name": "新市政",
+              "address": "台中市西屯區臺灣大道三段99號1樓",
+              "inDb": false
+            },
+            {
+              "poiId": "243823",
+              "name": "新市廠",
+              "address": "台南市新市區大營里7號1樓",
+              "inDb": true
+            },
+            {
+              "poiId": "287498",
+              "name": "新市鎮",
+              "address": "新北市淡水區新市一路三段18號1樓",
+              "inDb": false
+            }
+          ]
+        },
+        {
+          "label": "StoreName=縣市+區名",
+          "payload": {
+            "StoreName": "台南新市"
+          },
+          "status": "連線成功",
+          "total": 0,
+          "inDb": 0,
+          "newCount": 0,
+          "crossRegion": 0,
+          "hasLimit": false,
+          "error": null,
+          "top5": []
+        },
+        {
+          "label": "address=縣市+行政區",
+          "payload": {
+            "address": "台南市新市"
+          },
+          "status": "(no status)",
+          "total": 0,
+          "inDb": 0,
+          "newCount": 0,
+          "crossRegion": 0,
+          "hasLimit": false,
+          "error": null,
+          "top5": []
+        },
+        {
+          "label": "address=縣市全稱",
+          "payload": {
+            "address": "台南市"
+          },
+          "status": "(no status)",
+          "total": 0,
+          "inDb": 0,
+          "newCount": 0,
+          "crossRegion": 0,
+          "hasLimit": false,
+          "error": null,
+          "top5": []
+        },
+        {
+          "label": "city=縣市",
+          "payload": {
+            "city": "台南市"
+          },
+          "status": "(no status)",
+          "total": 0,
+          "inDb": 0,
+          "newCount": 0,
+          "crossRegion": 0,
+          "hasLimit": false,
+          "error": null,
+          "top5": []
+        },
+        {
+          "label": "city+town=縣市+區",
+          "payload": {
+            "city": "台南市",
+            "town": "新市區"
+          },
+          "status": "連線成功",
+          "total": 32,
+          "inDb": 17,
+          "newCount": 15,
+          "crossRegion": 0,
+          "hasLimit": false,
+          "error": null,
+          "top5": [
+            {
+              "poiId": "268512",
+              "name": "AP8",
+              "address": "台南市新市區豐華里豐華168號1樓",
+              "inDb": false
+            },
+            {
+              "poiId": "181277",
+              "name": "三舍",
+              "address": "台南市新市區三舍里復興路392號1樓",
+              "inDb": false
+            },
+            {
+              "poiId": "151977",
+              "name": "大營",
+              "address": "台南市新市區大營里136-1號",
+              "inDb": true
+            },
+            {
+              "poiId": "236412",
+              "name": "永佳",
+              "address": "台南市新市區復興路173.175號",
+              "inDb": false
+            },
+            {
+              "poiId": "990075",
+              "name": "東科",
+              "address": "台南市新市區三舍里大順三路125號1樓",
+              "inDb": true
+            }
+          ]
+        },
+        {
+          "label": "city+town=縣市+區短",
+          "payload": {
+            "city": "台南市",
+            "town": "新市"
+          },
+          "status": "連線成功",
+          "total": 0,
+          "inDb": 0,
+          "newCount": 0,
+          "crossRegion": 0,
+          "hasLimit": false,
+          "error": null,
+          "top5": []
+        },
+        {
+          "label": "roadname=行政區",
+          "payload": {
+            "roadname": "新市區"
+          },
+          "status": "(no status)",
+          "total": 0,
+          "inDb": 0,
+          "newCount": 0,
+          "crossRegion": 0,
+          "hasLimit": false,
+          "error": null,
+          "top5": []
+        },
+        {
+          "label": "leftMenuChecked=1",
+          "payload": {
+            "StoreName": "新市",
+            "leftMenuChecked": "1"
+          },
+          "status": "連線成功",
+          "total": 0,
+          "inDb": 0,
+          "newCount": 0,
+          "crossRegion": 0,
+          "hasLimit": false,
+          "error": null,
+          "top5": []
+        },
+        {
+          "label": "SpecialStore_Kind=空",
+          "payload": {
+            "StoreName": "新市",
+            "SpecialStore_Kind": ""
+          },
+          "status": "連線成功",
+          "total": 4,
+          "inDb": 2,
+          "newCount": 2,
+          "crossRegion": 2,
+          "hasLimit": false,
+          "error": null,
+          "top5": [
+            {
+              "poiId": "199027",
+              "name": "新市",
+              "address": "台南市新市區華興街48號1樓",
+              "inDb": true
+            },
+            {
+              "poiId": "163523",
+              "name": "新市政",
+              "address": "台中市西屯區臺灣大道三段99號1樓",
+              "inDb": false
+            },
+            {
+              "poiId": "243823",
+              "name": "新市廠",
+              "address": "台南市新市區大營里7號1樓",
+              "inDb": true
+            },
+            {
+              "poiId": "287498",
+              "name": "新市鎮",
+              "address": "新北市淡水區新市一路三段18號1樓",
+              "inDb": false
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "strategySummary": [
+    {
+      "label": "city+town=縣市+區",
+      "avgResults": "53.0",
+      "avgNew": "24.3",
+      "crossRegions": 0,
+      "hitLimit": 0,
+      "errors": 0,
+      "score": 97
+    },
+    {
+      "label": "StoreName=短名",
+      "avgResults": "2.8",
+      "avgNew": "0.5",
+      "crossRegions": 1,
+      "hitLimit": 0,
+      "errors": 0,
+      "score": 2
+    },
+    {
+      "label": "SpecialStore_Kind=空",
+      "avgResults": "2.8",
+      "avgNew": "0.5",
+      "crossRegions": 1,
+      "hitLimit": 0,
+      "errors": 0,
+      "score": 2
+    },
+    {
+      "label": "StoreName=縣市+區名",
+      "avgResults": "0.0",
+      "avgNew": "0.0",
+      "crossRegions": 0,
+      "hitLimit": 0,
+      "errors": 0,
+      "score": 0
+    },
+    {
+      "label": "address=縣市+行政區",
+      "avgResults": "0.0",
+      "avgNew": "0.0",
+      "crossRegions": 0,
+      "hitLimit": 0,
+      "errors": 0,
+      "score": 0
+    },
+    {
+      "label": "address=縣市全稱",
+      "avgResults": "0.0",
+      "avgNew": "0.0",
+      "crossRegions": 0,
+      "hitLimit": 0,
+      "errors": 0,
+      "score": 0
+    },
+    {
+      "label": "city=縣市",
+      "avgResults": "0.0",
+      "avgNew": "0.0",
+      "crossRegions": 0,
+      "hitLimit": 0,
+      "errors": 0,
+      "score": 0
+    },
+    {
+      "label": "city+town=縣市+區短",
+      "avgResults": "0.0",
+      "avgNew": "0.0",
+      "crossRegions": 0,
+      "hitLimit": 0,
+      "errors": 0,
+      "score": 0
+    },
+    {
+      "label": "roadname=行政區",
+      "avgResults": "0.0",
+      "avgNew": "0.0",
+      "crossRegions": 0,
+      "hitLimit": 0,
+      "errors": 0,
+      "score": 0
+    },
+    {
+      "label": "leftMenuChecked=1",
+      "avgResults": "0.0",
+      "avgNew": "0.0",
+      "crossRegions": 0,
+      "hitLimit": 0,
+      "errors": 0,
+      "score": 0
+    },
+    {
+      "label": "ID=已知POIID(懷民)",
+      "avgResults": "1.0",
+      "avgNew": "0.0",
+      "crossRegions": 0,
+      "hitLimit": 0,
+      "errors": 0,
+      "score": 0
+    },
+    {
+      "label": "POIID=已知POIID",
+      "avgResults": "0.0",
+      "avgNew": "0.0",
+      "crossRegions": 0,
+      "hitLimit": 0,
+      "errors": 0,
+      "score": 0
+    }
+  ],
+  "estimatedNewStores": {
+    "strategy": "city+town=縣市+區",
+    "avgNewPerDistrict": 24.3,
+    "estimated368Districts": 8942
+  }
+}
