@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@clerk/react";
-import { useGetMyStore, useListOrders, useUpdateOrderStatus, getListOrdersQueryKey, type Order } from "@workspace/api-client-react";
+import { useGetMyStore, useListOrders, useUpdateOrderStatus, useBulkUpdateOrders, getListOrdersQueryKey, type Order } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { BottomNav } from "./Dashboard";
 import { STATUS_LABELS, STATUS_COLORS, ALL_STATUSES, VALID_NEXT_STATUSES } from "../lib/orderStatus";
@@ -65,6 +65,7 @@ const SHIPPING_METHOD_LABELS: Record<string, string> = {
 
 import { CreateOrderDialog } from "./CreateOrderDialog";
 import { EditOrderDialog } from "./EditOrderDialog";
+import { toast } from "@/hooks/use-toast";
 
 export default function OrdersPage() {
   const qc = useQueryClient();
@@ -82,6 +83,14 @@ export default function OrdersPage() {
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [showAddOrder, setShowAddOrder] = useState(false);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
+
+  // Bulk selection state
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [bulkPaymentStatus, setBulkPaymentStatus] = useState("");
+  const [bulkShippingStatus, setBulkShippingStatus] = useState("");
+  const [bulkError, setBulkError] = useState<string | null>(null);
+  const [isBulkLoading, setIsBulkLoading] = useState(false);
+  const bulkUpdateOrders = useBulkUpdateOrders();
 
   const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -161,6 +170,47 @@ export default function OrdersPage() {
     a.download = filename;
     a.click();
     URL.revokeObjectURL(objectUrl);
+  };
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+    setBulkError(null);
+  };
+
+  const clearSelection = () => {
+    setSelectedIds(new Set());
+    setBulkPaymentStatus("");
+    setBulkShippingStatus("");
+    setBulkError(null);
+  };
+
+  const handleBulkUpdate = async (type: "payment" | "shipping") => {
+    if (selectedIds.size === 0 || !storeId) return;
+    const statusVal = type === "payment" ? bulkPaymentStatus : bulkShippingStatus;
+    if (!statusVal) return;
+    setIsBulkLoading(true);
+    setBulkError(null);
+    try {
+      const body: Parameters<typeof bulkUpdateOrders.mutateAsync>[0]["data"] = {
+        orderIds: [...selectedIds],
+        ...(type === "payment" ? { paymentStatus: statusVal as any } : { shippingStatus: statusVal as any }),
+      };
+      const result = await bulkUpdateOrders.mutateAsync({ data: body });
+      const skippedMsg = result.skippedCount > 0 ? `（跳過 ${result.skippedCount} 筆已結束訂單）` : "";
+      toast({ title: `已更新 ${result.updatedCount} 筆訂單${skippedMsg}` });
+      qc.invalidateQueries({ queryKey: getListOrdersQueryKey(storeId) });
+      clearSelection();
+    } catch (err: unknown) {
+      const e = err as { data?: { error?: string } };
+      setBulkError(e?.data?.error ?? "批次更新失敗，請稍後再試");
+    } finally {
+      setIsBulkLoading(false);
+    }
   };
 
   const formatDate = (d: string) => {
@@ -247,9 +297,27 @@ export default function OrdersPage() {
                       className="px-4 pt-3.5 pb-3.5 cursor-pointer"
                       onClick={() => setExpandedId(expandedId === o.id ? null : o.id)}
                     >
-                      {/* Row 1: Order # (left) + Amount (right) */}
-                      <div className="flex items-baseline justify-between mb-1.5">
-                        <span className="text-sm font-bold text-primary tracking-wide">#{o.id}</span>
+                      {/* Row 1: Checkbox + Order # (left) + Amount (right) */}
+                      <div className="flex items-center justify-between mb-1.5">
+                        <div className="flex items-center gap-2">
+                          <div
+                            role="checkbox"
+                            aria-checked={selectedIds.has(o.id)}
+                            tabIndex={0}
+                            onClick={(e) => { e.stopPropagation(); toggleSelect(o.id); }}
+                            onKeyDown={(e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); toggleSelect(o.id); } }}
+                            className={`w-4 h-4 rounded border-2 flex-shrink-0 cursor-pointer flex items-center justify-center transition-colors ${
+                              selectedIds.has(o.id) ? "bg-primary border-primary" : "border-border hover:border-primary/60"
+                            }`}
+                          >
+                            {selectedIds.has(o.id) && (
+                              <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 10 8">
+                                <path d="M1 4l3 3 5-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                            )}
+                          </div>
+                          <span className="text-sm font-bold text-primary tracking-wide">#{o.id}</span>
+                        </div>
                         <span className="text-xl font-bold text-primary">NT${Number(o.totalPrice).toLocaleString()}</span>
                       </div>
                       {/* Row 2: Buyer name (left) + date (right) */}
@@ -551,6 +619,74 @@ export default function OrdersPage() {
           </>
         )}
       </div>
+
+      {/* Bulk action bar — shown when any order is selected */}
+      {selectedIds.size > 0 && (
+        <div className="fixed bottom-16 left-0 right-0 max-w-[480px] mx-auto z-20 bg-white border-t border-border shadow-lg px-4 py-3">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-semibold text-foreground">已選 {selectedIds.size} 筆</span>
+            <button
+              type="button"
+              onClick={clearSelection}
+              className="text-xs text-muted-foreground hover:text-foreground"
+            >
+              清除選取
+            </button>
+          </div>
+          <div className="flex gap-2">
+            <div className="flex flex-1 gap-1">
+              <select
+                value={bulkPaymentStatus}
+                onChange={(e) => { setBulkPaymentStatus(e.target.value); setBulkError(null); }}
+                disabled={isBulkLoading}
+                className="flex-1 min-w-0 h-9 px-2 rounded-xl border border-input bg-secondary/40 text-xs focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
+              >
+                <option value="">付款狀態…</option>
+                <option value="unpaid">未付款</option>
+                <option value="pending">待確認</option>
+                <option value="partially_paid">部分付款</option>
+                <option value="paid">已付款</option>
+                <option value="refunded">已退款</option>
+                <option value="failed">付款失敗</option>
+              </select>
+              <button
+                type="button"
+                onClick={() => handleBulkUpdate("payment")}
+                disabled={!bulkPaymentStatus || isBulkLoading}
+                className="h-9 px-3 rounded-xl bg-primary text-white text-xs font-semibold disabled:opacity-40 shrink-0"
+              >
+                {isBulkLoading ? "…" : "套用"}
+              </button>
+            </div>
+            <div className="flex flex-1 gap-1">
+              <select
+                value={bulkShippingStatus}
+                onChange={(e) => { setBulkShippingStatus(e.target.value); setBulkError(null); }}
+                disabled={isBulkLoading}
+                className="flex-1 min-w-0 h-9 px-2 rounded-xl border border-input bg-secondary/40 text-xs focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
+              >
+                <option value="">出貨狀態…</option>
+                <option value="not_shipped">未出貨</option>
+                <option value="preparing">備貨中</option>
+                <option value="shipped">已出貨</option>
+                <option value="arrived">已到貨</option>
+                <option value="picked_up">已取貨</option>
+                <option value="returned">已退回</option>
+                <option value="cancelled">已取消</option>
+              </select>
+              <button
+                type="button"
+                onClick={() => handleBulkUpdate("shipping")}
+                disabled={!bulkShippingStatus || isBulkLoading}
+                className="h-9 px-3 rounded-xl bg-primary text-white text-xs font-semibold disabled:opacity-40 shrink-0"
+              >
+                {isBulkLoading ? "…" : "套用"}
+              </button>
+            </div>
+          </div>
+          {bulkError && <p className="text-xs text-destructive mt-1.5">{bulkError}</p>}
+        </div>
+      )}
 
       <BottomNav active="orders" />
 

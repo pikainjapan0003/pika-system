@@ -6,6 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './bulkOrderUpdate';
+export * from './bulkOrderUpdateResponse';
 export * from './healthStatus';
 export * from './merchantOrderInput';
 export * from './merchantOrderInputSpecValues';

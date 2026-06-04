@@ -462,3 +462,16 @@ export interface ProductCategoryInput {
   name: string;
 }
 
+export interface BulkOrderUpdate {
+  /** @minItems 1 */
+  orderIds: number[];
+  paymentStatus?: PaymentStatus;
+  shippingStatus?: ShippingStatus;
+}
+
+export interface BulkOrderUpdateResponse {
+  updatedCount: number;
+  skippedCount: number;
+  skippedOrderIds: number[];
+}
+

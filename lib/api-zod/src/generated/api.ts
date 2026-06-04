@@ -538,6 +538,25 @@ export const UpdateOrderStatusResponse = zod.object({
 
 
 /**
+ * @summary Bulk update payment/shipping status for multiple orders
+ */
+
+
+
+export const BulkUpdateOrdersBody = zod.object({
+  "orderIds": zod.array(zod.number()).min(1),
+  "paymentStatus": zod.enum(['unpaid', 'pending', 'partially_paid', 'paid', 'refunded', 'failed']).optional(),
+  "shippingStatus": zod.enum(['not_shipped', 'preparing', 'shipped', 'arrived', 'picked_up', 'returned', 'cancelled']).optional()
+})
+
+export const BulkUpdateOrdersResponse = zod.object({
+  "updatedCount": zod.number(),
+  "skippedCount": zod.number(),
+  "skippedOrderIds": zod.array(zod.number())
+})
+
+
+/**
  * @summary Get product by share token (public, no auth)
  */
 export const GetPublicProductParams = zod.object({

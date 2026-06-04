@@ -592,3 +592,172 @@ describe('Step 5C: public tracking API — privacy guard', () => {
     assert.strictEqual(data.trackingCode, 'PUB-TRACK-123', 'trackingCode should be the logistics tracking number');
   });
 });
+
+// ─────────────────────────────────────────────────────────────
+// 12. Step 5E: PATCH /orders/bulk
+// ─────────────────────────────────────────────────────────────
+describe('Step 5E: PATCH /orders/bulk', () => {
+  let bulkOrder1Id;
+  let bulkOrder2Id;
+  let bulkCompletedId;
+  let bulkCancelledId;
+
+  before(async () => {
+    const insertOrder = (token) =>
+      db.insert(ordersTable).values({
+        productId: testProductId,
+        storeId: testStoreId,
+        productName: '__test_product__',
+        publicToken: token,
+        buyerName: 'Bulk Buyer',
+        buyerPhone: '0955555555',
+        pickupMethod: 'pickup',
+        quantity: 1,
+        unitPrice: '100.00',
+        totalPrice: '100.00',
+        status: 'pending',
+        specValues: {},
+      }).returning();
+
+    const [o1] = await insertOrder(`bulk-tok-1-${Date.now()}`);
+    const [o2] = await insertOrder(`bulk-tok-2-${Date.now()}`);
+    const [oComp] = await insertOrder(`bulk-tok-c-${Date.now()}`);
+    const [oCanc] = await insertOrder(`bulk-tok-x-${Date.now()}`);
+
+    bulkOrder1Id = o1.id;
+    bulkOrder2Id = o2.id;
+    bulkCompletedId = oComp.id;
+    bulkCancelledId = oCanc.id;
+
+    await db.update(ordersTable).set({ status: 'completed' }).where(eq(ordersTable.id, bulkCompletedId));
+    await db.update(ordersTable).set({ status: 'cancelled' }).where(eq(ordersTable.id, bulkCancelledId));
+  });
+
+  test('200 — bulk update paymentStatus for multiple orders', async () => {
+    const { status, data } = await req('PATCH', '/orders/bulk', {
+      orderIds: [bulkOrder1Id, bulkOrder2Id],
+      paymentStatus: 'paid',
+    });
+    assert.strictEqual(status, 200);
+    assert.strictEqual(data.updatedCount, 2);
+    assert.strictEqual(data.skippedCount, 0);
+    assert.deepStrictEqual(data.skippedOrderIds, []);
+
+    const { data: orders } = await req('GET', `/stores/${testStoreId}/orders`);
+    const o1 = orders.find((o) => o.id === bulkOrder1Id);
+    const o2 = orders.find((o) => o.id === bulkOrder2Id);
+    assert.strictEqual(o1.paymentStatus, 'paid');
+    assert.strictEqual(o2.paymentStatus, 'paid');
+  });
+
+  test('200 — bulk update shippingStatus for multiple orders', async () => {
+    const { status, data } = await req('PATCH', '/orders/bulk', {
+      orderIds: [bulkOrder1Id, bulkOrder2Id],
+      shippingStatus: 'shipped',
+    });
+    assert.strictEqual(status, 200);
+    assert.strictEqual(data.updatedCount, 2);
+
+    const { data: orders } = await req('GET', `/stores/${testStoreId}/orders`);
+    const o1 = orders.find((o) => o.id === bulkOrder1Id);
+    assert.strictEqual(o1.shippingStatus, 'shipped');
+  });
+
+  test('200 — bulk update both paymentStatus and shippingStatus', async () => {
+    const { status, data } = await req('PATCH', '/orders/bulk', {
+      orderIds: [bulkOrder1Id],
+      paymentStatus: 'unpaid',
+      shippingStatus: 'not_shipped',
+    });
+    assert.strictEqual(status, 200);
+    assert.strictEqual(data.updatedCount, 1);
+  });
+
+  test('200 — completed and cancelled orders are skipped', async () => {
+    const { status, data } = await req('PATCH', '/orders/bulk', {
+      orderIds: [bulkOrder1Id, bulkCompletedId, bulkCancelledId],
+      paymentStatus: 'paid',
+    });
+    assert.strictEqual(status, 200);
+    assert.strictEqual(data.updatedCount, 1, 'only the pending order should be updated');
+    assert.strictEqual(data.skippedCount, 2, 'completed and cancelled should be skipped');
+    assert.ok(data.skippedOrderIds.includes(bulkCompletedId), 'completed order in skippedOrderIds');
+    assert.ok(data.skippedOrderIds.includes(bulkCancelledId), 'cancelled order in skippedOrderIds');
+  });
+
+  test('200 — all skipped returns updatedCount 0', async () => {
+    const { status, data } = await req('PATCH', '/orders/bulk', {
+      orderIds: [bulkCompletedId, bulkCancelledId],
+      shippingStatus: 'shipped',
+    });
+    assert.strictEqual(status, 200);
+    assert.strictEqual(data.updatedCount, 0);
+    assert.strictEqual(data.skippedCount, 2);
+  });
+
+  test('400 — empty orderIds array', async () => {
+    const { status } = await req('PATCH', '/orders/bulk', {
+      orderIds: [],
+      paymentStatus: 'paid',
+    });
+    assert.strictEqual(status, 400);
+  });
+
+  test('400 — missing orderIds', async () => {
+    const { status } = await req('PATCH', '/orders/bulk', {
+      paymentStatus: 'paid',
+    });
+    assert.strictEqual(status, 400);
+  });
+
+  test('422 — neither paymentStatus nor shippingStatus provided', async () => {
+    const { status, data } = await req('PATCH', '/orders/bulk', {
+      orderIds: [bulkOrder1Id],
+    });
+    assert.strictEqual(status, 422);
+    assert.ok(data.error, 'should return error message');
+  });
+
+  test('422 — invalid paymentStatus enum', async () => {
+    const { status, data } = await req('PATCH', '/orders/bulk', {
+      orderIds: [bulkOrder1Id],
+      paymentStatus: 'not_valid',
+    });
+    assert.strictEqual(status, 422);
+    assert.ok(data.error, 'should return error message');
+  });
+
+  test('422 — invalid shippingStatus enum', async () => {
+    const { status, data } = await req('PATCH', '/orders/bulk', {
+      orderIds: [bulkOrder1Id],
+      shippingStatus: 'flying',
+    });
+    assert.strictEqual(status, 422);
+    assert.ok(data.error, 'should return error message');
+  });
+
+  test('401 — unauthenticated', async () => {
+    const { status } = await req('PATCH', '/orders/bulk', {
+      orderIds: [bulkOrder1Id],
+      paymentStatus: 'paid',
+    }, null);
+    assert.strictEqual(status, 401);
+  });
+
+  test('403 — wrong merchant cannot bulk update orders', async () => {
+    const { status } = await req('PATCH', '/orders/bulk', {
+      orderIds: [bulkOrder1Id],
+      paymentStatus: 'paid',
+    }, 'other_merchant_id');
+    assert.strictEqual(status, 403);
+  });
+
+  test('422 — orderIds contains non-existent order', async () => {
+    const { status, data } = await req('PATCH', '/orders/bulk', {
+      orderIds: [999999999],
+      paymentStatus: 'paid',
+    });
+    assert.strictEqual(status, 422);
+    assert.ok(data.error, 'should return error message');
+  });
+});
