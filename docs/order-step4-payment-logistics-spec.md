@@ -1,8 +1,9 @@
 # Order Step 4：付款 / 物流欄位正式化規格（含後台手動訂單管理）
 
-> 版本：Draft v2（補強版）
-> 日期：2026-06-03
-> 狀態：待使用者確認後進入 Step 4B 實作
+> 版本：Draft v3（Step 5A 付款 / 物流欄位正式化確認版）
+> 最後更新：2026-06-04
+> Step 4A–4D 狀態：已完成
+> Step 5A 狀態：規格確認中（本文件）
 
 ---
 
@@ -887,7 +888,7 @@ WHERE status = 'cancelled';
 - 設計 enum
 - 定義 API 變更
 - 確認 UI 方向
-- **狀態：本文件 ← 目前在此**
+- **狀態：✅ 已完成**
 
 ### Step 4B：DB / API 支援後台手動新增訂單與編輯訂單
 - 新增 `POST /stores/:storeId/orders` endpoint（店家後台建立訂單）
@@ -898,17 +899,20 @@ WHERE status = 'cancelled';
 - 更新 `GET /stores/:storeId/orders` 回傳新欄位
 - 更新 `GET /orders/track/:publicToken` 回傳出貨資訊
 - 執行 DB migration
+- **狀態：✅ 已完成**
 
 ### Step 4C：後台手動新增訂單 UI
 - `/orders` 頁面新增「＋ 新增訂單」按鈕
 - 新增訂單表單（商品選擇 / 買家資訊 / 數量規格 / 取貨方式 / 備註 / 金額預覽）
 - 建立後回到訂單列表
+- **狀態：✅ 已完成**
 
 ### Step 4D：後台手動編輯訂單 UI
 - 訂單展開詳情增加「編輯基本資料」功能
 - 可編輯：buyerName / buyerPhone / pickupMethod / notes / quantity / specValues
 - quantity 修改後即時顯示重算金額
 - completed / cancelled 訂單禁止編輯
+- **狀態：✅ 已完成**
 
 ### Step 4E：付款 / 物流欄位正式化 UI
 - `Orders.tsx` 付款資訊區接真實欄位（移除 placeholder）
@@ -996,3 +1000,371 @@ WHERE status = 'cancelled';
 
 12. **新增訂單 UI 入口位置**：右上角 button？或 FAB（浮動新增按鈕）？
     - 建議：右上角 button（現有 CSV 匯出旁），手機版可考慮 FAB
+
+---
+
+## 18. Step 5A：付款 / 物流欄位正式化規格確認（2026-06-04）
+
+### 18.1 背景
+
+Step 4B / 4C / 4D 已完成後台手動建立 / 編輯訂單功能。訂單詳情中仍有下列 placeholder 尚未連接真實欄位：
+
+- 付款方式（`paymentMethod`）
+- 付款狀態（`paymentStatus`）
+- 運費（`shippingFee`）— 注意：DB 已有此欄位（default `'0'`），需確認 API 是否已回傳
+- 出貨狀態（`shippingStatus`）
+- 物流追蹤碼（`trackingCode`）
+
+**Step 5A 本次任務範圍：僅做規格確認與任務切分，不修改 DB schema、不修改 API、不修改 UI、不執行 migration。**
+
+---
+
+### 18.2 DB 欄位現況確認
+
+依 `lib/db/src/schema/orders.ts` 目前狀態：
+
+**已存在於 DB（無需 migration）：**
+
+| 欄位 | 型別 | 說明 |
+|------|------|------|
+| `shippingFee` | numeric(10,2) NOT NULL DEFAULT `'0'` | 運費，Step 5C 確認 API 是否已回傳 |
+| `cvsStoreId` | text nullable | 超商門市代號（Step 5A 命名對應：`storeCode`） |
+| `cvsStoreName` | text nullable | 超商門市名稱（Step 5A 命名對應：`storeName`） |
+| `cvsStoreAddress` | text nullable | 超商門市地址 |
+| `cvsStorePhone` | text nullable | 超商門市電話 |
+| `storeSelectedBy` | text nullable | 門市選擇者（`customer` / `admin` / `system`） |
+| `storeSelectedAt` | timestamp nullable | 門市選擇時間 |
+
+**尚未存在於 DB（需 Step 5B migration 新增）：**
+
+`paymentMethod`、`paymentStatus`、`paidAmount`、`paymentNote`、
+`shippingMethod`、`shippingStatus`、`recipientName`、`recipientPhone`、
+`recipientAddress`、`trackingCode`、`trackingProvider`、`shippingNote`、`internalNote`
+
+---
+
+### 18.3 付款欄位完整規格
+
+| 欄位名 | 型別建議 | 預設值 | 公開給買家 | 可手動編輯 | 影響金額計算 | 說明 |
+|--------|---------|--------|-----------|-----------|------------|------|
+| `paymentMethod` | text nullable | `null` | ❌ | ✅ | ❌ | 付款方式 enum；null 表示未設定 |
+| `paymentStatus` | text nullable | `'unpaid'` | 有限（見 18.12） | ✅ | ❌ | 付款狀態 enum；店家手動標記，非自動驗證 |
+| `paidAmount` | numeric(10,2) nullable | `null` | ❌ | ✅ | ✅（推導 remainingAmount） | 已收款金額；null 視同 0 |
+| `paymentNote` | text nullable | `null` | ❌ | ✅ | ❌ | 店家付款備註；任何公開 API 均不可回傳 |
+
+---
+
+### 18.4 物流欄位完整規格
+
+| 欄位名 | 型別建議 | 預設值 | 公開給買家 | 可手動編輯 | 影響金額計算 | 說明 |
+|--------|---------|--------|-----------|-----------|------------|------|
+| `shippingMethod` | text nullable | `null` | ❌ | ✅ | ❌ | 出貨方式 enum |
+| `shippingStatus` | text nullable | `'not_shipped'` | ✅（有限） | ✅ | ❌ | 出貨狀態 enum；店家手動記錄，非 API 即時狀態 |
+| `shippingFee` | numeric(10,2) NOT NULL | `0` | ❌ | ✅ | ✅（計入 orderTotal） | DB 已存在；Step 5C 補充 API 回傳 |
+| `recipientName` | text nullable | `null`（UI 預填 buyerName） | ❌ | ✅ | ❌ | 收件人姓名；可能與買家姓名不同 |
+| `recipientPhone` | text nullable | `null` | ❌ | ✅ | ❌ | 收件人電話（個資） |
+| `recipientAddress` | text nullable | `null` | ❌（個資保護） | ✅ | ❌ | 宅配地址；任何公開 API 均不可回傳 |
+| `storeCode` | text nullable | `null` | ❌ | ✅ | ❌ | 超商門市代號；DB 欄位對應 `cvsStoreId`，Step 5B 確認命名 |
+| `storeName` | text nullable | `null` | ❌ | ✅ | ❌ | 超商門市名稱；DB 欄位對應 `cvsStoreName`，Step 5B 確認命名 |
+| `trackingCode` | text nullable | `null` | ✅ | ✅ | ❌ | 物流追蹤碼；與 `publicToken` 完全不同（見 18.6） |
+| `trackingProvider` | text nullable | `null` | ✅ | ✅ | ❌ | 物流商名稱，如「黑貓宅急便」 |
+| `shippingNote` | text nullable | `null` | ❌ | ✅ | ❌ | 物流備註；買家不可見 |
+| `internalNote` | text nullable | `null` | ❌（絕對禁止） | ✅ | ❌ | 店家內部備註；任何公開 API 均不可回傳 |
+
+---
+
+### 18.5 Enum 值正式化（Step 5A 確認版）
+
+#### paymentMethod
+
+```typescript
+export const paymentMethodEnum = [
+  'cash',          // 現金
+  'bank_transfer', // ATM / 銀行轉帳
+  'line_pay',      // LINE Pay（店家手動確認，非串接）
+  'other',         // 其他
+] as const;
+// null = 未設定付款方式
+```
+
+> ⚠️ Step 5A 決策：`unpaid` 本質上屬於 `paymentStatus` 語意，不應列入 `paymentMethod`。
+> `paymentMethod = null` 表示「尚未設定付款方式」，語意清晰且無歧義。
+> Step 4A 規格中的 `line_pay_manual` 簡化為 `line_pay`。
+
+#### paymentStatus
+
+```typescript
+export const paymentStatusEnum = [
+  'unpaid',         // 未付款（預設）
+  'pending',        // 待確認（買家聲稱已付，等待店家確認）
+  'partially_paid', // 已付部分
+  'paid',           // 已全額付清（店家手動確認）
+  'refunded',       // 已退款
+  'failed',         // 付款失敗 / 取消付款
+] as const;
+```
+
+> ⚠️ Step 5A 更新：
+> - `partial`（Step 4A）改為 `partially_paid`（語意更明確）
+> - 新增 `pending`：買家聲稱已轉帳但店家尚未確認
+> - 新增 `failed`：付款失敗或買家取消
+> - **`paymentStatus = 'paid'` 由店家手動標記，不等於金流系統自動確認**
+
+#### shippingMethod
+
+```typescript
+export const shippingMethodEnum = [
+  'self_pickup',        // 自取
+  'convenience_store',  // 超商寄件（不分業者，搭配 storeCode/storeName 記錄）
+  'home_delivery',      // 宅配（黑貓、新竹等）
+  'other',              // 其他
+] as const;
+```
+
+> ⚠️ Step 5A 更新：Step 4A 規格將各超商分成獨立 enum（`seven_eleven_prepaid`、`familymart_prepaid` 等）。
+> 本版本改用通用的 `convenience_store`，搭配 `storeCode` / `storeName` 區分業者，擴充性更好。
+
+#### shippingStatus
+
+```typescript
+export const shippingStatusEnum = [
+  'not_shipped', // 未出貨（預設）
+  'preparing',   // 備貨中
+  'shipped',     // 已出貨（已填追蹤碼）
+  'arrived',     // 已到達門市 / 物流站
+  'picked_up',   // 買家已取貨
+  'returned',    // 退貨中
+  'cancelled',   // 物流取消
+] as const;
+```
+
+> ⚠️ Step 5A 更新：
+> - `delivered`（Step 4A）拆分為 `arrived`（到達）+ `picked_up`（取貨），對超商取貨更有意義
+> - 新增 `cancelled`：物流取消（與 `order.status = 'cancelled'` 是不同維度）
+> - **`shippingStatus` 由店家手動更新，不代表真實物流 API 狀態**
+
+---
+
+### 18.6 publicToken vs trackingCode 明確區分
+
+| 欄位 | 用途 | 產生方式 | 買家可見 |
+|------|------|---------|---------|
+| `publicToken` | 系統內部買家查詢連結（`/orders/track/:publicToken`） | Server 自動生成（UUID） | ✅ 訂單查詢連結用 |
+| `trackingCode` | 物流追蹤碼（如宅急便單號） | 店家手動填入 | ✅ 讓買家至物流商官網查詢 |
+
+> ❌ 嚴格禁止混淆：`publicToken` 不是物流追蹤碼。
+> 公開追蹤頁可同時顯示兩者，但功能完全不同。
+
+---
+
+### 18.7 金額欄位正式定義
+
+| 名稱 | 計算方式 | DB 存在 | API 回傳建議 | 說明 |
+|------|---------|--------|------------|------|
+| `unitPrice` | 建單快照 | ✅ | ✅ | 建單時商品單價快照，不可手動修改 |
+| `quantity` | 店家可編輯 | ✅ | ✅ | 修改後觸發 totalPrice 重算 |
+| `totalPrice` | `unitPrice × quantity` | ✅ | ✅ | **商品金額小計**（非訂單總計）；現有欄位，不重命名 |
+| `shippingFee` | 店家手動填入 | ✅（已存在） | ✅ | 運費；Step 5C 確認是否已在 API 回傳 |
+| `orderTotal` | `totalPrice + shippingFee` | ❌ 推導 | ✅（推導後回傳） | 訂單應付總計；MVP 不存 DB，前端或 API response 計算 |
+| `paidAmount` | 店家手動記錄 | ❌ 需新增 | ✅（店家端） | 已收款金額；null 視同 0；**不出現在公開 API** |
+| `remainingAmount` | `max(orderTotal − paidAmount, 0)` | ❌ 推導 | ✅（推導後回傳） | 待收款；MVP 不存 DB，前端或 API response 計算 |
+
+> 重要定義：
+> - `totalPrice` = 商品金額小計（`itemSubtotal`），**不是訂單總計**
+> - `orderTotal` = `totalPrice + shippingFee`，才是應付總計
+> - 不重命名 `totalPrice`，避免大範圍 migration 風險
+
+---
+
+### 18.8 API 建議確認
+
+沿用第 10 節規格，Step 5C 實作時確認以下事項：
+
+1. **`PATCH /orders/:orderId`** — 接受本節定義的所有付款 / 物流欄位；enum 驗證回傳 422
+2. **`GET /stores/:storeId/orders`** — 回傳所有付款 / 物流欄位（含 `shippingFee`）；`internalNote` 店家端可見
+3. **`GET /orders/track/:publicToken`** — 公開回傳：`shippingStatus`、`trackingCode`、`trackingProvider`；**嚴格禁止回傳**：`internalNote`、`paymentNote`、`paidAmount`、`recipientAddress`、`recipientPhone`
+4. **`GET /stores/:storeId/orders/export`** — CSV 新增：付款方式、付款狀態、已付金額、出貨狀態、追蹤碼、運費
+
+**storeCode / storeName 命名確認事項（Step 5B 需決策）：**
+- DB 目前欄位：`cvsStoreId`（非 `storeCode`）、`cvsStoreName`
+- 建議：API 層統一使用 `storeCode` / `storeName`（更通用），DB 欄位維持 `cvsStoreId` / `cvsStoreName`，在 API response 層做映射
+
+---
+
+### 18.9 UI 呈現建議確認
+
+沿用第 11 節規格，Step 5D 實作時確認以下事項：
+
+**付款資訊區**（移除 placeholder）：
+- `paymentMethod`：現金 / 轉帳 / LINE Pay / 其他（null 顯示「未設定」）
+- `paymentStatus` badge：未付款（紅）/ 待確認（黃）/ 已付部分（橙）/ 已付清（綠）/ 已退款（灰）/ 付款失敗（紅）
+- 金額明細：商品金額 + 運費 = 合計 / 已付 / 待收
+- 快速更新 inline button（不開 modal）
+
+**物流資訊區**（移除 placeholder）：
+- `shippingStatus` badge：未出貨（灰）/ 備貨中（藍）/ 已出貨（藍）/ 已到達（綠）/ 已取貨（綠）/ 退貨中（橙）/ 已取消（紅）
+- `trackingCode` + `trackingProvider`（一鍵複製）
+- 宅配：`recipientName`、`recipientPhone`、`recipientAddress`
+- 超商：`storeCode`、`storeName`（對應 DB `cvsStoreId`、`cvsStoreName`）
+- 快速更新 inline button
+
+> 注意：前端文案需避免暗示金流 / 物流已自動確認（見 18.12）
+
+---
+
+### 18.10 測試案例（Step 5 專屬）
+
+#### 付款欄位 API 測試
+
+- [ ] `PATCH /orders/:orderId` 傳入有效 `paymentMethod` 正確儲存
+- [ ] `PATCH /orders/:orderId` 傳入無效 `paymentMethod` 回傳 422
+- [ ] `PATCH /orders/:orderId` 傳入有效 `paymentStatus` 正確儲存
+- [ ] `PATCH /orders/:orderId` 傳入無效 `paymentStatus` 回傳 422
+- [ ] `PATCH /orders/:orderId` 傳入 `paidAmount` 正確儲存（含 0、null、正數）
+- [ ] `GET /stores/:storeId/orders` 回傳 `shippingFee`（DB 已存在，確認 API 層）
+- [ ] 公開追蹤 API 不回傳 `paidAmount`、`paymentNote`、`internalNote`
+
+#### 物流欄位 API 測試
+
+- [ ] `PATCH /orders/:orderId` 傳入有效 `shippingStatus` 正確儲存
+- [ ] `PATCH /orders/:orderId` 傳入 `trackingCode` 正確儲存
+- [ ] `PATCH /orders/:orderId` 傳入有效 `shippingMethod` 正確儲存
+- [ ] `PATCH /orders/:orderId` 傳入無效 enum 值回傳 422
+- [ ] 公開追蹤 API 回傳 `shippingStatus`、`trackingCode`、`trackingProvider`
+- [ ] 公開追蹤 API 不回傳 `recipientAddress`、`internalNote`
+- [ ] `storeCode` / `storeName`（或 `cvsStoreId` / `cvsStoreName`）正確儲存
+
+#### 金額計算測試
+
+- [ ] `shippingFee` 預設 `0`，現有訂單不受影響
+- [ ] `orderTotal = totalPrice + shippingFee` 計算正確
+- [ ] `remainingAmount = max(orderTotal − paidAmount, 0)` 計算正確
+- [ ] `paidAmount = null` 時 `remainingAmount = orderTotal`（null 視同 0）
+
+#### UI 回歸測試（Step 5D 後）
+
+- [ ] 付款資訊區顯示真實欄位值（非 placeholder）
+- [ ] 物流資訊區顯示真實欄位值（非 placeholder）
+- [ ] `paymentStatus` badge 顏色正確
+- [ ] `shippingStatus` badge 顏色正確
+- [ ] 追蹤碼可一鍵複製
+- [ ] 既有功能（狀態更新、搜尋、篩選、CSV 匯出、公開下單）不受影響
+
+> 未執行程式測試，原因是：本次僅修改文件 / 規格，未改動程式碼。
+
+---
+
+### 18.11 風險清單（Step 5 專屬）
+
+| 風險 | 影響程度 | 建議處理方式 |
+|------|---------|------------|
+| `shippingFee` DB 已存在但 API 可能未回傳 | 中 | Step 5C 第一步確認 `GET /stores/:storeId/orders` 是否已包含此欄位 |
+| `cvsStoreId` vs `storeCode` 命名不一致 | 中 | Step 5B 決策：API 層統一映射為 `storeCode`，避免前後端命名混亂 |
+| 多欄位同時 migration 風險 | 高 | 建議拆兩個 migration（付款欄位 / 物流欄位），分別可 rollback |
+| `paymentStatus = 'paid'` 被誤解為金流確認 | 高（客服風險） | 前端文案嚴格管控，見 18.12 |
+| `recipientAddress` 個資洩漏到公開 API | 嚴重 | 加入測試案例強制驗證；code review 必查項目 |
+| `internalNote` 不慎出現在公開 API | 嚴重 | 加入測試案例強制驗證；openapi.yaml 需標記不公開 |
+| `shippingStatus` 被誤解為真實物流 API 狀態 | 高（客服風險） | 前端文案嚴格管控，見 18.12 |
+| 退款欄位缺失（MVP 不含）導致店家混用 `paymentNote` | 低 | 暫以 `paymentNote` / `internalNote` 記錄退款情況；Step 後期補 `refundStatus` |
+
+---
+
+### 18.12 客服 / 對外文字注意事項
+
+**禁止使用的文案（與建議替代）：**
+
+| ❌ 禁止 | ✅ 建議替代 | 原因 |
+|---------|-----------|------|
+| 「系統確認付款」 | 「店家確認已收款」 | `paymentStatus` 為店家手動標記，非自動驗證 |
+| 「自動出貨通知」 | 「店家更新出貨資訊」 | 目前無自動通知 |
+| 「即時追蹤包裹」 | 「複製追蹤碼至物流商官網查詢」 | `trackingCode` 非 API 串接，無法即時追蹤 |
+| 「LINE Pay 付款完成」 | 「LINE Pay（待店家確認）」 | 非金流串接，店家手動標記 |
+| 「訂單已送達」（系統自動） | 「店家更新：已送達門市」 | `shippingStatus` 為店家手動更新 |
+| 「追蹤連結」（指 publicToken） | 「訂單查詢連結」 | `publicToken` 是查詢連結，非物流追蹤碼 |
+
+**公開追蹤頁 shippingStatus 建議文案：**
+
+| enum 值 | 顯示文案 |
+|---------|---------|
+| `not_shipped` | 尚未出貨 |
+| `preparing` | 備貨中 |
+| `shipped` | 已出貨（追蹤碼由店家提供） |
+| `arrived` | 已到達目的地 |
+| `picked_up` | 已取貨完成 |
+| `returned` | 退貨處理中 |
+| `cancelled` | 物流取消，請聯繫店家 |
+
+> `paymentStatus` 建議不出現在公開追蹤頁（個資保護）。
+> 例外：可於 `paymentStatus = 'unpaid'` 時顯示「請確認付款方式」提示。
+
+---
+
+## 19. Step 5B / 5C / 5D 後續任務切分
+
+### Step 5B：付款 / 物流欄位 DB Schema 更新與 Migration
+
+**範圍：**
+- 在 `lib/db/src/schema/orders.ts` 新增以下欄位：
+  - 付款：`paymentMethod`（text nullable）、`paymentStatus`（text default `'unpaid'`）、`paidAmount`（numeric(10,2) nullable）、`paymentNote`（text nullable）
+  - 物流：`shippingMethod`（text nullable）、`shippingStatus`（text default `'not_shipped'`）、`recipientName`（text nullable）、`recipientPhone`（text nullable）、`recipientAddress`（text nullable）、`trackingCode`（text nullable）、`trackingProvider`（text nullable）、`shippingNote`（text nullable）、`internalNote`（text nullable）
+  - 注意：`shippingFee` 已存在，無需新增
+- 建立 migration（建議拆兩個：付款欄位 / 物流欄位）
+- 定義 enum 常數（見 18.5）
+- 決策並統一 `storeCode` / `storeName` 與 DB `cvsStoreId` / `cvsStoreName` 的命名關係
+- 確認 migration rollback 可正常執行
+
+**不做：**API route 邏輯、前端 UI、第三方串接
+
+**驗收：** migration 在測試 DB 可執行 / rollback；現有訂單資料完整；所有新欄位為 nullable 或有合理預設值
+
+---
+
+### Step 5C：付款 / 物流欄位 API 更新
+
+**範圍：**
+- 更新 `lib/api-spec/openapi.yaml`，新增付款 / 物流欄位定義
+- `GET /stores/:storeId/orders` 回傳所有新欄位（含 `shippingFee` 確認）
+- `PATCH /orders/:orderId` 接受付款 / 物流欄位；enum 驗證回傳 422
+- `GET /orders/track/:publicToken` 回傳 `shippingStatus`、`trackingCode`、`trackingProvider`；嚴格排除個資與內部欄位
+- `GET /stores/:storeId/orders/export` CSV 新增付款 / 物流欄位
+- 重新執行 orval codegen（`lib/api-client-react`、`lib/api-zod`）
+- `orderTotal` / `remainingAmount` 在 API response 推導回傳（不存 DB）
+
+**不做：**DB schema 變更、前端 UI、第三方串接
+
+**驗收：** 18.10 付款欄位 API 測試 / 物流欄位 API 測試 / 金額計算測試全部通過；個資洩漏測試通過
+
+---
+
+### Step 5D：付款 / 物流欄位 UI 正式化
+
+**範圍：**
+- `Orders.tsx` 付款資訊區：移除 placeholder，接真實欄位
+- `Orders.tsx` 物流資訊區：移除 placeholder，接真實欄位
+- `paymentStatus` 快速切換 inline UI
+- `shippingStatus` 快速切換 inline UI
+- `trackingCode` 填入 + 複製功能
+- 金額明細區（商品金額 + 運費 = 合計 / 已付 / 待收）
+- `paymentStatus` / `shippingStatus` badge 顏色設計
+- 依 18.12 規範調整所有文案
+
+**不做：**第三方金流 / 物流串接、買家自動通知、批次操作、訂單詳情獨立頁（留後期）
+
+**驗收：** 18.10 UI 回歸測試全部通過；原有功能（搜尋、篩選、CSV、公開下單）不受影響
+
+---
+
+## 20. Step 5A 決策摘要與待確認事項
+
+| 決策項目 | Step 5A 建議 | 需確認方 |
+|---------|-------------|---------|
+| `unpaid` 列入 paymentMethod | ❌ 移除，改用 `null` 表示未設定 | Product 確認 |
+| `partial` vs `partially_paid` | 採用 `partially_paid`（語意更明確） | Engineering 確認 |
+| `delivered` vs `arrived` + `picked_up` | 拆分為 `arrived` + `picked_up` | Product 確認 |
+| `convenience_store` 通用 vs 分超商 enum | 採用通用 `convenience_store` | Engineering 確認 |
+| `storeCode` / `storeName` 命名 | API 層用 `storeCode` / `storeName`，DB 維持 `cvsStoreId` / `cvsStoreName` | Engineering 確認 |
+| `shippingFee` DB 已存在 | Step 5B 不新增欄位，Step 5C 確認 API 回傳 | Engineering 確認 |
+| `paidAmount > orderTotal` 驗證規則 | 建議允許（過付情境存在），但在 UI 顯示提示 | Product 確認 |
+| migration 拆分策略 | 拆付款欄位 / 物流欄位兩個 migration | Engineering 確認 |
+| 退款欄位（`refundStatus` / `refundedAmount`） | MVP 不包含，暫以 `paymentNote` 記錄，後期補充 | Product 確認 |
+| `orderTotal` / `remainingAmount` 是否存 DB | MVP 不存 DB，推導回傳；未來視需求再評估 | Engineering 確認 |
