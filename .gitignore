@@ -60,3 +60,5 @@ data/cvs/seven-import-report.json
 lib/db/twcoupon-emap-poc-report.json
 lib/db/twcoupon-emap-all-cities-progress.json
 lib/db/twcoupon-emap-all-cities-report.json
+lib/db/emap-district-import-progress.json
+lib/db/emap-district-import-report.json
