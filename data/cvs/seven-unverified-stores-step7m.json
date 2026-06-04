@@ -1,0 +1,326 @@
+[
+  {
+    "store_id": "twcoupon-c442bde1dd83",
+    "store_name": "向勝門市",
+    "store_address": "台中市西區東興路三段57號",
+    "city": "台中市",
+    "district": "",
+    "source": "twcoupon_unverified",
+    "note": "無座標（unverified，未通過 EmapSDK）"
+  },
+  {
+    "store_id": "twcoupon-6bc8d4eb73e6",
+    "store_name": "文津門市",
+    "store_address": "台中市北區天津路二段138之10號之11號",
+    "city": "台中市",
+    "district": "",
+    "source": "twcoupon_unverified",
+    "note": "無座標（unverified，未通過 EmapSDK）"
+  },
+  {
+    "store_id": "twcoupon-ef5172b4d89b",
+    "store_name": "新學和門市",
+    "store_address": "台中市南區學府路70號70-1號72號1樓",
+    "city": "台中市",
+    "district": "",
+    "source": "twcoupon_unverified",
+    "note": "無座標（unverified，未通過 EmapSDK）"
+  },
+  {
+    "store_id": "twcoupon-b33b452397f6",
+    "store_name": "連河門市",
+    "store_address": "台中市北屯區河北路二段218之1號1樓",
+    "city": "台中市",
+    "district": "北屯區",
+    "source": "twcoupon_unverified",
+    "note": "無座標（unverified，未通過 EmapSDK）"
+  },
+  {
+    "store_id": "twcoupon-ee3d62a84599",
+    "store_name": "金大安門市",
+    "store_address": "台中市大安區中山南路241號1樓",
+    "city": "台中市",
+    "district": "大安區",
+    "source": "twcoupon_unverified",
+    "note": "無座標（unverified，未通過 EmapSDK）"
+  },
+  {
+    "store_id": "twcoupon-82000aaf9c2e",
+    "store_name": "勤科大門市",
+    "store_address": "台中市太平區坪林里中山路二段57號",
+    "city": "台中市",
+    "district": "太平區",
+    "source": "twcoupon_unverified",
+    "note": "無座標（unverified，未通過 EmapSDK）"
+  },
+  {
+    "store_id": "twcoupon-176e050ab666",
+    "store_name": "靜宜門市",
+    "store_address": "台中市沙鹿區鎮南路二段293號",
+    "city": "台中市",
+    "district": "沙鹿區",
+    "source": "twcoupon_unverified",
+    "note": "無座標（unverified，未通過 EmapSDK）"
+  },
+  {
+    "store_id": "twcoupon-5cbd2a3466be",
+    "store_name": "潭北門市",
+    "store_address": "台中市潭子區福潭路645.647.649號",
+    "city": "台中市",
+    "district": "潭子區",
+    "source": "twcoupon_unverified",
+    "note": "無座標（unverified，未通過 EmapSDK）"
+  },
+  {
+    "store_id": "twcoupon-405c9c2395f8",
+    "store_name": "西屯重慶門市",
+    "store_address": "台中市西屯區西屯路二段95之25號、95之26號1樓",
+    "city": "台中市",
+    "district": "西屯區",
+    "source": "twcoupon_unverified",
+    "note": "無座標（unverified，未通過 EmapSDK）"
+  },
+  {
+    "store_id": "twcoupon-b3f31a96f1f2",
+    "store_name": "金德門市",
+    "store_address": "台北市內湖區金龍路5號1F",
+    "city": "台北市",
+    "district": "內湖區",
+    "source": "twcoupon_unverified",
+    "note": "無座標（unverified，未通過 EmapSDK）"
+  },
+  {
+    "store_id": "twcoupon-c4baaa62bf57",
+    "store_name": "吉仁門市",
+    "store_address": "台北市松山區延吉街27-1號1樓",
+    "city": "台北市",
+    "district": "松山區",
+    "source": "twcoupon_unverified",
+    "note": "無座標（unverified，未通過 EmapSDK）"
+  },
+  {
+    "store_id": "twcoupon-56064dfd673a",
+    "store_name": "夏林門市",
+    "store_address": "台南市南區健康路二段114號1樓、地下室1樓",
+    "city": "台南市",
+    "district": "",
+    "source": "twcoupon_unverified",
+    "note": "無座標（unverified，未通過 EmapSDK）"
+  },
+  {
+    "store_id": "twcoupon-e0b4955ccb1f",
+    "store_name": "永發門市",
+    "store_address": "屏東縣屏東市永安里復興路258號",
+    "city": "屏東縣",
+    "district": "屏東市",
+    "source": "twcoupon_unverified",
+    "note": "無座標（unverified，未通過 EmapSDK）"
+  },
+  {
+    "store_id": "twcoupon-d1f7a1463573",
+    "store_name": "億財富門市",
+    "store_address": "屏東縣東港鎮新勝里光復路二段77號1樓",
+    "city": "屏東縣",
+    "district": "東港鎮",
+    "source": "twcoupon_unverified",
+    "note": "無座標（unverified，未通過 EmapSDK）"
+  },
+  {
+    "store_id": "twcoupon-492eb6191543",
+    "store_name": "家樂福門市",
+    "store_address": "彰化縣彰化市茄苳路一段276號",
+    "city": "彰化縣",
+    "district": "彰化市",
+    "source": "twcoupon_unverified",
+    "note": "無座標（unverified，未通過 EmapSDK）"
+  },
+  {
+    "store_id": "twcoupon-8c4766d3efad",
+    "store_name": "崙北門市",
+    "store_address": "彰化縣彰化市中央路232號234號",
+    "city": "彰化縣",
+    "district": "彰化市",
+    "source": "twcoupon_unverified",
+    "note": "無座標（unverified，未通過 EmapSDK）"
+  },
+  {
+    "store_id": "twcoupon-13a93fc2e528",
+    "store_name": "新大埔門市",
+    "store_address": "彰化縣彰化市延平里大埔路540號542號",
+    "city": "彰化縣",
+    "district": "彰化市",
+    "source": "twcoupon_unverified",
+    "note": "無座標（unverified，未通過 EmapSDK）"
+  },
+  {
+    "store_id": "twcoupon-70291b47d60b",
+    "store_name": "大峽門市",
+    "store_address": "新北市三峽區大學路13鄰147號1樓",
+    "city": "新北市",
+    "district": "三峽區",
+    "source": "twcoupon_unverified",
+    "note": "無座標（unverified，未通過 EmapSDK）"
+  },
+  {
+    "store_id": "twcoupon-4f2ce1b190fd",
+    "store_name": "長泰門市",
+    "store_address": "新北市三重區三和路二段125號127號1樓",
+    "city": "新北市",
+    "district": "三重區",
+    "source": "twcoupon_unverified",
+    "note": "無座標（unverified，未通過 EmapSDK）"
+  },
+  {
+    "store_id": "twcoupon-0d04d5c31f34",
+    "store_name": "青潭門市",
+    "store_address": "新北市新店區北宜路一段41-1號",
+    "city": "新北市",
+    "district": "新店區",
+    "source": "twcoupon_unverified",
+    "note": "無座標（unverified，未通過 EmapSDK）"
+  },
+  {
+    "store_id": "twcoupon-55cffefa3b0f",
+    "store_name": "林宏門市",
+    "store_address": "新北市新莊區成功街1號",
+    "city": "新北市",
+    "district": "新莊區",
+    "source": "twcoupon_unverified",
+    "note": "無座標（unverified，未通過 EmapSDK）"
+  },
+  {
+    "store_id": "twcoupon-7506387f62ab",
+    "store_name": "過嶺門市",
+    "store_address": "桃園市中壢區民族路五段451號453號1樓",
+    "city": "桃園市",
+    "district": "中壢區",
+    "source": "twcoupon_unverified",
+    "note": "無座標（unverified，未通過 EmapSDK）"
+  },
+  {
+    "store_id": "twcoupon-34259a2e4950",
+    "store_name": "丰順門市",
+    "store_address": "桃園市平鎮區中豐路一段281之1號1樓",
+    "city": "桃園市",
+    "district": "平鎮區",
+    "source": "twcoupon_unverified",
+    "note": "無座標（unverified，未通過 EmapSDK）"
+  },
+  {
+    "store_id": "twcoupon-0d903c977d97",
+    "store_name": "新貴中門市",
+    "store_address": "桃園市平鎮區新貴里中豐路一段98號1樓",
+    "city": "桃園市",
+    "district": "平鎮區",
+    "source": "twcoupon_unverified",
+    "note": "無座標（unverified，未通過 EmapSDK）"
+  },
+  {
+    "store_id": "twcoupon-a6ed5ce2f963",
+    "store_name": "高安門市",
+    "store_address": "桃園市平鎮區民族路三段95號",
+    "city": "桃園市",
+    "district": "平鎮區",
+    "source": "twcoupon_unverified",
+    "note": "無座標（unverified，未通過 EmapSDK）"
+  },
+  {
+    "store_id": "twcoupon-210e337eebde",
+    "store_name": "國仲門市",
+    "store_address": "桃園市桃園區中德里國際路一段538號",
+    "city": "桃園市",
+    "district": "桃園區",
+    "source": "twcoupon_unverified",
+    "note": "無座標（unverified，未通過 EmapSDK）"
+  },
+  {
+    "store_id": "twcoupon-0318e7958f99",
+    "store_name": "桃民門市",
+    "store_address": "桃園市桃園區民族路79號1樓",
+    "city": "桃園市",
+    "district": "桃園區",
+    "source": "twcoupon_unverified",
+    "note": "無座標（unverified，未通過 EmapSDK）"
+  },
+  {
+    "store_id": "twcoupon-199ddcf49fe8",
+    "store_name": "航榮門市",
+    "store_address": "桃園市蘆竹區南崁路二段473號",
+    "city": "桃園市",
+    "district": "蘆竹區",
+    "source": "twcoupon_unverified",
+    "note": "無座標（unverified，未通過 EmapSDK）"
+  },
+  {
+    "store_id": "twcoupon-c92d901974f7",
+    "store_name": "吉海門市",
+    "store_address": "花蓮縣吉安鄉海岸路683號",
+    "city": "花蓮縣",
+    "district": "吉安鄉",
+    "source": "twcoupon_unverified",
+    "note": "無座標（unverified，未通過 EmapSDK）"
+  },
+  {
+    "store_id": "twcoupon-927fb9a0b9c1",
+    "store_name": "竹南建國門市",
+    "store_address": "苗栗縣竹南鎮龍鳳里龍山路一段162號1樓",
+    "city": "苗栗縣",
+    "district": "竹南鎮",
+    "source": "twcoupon_unverified",
+    "note": "無座標（unverified，未通過 EmapSDK）"
+  },
+  {
+    "store_id": "twcoupon-3d9afc4a487e",
+    "store_name": "新宗行門市",
+    "store_address": "雲林縣虎尾鎮林森路二段240號1樓",
+    "city": "雲林縣",
+    "district": "虎尾鎮",
+    "source": "twcoupon_unverified",
+    "note": "無座標（unverified，未通過 EmapSDK）"
+  },
+  {
+    "store_id": "twcoupon-e17f998434a3",
+    "store_name": "台興門市",
+    "store_address": "高雄市岡山區台上里嘉新東路136號",
+    "city": "高雄市",
+    "district": "岡山區",
+    "source": "twcoupon_unverified",
+    "note": "無座標（unverified，未通過 EmapSDK）"
+  },
+  {
+    "store_id": "twcoupon-f1f201a4bb22",
+    "store_name": "孟新門市",
+    "store_address": "高雄市左營區自由三路292號",
+    "city": "高雄市",
+    "district": "左營區",
+    "source": "twcoupon_unverified",
+    "note": "無座標（unverified，未通過 EmapSDK）"
+  },
+  {
+    "store_id": "twcoupon-ed77fb74484f",
+    "store_name": "高高鐵門市",
+    "store_address": "高雄市左營區菜公里高鐵路105號(高鐵高雄車站地上第二樓層)",
+    "city": "高雄市",
+    "district": "左營區",
+    "source": "twcoupon_unverified",
+    "note": "無座標（unverified，未通過 EmapSDK）"
+  },
+  {
+    "store_id": "twcoupon-a3c158d5a919",
+    "store_name": "歐士盟門市",
+    "store_address": "高雄市楠梓區右昌街619號",
+    "city": "高雄市",
+    "district": "楠梓區",
+    "source": "twcoupon_unverified",
+    "note": "無座標（unverified，未通過 EmapSDK）"
+  },
+  {
+    "store_id": "twcoupon-efa5a515dc84",
+    "store_name": "天虹門市",
+    "store_address": "高雄市鳳山區鎮南里五甲二路744號",
+    "city": "高雄市",
+    "district": "鳳山區",
+    "source": "twcoupon_unverified",
+    "note": "無座標（unverified，未通過 EmapSDK）"
+  }
+]
