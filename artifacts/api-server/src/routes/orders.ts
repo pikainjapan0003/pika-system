@@ -99,7 +99,15 @@ router.patch("/orders/:orderId", requireAuth, async (req: any, res) => {
 
   const parsed = UpdateOrderBody.safeParse(req.body);
   if (!parsed.success) {
-    return res.status(400).json({ error: parsed.error.message });
+    const AMOUNT_PATHS = ["paidAmount", "shippingFee"];
+    const ENUM_UNION_PATHS = new Set(["paymentMethod", "shippingMethod"]);
+    const is422 = parsed.error.issues.some(
+      (i) =>
+        i.code === "invalid_enum_value" ||
+        (i.code === "invalid_union" && i.path.length > 0 && ENUM_UNION_PATHS.has(i.path[0] as string)) ||
+        (i.code === "too_small" && AMOUNT_PATHS.includes(i.path[0] as string))
+    );
+    return res.status(is422 ? 422 : 400).json({ error: parsed.error.message });
   }
 
   const [order] = await db.select().from(ordersTable).where(eq(ordersTable.id, orderId)).limit(1);
@@ -111,7 +119,14 @@ router.patch("/orders/:orderId", requireAuth, async (req: any, res) => {
     return res.status(422).json({ error: "Cannot edit a completed or cancelled order" });
   }
 
-  const { buyerName, buyerPhone, quantity, pickupMethod, notes, specValues } = parsed.data;
+  const {
+    buyerName, buyerPhone, quantity, pickupMethod, notes, specValues,
+    paymentMethod, paymentStatus, paidAmount, paymentNote,
+    shippingMethod, shippingStatus, shippingFee,
+    recipientName, recipientPhone, recipientAddress,
+    storeCode, storeName,
+    trackingCode, trackingProvider, shippingNote, internalNote,
+  } = parsed.data;
 
   const updates: Record<string, unknown> = {};
   if (buyerName !== undefined) updates.buyerName = buyerName;
@@ -124,6 +139,24 @@ router.patch("/orders/:orderId", requireAuth, async (req: any, res) => {
     const existingUnitPrice = parseFloat(order.unitPrice as string);
     updates.totalPrice = String(existingUnitPrice * quantity);
   }
+  // Payment fields
+  if (paymentMethod !== undefined) updates.paymentMethod = paymentMethod;
+  if (paymentStatus !== undefined) updates.paymentStatus = paymentStatus;
+  if (paidAmount !== undefined) updates.paidAmount = paidAmount !== null ? String(paidAmount) : null;
+  if (paymentNote !== undefined) updates.paymentNote = paymentNote;
+  // Shipping / logistics fields
+  if (shippingMethod !== undefined) updates.shippingMethod = shippingMethod;
+  if (shippingStatus !== undefined) updates.shippingStatus = shippingStatus;
+  if (shippingFee !== undefined) updates.shippingFee = String(shippingFee);
+  if (recipientName !== undefined) updates.recipientName = recipientName;
+  if (recipientPhone !== undefined) updates.recipientPhone = recipientPhone;
+  if (recipientAddress !== undefined) updates.recipientAddress = recipientAddress;
+  if (storeCode !== undefined) updates.cvsStoreId = storeCode;
+  if (storeName !== undefined) updates.cvsStoreName = storeName;
+  if (trackingCode !== undefined) updates.trackingCode = trackingCode;
+  if (trackingProvider !== undefined) updates.trackingProvider = trackingProvider;
+  if (shippingNote !== undefined) updates.shippingNote = shippingNote;
+  if (internalNote !== undefined) updates.internalNote = internalNote;
 
   if (Object.keys(updates).length === 0) {
     return res.json(formatOrder(order));
@@ -216,12 +249,22 @@ router.patch("/orders/:orderId/status", requireAuth, async (req: any, res) => {
 });
 
 function formatOrder(o: any) {
+  const shippingFee = parseFloat(o.shippingFee ?? "0");
+  const totalPrice = parseFloat(o.totalPrice);
+  const paidAmount = o.paidAmount != null ? parseFloat(o.paidAmount as string) : null;
+  const orderTotal = totalPrice + shippingFee;
+  const remainingAmount = Math.max(orderTotal - (paidAmount ?? 0), 0);
   return {
     ...o,
     unitPrice: parseFloat(o.unitPrice),
-    shippingFee: parseFloat(o.shippingFee ?? "0"),
-    totalPrice: parseFloat(o.totalPrice),
+    shippingFee,
+    totalPrice,
+    paidAmount,
     storeSelectedAt: o.storeSelectedAt?.toISOString() ?? null,
+    storeCode: o.cvsStoreId ?? null,
+    storeName: o.cvsStoreName ?? null,
+    orderTotal,
+    remainingAmount,
   };
 }
 

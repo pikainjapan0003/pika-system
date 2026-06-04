@@ -7,6 +7,7 @@
  */
 import type { PublicOrderSpecValues } from './publicOrderSpecValues';
 import type { PublicOrderStatus } from './publicOrderStatus';
+import type { ShippingStatus } from './shippingStatus';
 
 export interface PublicOrder {
   publicToken: string;
@@ -14,10 +15,18 @@ export interface PublicOrder {
   productName?: string | null;
   quantity: number;
   unitPrice: number;
+  shippingFee: number;
   totalPrice: number;
+  orderTotal: number;
   pickupMethod: string;
   specValues?: PublicOrderSpecValues;
   status: PublicOrderStatus;
   statusLabel: string;
+  shippingStatus: ShippingStatus;
+  shippingStatusLabel?: string;
+  /** @nullable */
+  trackingCode?: string | null;
+  /** @nullable */
+  trackingProvider?: string | null;
   createdAt: string;
 }

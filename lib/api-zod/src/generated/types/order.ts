@@ -7,6 +7,10 @@
  */
 import type { OrderSpecValues } from './orderSpecValues';
 import type { OrderStatus } from './orderStatus';
+import type { PaymentMethod } from './paymentMethod';
+import type { PaymentStatus } from './paymentStatus';
+import type { ShippingMethod } from './shippingMethod';
+import type { ShippingStatus } from './shippingStatus';
 
 export interface Order {
   id: number;
@@ -23,7 +27,36 @@ export interface Order {
   specValues?: OrderSpecValues;
   quantity: number;
   unitPrice?: number;
+  shippingFee?: number;
   totalPrice: number;
+  orderTotal?: number;
+  remainingAmount?: number;
   status: OrderStatus;
+  paymentMethod?: PaymentMethod | null;
+  paymentStatus?: PaymentStatus;
+  /** @nullable */
+  paidAmount?: number | null;
+  /** @nullable */
+  paymentNote?: string | null;
+  shippingMethod?: ShippingMethod | null;
+  shippingStatus?: ShippingStatus;
+  /** @nullable */
+  recipientName?: string | null;
+  /** @nullable */
+  recipientPhone?: string | null;
+  /** @nullable */
+  recipientAddress?: string | null;
+  /** @nullable */
+  storeCode?: string | null;
+  /** @nullable */
+  storeName?: string | null;
+  /** @nullable */
+  trackingCode?: string | null;
+  /** @nullable */
+  trackingProvider?: string | null;
+  /** @nullable */
+  shippingNote?: string | null;
+  /** @nullable */
+  internalNote?: string | null;
   createdAt: string;
 }

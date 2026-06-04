@@ -327,8 +327,26 @@ export const ListOrdersResponseItem = zod.object({
 }).passthrough().optional(),
   "quantity": zod.number(),
   "unitPrice": zod.number().optional(),
+  "shippingFee": zod.number().optional(),
   "totalPrice": zod.number(),
+  "orderTotal": zod.number().optional(),
+  "remainingAmount": zod.number().optional(),
   "status": zod.enum(['pending', 'awaiting_payment', 'preparing', 'shipped', 'completed', 'cancelled']),
+  "paymentMethod": zod.union([zod.literal('cash'),zod.literal('bank_transfer'),zod.literal('line_pay'),zod.literal('other'),zod.literal(null)]).nullish(),
+  "paymentStatus": zod.enum(['unpaid', 'pending', 'partially_paid', 'paid', 'refunded', 'failed']).optional(),
+  "paidAmount": zod.number().nullish(),
+  "paymentNote": zod.string().nullish(),
+  "shippingMethod": zod.union([zod.literal('self_pickup'),zod.literal('convenience_store'),zod.literal('home_delivery'),zod.literal('other'),zod.literal(null)]).nullish(),
+  "shippingStatus": zod.enum(['not_shipped', 'preparing', 'shipped', 'arrived', 'picked_up', 'returned', 'cancelled']).optional(),
+  "recipientName": zod.string().nullish(),
+  "recipientPhone": zod.string().nullish(),
+  "recipientAddress": zod.string().nullish(),
+  "storeCode": zod.string().nullish(),
+  "storeName": zod.string().nullish(),
+  "trackingCode": zod.string().nullish(),
+  "trackingProvider": zod.string().nullish(),
+  "shippingNote": zod.string().nullish(),
+  "internalNote": zod.string().nullish(),
   "createdAt": zod.string()
 })
 export const ListOrdersResponse = zod.array(ListOrdersResponseItem)
@@ -397,6 +415,10 @@ export const UpdateOrderParams = zod.object({
 
 
 
+export const updateOrderBodyPaidAmountMin = 0;
+
+export const updateOrderBodyShippingFeeMin = 0;
+
 
 
 export const UpdateOrderBody = zod.object({
@@ -407,7 +429,23 @@ export const UpdateOrderBody = zod.object({
   "notes": zod.string().nullish(),
   "specValues": zod.object({
 
-}).passthrough().optional()
+}).passthrough().optional(),
+  "paymentMethod": zod.union([zod.literal('cash'),zod.literal('bank_transfer'),zod.literal('line_pay'),zod.literal('other'),zod.literal(null)]).nullish(),
+  "paymentStatus": zod.enum(['unpaid', 'pending', 'partially_paid', 'paid', 'refunded', 'failed']).optional(),
+  "paidAmount": zod.number().min(updateOrderBodyPaidAmountMin).nullish(),
+  "paymentNote": zod.string().nullish(),
+  "shippingMethod": zod.union([zod.literal('self_pickup'),zod.literal('convenience_store'),zod.literal('home_delivery'),zod.literal('other'),zod.literal(null)]).nullish(),
+  "shippingStatus": zod.enum(['not_shipped', 'preparing', 'shipped', 'arrived', 'picked_up', 'returned', 'cancelled']).optional(),
+  "shippingFee": zod.number().min(updateOrderBodyShippingFeeMin).optional(),
+  "recipientName": zod.string().nullish(),
+  "recipientPhone": zod.string().nullish(),
+  "recipientAddress": zod.string().nullish(),
+  "storeCode": zod.string().nullish(),
+  "storeName": zod.string().nullish(),
+  "trackingCode": zod.string().nullish(),
+  "trackingProvider": zod.string().nullish(),
+  "shippingNote": zod.string().nullish(),
+  "internalNote": zod.string().nullish()
 })
 
 export const UpdateOrderResponse = zod.object({
@@ -425,8 +463,26 @@ export const UpdateOrderResponse = zod.object({
 }).passthrough().optional(),
   "quantity": zod.number(),
   "unitPrice": zod.number().optional(),
+  "shippingFee": zod.number().optional(),
   "totalPrice": zod.number(),
+  "orderTotal": zod.number().optional(),
+  "remainingAmount": zod.number().optional(),
   "status": zod.enum(['pending', 'awaiting_payment', 'preparing', 'shipped', 'completed', 'cancelled']),
+  "paymentMethod": zod.union([zod.literal('cash'),zod.literal('bank_transfer'),zod.literal('line_pay'),zod.literal('other'),zod.literal(null)]).nullish(),
+  "paymentStatus": zod.enum(['unpaid', 'pending', 'partially_paid', 'paid', 'refunded', 'failed']).optional(),
+  "paidAmount": zod.number().nullish(),
+  "paymentNote": zod.string().nullish(),
+  "shippingMethod": zod.union([zod.literal('self_pickup'),zod.literal('convenience_store'),zod.literal('home_delivery'),zod.literal('other'),zod.literal(null)]).nullish(),
+  "shippingStatus": zod.enum(['not_shipped', 'preparing', 'shipped', 'arrived', 'picked_up', 'returned', 'cancelled']).optional(),
+  "recipientName": zod.string().nullish(),
+  "recipientPhone": zod.string().nullish(),
+  "recipientAddress": zod.string().nullish(),
+  "storeCode": zod.string().nullish(),
+  "storeName": zod.string().nullish(),
+  "trackingCode": zod.string().nullish(),
+  "trackingProvider": zod.string().nullish(),
+  "shippingNote": zod.string().nullish(),
+  "internalNote": zod.string().nullish(),
   "createdAt": zod.string()
 })
 
@@ -457,8 +513,26 @@ export const UpdateOrderStatusResponse = zod.object({
 }).passthrough().optional(),
   "quantity": zod.number(),
   "unitPrice": zod.number().optional(),
+  "shippingFee": zod.number().optional(),
   "totalPrice": zod.number(),
+  "orderTotal": zod.number().optional(),
+  "remainingAmount": zod.number().optional(),
   "status": zod.enum(['pending', 'awaiting_payment', 'preparing', 'shipped', 'completed', 'cancelled']),
+  "paymentMethod": zod.union([zod.literal('cash'),zod.literal('bank_transfer'),zod.literal('line_pay'),zod.literal('other'),zod.literal(null)]).nullish(),
+  "paymentStatus": zod.enum(['unpaid', 'pending', 'partially_paid', 'paid', 'refunded', 'failed']).optional(),
+  "paidAmount": zod.number().nullish(),
+  "paymentNote": zod.string().nullish(),
+  "shippingMethod": zod.union([zod.literal('self_pickup'),zod.literal('convenience_store'),zod.literal('home_delivery'),zod.literal('other'),zod.literal(null)]).nullish(),
+  "shippingStatus": zod.enum(['not_shipped', 'preparing', 'shipped', 'arrived', 'picked_up', 'returned', 'cancelled']).optional(),
+  "recipientName": zod.string().nullish(),
+  "recipientPhone": zod.string().nullish(),
+  "recipientAddress": zod.string().nullish(),
+  "storeCode": zod.string().nullish(),
+  "storeName": zod.string().nullish(),
+  "trackingCode": zod.string().nullish(),
+  "trackingProvider": zod.string().nullish(),
+  "shippingNote": zod.string().nullish(),
+  "internalNote": zod.string().nullish(),
   "createdAt": zod.string()
 })
 
@@ -528,13 +602,19 @@ export const GetPublicOrderResponse = zod.object({
   "productName": zod.string().nullish(),
   "quantity": zod.number(),
   "unitPrice": zod.number(),
+  "shippingFee": zod.number(),
   "totalPrice": zod.number(),
+  "orderTotal": zod.number(),
   "pickupMethod": zod.string(),
   "specValues": zod.object({
 
 }).passthrough().optional(),
   "status": zod.enum(['pending', 'awaiting_payment', 'preparing', 'shipped', 'completed', 'cancelled']),
   "statusLabel": zod.string(),
+  "shippingStatus": zod.enum(['not_shipped', 'preparing', 'shipped', 'arrived', 'picked_up', 'returned', 'cancelled']),
+  "shippingStatusLabel": zod.string().optional(),
+  "trackingCode": zod.string().nullish(),
+  "trackingProvider": zod.string().nullish(),
   "createdAt": zod.string()
 })
 

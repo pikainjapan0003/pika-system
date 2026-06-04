@@ -36,6 +36,7 @@ const { default: express }          = await import('express');
 const { db, storesTable, productsTable, ordersTable, pool } = await import('@workspace/db');
 const { eq }                        = await import('drizzle-orm');
 const { default: ordersRouter }     = await import('./orders.ts');
+const { default: publicRouter }     = await import('./public.ts');
 
 // ─────────────────────────────────────────────────────────────
 // 3. Minimal test Express app (no clerkMiddleware, no Clerk keys needed)
@@ -43,6 +44,7 @@ const { default: ordersRouter }     = await import('./orders.ts');
 const app = express();
 app.use(express.json());
 app.use('/api', ordersRouter);
+app.use('/api', publicRouter);
 
 // ─────────────────────────────────────────────────────────────
 // 4. Shared test state
@@ -331,5 +333,262 @@ describe('Regression: existing routes unbroken', () => {
     assert.strictEqual(status, 200);
     assert.ok(typeof data === 'string', 'export should return text/csv as string');
     assert.ok(data.includes('訂單編號'), 'CSV should have header row');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────
+// 10. Step 5C: payment / logistics fields on PATCH
+// ─────────────────────────────────────────────────────────────
+describe('Step 5C: payment / logistics fields', () => {
+  let step5OrderId;
+
+  before(async () => {
+    const [order] = await db
+      .insert(ordersTable)
+      .values({
+        productId: testProductId,
+        storeId: testStoreId,
+        productName: '__test_product__',
+        publicToken: `tok-step5-${Date.now()}`,
+        buyerName: 'Step5 Buyer',
+        buyerPhone: '0933333333',
+        pickupMethod: 'pickup',
+        quantity: 2,
+        unitPrice: '100.00',
+        shippingFee: '60.00',
+        totalPrice: '200.00',
+        status: 'pending',
+        specValues: {},
+      })
+      .returning();
+    step5OrderId = order.id;
+  });
+
+  // ── orderTotal / remainingAmount computed fields ──────────
+  test('GET /stores/:storeId/orders includes orderTotal and remainingAmount', async () => {
+    const { status, data } = await req('GET', `/stores/${testStoreId}/orders`);
+    assert.strictEqual(status, 200);
+    const order = data.find((o) => o.id === step5OrderId);
+    assert.ok(order, 'created order should appear in list');
+    assert.strictEqual(order.orderTotal, 260, 'orderTotal = totalPrice(200) + shippingFee(60)');
+    assert.strictEqual(order.remainingAmount, 260, 'remainingAmount = orderTotal when paidAmount is null');
+    assert.strictEqual(order.paidAmount, null, 'paidAmount should be null initially');
+    assert.strictEqual(order.paymentStatus, 'unpaid', 'paymentStatus defaults to unpaid');
+    assert.strictEqual(order.shippingStatus, 'not_shipped', 'shippingStatus defaults to not_shipped');
+  });
+
+  // ── PATCH: update payment fields ─────────────────────────
+  test('200 — PATCH updates paymentMethod and paymentStatus', async () => {
+    const { status, data } = await req('PATCH', `/orders/${step5OrderId}`, {
+      paymentMethod: 'bank_transfer',
+      paymentStatus: 'paid',
+    });
+    assert.strictEqual(status, 200);
+    assert.strictEqual(data.paymentMethod, 'bank_transfer');
+    assert.strictEqual(data.paymentStatus, 'paid');
+  });
+
+  test('200 — PATCH updates paidAmount and computes remainingAmount', async () => {
+    const { status, data } = await req('PATCH', `/orders/${step5OrderId}`, {
+      paidAmount: 150,
+    });
+    assert.strictEqual(status, 200);
+    assert.strictEqual(data.paidAmount, 150);
+    assert.strictEqual(data.orderTotal, 260);
+    assert.strictEqual(data.remainingAmount, 110, 'remainingAmount = 260 - 150');
+  });
+
+  test('200 — PATCH sets paidAmount to null clears it', async () => {
+    const { status, data } = await req('PATCH', `/orders/${step5OrderId}`, {
+      paidAmount: null,
+    });
+    assert.strictEqual(status, 200);
+    assert.strictEqual(data.paidAmount, null);
+    assert.strictEqual(data.remainingAmount, data.orderTotal, 'remainingAmount = orderTotal when paidAmount is null');
+  });
+
+  // ── PATCH: update shipping / logistics fields ─────────────
+  test('200 — PATCH updates shippingStatus and trackingCode', async () => {
+    const { status, data } = await req('PATCH', `/orders/${step5OrderId}`, {
+      shippingStatus: 'shipped',
+      trackingCode: 'TEST12345',
+      trackingProvider: '黑貓宅急便',
+    });
+    assert.strictEqual(status, 200);
+    assert.strictEqual(data.shippingStatus, 'shipped');
+    assert.strictEqual(data.trackingCode, 'TEST12345');
+    assert.strictEqual(data.trackingProvider, '黑貓宅急便');
+  });
+
+  test('200 — PATCH updates shippingFee recalculates orderTotal', async () => {
+    const { status, data } = await req('PATCH', `/orders/${step5OrderId}`, {
+      shippingFee: 100,
+    });
+    assert.strictEqual(status, 200);
+    assert.strictEqual(data.shippingFee, 100);
+    assert.strictEqual(data.orderTotal, 300, 'orderTotal = totalPrice(200) + shippingFee(100)');
+  });
+
+  test('200 — PATCH updates storeCode and storeName (maps to cvsStoreId/cvsStoreName)', async () => {
+    const { status, data } = await req('PATCH', `/orders/${step5OrderId}`, {
+      storeCode: '170268',
+      storeName: '全家台北信義店',
+    });
+    assert.strictEqual(status, 200);
+    assert.strictEqual(data.storeCode, '170268');
+    assert.strictEqual(data.storeName, '全家台北信義店');
+  });
+
+  test('200 — PATCH updates internalNote', async () => {
+    const { status, data } = await req('PATCH', `/orders/${step5OrderId}`, {
+      internalNote: '內部備註測試',
+    });
+    assert.strictEqual(status, 200);
+    assert.strictEqual(data.internalNote, '內部備註測試');
+  });
+
+  // ── PATCH enum validation → 422 ───────────────────────────
+  test('422 — invalid paymentMethod enum value', async () => {
+    const { status, data } = await req('PATCH', `/orders/${step5OrderId}`, {
+      paymentMethod: 'unpaid',
+    });
+    assert.strictEqual(status, 422);
+    assert.ok(data.error, 'should return error message');
+  });
+
+  test('422 — invalid paymentStatus enum value', async () => {
+    const { status, data } = await req('PATCH', `/orders/${step5OrderId}`, {
+      paymentStatus: 'invalid_status',
+    });
+    assert.strictEqual(status, 422);
+    assert.ok(data.error, 'should return error message');
+  });
+
+  test('422 — invalid shippingStatus enum value', async () => {
+    const { status, data } = await req('PATCH', `/orders/${step5OrderId}`, {
+      shippingStatus: 'not_a_status',
+    });
+    assert.strictEqual(status, 422);
+    assert.ok(data.error, 'should return error message');
+  });
+
+  test('422 — invalid shippingMethod enum value', async () => {
+    const { status, data } = await req('PATCH', `/orders/${step5OrderId}`, {
+      shippingMethod: 'teleport',
+    });
+    assert.strictEqual(status, 422);
+    assert.ok(data.error, 'should return error message');
+  });
+
+  // ── PATCH negative amount → 422 ───────────────────────────
+  test('422 — negative paidAmount', async () => {
+    const { status, data } = await req('PATCH', `/orders/${step5OrderId}`, {
+      paidAmount: -1,
+    });
+    assert.strictEqual(status, 422);
+    assert.ok(data.error, 'should return error message');
+  });
+
+  test('422 — negative shippingFee', async () => {
+    const { status, data } = await req('PATCH', `/orders/${step5OrderId}`, {
+      shippingFee: -10,
+    });
+    assert.strictEqual(status, 422);
+    assert.ok(data.error, 'should return error message');
+  });
+
+  // ── Existing validation still returns 400 (not 422) ──────
+  test('400 — quantity=0 still returns 400 (not 422)', async () => {
+    const { status } = await req('PATCH', `/orders/${step5OrderId}`, { quantity: 0 });
+    assert.strictEqual(status, 400);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────
+// 11. Step 5C: public tracking API privacy guard
+// ─────────────────────────────────────────────────────────────
+describe('Step 5C: public tracking API — privacy guard', () => {
+  let publicOrderToken;
+
+  before(async () => {
+    const token = `pub-tok-${Date.now()}`;
+    await db
+      .insert(ordersTable)
+      .values({
+        productId: testProductId,
+        storeId: testStoreId,
+        productName: '__test_product__',
+        publicToken: token,
+        buyerName: 'Privacy Buyer',
+        buyerPhone: '0944444444',
+        pickupMethod: 'home_delivery',
+        quantity: 1,
+        unitPrice: '200.00',
+        shippingFee: '80.00',
+        totalPrice: '200.00',
+        status: 'pending',
+        specValues: {},
+        // Fields that must NOT appear in public response
+        internalNote: '這是內部備註，不能公開',
+        paymentNote: '這是付款備註，不能公開',
+        paidAmount: '50.00',
+        recipientPhone: '0999999999',
+        recipientAddress: '台北市信義區信義路五段7號',
+        shippingNote: '這是物流備註，不能公開',
+        // Fields that ARE safe to show
+        shippingStatus: 'shipped',
+        trackingCode: 'PUB-TRACK-123',
+        trackingProvider: '黑貓宅急便',
+      })
+      .returning();
+    publicOrderToken = token;
+  });
+
+  test('200 — public tracking returns safe shipping fields', async () => {
+    const { status, data } = await req('GET', `/orders/track/${publicOrderToken}`, null, null);
+    assert.strictEqual(status, 200);
+    assert.strictEqual(data.shippingStatus, 'shipped');
+    assert.ok(typeof data.shippingStatusLabel === 'string', 'shippingStatusLabel should be present');
+    assert.strictEqual(data.trackingCode, 'PUB-TRACK-123');
+    assert.strictEqual(data.trackingProvider, '黑貓宅急便');
+    assert.strictEqual(data.shippingFee, 80);
+    assert.strictEqual(data.orderTotal, 280, 'orderTotal = totalPrice(200) + shippingFee(80)');
+  });
+
+  test('public tracking MUST NOT return internalNote', async () => {
+    const { data } = await req('GET', `/orders/track/${publicOrderToken}`, null, null);
+    assert.strictEqual(data.internalNote, undefined, 'internalNote MUST NOT be in public response');
+  });
+
+  test('public tracking MUST NOT return paymentNote', async () => {
+    const { data } = await req('GET', `/orders/track/${publicOrderToken}`, null, null);
+    assert.strictEqual(data.paymentNote, undefined, 'paymentNote MUST NOT be in public response');
+  });
+
+  test('public tracking MUST NOT return paidAmount', async () => {
+    const { data } = await req('GET', `/orders/track/${publicOrderToken}`, null, null);
+    assert.strictEqual(data.paidAmount, undefined, 'paidAmount MUST NOT be in public response');
+  });
+
+  test('public tracking MUST NOT return recipientPhone', async () => {
+    const { data } = await req('GET', `/orders/track/${publicOrderToken}`, null, null);
+    assert.strictEqual(data.recipientPhone, undefined, 'recipientPhone MUST NOT be in public response');
+  });
+
+  test('public tracking MUST NOT return recipientAddress', async () => {
+    const { data } = await req('GET', `/orders/track/${publicOrderToken}`, null, null);
+    assert.strictEqual(data.recipientAddress, undefined, 'recipientAddress MUST NOT be in public response');
+  });
+
+  test('public tracking MUST NOT return shippingNote', async () => {
+    const { data } = await req('GET', `/orders/track/${publicOrderToken}`, null, null);
+    assert.strictEqual(data.shippingNote, undefined, 'shippingNote MUST NOT be in public response');
+  });
+
+  test('publicToken is NOT trackingCode', async () => {
+    const { data } = await req('GET', `/orders/track/${publicOrderToken}`, null, null);
+    assert.ok(data.publicToken, 'publicToken should be present');
+    assert.notStrictEqual(data.publicToken, data.trackingCode, 'publicToken must not equal trackingCode');
+    assert.strictEqual(data.trackingCode, 'PUB-TRACK-123', 'trackingCode should be the logistics tracking number');
   });
 });

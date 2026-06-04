@@ -190,6 +190,57 @@ export interface PublicProduct {
   brandPrimaryColor?: string | null;
 }
 
+/**
+ * @nullable
+ */
+export type PaymentMethod = typeof PaymentMethod[keyof typeof PaymentMethod] | null;
+
+
+export const PaymentMethod = {
+  cash: 'cash',
+  bank_transfer: 'bank_transfer',
+  line_pay: 'line_pay',
+  other: 'other',
+} as const;
+
+export type PaymentStatus = typeof PaymentStatus[keyof typeof PaymentStatus];
+
+
+export const PaymentStatus = {
+  unpaid: 'unpaid',
+  pending: 'pending',
+  partially_paid: 'partially_paid',
+  paid: 'paid',
+  refunded: 'refunded',
+  failed: 'failed',
+} as const;
+
+/**
+ * @nullable
+ */
+export type ShippingMethod = typeof ShippingMethod[keyof typeof ShippingMethod] | null;
+
+
+export const ShippingMethod = {
+  self_pickup: 'self_pickup',
+  convenience_store: 'convenience_store',
+  home_delivery: 'home_delivery',
+  other: 'other',
+} as const;
+
+export type ShippingStatus = typeof ShippingStatus[keyof typeof ShippingStatus];
+
+
+export const ShippingStatus = {
+  not_shipped: 'not_shipped',
+  preparing: 'preparing',
+  shipped: 'shipped',
+  arrived: 'arrived',
+  picked_up: 'picked_up',
+  returned: 'returned',
+  cancelled: 'cancelled',
+} as const;
+
 export type OrderSpecValues = { [key: string]: unknown };
 
 export type OrderStatus = typeof OrderStatus[keyof typeof OrderStatus];
@@ -219,8 +270,37 @@ export interface Order {
   specValues?: OrderSpecValues;
   quantity: number;
   unitPrice?: number;
+  shippingFee?: number;
   totalPrice: number;
+  orderTotal?: number;
+  remainingAmount?: number;
   status: OrderStatus;
+  paymentMethod?: PaymentMethod | null;
+  paymentStatus?: PaymentStatus;
+  /** @nullable */
+  paidAmount?: number | null;
+  /** @nullable */
+  paymentNote?: string | null;
+  shippingMethod?: ShippingMethod | null;
+  shippingStatus?: ShippingStatus;
+  /** @nullable */
+  recipientName?: string | null;
+  /** @nullable */
+  recipientPhone?: string | null;
+  /** @nullable */
+  recipientAddress?: string | null;
+  /** @nullable */
+  storeCode?: string | null;
+  /** @nullable */
+  storeName?: string | null;
+  /** @nullable */
+  trackingCode?: string | null;
+  /** @nullable */
+  trackingProvider?: string | null;
+  /** @nullable */
+  shippingNote?: string | null;
+  /** @nullable */
+  internalNote?: string | null;
   createdAt: string;
 }
 
@@ -244,11 +324,19 @@ export interface PublicOrder {
   productName?: string | null;
   quantity: number;
   unitPrice: number;
+  shippingFee: number;
   totalPrice: number;
+  orderTotal: number;
   pickupMethod: string;
   specValues?: PublicOrderSpecValues;
   status: PublicOrderStatus;
   statusLabel: string;
+  shippingStatus: ShippingStatus;
+  shippingStatusLabel?: string;
+  /** @nullable */
+  trackingCode?: string | null;
+  /** @nullable */
+  trackingProvider?: string | null;
   createdAt: string;
 }
 
@@ -298,6 +386,37 @@ export interface OrderUpdate {
   /** @nullable */
   notes?: string | null;
   specValues?: OrderUpdateSpecValues;
+  paymentMethod?: PaymentMethod | null;
+  paymentStatus?: PaymentStatus;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  paidAmount?: number | null;
+  /** @nullable */
+  paymentNote?: string | null;
+  shippingMethod?: ShippingMethod | null;
+  shippingStatus?: ShippingStatus;
+  /** @minimum 0 */
+  shippingFee?: number;
+  /** @nullable */
+  recipientName?: string | null;
+  /** @nullable */
+  recipientPhone?: string | null;
+  /** @nullable */
+  recipientAddress?: string | null;
+  /** @nullable */
+  storeCode?: string | null;
+  /** @nullable */
+  storeName?: string | null;
+  /** @nullable */
+  trackingCode?: string | null;
+  /** @nullable */
+  trackingProvider?: string | null;
+  /** @nullable */
+  shippingNote?: string | null;
+  /** @nullable */
+  internalNote?: string | null;
 }
 
 export type OrderStatusUpdateStatus = typeof OrderStatusUpdateStatus[keyof typeof OrderStatusUpdateStatus];

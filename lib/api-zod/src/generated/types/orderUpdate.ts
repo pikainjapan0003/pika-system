@@ -6,6 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { OrderUpdateSpecValues } from './orderUpdateSpecValues';
+import type { PaymentMethod } from './paymentMethod';
+import type { PaymentStatus } from './paymentStatus';
+import type { ShippingMethod } from './shippingMethod';
+import type { ShippingStatus } from './shippingStatus';
 
 export interface OrderUpdate {
   /** @minLength 1 */
@@ -19,4 +23,35 @@ export interface OrderUpdate {
   /** @nullable */
   notes?: string | null;
   specValues?: OrderUpdateSpecValues;
+  paymentMethod?: PaymentMethod | null;
+  paymentStatus?: PaymentStatus;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  paidAmount?: number | null;
+  /** @nullable */
+  paymentNote?: string | null;
+  shippingMethod?: ShippingMethod | null;
+  shippingStatus?: ShippingStatus;
+  /** @minimum 0 */
+  shippingFee?: number;
+  /** @nullable */
+  recipientName?: string | null;
+  /** @nullable */
+  recipientPhone?: string | null;
+  /** @nullable */
+  recipientAddress?: string | null;
+  /** @nullable */
+  storeCode?: string | null;
+  /** @nullable */
+  storeName?: string | null;
+  /** @nullable */
+  trackingCode?: string | null;
+  /** @nullable */
+  trackingProvider?: string | null;
+  /** @nullable */
+  shippingNote?: string | null;
+  /** @nullable */
+  internalNote?: string | null;
 }
