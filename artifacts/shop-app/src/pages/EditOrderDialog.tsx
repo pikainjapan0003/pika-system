@@ -4,6 +4,10 @@ import {
   useUpdateOrder,
   getListOrdersQueryKey,
   type Order,
+  PaymentMethod,
+  PaymentStatus,
+  ShippingMethod,
+  ShippingStatus,
 } from "@workspace/api-client-react";
 import { toast } from "@/hooks/use-toast";
 import {
@@ -21,6 +25,8 @@ interface Props {
 
 const INPUT =
   "w-full h-9 px-3 rounded-xl border border-input bg-secondary/40 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30";
+const SELECT =
+  "w-full h-9 px-3 rounded-xl border border-input bg-secondary/40 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 cursor-pointer";
 const LABEL = "block text-xs text-muted-foreground mb-1 font-medium";
 const ERR = "text-xs text-destructive mt-1";
 
@@ -28,11 +34,33 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
   const qc = useQueryClient();
   const updateOrder = useUpdateOrder();
 
+  // Buyer / order core
   const [buyerName, setBuyerName] = useState("");
   const [buyerPhone, setBuyerPhone] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [pickupMethod, setPickupMethod] = useState("");
   const [notes, setNotes] = useState("");
+
+  // Payment
+  const [paymentMethod, setPaymentMethod] = useState<string>("");
+  const [paymentStatus, setPaymentStatus] = useState<string>("unpaid");
+  const [paidAmountStr, setPaidAmountStr] = useState<string>("");
+  const [paymentNote, setPaymentNote] = useState<string>("");
+
+  // Logistics
+  const [shippingMethod, setShippingMethod] = useState<string>("");
+  const [shippingStatus, setShippingStatus] = useState<string>("not_shipped");
+  const [shippingFeeStr, setShippingFeeStr] = useState<string>("");
+  const [recipientName, setRecipientName] = useState<string>("");
+  const [recipientPhone, setRecipientPhone] = useState<string>("");
+  const [recipientAddress, setRecipientAddress] = useState<string>("");
+  const [storeCode, setStoreCode] = useState<string>("");
+  const [storeName, setStoreName] = useState<string>("");
+  const [trackingCode, setTrackingCode] = useState<string>("");
+  const [trackingProvider, setTrackingProvider] = useState<string>("");
+  const [shippingNote, setShippingNote] = useState<string>("");
+  const [internalNote, setInternalNote] = useState<string>("");
+
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -43,6 +71,24 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
       setQuantity(order.quantity);
       setPickupMethod(order.pickupMethod);
       setNotes(order.notes ?? "");
+      // Payment
+      setPaymentMethod(order.paymentMethod ?? "");
+      setPaymentStatus(order.paymentStatus ?? "unpaid");
+      setPaidAmountStr(order.paidAmount != null ? String(order.paidAmount) : "");
+      setPaymentNote(order.paymentNote ?? "");
+      // Logistics
+      setShippingMethod(order.shippingMethod ?? "");
+      setShippingStatus(order.shippingStatus ?? "not_shipped");
+      setShippingFeeStr(order.shippingFee != null ? String(order.shippingFee) : "");
+      setRecipientName(order.recipientName ?? "");
+      setRecipientPhone(order.recipientPhone ?? "");
+      setRecipientAddress(order.recipientAddress ?? "");
+      setStoreCode(order.storeCode ?? "");
+      setStoreName(order.storeName ?? "");
+      setTrackingCode(order.trackingCode ?? "");
+      setTrackingProvider(order.trackingProvider ?? "");
+      setShippingNote(order.shippingNote ?? "");
+      setInternalNote(order.internalNote ?? "");
       setFieldErrors({});
       setSubmitError(null);
     }
@@ -66,6 +112,14 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
     if (!buyerPhone.trim()) errs.buyerPhone = "請輸入電話";
     if (!quantity || quantity < 1 || !Number.isInteger(quantity)) errs.quantity = "數量至少為 1";
     if (!pickupMethod.trim()) errs.pickupMethod = "請輸入取貨方式";
+    if (paidAmountStr.trim() !== "") {
+      const pa = parseFloat(paidAmountStr);
+      if (isNaN(pa) || pa < 0) errs.paidAmount = "已收金額不可為負數";
+    }
+    if (shippingFeeStr.trim() !== "") {
+      const sf = parseFloat(shippingFeeStr);
+      if (isNaN(sf) || sf < 0) errs.shippingFee = "運費不可為負數";
+    }
     setFieldErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -73,6 +127,10 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
   const handleSubmit = async () => {
     if (!order || !validate()) return;
     setSubmitError(null);
+
+    const paidAmount = paidAmountStr.trim() === "" ? null : parseFloat(paidAmountStr);
+    const shippingFee = shippingFeeStr.trim() === "" ? undefined : parseFloat(shippingFeeStr);
+
     try {
       await updateOrder.mutateAsync({
         orderId: order.id,
@@ -83,6 +141,24 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
           pickupMethod: pickupMethod.trim(),
           notes: notes.trim() || null,
           specValues: order.specValues as Record<string, unknown>,
+          // Payment
+          paymentMethod: (paymentMethod || null) as PaymentMethod,
+          paymentStatus: paymentStatus as PaymentStatus,
+          paidAmount,
+          paymentNote: paymentNote.trim() || null,
+          // Logistics
+          shippingMethod: (shippingMethod || null) as ShippingMethod,
+          shippingStatus: shippingStatus as ShippingStatus,
+          shippingFee,
+          recipientName: recipientName.trim() || null,
+          recipientPhone: recipientPhone.trim() || null,
+          recipientAddress: recipientAddress.trim() || null,
+          storeCode: storeCode.trim() || null,
+          storeName: storeName.trim() || null,
+          trackingCode: trackingCode.trim() || null,
+          trackingProvider: trackingProvider.trim() || null,
+          shippingNote: shippingNote.trim() || null,
+          internalNote: internalNote.trim() || null,
         },
       });
       toast({ title: "已更新訂單" });
@@ -178,7 +254,7 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
 
           {/* 備註 */}
           <FormSection>
-            <SectionHeading>備註</SectionHeading>
+            <SectionHeading>買家備註</SectionHeading>
             <div>
               <label className={LABEL}>備註（選填）</label>
               <textarea
@@ -187,6 +263,203 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
                 placeholder="選填備註"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
+              />
+            </div>
+          </FormSection>
+
+          {/* 付款資訊 */}
+          <FormSection>
+            <SectionHeading>付款資訊</SectionHeading>
+            <p className="text-[10px] text-muted-foreground/60">店家手動記錄，尚未串接金流</p>
+            <div>
+              <label className={LABEL}>付款狀態</label>
+              <select
+                className={SELECT}
+                value={paymentStatus}
+                onChange={(e) => setPaymentStatus(e.target.value)}
+              >
+                <option value={PaymentStatus.unpaid}>未付款</option>
+                <option value={PaymentStatus.pending}>待確認</option>
+                <option value={PaymentStatus.partially_paid}>部分付款</option>
+                <option value={PaymentStatus.paid}>已付款</option>
+                <option value={PaymentStatus.refunded}>已退款</option>
+                <option value={PaymentStatus.failed}>付款失敗</option>
+              </select>
+            </div>
+            <div>
+              <label className={LABEL}>付款方式</label>
+              <select
+                className={SELECT}
+                value={paymentMethod}
+                onChange={(e) => setPaymentMethod(e.target.value)}
+              >
+                <option value="">未設定</option>
+                <option value={PaymentMethod.cash}>現金</option>
+                <option value={PaymentMethod.bank_transfer}>銀行轉帳</option>
+                <option value={PaymentMethod.line_pay}>LINE Pay</option>
+                <option value={PaymentMethod.other}>其他</option>
+              </select>
+            </div>
+            <div>
+              <label className={LABEL}>已收金額（選填，留空代表未記錄）</label>
+              <input
+                type="number"
+                min={0}
+                step={1}
+                className={INPUT}
+                placeholder="例如：200"
+                value={paidAmountStr}
+                onChange={(e) => { setPaidAmountStr(e.target.value); clearFieldError("paidAmount"); }}
+              />
+              {fieldErrors.paidAmount && <p className={ERR}>{fieldErrors.paidAmount}</p>}
+            </div>
+            <div>
+              <label className={LABEL}>付款備註（後台可見，選填）</label>
+              <textarea
+                className={`${INPUT} h-auto pt-2 pb-2 resize-none`}
+                rows={2}
+                placeholder="例如：已轉帳 NT$200，2024/06/01"
+                value={paymentNote}
+                onChange={(e) => setPaymentNote(e.target.value)}
+              />
+            </div>
+          </FormSection>
+
+          {/* 物流資訊 */}
+          <FormSection>
+            <SectionHeading>物流資訊</SectionHeading>
+            <p className="text-[10px] text-muted-foreground/60">店家手動記錄，尚未串接物流</p>
+            <div>
+              <label className={LABEL}>出貨狀態</label>
+              <select
+                className={SELECT}
+                value={shippingStatus}
+                onChange={(e) => setShippingStatus(e.target.value)}
+              >
+                <option value={ShippingStatus.not_shipped}>未出貨</option>
+                <option value={ShippingStatus.preparing}>備貨中</option>
+                <option value={ShippingStatus.shipped}>已出貨</option>
+                <option value={ShippingStatus.arrived}>已到貨</option>
+                <option value={ShippingStatus.picked_up}>已取貨</option>
+                <option value={ShippingStatus.returned}>已退回</option>
+                <option value={ShippingStatus.cancelled}>已取消</option>
+              </select>
+            </div>
+            <div>
+              <label className={LABEL}>物流方式</label>
+              <select
+                className={SELECT}
+                value={shippingMethod}
+                onChange={(e) => setShippingMethod(e.target.value)}
+              >
+                <option value="">未設定</option>
+                <option value={ShippingMethod.self_pickup}>自取</option>
+                <option value={ShippingMethod.convenience_store}>超商取貨</option>
+                <option value={ShippingMethod.home_delivery}>宅配</option>
+                <option value={ShippingMethod.other}>其他</option>
+              </select>
+            </div>
+            <div>
+              <label className={LABEL}>運費（選填，留空保留原值）</label>
+              <input
+                type="number"
+                min={0}
+                step={1}
+                className={INPUT}
+                placeholder="例如：60"
+                value={shippingFeeStr}
+                onChange={(e) => { setShippingFeeStr(e.target.value); clearFieldError("shippingFee"); }}
+              />
+              {fieldErrors.shippingFee && <p className={ERR}>{fieldErrors.shippingFee}</p>}
+            </div>
+            <div>
+              <label className={LABEL}>物流追蹤碼（選填）</label>
+              <input
+                type="text"
+                className={INPUT}
+                placeholder="例如：TC123456789TW"
+                value={trackingCode}
+                onChange={(e) => setTrackingCode(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className={LABEL}>物流商（選填）</label>
+              <input
+                type="text"
+                className={INPUT}
+                placeholder="例如：黑貓宅急便"
+                value={trackingProvider}
+                onChange={(e) => setTrackingProvider(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className={LABEL}>收件人（選填）</label>
+              <input
+                type="text"
+                className={INPUT}
+                placeholder="收件人姓名"
+                value={recipientName}
+                onChange={(e) => setRecipientName(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className={LABEL}>收件電話（選填）</label>
+              <input
+                type="tel"
+                className={INPUT}
+                placeholder="收件人電話"
+                value={recipientPhone}
+                onChange={(e) => setRecipientPhone(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className={LABEL}>收件地址（選填）</label>
+              <input
+                type="text"
+                className={INPUT}
+                placeholder="完整收件地址"
+                value={recipientAddress}
+                onChange={(e) => setRecipientAddress(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className={LABEL}>超商店號（選填）</label>
+              <input
+                type="text"
+                className={INPUT}
+                placeholder="超商門市店號"
+                value={storeCode}
+                onChange={(e) => setStoreCode(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className={LABEL}>超商店名（選填）</label>
+              <input
+                type="text"
+                className={INPUT}
+                placeholder="超商門市名稱"
+                value={storeName}
+                onChange={(e) => setStoreName(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className={LABEL}>物流備註（選填）</label>
+              <textarea
+                className={`${INPUT} h-auto pt-2 pb-2 resize-none`}
+                rows={2}
+                placeholder="物流相關備註"
+                value={shippingNote}
+                onChange={(e) => setShippingNote(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className={LABEL}>內部備註（後台可見，選填）</label>
+              <textarea
+                className={`${INPUT} h-auto pt-2 pb-2 resize-none`}
+                rows={2}
+                placeholder="僅後台可見的備註"
+                value={internalNote}
+                onChange={(e) => setInternalNote(e.target.value)}
               />
             </div>
           </FormSection>

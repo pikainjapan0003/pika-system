@@ -15,6 +15,54 @@ const HOME_DELIVERY_LABELS: Record<string, string> = {
   "郵局": "郵局",
   "宅配": "宅配（已停用）",
 };
+
+const PAYMENT_STATUS_LABELS: Record<string, string> = {
+  unpaid: "未付款",
+  pending: "待確認",
+  partially_paid: "部分付款",
+  paid: "已付款",
+  refunded: "已退款",
+  failed: "付款失敗",
+};
+const PAYMENT_STATUS_COLORS: Record<string, string> = {
+  unpaid: "bg-red-100 text-red-700",
+  pending: "bg-amber-100 text-amber-600",
+  partially_paid: "bg-blue-100 text-blue-700",
+  paid: "bg-green-100 text-green-700",
+  refunded: "bg-gray-100 text-gray-600",
+  failed: "bg-red-100 text-red-700",
+};
+const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  cash: "現金",
+  bank_transfer: "銀行轉帳",
+  line_pay: "LINE Pay",
+  other: "其他",
+};
+const SHIPPING_STATUS_LABELS: Record<string, string> = {
+  not_shipped: "未出貨",
+  preparing: "備貨中",
+  shipped: "已出貨",
+  arrived: "已到貨",
+  picked_up: "已取貨",
+  returned: "已退回",
+  cancelled: "已取消",
+};
+const SHIPPING_STATUS_COLORS: Record<string, string> = {
+  not_shipped: "bg-secondary/80 text-muted-foreground",
+  preparing: "bg-amber-100 text-amber-600",
+  shipped: "bg-cyan-100 text-cyan-700",
+  arrived: "bg-blue-100 text-blue-600",
+  picked_up: "bg-green-100 text-green-600",
+  returned: "bg-orange-100 text-orange-600",
+  cancelled: "bg-gray-100 text-gray-500",
+};
+const SHIPPING_METHOD_LABELS: Record<string, string> = {
+  self_pickup: "自取",
+  convenience_store: "超商取貨",
+  home_delivery: "宅配",
+  other: "其他",
+};
+
 import { CreateOrderDialog } from "./CreateOrderDialog";
 import { EditOrderDialog } from "./EditOrderDialog";
 
@@ -226,11 +274,9 @@ export default function OrdersPage() {
                         )}
                         {o.status !== "cancelled" && (
                           <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium shrink-0 ${
-                            o.status === "shipped" || o.status === "completed"
-                              ? "bg-cyan-100 text-cyan-700"
-                              : "bg-secondary/80 text-muted-foreground"
+                            SHIPPING_STATUS_COLORS[o.shippingStatus ?? "not_shipped"] ?? "bg-secondary/80 text-muted-foreground"
                           }`}>
-                            {o.status === "shipped" || o.status === "completed" ? "已出貨" : "未出貨"}
+                            {SHIPPING_STATUS_LABELS[o.shippingStatus ?? "not_shipped"] ?? "未出貨"}
                           </span>
                         )}
                         <span className="text-muted-foreground shrink-0 ml-auto text-sm leading-none">
@@ -239,7 +285,7 @@ export default function OrdersPage() {
                       </div>
                     </div>
 
-                    {/* Expanded detail panel (Step 1) */}
+                    {/* Expanded detail panel */}
                     {expandedId === o.id && (
                       <div className="border-t border-border bg-secondary/20 px-4 pt-4 pb-5 space-y-3">
 
@@ -273,32 +319,80 @@ export default function OrdersPage() {
                             {o.unitPrice != null && (
                               <DetailRow label="單價" value={`NT$ ${Number(o.unitPrice).toLocaleString()}`} />
                             )}
-                            <DetailRow label="總金額" value={`NT$ ${Number(o.totalPrice).toLocaleString()}`} bold />
+                            <DetailRow label="商品小計" value={`NT$ ${Number(o.totalPrice).toLocaleString()}`} bold />
                           </div>
                         </div>
 
                         {/* 付款資訊 */}
                         <div>
                           <SectionLabel>付款資訊</SectionLabel>
+                          <p className="text-[10px] text-muted-foreground/50 mb-1.5">店家手動記錄，尚未串接金流</p>
                           <div className="bg-white rounded-xl border border-border/50 divide-y divide-border/40">
-                            <PlaceholderRow label="付款方式" />
-                            <PlaceholderRow label="付款狀態" />
-                            <PlaceholderRow label="運費" />
+                            <div className="flex items-center justify-between px-3 py-2.5 gap-2">
+                              <span className="text-xs text-muted-foreground shrink-0">付款狀態</span>
+                              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${PAYMENT_STATUS_COLORS[o.paymentStatus ?? "unpaid"] ?? "bg-gray-100 text-gray-500"}`}>
+                                {PAYMENT_STATUS_LABELS[o.paymentStatus ?? "unpaid"] ?? "未付款"}
+                              </span>
+                            </div>
+                            <DetailRow
+                              label="付款方式"
+                              value={o.paymentMethod ? (PAYMENT_METHOD_LABELS[o.paymentMethod] ?? o.paymentMethod) : "未設定"}
+                            />
+                            <DetailRow
+                              label="運費"
+                              value={`NT$ ${Number(o.shippingFee ?? 0).toLocaleString()}`}
+                            />
+                            <DetailRow
+                              label="訂單總額"
+                              value={`NT$ ${Number(o.orderTotal ?? (Number(o.totalPrice) + Number(o.shippingFee ?? 0))).toLocaleString()}`}
+                              bold
+                            />
+                            <DetailRow
+                              label="已收金額"
+                              value={o.paidAmount != null ? `NT$ ${Number(o.paidAmount).toLocaleString()}` : "尚未記錄"}
+                            />
+                            <DetailRow
+                              label="待收金額"
+                              value={`NT$ ${Number(o.remainingAmount ?? (Number(o.orderTotal ?? o.totalPrice) - (o.paidAmount ?? 0))).toLocaleString()}`}
+                            />
+                            {o.paymentNote && (
+                              <DetailRow label="付款備註（後台）" value={o.paymentNote} />
+                            )}
                           </div>
                         </div>
 
                         {/* 物流資訊 */}
                         <div>
                           <SectionLabel>物流資訊</SectionLabel>
+                          <p className="text-[10px] text-muted-foreground/50 mb-1.5">店家手動記錄，尚未串接物流</p>
                           <div className="bg-white rounded-xl border border-border/50 divide-y divide-border/40">
-                            <DetailRow label="取貨方式" value={o.pickupMethod} />
-                            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                            {(o as any).shippingFee != null && (
-                              <DetailRow label="運費" value={`NT$ ${Number((o as any).shippingFee).toLocaleString()}`} />
+                            <div className="flex items-center justify-between px-3 py-2.5 gap-2">
+                              <span className="text-xs text-muted-foreground shrink-0">出貨狀態</span>
+                              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${SHIPPING_STATUS_COLORS[o.shippingStatus ?? "not_shipped"] ?? "bg-secondary/80 text-muted-foreground"}`}>
+                                {SHIPPING_STATUS_LABELS[o.shippingStatus ?? "not_shipped"] ?? "未出貨"}
+                              </span>
+                            </div>
+                            {o.shippingMethod && (
+                              <DetailRow
+                                label="物流方式"
+                                value={SHIPPING_METHOD_LABELS[o.shippingMethod] ?? o.shippingMethod}
+                              />
                             )}
-                            <PlaceholderRow label="出貨狀態" />
-                            <PlaceholderRow label="物流追蹤碼" />
-                            {o.notes && <DetailRow label="備註" value={o.notes} />}
+                            <DetailRow label="取貨方式" value={o.pickupMethod} />
+                            {o.trackingCode && <DetailRow label="物流追蹤碼" value={o.trackingCode} />}
+                            {o.trackingProvider && <DetailRow label="物流商" value={o.trackingProvider} />}
+                            {o.recipientName && <DetailRow label="收件人" value={o.recipientName} />}
+                            {o.recipientPhone && <DetailRow label="收件電話" value={o.recipientPhone} />}
+                            {o.recipientAddress && <DetailRow label="收件地址" value={o.recipientAddress} />}
+                            {o.storeCode && !isSevenElevenMethod(o.pickupMethod) && (
+                              <DetailRow label="超商店號" value={o.storeCode} />
+                            )}
+                            {o.storeName && !isSevenElevenMethod(o.pickupMethod) && (
+                              <DetailRow label="超商店名" value={o.storeName} />
+                            )}
+                            {o.shippingNote && <DetailRow label="物流備註" value={o.shippingNote} />}
+                            {o.internalNote && <DetailRow label="內部備註（後台）" value={o.internalNote} />}
+                            {o.notes && <DetailRow label="買家備註" value={o.notes} />}
                           </div>
                         </div>
 
@@ -306,15 +400,12 @@ export default function OrdersPage() {
                         {isSevenElevenMethod(o.pickupMethod) && (
                           <div>
                             <SectionLabel>7-11 門市</SectionLabel>
-                            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                            {(o as any).cvsStoreId ? (
+                            {o.storeCode ? (
                               <div className="bg-white rounded-xl border border-primary/20 px-4 py-3 space-y-1">
-                                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                                <div className="text-sm font-semibold text-foreground">7-11 {(o as any).cvsStoreName}</div>
+                                <div className="text-sm font-semibold text-foreground">7-11 {o.storeName}</div>
                                 {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                                 <div className="text-xs text-muted-foreground">{(o as any).cvsStoreAddress}</div>
-                                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                                <div className="text-xs text-muted-foreground/70">門市編號：{(o as any).cvsStoreId}</div>
+                                <div className="text-xs text-muted-foreground/70">門市編號：{o.storeCode}</div>
                                 <div className="flex items-center gap-3 mt-1 pt-1 border-t border-border/40">
                                   <span className="text-xs text-muted-foreground/60">
                                     {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
@@ -516,15 +607,6 @@ function DetailRow({ label, value, bold }: { label: string; value: string; bold?
     <div className="flex items-center justify-between px-3 py-2.5 gap-2">
       <span className="text-xs text-muted-foreground shrink-0">{label}</span>
       <span className={`text-sm text-right break-all ${bold ? "font-bold" : "font-medium"} text-foreground`}>{value}</span>
-    </div>
-  );
-}
-
-function PlaceholderRow({ label }: { label: string }) {
-  return (
-    <div className="flex items-center justify-between px-3 py-2.5 gap-2">
-      <span className="text-xs text-muted-foreground shrink-0">{label}</span>
-      <span className="text-xs text-muted-foreground/50 italic">尚未建立此欄位</span>
     </div>
   );
 }
