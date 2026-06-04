@@ -1,0 +1,2636 @@
+{
+  "generatedAt": "2026-06-04T16:39:38.660Z",
+  "totalStores": 7386,
+  "targetStores": 7200,
+  "coverageRate": "102.58%",
+  "coverageRatio": 102.58,
+  "meetsTarget": true,
+  "excessOrDeficit": 186,
+  "sourceUpdatedRange": {
+    "oldest": "2026-06-03T15:22:21.588Z",
+    "newest": "2026-06-04T09:41:57.403Z"
+  },
+  "cityCounts": {
+    "新北市": 1230,
+    "台北市": 977,
+    "台中市": 936,
+    "桃園市": 862,
+    "高雄市": 757,
+    "台南市": 612,
+    "彰化縣": 272,
+    "新竹縣": 226,
+    "屏東縣": 206,
+    "新竹市": 179,
+    "苗栗縣": 175,
+    "雲林縣": 145,
+    "宜蘭縣": 137,
+    "花蓮縣": 117,
+    "嘉義縣": 115,
+    "南投縣": 115,
+    "基隆市": 99,
+    "台東縣": 76,
+    "嘉義市": 73,
+    "澎湖縣": 39,
+    "金門縣": 27,
+    "連江縣": 11
+  },
+  "sourceCounts": {
+    "emap_district_batch": 7347,
+    "twcoupon_unverified": 36,
+    "manual_seed": 2,
+    "twcoupon_emap_verified": 1
+  },
+  "coordinateStats": {
+    "hasCoordinates": 7347,
+    "missingCoordinates": 39,
+    "totalActive": 7386
+  },
+  "anomalyChecks": {
+    "cityAnomalyCount": 0,
+    "districtNullCount": 4,
+    "districtNullRecords": [
+      {
+        "store_id": "twcoupon-6bc8d4eb73e6",
+        "store_name": "文津門市",
+        "city": "台中市",
+        "source": "twcoupon_unverified"
+      },
+      {
+        "store_id": "twcoupon-c442bde1dd83",
+        "store_name": "向勝門市",
+        "city": "台中市",
+        "source": "twcoupon_unverified"
+      },
+      {
+        "store_id": "twcoupon-ef5172b4d89b",
+        "store_name": "新學和門市",
+        "city": "台中市",
+        "source": "twcoupon_unverified"
+      },
+      {
+        "store_id": "twcoupon-56064dfd673a",
+        "store_name": "夏林門市",
+        "city": "台南市",
+        "source": "twcoupon_unverified"
+      }
+    ],
+    "districtPatternAnomalies": [],
+    "duplicateStoreIdCount": 0,
+    "duplicateNameAddressCombinations": [],
+    "coordinateOutOfTaiwanRange": 27,
+    "coordinateTrueAnomalies": 0,
+    "coordinateTrueAnomalyNote": "金門縣 stores with longitude ~118.x are CORRECT for Kinmen island",
+    "inactiveStoreCount": 4,
+    "mixedProviderCount": 0
+  },
+  "districtCoverageStats": {
+    "totalExpected": 368,
+    "totalCovered": 366,
+    "totalMissing": 2,
+    "missingDistricts": [
+      {
+        "city": "新竹縣",
+        "district": "峨眉鄉",
+        "storeCount": 0
+      },
+      {
+        "city": "金門縣",
+        "district": "烏坵鄉",
+        "storeCount": 0
+      }
+    ]
+  },
+  "lowCountDistricts": [
+    {
+      "city": "新北市",
+      "district": "雙溪區",
+      "storeCount": 2
+    },
+    {
+      "city": "新北市",
+      "district": "烏來區",
+      "storeCount": 2
+    },
+    {
+      "city": "新北市",
+      "district": "石碇區",
+      "storeCount": 1
+    },
+    {
+      "city": "新北市",
+      "district": "坪林區",
+      "storeCount": 2
+    },
+    {
+      "city": "新北市",
+      "district": "平溪區",
+      "storeCount": 1
+    },
+    {
+      "city": "新竹縣",
+      "district": "北埔鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "新竹縣",
+      "district": "尖石鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "新竹縣",
+      "district": "五峰鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "苗栗縣",
+      "district": "卓蘭鎮",
+      "storeCount": 2
+    },
+    {
+      "city": "苗栗縣",
+      "district": "大湖鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "苗栗縣",
+      "district": "西湖鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "苗栗縣",
+      "district": "三灣鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "苗栗縣",
+      "district": "獅潭鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "苗栗縣",
+      "district": "泰安鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "彰化縣",
+      "district": "二水鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "彰化縣",
+      "district": "大城鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "彰化縣",
+      "district": "竹塘鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "南投縣",
+      "district": "集集鎮",
+      "storeCount": 2
+    },
+    {
+      "city": "南投縣",
+      "district": "鹿谷鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "南投縣",
+      "district": "中寮鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "南投縣",
+      "district": "國姓鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "南投縣",
+      "district": "信義鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "雲林縣",
+      "district": "大埤鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "雲林縣",
+      "district": "林內鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "雲林縣",
+      "district": "褒忠鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "雲林縣",
+      "district": "台西鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "雲林縣",
+      "district": "水林鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "雲林縣",
+      "district": "東勢鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "嘉義縣",
+      "district": "溪口鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "嘉義縣",
+      "district": "義竹鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "嘉義縣",
+      "district": "鹿草鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "嘉義縣",
+      "district": "番路鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "嘉義縣",
+      "district": "大埔鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "嘉義縣",
+      "district": "阿里山鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "台南市",
+      "district": "南化區",
+      "storeCount": 1
+    },
+    {
+      "city": "台南市",
+      "district": "七股區",
+      "storeCount": 2
+    },
+    {
+      "city": "台南市",
+      "district": "將軍區",
+      "storeCount": 2
+    },
+    {
+      "city": "台南市",
+      "district": "北門區",
+      "storeCount": 2
+    },
+    {
+      "city": "台南市",
+      "district": "大內區",
+      "storeCount": 2
+    },
+    {
+      "city": "台南市",
+      "district": "山上區",
+      "storeCount": 2
+    },
+    {
+      "city": "台南市",
+      "district": "左鎮區",
+      "storeCount": 1
+    },
+    {
+      "city": "高雄市",
+      "district": "田寮區",
+      "storeCount": 1
+    },
+    {
+      "city": "高雄市",
+      "district": "永安區",
+      "storeCount": 2
+    },
+    {
+      "city": "高雄市",
+      "district": "甲仙區",
+      "storeCount": 2
+    },
+    {
+      "city": "高雄市",
+      "district": "杉林區",
+      "storeCount": 1
+    },
+    {
+      "city": "高雄市",
+      "district": "茂林區",
+      "storeCount": 1
+    },
+    {
+      "city": "高雄市",
+      "district": "桃源區",
+      "storeCount": 1
+    },
+    {
+      "city": "高雄市",
+      "district": "那瑪夏區",
+      "storeCount": 1
+    },
+    {
+      "city": "屏東縣",
+      "district": "新埤鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "屏東縣",
+      "district": "崁頂鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "屏東縣",
+      "district": "滿州鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "屏東縣",
+      "district": "三地門鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "屏東縣",
+      "district": "霧台鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "屏東縣",
+      "district": "牡丹鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "屏東縣",
+      "district": "獅子鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "屏東縣",
+      "district": "春日鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "屏東縣",
+      "district": "來義鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "屏東縣",
+      "district": "泰武鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "屏東縣",
+      "district": "瑪家鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "宜蘭縣",
+      "district": "大同鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "宜蘭縣",
+      "district": "南澳鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "花蓮縣",
+      "district": "豐濱鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "花蓮縣",
+      "district": "富里鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "花蓮縣",
+      "district": "萬榮鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "花蓮縣",
+      "district": "卓溪鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "台東縣",
+      "district": "關山鎮",
+      "storeCount": 2
+    },
+    {
+      "city": "台東縣",
+      "district": "東河鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "台東縣",
+      "district": "長濱鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "台東縣",
+      "district": "綠島鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "台東縣",
+      "district": "蘭嶼鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "台東縣",
+      "district": "延平鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "台東縣",
+      "district": "金峰鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "台東縣",
+      "district": "達仁鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "台東縣",
+      "district": "海端鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "澎湖縣",
+      "district": "白沙鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "澎湖縣",
+      "district": "西嶼鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "澎湖縣",
+      "district": "望安鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "澎湖縣",
+      "district": "七美鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "金門縣",
+      "district": "烈嶼鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "連江縣",
+      "district": "莒光鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "連江縣",
+      "district": "東引鄉",
+      "storeCount": 1
+    }
+  ],
+  "singleStoreDistricts": [
+    {
+      "city": "新北市",
+      "district": "石碇區",
+      "storeCount": 1
+    },
+    {
+      "city": "新北市",
+      "district": "平溪區",
+      "storeCount": 1
+    },
+    {
+      "city": "新竹縣",
+      "district": "尖石鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "新竹縣",
+      "district": "五峰鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "苗栗縣",
+      "district": "西湖鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "苗栗縣",
+      "district": "三灣鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "苗栗縣",
+      "district": "獅潭鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "苗栗縣",
+      "district": "泰安鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "彰化縣",
+      "district": "大城鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "南投縣",
+      "district": "中寮鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "雲林縣",
+      "district": "東勢鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "嘉義縣",
+      "district": "鹿草鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "嘉義縣",
+      "district": "大埔鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "嘉義縣",
+      "district": "阿里山鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "台南市",
+      "district": "南化區",
+      "storeCount": 1
+    },
+    {
+      "city": "台南市",
+      "district": "左鎮區",
+      "storeCount": 1
+    },
+    {
+      "city": "高雄市",
+      "district": "田寮區",
+      "storeCount": 1
+    },
+    {
+      "city": "高雄市",
+      "district": "杉林區",
+      "storeCount": 1
+    },
+    {
+      "city": "高雄市",
+      "district": "茂林區",
+      "storeCount": 1
+    },
+    {
+      "city": "高雄市",
+      "district": "桃源區",
+      "storeCount": 1
+    },
+    {
+      "city": "高雄市",
+      "district": "那瑪夏區",
+      "storeCount": 1
+    },
+    {
+      "city": "屏東縣",
+      "district": "新埤鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "屏東縣",
+      "district": "三地門鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "屏東縣",
+      "district": "霧台鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "屏東縣",
+      "district": "牡丹鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "屏東縣",
+      "district": "獅子鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "屏東縣",
+      "district": "春日鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "屏東縣",
+      "district": "來義鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "屏東縣",
+      "district": "泰武鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "屏東縣",
+      "district": "瑪家鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "花蓮縣",
+      "district": "豐濱鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "花蓮縣",
+      "district": "萬榮鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "花蓮縣",
+      "district": "卓溪鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "台東縣",
+      "district": "綠島鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "台東縣",
+      "district": "延平鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "台東縣",
+      "district": "金峰鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "台東縣",
+      "district": "達仁鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "台東縣",
+      "district": "海端鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "澎湖縣",
+      "district": "望安鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "澎湖縣",
+      "district": "七美鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "連江縣",
+      "district": "莒光鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "連江縣",
+      "district": "東引鄉",
+      "storeCount": 1
+    }
+  ],
+  "highCountDistricts": [
+    {
+      "city": "桃園市",
+      "district": "桃園區",
+      "storeCount": 169
+    },
+    {
+      "city": "桃園市",
+      "district": "中壢區",
+      "storeCount": 168
+    },
+    {
+      "city": "新北市",
+      "district": "板橋區",
+      "storeCount": 154
+    },
+    {
+      "city": "台北市",
+      "district": "中山區",
+      "storeCount": 130
+    },
+    {
+      "city": "新北市",
+      "district": "中和區",
+      "storeCount": 125
+    },
+    {
+      "city": "新北市",
+      "district": "三重區",
+      "storeCount": 125
+    },
+    {
+      "city": "台北市",
+      "district": "大安區",
+      "storeCount": 124
+    },
+    {
+      "city": "新北市",
+      "district": "新莊區",
+      "storeCount": 124
+    },
+    {
+      "city": "台中市",
+      "district": "西屯區",
+      "storeCount": 115
+    },
+    {
+      "city": "新竹市",
+      "district": "東區",
+      "storeCount": 106
+    },
+    {
+      "city": "台北市",
+      "district": "內湖區",
+      "storeCount": 103
+    },
+    {
+      "city": "桃園市",
+      "district": "龜山區",
+      "storeCount": 101
+    }
+  ],
+  "districtCoverage": [
+    {
+      "city": "台北市",
+      "district": "中正區",
+      "storeCount": 86
+    },
+    {
+      "city": "台北市",
+      "district": "大同區",
+      "storeCount": 47
+    },
+    {
+      "city": "台北市",
+      "district": "中山區",
+      "storeCount": 130
+    },
+    {
+      "city": "台北市",
+      "district": "松山區",
+      "storeCount": 73
+    },
+    {
+      "city": "台北市",
+      "district": "大安區",
+      "storeCount": 124
+    },
+    {
+      "city": "台北市",
+      "district": "萬華區",
+      "storeCount": 61
+    },
+    {
+      "city": "台北市",
+      "district": "信義區",
+      "storeCount": 91
+    },
+    {
+      "city": "台北市",
+      "district": "士林區",
+      "storeCount": 90
+    },
+    {
+      "city": "台北市",
+      "district": "北投區",
+      "storeCount": 65
+    },
+    {
+      "city": "台北市",
+      "district": "內湖區",
+      "storeCount": 103
+    },
+    {
+      "city": "台北市",
+      "district": "南港區",
+      "storeCount": 45
+    },
+    {
+      "city": "台北市",
+      "district": "文山區",
+      "storeCount": 62
+    },
+    {
+      "city": "新北市",
+      "district": "板橋區",
+      "storeCount": 154
+    },
+    {
+      "city": "新北市",
+      "district": "汐止區",
+      "storeCount": 62
+    },
+    {
+      "city": "新北市",
+      "district": "新店區",
+      "storeCount": 95
+    },
+    {
+      "city": "新北市",
+      "district": "中和區",
+      "storeCount": 125
+    },
+    {
+      "city": "新北市",
+      "district": "永和區",
+      "storeCount": 56
+    },
+    {
+      "city": "新北市",
+      "district": "土城區",
+      "storeCount": 68
+    },
+    {
+      "city": "新北市",
+      "district": "樹林區",
+      "storeCount": 55
+    },
+    {
+      "city": "新北市",
+      "district": "三重區",
+      "storeCount": 125
+    },
+    {
+      "city": "新北市",
+      "district": "新莊區",
+      "storeCount": 124
+    },
+    {
+      "city": "新北市",
+      "district": "蘆洲區",
+      "storeCount": 51
+    },
+    {
+      "city": "新北市",
+      "district": "五股區",
+      "storeCount": 34
+    },
+    {
+      "city": "新北市",
+      "district": "泰山區",
+      "storeCount": 29
+    },
+    {
+      "city": "新北市",
+      "district": "林口區",
+      "storeCount": 48
+    },
+    {
+      "city": "新北市",
+      "district": "淡水區",
+      "storeCount": 66
+    },
+    {
+      "city": "新北市",
+      "district": "三芝區",
+      "storeCount": 6
+    },
+    {
+      "city": "新北市",
+      "district": "石門區",
+      "storeCount": 3
+    },
+    {
+      "city": "新北市",
+      "district": "八里區",
+      "storeCount": 18
+    },
+    {
+      "city": "新北市",
+      "district": "瑞芳區",
+      "storeCount": 10
+    },
+    {
+      "city": "新北市",
+      "district": "雙溪區",
+      "storeCount": 2
+    },
+    {
+      "city": "新北市",
+      "district": "貢寮區",
+      "storeCount": 4
+    },
+    {
+      "city": "新北市",
+      "district": "金山區",
+      "storeCount": 4
+    },
+    {
+      "city": "新北市",
+      "district": "萬里區",
+      "storeCount": 7
+    },
+    {
+      "city": "新北市",
+      "district": "烏來區",
+      "storeCount": 2
+    },
+    {
+      "city": "新北市",
+      "district": "深坑區",
+      "storeCount": 9
+    },
+    {
+      "city": "新北市",
+      "district": "石碇區",
+      "storeCount": 1
+    },
+    {
+      "city": "新北市",
+      "district": "坪林區",
+      "storeCount": 2
+    },
+    {
+      "city": "新北市",
+      "district": "平溪區",
+      "storeCount": 1
+    },
+    {
+      "city": "新北市",
+      "district": "鶯歌區",
+      "storeCount": 30
+    },
+    {
+      "city": "新北市",
+      "district": "三峽區",
+      "storeCount": 39
+    },
+    {
+      "city": "基隆市",
+      "district": "中正區",
+      "storeCount": 21
+    },
+    {
+      "city": "基隆市",
+      "district": "七堵區",
+      "storeCount": 15
+    },
+    {
+      "city": "基隆市",
+      "district": "暖暖區",
+      "storeCount": 7
+    },
+    {
+      "city": "基隆市",
+      "district": "仁愛區",
+      "storeCount": 18
+    },
+    {
+      "city": "基隆市",
+      "district": "中山區",
+      "storeCount": 8
+    },
+    {
+      "city": "基隆市",
+      "district": "安樂區",
+      "storeCount": 15
+    },
+    {
+      "city": "基隆市",
+      "district": "信義區",
+      "storeCount": 15
+    },
+    {
+      "city": "桃園市",
+      "district": "桃園區",
+      "storeCount": 169
+    },
+    {
+      "city": "桃園市",
+      "district": "中壢區",
+      "storeCount": 168
+    },
+    {
+      "city": "桃園市",
+      "district": "大溪區",
+      "storeCount": 28
+    },
+    {
+      "city": "桃園市",
+      "district": "楊梅區",
+      "storeCount": 49
+    },
+    {
+      "city": "桃園市",
+      "district": "蘆竹區",
+      "storeCount": 80
+    },
+    {
+      "city": "桃園市",
+      "district": "大園區",
+      "storeCount": 53
+    },
+    {
+      "city": "桃園市",
+      "district": "龜山區",
+      "storeCount": 101
+    },
+    {
+      "city": "桃園市",
+      "district": "八德區",
+      "storeCount": 60
+    },
+    {
+      "city": "桃園市",
+      "district": "龍潭區",
+      "storeCount": 39
+    },
+    {
+      "city": "桃園市",
+      "district": "平鎮區",
+      "storeCount": 67
+    },
+    {
+      "city": "桃園市",
+      "district": "新屋區",
+      "storeCount": 15
+    },
+    {
+      "city": "桃園市",
+      "district": "觀音區",
+      "storeCount": 30
+    },
+    {
+      "city": "桃園市",
+      "district": "復興區",
+      "storeCount": 3
+    },
+    {
+      "city": "新竹市",
+      "district": "東區",
+      "storeCount": 106
+    },
+    {
+      "city": "新竹市",
+      "district": "北區",
+      "storeCount": 47
+    },
+    {
+      "city": "新竹市",
+      "district": "香山區",
+      "storeCount": 26
+    },
+    {
+      "city": "新竹縣",
+      "district": "竹北市",
+      "storeCount": 82
+    },
+    {
+      "city": "新竹縣",
+      "district": "竹東鎮",
+      "storeCount": 27
+    },
+    {
+      "city": "新竹縣",
+      "district": "新埔鎮",
+      "storeCount": 8
+    },
+    {
+      "city": "新竹縣",
+      "district": "關西鎮",
+      "storeCount": 6
+    },
+    {
+      "city": "新竹縣",
+      "district": "湖口鄉",
+      "storeCount": 50
+    },
+    {
+      "city": "新竹縣",
+      "district": "新豐鄉",
+      "storeCount": 18
+    },
+    {
+      "city": "新竹縣",
+      "district": "芎林鄉",
+      "storeCount": 5
+    },
+    {
+      "city": "新竹縣",
+      "district": "橫山鄉",
+      "storeCount": 4
+    },
+    {
+      "city": "新竹縣",
+      "district": "北埔鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "新竹縣",
+      "district": "寶山鄉",
+      "storeCount": 22
+    },
+    {
+      "city": "新竹縣",
+      "district": "峨眉鄉",
+      "storeCount": 0
+    },
+    {
+      "city": "新竹縣",
+      "district": "尖石鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "新竹縣",
+      "district": "五峰鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "苗栗縣",
+      "district": "苗栗市",
+      "storeCount": 28
+    },
+    {
+      "city": "苗栗縣",
+      "district": "頭份市",
+      "storeCount": 39
+    },
+    {
+      "city": "苗栗縣",
+      "district": "竹南鎮",
+      "storeCount": 43
+    },
+    {
+      "city": "苗栗縣",
+      "district": "後龍鎮",
+      "storeCount": 11
+    },
+    {
+      "city": "苗栗縣",
+      "district": "通霄鎮",
+      "storeCount": 9
+    },
+    {
+      "city": "苗栗縣",
+      "district": "苑裡鎮",
+      "storeCount": 10
+    },
+    {
+      "city": "苗栗縣",
+      "district": "卓蘭鎮",
+      "storeCount": 2
+    },
+    {
+      "city": "苗栗縣",
+      "district": "大湖鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "苗栗縣",
+      "district": "公館鄉",
+      "storeCount": 7
+    },
+    {
+      "city": "苗栗縣",
+      "district": "銅鑼鄉",
+      "storeCount": 4
+    },
+    {
+      "city": "苗栗縣",
+      "district": "南庄鄉",
+      "storeCount": 3
+    },
+    {
+      "city": "苗栗縣",
+      "district": "頭屋鄉",
+      "storeCount": 4
+    },
+    {
+      "city": "苗栗縣",
+      "district": "三義鄉",
+      "storeCount": 5
+    },
+    {
+      "city": "苗栗縣",
+      "district": "西湖鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "苗栗縣",
+      "district": "造橋鄉",
+      "storeCount": 4
+    },
+    {
+      "city": "苗栗縣",
+      "district": "三灣鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "苗栗縣",
+      "district": "獅潭鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "苗栗縣",
+      "district": "泰安鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "台中市",
+      "district": "中區",
+      "storeCount": 10
+    },
+    {
+      "city": "台中市",
+      "district": "東區",
+      "storeCount": 24
+    },
+    {
+      "city": "台中市",
+      "district": "南區",
+      "storeCount": 36
+    },
+    {
+      "city": "台中市",
+      "district": "西區",
+      "storeCount": 40
+    },
+    {
+      "city": "台中市",
+      "district": "北區",
+      "storeCount": 58
+    },
+    {
+      "city": "台中市",
+      "district": "西屯區",
+      "storeCount": 115
+    },
+    {
+      "city": "台中市",
+      "district": "南屯區",
+      "storeCount": 60
+    },
+    {
+      "city": "台中市",
+      "district": "北屯區",
+      "storeCount": 97
+    },
+    {
+      "city": "台中市",
+      "district": "豐原區",
+      "storeCount": 48
+    },
+    {
+      "city": "台中市",
+      "district": "大里區",
+      "storeCount": 43
+    },
+    {
+      "city": "台中市",
+      "district": "太平區",
+      "storeCount": 49
+    },
+    {
+      "city": "台中市",
+      "district": "清水區",
+      "storeCount": 26
+    },
+    {
+      "city": "台中市",
+      "district": "沙鹿區",
+      "storeCount": 38
+    },
+    {
+      "city": "台中市",
+      "district": "梧棲區",
+      "storeCount": 31
+    },
+    {
+      "city": "台中市",
+      "district": "烏日區",
+      "storeCount": 33
+    },
+    {
+      "city": "台中市",
+      "district": "大肚區",
+      "storeCount": 14
+    },
+    {
+      "city": "台中市",
+      "district": "龍井區",
+      "storeCount": 25
+    },
+    {
+      "city": "台中市",
+      "district": "霧峰區",
+      "storeCount": 24
+    },
+    {
+      "city": "台中市",
+      "district": "神岡區",
+      "storeCount": 19
+    },
+    {
+      "city": "台中市",
+      "district": "大雅區",
+      "storeCount": 32
+    },
+    {
+      "city": "台中市",
+      "district": "潭子區",
+      "storeCount": 31
+    },
+    {
+      "city": "台中市",
+      "district": "后里區",
+      "storeCount": 32
+    },
+    {
+      "city": "台中市",
+      "district": "東勢區",
+      "storeCount": 8
+    },
+    {
+      "city": "台中市",
+      "district": "石岡區",
+      "storeCount": 3
+    },
+    {
+      "city": "台中市",
+      "district": "新社區",
+      "storeCount": 6
+    },
+    {
+      "city": "台中市",
+      "district": "和平區",
+      "storeCount": 4
+    },
+    {
+      "city": "台中市",
+      "district": "大甲區",
+      "storeCount": 19
+    },
+    {
+      "city": "台中市",
+      "district": "外埔區",
+      "storeCount": 4
+    },
+    {
+      "city": "台中市",
+      "district": "大安區",
+      "storeCount": 4
+    },
+    {
+      "city": "彰化縣",
+      "district": "彰化市",
+      "storeCount": 57
+    },
+    {
+      "city": "彰化縣",
+      "district": "鹿港鎮",
+      "storeCount": 20
+    },
+    {
+      "city": "彰化縣",
+      "district": "和美鎮",
+      "storeCount": 27
+    },
+    {
+      "city": "彰化縣",
+      "district": "線西鄉",
+      "storeCount": 5
+    },
+    {
+      "city": "彰化縣",
+      "district": "伸港鄉",
+      "storeCount": 8
+    },
+    {
+      "city": "彰化縣",
+      "district": "福興鄉",
+      "storeCount": 12
+    },
+    {
+      "city": "彰化縣",
+      "district": "秀水鄉",
+      "storeCount": 8
+    },
+    {
+      "city": "彰化縣",
+      "district": "花壇鄉",
+      "storeCount": 11
+    },
+    {
+      "city": "彰化縣",
+      "district": "芬園鄉",
+      "storeCount": 3
+    },
+    {
+      "city": "彰化縣",
+      "district": "員林市",
+      "storeCount": 25
+    },
+    {
+      "city": "彰化縣",
+      "district": "溪湖鎮",
+      "storeCount": 9
+    },
+    {
+      "city": "彰化縣",
+      "district": "田中鎮",
+      "storeCount": 7
+    },
+    {
+      "city": "彰化縣",
+      "district": "大村鄉",
+      "storeCount": 9
+    },
+    {
+      "city": "彰化縣",
+      "district": "埔鹽鄉",
+      "storeCount": 5
+    },
+    {
+      "city": "彰化縣",
+      "district": "埔心鄉",
+      "storeCount": 8
+    },
+    {
+      "city": "彰化縣",
+      "district": "永靖鄉",
+      "storeCount": 6
+    },
+    {
+      "city": "彰化縣",
+      "district": "社頭鄉",
+      "storeCount": 9
+    },
+    {
+      "city": "彰化縣",
+      "district": "二水鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "彰化縣",
+      "district": "北斗鎮",
+      "storeCount": 7
+    },
+    {
+      "city": "彰化縣",
+      "district": "二林鎮",
+      "storeCount": 9
+    },
+    {
+      "city": "彰化縣",
+      "district": "田尾鄉",
+      "storeCount": 4
+    },
+    {
+      "city": "彰化縣",
+      "district": "埤頭鄉",
+      "storeCount": 8
+    },
+    {
+      "city": "彰化縣",
+      "district": "芳苑鄉",
+      "storeCount": 5
+    },
+    {
+      "city": "彰化縣",
+      "district": "大城鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "彰化縣",
+      "district": "竹塘鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "彰化縣",
+      "district": "溪州鄉",
+      "storeCount": 5
+    },
+    {
+      "city": "南投縣",
+      "district": "南投市",
+      "storeCount": 25
+    },
+    {
+      "city": "南投縣",
+      "district": "埔里鎮",
+      "storeCount": 25
+    },
+    {
+      "city": "南投縣",
+      "district": "草屯鎮",
+      "storeCount": 23
+    },
+    {
+      "city": "南投縣",
+      "district": "竹山鎮",
+      "storeCount": 10
+    },
+    {
+      "city": "南投縣",
+      "district": "集集鎮",
+      "storeCount": 2
+    },
+    {
+      "city": "南投縣",
+      "district": "名間鄉",
+      "storeCount": 6
+    },
+    {
+      "city": "南投縣",
+      "district": "鹿谷鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "南投縣",
+      "district": "中寮鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "南投縣",
+      "district": "魚池鄉",
+      "storeCount": 8
+    },
+    {
+      "city": "南投縣",
+      "district": "國姓鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "南投縣",
+      "district": "水里鄉",
+      "storeCount": 4
+    },
+    {
+      "city": "南投縣",
+      "district": "信義鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "南投縣",
+      "district": "仁愛鄉",
+      "storeCount": 5
+    },
+    {
+      "city": "雲林縣",
+      "district": "斗六市",
+      "storeCount": 34
+    },
+    {
+      "city": "雲林縣",
+      "district": "斗南鎮",
+      "storeCount": 11
+    },
+    {
+      "city": "雲林縣",
+      "district": "虎尾鎮",
+      "storeCount": 26
+    },
+    {
+      "city": "雲林縣",
+      "district": "西螺鎮",
+      "storeCount": 12
+    },
+    {
+      "city": "雲林縣",
+      "district": "土庫鎮",
+      "storeCount": 4
+    },
+    {
+      "city": "雲林縣",
+      "district": "北港鎮",
+      "storeCount": 6
+    },
+    {
+      "city": "雲林縣",
+      "district": "大埤鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "雲林縣",
+      "district": "莿桐鄉",
+      "storeCount": 5
+    },
+    {
+      "city": "雲林縣",
+      "district": "林內鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "雲林縣",
+      "district": "二崙鄉",
+      "storeCount": 3
+    },
+    {
+      "city": "雲林縣",
+      "district": "崙背鄉",
+      "storeCount": 5
+    },
+    {
+      "city": "雲林縣",
+      "district": "麥寮鄉",
+      "storeCount": 10
+    },
+    {
+      "city": "雲林縣",
+      "district": "褒忠鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "雲林縣",
+      "district": "台西鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "雲林縣",
+      "district": "元長鄉",
+      "storeCount": 4
+    },
+    {
+      "city": "雲林縣",
+      "district": "四湖鄉",
+      "storeCount": 3
+    },
+    {
+      "city": "雲林縣",
+      "district": "口湖鄉",
+      "storeCount": 6
+    },
+    {
+      "city": "雲林縣",
+      "district": "水林鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "雲林縣",
+      "district": "古坑鄉",
+      "storeCount": 5
+    },
+    {
+      "city": "雲林縣",
+      "district": "東勢鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "嘉義市",
+      "district": "東區",
+      "storeCount": 30
+    },
+    {
+      "city": "嘉義市",
+      "district": "西區",
+      "storeCount": 43
+    },
+    {
+      "city": "嘉義縣",
+      "district": "太保市",
+      "storeCount": 13
+    },
+    {
+      "city": "嘉義縣",
+      "district": "朴子市",
+      "storeCount": 14
+    },
+    {
+      "city": "嘉義縣",
+      "district": "布袋鎮",
+      "storeCount": 5
+    },
+    {
+      "city": "嘉義縣",
+      "district": "大林鎮",
+      "storeCount": 9
+    },
+    {
+      "city": "嘉義縣",
+      "district": "民雄鄉",
+      "storeCount": 20
+    },
+    {
+      "city": "嘉義縣",
+      "district": "溪口鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "嘉義縣",
+      "district": "新港鄉",
+      "storeCount": 7
+    },
+    {
+      "city": "嘉義縣",
+      "district": "六腳鄉",
+      "storeCount": 4
+    },
+    {
+      "city": "嘉義縣",
+      "district": "東石鄉",
+      "storeCount": 3
+    },
+    {
+      "city": "嘉義縣",
+      "district": "義竹鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "嘉義縣",
+      "district": "鹿草鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "嘉義縣",
+      "district": "水上鄉",
+      "storeCount": 11
+    },
+    {
+      "city": "嘉義縣",
+      "district": "中埔鄉",
+      "storeCount": 9
+    },
+    {
+      "city": "嘉義縣",
+      "district": "竹崎鄉",
+      "storeCount": 7
+    },
+    {
+      "city": "嘉義縣",
+      "district": "梅山鄉",
+      "storeCount": 4
+    },
+    {
+      "city": "嘉義縣",
+      "district": "番路鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "嘉義縣",
+      "district": "大埔鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "嘉義縣",
+      "district": "阿里山鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "台南市",
+      "district": "中西區",
+      "storeCount": 34
+    },
+    {
+      "city": "台南市",
+      "district": "東區",
+      "storeCount": 58
+    },
+    {
+      "city": "台南市",
+      "district": "南區",
+      "storeCount": 31
+    },
+    {
+      "city": "台南市",
+      "district": "北區",
+      "storeCount": 43
+    },
+    {
+      "city": "台南市",
+      "district": "安平區",
+      "storeCount": 25
+    },
+    {
+      "city": "台南市",
+      "district": "安南區",
+      "storeCount": 56
+    },
+    {
+      "city": "台南市",
+      "district": "永康區",
+      "storeCount": 95
+    },
+    {
+      "city": "台南市",
+      "district": "歸仁區",
+      "storeCount": 28
+    },
+    {
+      "city": "台南市",
+      "district": "新化區",
+      "storeCount": 12
+    },
+    {
+      "city": "台南市",
+      "district": "玉井區",
+      "storeCount": 3
+    },
+    {
+      "city": "台南市",
+      "district": "楠西區",
+      "storeCount": 3
+    },
+    {
+      "city": "台南市",
+      "district": "南化區",
+      "storeCount": 1
+    },
+    {
+      "city": "台南市",
+      "district": "仁德區",
+      "storeCount": 32
+    },
+    {
+      "city": "台南市",
+      "district": "關廟區",
+      "storeCount": 8
+    },
+    {
+      "city": "台南市",
+      "district": "龍崎區",
+      "storeCount": 3
+    },
+    {
+      "city": "台南市",
+      "district": "官田區",
+      "storeCount": 6
+    },
+    {
+      "city": "台南市",
+      "district": "麻豆區",
+      "storeCount": 12
+    },
+    {
+      "city": "台南市",
+      "district": "佳里區",
+      "storeCount": 14
+    },
+    {
+      "city": "台南市",
+      "district": "西港區",
+      "storeCount": 4
+    },
+    {
+      "city": "台南市",
+      "district": "七股區",
+      "storeCount": 2
+    },
+    {
+      "city": "台南市",
+      "district": "將軍區",
+      "storeCount": 2
+    },
+    {
+      "city": "台南市",
+      "district": "學甲區",
+      "storeCount": 6
+    },
+    {
+      "city": "台南市",
+      "district": "北門區",
+      "storeCount": 2
+    },
+    {
+      "city": "台南市",
+      "district": "新營區",
+      "storeCount": 17
+    },
+    {
+      "city": "台南市",
+      "district": "後壁區",
+      "storeCount": 4
+    },
+    {
+      "city": "台南市",
+      "district": "白河區",
+      "storeCount": 6
+    },
+    {
+      "city": "台南市",
+      "district": "東山區",
+      "storeCount": 4
+    },
+    {
+      "city": "台南市",
+      "district": "六甲區",
+      "storeCount": 3
+    },
+    {
+      "city": "台南市",
+      "district": "下營區",
+      "storeCount": 3
+    },
+    {
+      "city": "台南市",
+      "district": "柳營區",
+      "storeCount": 6
+    },
+    {
+      "city": "台南市",
+      "district": "鹽水區",
+      "storeCount": 6
+    },
+    {
+      "city": "台南市",
+      "district": "善化區",
+      "storeCount": 29
+    },
+    {
+      "city": "台南市",
+      "district": "大內區",
+      "storeCount": 2
+    },
+    {
+      "city": "台南市",
+      "district": "山上區",
+      "storeCount": 2
+    },
+    {
+      "city": "台南市",
+      "district": "新市區",
+      "storeCount": 32
+    },
+    {
+      "city": "台南市",
+      "district": "安定區",
+      "storeCount": 16
+    },
+    {
+      "city": "台南市",
+      "district": "左鎮區",
+      "storeCount": 1
+    },
+    {
+      "city": "高雄市",
+      "district": "鹽埕區",
+      "storeCount": 8
+    },
+    {
+      "city": "高雄市",
+      "district": "鼓山區",
+      "storeCount": 41
+    },
+    {
+      "city": "高雄市",
+      "district": "左營區",
+      "storeCount": 60
+    },
+    {
+      "city": "高雄市",
+      "district": "楠梓區",
+      "storeCount": 68
+    },
+    {
+      "city": "高雄市",
+      "district": "三民區",
+      "storeCount": 86
+    },
+    {
+      "city": "高雄市",
+      "district": "新興區",
+      "storeCount": 26
+    },
+    {
+      "city": "高雄市",
+      "district": "前金區",
+      "storeCount": 16
+    },
+    {
+      "city": "高雄市",
+      "district": "苓雅區",
+      "storeCount": 49
+    },
+    {
+      "city": "高雄市",
+      "district": "前鎮區",
+      "storeCount": 51
+    },
+    {
+      "city": "高雄市",
+      "district": "旗津區",
+      "storeCount": 6
+    },
+    {
+      "city": "高雄市",
+      "district": "小港區",
+      "storeCount": 38
+    },
+    {
+      "city": "高雄市",
+      "district": "鳳山區",
+      "storeCount": 78
+    },
+    {
+      "city": "高雄市",
+      "district": "林園區",
+      "storeCount": 14
+    },
+    {
+      "city": "高雄市",
+      "district": "大寮區",
+      "storeCount": 24
+    },
+    {
+      "city": "高雄市",
+      "district": "大樹區",
+      "storeCount": 7
+    },
+    {
+      "city": "高雄市",
+      "district": "大社區",
+      "storeCount": 9
+    },
+    {
+      "city": "高雄市",
+      "district": "仁武區",
+      "storeCount": 32
+    },
+    {
+      "city": "高雄市",
+      "district": "鳥松區",
+      "storeCount": 10
+    },
+    {
+      "city": "高雄市",
+      "district": "岡山區",
+      "storeCount": 30
+    },
+    {
+      "city": "高雄市",
+      "district": "橋頭區",
+      "storeCount": 11
+    },
+    {
+      "city": "高雄市",
+      "district": "燕巢區",
+      "storeCount": 10
+    },
+    {
+      "city": "高雄市",
+      "district": "田寮區",
+      "storeCount": 1
+    },
+    {
+      "city": "高雄市",
+      "district": "阿蓮區",
+      "storeCount": 7
+    },
+    {
+      "city": "高雄市",
+      "district": "路竹區",
+      "storeCount": 19
+    },
+    {
+      "city": "高雄市",
+      "district": "湖內區",
+      "storeCount": 7
+    },
+    {
+      "city": "高雄市",
+      "district": "茄萣區",
+      "storeCount": 5
+    },
+    {
+      "city": "高雄市",
+      "district": "永安區",
+      "storeCount": 2
+    },
+    {
+      "city": "高雄市",
+      "district": "彌陀區",
+      "storeCount": 4
+    },
+    {
+      "city": "高雄市",
+      "district": "梓官區",
+      "storeCount": 9
+    },
+    {
+      "city": "高雄市",
+      "district": "旗山區",
+      "storeCount": 10
+    },
+    {
+      "city": "高雄市",
+      "district": "美濃區",
+      "storeCount": 6
+    },
+    {
+      "city": "高雄市",
+      "district": "六龜區",
+      "storeCount": 4
+    },
+    {
+      "city": "高雄市",
+      "district": "甲仙區",
+      "storeCount": 2
+    },
+    {
+      "city": "高雄市",
+      "district": "杉林區",
+      "storeCount": 1
+    },
+    {
+      "city": "高雄市",
+      "district": "內門區",
+      "storeCount": 3
+    },
+    {
+      "city": "高雄市",
+      "district": "茂林區",
+      "storeCount": 1
+    },
+    {
+      "city": "高雄市",
+      "district": "桃源區",
+      "storeCount": 1
+    },
+    {
+      "city": "高雄市",
+      "district": "那瑪夏區",
+      "storeCount": 1
+    },
+    {
+      "city": "屏東縣",
+      "district": "屏東市",
+      "storeCount": 48
+    },
+    {
+      "city": "屏東縣",
+      "district": "潮州鎮",
+      "storeCount": 14
+    },
+    {
+      "city": "屏東縣",
+      "district": "東港鎮",
+      "storeCount": 11
+    },
+    {
+      "city": "屏東縣",
+      "district": "恆春鎮",
+      "storeCount": 17
+    },
+    {
+      "city": "屏東縣",
+      "district": "萬丹鄉",
+      "storeCount": 13
+    },
+    {
+      "city": "屏東縣",
+      "district": "長治鄉",
+      "storeCount": 8
+    },
+    {
+      "city": "屏東縣",
+      "district": "麟洛鄉",
+      "storeCount": 3
+    },
+    {
+      "city": "屏東縣",
+      "district": "九如鄉",
+      "storeCount": 7
+    },
+    {
+      "city": "屏東縣",
+      "district": "里港鄉",
+      "storeCount": 5
+    },
+    {
+      "city": "屏東縣",
+      "district": "鹽埔鄉",
+      "storeCount": 3
+    },
+    {
+      "city": "屏東縣",
+      "district": "高樹鄉",
+      "storeCount": 4
+    },
+    {
+      "city": "屏東縣",
+      "district": "萬巒鄉",
+      "storeCount": 4
+    },
+    {
+      "city": "屏東縣",
+      "district": "內埔鄉",
+      "storeCount": 17
+    },
+    {
+      "city": "屏東縣",
+      "district": "竹田鄉",
+      "storeCount": 4
+    },
+    {
+      "city": "屏東縣",
+      "district": "新埤鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "屏東縣",
+      "district": "枋寮鄉",
+      "storeCount": 6
+    },
+    {
+      "city": "屏東縣",
+      "district": "新園鄉",
+      "storeCount": 6
+    },
+    {
+      "city": "屏東縣",
+      "district": "崁頂鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "屏東縣",
+      "district": "林邊鄉",
+      "storeCount": 3
+    },
+    {
+      "city": "屏東縣",
+      "district": "南州鄉",
+      "storeCount": 5
+    },
+    {
+      "city": "屏東縣",
+      "district": "佳冬鄉",
+      "storeCount": 3
+    },
+    {
+      "city": "屏東縣",
+      "district": "琉球鄉",
+      "storeCount": 3
+    },
+    {
+      "city": "屏東縣",
+      "district": "車城鄉",
+      "storeCount": 3
+    },
+    {
+      "city": "屏東縣",
+      "district": "滿州鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "屏東縣",
+      "district": "枋山鄉",
+      "storeCount": 6
+    },
+    {
+      "city": "屏東縣",
+      "district": "三地門鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "屏東縣",
+      "district": "霧台鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "屏東縣",
+      "district": "牡丹鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "屏東縣",
+      "district": "獅子鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "屏東縣",
+      "district": "春日鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "屏東縣",
+      "district": "來義鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "屏東縣",
+      "district": "泰武鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "屏東縣",
+      "district": "瑪家鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "宜蘭縣",
+      "district": "宜蘭市",
+      "storeCount": 27
+    },
+    {
+      "city": "宜蘭縣",
+      "district": "羅東鎮",
+      "storeCount": 20
+    },
+    {
+      "city": "宜蘭縣",
+      "district": "蘇澳鎮",
+      "storeCount": 13
+    },
+    {
+      "city": "宜蘭縣",
+      "district": "頭城鎮",
+      "storeCount": 9
+    },
+    {
+      "city": "宜蘭縣",
+      "district": "礁溪鄉",
+      "storeCount": 14
+    },
+    {
+      "city": "宜蘭縣",
+      "district": "壯圍鄉",
+      "storeCount": 8
+    },
+    {
+      "city": "宜蘭縣",
+      "district": "員山鄉",
+      "storeCount": 9
+    },
+    {
+      "city": "宜蘭縣",
+      "district": "冬山鄉",
+      "storeCount": 14
+    },
+    {
+      "city": "宜蘭縣",
+      "district": "五結鄉",
+      "storeCount": 11
+    },
+    {
+      "city": "宜蘭縣",
+      "district": "三星鄉",
+      "storeCount": 8
+    },
+    {
+      "city": "宜蘭縣",
+      "district": "大同鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "宜蘭縣",
+      "district": "南澳鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "花蓮縣",
+      "district": "花蓮市",
+      "storeCount": 47
+    },
+    {
+      "city": "花蓮縣",
+      "district": "鳳林鎮",
+      "storeCount": 5
+    },
+    {
+      "city": "花蓮縣",
+      "district": "玉里鎮",
+      "storeCount": 7
+    },
+    {
+      "city": "花蓮縣",
+      "district": "新城鄉",
+      "storeCount": 9
+    },
+    {
+      "city": "花蓮縣",
+      "district": "吉安鄉",
+      "storeCount": 25
+    },
+    {
+      "city": "花蓮縣",
+      "district": "壽豐鄉",
+      "storeCount": 8
+    },
+    {
+      "city": "花蓮縣",
+      "district": "光復鄉",
+      "storeCount": 3
+    },
+    {
+      "city": "花蓮縣",
+      "district": "豐濱鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "花蓮縣",
+      "district": "瑞穗鄉",
+      "storeCount": 3
+    },
+    {
+      "city": "花蓮縣",
+      "district": "富里鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "花蓮縣",
+      "district": "秀林鄉",
+      "storeCount": 5
+    },
+    {
+      "city": "花蓮縣",
+      "district": "萬榮鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "花蓮縣",
+      "district": "卓溪鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "台東縣",
+      "district": "台東市",
+      "storeCount": 44
+    },
+    {
+      "city": "台東縣",
+      "district": "成功鎮",
+      "storeCount": 3
+    },
+    {
+      "city": "台東縣",
+      "district": "關山鎮",
+      "storeCount": 2
+    },
+    {
+      "city": "台東縣",
+      "district": "卑南鄉",
+      "storeCount": 3
+    },
+    {
+      "city": "台東縣",
+      "district": "鹿野鄉",
+      "storeCount": 4
+    },
+    {
+      "city": "台東縣",
+      "district": "池上鄉",
+      "storeCount": 3
+    },
+    {
+      "city": "台東縣",
+      "district": "東河鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "台東縣",
+      "district": "長濱鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "台東縣",
+      "district": "太麻里鄉",
+      "storeCount": 3
+    },
+    {
+      "city": "台東縣",
+      "district": "大武鄉",
+      "storeCount": 3
+    },
+    {
+      "city": "台東縣",
+      "district": "綠島鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "台東縣",
+      "district": "蘭嶼鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "台東縣",
+      "district": "延平鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "台東縣",
+      "district": "金峰鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "台東縣",
+      "district": "達仁鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "台東縣",
+      "district": "海端鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "澎湖縣",
+      "district": "馬公市",
+      "storeCount": 30
+    },
+    {
+      "city": "澎湖縣",
+      "district": "湖西鄉",
+      "storeCount": 3
+    },
+    {
+      "city": "澎湖縣",
+      "district": "白沙鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "澎湖縣",
+      "district": "西嶼鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "澎湖縣",
+      "district": "望安鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "澎湖縣",
+      "district": "七美鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "金門縣",
+      "district": "金城鎮",
+      "storeCount": 9
+    },
+    {
+      "city": "金門縣",
+      "district": "金湖鎮",
+      "storeCount": 8
+    },
+    {
+      "city": "金門縣",
+      "district": "金沙鎮",
+      "storeCount": 3
+    },
+    {
+      "city": "金門縣",
+      "district": "金寧鄉",
+      "storeCount": 5
+    },
+    {
+      "city": "金門縣",
+      "district": "烈嶼鄉",
+      "storeCount": 2
+    },
+    {
+      "city": "金門縣",
+      "district": "烏坵鄉",
+      "storeCount": 0
+    },
+    {
+      "city": "連江縣",
+      "district": "南竿鄉",
+      "storeCount": 6
+    },
+    {
+      "city": "連江縣",
+      "district": "北竿鄉",
+      "storeCount": 3
+    },
+    {
+      "city": "連江縣",
+      "district": "莒光鄉",
+      "storeCount": 1
+    },
+    {
+      "city": "連江縣",
+      "district": "東引鄉",
+      "storeCount": 1
+    }
+  ],
+  "recommendations": [
+    "✅ 已達成目標：DB 7386 間 >= 目標 7200 間（超出 186 間）",
+    "行政區覆蓋：366/368（99.5%）",
+    "缺漏行政區：新竹縣峨眉鄉、金門縣烏坵鄉",
+    "27 間金門縣門市 longitude ~118.x 為正確金門座標，非異常",
+    "4 筆 district IS NULL 均為 twcoupon_unverified 舊資料，不影響主要匯入品質",
+    "4 組門市 store_name+address 重複（各出現 2 次），建議確認是否為重複匯入",
+    "emap_district_batch 佔 99.5% 為主要來源",
+    "twcoupon_unverified 剩 36 筆，可視需求保留或清除"
+  ]
+}
