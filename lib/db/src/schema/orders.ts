@@ -8,6 +8,18 @@ import { productsTable } from "./products";
 export const orderStatusEnum = ["pending", "awaiting_payment", "preparing", "shipped", "completed", "cancelled"] as const;
 export type OrderStatus = typeof orderStatusEnum[number];
 
+export const paymentMethodEnum = ["cash", "bank_transfer", "line_pay", "other"] as const;
+export type PaymentMethod = typeof paymentMethodEnum[number];
+
+export const paymentStatusEnum = ["unpaid", "pending", "partially_paid", "paid", "refunded", "failed"] as const;
+export type PaymentStatus = typeof paymentStatusEnum[number];
+
+export const shippingMethodEnum = ["self_pickup", "convenience_store", "home_delivery", "other"] as const;
+export type ShippingMethod = typeof shippingMethodEnum[number];
+
+export const shippingStatusEnum = ["not_shipped", "preparing", "shipped", "arrived", "picked_up", "returned", "cancelled"] as const;
+export type ShippingStatus = typeof shippingStatusEnum[number];
+
 export const ordersTable = pgTable("orders", {
   id: serial("id").primaryKey(),
   productId: integer("product_id").notNull().references(() => productsTable.id),
@@ -24,7 +36,22 @@ export const ordersTable = pgTable("orders", {
   shippingFee: numeric("shipping_fee", { precision: 10, scale: 2 }).notNull().default("0"),
   totalPrice: numeric("total_price", { precision: 10, scale: 2 }).notNull(),
   status: text("status").notNull().default("pending"),
-  // CVS store fields (7-11, FamilyMart, etc.)
+  // Payment fields (store-side manual tracking, not automated payment gateway)
+  paymentMethod: text("payment_method"),
+  paymentStatus: text("payment_status").notNull().default("unpaid"),
+  paidAmount: numeric("paid_amount", { precision: 10, scale: 2 }),
+  paymentNote: text("payment_note"),
+  // Shipping / logistics fields (store-side manual tracking, not real-time logistics API)
+  shippingMethod: text("shipping_method"),
+  shippingStatus: text("shipping_status").notNull().default("not_shipped"),
+  recipientName: text("recipient_name"),
+  recipientPhone: text("recipient_phone"),
+  recipientAddress: text("recipient_address"),
+  trackingCode: text("tracking_code"),
+  trackingProvider: text("tracking_provider"),
+  shippingNote: text("shipping_note"),
+  internalNote: text("internal_note"),
+  // CVS store fields (7-11, FamilyMart, etc.) — DB cols cvsStoreId/cvsStoreName map to API storeCode/storeName
   cvsStoreId: text("cvs_store_id"),
   cvsStoreName: text("cvs_store_name"),
   cvsStoreAddress: text("cvs_store_address"),
