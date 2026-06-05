@@ -25,9 +25,11 @@ import type {
   HealthStatus,
   MerchantOrderInput,
   Order,
+  OrderIdsBody,
   OrderInput,
   OrderStatusUpdate,
   OrderUpdate,
+  PickingListResponse,
   Product,
   ProductCategory,
   ProductCategoryInput,
@@ -35,6 +37,7 @@ import type {
   ProductUpdate,
   PublicOrder,
   PublicProduct,
+  ShippingListResponse,
   Store,
   StoreInput,
   StoreStats,
@@ -1467,6 +1470,148 @@ export const useUpdateOrderStatus = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getUpdateOrderStatusMutationOptions(options));
+    }
+
+export const getGetPickingListUrl = () => {
+
+
+
+
+  return `/api/orders/picking-list`
+}
+
+/**
+ * @summary Get picking list for selected orders (grouped by product)
+ */
+export const getPickingList = async (orderIdsBody: OrderIdsBody, options?: RequestInit): Promise<PickingListResponse> => {
+
+  return customFetch<PickingListResponse>(getGetPickingListUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      orderIdsBody,)
+  }
+);}
+
+
+
+
+export const getGetPickingListMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof getPickingList>>, TError,{data: BodyType<OrderIdsBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof getPickingList>>, TError,{data: BodyType<OrderIdsBody>}, TContext> => {
+
+const mutationKey = ['getPickingList'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof getPickingList>>, {data: BodyType<OrderIdsBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  getPickingList(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type GetPickingListMutationResult = NonNullable<Awaited<ReturnType<typeof getPickingList>>>
+    export type GetPickingListMutationBody = BodyType<OrderIdsBody>
+    export type GetPickingListMutationError = ErrorType<void>
+
+    /**
+ * @summary Get picking list for selected orders (grouped by product)
+ */
+export const useGetPickingList = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof getPickingList>>, TError,{data: BodyType<OrderIdsBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof getPickingList>>,
+        TError,
+        {data: BodyType<OrderIdsBody>},
+        TContext
+      > => {
+      return useMutation(getGetPickingListMutationOptions(options));
+    }
+
+export const getGetShippingListUrl = () => {
+
+
+
+
+  return `/api/orders/shipping-list`
+}
+
+/**
+ * @summary Get shipping list for selected orders (one entry per order)
+ */
+export const getShippingList = async (orderIdsBody: OrderIdsBody, options?: RequestInit): Promise<ShippingListResponse> => {
+
+  return customFetch<ShippingListResponse>(getGetShippingListUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      orderIdsBody,)
+  }
+);}
+
+
+
+
+export const getGetShippingListMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof getShippingList>>, TError,{data: BodyType<OrderIdsBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof getShippingList>>, TError,{data: BodyType<OrderIdsBody>}, TContext> => {
+
+const mutationKey = ['getShippingList'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof getShippingList>>, {data: BodyType<OrderIdsBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  getShippingList(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type GetShippingListMutationResult = NonNullable<Awaited<ReturnType<typeof getShippingList>>>
+    export type GetShippingListMutationBody = BodyType<OrderIdsBody>
+    export type GetShippingListMutationError = ErrorType<void>
+
+    /**
+ * @summary Get shipping list for selected orders (one entry per order)
+ */
+export const useGetShippingList = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof getShippingList>>, TError,{data: BodyType<OrderIdsBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof getShippingList>>,
+        TError,
+        {data: BodyType<OrderIdsBody>},
+        TContext
+      > => {
+      return useMutation(getGetShippingListMutationOptions(options));
     }
 
 export const getBulkUpdateOrdersUrl = () => {

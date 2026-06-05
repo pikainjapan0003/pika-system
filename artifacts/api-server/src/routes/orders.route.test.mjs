@@ -761,3 +761,246 @@ describe('Step 5E: PATCH /orders/bulk', () => {
     assert.ok(data.error, 'should return error message');
   });
 });
+
+// ─────────────────────────────────────────────────────────────
+// 13. Step 5F-B: POST /orders/picking-list
+// ─────────────────────────────────────────────────────────────
+describe('Step 5F-B: POST /orders/picking-list', () => {
+  let pickOrder1Id;
+  let pickOrder2Id;
+  let pickCancelledId;
+
+  before(async () => {
+    const insertOrder = (token, spec, qty) =>
+      db.insert(ordersTable).values({
+        productId: testProductId,
+        storeId: testStoreId,
+        productName: '__test_product__',
+        publicToken: token,
+        buyerName: 'Pick Buyer',
+        buyerPhone: '0966666666',
+        pickupMethod: 'pickup',
+        quantity: qty,
+        unitPrice: '100.00',
+        totalPrice: String(100 * qty),
+        status: 'pending',
+        specValues: spec,
+        notes: null,
+      }).returning();
+
+    const [o1] = await insertOrder(`pick-tok-1-${Date.now()}`, { color: 'red' }, 2);
+    const [o2] = await insertOrder(`pick-tok-2-${Date.now()}`, { color: 'red' }, 3);
+    const [oCanc] = await insertOrder(`pick-tok-c-${Date.now()}`, {}, 1);
+
+    pickOrder1Id = o1.id;
+    pickOrder2Id = o2.id;
+    pickCancelledId = oCanc.id;
+
+    await db.update(ordersTable).set({ status: 'cancelled' }).where(eq(ordersTable.id, pickCancelledId));
+  });
+
+  test('401 — unauthenticated', async () => {
+    const { status } = await req('POST', '/orders/picking-list', { orderIds: [pickOrder1Id] }, null);
+    assert.strictEqual(status, 401);
+  });
+
+  test('422 — empty orderIds', async () => {
+    const { status } = await req('POST', '/orders/picking-list', { orderIds: [] });
+    assert.strictEqual(status, 422);
+  });
+
+  test('422 — orderId does not exist', async () => {
+    const { status, data } = await req('POST', '/orders/picking-list', { orderIds: [999999999] });
+    assert.strictEqual(status, 422);
+    assert.ok(data.error);
+  });
+
+  test('403 — wrong merchant cannot access picking list', async () => {
+    const { status } = await req('POST', '/orders/picking-list', { orderIds: [pickOrder1Id] }, 'other_merchant_id');
+    assert.strictEqual(status, 403);
+  });
+
+  test('200 — groups by product+spec and sums quantity', async () => {
+    const { status, data } = await req('POST', '/orders/picking-list', {
+      orderIds: [pickOrder1Id, pickOrder2Id],
+    });
+    assert.strictEqual(status, 200);
+    assert.ok(Array.isArray(data.items), 'items should be an array');
+    assert.strictEqual(data.items.length, 1, 'both orders have same product+spec, should merge into 1 item');
+    assert.strictEqual(data.items[0].quantityTotal, 5, 'qty 2 + 3 = 5');
+    assert.strictEqual(data.items[0].productId, testProductId);
+    assert.ok(data.items[0].orderIds.includes(pickOrder1Id));
+    assert.ok(data.items[0].orderIds.includes(pickOrder2Id));
+    assert.strictEqual(data.orderCount, 2);
+    assert.deepStrictEqual(data.excludedOrderIds, []);
+  });
+
+  test('200 — cancelled orders excluded and in excludedOrderIds', async () => {
+    const { status, data } = await req('POST', '/orders/picking-list', {
+      orderIds: [pickOrder1Id, pickCancelledId],
+    });
+    assert.strictEqual(status, 200);
+    assert.ok(data.excludedOrderIds.includes(pickCancelledId), 'cancelled order in excludedOrderIds');
+    assert.strictEqual(data.orderCount, 1, 'only 1 non-cancelled order');
+    const includedOrderId = data.items.flatMap((i) => i.orderIds);
+    assert.ok(!includedOrderId.includes(pickCancelledId), 'cancelled order not in items');
+  });
+
+  test('200 — empty specValues does not crash', async () => {
+    const { status, data } = await req('POST', '/orders/picking-list', {
+      orderIds: [pickCancelledId === pickOrder1Id ? pickOrder2Id : pickOrder1Id],
+    });
+    assert.strictEqual(status, 200);
+    assert.ok(Array.isArray(data.items));
+  });
+
+  test('200 — generatedAt and structure present', async () => {
+    const { status, data } = await req('POST', '/orders/picking-list', {
+      orderIds: [pickOrder1Id],
+    });
+    assert.strictEqual(status, 200);
+    assert.ok(data.generatedAt, 'generatedAt should be present');
+    assert.ok(typeof data.orderCount === 'number');
+    assert.ok(Array.isArray(data.excludedOrderIds));
+    assert.ok(Array.isArray(data.items));
+    const item = data.items[0];
+    assert.ok(typeof item.quantityTotal === 'number');
+    assert.ok(Array.isArray(item.orderIds));
+    assert.ok(Array.isArray(item.orderNumbers));
+  });
+});
+
+// ─────────────────────────────────────────────────────────────
+// 14. Step 5F-B: POST /orders/shipping-list
+// ─────────────────────────────────────────────────────────────
+describe('Step 5F-B: POST /orders/shipping-list', () => {
+  let shipOrder1Id;
+  let shipUnpaidId;
+  let shipCancelledId;
+  let shipOrder1Token;
+
+  before(async () => {
+    const insertOrder = (token, overrides) =>
+      db.insert(ordersTable).values({
+        productId: testProductId,
+        storeId: testStoreId,
+        productName: '__test_product__',
+        publicToken: token,
+        buyerName: 'Ship Buyer',
+        buyerPhone: '0977777777',
+        pickupMethod: 'delivery',
+        quantity: 1,
+        unitPrice: '200.00',
+        totalPrice: '200.00',
+        status: 'pending',
+        specValues: {},
+        internalNote: 'INTERNAL_SECRET',
+        paymentNote: 'PAYMENT_SECRET',
+        trackingCode: 'SHIP-TRACK-001',
+        ...overrides,
+      }).returning();
+
+    shipOrder1Token = `ship-tok-1-${Date.now()}`;
+    const [o1] = await insertOrder(shipOrder1Token, {
+      paymentStatus: 'paid',
+      shippingStatus: 'shipped',
+      recipientName: '王收件',
+      recipientPhone: '0911111111',
+      recipientAddress: '台北市信義區某路1號',
+    });
+    const [oUnpaid] = await insertOrder(`ship-tok-u-${Date.now()}`, {
+      paymentStatus: 'unpaid',
+    });
+    const [oCanc] = await insertOrder(`ship-tok-c-${Date.now()}`, {});
+
+    shipOrder1Id = o1.id;
+    shipUnpaidId = oUnpaid.id;
+    shipCancelledId = oCanc.id;
+
+    await db.update(ordersTable).set({ status: 'cancelled' }).where(eq(ordersTable.id, shipCancelledId));
+  });
+
+  test('401 — unauthenticated', async () => {
+    const { status } = await req('POST', '/orders/shipping-list', { orderIds: [shipOrder1Id] }, null);
+    assert.strictEqual(status, 401);
+  });
+
+  test('422 — orderId does not exist', async () => {
+    const { status, data } = await req('POST', '/orders/shipping-list', { orderIds: [999999998] });
+    assert.strictEqual(status, 422);
+    assert.ok(data.error);
+  });
+
+  test('403 — wrong merchant cannot access shipping list', async () => {
+    const { status } = await req('POST', '/orders/shipping-list', { orderIds: [shipOrder1Id] }, 'other_merchant_id');
+    assert.strictEqual(status, 403);
+  });
+
+  test('200 — returns shipping data with correct fields', async () => {
+    const { status, data } = await req('POST', '/orders/shipping-list', {
+      orderIds: [shipOrder1Id],
+    });
+    assert.strictEqual(status, 200);
+    assert.strictEqual(data.orderCount, 1);
+    assert.ok(Array.isArray(data.orders));
+    const order = data.orders[0];
+    assert.strictEqual(order.orderId, shipOrder1Id);
+    assert.strictEqual(order.paymentStatus, 'paid');
+    assert.strictEqual(order.shippingStatus, 'shipped');
+    assert.strictEqual(order.recipientName, '王收件');
+    assert.strictEqual(order.recipientPhone, '0911111111');
+    assert.strictEqual(order.recipientAddress, '台北市信義區某路1號');
+    assert.strictEqual(order.trackingCode, 'SHIP-TRACK-001');
+    assert.ok(typeof order.itemsText === 'string', 'itemsText should be present');
+    assert.ok(order.orderNumber, 'orderNumber should be present');
+  });
+
+  test('200 — unpaid order included, paymentStatus present', async () => {
+    const { status, data } = await req('POST', '/orders/shipping-list', {
+      orderIds: [shipUnpaidId],
+    });
+    assert.strictEqual(status, 200);
+    assert.strictEqual(data.orderCount, 1);
+    const order = data.orders[0];
+    assert.ok(order.paymentStatus !== undefined, 'paymentStatus must be present even for unpaid');
+    assert.strictEqual(order.paymentStatus, 'unpaid');
+  });
+
+  test('200 — cancelled orders excluded and in excludedOrderIds', async () => {
+    const { status, data } = await req('POST', '/orders/shipping-list', {
+      orderIds: [shipOrder1Id, shipCancelledId],
+    });
+    assert.strictEqual(status, 200);
+    assert.ok(data.excludedOrderIds.includes(shipCancelledId), 'cancelled order in excludedOrderIds');
+    assert.strictEqual(data.orderCount, 1);
+    assert.ok(!data.orders.find((o) => o.orderId === shipCancelledId), 'cancelled order not in orders array');
+  });
+
+  test('200 — internalNote MUST NOT be returned', async () => {
+    const { status, data } = await req('POST', '/orders/shipping-list', {
+      orderIds: [shipOrder1Id],
+    });
+    assert.strictEqual(status, 200);
+    const order = data.orders[0];
+    assert.strictEqual(order.internalNote, undefined, 'internalNote must not appear in shipping list response');
+  });
+
+  test('200 — paymentNote MUST NOT be returned', async () => {
+    const { status, data } = await req('POST', '/orders/shipping-list', {
+      orderIds: [shipOrder1Id],
+    });
+    assert.strictEqual(status, 200);
+    const order = data.orders[0];
+    assert.strictEqual(order.paymentNote, undefined, 'paymentNote must not appear in shipping list response');
+  });
+
+  test('200 — publicToken is NOT trackingCode', async () => {
+    const { status, data } = await req('POST', '/orders/shipping-list', {
+      orderIds: [shipOrder1Id],
+    });
+    assert.strictEqual(status, 200);
+    const order = data.orders[0];
+    assert.strictEqual(order.trackingCode, 'SHIP-TRACK-001', 'trackingCode should be logistics tracking number');
+    assert.strictEqual(order.publicToken, undefined, 'publicToken should not appear in shipping list');
+  });
+});

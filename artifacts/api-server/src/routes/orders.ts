@@ -3,9 +3,9 @@ import { and, eq, inArray } from "drizzle-orm";
 import { randomBytes } from "crypto";
 import { db, ordersTable, productsTable } from "@workspace/db";
 import type { OrderStatus } from "@workspace/db";
-import { CreateMerchantOrderBody, UpdateOrderBody, UpdateOrderStatusBody, BulkUpdateOrdersBody } from "@workspace/api-zod";
-import { requireAuth, verifyStoreOwner } from "../middlewares/auth";
-import { isValidTransition, getTransitionError } from "../lib/orderStatusMachine";
+import { CreateMerchantOrderBody, UpdateOrderBody, UpdateOrderStatusBody, BulkUpdateOrdersBody, GetPickingListBody, GetShippingListBody } from "@workspace/api-zod";
+import { requireAuth, verifyStoreOwner } from "../middlewares/auth.ts";
+import { isValidTransition, getTransitionError } from "../lib/orderStatusMachine.ts";
 
 const router = Router();
 
@@ -91,6 +91,195 @@ router.post("/stores/:storeId/orders", requireAuth, async (req: any, res) => {
     }
   }
   throw new Error("Failed to generate unique publicToken after retries");
+});
+
+router.post("/orders/picking-list", requireAuth, async (req: any, res) => {
+  const parsed = GetPickingListBody.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(422).json({ error: parsed.error.message });
+  }
+
+  const { orderIds } = parsed.data;
+
+  const orders = await db
+    .select()
+    .from(ordersTable)
+    .where(inArray(ordersTable.id, orderIds));
+
+  const foundIds = new Set(orders.map((o) => o.id));
+  const notFoundIds = orderIds.filter((id) => !foundIds.has(id));
+  if (notFoundIds.length > 0) {
+    return res.status(422).json({ error: `Orders not found: ${notFoundIds.join(", ")}` });
+  }
+
+  const uniqueStoreIds = [...new Set(orders.map((o) => o.storeId))];
+  for (const storeId of uniqueStoreIds) {
+    const owned = await verifyStoreOwner(req, res, storeId);
+    if (!owned) return;
+  }
+
+  const excludedOrderIds = orders.filter((o) => o.status === "cancelled").map((o) => o.id);
+  const activeOrders = orders.filter((o) => o.status !== "cancelled");
+
+  // Fetch product details for all products in active orders
+  const productIds = [...new Set(activeOrders.map((o) => o.productId))];
+  const products = productIds.length > 0
+    ? await db.select().from(productsTable).where(inArray(productsTable.id, productIds))
+    : [];
+  const productMap = new Map(products.map((p) => [p.id, p]));
+
+  // Group by productId + specValues key
+  const groupMap = new Map<string, {
+    productId: number;
+    skuCode: string | null;
+    productName: string;
+    specValues: Record<string, unknown>;
+    storageTemp: string | null;
+    shelfLife: string | null;
+    quantityTotal: number;
+    orderIds: number[];
+    orderNumbers: string[];
+    noteSet: Set<string>;
+  }>();
+
+  for (const order of activeOrders) {
+    const specValues = (order.specValues ?? {}) as Record<string, unknown>;
+    const groupKey = `${order.productId}::${JSON.stringify(specValues)}`;
+    const product = productMap.get(order.productId);
+    const productName = order.productName ?? product?.name ?? `Product #${order.productId}`;
+
+    if (!groupMap.has(groupKey)) {
+      groupMap.set(groupKey, {
+        productId: order.productId,
+        skuCode: product?.skuCode ?? null,
+        productName,
+        specValues,
+        storageTemp: product?.storageTemp ?? null,
+        shelfLife: product?.shelfLife ?? null,
+        quantityTotal: 0,
+        orderIds: [],
+        orderNumbers: [],
+        noteSet: new Set(),
+      });
+    }
+
+    const group = groupMap.get(groupKey)!;
+    group.quantityTotal += order.quantity;
+    group.orderIds.push(order.id);
+    group.orderNumbers.push(`#${order.id}`);
+    if (order.notes) group.noteSet.add(order.notes);
+  }
+
+  const items = [...groupMap.values()].map((g) => {
+    const specEntries = Object.entries(g.specValues);
+    const specLabel = specEntries.length > 0
+      ? specEntries.map(([k, v]) => `${k}: ${v}`).join("、")
+      : null;
+
+    return {
+      productId: g.productId,
+      skuCode: g.skuCode,
+      productName: g.productName,
+      specValues: g.specValues,
+      specLabel,
+      storageTemp: g.storageTemp,
+      shelfLife: g.shelfLife,
+      quantityTotal: g.quantityTotal,
+      orderIds: g.orderIds,
+      orderNumbers: g.orderNumbers,
+      notes: [...g.noteSet].join(" / "),
+    };
+  });
+
+  return res.json({
+    generatedAt: new Date().toISOString(),
+    orderCount: activeOrders.length,
+    excludedOrderIds,
+    items,
+  });
+});
+
+router.post("/orders/shipping-list", requireAuth, async (req: any, res) => {
+  const parsed = GetShippingListBody.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(422).json({ error: parsed.error.message });
+  }
+
+  const { orderIds } = parsed.data;
+
+  const orders = await db
+    .select()
+    .from(ordersTable)
+    .where(inArray(ordersTable.id, orderIds));
+
+  const foundIds = new Set(orders.map((o) => o.id));
+  const notFoundIds = orderIds.filter((id) => !foundIds.has(id));
+  if (notFoundIds.length > 0) {
+    return res.status(422).json({ error: `Orders not found: ${notFoundIds.join(", ")}` });
+  }
+
+  const uniqueStoreIds = [...new Set(orders.map((o) => o.storeId))];
+  for (const storeId of uniqueStoreIds) {
+    const owned = await verifyStoreOwner(req, res, storeId);
+    if (!owned) return;
+  }
+
+  const excludedOrderIds = orders.filter((o) => o.status === "cancelled").map((o) => o.id);
+  const activeOrders = orders.filter((o) => o.status !== "cancelled");
+
+  // Fetch product details for skuCode
+  const productIds = [...new Set(activeOrders.map((o) => o.productId))];
+  const products = productIds.length > 0
+    ? await db.select().from(productsTable).where(inArray(productsTable.id, productIds))
+    : [];
+  const productMap = new Map(products.map((p) => [p.id, p]));
+
+  const shippingOrders = activeOrders.map((order) => {
+    const product = productMap.get(order.productId);
+    const specValues = (order.specValues ?? {}) as Record<string, unknown>;
+    const specEntries = Object.entries(specValues);
+    const specLabel = specEntries.length > 0
+      ? specEntries.map(([k, v]) => `${k}: ${v}`).join("、")
+      : null;
+    const productName = order.productName ?? product?.name ?? null;
+    const itemsText = specLabel
+      ? `${productName} (${specLabel}) × ${order.quantity}`
+      : `${productName} × ${order.quantity}`;
+
+    return {
+      orderId: order.id,
+      orderNumber: `#${order.id}`,
+      status: order.status,
+      buyerName: order.buyerName,
+      buyerPhone: order.buyerPhone,
+      productName,
+      skuCode: product?.skuCode ?? null,
+      specValues,
+      quantity: order.quantity,
+      paymentStatus: order.paymentStatus,
+      paymentMethod: order.paymentMethod ?? null,
+      shippingStatus: order.shippingStatus,
+      shippingMethod: order.shippingMethod ?? null,
+      trackingCode: order.trackingCode ?? null,
+      trackingProvider: order.trackingProvider ?? null,
+      storeCode: order.cvsStoreId ?? null,
+      storeName: order.cvsStoreName ?? null,
+      recipientName: order.recipientName ?? null,
+      recipientPhone: order.recipientPhone ?? null,
+      recipientAddress: order.recipientAddress ?? null,
+      shippingNote: order.shippingNote ?? null,
+      itemsText,
+      // internalNote intentionally excluded
+      // paymentNote intentionally excluded
+    };
+  });
+
+  return res.json({
+    generatedAt: new Date().toISOString(),
+    orderCount: activeOrders.length,
+    excludedOrderIds,
+    orders: shippingOrders,
+  });
 });
 
 router.patch("/orders/bulk", requireAuth, async (req: any, res) => {

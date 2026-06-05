@@ -1,5 +1,5 @@
 import { index, integer, pgTable, serial, text, timestamp, unique } from "drizzle-orm/pg-core";
-import { storesTable } from "./stores";
+import { storesTable } from "./stores.ts";
 
 export const productCategoriesTable = pgTable(
   "product_categories",

@@ -2,8 +2,8 @@ import { pgTable, text, serial, timestamp, integer, numeric, jsonb, index, check
 import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
-import { storesTable } from "./stores";
-import { productsTable } from "./products";
+import { storesTable } from "./stores.ts";
+import { productsTable } from "./products.ts";
 
 export const orderStatusEnum = ["pending", "awaiting_payment", "preparing", "shipped", "completed", "cancelled"] as const;
 export type OrderStatus = typeof orderStatusEnum[number];
