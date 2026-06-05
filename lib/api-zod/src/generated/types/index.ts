@@ -6,6 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './bulkOrderUpdate';
+export * from './bulkOrderUpdateResponse';
 export * from './healthStatus';
 export * from './merchantOrderInput';
 export * from './merchantOrderInputSpecValues';
@@ -18,6 +20,8 @@ export * from './orderStatusUpdate';
 export * from './orderStatusUpdateStatus';
 export * from './orderUpdate';
 export * from './orderUpdateSpecValues';
+export * from './paymentMethod';
+export * from './paymentStatus';
 export * from './product';
 export * from './productCategory';
 export * from './productCategoryInput';
@@ -32,6 +36,8 @@ export * from './publicOrderSpecValues';
 export * from './publicOrderStatus';
 export * from './publicProduct';
 export * from './publicProductStorageTemp';
+export * from './shippingMethod';
+export * from './shippingStatus';
 export * from './store';
 export * from './storeInput';
 export * from './storeStats';

@@ -20,6 +20,8 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  BulkOrderUpdate,
+  BulkOrderUpdateResponse,
   HealthStatus,
   MerchantOrderInput,
   Order,
@@ -1465,6 +1467,77 @@ export const useUpdateOrderStatus = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getUpdateOrderStatusMutationOptions(options));
+    }
+
+export const getBulkUpdateOrdersUrl = () => {
+
+
+
+
+  return `/api/orders/bulk`
+}
+
+/**
+ * @summary Bulk update payment/shipping status for multiple orders
+ */
+export const bulkUpdateOrders = async (bulkOrderUpdate: BulkOrderUpdate, options?: RequestInit): Promise<BulkOrderUpdateResponse> => {
+
+  return customFetch<BulkOrderUpdateResponse>(getBulkUpdateOrdersUrl(),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      bulkOrderUpdate,)
+  }
+);}
+
+
+
+
+export const getBulkUpdateOrdersMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bulkUpdateOrders>>, TError,{data: BodyType<BulkOrderUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof bulkUpdateOrders>>, TError,{data: BodyType<BulkOrderUpdate>}, TContext> => {
+
+const mutationKey = ['bulkUpdateOrders'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof bulkUpdateOrders>>, {data: BodyType<BulkOrderUpdate>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  bulkUpdateOrders(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type BulkUpdateOrdersMutationResult = NonNullable<Awaited<ReturnType<typeof bulkUpdateOrders>>>
+    export type BulkUpdateOrdersMutationBody = BodyType<BulkOrderUpdate>
+    export type BulkUpdateOrdersMutationError = ErrorType<void>
+
+    /**
+ * @summary Bulk update payment/shipping status for multiple orders
+ */
+export const useBulkUpdateOrders = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bulkUpdateOrders>>, TError,{data: BodyType<BulkOrderUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof bulkUpdateOrders>>,
+        TError,
+        {data: BodyType<BulkOrderUpdate>},
+        TContext
+      > => {
+      return useMutation(getBulkUpdateOrdersMutationOptions(options));
     }
 
 export const getGetPublicProductUrl = (shareToken: string,) => {

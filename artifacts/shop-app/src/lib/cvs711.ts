@@ -1,4 +1,5 @@
 export interface CvsStore {
+  provider?: "seven" | "family";
   storeId: string;
   storeName: string;
   storeAddress: string;
@@ -7,6 +8,9 @@ export interface CvsStore {
 
 export const SEVEN_ELEVEN_PICKUP_METHODS = ["7-11 貨到付款", "7-11 取貨（先付款）"] as const;
 export type SevenElevenMethod = typeof SEVEN_ELEVEN_PICKUP_METHODS[number];
+
+export const FAMILY_MART_PICKUP_METHODS = ["全家取貨（先付款）", "全家貨到付款"] as const;
+export type FamilyMartMethod = typeof FAMILY_MART_PICKUP_METHODS[number];
 
 export const PICKUP_METHOD_SHIPPING_FEE: Record<string, number> = {
   "面交": 0,
@@ -27,6 +31,18 @@ export const PICKUP_METHOD_SHIPPING_FEE: Record<string, number> = {
 
 export function isSevenElevenMethod(method: string): boolean {
   return SEVEN_ELEVEN_PICKUP_METHODS.includes(method as SevenElevenMethod);
+}
+
+export function isFamilyMartMethod(method: string): boolean {
+  return FAMILY_MART_PICKUP_METHODS.includes(method as FamilyMartMethod);
+}
+
+export function isStorePickupMethod(method: string): boolean {
+  return isSevenElevenMethod(method) || isFamilyMartMethod(method);
+}
+
+export function getPickupProvider(method: string): "seven" | "family" {
+  return isFamilyMartMethod(method) ? "family" : "seven";
 }
 
 export function getShippingFee(pickupMethod: string): number {
@@ -109,11 +125,16 @@ export interface OpenSevenElevenMapOptions {
   shareToken?: string;
 }
 
-/** Navigate to LeMai self-hosted store picker at /cvs/711/select */
-export function openSevenElevenMap(options: OpenSevenElevenMapOptions): void {
+export interface OpenCvsMapOptions extends OpenSevenElevenMapOptions {
+  provider: "seven" | "family";
+}
+
+/** Navigate to the self-hosted CVS store picker at /cvs/711/select */
+export function openCvsStoreMap(options: OpenCvsMapOptions): void {
   const basePath = (import.meta as any).env?.BASE_URL?.replace(/\/$/, "") ?? "";
 
   const selectParams = new URLSearchParams({
+    provider: options.provider,
     source: options.source,
     returnTo: options.returnPath,
     ...(options.orderId != null ? { orderId: String(options.orderId) } : {}),
@@ -121,6 +142,11 @@ export function openSevenElevenMap(options: OpenSevenElevenMapOptions): void {
   });
 
   window.location.href = `${basePath}/cvs/711/select?${selectParams.toString()}`;
+}
+
+/** @deprecated Use openCvsStoreMap with provider:"seven" */
+export function openSevenElevenMap(options: OpenSevenElevenMapOptions): void {
+  openCvsStoreMap({ ...options, provider: "seven" });
 }
 
 /** Open official 7-11 E-Map in a new tab (auxiliary / reference only) */

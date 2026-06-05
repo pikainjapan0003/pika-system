@@ -1,0 +1,115 @@
+{
+  "generatedAt": "2026-06-04T20:32:01.704Z",
+  "provider": "family",
+  "mode": "upsert-small-scope",
+  "targets": [
+    {
+      "city": "連江縣",
+      "district": "南竿鄉"
+    }
+  ],
+  "totalRaw": 3,
+  "totalDeduped": 3,
+  "inserted": 3,
+  "updated": 0,
+  "failed": 0,
+  "dbCounts": {
+    "familyBefore": 112,
+    "familyAfter": 115,
+    "sevenBefore": 7386,
+    "sevenAfter": 7386,
+    "sevenUnchanged": true
+  },
+  "districtReports": [
+    {
+      "city": "連江縣",
+      "district": "南竿鄉",
+      "rawCount": 3,
+      "dedupedCount": 3,
+      "inserted": 3,
+      "updated": 0,
+      "failed": 0,
+      "missingPhone": 0,
+      "missingAddress": 0,
+      "missingDistrict": 0,
+      "sample": [
+        {
+          "provider": "family",
+          "generatedStoreId": "family-043c532da71c",
+          "storeName": "全家馬祖清水店",
+          "storeAddress": "連江縣南竿鄉清水村117號1樓",
+          "phone": "836-23744",
+          "postalCode": "209",
+          "city": "連江縣",
+          "district": "南竿鄉",
+          "source": "twcoupon_family",
+          "sourceUrl": "https://twcoupon.com/brandshoparea-%e5%85%a8%e5%ae%b6%e4%be%bf%e5%88%a9%e5%95%86%e5%ba%97-%e9%80%a3%e6%b1%9f%e7%b8%a3-%e5%8d%97%e7%ab%bf%e9%84%89-%e9%9b%bb%e8%a9%b1-%e5%9c%b0%e5%9d%80.html"
+        },
+        {
+          "provider": "family",
+          "generatedStoreId": "family-286c5b39667e",
+          "storeName": "全家馬祖機場店",
+          "storeAddress": "連江縣南竿鄉復興村220號1樓(南竿航空站二航廈)",
+          "phone": "836-22517",
+          "postalCode": "209",
+          "city": "連江縣",
+          "district": "南竿鄉",
+          "source": "twcoupon_family",
+          "sourceUrl": "https://twcoupon.com/brandshoparea-%e5%85%a8%e5%ae%b6%e4%be%bf%e5%88%a9%e5%95%86%e5%ba%97-%e9%80%a3%e6%b1%9f%e7%b8%a3-%e5%8d%97%e7%ab%bf%e9%84%89-%e9%9b%bb%e8%a9%b1-%e5%9c%b0%e5%9d%80.html"
+        },
+        {
+          "provider": "family",
+          "generatedStoreId": "family-80b0df6a58df",
+          "storeName": "全家馬祖福運店",
+          "storeAddress": "連江縣南竿鄉福沃村69號1樓",
+          "phone": "836-23389",
+          "postalCode": "209",
+          "city": "連江縣",
+          "district": "南竿鄉",
+          "source": "twcoupon_family",
+          "sourceUrl": "https://twcoupon.com/brandshoparea-%e5%85%a8%e5%ae%b6%e4%be%bf%e5%88%a9%e5%95%86%e5%ba%97-%e9%80%a3%e6%b1%9f%e7%b8%a3-%e5%8d%97%e7%ab%bf%e9%84%89-%e9%9b%bb%e8%a9%b1-%e5%9c%b0%e5%9d%80.html"
+        }
+      ]
+    }
+  ],
+  "duplicates": [],
+  "anomalies": [],
+  "samples": [
+    {
+      "provider": "family",
+      "generatedStoreId": "family-043c532da71c",
+      "storeName": "全家馬祖清水店",
+      "storeAddress": "連江縣南竿鄉清水村117號1樓",
+      "phone": "836-23744",
+      "postalCode": "209",
+      "city": "連江縣",
+      "district": "南竿鄉",
+      "source": "twcoupon_family",
+      "sourceUrl": "https://twcoupon.com/brandshoparea-%e5%85%a8%e5%ae%b6%e4%be%bf%e5%88%a9%e5%95%86%e5%ba%97-%e9%80%a3%e6%b1%9f%e7%b8%a3-%e5%8d%97%e7%ab%bf%e9%84%89-%e9%9b%bb%e8%a9%b1-%e5%9c%b0%e5%9d%80.html"
+    },
+    {
+      "provider": "family",
+      "generatedStoreId": "family-286c5b39667e",
+      "storeName": "全家馬祖機場店",
+      "storeAddress": "連江縣南竿鄉復興村220號1樓(南竿航空站二航廈)",
+      "phone": "836-22517",
+      "postalCode": "209",
+      "city": "連江縣",
+      "district": "南竿鄉",
+      "source": "twcoupon_family",
+      "sourceUrl": "https://twcoupon.com/brandshoparea-%e5%85%a8%e5%ae%b6%e4%be%bf%e5%88%a9%e5%95%86%e5%ba%97-%e9%80%a3%e6%b1%9f%e7%b8%a3-%e5%8d%97%e7%ab%bf%e9%84%89-%e9%9b%bb%e8%a9%b1-%e5%9c%b0%e5%9d%80.html"
+    },
+    {
+      "provider": "family",
+      "generatedStoreId": "family-80b0df6a58df",
+      "storeName": "全家馬祖福運店",
+      "storeAddress": "連江縣南竿鄉福沃村69號1樓",
+      "phone": "836-23389",
+      "postalCode": "209",
+      "city": "連江縣",
+      "district": "南竿鄉",
+      "source": "twcoupon_family",
+      "sourceUrl": "https://twcoupon.com/brandshoparea-%e5%85%a8%e5%ae%b6%e4%be%bf%e5%88%a9%e5%95%86%e5%ba%97-%e9%80%a3%e6%b1%9f%e7%b8%a3-%e5%8d%97%e7%ab%bf%e9%84%89-%e9%9b%bb%e8%a9%b1-%e5%9c%b0%e5%9d%80.html"
+    }
+  ]
+}

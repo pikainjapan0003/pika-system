@@ -73,6 +73,16 @@ const STATUS_LABELS: Record<string, string> = {
   cancelled: "已取消",
 };
 
+const SHIPPING_STATUS_LABELS: Record<string, string> = {
+  not_shipped: "尚未出貨",
+  preparing: "備貨中",
+  shipped: "已出貨（追蹤碼由店家提供）",
+  arrived: "已到達目的地",
+  picked_up: "已取貨完成",
+  returned: "退貨處理中",
+  cancelled: "物流取消，請聯繫店家",
+};
+
 const router = Router();
 
 router.get("/p/:shareToken", async (req, res) => {
@@ -236,17 +246,28 @@ router.get("/orders/track/:publicToken", trackOrderLimiter, async (req, res) => 
     return res.status(404).json({ error: "Order not found" });
   }
 
+  const shippingFee = parseFloat(order.shippingFee as string ?? "0");
+  const totalPrice = parseFloat(order.totalPrice as string);
   return res.json({
     publicToken: order.publicToken,
     productName: order.productName,
     quantity: order.quantity,
     unitPrice: parseFloat(order.unitPrice as string),
-    totalPrice: parseFloat(order.totalPrice as string),
+    shippingFee,
+    totalPrice,
+    orderTotal: totalPrice + shippingFee,
     pickupMethod: order.pickupMethod,
     specValues: order.specValues ?? {},
     status: order.status,
     statusLabel: STATUS_LABELS[order.status] ?? order.status,
+    shippingStatus: order.shippingStatus ?? "not_shipped",
+    shippingStatusLabel: SHIPPING_STATUS_LABELS[order.shippingStatus ?? "not_shipped"] ?? order.shippingStatus,
+    trackingCode: order.trackingCode ?? null,
+    trackingProvider: order.trackingProvider ?? null,
     createdAt: order.createdAt,
+    // STRICTLY EXCLUDED (private / personal info):
+    // internalNote, paymentNote, paidAmount, recipientPhone, recipientAddress,
+    // shippingNote, recipientName, paymentMethod, paymentStatus, remainingAmount
   });
 });
 
