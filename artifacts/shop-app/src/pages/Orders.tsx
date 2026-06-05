@@ -4,7 +4,7 @@ import { useGetMyStore, useListOrders, useUpdateOrderStatus, useBulkUpdateOrders
 import { useQueryClient } from "@tanstack/react-query";
 import { BottomNav } from "./Dashboard";
 import { STATUS_LABELS, STATUS_COLORS, ALL_STATUSES, VALID_NEXT_STATUSES } from "../lib/orderStatus";
-import { isSevenElevenMethod, openSevenElevenMap } from "@/lib/cvs711";
+import { isSevenElevenMethod, isFamilyMartMethod, openSevenElevenMap, openCvsStoreMap } from "@/lib/cvs711";
 
 const DEPRECATED_METHODS: Record<string, string> = {
   "OK Mart": "OK Mart",
@@ -506,6 +506,54 @@ export default function OrdersPage() {
                                 className="mt-2 w-full h-9 rounded-xl border border-primary/40 bg-primary/5 text-xs font-medium text-primary"
                               >
                                 選擇 / 修改 7-11 門市
+                              </button>
+                            )}
+                          </div>
+                        )}
+
+                        {/* 全家門市資訊 */}
+                        {isFamilyMartMethod(o.pickupMethod) && (
+                          <div>
+                            <SectionLabel>全家門市</SectionLabel>
+                            {o.storeCode ? (
+                              <div className="bg-white rounded-xl border border-primary/20 px-4 py-3 space-y-1">
+                                <div className="text-sm font-semibold text-foreground">全家 {o.storeName}</div>
+                                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                                <div className="text-xs text-muted-foreground">{(o as any).cvsStoreAddress}</div>
+                                <div className="text-xs text-muted-foreground/70">門市編號：{o.storeCode}</div>
+                                <div className="flex items-center gap-3 mt-1 pt-1 border-t border-border/40">
+                                  <span className="text-xs text-muted-foreground/60">
+                                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                                    選擇來源：{(o as any).storeSelectedBy === "admin" ? "老闆代選" : "客人選擇"}
+                                  </span>
+                                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                                  {(o as any).storeSelectedAt && (
+                                    <span className="text-xs text-muted-foreground/60">
+                                      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                                      {formatDate((o as any).storeSelectedAt)}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="bg-amber-50 rounded-xl border border-amber-200 px-4 py-3">
+                                <p className="text-xs text-amber-700">尚未選擇全家門市</p>
+                              </div>
+                            )}
+                            {o.status !== "completed" && o.status !== "cancelled" && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  openCvsStoreMap({
+                                    provider: "family",
+                                    returnPath: `${basePath}/orders`,
+                                    source: "admin",
+                                    orderId: o.id,
+                                  });
+                                }}
+                                className="mt-2 w-full h-9 rounded-xl border border-primary/40 bg-primary/5 text-xs font-medium text-primary"
+                              >
+                                選擇 / 修改全家門市
                               </button>
                             )}
                           </div>
