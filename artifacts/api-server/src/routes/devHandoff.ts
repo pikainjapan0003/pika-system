@@ -4,7 +4,12 @@ import path from "path";
 
 const router = Router();
 
-const HANDOFF_PATH = path.resolve(process.cwd(), "../../dev-handoff/latest.json");
+// Use process.argv[1] (the bundle entry path = dist/index.mjs) so the path is
+// correct regardless of the working directory the server is started from.
+const HANDOFF_PATH = path.resolve(
+  path.dirname(process.argv[1]),
+  "../../../dev-handoff/latest.json"
+);
 
 const SECRET_PATTERNS: RegExp[] = [
   /\b(SECRET|ACCESS[_-]?KEY|SECRET[_-]?KEY|API[_-]?KEY|ACCOUNT[_-]?ID|PASSWORD|PRIVATE[_-]?KEY)\s*[=:"'`]\s*\S{4,}/gi,
