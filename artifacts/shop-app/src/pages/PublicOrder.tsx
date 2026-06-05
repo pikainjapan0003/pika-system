@@ -5,8 +5,11 @@ import LaundryCountdownTimer from "../components/LaundryCountdownTimer";
 import { applyBrandColor, DEFAULT_BRAND_PRIMARY_COLOR } from "@/lib/brandColor";
 import {
   isSevenElevenMethod,
+  isFamilyMartMethod,
+  isStorePickupMethod,
+  getPickupProvider,
   getShippingFee,
-  openSevenElevenMap,
+  openCvsStoreMap,
   loadCvsStore,
   clearCvsStore,
   type CvsStore,
@@ -41,9 +44,6 @@ type PickupMethod =
   | "郵局"
   | "面交";
 
-function isFamilyMartMethod(m: string) {
-  return m === "全家取貨（先付款）" || m === "全家貨到付款";
-}
 function isHomeDeliveryMethod(m: string) {
   return m === "黑貓宅急便" || m === "郵局";
 }
@@ -132,7 +132,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
   const shippingFee = getShippingFee(pickupMethod);
   const subtotal = Number(product?.price ?? 0) * quantity;
   const totalDisplay = subtotal + shippingFee;
-  const needs711 = isSevenElevenMethod(pickupMethod);
+  const needsCvsStore = isStorePickupMethod(pickupMethod);
 
   useEffect(() => {
     const stored = loadCvsStore(shareToken);
@@ -140,15 +140,18 @@ export default function PublicOrderPage({ shareToken }: Props) {
   }, [shareToken]);
 
   useEffect(() => {
-    if (!needs711) {
-      if (!isSevenElevenMethod(pickupMethod) && pickupMethod !== "") {
-        setCvsStore(null);
-      }
+    if (!isStorePickupMethod(pickupMethod)) {
+      if (pickupMethod !== "") setCvsStore(null);
     } else {
       const stored = loadCvsStore(shareToken);
-      if (stored) setCvsStore(stored);
+      const expectedProvider = getPickupProvider(pickupMethod);
+      if (stored && (stored.provider === expectedProvider || (!stored.provider && expectedProvider === "seven"))) {
+        setCvsStore(stored);
+      } else {
+        setCvsStore(null);
+      }
     }
-  }, [pickupMethod, needs711, shareToken]);
+  }, [pickupMethod, shareToken]);
 
   useEffect(() => {
     applyBrandColor(product?.brandPrimaryColor ?? DEFAULT_BRAND_PRIMARY_COLOR);
@@ -181,7 +184,8 @@ export default function PublicOrderPage({ shareToken }: Props) {
 
   const handleSelectStore = () => {
     const basePath = (import.meta as any).env?.BASE_URL?.replace(/\/$/, "") ?? "";
-    openSevenElevenMap({
+    openCvsStoreMap({
+      provider: getPickupProvider(pickupMethod),
       returnPath: `${basePath}/p/${shareToken}`,
       source: "customer",
       shareToken,
@@ -210,8 +214,9 @@ export default function PublicOrderPage({ shareToken }: Props) {
       }
     }
 
-    if (needs711 && !cvsStore) {
-      setFormError("請先選擇 7-11 門市");
+    if (needsCvsStore && !cvsStore) {
+      const label = isFamilyMartMethod(pickupMethod) ? "全家門市" : "7-11 門市";
+      setFormError(`請先選擇${label}`);
       return;
     }
 
@@ -235,8 +240,8 @@ export default function PublicOrderPage({ shareToken }: Props) {
         notes: notesPayload,
         specValues: Object.keys(specValues).length > 0 ? specValues : undefined,
         quantity,
-        shippingFee: needs711 ? shippingFee : getShippingFee(pickupMethod),
-        ...(cvsStore && needs711
+        shippingFee,
+        ...(cvsStore && needsCvsStore
           ? {
               cvsStoreId: cvsStore.storeId,
               cvsStoreName: cvsStore.storeName,
@@ -249,7 +254,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
 
       const order = await submitOrder.mutateAsync({ shareToken, data: body });
       setSubmittedOrder(order);
-      if (needs711) clearCvsStore(shareToken);
+      if (needsCvsStore) clearCvsStore(shareToken);
     } catch (err: any) {
       setFormError(err?.data?.message || err?.data?.error || "下單失敗，請稍後再試");
     }
@@ -542,11 +547,41 @@ export default function PublicOrderPage({ shareToken }: Props) {
 
                       {/* 全家 detail */}
                       {isFamilyMartMethod(m) && (
-                        <div className="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 space-y-1">
-                          <p className="text-xs font-semibold text-amber-800">全家取貨</p>
-                          <p className="text-xs text-amber-700 leading-relaxed">
-                            全家門市選擇功能尚未開放，請先於備註填寫希望取貨門市，或改選 7-11。
-                          </p>
+                        <div className="bg-white border border-border rounded-2xl px-4 py-3 space-y-2">
+                          {cvsStore ? (
+                            <>
+                              <div className="flex items-start justify-between gap-2">
+                                <span className="text-sm font-semibold text-foreground">{cvsStore.storeName}</span>
+                                <button
+                                  type="button"
+                                  onClick={handleSelectStore}
+                                  className="shrink-0 text-xs font-medium text-primary border border-primary/30 px-2.5 py-1 rounded-lg"
+                                >
+                                  重選
+                                </button>
+                              </div>
+                              <div className="text-xs text-muted-foreground">{cvsStore.storeAddress || "地址未回傳"}</div>
+                              <div className="text-xs text-muted-foreground/70">門市編號：{cvsStore.storeId}</div>
+                              {!cvsStore.storeAddress && (
+                                <div className="text-xs text-amber-600">地址資料未完整回傳，請確認門市資訊</div>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              <p className="text-xs font-semibold text-foreground">全家門市</p>
+                              <p className="text-xs text-muted-foreground">請選擇取貨門市</p>
+                              <button
+                                type="button"
+                                onClick={handleSelectStore}
+                                className="w-full h-10 rounded-xl border-2 border-primary bg-primary/5 text-primary text-sm font-semibold"
+                              >
+                                選擇全家門市
+                              </button>
+                              {formError === "請先選擇全家門市" && (
+                                <p className="text-xs text-destructive">請先選擇全家門市</p>
+                              )}
+                            </>
+                          )}
                         </div>
                       )}
 
@@ -668,7 +703,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
           </div>
         )}
 
-        {formError && formError !== "請先選擇 7-11 門市" && formError !== "請完整填寫收件地址" && (
+        {formError && formError !== "請先選擇 7-11 門市" && formError !== "請先選擇全家門市" && formError !== "請完整填寫收件地址" && (
           <div className="bg-destructive/10 text-destructive text-sm px-4 py-3 rounded-xl">
             {formError}
           </div>
