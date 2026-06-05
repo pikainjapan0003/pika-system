@@ -1,0 +1,220 @@
+{
+  "generatedAt": "2026-06-05T09:30:00Z",
+  "mode": "official-map-poc",
+  "source": "family-official-map",
+  "targets": [
+    { "city": "台北市", "district": "大安區" },
+    { "city": "新北市", "district": "板橋區" },
+    { "city": "高雄市", "district": "鳳山區" },
+    { "city": "連江縣", "district": "南竿鄉" },
+    { "city": "金門縣", "district": "金城鎮" }
+  ],
+  "results": [
+    {
+      "city": "台北市",
+      "district": "大安區",
+      "success": true,
+      "officialCount": 83,
+      "twcouponDbCount": 43,
+      "officialVsDb_ratio": 1.93,
+      "fields": ["NAME", "TEL", "px", "py", "addr", "SERID", "pkey", "oldpkey", "post", "all", "road", "twoice"],
+      "sample": [
+        {
+          "NAME": "全家大安店",
+          "TEL": "02-27117896",
+          "px": 121.546052,
+          "py": 25.044141,
+          "addr": "台北市大安區大安路一段２０號",
+          "SERID": 10076,
+          "pkey": "020150",
+          "oldpkey": "000076",
+          "post": "106",
+          "all": "ice,SWEETPOTATO,icecream,Rpotato,hd",
+          "road": "大安路一段",
+          "twoice": null
+        }
+      ],
+      "notes": [
+        "Official API returned 83 stores vs DB 43 — 1.93x more data",
+        "Coordinates confirmed WGS84 (px=lon, py=lat)"
+      ]
+    },
+    {
+      "city": "新北市",
+      "district": "板橋區",
+      "success": true,
+      "officialCount": 141,
+      "twcouponDbCount": 70,
+      "officialVsDb_ratio": 2.01,
+      "fields": ["NAME", "TEL", "px", "py", "addr", "SERID", "pkey", "oldpkey", "post", "all", "road", "twoice"],
+      "sample": [
+        {
+          "NAME": "全家板橋振興店",
+          "TEL": "***REDACTED***",
+          "px": 121.481717,
+          "py": 25.023383,
+          "addr": "新北市板橋區三民路一段３１巷８９弄３號",
+          "pkey": "025778"
+        }
+      ],
+      "notes": [
+        "Official API returned 141 stores vs DB 70 — 2.01x more data"
+      ]
+    },
+    {
+      "city": "高雄市",
+      "district": "鳳山區",
+      "success": true,
+      "officialCount": 44,
+      "twcouponDbCount": 28,
+      "officialVsDb_ratio": 1.57,
+      "fields": ["NAME", "TEL", "px", "py", "addr", "SERID", "pkey", "oldpkey", "post", "all", "road", "twoice"],
+      "sample": [
+        {
+          "NAME": "全家鳳山三誠店",
+          "px": 120.32422904047,
+          "py": 22.5942419617203,
+          "addr": "高雄市鳳山區三誠路９９號",
+          "pkey": "022297"
+        }
+      ],
+      "notes": [
+        "Official API returned 44 stores vs DB 28 — 1.57x more data"
+      ]
+    },
+    {
+      "city": "連江縣",
+      "district": "南竿鄉",
+      "success": true,
+      "officialCount": 6,
+      "twcouponDbCount": 3,
+      "officialVsDb_ratio": 2.0,
+      "fields": ["NAME", "TEL", "px", "py", "addr", "SERID", "pkey", "oldpkey", "post", "all", "road", "twoice"],
+      "sample": [
+        {
+          "NAME": "全家馬祖福運店",
+          "px": 119.941263,
+          "py": 26.158136,
+          "addr": "連江縣南竿鄉福沃村６９號１樓",
+          "pkey": "019854"
+        }
+      ],
+      "notes": [
+        "Official API returned 6 stores vs DB 3 — 2.0x more data",
+        "Even remote Matsu archipelago has correct WGS84 coordinates"
+      ]
+    },
+    {
+      "city": "金門縣",
+      "district": "金城鎮",
+      "success": true,
+      "officialCount": 4,
+      "twcouponDbCount": 3,
+      "officialVsDb_ratio": 1.33,
+      "fields": ["NAME", "TEL", "px", "py", "addr", "SERID", "pkey", "oldpkey", "post", "all", "road", "twoice"],
+      "sample": [
+        {
+          "NAME": "全家金門金城店",
+          "px": 118.31948551,
+          "py": 24.43359084,
+          "addr": "金門縣金城鎮中興路１４６巷１１號",
+          "pkey": "018975"
+        }
+      ],
+      "notes": [
+        "Official API returned 4 stores vs DB 3",
+        "Kinmen island WGS84 coordinates confirmed correct"
+      ]
+    }
+  ],
+  "endpointFound": true,
+  "requiresHeadlessBrowser": false,
+  "canAccessData": true,
+  "officialEndpointObservations": {
+    "mapPageUrl": "https://www.family.com.tw/Marketing/StoreMap/?v=1",
+    "storeApiEndpoint": "https://api.map.com.tw/net/familyShop.aspx",
+    "workingUrlPattern": "https://api.map.com.tw/net/familyShop.aspx?searchType=ShopList&type=&city=<url-encoded-city>&area=<url-encoded-district>&road=&fun=showStoreList&key=***REDACTED***",
+    "requiredHeaders": {
+      "Referer": "https://www.family.com.tw/Marketing/StoreMap/?v=1",
+      "User-Agent": "Mozilla/5.0 ..."
+    },
+    "keyDiscovery": "Key embedded in StoreMap/?v=1 page HTML — can be extracted via grep",
+    "parameterNotes": {
+      "searchType": "ShopList (not 'type=ShopList' as previously tried)",
+      "type": "empty string — service filter, leave empty for all stores",
+      "city": "Chinese city name URL-encoded (e.g. 台北市)",
+      "area": "Chinese district name URL-encoded — NOT 'town=' as previously tried",
+      "fun": "JSONP callback function name (e.g. showStoreList)",
+      "key": "40-char hex key from StoreMap page — REDACTED in this report"
+    },
+    "responseFormat": "JSONP: showStoreList([{...}, ...])",
+    "dataFields": {
+      "NAME": "店名 (store name)",
+      "TEL": "電話 (phone number)",
+      "px": "經度 WGS84 longitude",
+      "py": "緯度 WGS84 latitude",
+      "addr": "地址 (full address, traditional Chinese)",
+      "SERID": "服務號碼 (service ID integer)",
+      "pkey": "官方店號 (official store number, 6-digit string like '020150')",
+      "oldpkey": "舊店號 (old store number, 6-digit string)",
+      "post": "郵遞區號 (postal code, 3-digit string)",
+      "all": "服務列表 (CSV of service codes, e.g. 'ice,SWEETPOTATO,icecream,Rpotato,hd')",
+      "road": "路名 (road name)",
+      "twoice": "null or service flag"
+    },
+    "coordinateSystem": "WGS84 confirmed — px is longitude (~120-122 for Taiwan), py is latitude (~22-25 for Taiwan)",
+    "additionalEndpoints": {
+      "ShowTownList": "searchType=ShowTownList&city=<city>&fun=storeTownList — returns list of districts with postal codes",
+      "ShowCityList": "searchType=ShowCityList — returns empty (city list may be hardcoded in map.js)",
+      "ShopName": "searchType=ShopName for name search",
+      "ShopNo": "searchType=ShopNo for store number lookup"
+    },
+    "familyJsDecoded": "family.js (15KB) is obfuscated with substitution cipher; decoded reveals full iMap.prototype.getShopList implementation"
+  },
+  "cityLevelCounts": {
+    "sampled": {
+      "台北市": { "official": 640, "db": 335, "ratio": 1.91 },
+      "新北市": { "official": 960, "db": 533, "ratio": 1.80 },
+      "高雄市": { "official": 393, "db": 226, "ratio": 1.74 },
+      "台中市": { "official": 625, "db": 340, "ratio": 1.84 },
+      "桃園市": { "official": 425, "db": 224, "ratio": 1.90 },
+      "台南市": { "official": 261, "db": 154, "ratio": 1.69 }
+    },
+    "notes": "6 major cities sampled by fetching entire city without district filter"
+  },
+  "nationalEstimate": {
+    "dbCount": 2509,
+    "sampled6CitiesOfficial": 3304,
+    "sampled6CitiesDb": 1812,
+    "averageRatio": 1.823,
+    "remainingDbCount": 697,
+    "estimatedRemainingOfficial": 1271,
+    "estimatedNationalTotal": 4575,
+    "expectedCount": 4470,
+    "estimateVsExpected_gap": 105,
+    "confidence": "high — estimate within 2.3% of expected 4,470",
+    "conclusion": "Official API can supply ~4,575 stores nationally, vs current DB 2,509 (1.82x more)"
+  },
+  "currentDbSummary": {
+    "familyTotal": 2509,
+    "sevenTotal": 7386,
+    "byCity": {
+      "南投縣": 47, "台中市": 340, "台北市": 335, "台南市": 154,
+      "台東縣": 29, "嘉義市": 21, "嘉義縣": 36, "基隆市": 41,
+      "宜蘭縣": 48, "屏東縣": 67, "彰化縣": 83, "新北市": 533,
+      "新竹市": 60, "新竹縣": 77, "桃園市": 224, "澎湖縣": 15,
+      "花蓮縣": 37, "苗栗縣": 66, "連江縣": 3, "金門縣": 10,
+      "雲林縣": 57, "高雄市": 226
+    }
+  },
+  "scrapeStrategy": {
+    "approach": "ShopList per district (city + area)",
+    "districtListApi": "ShowTownList — dynamically fetch all districts per city",
+    "estimatedRequests": "~400 requests (22 cities × ~18 avg districts)",
+    "recommendedDelay": "500ms between requests to avoid overload",
+    "keyRotation": "Not needed — single key works, just needs Referer header",
+    "outputFields": "NAME, TEL, px (lon), py (lat), addr, SERID, pkey, oldpkey, post, all, road"
+  },
+  "recommendedNextStep": "F5-2: Full national dry-run scrape — use ShowTownList to enumerate all 22 city districts, then ShopList per district with 500ms delay. Do NOT write to DB in dry-run. Estimated ~400 API requests, ~4,500 stores returned. After dry-run validation, F5-3 can upsert to DB.",
+  "blockedBy": null
+}
