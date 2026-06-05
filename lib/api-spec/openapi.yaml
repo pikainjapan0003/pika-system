@@ -503,6 +503,68 @@ paths:
         "422":
           description: Validation error or order not found
 
+  /orders/picking-list.csv:
+    post:
+      operationId: downloadPickingListCsv
+      tags: [orders]
+      summary: Download picking list as CSV (UTF-8 BOM, grouped by product)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderIdsBody"
+      responses:
+        "200":
+          description: CSV file download
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+                example: 'attachment; filename="picking-list-20241201-1430.csv"'
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden — order belongs to another store
+        "422":
+          description: Validation error or order not found
+
+  /orders/shipping-list.csv:
+    post:
+      operationId: downloadShippingListCsv
+      tags: [orders]
+      summary: Download shipping list as CSV (UTF-8 BOM, one row per order)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderIdsBody"
+      responses:
+        "200":
+          description: CSV file download
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+                example: 'attachment; filename="shipping-list-20241201-1430.csv"'
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden — order belongs to another store
+        "422":
+          description: Validation error or order not found
+
   /orders/bulk:
     patch:
       operationId: bulkUpdateOrders

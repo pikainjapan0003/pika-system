@@ -1614,6 +1614,148 @@ export const useGetShippingList = <TError = ErrorType<void>,
       return useMutation(getGetShippingListMutationOptions(options));
     }
 
+export const getDownloadPickingListCsvUrl = () => {
+
+
+
+
+  return `/api/orders/picking-list.csv`
+}
+
+/**
+ * @summary Download picking list as CSV (UTF-8 BOM, grouped by product)
+ */
+export const downloadPickingListCsv = async (orderIdsBody: OrderIdsBody, options?: RequestInit): Promise<Blob> => {
+
+  return customFetch<Blob>(getDownloadPickingListCsvUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      orderIdsBody,)
+  }
+);}
+
+
+
+
+export const getDownloadPickingListCsvMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof downloadPickingListCsv>>, TError,{data: BodyType<OrderIdsBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof downloadPickingListCsv>>, TError,{data: BodyType<OrderIdsBody>}, TContext> => {
+
+const mutationKey = ['downloadPickingListCsv'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof downloadPickingListCsv>>, {data: BodyType<OrderIdsBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  downloadPickingListCsv(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DownloadPickingListCsvMutationResult = NonNullable<Awaited<ReturnType<typeof downloadPickingListCsv>>>
+    export type DownloadPickingListCsvMutationBody = BodyType<OrderIdsBody>
+    export type DownloadPickingListCsvMutationError = ErrorType<void>
+
+    /**
+ * @summary Download picking list as CSV (UTF-8 BOM, grouped by product)
+ */
+export const useDownloadPickingListCsv = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof downloadPickingListCsv>>, TError,{data: BodyType<OrderIdsBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof downloadPickingListCsv>>,
+        TError,
+        {data: BodyType<OrderIdsBody>},
+        TContext
+      > => {
+      return useMutation(getDownloadPickingListCsvMutationOptions(options));
+    }
+
+export const getDownloadShippingListCsvUrl = () => {
+
+
+
+
+  return `/api/orders/shipping-list.csv`
+}
+
+/**
+ * @summary Download shipping list as CSV (UTF-8 BOM, one row per order)
+ */
+export const downloadShippingListCsv = async (orderIdsBody: OrderIdsBody, options?: RequestInit): Promise<Blob> => {
+
+  return customFetch<Blob>(getDownloadShippingListCsvUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      orderIdsBody,)
+  }
+);}
+
+
+
+
+export const getDownloadShippingListCsvMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof downloadShippingListCsv>>, TError,{data: BodyType<OrderIdsBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof downloadShippingListCsv>>, TError,{data: BodyType<OrderIdsBody>}, TContext> => {
+
+const mutationKey = ['downloadShippingListCsv'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof downloadShippingListCsv>>, {data: BodyType<OrderIdsBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  downloadShippingListCsv(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DownloadShippingListCsvMutationResult = NonNullable<Awaited<ReturnType<typeof downloadShippingListCsv>>>
+    export type DownloadShippingListCsvMutationBody = BodyType<OrderIdsBody>
+    export type DownloadShippingListCsvMutationError = ErrorType<void>
+
+    /**
+ * @summary Download shipping list as CSV (UTF-8 BOM, one row per order)
+ */
+export const useDownloadShippingListCsv = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof downloadShippingListCsv>>, TError,{data: BodyType<OrderIdsBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof downloadShippingListCsv>>,
+        TError,
+        {data: BodyType<OrderIdsBody>},
+        TContext
+      > => {
+      return useMutation(getDownloadShippingListCsvMutationOptions(options));
+    }
+
 export const getBulkUpdateOrdersUrl = () => {
 
 

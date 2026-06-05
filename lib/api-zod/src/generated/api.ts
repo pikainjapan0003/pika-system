@@ -613,6 +613,28 @@ export const GetShippingListResponse = zod.object({
 
 
 /**
+ * @summary Download picking list as CSV (UTF-8 BOM, grouped by product)
+ */
+
+
+
+export const DownloadPickingListCsvBody = zod.object({
+  "orderIds": zod.array(zod.number()).min(1)
+})
+
+
+/**
+ * @summary Download shipping list as CSV (UTF-8 BOM, one row per order)
+ */
+
+
+
+export const DownloadShippingListCsvBody = zod.object({
+  "orderIds": zod.array(zod.number()).min(1)
+})
+
+
+/**
  * @summary Bulk update payment/shipping status for multiple orders
  */
 

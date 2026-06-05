@@ -106,6 +106,16 @@ async function req(method, path, body, userId = TEST_MERCHANT_ID) {
   return { status: res.status, data };
 }
 
+async function rawFetch(method, path, body, userId = TEST_MERCHANT_ID) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (userId) headers['x-test-user-id'] = userId;
+  return fetch(`${baseUrl}${path}`, {
+    method,
+    headers,
+    body: body != null ? JSON.stringify(body) : undefined,
+  });
+}
+
 // ─────────────────────────────────────────────────────────────
 // 7. POST /stores/:storeId/orders
 // ─────────────────────────────────────────────────────────────
@@ -1002,5 +1012,229 @@ describe('Step 5F-B: POST /orders/shipping-list', () => {
     const order = data.orders[0];
     assert.strictEqual(order.trackingCode, 'SHIP-TRACK-001', 'trackingCode should be logistics tracking number');
     assert.strictEqual(order.publicToken, undefined, 'publicToken should not appear in shipping list');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────
+// 15. Step 5F-C: POST /orders/picking-list.csv
+// ─────────────────────────────────────────────────────────────
+describe('Step 5F-C: POST /orders/picking-list.csv', () => {
+  let csvPickOrder1Id;
+  let csvPickCancelledId;
+  let csvPickSpecialId;
+
+  before(async () => {
+    const insertOrder = (token, overrides) =>
+      db.insert(ordersTable).values({
+        productId: testProductId,
+        storeId: testStoreId,
+        productName: '__test_product__',
+        publicToken: token,
+        buyerName: 'CSV Pick Buyer',
+        buyerPhone: '0911222333',
+        pickupMethod: 'pickup',
+        quantity: 3,
+        unitPrice: '100.00',
+        totalPrice: '300.00',
+        status: 'pending',
+        specValues: { color: 'blue' },
+        ...overrides,
+      }).returning();
+
+    const [o1] = await insertOrder(`csv-pick-1-${Date.now()}`, {});
+    const [oCanc] = await insertOrder(`csv-pick-c-${Date.now()}`, {});
+    const [oSpec] = await insertOrder(`csv-pick-s-${Date.now()}`, {
+      notes: 'has,comma "quote"\nnewline',
+    });
+
+    csvPickOrder1Id = o1.id;
+    csvPickCancelledId = oCanc.id;
+    csvPickSpecialId = oSpec.id;
+
+    await db.update(ordersTable).set({ status: 'cancelled' }).where(eq(ordersTable.id, csvPickCancelledId));
+  });
+
+  test('401 — unauthenticated', async () => {
+    const { status } = await req('POST', '/orders/picking-list.csv', { orderIds: [csvPickOrder1Id] }, null);
+    assert.strictEqual(status, 401);
+  });
+
+  test('422 — empty orderIds', async () => {
+    const { status } = await req('POST', '/orders/picking-list.csv', { orderIds: [] });
+    assert.strictEqual(status, 422);
+  });
+
+  test('403 — cannot export other merchant orders', async () => {
+    const { status } = await req('POST', '/orders/picking-list.csv', { orderIds: [csvPickOrder1Id] }, 'other_merchant_id');
+    assert.strictEqual(status, 403);
+  });
+
+  test('200 — Content-Type is text/csv', async () => {
+    const response = await rawFetch('POST', '/orders/picking-list.csv', { orderIds: [csvPickOrder1Id] });
+    assert.strictEqual(response.status, 200);
+    const ct = response.headers.get('content-type') ?? '';
+    assert.ok(ct.includes('text/csv'), `expected text/csv, got: ${ct}`);
+  });
+
+  test('200 — CSV starts with UTF-8 BOM (raw bytes EF BB BF)', async () => {
+    const response = await rawFetch('POST', '/orders/picking-list.csv', { orderIds: [csvPickOrder1Id] });
+    assert.strictEqual(response.status, 200);
+    const buf = await response.arrayBuffer();
+    const bytes = new Uint8Array(buf);
+    assert.strictEqual(bytes[0], 0xEF, 'BOM byte 1 should be 0xEF');
+    assert.strictEqual(bytes[1], 0xBB, 'BOM byte 2 should be 0xBB');
+    assert.strictEqual(bytes[2], 0xBF, 'BOM byte 3 should be 0xBF');
+  });
+
+  test('200 — CSV contains product name, quantityTotal, order number', async () => {
+    const { status, data } = await req('POST', '/orders/picking-list.csv', { orderIds: [csvPickOrder1Id] });
+    assert.strictEqual(status, 200);
+    assert.ok(data.includes('__test_product__'), 'product name in CSV');
+    assert.ok(data.includes('3'), 'quantity in CSV');
+    assert.ok(data.includes(`#${csvPickOrder1Id}`), 'order number in CSV');
+  });
+
+  test('200 — cancelled orders not in CSV', async () => {
+    const { status, data } = await req('POST', '/orders/picking-list.csv', {
+      orderIds: [csvPickOrder1Id, csvPickCancelledId],
+    });
+    assert.strictEqual(status, 200);
+    const lines = data.split('\n');
+    // Header + 1 data row (cancelled excluded)
+    assert.strictEqual(lines.filter((l) => l.trim()).length, 2, 'header + 1 active row');
+    assert.ok(!data.includes(`#${csvPickCancelledId}`), 'cancelled order not in CSV');
+  });
+
+  test('200 — comma, quote, newline correctly escaped', async () => {
+    const { status, data } = await req('POST', '/orders/picking-list.csv', { orderIds: [csvPickSpecialId] });
+    assert.strictEqual(status, 200);
+    // Properly escaped: comma inside quotes, quote doubled, newline inside quotes
+    assert.ok(data.includes('"has,comma ""quote""\nnewline"'), 'special chars properly escaped in CSV');
+  });
+
+  test('200 — Content-Disposition has picking-list filename', async () => {
+    const response = await rawFetch('POST', '/orders/picking-list.csv', { orderIds: [csvPickOrder1Id] });
+    assert.strictEqual(response.status, 200);
+    const cd = response.headers.get('content-disposition') ?? '';
+    assert.ok(cd.includes('picking-list'), `filename should contain picking-list, got: ${cd}`);
+    assert.ok(cd.includes('.csv'), 'filename should have .csv extension');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────
+// 16. Step 5F-C: POST /orders/shipping-list.csv
+// ─────────────────────────────────────────────────────────────
+describe('Step 5F-C: POST /orders/shipping-list.csv', () => {
+  let csvShipOrder1Id;
+  let csvShipCancelledId;
+  let csvShipSpecialId;
+
+  before(async () => {
+    const insertOrder = (token, overrides) =>
+      db.insert(ordersTable).values({
+        productId: testProductId,
+        storeId: testStoreId,
+        productName: '__test_product__',
+        publicToken: token,
+        buyerName: 'CSV Ship Buyer',
+        buyerPhone: '0922333444',
+        pickupMethod: 'delivery',
+        quantity: 1,
+        unitPrice: '150.00',
+        totalPrice: '150.00',
+        status: 'pending',
+        specValues: {},
+        paymentStatus: 'paid',
+        shippingStatus: 'shipped',
+        trackingCode: 'CSV-TRACK-001',
+        recipientName: '王收件人',
+        recipientPhone: '0933444555',
+        recipientAddress: '台南市中西區某路2號',
+        internalNote: 'INTERNAL_DO_NOT_EXPORT',
+        paymentNote: 'PAYMENT_DO_NOT_EXPORT',
+        ...overrides,
+      }).returning();
+
+    const [o1] = await insertOrder(`csv-ship-1-${Date.now()}`, {});
+    const [oCanc] = await insertOrder(`csv-ship-c-${Date.now()}`, {});
+    const [oSpec] = await insertOrder(`csv-ship-s-${Date.now()}`, {
+      buyerName: 'Buyer,With"Special\nChars',
+    });
+
+    csvShipOrder1Id = o1.id;
+    csvShipCancelledId = oCanc.id;
+    csvShipSpecialId = oSpec.id;
+
+    await db.update(ordersTable).set({ status: 'cancelled' }).where(eq(ordersTable.id, csvShipCancelledId));
+  });
+
+  test('401 — unauthenticated', async () => {
+    const { status } = await req('POST', '/orders/shipping-list.csv', { orderIds: [csvShipOrder1Id] }, null);
+    assert.strictEqual(status, 401);
+  });
+
+  test('200 — Content-Type is text/csv', async () => {
+    const response = await rawFetch('POST', '/orders/shipping-list.csv', { orderIds: [csvShipOrder1Id] });
+    assert.strictEqual(response.status, 200);
+    const ct = response.headers.get('content-type') ?? '';
+    assert.ok(ct.includes('text/csv'), `expected text/csv, got: ${ct}`);
+  });
+
+  test('200 — CSV contains buyer name, payment status, shipping status, tracking code', async () => {
+    const { status, data } = await req('POST', '/orders/shipping-list.csv', { orderIds: [csvShipOrder1Id] });
+    assert.strictEqual(status, 200);
+    assert.ok(data.includes('CSV Ship Buyer'), 'buyer name in CSV');
+    assert.ok(data.includes('paid'), 'paymentStatus in CSV');
+    assert.ok(data.includes('shipped'), 'shippingStatus in CSV');
+    assert.ok(data.includes('CSV-TRACK-001'), 'trackingCode in CSV');
+  });
+
+  test('200 — CSV contains recipient phone and address', async () => {
+    const { status, data } = await req('POST', '/orders/shipping-list.csv', { orderIds: [csvShipOrder1Id] });
+    assert.strictEqual(status, 200);
+    assert.ok(data.includes('0933444555'), 'recipientPhone in CSV');
+    assert.ok(data.includes('台南市中西區某路2號'), 'recipientAddress in CSV');
+  });
+
+  test('200 — internalNote NOT in CSV', async () => {
+    const { status, data } = await req('POST', '/orders/shipping-list.csv', { orderIds: [csvShipOrder1Id] });
+    assert.strictEqual(status, 200);
+    assert.ok(!data.includes('INTERNAL_DO_NOT_EXPORT'), 'internalNote must not appear in CSV');
+  });
+
+  test('200 — paymentNote NOT in CSV', async () => {
+    const { status, data } = await req('POST', '/orders/shipping-list.csv', { orderIds: [csvShipOrder1Id] });
+    assert.strictEqual(status, 200);
+    assert.ok(!data.includes('PAYMENT_DO_NOT_EXPORT'), 'paymentNote must not appear in CSV');
+  });
+
+  test('200 — publicToken NOT in CSV', async () => {
+    const { status, data } = await req('POST', '/orders/shipping-list.csv', { orderIds: [csvShipOrder1Id] });
+    assert.strictEqual(status, 200);
+    assert.ok(!data.includes('csv-ship-1-'), 'publicToken must not appear in CSV');
+  });
+
+  test('200 — cancelled orders not in CSV', async () => {
+    const { status, data } = await req('POST', '/orders/shipping-list.csv', {
+      orderIds: [csvShipOrder1Id, csvShipCancelledId],
+    });
+    assert.strictEqual(status, 200);
+    const lines = data.split('\n');
+    assert.strictEqual(lines.filter((l) => l.trim()).length, 2, 'header + 1 active row');
+    assert.ok(!data.includes(`#${csvShipCancelledId}`), 'cancelled order not in CSV');
+  });
+
+  test('200 — comma, quote, newline correctly escaped', async () => {
+    const { status, data } = await req('POST', '/orders/shipping-list.csv', { orderIds: [csvShipSpecialId] });
+    assert.strictEqual(status, 200);
+    assert.ok(data.includes('"Buyer,With""Special\nChars"'), 'special chars properly escaped in CSV');
+  });
+
+  test('200 — Content-Disposition has shipping-list filename', async () => {
+    const response = await rawFetch('POST', '/orders/shipping-list.csv', { orderIds: [csvShipOrder1Id] });
+    assert.strictEqual(response.status, 200);
+    const cd = response.headers.get('content-disposition') ?? '';
+    assert.ok(cd.includes('shipping-list'), `filename should contain shipping-list, got: ${cd}`);
+    assert.ok(cd.includes('.csv'), 'filename should have .csv extension');
   });
 });
