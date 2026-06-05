@@ -1,0 +1,300 @@
+{
+  "generatedAt": "2026-06-05T13:15:54.491Z",
+  "mode": "official-map-allcities-replace-upsert",
+  "dryRun": true,
+  "provider": "family",
+  "source": "family_official_map",
+  "officialRaw": 4492,
+  "officialDeduped": 4492,
+  "familyBefore": 2814,
+  "familyAfter": null,
+  "expectedFamilyAfter": 4492,
+  "sevenBefore": 7386,
+  "sevenAfter": null,
+  "sevenUnchanged": null,
+  "deactivatedOldFamilyRows": null,
+  "inserted": null,
+  "updated": null,
+  "reactivated": 0,
+  "failed": null,
+  "failedDistricts": [],
+  "anomalies": [],
+  "missingStats": {
+    "missingOfficialStoreId": 0,
+    "missingName": 0,
+    "missingAddress": 0,
+    "missingPhone": 0,
+    "missingPostalCode": 0,
+    "missingCity": 0,
+    "missingDistrict": 0,
+    "missingCoordinates": 0
+  },
+  "familySourceAfter": null,
+  "postWriteValidation": null,
+  "cityReports": [
+    {
+      "city": "南投縣",
+      "officialCount": 83,
+      "familyCityBefore": 47,
+      "familyCitySourceBefore": {
+        "twcoupon_family": 47
+      },
+      "expectedDeactivatedOldRows": 47,
+      "expectedFamilyCityAfter": 83,
+      "failedDistricts": 0,
+      "anomalies": 0
+    },
+    {
+      "city": "台中市",
+      "officialCount": 625,
+      "familyCityBefore": 340,
+      "familyCitySourceBefore": {
+        "twcoupon_family": 340
+      },
+      "expectedDeactivatedOldRows": 340,
+      "expectedFamilyCityAfter": 625,
+      "failedDistricts": 0,
+      "anomalies": 0
+    },
+    {
+      "city": "台北市",
+      "officialCount": 640,
+      "familyCityBefore": 640,
+      "familyCitySourceBefore": {
+        "family_official_map": 640
+      },
+      "expectedDeactivatedOldRows": 640,
+      "expectedFamilyCityAfter": 640,
+      "failedDistricts": 0,
+      "anomalies": 0
+    },
+    {
+      "city": "台南市",
+      "officialCount": 261,
+      "familyCityBefore": 154,
+      "familyCitySourceBefore": {
+        "twcoupon_family": 154
+      },
+      "expectedDeactivatedOldRows": 154,
+      "expectedFamilyCityAfter": 261,
+      "failedDistricts": 0,
+      "anomalies": 0
+    },
+    {
+      "city": "台東縣",
+      "officialCount": 41,
+      "familyCityBefore": 29,
+      "familyCitySourceBefore": {
+        "twcoupon_family": 29
+      },
+      "expectedDeactivatedOldRows": 29,
+      "expectedFamilyCityAfter": 41,
+      "failedDistricts": 0,
+      "anomalies": 0
+    },
+    {
+      "city": "嘉義市",
+      "officialCount": 40,
+      "familyCityBefore": 21,
+      "familyCitySourceBefore": {
+        "twcoupon_family": 21
+      },
+      "expectedDeactivatedOldRows": 21,
+      "expectedFamilyCityAfter": 40,
+      "failedDistricts": 0,
+      "anomalies": 0
+    },
+    {
+      "city": "嘉義縣",
+      "officialCount": 59,
+      "familyCityBefore": 36,
+      "familyCitySourceBefore": {
+        "twcoupon_family": 36
+      },
+      "expectedDeactivatedOldRows": 36,
+      "expectedFamilyCityAfter": 59,
+      "failedDistricts": 0,
+      "anomalies": 0
+    },
+    {
+      "city": "基隆市",
+      "officialCount": 72,
+      "familyCityBefore": 41,
+      "familyCitySourceBefore": {
+        "twcoupon_family": 41
+      },
+      "expectedDeactivatedOldRows": 41,
+      "expectedFamilyCityAfter": 72,
+      "failedDistricts": 0,
+      "anomalies": 0
+    },
+    {
+      "city": "宜蘭縣",
+      "officialCount": 82,
+      "familyCityBefore": 48,
+      "familyCitySourceBefore": {
+        "twcoupon_family": 48
+      },
+      "expectedDeactivatedOldRows": 48,
+      "expectedFamilyCityAfter": 82,
+      "failedDistricts": 0,
+      "anomalies": 0
+    },
+    {
+      "city": "屏東縣",
+      "officialCount": 107,
+      "familyCityBefore": 67,
+      "familyCitySourceBefore": {
+        "twcoupon_family": 67
+      },
+      "expectedDeactivatedOldRows": 67,
+      "expectedFamilyCityAfter": 107,
+      "failedDistricts": 0,
+      "anomalies": 0
+    },
+    {
+      "city": "彰化縣",
+      "officialCount": 144,
+      "familyCityBefore": 83,
+      "familyCitySourceBefore": {
+        "twcoupon_family": 83
+      },
+      "expectedDeactivatedOldRows": 83,
+      "expectedFamilyCityAfter": 144,
+      "failedDistricts": 0,
+      "anomalies": 0
+    },
+    {
+      "city": "新北市",
+      "officialCount": 960,
+      "familyCityBefore": 533,
+      "familyCitySourceBefore": {
+        "twcoupon_family": 533
+      },
+      "expectedDeactivatedOldRows": 533,
+      "expectedFamilyCityAfter": 960,
+      "failedDistricts": 0,
+      "anomalies": 0
+    },
+    {
+      "city": "新竹市",
+      "officialCount": 112,
+      "familyCityBefore": 60,
+      "familyCitySourceBefore": {
+        "twcoupon_family": 60
+      },
+      "expectedDeactivatedOldRows": 60,
+      "expectedFamilyCityAfter": 112,
+      "failedDistricts": 0,
+      "anomalies": 0
+    },
+    {
+      "city": "新竹縣",
+      "officialCount": 136,
+      "familyCityBefore": 77,
+      "familyCitySourceBefore": {
+        "twcoupon_family": 77
+      },
+      "expectedDeactivatedOldRows": 77,
+      "expectedFamilyCityAfter": 136,
+      "failedDistricts": 0,
+      "anomalies": 0
+    },
+    {
+      "city": "桃園市",
+      "officialCount": 425,
+      "familyCityBefore": 224,
+      "familyCitySourceBefore": {
+        "twcoupon_family": 224
+      },
+      "expectedDeactivatedOldRows": 224,
+      "expectedFamilyCityAfter": 425,
+      "failedDistricts": 0,
+      "anomalies": 0
+    },
+    {
+      "city": "澎湖縣",
+      "officialCount": 25,
+      "familyCityBefore": 15,
+      "familyCitySourceBefore": {
+        "twcoupon_family": 15
+      },
+      "expectedDeactivatedOldRows": 15,
+      "expectedFamilyCityAfter": 25,
+      "failedDistricts": 0,
+      "anomalies": 0
+    },
+    {
+      "city": "花蓮縣",
+      "officialCount": 58,
+      "familyCityBefore": 37,
+      "familyCitySourceBefore": {
+        "twcoupon_family": 37
+      },
+      "expectedDeactivatedOldRows": 37,
+      "expectedFamilyCityAfter": 58,
+      "failedDistricts": 0,
+      "anomalies": 0
+    },
+    {
+      "city": "苗栗縣",
+      "officialCount": 114,
+      "familyCityBefore": 66,
+      "familyCitySourceBefore": {
+        "twcoupon_family": 66
+      },
+      "expectedDeactivatedOldRows": 66,
+      "expectedFamilyCityAfter": 114,
+      "failedDistricts": 0,
+      "anomalies": 0
+    },
+    {
+      "city": "連江縣",
+      "officialCount": 7,
+      "familyCityBefore": 3,
+      "familyCitySourceBefore": {
+        "twcoupon_family": 3
+      },
+      "expectedDeactivatedOldRows": 3,
+      "expectedFamilyCityAfter": 7,
+      "failedDistricts": 0,
+      "anomalies": 0
+    },
+    {
+      "city": "金門縣",
+      "officialCount": 14,
+      "familyCityBefore": 10,
+      "familyCitySourceBefore": {
+        "twcoupon_family": 10
+      },
+      "expectedDeactivatedOldRows": 10,
+      "expectedFamilyCityAfter": 14,
+      "failedDistricts": 0,
+      "anomalies": 0
+    },
+    {
+      "city": "雲林縣",
+      "officialCount": 94,
+      "familyCityBefore": 57,
+      "familyCitySourceBefore": {
+        "twcoupon_family": 57
+      },
+      "expectedDeactivatedOldRows": 57,
+      "expectedFamilyCityAfter": 94,
+      "failedDistricts": 0,
+      "anomalies": 0
+    },
+    {
+      "city": "高雄市",
+      "officialCount": 393,
+      "familyCityBefore": 226,
+      "familyCitySourceBefore": {
+        "twcoupon_family": 226
+      },
+      "expectedDeactivatedOldRows": 226,
+      "expectedFamilyCityAfter": 393,
+      "failedDistricts": 0,
+      "anomalies": 0
+    }
+  ]
+}

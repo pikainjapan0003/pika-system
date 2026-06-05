@@ -1,0 +1,83 @@
+{
+  "generatedAt": "2026-06-05T13:00:32.492Z",
+  "mode": "official-map-city-replace-upsert",
+  "dryRun": false,
+  "provider": "family",
+  "source": "family_official_map",
+  "targetCity": "台北市",
+  "officialRaw": 640,
+  "officialDeduped": 640,
+  "familyBefore": 2509,
+  "familyAfter": 2814,
+  "familyCityBefore": 335,
+  "familyCityAfter": 640,
+  "familyCitySourceBefore": {
+    "twcoupon_family": 335
+  },
+  "familyCitySourceAfter": {
+    "family_official_map": 640
+  },
+  "sevenBefore": 7386,
+  "sevenAfter": 7386,
+  "sevenUnchanged": true,
+  "familyCityOk": true,
+  "deactivatedOldFamilyRows": 335,
+  "inserted": 640,
+  "updated": 0,
+  "reactivated": 0,
+  "failed": 0,
+  "failedDistricts": [],
+  "writeErrors": [],
+  "duplicates": {
+    "byStoreId": [],
+    "byNameAddr": []
+  },
+  "anomalies": [],
+  "missingStats": {
+    "missingOfficialStoreId": 0,
+    "missingName": 0,
+    "missingAddress": 0,
+    "missingPhone": 0,
+    "missingPostalCode": 0,
+    "missingCity": 0,
+    "missingDistrict": 0,
+    "missingCoordinates": 0
+  },
+  "postWriteValidation": {
+    "missingCoordinates": 0,
+    "missingPhone": 0,
+    "missingAddress": 0,
+    "missingDistrict": 0,
+    "duplicateStoreIds": 0,
+    "duplicateNameAddr": 0
+  },
+  "samples": [
+    {
+      "store_id": "family-024080",
+      "store_name": "全家新德店",
+      "store_address": "台北市中正區八德路一段４３巷２號",
+      "city": "台北市",
+      "district": "中正區",
+      "longitude": 121.531597,
+      "latitude": 25.044475
+    },
+    {
+      "store_id": "family-018527",
+      "store_name": "全家台大醫院店",
+      "store_address": "台北市中正區中山南路７號Ｂ１樓",
+      "city": "台北市",
+      "district": "中正區",
+      "longitude": 121.518534,
+      "latitude": 25.040793
+    },
+    {
+      "store_id": "family-021130",
+      "store_name": "全家新惠安店",
+      "store_address": "台北市中正區中華路二段３０７巷４６號",
+      "city": "台北市",
+      "district": "中正區",
+      "longitude": 121.506467,
+      "latitude": 25.02953
+    }
+  ]
+}
