@@ -5,8 +5,8 @@
  * 團購/代購訂單管理 API
  * OpenAPI spec version: 0.1.0
  */
-import type { PaymentStatus } from './paymentStatus';
-import type { ShippingStatus } from './shippingStatus';
+import type { PaymentStatus } from './paymentStatus.ts';
+import type { ShippingStatus } from './shippingStatus.ts';
 
 export interface BulkOrderUpdate {
   /** @minItems 1 */

@@ -5,7 +5,7 @@
  * 團購/代購訂單管理 API
  * OpenAPI spec version: 0.1.0
  */
-import type { StoreStatsStatusBreakdownItem } from './storeStatsStatusBreakdownItem';
+import type { StoreStatsStatusBreakdownItem } from './storeStatsStatusBreakdownItem.ts';
 
 export interface StoreStats {
   totalOrders: number;

@@ -5,9 +5,9 @@
  * 團購/代購訂單管理 API
  * OpenAPI spec version: 0.1.0
  */
-import type { PublicOrderSpecValues } from './publicOrderSpecValues';
-import type { PublicOrderStatus } from './publicOrderStatus';
-import type { ShippingStatus } from './shippingStatus';
+import type { PublicOrderSpecValues } from './publicOrderSpecValues.ts';
+import type { PublicOrderStatus } from './publicOrderStatus.ts';
+import type { ShippingStatus } from './shippingStatus.ts';
 
 export interface PublicOrder {
   publicToken: string;

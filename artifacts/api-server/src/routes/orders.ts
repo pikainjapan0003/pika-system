@@ -3,9 +3,9 @@ import { and, eq, inArray } from "drizzle-orm";
 import { randomBytes } from "crypto";
 import { db, ordersTable, productsTable } from "@workspace/db";
 import type { OrderStatus } from "@workspace/db";
-import { CreateMerchantOrderBody, UpdateOrderBody, UpdateOrderStatusBody, BulkUpdateOrdersBody } from "@workspace/api-zod";
-import { requireAuth, verifyStoreOwner } from "../middlewares/auth";
-import { isValidTransition, getTransitionError } from "../lib/orderStatusMachine";
+import { CreateMerchantOrderBody, UpdateOrderBody, UpdateOrderStatusBody, BulkUpdateOrdersBody, GetPickingListBody, GetShippingListBody } from "@workspace/api-zod";
+import { requireAuth, verifyStoreOwner } from "../middlewares/auth.ts";
+import { isValidTransition, getTransitionError } from "../lib/orderStatusMachine.ts";
 
 const router = Router();
 
@@ -91,6 +91,337 @@ router.post("/stores/:storeId/orders", requireAuth, async (req: any, res) => {
     }
   }
   throw new Error("Failed to generate unique publicToken after retries");
+});
+
+router.post("/orders/picking-list", requireAuth, async (req: any, res) => {
+  const parsed = GetPickingListBody.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(422).json({ error: parsed.error.message });
+  }
+
+  const { orderIds } = parsed.data;
+
+  const orders = await db
+    .select()
+    .from(ordersTable)
+    .where(inArray(ordersTable.id, orderIds));
+
+  const foundIds = new Set(orders.map((o) => o.id));
+  const notFoundIds = orderIds.filter((id) => !foundIds.has(id));
+  if (notFoundIds.length > 0) {
+    return res.status(422).json({ error: `Orders not found: ${notFoundIds.join(", ")}` });
+  }
+
+  const uniqueStoreIds = [...new Set(orders.map((o) => o.storeId))];
+  for (const storeId of uniqueStoreIds) {
+    const owned = await verifyStoreOwner(req, res, storeId);
+    if (!owned) return;
+  }
+
+  const excludedOrderIds = orders.filter((o) => o.status === "cancelled").map((o) => o.id);
+  const activeOrders = orders.filter((o) => o.status !== "cancelled");
+
+  // Fetch product details for all products in active orders
+  const productIds = [...new Set(activeOrders.map((o) => o.productId))];
+  const products = productIds.length > 0
+    ? await db.select().from(productsTable).where(inArray(productsTable.id, productIds))
+    : [];
+  const productMap = new Map(products.map((p) => [p.id, p]));
+
+  // Group by productId + specValues key
+  const groupMap = new Map<string, {
+    productId: number;
+    skuCode: string | null;
+    productName: string;
+    specValues: Record<string, unknown>;
+    storageTemp: string | null;
+    shelfLife: string | null;
+    quantityTotal: number;
+    orderIds: number[];
+    orderNumbers: string[];
+    noteSet: Set<string>;
+  }>();
+
+  for (const order of activeOrders) {
+    const specValues = (order.specValues ?? {}) as Record<string, unknown>;
+    const groupKey = `${order.productId}::${JSON.stringify(specValues)}`;
+    const product = productMap.get(order.productId);
+    const productName = order.productName ?? product?.name ?? `Product #${order.productId}`;
+
+    if (!groupMap.has(groupKey)) {
+      groupMap.set(groupKey, {
+        productId: order.productId,
+        skuCode: product?.skuCode ?? null,
+        productName,
+        specValues,
+        storageTemp: product?.storageTemp ?? null,
+        shelfLife: product?.shelfLife ?? null,
+        quantityTotal: 0,
+        orderIds: [],
+        orderNumbers: [],
+        noteSet: new Set(),
+      });
+    }
+
+    const group = groupMap.get(groupKey)!;
+    group.quantityTotal += order.quantity;
+    group.orderIds.push(order.id);
+    group.orderNumbers.push(`#${order.id}`);
+    if (order.notes) group.noteSet.add(order.notes);
+  }
+
+  const items = [...groupMap.values()].map((g) => {
+    const specEntries = Object.entries(g.specValues);
+    const specLabel = specEntries.length > 0
+      ? specEntries.map(([k, v]) => `${k}: ${v}`).join("、")
+      : null;
+
+    return {
+      productId: g.productId,
+      skuCode: g.skuCode,
+      productName: g.productName,
+      specValues: g.specValues,
+      specLabel,
+      storageTemp: g.storageTemp,
+      shelfLife: g.shelfLife,
+      quantityTotal: g.quantityTotal,
+      orderIds: g.orderIds,
+      orderNumbers: g.orderNumbers,
+      notes: [...g.noteSet].join(" / "),
+    };
+  });
+
+  return res.json({
+    generatedAt: new Date().toISOString(),
+    orderCount: activeOrders.length,
+    excludedOrderIds,
+    items,
+  });
+});
+
+router.post("/orders/picking-list.csv", requireAuth, async (req: any, res) => {
+  const parsed = GetPickingListBody.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(422).json({ error: parsed.error.message });
+  }
+
+  const result = await fetchAndValidate(parsed.data.orderIds, req, res);
+  if (!result) return;
+
+  const { activeOrders, productMap } = result;
+
+  const groupMap = new Map<string, {
+    productId: number;
+    skuCode: string | null;
+    productName: string;
+    specValues: Record<string, unknown>;
+    storageTemp: string | null;
+    shelfLife: string | null;
+    quantityTotal: number;
+    orderIds: number[];
+    orderNumbers: string[];
+    noteSet: Set<string>;
+  }>();
+
+  for (const order of activeOrders) {
+    const specValues = (order.specValues ?? {}) as Record<string, unknown>;
+    const groupKey = `${order.productId}::${JSON.stringify(specValues)}`;
+    const product = productMap.get(order.productId);
+    const productName = order.productName ?? product?.name ?? `Product #${order.productId}`;
+
+    if (!groupMap.has(groupKey)) {
+      groupMap.set(groupKey, {
+        productId: order.productId,
+        skuCode: product?.skuCode ?? null,
+        productName,
+        specValues,
+        storageTemp: product?.storageTemp ?? null,
+        shelfLife: product?.shelfLife ?? null,
+        quantityTotal: 0,
+        orderIds: [],
+        orderNumbers: [],
+        noteSet: new Set(),
+      });
+    }
+
+    const group = groupMap.get(groupKey)!;
+    group.quantityTotal += order.quantity;
+    group.orderIds.push(order.id);
+    group.orderNumbers.push(`#${order.id}`);
+    if (order.notes) group.noteSet.add(order.notes);
+  }
+
+  const headers = ["商品ID", "SKU / 商品編號", "商品名稱", "規格", "溫層", "保存期限", "數量合計", "對應訂單ID", "對應訂單編號", "備註"];
+  const rows = [...groupMap.values()].map((g) => {
+    const specEntries = Object.entries(g.specValues);
+    const specLabel = specEntries.length > 0
+      ? specEntries.map(([k, v]) => `${k}: ${v}`).join("、")
+      : "";
+    return [
+      g.productId,
+      g.skuCode,
+      g.productName,
+      specLabel,
+      g.storageTemp,
+      g.shelfLife,
+      g.quantityTotal,
+      g.orderIds.join("、"),
+      g.orderNumbers.join("、"),
+      [...g.noteSet].join(" / "),
+    ];
+  });
+
+  const now = new Date();
+  const csvContent = [headers, ...rows].map(csvRow).join("\n");
+  res.setHeader("Content-Type", "text/csv; charset=utf-8");
+  res.setHeader("Content-Disposition", `attachment; filename="${csvFilename("picking-list", now)}"`);
+  return res.send("﻿" + csvContent);
+});
+
+router.post("/orders/shipping-list", requireAuth, async (req: any, res) => {
+  const parsed = GetShippingListBody.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(422).json({ error: parsed.error.message });
+  }
+
+  const { orderIds } = parsed.data;
+
+  const orders = await db
+    .select()
+    .from(ordersTable)
+    .where(inArray(ordersTable.id, orderIds));
+
+  const foundIds = new Set(orders.map((o) => o.id));
+  const notFoundIds = orderIds.filter((id) => !foundIds.has(id));
+  if (notFoundIds.length > 0) {
+    return res.status(422).json({ error: `Orders not found: ${notFoundIds.join(", ")}` });
+  }
+
+  const uniqueStoreIds = [...new Set(orders.map((o) => o.storeId))];
+  for (const storeId of uniqueStoreIds) {
+    const owned = await verifyStoreOwner(req, res, storeId);
+    if (!owned) return;
+  }
+
+  const excludedOrderIds = orders.filter((o) => o.status === "cancelled").map((o) => o.id);
+  const activeOrders = orders.filter((o) => o.status !== "cancelled");
+
+  // Fetch product details for skuCode
+  const productIds = [...new Set(activeOrders.map((o) => o.productId))];
+  const products = productIds.length > 0
+    ? await db.select().from(productsTable).where(inArray(productsTable.id, productIds))
+    : [];
+  const productMap = new Map(products.map((p) => [p.id, p]));
+
+  const shippingOrders = activeOrders.map((order) => {
+    const product = productMap.get(order.productId);
+    const specValues = (order.specValues ?? {}) as Record<string, unknown>;
+    const specEntries = Object.entries(specValues);
+    const specLabel = specEntries.length > 0
+      ? specEntries.map(([k, v]) => `${k}: ${v}`).join("、")
+      : null;
+    const productName = order.productName ?? product?.name ?? null;
+    const itemsText = specLabel
+      ? `${productName} (${specLabel}) × ${order.quantity}`
+      : `${productName} × ${order.quantity}`;
+
+    return {
+      orderId: order.id,
+      orderNumber: `#${order.id}`,
+      status: order.status,
+      buyerName: order.buyerName,
+      buyerPhone: order.buyerPhone,
+      productName,
+      skuCode: product?.skuCode ?? null,
+      specValues,
+      quantity: order.quantity,
+      paymentStatus: order.paymentStatus,
+      paymentMethod: order.paymentMethod ?? null,
+      shippingStatus: order.shippingStatus,
+      shippingMethod: order.shippingMethod ?? null,
+      trackingCode: order.trackingCode ?? null,
+      trackingProvider: order.trackingProvider ?? null,
+      storeCode: order.cvsStoreId ?? null,
+      storeName: order.cvsStoreName ?? null,
+      recipientName: order.recipientName ?? null,
+      recipientPhone: order.recipientPhone ?? null,
+      recipientAddress: order.recipientAddress ?? null,
+      shippingNote: order.shippingNote ?? null,
+      itemsText,
+      // internalNote intentionally excluded
+      // paymentNote intentionally excluded
+    };
+  });
+
+  return res.json({
+    generatedAt: new Date().toISOString(),
+    orderCount: activeOrders.length,
+    excludedOrderIds,
+    orders: shippingOrders,
+  });
+});
+
+router.post("/orders/shipping-list.csv", requireAuth, async (req: any, res) => {
+  const parsed = GetShippingListBody.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(422).json({ error: parsed.error.message });
+  }
+
+  const result = await fetchAndValidate(parsed.data.orderIds, req, res);
+  if (!result) return;
+
+  const { activeOrders, productMap } = result;
+
+  const headers = [
+    "訂單ID", "訂單編號", "訂單狀態", "買家姓名", "買家電話",
+    "商品名稱", "規格", "數量", "付款狀態", "出貨狀態",
+    "物流方式", "物流追蹤碼", "物流商", "超商店號", "超商店名",
+    "收件人", "收件電話", "收件地址", "物流備註", "商品明細文字",
+  ];
+
+  const rows = activeOrders.map((order) => {
+    const product = productMap.get(order.productId);
+    const specValues = (order.specValues ?? {}) as Record<string, unknown>;
+    const specEntries = Object.entries(specValues);
+    const specLabel = specEntries.length > 0
+      ? specEntries.map(([k, v]) => `${k}: ${v}`).join("、")
+      : "";
+    const productName = order.productName ?? product?.name ?? "";
+    const itemsText = specLabel
+      ? `${productName} (${specLabel}) × ${order.quantity}`
+      : `${productName} × ${order.quantity}`;
+
+    return [
+      order.id,
+      `#${order.id}`,
+      order.status,
+      order.buyerName,
+      order.buyerPhone,
+      productName,
+      specLabel,
+      order.quantity,
+      order.paymentStatus,
+      order.shippingStatus,
+      order.shippingMethod ?? "",
+      order.trackingCode ?? "",
+      order.trackingProvider ?? "",
+      order.cvsStoreId ?? "",
+      order.cvsStoreName ?? "",
+      order.recipientName ?? "",
+      order.recipientPhone ?? "",
+      order.recipientAddress ?? "",
+      order.shippingNote ?? "",
+      itemsText,
+      // internalNote intentionally excluded
+      // paymentNote intentionally excluded
+    ];
+  });
+
+  const now = new Date();
+  const csvContent = [headers, ...rows].map(csvRow).join("\n");
+  res.setHeader("Content-Type", "text/csv; charset=utf-8");
+  res.setHeader("Content-Disposition", `attachment; filename="${csvFilename("shipping-list", now)}"`);
+  return res.send("﻿" + csvContent);
 });
 
 router.patch("/orders/bulk", requireAuth, async (req: any, res) => {
@@ -304,6 +635,47 @@ router.patch("/orders/:orderId/status", requireAuth, async (req: any, res) => {
 
   return res.json(formatOrder(updated));
 });
+
+function csvRow(cells: unknown[]): string {
+  return cells.map((c) => `"${String(c ?? "").replace(/"/g, '""')}"`).join(",");
+}
+
+function csvFilename(prefix: string, date: Date): string {
+  const p = (n: number, len = 2) => String(n).padStart(len, "0");
+  const ts = `${date.getFullYear()}${p(date.getMonth() + 1)}${p(date.getDate())}-${p(date.getHours())}${p(date.getMinutes())}`;
+  return `${prefix}-${ts}.csv`;
+}
+
+async function fetchAndValidate(
+  orderIds: number[],
+  req: any,
+  res: any,
+): Promise<{ excludedOrderIds: number[]; activeOrders: any[]; productMap: Map<number, any> } | null> {
+  const orders = await db.select().from(ordersTable).where(inArray(ordersTable.id, orderIds));
+
+  const foundIds = new Set(orders.map((o) => o.id));
+  const notFoundIds = orderIds.filter((id) => !foundIds.has(id));
+  if (notFoundIds.length > 0) {
+    res.status(422).json({ error: `Orders not found: ${notFoundIds.join(", ")}` });
+    return null;
+  }
+
+  const uniqueStoreIds = [...new Set(orders.map((o) => o.storeId))];
+  for (const storeId of uniqueStoreIds) {
+    if (!(await verifyStoreOwner(req, res, storeId))) return null;
+  }
+
+  const excludedOrderIds = orders.filter((o) => o.status === "cancelled").map((o) => o.id);
+  const activeOrders = orders.filter((o) => o.status !== "cancelled");
+
+  const productIds = [...new Set(activeOrders.map((o) => o.productId))];
+  const products = productIds.length > 0
+    ? await db.select().from(productsTable).where(inArray(productsTable.id, productIds))
+    : [];
+  const productMap = new Map(products.map((p) => [p.id, p]));
+
+  return { excludedOrderIds, activeOrders, productMap };
+}
 
 function formatOrder(o: any) {
   const shippingFee = parseFloat(o.shippingFee ?? "0");

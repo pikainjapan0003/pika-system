@@ -453,6 +453,118 @@ paths:
               schema:
                 $ref: "#/components/schemas/Order"
 
+  /orders/picking-list:
+    post:
+      operationId: getPickingList
+      tags: [orders]
+      summary: Get picking list for selected orders (grouped by product)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderIdsBody"
+      responses:
+        "200":
+          description: Picking list grouped by product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PickingListResponse"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden — order belongs to another store
+        "422":
+          description: Validation error or order not found
+
+  /orders/shipping-list:
+    post:
+      operationId: getShippingList
+      tags: [orders]
+      summary: Get shipping list for selected orders (one entry per order)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderIdsBody"
+      responses:
+        "200":
+          description: Shipping list one entry per order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShippingListResponse"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden — order belongs to another store
+        "422":
+          description: Validation error or order not found
+
+  /orders/picking-list.csv:
+    post:
+      operationId: downloadPickingListCsv
+      tags: [orders]
+      summary: Download picking list as CSV (UTF-8 BOM, grouped by product)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderIdsBody"
+      responses:
+        "200":
+          description: CSV file download
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+                example: 'attachment; filename="picking-list-20241201-1430.csv"'
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden — order belongs to another store
+        "422":
+          description: Validation error or order not found
+
+  /orders/shipping-list.csv:
+    post:
+      operationId: downloadShippingListCsv
+      tags: [orders]
+      summary: Download shipping list as CSV (UTF-8 BOM, one row per order)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderIdsBody"
+      responses:
+        "200":
+          description: CSV file download
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+                example: 'attachment; filename="shipping-list-20241201-1430.csv"'
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden — order belongs to another store
+        "422":
+          description: Validation error or order not found
+
   /orders/bulk:
     patch:
       operationId: bulkUpdateOrders
@@ -1050,6 +1162,133 @@ components:
           type: string
           minLength: 1
           maxLength: 80
+
+    OrderIdsBody:
+      type: object
+      required: [orderIds]
+      properties:
+        orderIds:
+          type: array
+          items:
+            type: integer
+          minItems: 1
+
+    PickingListItem:
+      type: object
+      required: [productId, productName, quantityTotal, orderIds, orderNumbers]
+      properties:
+        productId:
+          type: integer
+        skuCode:
+          type: ["string", "null"]
+        productName:
+          type: string
+        specValues:
+          type: object
+        specLabel:
+          type: ["string", "null"]
+        storageTemp:
+          type: ["string", "null"]
+          enum: [ambient, chilled, frozen, null]
+        shelfLife:
+          type: ["string", "null"]
+        quantityTotal:
+          type: integer
+        orderIds:
+          type: array
+          items:
+            type: integer
+        orderNumbers:
+          type: array
+          items:
+            type: string
+        notes:
+          type: string
+
+    PickingListResponse:
+      type: object
+      required: [generatedAt, orderCount, excludedOrderIds, items]
+      properties:
+        generatedAt:
+          type: string
+          format: date-time
+        orderCount:
+          type: integer
+        excludedOrderIds:
+          type: array
+          items:
+            type: integer
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PickingListItem"
+
+    ShippingListOrder:
+      type: object
+      required: [orderId, orderNumber, status, buyerName, buyerPhone, productName, quantity, paymentStatus, shippingStatus, itemsText]
+      properties:
+        orderId:
+          type: integer
+        orderNumber:
+          type: string
+        status:
+          type: string
+        buyerName:
+          type: string
+        buyerPhone:
+          type: string
+        productName:
+          type: ["string", "null"]
+        skuCode:
+          type: ["string", "null"]
+        specValues:
+          type: object
+        quantity:
+          type: integer
+        paymentStatus:
+          $ref: "#/components/schemas/PaymentStatus"
+        paymentMethod:
+          $ref: "#/components/schemas/PaymentMethod"
+        shippingStatus:
+          $ref: "#/components/schemas/ShippingStatus"
+        shippingMethod:
+          $ref: "#/components/schemas/ShippingMethod"
+        trackingCode:
+          type: ["string", "null"]
+        trackingProvider:
+          type: ["string", "null"]
+        storeCode:
+          type: ["string", "null"]
+        storeName:
+          type: ["string", "null"]
+        recipientName:
+          type: ["string", "null"]
+        recipientPhone:
+          type: ["string", "null"]
+        recipientAddress:
+          type: ["string", "null"]
+        shippingNote:
+          type: ["string", "null"]
+        itemsText:
+          type: string
+
+    ShippingListResponse:
+      type: object
+      required: [generatedAt, orderCount, excludedOrderIds, orders]
+      properties:
+        generatedAt:
+          type: string
+          format: date-time
+        orderCount:
+          type: integer
+        excludedOrderIds:
+          type: array
+          items:
+            type: integer
+        orders:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShippingListOrder"
 
     BulkOrderUpdate:
       type: object

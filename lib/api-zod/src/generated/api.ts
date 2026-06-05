@@ -538,6 +538,103 @@ export const UpdateOrderStatusResponse = zod.object({
 
 
 /**
+ * @summary Get picking list for selected orders (grouped by product)
+ */
+
+
+
+export const GetPickingListBody = zod.object({
+  "orderIds": zod.array(zod.number()).min(1)
+})
+
+export const GetPickingListResponse = zod.object({
+  "generatedAt": zod.coerce.date(),
+  "orderCount": zod.number(),
+  "excludedOrderIds": zod.array(zod.number()),
+  "items": zod.array(zod.object({
+  "productId": zod.number(),
+  "skuCode": zod.string().nullish(),
+  "productName": zod.string(),
+  "specValues": zod.object({
+
+}).passthrough().optional(),
+  "specLabel": zod.string().nullish(),
+  "storageTemp": zod.union([zod.literal('ambient'),zod.literal('chilled'),zod.literal('frozen'),zod.literal(null)]).nullish(),
+  "shelfLife": zod.string().nullish(),
+  "quantityTotal": zod.number(),
+  "orderIds": zod.array(zod.number()),
+  "orderNumbers": zod.array(zod.string()),
+  "notes": zod.string().optional()
+}))
+})
+
+
+/**
+ * @summary Get shipping list for selected orders (one entry per order)
+ */
+
+
+
+export const GetShippingListBody = zod.object({
+  "orderIds": zod.array(zod.number()).min(1)
+})
+
+export const GetShippingListResponse = zod.object({
+  "generatedAt": zod.coerce.date(),
+  "orderCount": zod.number(),
+  "excludedOrderIds": zod.array(zod.number()),
+  "orders": zod.array(zod.object({
+  "orderId": zod.number(),
+  "orderNumber": zod.string(),
+  "status": zod.string(),
+  "buyerName": zod.string(),
+  "buyerPhone": zod.string(),
+  "productName": zod.string().nullable(),
+  "skuCode": zod.string().nullish(),
+  "specValues": zod.object({
+
+}).passthrough().optional(),
+  "quantity": zod.number(),
+  "paymentStatus": zod.enum(['unpaid', 'pending', 'partially_paid', 'paid', 'refunded', 'failed']),
+  "paymentMethod": zod.union([zod.literal('cash'),zod.literal('bank_transfer'),zod.literal('line_pay'),zod.literal('other'),zod.literal(null)]).nullish(),
+  "shippingStatus": zod.enum(['not_shipped', 'preparing', 'shipped', 'arrived', 'picked_up', 'returned', 'cancelled']),
+  "shippingMethod": zod.union([zod.literal('self_pickup'),zod.literal('convenience_store'),zod.literal('home_delivery'),zod.literal('other'),zod.literal(null)]).nullish(),
+  "trackingCode": zod.string().nullish(),
+  "trackingProvider": zod.string().nullish(),
+  "storeCode": zod.string().nullish(),
+  "storeName": zod.string().nullish(),
+  "recipientName": zod.string().nullish(),
+  "recipientPhone": zod.string().nullish(),
+  "recipientAddress": zod.string().nullish(),
+  "shippingNote": zod.string().nullish(),
+  "itemsText": zod.string()
+}))
+})
+
+
+/**
+ * @summary Download picking list as CSV (UTF-8 BOM, grouped by product)
+ */
+
+
+
+export const DownloadPickingListCsvBody = zod.object({
+  "orderIds": zod.array(zod.number()).min(1)
+})
+
+
+/**
+ * @summary Download shipping list as CSV (UTF-8 BOM, one row per order)
+ */
+
+
+
+export const DownloadShippingListCsvBody = zod.object({
+  "orderIds": zod.array(zod.number()).min(1)
+})
+
+
+/**
  * @summary Bulk update payment/shipping status for multiple orders
  */
 

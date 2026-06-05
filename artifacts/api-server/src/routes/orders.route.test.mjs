@@ -106,6 +106,16 @@ async function req(method, path, body, userId = TEST_MERCHANT_ID) {
   return { status: res.status, data };
 }
 
+async function rawFetch(method, path, body, userId = TEST_MERCHANT_ID) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (userId) headers['x-test-user-id'] = userId;
+  return fetch(`${baseUrl}${path}`, {
+    method,
+    headers,
+    body: body != null ? JSON.stringify(body) : undefined,
+  });
+}
+
 // ─────────────────────────────────────────────────────────────
 // 7. POST /stores/:storeId/orders
 // ─────────────────────────────────────────────────────────────
@@ -759,5 +769,472 @@ describe('Step 5E: PATCH /orders/bulk', () => {
     });
     assert.strictEqual(status, 422);
     assert.ok(data.error, 'should return error message');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────
+// 13. Step 5F-B: POST /orders/picking-list
+// ─────────────────────────────────────────────────────────────
+describe('Step 5F-B: POST /orders/picking-list', () => {
+  let pickOrder1Id;
+  let pickOrder2Id;
+  let pickCancelledId;
+
+  before(async () => {
+    const insertOrder = (token, spec, qty) =>
+      db.insert(ordersTable).values({
+        productId: testProductId,
+        storeId: testStoreId,
+        productName: '__test_product__',
+        publicToken: token,
+        buyerName: 'Pick Buyer',
+        buyerPhone: '0966666666',
+        pickupMethod: 'pickup',
+        quantity: qty,
+        unitPrice: '100.00',
+        totalPrice: String(100 * qty),
+        status: 'pending',
+        specValues: spec,
+        notes: null,
+      }).returning();
+
+    const [o1] = await insertOrder(`pick-tok-1-${Date.now()}`, { color: 'red' }, 2);
+    const [o2] = await insertOrder(`pick-tok-2-${Date.now()}`, { color: 'red' }, 3);
+    const [oCanc] = await insertOrder(`pick-tok-c-${Date.now()}`, {}, 1);
+
+    pickOrder1Id = o1.id;
+    pickOrder2Id = o2.id;
+    pickCancelledId = oCanc.id;
+
+    await db.update(ordersTable).set({ status: 'cancelled' }).where(eq(ordersTable.id, pickCancelledId));
+  });
+
+  test('401 — unauthenticated', async () => {
+    const { status } = await req('POST', '/orders/picking-list', { orderIds: [pickOrder1Id] }, null);
+    assert.strictEqual(status, 401);
+  });
+
+  test('422 — empty orderIds', async () => {
+    const { status } = await req('POST', '/orders/picking-list', { orderIds: [] });
+    assert.strictEqual(status, 422);
+  });
+
+  test('422 — orderId does not exist', async () => {
+    const { status, data } = await req('POST', '/orders/picking-list', { orderIds: [999999999] });
+    assert.strictEqual(status, 422);
+    assert.ok(data.error);
+  });
+
+  test('403 — wrong merchant cannot access picking list', async () => {
+    const { status } = await req('POST', '/orders/picking-list', { orderIds: [pickOrder1Id] }, 'other_merchant_id');
+    assert.strictEqual(status, 403);
+  });
+
+  test('200 — groups by product+spec and sums quantity', async () => {
+    const { status, data } = await req('POST', '/orders/picking-list', {
+      orderIds: [pickOrder1Id, pickOrder2Id],
+    });
+    assert.strictEqual(status, 200);
+    assert.ok(Array.isArray(data.items), 'items should be an array');
+    assert.strictEqual(data.items.length, 1, 'both orders have same product+spec, should merge into 1 item');
+    assert.strictEqual(data.items[0].quantityTotal, 5, 'qty 2 + 3 = 5');
+    assert.strictEqual(data.items[0].productId, testProductId);
+    assert.ok(data.items[0].orderIds.includes(pickOrder1Id));
+    assert.ok(data.items[0].orderIds.includes(pickOrder2Id));
+    assert.strictEqual(data.orderCount, 2);
+    assert.deepStrictEqual(data.excludedOrderIds, []);
+  });
+
+  test('200 — cancelled orders excluded and in excludedOrderIds', async () => {
+    const { status, data } = await req('POST', '/orders/picking-list', {
+      orderIds: [pickOrder1Id, pickCancelledId],
+    });
+    assert.strictEqual(status, 200);
+    assert.ok(data.excludedOrderIds.includes(pickCancelledId), 'cancelled order in excludedOrderIds');
+    assert.strictEqual(data.orderCount, 1, 'only 1 non-cancelled order');
+    const includedOrderId = data.items.flatMap((i) => i.orderIds);
+    assert.ok(!includedOrderId.includes(pickCancelledId), 'cancelled order not in items');
+  });
+
+  test('200 — empty specValues does not crash', async () => {
+    const { status, data } = await req('POST', '/orders/picking-list', {
+      orderIds: [pickCancelledId === pickOrder1Id ? pickOrder2Id : pickOrder1Id],
+    });
+    assert.strictEqual(status, 200);
+    assert.ok(Array.isArray(data.items));
+  });
+
+  test('200 — generatedAt and structure present', async () => {
+    const { status, data } = await req('POST', '/orders/picking-list', {
+      orderIds: [pickOrder1Id],
+    });
+    assert.strictEqual(status, 200);
+    assert.ok(data.generatedAt, 'generatedAt should be present');
+    assert.ok(typeof data.orderCount === 'number');
+    assert.ok(Array.isArray(data.excludedOrderIds));
+    assert.ok(Array.isArray(data.items));
+    const item = data.items[0];
+    assert.ok(typeof item.quantityTotal === 'number');
+    assert.ok(Array.isArray(item.orderIds));
+    assert.ok(Array.isArray(item.orderNumbers));
+  });
+});
+
+// ─────────────────────────────────────────────────────────────
+// 14. Step 5F-B: POST /orders/shipping-list
+// ─────────────────────────────────────────────────────────────
+describe('Step 5F-B: POST /orders/shipping-list', () => {
+  let shipOrder1Id;
+  let shipUnpaidId;
+  let shipCancelledId;
+  let shipOrder1Token;
+
+  before(async () => {
+    const insertOrder = (token, overrides) =>
+      db.insert(ordersTable).values({
+        productId: testProductId,
+        storeId: testStoreId,
+        productName: '__test_product__',
+        publicToken: token,
+        buyerName: 'Ship Buyer',
+        buyerPhone: '0977777777',
+        pickupMethod: 'delivery',
+        quantity: 1,
+        unitPrice: '200.00',
+        totalPrice: '200.00',
+        status: 'pending',
+        specValues: {},
+        internalNote: 'INTERNAL_SECRET',
+        paymentNote: 'PAYMENT_SECRET',
+        trackingCode: 'SHIP-TRACK-001',
+        ...overrides,
+      }).returning();
+
+    shipOrder1Token = `ship-tok-1-${Date.now()}`;
+    const [o1] = await insertOrder(shipOrder1Token, {
+      paymentStatus: 'paid',
+      shippingStatus: 'shipped',
+      recipientName: '王收件',
+      recipientPhone: '0911111111',
+      recipientAddress: '台北市信義區某路1號',
+    });
+    const [oUnpaid] = await insertOrder(`ship-tok-u-${Date.now()}`, {
+      paymentStatus: 'unpaid',
+    });
+    const [oCanc] = await insertOrder(`ship-tok-c-${Date.now()}`, {});
+
+    shipOrder1Id = o1.id;
+    shipUnpaidId = oUnpaid.id;
+    shipCancelledId = oCanc.id;
+
+    await db.update(ordersTable).set({ status: 'cancelled' }).where(eq(ordersTable.id, shipCancelledId));
+  });
+
+  test('401 — unauthenticated', async () => {
+    const { status } = await req('POST', '/orders/shipping-list', { orderIds: [shipOrder1Id] }, null);
+    assert.strictEqual(status, 401);
+  });
+
+  test('422 — orderId does not exist', async () => {
+    const { status, data } = await req('POST', '/orders/shipping-list', { orderIds: [999999998] });
+    assert.strictEqual(status, 422);
+    assert.ok(data.error);
+  });
+
+  test('403 — wrong merchant cannot access shipping list', async () => {
+    const { status } = await req('POST', '/orders/shipping-list', { orderIds: [shipOrder1Id] }, 'other_merchant_id');
+    assert.strictEqual(status, 403);
+  });
+
+  test('200 — returns shipping data with correct fields', async () => {
+    const { status, data } = await req('POST', '/orders/shipping-list', {
+      orderIds: [shipOrder1Id],
+    });
+    assert.strictEqual(status, 200);
+    assert.strictEqual(data.orderCount, 1);
+    assert.ok(Array.isArray(data.orders));
+    const order = data.orders[0];
+    assert.strictEqual(order.orderId, shipOrder1Id);
+    assert.strictEqual(order.paymentStatus, 'paid');
+    assert.strictEqual(order.shippingStatus, 'shipped');
+    assert.strictEqual(order.recipientName, '王收件');
+    assert.strictEqual(order.recipientPhone, '0911111111');
+    assert.strictEqual(order.recipientAddress, '台北市信義區某路1號');
+    assert.strictEqual(order.trackingCode, 'SHIP-TRACK-001');
+    assert.ok(typeof order.itemsText === 'string', 'itemsText should be present');
+    assert.ok(order.orderNumber, 'orderNumber should be present');
+  });
+
+  test('200 — unpaid order included, paymentStatus present', async () => {
+    const { status, data } = await req('POST', '/orders/shipping-list', {
+      orderIds: [shipUnpaidId],
+    });
+    assert.strictEqual(status, 200);
+    assert.strictEqual(data.orderCount, 1);
+    const order = data.orders[0];
+    assert.ok(order.paymentStatus !== undefined, 'paymentStatus must be present even for unpaid');
+    assert.strictEqual(order.paymentStatus, 'unpaid');
+  });
+
+  test('200 — cancelled orders excluded and in excludedOrderIds', async () => {
+    const { status, data } = await req('POST', '/orders/shipping-list', {
+      orderIds: [shipOrder1Id, shipCancelledId],
+    });
+    assert.strictEqual(status, 200);
+    assert.ok(data.excludedOrderIds.includes(shipCancelledId), 'cancelled order in excludedOrderIds');
+    assert.strictEqual(data.orderCount, 1);
+    assert.ok(!data.orders.find((o) => o.orderId === shipCancelledId), 'cancelled order not in orders array');
+  });
+
+  test('200 — internalNote MUST NOT be returned', async () => {
+    const { status, data } = await req('POST', '/orders/shipping-list', {
+      orderIds: [shipOrder1Id],
+    });
+    assert.strictEqual(status, 200);
+    const order = data.orders[0];
+    assert.strictEqual(order.internalNote, undefined, 'internalNote must not appear in shipping list response');
+  });
+
+  test('200 — paymentNote MUST NOT be returned', async () => {
+    const { status, data } = await req('POST', '/orders/shipping-list', {
+      orderIds: [shipOrder1Id],
+    });
+    assert.strictEqual(status, 200);
+    const order = data.orders[0];
+    assert.strictEqual(order.paymentNote, undefined, 'paymentNote must not appear in shipping list response');
+  });
+
+  test('200 — publicToken is NOT trackingCode', async () => {
+    const { status, data } = await req('POST', '/orders/shipping-list', {
+      orderIds: [shipOrder1Id],
+    });
+    assert.strictEqual(status, 200);
+    const order = data.orders[0];
+    assert.strictEqual(order.trackingCode, 'SHIP-TRACK-001', 'trackingCode should be logistics tracking number');
+    assert.strictEqual(order.publicToken, undefined, 'publicToken should not appear in shipping list');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────
+// 15. Step 5F-C: POST /orders/picking-list.csv
+// ─────────────────────────────────────────────────────────────
+describe('Step 5F-C: POST /orders/picking-list.csv', () => {
+  let csvPickOrder1Id;
+  let csvPickCancelledId;
+  let csvPickSpecialId;
+
+  before(async () => {
+    const insertOrder = (token, overrides) =>
+      db.insert(ordersTable).values({
+        productId: testProductId,
+        storeId: testStoreId,
+        productName: '__test_product__',
+        publicToken: token,
+        buyerName: 'CSV Pick Buyer',
+        buyerPhone: '0911222333',
+        pickupMethod: 'pickup',
+        quantity: 3,
+        unitPrice: '100.00',
+        totalPrice: '300.00',
+        status: 'pending',
+        specValues: { color: 'blue' },
+        ...overrides,
+      }).returning();
+
+    const [o1] = await insertOrder(`csv-pick-1-${Date.now()}`, {});
+    const [oCanc] = await insertOrder(`csv-pick-c-${Date.now()}`, {});
+    const [oSpec] = await insertOrder(`csv-pick-s-${Date.now()}`, {
+      notes: 'has,comma "quote"\nnewline',
+    });
+
+    csvPickOrder1Id = o1.id;
+    csvPickCancelledId = oCanc.id;
+    csvPickSpecialId = oSpec.id;
+
+    await db.update(ordersTable).set({ status: 'cancelled' }).where(eq(ordersTable.id, csvPickCancelledId));
+  });
+
+  test('401 — unauthenticated', async () => {
+    const { status } = await req('POST', '/orders/picking-list.csv', { orderIds: [csvPickOrder1Id] }, null);
+    assert.strictEqual(status, 401);
+  });
+
+  test('422 — empty orderIds', async () => {
+    const { status } = await req('POST', '/orders/picking-list.csv', { orderIds: [] });
+    assert.strictEqual(status, 422);
+  });
+
+  test('403 — cannot export other merchant orders', async () => {
+    const { status } = await req('POST', '/orders/picking-list.csv', { orderIds: [csvPickOrder1Id] }, 'other_merchant_id');
+    assert.strictEqual(status, 403);
+  });
+
+  test('200 — Content-Type is text/csv', async () => {
+    const response = await rawFetch('POST', '/orders/picking-list.csv', { orderIds: [csvPickOrder1Id] });
+    assert.strictEqual(response.status, 200);
+    const ct = response.headers.get('content-type') ?? '';
+    assert.ok(ct.includes('text/csv'), `expected text/csv, got: ${ct}`);
+  });
+
+  test('200 — CSV starts with UTF-8 BOM (raw bytes EF BB BF)', async () => {
+    const response = await rawFetch('POST', '/orders/picking-list.csv', { orderIds: [csvPickOrder1Id] });
+    assert.strictEqual(response.status, 200);
+    const buf = await response.arrayBuffer();
+    const bytes = new Uint8Array(buf);
+    assert.strictEqual(bytes[0], 0xEF, 'BOM byte 1 should be 0xEF');
+    assert.strictEqual(bytes[1], 0xBB, 'BOM byte 2 should be 0xBB');
+    assert.strictEqual(bytes[2], 0xBF, 'BOM byte 3 should be 0xBF');
+  });
+
+  test('200 — CSV contains product name, quantityTotal, order number', async () => {
+    const { status, data } = await req('POST', '/orders/picking-list.csv', { orderIds: [csvPickOrder1Id] });
+    assert.strictEqual(status, 200);
+    assert.ok(data.includes('__test_product__'), 'product name in CSV');
+    assert.ok(data.includes('3'), 'quantity in CSV');
+    assert.ok(data.includes(`#${csvPickOrder1Id}`), 'order number in CSV');
+  });
+
+  test('200 — cancelled orders not in CSV', async () => {
+    const { status, data } = await req('POST', '/orders/picking-list.csv', {
+      orderIds: [csvPickOrder1Id, csvPickCancelledId],
+    });
+    assert.strictEqual(status, 200);
+    const lines = data.split('\n');
+    // Header + 1 data row (cancelled excluded)
+    assert.strictEqual(lines.filter((l) => l.trim()).length, 2, 'header + 1 active row');
+    assert.ok(!data.includes(`#${csvPickCancelledId}`), 'cancelled order not in CSV');
+  });
+
+  test('200 — comma, quote, newline correctly escaped', async () => {
+    const { status, data } = await req('POST', '/orders/picking-list.csv', { orderIds: [csvPickSpecialId] });
+    assert.strictEqual(status, 200);
+    // Properly escaped: comma inside quotes, quote doubled, newline inside quotes
+    assert.ok(data.includes('"has,comma ""quote""\nnewline"'), 'special chars properly escaped in CSV');
+  });
+
+  test('200 — Content-Disposition has picking-list filename', async () => {
+    const response = await rawFetch('POST', '/orders/picking-list.csv', { orderIds: [csvPickOrder1Id] });
+    assert.strictEqual(response.status, 200);
+    const cd = response.headers.get('content-disposition') ?? '';
+    assert.ok(cd.includes('picking-list'), `filename should contain picking-list, got: ${cd}`);
+    assert.ok(cd.includes('.csv'), 'filename should have .csv extension');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────
+// 16. Step 5F-C: POST /orders/shipping-list.csv
+// ─────────────────────────────────────────────────────────────
+describe('Step 5F-C: POST /orders/shipping-list.csv', () => {
+  let csvShipOrder1Id;
+  let csvShipCancelledId;
+  let csvShipSpecialId;
+
+  before(async () => {
+    const insertOrder = (token, overrides) =>
+      db.insert(ordersTable).values({
+        productId: testProductId,
+        storeId: testStoreId,
+        productName: '__test_product__',
+        publicToken: token,
+        buyerName: 'CSV Ship Buyer',
+        buyerPhone: '0922333444',
+        pickupMethod: 'delivery',
+        quantity: 1,
+        unitPrice: '150.00',
+        totalPrice: '150.00',
+        status: 'pending',
+        specValues: {},
+        paymentStatus: 'paid',
+        shippingStatus: 'shipped',
+        trackingCode: 'CSV-TRACK-001',
+        recipientName: '王收件人',
+        recipientPhone: '0933444555',
+        recipientAddress: '台南市中西區某路2號',
+        internalNote: 'INTERNAL_DO_NOT_EXPORT',
+        paymentNote: 'PAYMENT_DO_NOT_EXPORT',
+        ...overrides,
+      }).returning();
+
+    const [o1] = await insertOrder(`csv-ship-1-${Date.now()}`, {});
+    const [oCanc] = await insertOrder(`csv-ship-c-${Date.now()}`, {});
+    const [oSpec] = await insertOrder(`csv-ship-s-${Date.now()}`, {
+      buyerName: 'Buyer,With"Special\nChars',
+    });
+
+    csvShipOrder1Id = o1.id;
+    csvShipCancelledId = oCanc.id;
+    csvShipSpecialId = oSpec.id;
+
+    await db.update(ordersTable).set({ status: 'cancelled' }).where(eq(ordersTable.id, csvShipCancelledId));
+  });
+
+  test('401 — unauthenticated', async () => {
+    const { status } = await req('POST', '/orders/shipping-list.csv', { orderIds: [csvShipOrder1Id] }, null);
+    assert.strictEqual(status, 401);
+  });
+
+  test('200 — Content-Type is text/csv', async () => {
+    const response = await rawFetch('POST', '/orders/shipping-list.csv', { orderIds: [csvShipOrder1Id] });
+    assert.strictEqual(response.status, 200);
+    const ct = response.headers.get('content-type') ?? '';
+    assert.ok(ct.includes('text/csv'), `expected text/csv, got: ${ct}`);
+  });
+
+  test('200 — CSV contains buyer name, payment status, shipping status, tracking code', async () => {
+    const { status, data } = await req('POST', '/orders/shipping-list.csv', { orderIds: [csvShipOrder1Id] });
+    assert.strictEqual(status, 200);
+    assert.ok(data.includes('CSV Ship Buyer'), 'buyer name in CSV');
+    assert.ok(data.includes('paid'), 'paymentStatus in CSV');
+    assert.ok(data.includes('shipped'), 'shippingStatus in CSV');
+    assert.ok(data.includes('CSV-TRACK-001'), 'trackingCode in CSV');
+  });
+
+  test('200 — CSV contains recipient phone and address', async () => {
+    const { status, data } = await req('POST', '/orders/shipping-list.csv', { orderIds: [csvShipOrder1Id] });
+    assert.strictEqual(status, 200);
+    assert.ok(data.includes('0933444555'), 'recipientPhone in CSV');
+    assert.ok(data.includes('台南市中西區某路2號'), 'recipientAddress in CSV');
+  });
+
+  test('200 — internalNote NOT in CSV', async () => {
+    const { status, data } = await req('POST', '/orders/shipping-list.csv', { orderIds: [csvShipOrder1Id] });
+    assert.strictEqual(status, 200);
+    assert.ok(!data.includes('INTERNAL_DO_NOT_EXPORT'), 'internalNote must not appear in CSV');
+  });
+
+  test('200 — paymentNote NOT in CSV', async () => {
+    const { status, data } = await req('POST', '/orders/shipping-list.csv', { orderIds: [csvShipOrder1Id] });
+    assert.strictEqual(status, 200);
+    assert.ok(!data.includes('PAYMENT_DO_NOT_EXPORT'), 'paymentNote must not appear in CSV');
+  });
+
+  test('200 — publicToken NOT in CSV', async () => {
+    const { status, data } = await req('POST', '/orders/shipping-list.csv', { orderIds: [csvShipOrder1Id] });
+    assert.strictEqual(status, 200);
+    assert.ok(!data.includes('csv-ship-1-'), 'publicToken must not appear in CSV');
+  });
+
+  test('200 — cancelled orders not in CSV', async () => {
+    const { status, data } = await req('POST', '/orders/shipping-list.csv', {
+      orderIds: [csvShipOrder1Id, csvShipCancelledId],
+    });
+    assert.strictEqual(status, 200);
+    const lines = data.split('\n');
+    assert.strictEqual(lines.filter((l) => l.trim()).length, 2, 'header + 1 active row');
+    assert.ok(!data.includes(`#${csvShipCancelledId}`), 'cancelled order not in CSV');
+  });
+
+  test('200 — comma, quote, newline correctly escaped', async () => {
+    const { status, data } = await req('POST', '/orders/shipping-list.csv', { orderIds: [csvShipSpecialId] });
+    assert.strictEqual(status, 200);
+    assert.ok(data.includes('"Buyer,With""Special\nChars"'), 'special chars properly escaped in CSV');
+  });
+
+  test('200 — Content-Disposition has shipping-list filename', async () => {
+    const response = await rawFetch('POST', '/orders/shipping-list.csv', { orderIds: [csvShipOrder1Id] });
+    assert.strictEqual(response.status, 200);
+    const cd = response.headers.get('content-disposition') ?? '';
+    assert.ok(cd.includes('shipping-list'), `filename should contain shipping-list, got: ${cd}`);
+    assert.ok(cd.includes('.csv'), 'filename should have .csv extension');
   });
 });

@@ -462,6 +462,94 @@ export interface ProductCategoryInput {
   name: string;
 }
 
+export interface OrderIdsBody {
+  /** @minItems 1 */
+  orderIds: number[];
+}
+
+export type PickingListItemSpecValues = { [key: string]: unknown };
+
+/**
+ * @nullable
+ */
+export type PickingListItemStorageTemp = typeof PickingListItemStorageTemp[keyof typeof PickingListItemStorageTemp] | null;
+
+
+export const PickingListItemStorageTemp = {
+  ambient: 'ambient',
+  chilled: 'chilled',
+  frozen: 'frozen',
+} as const;
+
+export interface PickingListItem {
+  productId: number;
+  /** @nullable */
+  skuCode?: string | null;
+  productName: string;
+  specValues?: PickingListItemSpecValues;
+  /** @nullable */
+  specLabel?: string | null;
+  /** @nullable */
+  storageTemp?: PickingListItemStorageTemp;
+  /** @nullable */
+  shelfLife?: string | null;
+  quantityTotal: number;
+  orderIds: number[];
+  orderNumbers: string[];
+  notes?: string;
+}
+
+export interface PickingListResponse {
+  generatedAt: string;
+  orderCount: number;
+  excludedOrderIds: number[];
+  items: PickingListItem[];
+}
+
+export type ShippingListOrderSpecValues = { [key: string]: unknown };
+
+export interface ShippingListOrder {
+  orderId: number;
+  orderNumber: string;
+  status: string;
+  buyerName: string;
+  buyerPhone: string;
+  /** @nullable */
+  productName: string | null;
+  /** @nullable */
+  skuCode?: string | null;
+  specValues?: ShippingListOrderSpecValues;
+  quantity: number;
+  paymentStatus: PaymentStatus;
+  paymentMethod?: PaymentMethod | null;
+  shippingStatus: ShippingStatus;
+  shippingMethod?: ShippingMethod | null;
+  /** @nullable */
+  trackingCode?: string | null;
+  /** @nullable */
+  trackingProvider?: string | null;
+  /** @nullable */
+  storeCode?: string | null;
+  /** @nullable */
+  storeName?: string | null;
+  /** @nullable */
+  recipientName?: string | null;
+  /** @nullable */
+  recipientPhone?: string | null;
+  /** @nullable */
+  recipientAddress?: string | null;
+  /** @nullable */
+  shippingNote?: string | null;
+  itemsText: string;
+}
+
+export interface ShippingListResponse {
+  generatedAt: string;
+  orderCount: number;
+  excludedOrderIds: number[];
+  orders: ShippingListOrder[];
+}
+
 export interface BulkOrderUpdate {
   /** @minItems 1 */
   orderIds: number[];

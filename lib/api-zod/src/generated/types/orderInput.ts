@@ -5,7 +5,7 @@
  * 團購/代購訂單管理 API
  * OpenAPI spec version: 0.1.0
  */
-import type { OrderInputSpecValues } from './orderInputSpecValues';
+import type { OrderInputSpecValues } from './orderInputSpecValues.ts';
 
 export interface OrderInput {
   /** @minLength 1 */
