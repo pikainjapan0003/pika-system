@@ -1,5 +1,6 @@
 import { Sheet, SheetContent, SheetClose, SheetTitle } from "@/components/ui/sheet";
 import type { ShippingListResponse, ShippingListOrder } from "@workspace/api-client-react";
+import { printShippingList } from "../lib/printHelpers";
 
 interface Props {
   open: boolean;
@@ -48,12 +49,21 @@ export function ShippingListDialog({ open, onClose, data }: Props) {
               {data.orderCount} 筆訂單
             </p>
           </div>
-          <SheetClose className="text-muted-foreground hover:text-foreground mt-0.5 rounded-sm focus:outline-none focus:ring-2 focus:ring-ring">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-            <span className="sr-only">關閉</span>
-          </SheetClose>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => printShippingList(data)}
+              className="h-7 px-2.5 text-xs font-medium rounded-lg border border-border bg-white text-foreground hover:bg-secondary/50"
+            >
+              列印
+            </button>
+            <SheetClose className="text-muted-foreground hover:text-foreground mt-0.5 rounded-sm focus:outline-none focus:ring-2 focus:ring-ring">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              <span className="sr-only">關閉</span>
+            </SheetClose>
+          </div>
         </div>
 
         {/* Excluded warning */}
