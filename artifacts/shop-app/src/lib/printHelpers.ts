@@ -28,16 +28,52 @@ function htmlDoc(title: string, body: string): string {
 </head>
 <body>
 ${body}
-<script>window.onload = function() { window.print(); };<\/script>
 </body>
 </html>`;
 }
 
 function openPrint(html: string): void {
-  const win = window.open("", "_blank");
-  if (!win) return;
-  win.document.write(html);
-  win.document.close();
+  // Clean up any leftover iframe from a prior call
+  const prev = document.getElementById("__print_frame__");
+  if (prev) prev.remove();
+
+  const iframe = document.createElement("iframe");
+  iframe.id = "__print_frame__";
+  iframe.setAttribute("aria-hidden", "true");
+  // Hidden visually but still renderable; position:fixed keeps it out of layout
+  iframe.style.cssText =
+    "position:fixed;top:0;left:0;width:100%;height:100%;visibility:hidden;border:none;z-index:-9999;pointer-events:none;";
+
+  let cleaned = false;
+  const cleanup = () => {
+    if (cleaned) return;
+    cleaned = true;
+    iframe.remove();
+  };
+
+  document.body.appendChild(iframe);
+
+  const doc = iframe.contentDocument ?? iframe.contentWindow?.document;
+  if (!doc) { cleanup(); return; }
+
+  doc.open();
+  doc.write(html);
+  doc.close();
+
+  // Wait for content to render, then print from within the iframe
+  setTimeout(() => {
+    const cw = iframe.contentWindow;
+    if (!cw) { cleanup(); return; }
+    try {
+      cw.focus();
+      cw.print();
+    } catch {
+      // ignore
+    }
+    // afterprint fires when the print dialog closes; fallback after 5 min
+    cw.addEventListener("afterprint", cleanup, { once: true });
+    setTimeout(cleanup, 5 * 60_000);
+  }, 250);
 }
 
 const STORAGE_TEMP_LABELS: Record<string, string> = {
