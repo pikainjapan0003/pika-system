@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@clerk/react";
-import { useGetMyStore, useListOrders, useUpdateOrderStatus, useBulkUpdateOrders, getListOrdersQueryKey, type Order } from "@workspace/api-client-react";
+import { useGetMyStore, useListOrders, useUpdateOrderStatus, useBulkUpdateOrders, useGetPickingList, useGetShippingList, getListOrdersQueryKey, type Order, type PickingListResponse, type ShippingListResponse } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { BottomNav } from "./Dashboard";
 import { STATUS_LABELS, STATUS_COLORS, ALL_STATUSES, VALID_NEXT_STATUSES } from "../lib/orderStatus";
@@ -65,6 +65,8 @@ const SHIPPING_METHOD_LABELS: Record<string, string> = {
 
 import { CreateOrderDialog } from "./CreateOrderDialog";
 import { EditOrderDialog } from "./EditOrderDialog";
+import { PickingListDialog } from "./PickingListDialog";
+import { ShippingListDialog } from "./ShippingListDialog";
 import { toast } from "@/hooks/use-toast";
 
 export default function OrdersPage() {
@@ -91,6 +93,18 @@ export default function OrdersPage() {
   const [bulkError, setBulkError] = useState<string | null>(null);
   const [isBulkLoading, setIsBulkLoading] = useState(false);
   const bulkUpdateOrders = useBulkUpdateOrders();
+
+  // Picking / shipping list state
+  const [pickingListOpen, setPickingListOpen] = useState(false);
+  const [shippingListOpen, setShippingListOpen] = useState(false);
+  const [pickingListData, setPickingListData] = useState<PickingListResponse | null>(null);
+  const [shippingListData, setShippingListData] = useState<ShippingListResponse | null>(null);
+  const [pickingListError, setPickingListError] = useState<string | null>(null);
+  const [shippingListError, setShippingListError] = useState<string | null>(null);
+  const [csvPickingLoading, setCsvPickingLoading] = useState(false);
+  const [csvShippingLoading, setCsvShippingLoading] = useState(false);
+  const getPickingListMutation = useGetPickingList();
+  const getShippingListMutation = useGetShippingList();
 
   const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -210,6 +224,104 @@ export default function OrdersPage() {
       setBulkError(e?.data?.error ?? "批次更新失敗，請稍後再試");
     } finally {
       setIsBulkLoading(false);
+    }
+  };
+
+  const handleViewPickingList = async () => {
+    if (selectedIds.size === 0) return;
+    setPickingListError(null);
+    try {
+      const data = await getPickingListMutation.mutateAsync({ data: { orderIds: [...selectedIds] } });
+      setPickingListData(data);
+      setPickingListOpen(true);
+    } catch (err: unknown) {
+      const e = err as { data?: { error?: string }; message?: string };
+      setPickingListError(e?.data?.error ?? e?.message ?? "無法取得撿貨單，請稍後再試");
+    }
+  };
+
+  const handleViewShippingList = async () => {
+    if (selectedIds.size === 0) return;
+    setShippingListError(null);
+    try {
+      const data = await getShippingListMutation.mutateAsync({ data: { orderIds: [...selectedIds] } });
+      setShippingListData(data);
+      setShippingListOpen(true);
+    } catch (err: unknown) {
+      const e = err as { data?: { error?: string }; message?: string };
+      setShippingListError(e?.data?.error ?? e?.message ?? "無法取得出貨單，請稍後再試");
+    }
+  };
+
+  const handleDownloadPickingCsv = async () => {
+    if (selectedIds.size === 0) return;
+    setCsvPickingLoading(true);
+    try {
+      const token = await getToken();
+      const res = await fetch("/api/orders/picking-list.csv", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ orderIds: [...selectedIds] }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        throw new Error((err as { error?: string })?.error ?? "下載失敗，請稍後再試");
+      }
+      const blob = await res.blob();
+      const disposition = res.headers.get("Content-Disposition") ?? "";
+      const match = disposition.match(/filename="([^"]+)"/);
+      const filename = match?.[1] ?? "picking-list.csv";
+      const objectUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = objectUrl;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(objectUrl);
+    } catch (err: unknown) {
+      const e = err as { message?: string };
+      setBulkError(e?.message ?? "下載撿貨 CSV 失敗");
+    } finally {
+      setCsvPickingLoading(false);
+    }
+  };
+
+  const handleDownloadShippingCsv = async () => {
+    if (selectedIds.size === 0) return;
+    setCsvShippingLoading(true);
+    try {
+      const token = await getToken();
+      const res = await fetch("/api/orders/shipping-list.csv", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ orderIds: [...selectedIds] }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        throw new Error((err as { error?: string })?.error ?? "下載失敗，請稍後再試");
+      }
+      const blob = await res.blob();
+      const disposition = res.headers.get("Content-Disposition") ?? "";
+      const match = disposition.match(/filename="([^"]+)"/);
+      const filename = match?.[1] ?? "shipping-list.csv";
+      const objectUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = objectUrl;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(objectUrl);
+    } catch (err: unknown) {
+      const e = err as { message?: string };
+      setBulkError(e?.message ?? "下載出貨 CSV 失敗");
+    } finally {
+      setCsvShippingLoading(false);
     }
   };
 
@@ -733,6 +845,47 @@ export default function OrdersPage() {
             </div>
           </div>
           {bulkError && <p className="text-xs text-destructive mt-1.5">{bulkError}</p>}
+
+          {/* Picking / shipping tools row */}
+          <div className="mt-2 pt-2 border-t border-border/50">
+            <p className="text-[11px] text-muted-foreground/60 mb-1.5">撿貨 / 出貨工具</p>
+            <div className="flex gap-1.5 flex-wrap">
+              <button
+                type="button"
+                onClick={handleViewPickingList}
+                disabled={getPickingListMutation.isPending}
+                className="h-8 px-3 text-xs font-medium rounded-xl border border-primary/40 bg-primary/5 text-primary disabled:opacity-50 shrink-0"
+              >
+                {getPickingListMutation.isPending ? "載入中…" : "查看撿貨單"}
+              </button>
+              <button
+                type="button"
+                onClick={handleViewShippingList}
+                disabled={getShippingListMutation.isPending}
+                className="h-8 px-3 text-xs font-medium rounded-xl border border-primary/40 bg-primary/5 text-primary disabled:opacity-50 shrink-0"
+              >
+                {getShippingListMutation.isPending ? "載入中…" : "查看出貨單"}
+              </button>
+              <button
+                type="button"
+                onClick={handleDownloadPickingCsv}
+                disabled={csvPickingLoading}
+                className="h-8 px-3 text-xs font-medium rounded-xl border border-border bg-white text-foreground disabled:opacity-50 shrink-0"
+              >
+                {csvPickingLoading ? "下載中…" : "↓ 撿貨 CSV"}
+              </button>
+              <button
+                type="button"
+                onClick={handleDownloadShippingCsv}
+                disabled={csvShippingLoading}
+                className="h-8 px-3 text-xs font-medium rounded-xl border border-border bg-white text-foreground disabled:opacity-50 shrink-0"
+              >
+                {csvShippingLoading ? "下載中…" : "↓ 出貨 CSV"}
+              </button>
+            </div>
+            {pickingListError && <p className="text-xs text-destructive mt-1">{pickingListError}</p>}
+            {shippingListError && <p className="text-xs text-destructive mt-1">{shippingListError}</p>}
+          </div>
         </div>
       )}
 
@@ -754,6 +907,18 @@ export default function OrdersPage() {
           onClose={() => setEditingOrder(null)}
         />
       )}
+
+      <PickingListDialog
+        open={pickingListOpen}
+        onClose={() => setPickingListOpen(false)}
+        data={pickingListData}
+      />
+
+      <ShippingListDialog
+        open={shippingListOpen}
+        onClose={() => setShippingListOpen(false)}
+        data={shippingListData}
+      />
     </div>
   );
 }
