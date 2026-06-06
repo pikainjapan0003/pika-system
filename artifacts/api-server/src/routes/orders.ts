@@ -545,9 +545,15 @@ router.patch("/orders/:orderId", requireAuth, async (req: any, res) => {
   if (cvsStoreAddress !== undefined) updates.cvsStoreAddress = cvsStoreAddress;
   if (cvsStorePhone !== undefined) updates.cvsStorePhone = cvsStorePhone;
   if (storeSelectedBy !== undefined) updates.storeSelectedBy = storeSelectedBy;
-  if (storeCode !== undefined || storeName !== undefined || cvsStoreAddress !== undefined || cvsStorePhone !== undefined || storeSelectedBy !== undefined) {
-    updates.storeSelectedAt = new Date();
-  }
+  // Only update storeSelectedAt when a CVS store field actually changes value.
+  // Guards against saves that don't change the store (e.g. payment-only edits).
+  const cvsChanged =
+    (storeCode !== undefined && (storeCode ?? null) !== (order.cvsStoreId ?? null)) ||
+    (storeName !== undefined && (storeName ?? null) !== (order.cvsStoreName ?? null)) ||
+    (cvsStoreAddress !== undefined && (cvsStoreAddress ?? null) !== (order.cvsStoreAddress ?? null)) ||
+    (cvsStorePhone !== undefined && (cvsStorePhone ?? null) !== (order.cvsStorePhone ?? null)) ||
+    (storeSelectedBy !== undefined && (storeSelectedBy ?? null) !== (order.storeSelectedBy ?? null));
+  if (cvsChanged) updates.storeSelectedAt = new Date();
   if (trackingCode !== undefined) updates.trackingCode = trackingCode;
   if (trackingProvider !== undefined) updates.trackingProvider = trackingProvider;
   if (shippingNote !== undefined) updates.shippingNote = shippingNote;
