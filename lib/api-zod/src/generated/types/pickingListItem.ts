@@ -5,8 +5,8 @@
  * 團購/代購訂單管理 API
  * OpenAPI spec version: 0.1.0
  */
-import type { PickingListItemSpecValues } from './pickingListItemSpecValues.ts';
-import type { PickingListItemStorageTemp } from './pickingListItemStorageTemp.ts';
+import type { PickingListItemSpecValues } from './pickingListItemSpecValues';
+import type { PickingListItemStorageTemp } from './pickingListItemStorageTemp';
 
 export interface PickingListItem {
   productId: number;

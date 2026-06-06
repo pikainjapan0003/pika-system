@@ -590,6 +590,31 @@ paths:
         "422":
           description: Semantic validation error
 
+  /orders/tracking-import:
+    post:
+      operationId: importOrderTracking
+      tags: [orders]
+      summary: Batch import tracking codes for orders (merchant, auth required)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TrackingImportBody"
+      responses:
+        "200":
+          description: Import result (partial success possible)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrackingImportResponse"
+        "400":
+          description: Validation error (missing or empty rows)
+        "401":
+          description: Unauthorized
+        "422":
+          description: Request contains publicToken field (forbidden)
+
   /p/{shareToken}:
     get:
       operationId: getPublicProduct
@@ -1331,3 +1356,67 @@ components:
           type: array
           items:
             type: integer
+
+    TrackingProvider:
+      type: string
+      enum: ["711", familymart, home_delivery, other]
+      description: >
+        Carrier provider code. Note: "familymart" here is distinct from
+        cvsStores.provider value "family" — these are different enum contexts.
+
+    TrackingImportRow:
+      type: object
+      required: [orderId, trackingProvider, trackingCode]
+      properties:
+        orderId:
+          type: string
+          description: Order ID as plain integer string (e.g. "123") or "#123" format
+        trackingProvider:
+          $ref: "#/components/schemas/TrackingProvider"
+        trackingCode:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Carrier tracking number (trimmed, max 100 chars)
+
+    TrackingImportBody:
+      type: object
+      required: [rows]
+      properties:
+        rows:
+          type: array
+          items:
+            $ref: "#/components/schemas/TrackingImportRow"
+          minItems: 1
+          description: >
+            Must not contain any row with a "publicToken" key.
+            Presence of publicToken in any row rejects the entire request (HTTP 422).
+
+    TrackingImportError:
+      type: object
+      required: [row, reason]
+      properties:
+        row:
+          type: integer
+          description: 1-based row index in the submitted rows array
+        orderId:
+          type: string
+          description: The orderId from the row that failed (if available)
+        reason:
+          type: string
+          description: Human-readable error reason
+
+    TrackingImportResponse:
+      type: object
+      required: [totalRows, successCount, failedCount, errors]
+      properties:
+        totalRows:
+          type: integer
+        successCount:
+          type: integer
+        failedCount:
+          type: integer
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/TrackingImportError"

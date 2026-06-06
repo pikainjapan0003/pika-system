@@ -5,11 +5,11 @@
  * 團購/代購訂單管理 API
  * OpenAPI spec version: 0.1.0
  */
-import type { PaymentMethod } from './paymentMethod.ts';
-import type { PaymentStatus } from './paymentStatus.ts';
-import type { ShippingListOrderSpecValues } from './shippingListOrderSpecValues.ts';
-import type { ShippingMethod } from './shippingMethod.ts';
-import type { ShippingStatus } from './shippingStatus.ts';
+import type { PaymentMethod } from './paymentMethod';
+import type { PaymentStatus } from './paymentStatus';
+import type { ShippingListOrderSpecValues } from './shippingListOrderSpecValues';
+import type { ShippingMethod } from './shippingMethod';
+import type { ShippingStatus } from './shippingStatus';
 
 export interface ShippingListOrder {
   orderId: number;

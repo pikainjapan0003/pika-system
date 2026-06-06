@@ -5,8 +5,8 @@
  * 團購/代購訂單管理 API
  * OpenAPI spec version: 0.1.0
  */
-import type { ProductSpec } from './productSpec.ts';
-import type { ProductUpdateStorageTemp } from './productUpdateStorageTemp.ts';
+import type { ProductSpec } from './productSpec';
+import type { ProductUpdateStorageTemp } from './productUpdateStorageTemp';
 
 export interface ProductUpdate {
   /** @minLength 1 */

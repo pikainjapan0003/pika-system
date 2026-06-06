@@ -343,6 +343,10 @@ export const ListOrdersResponseItem = zod.object({
   "recipientAddress": zod.string().nullish(),
   "storeCode": zod.string().nullish(),
   "storeName": zod.string().nullish(),
+  "cvsStoreAddress": zod.string().nullish(),
+  "cvsStorePhone": zod.string().nullish(),
+  "storeSelectedBy": zod.string().nullish(),
+  "storeSelectedAt": zod.string().nullish(),
   "trackingCode": zod.string().nullish(),
   "trackingProvider": zod.string().nullish(),
   "shippingNote": zod.string().nullish(),
@@ -661,6 +665,34 @@ export const BulkUpdateOrdersResponse = zod.object({
   "updatedCount": zod.number(),
   "skippedCount": zod.number(),
   "skippedOrderIds": zod.array(zod.number())
+})
+
+
+/**
+ * @summary Batch import tracking codes for orders (merchant, auth required)
+ */
+export const importOrderTrackingBodyRowsItemTrackingCodeMax = 100;
+
+
+
+
+export const ImportOrderTrackingBody = zod.object({
+  "rows": zod.array(zod.object({
+  "orderId": zod.string().describe('Order ID as plain integer string (e.g. \"123\") or \"#123\" format'),
+  "trackingProvider": zod.enum(['711', 'familymart', 'home_delivery', 'other']).describe('Carrier provider code. Note: \"familymart\" here is distinct from cvsStores.provider value \"family\" — these are different enum contexts.\n'),
+  "trackingCode": zod.string().min(1).max(importOrderTrackingBodyRowsItemTrackingCodeMax).describe('Carrier tracking number (trimmed, max 100 chars)')
+})).min(1).describe('Must not contain any row with a \"publicToken\" key. Presence of publicToken in any row rejects the entire request (HTTP 422).\n')
+})
+
+export const ImportOrderTrackingResponse = zod.object({
+  "totalRows": zod.number(),
+  "successCount": zod.number(),
+  "failedCount": zod.number(),
+  "errors": zod.array(zod.object({
+  "row": zod.number().describe('1-based row index in the submitted rows array'),
+  "orderId": zod.string().optional().describe('The orderId from the row that failed (if available)'),
+  "reason": zod.string().describe('Human-readable error reason')
+}))
 })
 
 

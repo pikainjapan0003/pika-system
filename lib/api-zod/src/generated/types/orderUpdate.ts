@@ -5,11 +5,12 @@
  * 團購/代購訂單管理 API
  * OpenAPI spec version: 0.1.0
  */
-import type { OrderUpdateSpecValues } from './orderUpdateSpecValues.ts';
-import type { PaymentMethod } from './paymentMethod.ts';
-import type { PaymentStatus } from './paymentStatus.ts';
-import type { ShippingMethod } from './shippingMethod.ts';
-import type { ShippingStatus } from './shippingStatus.ts';
+import type { OrderUpdateSpecValues } from './orderUpdateSpecValues';
+import type { OrderUpdateStoreSelectedBy } from './orderUpdateStoreSelectedBy';
+import type { PaymentMethod } from './paymentMethod';
+import type { PaymentStatus } from './paymentStatus';
+import type { ShippingMethod } from './shippingMethod';
+import type { ShippingStatus } from './shippingStatus';
 
 export interface OrderUpdate {
   /** @minLength 1 */
@@ -46,6 +47,11 @@ export interface OrderUpdate {
   storeCode?: string | null;
   /** @nullable */
   storeName?: string | null;
+  /** @nullable */
+  cvsStoreAddress?: string | null;
+  /** @nullable */
+  cvsStorePhone?: string | null;
+  storeSelectedBy?: OrderUpdateStoreSelectedBy;
   /** @nullable */
   trackingCode?: string | null;
   /** @nullable */

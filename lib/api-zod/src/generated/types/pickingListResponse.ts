@@ -5,7 +5,7 @@
  * 團購/代購訂單管理 API
  * OpenAPI spec version: 0.1.0
  */
-import type { PickingListItem } from './pickingListItem.ts';
+import type { PickingListItem } from './pickingListItem';
 
 export interface PickingListResponse {
   generatedAt: Date;

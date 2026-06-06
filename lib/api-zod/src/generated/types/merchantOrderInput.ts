@@ -5,7 +5,7 @@
  * 團購/代購訂單管理 API
  * OpenAPI spec version: 0.1.0
  */
-import type { MerchantOrderInputSpecValues } from './merchantOrderInputSpecValues.ts';
+import type { MerchantOrderInputSpecValues } from './merchantOrderInputSpecValues';
 
 export interface MerchantOrderInput {
   productId: number;

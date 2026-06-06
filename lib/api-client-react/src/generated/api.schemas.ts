@@ -382,6 +382,15 @@ export interface MerchantOrderInput {
 
 export type OrderUpdateSpecValues = { [key: string]: unknown };
 
+export type OrderUpdateStoreSelectedBy = typeof OrderUpdateStoreSelectedBy[keyof typeof OrderUpdateStoreSelectedBy];
+
+
+export const OrderUpdateStoreSelectedBy = {
+  customer: 'customer',
+  admin: 'admin',
+  system: 'system',
+} as const;
+
 export interface OrderUpdate {
   /** @minLength 1 */
   buyerName?: string;
@@ -421,7 +430,7 @@ export interface OrderUpdate {
   cvsStoreAddress?: string | null;
   /** @nullable */
   cvsStorePhone?: string | null;
-  storeSelectedBy?: 'customer' | 'admin' | 'system';
+  storeSelectedBy?: OrderUpdateStoreSelectedBy;
   /** @nullable */
   trackingCode?: string | null;
   /** @nullable */
@@ -574,5 +583,56 @@ export interface BulkOrderUpdateResponse {
   updatedCount: number;
   skippedCount: number;
   skippedOrderIds: number[];
+}
+
+/**
+ * Carrier provider code. Note: "familymart" here is distinct from cvsStores.provider value "family" — these are different enum contexts.
+
+ */
+export type TrackingProvider = typeof TrackingProvider[keyof typeof TrackingProvider];
+
+
+export const TrackingProvider = {
+  NUMBER_711: '711',
+  familymart: 'familymart',
+  home_delivery: 'home_delivery',
+  other: 'other',
+} as const;
+
+export interface TrackingImportRow {
+  /** Order ID as plain integer string (e.g. "123") or "#123" format */
+  orderId: string;
+  trackingProvider: TrackingProvider;
+  /**
+     * Carrier tracking number (trimmed, max 100 chars)
+     * @minLength 1
+     * @maxLength 100
+     */
+  trackingCode: string;
+}
+
+export interface TrackingImportBody {
+  /**
+     * Must not contain any row with a "publicToken" key. Presence of publicToken in any row rejects the entire request (HTTP 422).
+
+     * @minItems 1
+     */
+  rows: TrackingImportRow[];
+}
+
+export interface TrackingImportError {
+  /** 1-based row index in the submitted rows array */
+  row: number;
+  /** The orderId from the row that failed (if available) */
+  orderId?: string;
+  /** Human-readable error reason */
+  reason: string;
+}
+
+export interface TrackingImportResponse {
+  totalRows: number;
+  successCount: number;
+  failedCount: number;
+  errors: TrackingImportError[];
 }
 
