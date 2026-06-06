@@ -59,7 +59,7 @@ export default function TrackOrderPage({ publicToken }: Props) {
             {is404 ? "找不到此訂單" : "查詢失敗"}
           </h1>
           <p className="text-muted-foreground text-sm mt-1">
-            {is404 ? "請確認追蹤碼是否正確" : "請稍後再試"}
+            {is404 ? "請確認訂單查詢碼是否正確" : "請稍後再試"}
           </p>
           <button
             onClick={() => setLocation("/track")}
@@ -176,13 +176,13 @@ export default function TrackOrderPage({ publicToken }: Props) {
           </div>
         </div>
 
-        {/* Copy tracking code */}
+        {/* Copy public token (order query code) */}
         <div className="mt-4">
           <button
             onClick={() => handleCopy(order.publicToken)}
             className="w-full h-11 rounded-xl border border-border bg-white text-sm font-medium text-foreground"
           >
-            {copied ? "已複製！" : "複製追蹤碼"}
+            {copied ? "已複製！" : "複製訂單查詢碼"}
           </button>
         </div>
 
