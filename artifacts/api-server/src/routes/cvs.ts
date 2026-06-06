@@ -106,7 +106,7 @@ router.get("/cvs/stores", async (req, res) => {
 });
 
 /** POST /cvs/711/import-from-emap — query 7-11 EmapSDK and upsert one store into cvs_stores */
-router.post("/cvs/711/import-from-emap", async (req, res) => {
+router.post("/cvs/711/import-from-emap", requireAuth, async (req: any, res) => {
   const rawQuery = req.body?.query;
   if (!rawQuery || typeof rawQuery !== "string") {
     return res.status(400).json({ error: "query 必填" });
