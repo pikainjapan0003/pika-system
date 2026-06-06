@@ -18,4 +18,8 @@ export interface OrderInput {
   specValues?: OrderInputSpecValues;
   /** @minimum 1 */
   quantity: number;
+  cvsStoreId?: string | null;
+  cvsStoreName?: string | null;
+  cvsStoreAddress?: string | null;
+  cvsStorePhone?: string | null;
 }

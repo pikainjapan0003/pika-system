@@ -713,7 +713,11 @@ export const SubmitOrderBody = zod.object({
   "specValues": zod.object({
 
 }).passthrough().optional(),
-  "quantity": zod.number().min(1)
+  "quantity": zod.number().min(1),
+  "cvsStoreId": zod.string().nullish(),
+  "cvsStoreName": zod.string().nullish(),
+  "cvsStoreAddress": zod.string().nullish(),
+  "cvsStorePhone": zod.string().nullish()
 })
 
 

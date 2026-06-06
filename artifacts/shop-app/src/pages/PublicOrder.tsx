@@ -232,22 +232,19 @@ export default function PublicOrderPage({ shareToken }: Props) {
       : notes.trim() || undefined;
 
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const body: any = {
+      const body = {
         buyerName: buyerName.trim(),
         buyerPhone: buyerPhone.trim(),
         pickupMethod,
         notes: notesPayload,
         specValues: Object.keys(specValues).length > 0 ? specValues : undefined,
         quantity,
-        shippingFee,
         ...(cvsStore && needsCvsStore
           ? {
               cvsStoreId: cvsStore.storeId,
               cvsStoreName: cvsStore.storeName,
               cvsStoreAddress: cvsStore.storeAddress,
               cvsStorePhone: cvsStore.storePhone ?? null,
-              storeSelectedBy: "customer",
             }
           : {}),
       };
@@ -525,6 +522,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
                               {!cvsStore.storeAddress && (
                                 <div className="text-xs text-amber-600">地址資料未完整回傳，請確認門市資訊</div>
                               )}
+                              <div className="text-xs text-muted-foreground/50">門市資料可能因超商更新而異動，實際資訊以超商公告為準。</div>
                             </>
                           ) : (
                             <>
@@ -565,6 +563,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
                               {!cvsStore.storeAddress && (
                                 <div className="text-xs text-amber-600">地址資料未完整回傳，請確認門市資訊</div>
                               )}
+                              <div className="text-xs text-muted-foreground/50">門市資料可能因超商更新而異動，實際資訊以超商公告為準。</div>
                             </>
                           ) : (
                             <>

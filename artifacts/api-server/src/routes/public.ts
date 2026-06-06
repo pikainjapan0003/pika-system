@@ -5,25 +5,6 @@ import { randomBytes } from "crypto";
 import { db, storesTable, productsTable, ordersTable } from "@workspace/db";
 import { SubmitOrderBody } from "@workspace/api-zod";
 
-interface CvsOrderExtensionData {
-  shippingFee?: number;
-  cvsStoreId?: string;
-  cvsStoreName?: string;
-  cvsStoreAddress?: string;
-  cvsStorePhone?: string | null;
-  storeSelectedBy?: "customer" | "admin" | "system";
-}
-
-function parseCvsExtension(body: any): CvsOrderExtensionData {
-  return {
-    shippingFee: typeof body?.shippingFee === "number" ? body.shippingFee : undefined,
-    cvsStoreId: typeof body?.cvsStoreId === "string" ? body.cvsStoreId : undefined,
-    cvsStoreName: typeof body?.cvsStoreName === "string" ? body.cvsStoreName : undefined,
-    cvsStoreAddress: typeof body?.cvsStoreAddress === "string" ? body.cvsStoreAddress : undefined,
-    cvsStorePhone: body?.cvsStorePhone ?? null,
-    storeSelectedBy: body?.storeSelectedBy ?? "customer",
-  };
-}
 
 const SHIPPING_FEE_MAP: Record<string, number> = {
   "面交": 0,
@@ -130,8 +111,8 @@ router.post("/p/:shareToken/orders", submitOrderLimiter, async (req, res) => {
     return res.status(400).json({ error: parsed.error.message });
   }
 
-  // Extract optional CVS extension fields (these are not in the generated schema)
-  const cvsData = parseCvsExtension(req.body);
+  // shippingFee override: allow client to pass, but validate it's a number
+  const shippingFeeOverride = typeof req.body?.shippingFee === "number" ? req.body.shippingFee : undefined;
 
   let retries = 0;
   while (retries <= 3) {
@@ -166,7 +147,7 @@ router.post("/p/:shareToken/orders", submitOrderLimiter, async (req, res) => {
         }
 
         const unitPrice = parseFloat(product.price as string);
-        const shippingFee = getShippingFee(parsed.data.pickupMethod, cvsData.shippingFee);
+        const shippingFee = getShippingFee(parsed.data.pickupMethod, shippingFeeOverride);
         const subtotal = unitPrice * parsed.data.quantity;
         const totalPrice = subtotal + shippingFee;
 
@@ -178,7 +159,9 @@ router.post("/p/:shareToken/orders", submitOrderLimiter, async (req, res) => {
             .where(eq(productsTable.id, product.id));
         }
 
-        const hasCvs = !!(cvsData.cvsStoreId);
+        // CVS store data from validated body. storeSelectedBy is always forced to
+        // "customer" on this public endpoint — never trust the client's value.
+        const hasCvs = !!(parsed.data.cvsStoreId);
 
         const [newOrder] = await tx
           .insert(ordersTable)
@@ -197,11 +180,11 @@ router.post("/p/:shareToken/orders", submitOrderLimiter, async (req, res) => {
             shippingFee: String(shippingFee),
             totalPrice: String(totalPrice),
             status: "pending",
-            cvsStoreId: hasCvs ? (cvsData.cvsStoreId ?? null) : null,
-            cvsStoreName: hasCvs ? (cvsData.cvsStoreName ?? null) : null,
-            cvsStoreAddress: hasCvs ? (cvsData.cvsStoreAddress ?? null) : null,
-            cvsStorePhone: hasCvs ? (cvsData.cvsStorePhone ?? null) : null,
-            storeSelectedBy: hasCvs ? (cvsData.storeSelectedBy ?? "customer") : null,
+            cvsStoreId: hasCvs ? (parsed.data.cvsStoreId ?? null) : null,
+            cvsStoreName: hasCvs ? (parsed.data.cvsStoreName ?? null) : null,
+            cvsStoreAddress: hasCvs ? (parsed.data.cvsStoreAddress ?? null) : null,
+            cvsStorePhone: hasCvs ? (parsed.data.cvsStorePhone ?? null) : null,
+            storeSelectedBy: hasCvs ? "customer" : null,
             storeSelectedAt: hasCvs ? new Date() : null,
           })
           .returning();

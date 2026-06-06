@@ -1041,6 +1041,18 @@ components:
         quantity:
           type: integer
           minimum: 1
+        cvsStoreId:
+          type: string
+          nullable: true
+        cvsStoreName:
+          type: string
+          nullable: true
+        cvsStoreAddress:
+          type: string
+          nullable: true
+        cvsStorePhone:
+          type: string
+          nullable: true
 
     MerchantOrderInput:
       type: object
