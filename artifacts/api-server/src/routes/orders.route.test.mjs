@@ -34,7 +34,7 @@ mock.module('@clerk/express', {
 // ─────────────────────────────────────────────────────────────
 const { default: express }          = await import('express');
 const { db, storesTable, productsTable, ordersTable, pool } = await import('@workspace/db');
-const { eq }                        = await import('drizzle-orm');
+const { eq, inArray }               = await import('drizzle-orm');
 const { default: ordersRouter }     = await import('./orders.ts');
 const { default: publicRouter }     = await import('./public.ts');
 
@@ -1347,5 +1347,246 @@ describe('Step 6C: CVS snapshot fields', () => {
   test('public tracking MUST NOT return storeSelectedAt', async () => {
     const { data } = await req('GET', `/orders/track/${cvs6cPublicToken}`, null, null);
     assert.strictEqual(data.storeSelectedAt, undefined, 'storeSelectedAt MUST NOT be in public response');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────
+// Step 7B: POST /orders/tracking-import
+// ─────────────────────────────────────────────────────────────
+describe('POST /orders/tracking-import', () => {
+  let importOrderId1;
+  let importOrderId2;
+  let importOrderId3; // pre-filled trackingCode
+
+  before(async () => {
+    const makeOrder = async (suffix) => {
+      const [o] = await db.insert(ordersTable).values({
+        storeId: testStoreId,
+        productId: testProductId,
+        productName: `__import_test_${suffix}__`,
+        buyerName: `Import Buyer ${suffix}`,
+        buyerPhone: '0912345678',
+        pickupMethod: 'pickup',
+        quantity: 1,
+        unitPrice: '100.00',
+        totalPrice: '100.00',
+        shippingFee: '0',
+        status: 'pending',
+        shippingStatus: 'not_shipped',
+        publicToken: `import_test_token_${suffix}_${Date.now()}`,
+      }).returning();
+      return o.id;
+    };
+    importOrderId1 = await makeOrder('a');
+    importOrderId2 = await makeOrder('b');
+    importOrderId3 = await makeOrder('pre_filled');
+    // Pre-fill trackingCode on order3 to test duplicate protection
+    await db.update(ordersTable)
+      .set({ trackingCode: 'EXISTING123', trackingProvider: '711' })
+      .where(eq(ordersTable.id, importOrderId3));
+  });
+
+  after(async () => {
+    await db.delete(ordersTable).where(
+      inArray(ordersTable.id, [importOrderId1, importOrderId2, importOrderId3])
+    );
+  });
+
+  // ── Success cases ─────────────────────────────────────────
+  test('200 — single row import succeeds', async () => {
+    const { status, data } = await req('POST', '/orders/tracking-import', {
+      rows: [{ orderId: importOrderId1, trackingProvider: '711', trackingCode: 'TRACK001' }],
+    });
+    assert.strictEqual(status, 200, `expected 200, got ${status}: ${JSON.stringify(data)}`);
+    assert.strictEqual(data.totalRows, 1);
+    assert.strictEqual(data.successCount, 1);
+    assert.strictEqual(data.failedCount, 0);
+    assert.deepStrictEqual(data.errors, []);
+
+    const [order] = await db.select().from(ordersTable).where(eq(ordersTable.id, importOrderId1));
+    assert.strictEqual(order.trackingCode, 'TRACK001');
+    assert.strictEqual(order.trackingProvider, '711');
+    assert.strictEqual(order.shippingStatus, 'not_shipped', 'shippingStatus MUST NOT change');
+  });
+
+  test('200 — multi-row import succeeds', async () => {
+    const { status, data } = await req('POST', '/orders/tracking-import', {
+      rows: [
+        { orderId: importOrderId2, trackingProvider: 'familymart', trackingCode: 'FM999888777' },
+      ],
+    });
+    assert.strictEqual(status, 200);
+    assert.strictEqual(data.successCount, 1);
+    assert.strictEqual(data.failedCount, 0);
+    const [order] = await db.select().from(ordersTable).where(eq(ordersTable.id, importOrderId2));
+    assert.strictEqual(order.trackingCode, 'FM999888777');
+    assert.strictEqual(order.trackingProvider, 'familymart');
+  });
+
+  test('200 — orderId in #123 format works', async () => {
+    // Need a fresh order since importOrderId1 already has trackingCode
+    const [o] = await db.insert(ordersTable).values({
+      storeId: testStoreId,
+      productId: testProductId,
+      productName: '__import_hash_test__',
+      buyerName: 'Hash Test',
+      buyerPhone: '0987654321',
+      pickupMethod: 'pickup',
+      quantity: 1,
+      unitPrice: '100.00',
+      totalPrice: '100.00',
+      shippingFee: '0',
+      status: 'pending',
+      shippingStatus: 'not_shipped',
+      publicToken: `import_hash_token_${Date.now()}`,
+    }).returning();
+    const hashOrderId = o.id;
+    try {
+      const { status, data } = await req('POST', '/orders/tracking-import', {
+        rows: [{ orderId: `#${hashOrderId}`, trackingProvider: 'home_delivery', trackingCode: 'HD123456' }],
+      });
+      assert.strictEqual(status, 200, `expected 200, got ${status}: ${JSON.stringify(data)}`);
+      assert.strictEqual(data.successCount, 1);
+    } finally {
+      await db.delete(ordersTable).where(eq(ordersTable.id, hashOrderId));
+    }
+  });
+
+  // ── Validation errors ─────────────────────────────────────
+  test('200 — order not found returns error in errors array', async () => {
+    const { status, data } = await req('POST', '/orders/tracking-import', {
+      rows: [{ orderId: 9999999, trackingProvider: '711', trackingCode: 'TRACK_NF' }],
+    });
+    assert.strictEqual(status, 200);
+    assert.strictEqual(data.successCount, 0);
+    assert.strictEqual(data.failedCount, 1);
+    assert.strictEqual(data.errors.length, 1);
+    assert.ok(data.errors[0].reason.includes('找不到訂單'));
+  });
+
+  test('200 — unsupported trackingProvider returns error', async () => {
+    const { status, data } = await req('POST', '/orders/tracking-import', {
+      rows: [{ orderId: importOrderId1, trackingProvider: '黑貓', trackingCode: 'TRACK_P' }],
+    });
+    assert.strictEqual(status, 200);
+    assert.strictEqual(data.failedCount, 1);
+    assert.ok(data.errors[0].reason.includes('trackingProvider 不支援'));
+  });
+
+  test('200 — empty trackingCode returns error', async () => {
+    const { status, data } = await req('POST', '/orders/tracking-import', {
+      rows: [{ orderId: importOrderId1, trackingProvider: '711', trackingCode: '   ' }],
+    });
+    assert.strictEqual(status, 200);
+    assert.strictEqual(data.failedCount, 1);
+    assert.ok(data.errors[0].reason.includes('trackingCode 空白'));
+  });
+
+  test('200 — trackingCode over 100 chars returns error', async () => {
+    const { status, data } = await req('POST', '/orders/tracking-import', {
+      rows: [{ orderId: importOrderId1, trackingProvider: '711', trackingCode: 'A'.repeat(101) }],
+    });
+    assert.strictEqual(status, 200);
+    assert.strictEqual(data.failedCount, 1);
+    assert.ok(data.errors[0].reason.includes('100 字元'));
+  });
+
+  test('200 — existing trackingCode not overwritten (D3)', async () => {
+    const { status, data } = await req('POST', '/orders/tracking-import', {
+      rows: [{ orderId: importOrderId3, trackingProvider: 'familymart', trackingCode: 'NEW_CODE' }],
+    });
+    assert.strictEqual(status, 200);
+    assert.strictEqual(data.failedCount, 1);
+    assert.ok(data.errors[0].reason.includes('已有物流追蹤碼'));
+    // Verify DB unchanged
+    const [order] = await db.select().from(ordersTable).where(eq(ordersTable.id, importOrderId3));
+    assert.strictEqual(order.trackingCode, 'EXISTING123', 'trackingCode must not be overwritten');
+  });
+
+  test('422 — publicToken in rows rejects entire request (D10)', async () => {
+    const { status, data } = await req('POST', '/orders/tracking-import', {
+      rows: [{ orderId: importOrderId1, trackingProvider: '711', trackingCode: 'T1', publicToken: 'abc' }],
+    });
+    assert.strictEqual(status, 422, `expected 422, got ${status}: ${JSON.stringify(data)}`);
+    assert.ok(data.error.includes('publicToken'));
+  });
+
+  test('200 — partial success / partial failure returns correct stats (D7)', async () => {
+    const [fresh] = await db.insert(ordersTable).values({
+      storeId: testStoreId,
+      productId: testProductId,
+      productName: '__import_partial__',
+      buyerName: 'Partial Buyer',
+      buyerPhone: '0912000000',
+      pickupMethod: 'pickup',
+      quantity: 1,
+      unitPrice: '100.00',
+      totalPrice: '100.00',
+      shippingFee: '0',
+      status: 'pending',
+      shippingStatus: 'not_shipped',
+      publicToken: `import_partial_token_${Date.now()}`,
+    }).returning();
+    try {
+      const { status, data } = await req('POST', '/orders/tracking-import', {
+        rows: [
+          { orderId: fresh.id, trackingProvider: '711', trackingCode: 'PARTIAL_OK' },
+          { orderId: 9999999, trackingProvider: '711', trackingCode: 'PARTIAL_FAIL' },
+        ],
+      });
+      assert.strictEqual(status, 200);
+      assert.strictEqual(data.totalRows, 2);
+      assert.strictEqual(data.successCount, 1);
+      assert.strictEqual(data.failedCount, 1);
+      assert.strictEqual(data.errors.length, 1);
+    } finally {
+      await db.delete(ordersTable).where(eq(ordersTable.id, fresh.id));
+    }
+  });
+
+  test('200 — shippingStatus does NOT change after import (D9)', async () => {
+    const [fresh] = await db.insert(ordersTable).values({
+      storeId: testStoreId,
+      productId: testProductId,
+      productName: '__import_status_test__',
+      buyerName: 'Status Test',
+      buyerPhone: '0912111111',
+      pickupMethod: 'pickup',
+      quantity: 1,
+      unitPrice: '100.00',
+      totalPrice: '100.00',
+      shippingFee: '0',
+      status: 'pending',
+      shippingStatus: 'not_shipped',
+      publicToken: `import_status_token_${Date.now()}`,
+    }).returning();
+    try {
+      await req('POST', '/orders/tracking-import', {
+        rows: [{ orderId: fresh.id, trackingProvider: 'other', trackingCode: 'STATUS_TEST' }],
+      });
+      const [order] = await db.select().from(ordersTable).where(eq(ordersTable.id, fresh.id));
+      assert.strictEqual(order.shippingStatus, 'not_shipped', 'shippingStatus MUST remain not_shipped');
+    } finally {
+      await db.delete(ordersTable).where(eq(ordersTable.id, fresh.id));
+    }
+  });
+
+  // ── Auth ─────────────────────────────────────────────────
+  test('401 — unauthenticated request rejected', async () => {
+    const { status } = await req('POST', '/orders/tracking-import', {
+      rows: [{ orderId: importOrderId1, trackingProvider: '711', trackingCode: 'UNAUTH' }],
+    }, null);
+    assert.strictEqual(status, 401, `expected 401, got ${status}`);
+  });
+
+  // ── Request shape ─────────────────────────────────────────
+  test('400 — missing rows array', async () => {
+    const { status } = await req('POST', '/orders/tracking-import', {});
+    assert.strictEqual(status, 400);
+  });
+
+  test('400 — empty rows array', async () => {
+    const { status } = await req('POST', '/orders/tracking-import', { rows: [] });
+    assert.strictEqual(status, 400);
   });
 });
