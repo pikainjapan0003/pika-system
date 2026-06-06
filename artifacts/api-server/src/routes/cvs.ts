@@ -105,7 +105,18 @@ router.get("/cvs/stores", async (req, res) => {
   }
 });
 
-/** POST /cvs/711/import-from-emap — query 7-11 EmapSDK and upsert one store into cvs_stores */
+/**
+ * POST /cvs/711/import-from-emap — query 7-11 EmapSDK and upsert one store into cvs_stores
+ *
+ * Auth: requireAuth (any authenticated user).
+ * PENDING DECISION (Step 6C-0b): this endpoint modifies shared cvs_stores data and has no
+ * storeId scope. The project currently has no admin/role model beyond verifyStoreOwner(storeId).
+ * Options to restrict further:
+ *   A) Add a storeId query/body param and verify ownership via verifyStoreOwner.
+ *   B) Introduce an admin/role column on stores or a separate admin concept.
+ *   C) Disable or remove this endpoint entirely until emap compliance is confirmed.
+ * Until a product/engineering decision is made, requireAuth is the enforced floor.
+ */
 router.post("/cvs/711/import-from-emap", requireAuth, async (req: any, res) => {
   const rawQuery = req.body?.query;
   if (!rawQuery || typeof rawQuery !== "string") {

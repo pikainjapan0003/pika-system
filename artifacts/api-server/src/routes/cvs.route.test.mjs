@@ -1,10 +1,20 @@
 /**
- * Integration tests for CVS routes — auth enforcement (Step 6C-0)
+ * Integration tests for CVS routes — auth enforcement (Step 6C-0 / 6C-0b)
  *
  * Runtime: Node.js v24 built-in test runner (node:test)
  * Auth:    @clerk/express is mocked — getAuth reads x-test-user-id header
  * DB:      Real DB via DATABASE_URL (read-only tests; no data written)
  * Runner:  node --experimental-test-module-mocks --import /path/to/tsx/dist/esm/index.mjs --test src/routes/cvs.route.test.mjs
+ *
+ * PENDING DECISION (Step 6C-0b):
+ *   POST /cvs/711/import-from-emap is currently guarded by requireAuth only.
+ *   The project has no admin/role model (only requireAuth + verifyStoreOwner(storeId)).
+ *   A "403 — authenticated but not owner/admin" test cannot be added until a product/engineering
+ *   decision is made on one of these options:
+ *     A) Add storeId scoping to this endpoint and use verifyStoreOwner.
+ *     B) Introduce an admin/role concept in the stores schema or a separate mechanism.
+ *     C) Disable / remove this endpoint until emap compliance and access scope are confirmed.
+ *   See cvs.ts comment for full options.
  */
 
 import { mock, describe, test, before, after } from 'node:test';
@@ -87,6 +97,12 @@ describe('POST /cvs/711/import-from-emap — auth', () => {
     const { status } = await req('POST', '/cvs/711/import-from-emap', {}, 'test_merchant');
     assert.strictEqual(status, 400);
   });
+
+  // TODO (Step 6C-0b pending decision): add 403 test once a role/owner guard is implemented.
+  // Cannot test "authenticated but no permission → 403" because the project has no admin/role
+  // model. verifyStoreOwner(storeId) requires a storeId, which this endpoint does not have.
+  // Options: (A) add storeId param, (B) add admin role, (C) disable endpoint.
+  test('role guard pending — no admin model exists yet (todo)', { todo: 'requires product/engineering decision on access scope (Step 6C-0b)' }, async () => {});
 });
 
 // ─────────────────────────────────────────────────────────────
