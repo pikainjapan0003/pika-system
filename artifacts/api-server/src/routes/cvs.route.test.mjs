@@ -1,20 +1,15 @@
 /**
- * Integration tests for CVS routes — auth enforcement (Step 6C-0 / 6C-0b)
+ * Integration tests for CVS routes — auth enforcement (Step 6C-0 / 6C-0b / 6C-0c)
  *
  * Runtime: Node.js v24 built-in test runner (node:test)
  * Auth:    @clerk/express is mocked — getAuth reads x-test-user-id header
  * DB:      Real DB via DATABASE_URL (read-only tests; no data written)
  * Runner:  node --experimental-test-module-mocks --import /path/to/tsx/dist/esm/index.mjs --test src/routes/cvs.route.test.mjs
  *
- * PENDING DECISION (Step 6C-0b):
- *   POST /cvs/711/import-from-emap is currently guarded by requireAuth only.
- *   The project has no admin/role model (only requireAuth + verifyStoreOwner(storeId)).
- *   A "403 — authenticated but not owner/admin" test cannot be added until a product/engineering
- *   decision is made on one of these options:
- *     A) Add storeId scoping to this endpoint and use verifyStoreOwner.
- *     B) Introduce an admin/role concept in the stores schema or a separate mechanism.
- *     C) Disable / remove this endpoint until emap compliance and access scope are confirmed.
- *   See cvs.ts comment for full options.
+ * Step 6C-0c: POST /cvs/711/import-from-emap is DISABLED (option C from Step 6C-0b).
+ *   - Unauthenticated → 401 (requireAuth fires before disabled check)
+ *   - Authenticated   → 403 (endpoint disabled, emap not called, cvs_stores not written)
+ *   Endpoint can be re-enabled once emap compliance and access scope are confirmed.
  */
 
 import { mock, describe, test, before, after } from 'node:test';
@@ -84,25 +79,19 @@ async function req(method, path, body, userId = 'test_merchant') {
 }
 
 // ─────────────────────────────────────────────────────────────
-// 6. POST /cvs/711/import-from-emap — auth guard
+// 6. POST /cvs/711/import-from-emap — disabled (Step 6C-0c)
 // ─────────────────────────────────────────────────────────────
-describe('POST /cvs/711/import-from-emap — auth', () => {
-  test('401 — unauthenticated request is rejected before reaching emap', async () => {
+describe('POST /cvs/711/import-from-emap — disabled', () => {
+  test('401 — unauthenticated request is rejected by requireAuth before disabled check', async () => {
     const { status, data } = await req('POST', '/cvs/711/import-from-emap', { query: 'test' }, null);
     assert.strictEqual(status, 401, `expected 401, got ${status}: ${JSON.stringify(data)}`);
   });
 
-  test('400 — authenticated but missing query body returns 400 (not 401)', async () => {
-    // Verifies auth passes and route logic is reached; emap not called due to validation error.
-    const { status } = await req('POST', '/cvs/711/import-from-emap', {}, 'test_merchant');
-    assert.strictEqual(status, 400);
+  test('403 — authenticated request is rejected because endpoint is disabled', async () => {
+    // Endpoint is disabled (Step 6C-0c option C). No emap call, no cvs_stores write.
+    const { status, data } = await req('POST', '/cvs/711/import-from-emap', { query: 'test' }, 'test_merchant');
+    assert.strictEqual(status, 403, `expected 403, got ${status}: ${JSON.stringify(data)}`);
   });
-
-  // TODO (Step 6C-0b pending decision): add 403 test once a role/owner guard is implemented.
-  // Cannot test "authenticated but no permission → 403" because the project has no admin/role
-  // model. verifyStoreOwner(storeId) requires a storeId, which this endpoint does not have.
-  // Options: (A) add storeId param, (B) add admin role, (C) disable endpoint.
-  test('role guard pending — no admin model exists yet (todo)', { todo: 'requires product/engineering decision on access scope (Step 6C-0b)' }, async () => {});
 });
 
 // ─────────────────────────────────────────────────────────────

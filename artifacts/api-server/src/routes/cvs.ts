@@ -109,15 +109,19 @@ router.get("/cvs/stores", async (req, res) => {
  * POST /cvs/711/import-from-emap — query 7-11 EmapSDK and upsert one store into cvs_stores
  *
  * Auth: requireAuth (any authenticated user).
- * PENDING DECISION (Step 6C-0b): this endpoint modifies shared cvs_stores data and has no
- * storeId scope. The project currently has no admin/role model beyond verifyStoreOwner(storeId).
- * Options to restrict further:
- *   A) Add a storeId query/body param and verify ownership via verifyStoreOwner.
- *   B) Introduce an admin/role column on stores or a separate admin concept.
- *   C) Disable or remove this endpoint entirely until emap compliance is confirmed.
- * Until a product/engineering decision is made, requireAuth is the enforced floor.
+ * DISABLED (Step 6C-0c): adopted option C from Step 6C-0b.
+ * This endpoint is temporarily disabled pending:
+ *   1. Confirmation that use of emap.pcsc.com.tw/EmapSDK.aspx is legally authorised.
+ *   2. A product/engineering decision on access scope (storeId-scoped owner, admin role, etc.).
+ * The emap fetch and cvs_stores upsert logic below is preserved for when it is re-enabled.
+ * To re-enable: remove the early-return block and resolve the two items above.
  */
 router.post("/cvs/711/import-from-emap", requireAuth, async (req: any, res) => {
+  // DISABLED — see comment above. Return 403 without touching emap or cvs_stores.
+  return res.status(403).json({
+    error: "This operation is temporarily unavailable. Please contact the administrator.",
+  });
+
   const rawQuery = req.body?.query;
   if (!rawQuery || typeof rawQuery !== "string") {
     return res.status(400).json({ error: "query 必填" });
