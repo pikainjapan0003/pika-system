@@ -117,6 +117,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
   const [quantity, setQuantity] = useState(1);
   const [specValues, setSpecValues] = useState<Record<string, string>>({});
   const [submittedOrder, setSubmittedOrder] = useState<Order | null>(null);
+  const [submittedCvsStore, setSubmittedCvsStore] = useState<CvsStore | null>(null);
   const [formError, setFormError] = useState("");
   const [copied, setCopied] = useState(false);
   const [cvsStore, setCvsStore] = useState<CvsStore | null>(null);
@@ -249,8 +250,10 @@ export default function PublicOrderPage({ shareToken }: Props) {
           : {}),
       };
 
+      const capturedCvsStore = needsCvsStore ? cvsStore : null;
       const order = await submitOrder.mutateAsync({ shareToken, data: body });
       setSubmittedOrder(order);
+      setSubmittedCvsStore(capturedCvsStore);
       if (needsCvsStore) clearCvsStore(shareToken);
     } catch (err: any) {
       setFormError(err?.data?.message || err?.data?.error || "下單失敗，請稍後再試");
@@ -310,6 +313,17 @@ export default function PublicOrderPage({ shareToken }: Props) {
             <SummaryRow label="取貨方式" value={submittedOrder.pickupMethod} />
             <SummaryRow label="下單時間" value={formatDate(submittedOrder.createdAt)} />
           </div>
+          {submittedCvsStore && (
+            <div className="mt-3 bg-white rounded-2xl p-4 border border-border text-left space-y-1.5">
+              <div className="text-xs font-semibold text-muted-foreground">已選門市</div>
+              <div className="text-sm font-semibold text-foreground">{submittedCvsStore.storeName}</div>
+              <div className="text-xs text-muted-foreground">{submittedCvsStore.storeAddress}</div>
+              {submittedCvsStore.storePhone && (
+                <div className="text-xs text-muted-foreground">{submittedCvsStore.storePhone}</div>
+              )}
+              <div className="text-xs text-muted-foreground/50">門市資料可能因超商更新而異動，實際資訊以超商公告為準。</div>
+            </div>
+          )}
           <div className="mt-4 flex flex-col gap-2">
             <button
               onClick={handleCopy}

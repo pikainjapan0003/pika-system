@@ -50,12 +50,18 @@ export function getShippingFee(pickupMethod: string): number {
 }
 
 const CVS_STORAGE_KEY_PREFIX = "cvs711_store_";
+const CVS_STORE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 export function saveCvsStore(key: string, store: CvsStore): void {
   try {
+    const now = new Date();
     localStorage.setItem(
       CVS_STORAGE_KEY_PREFIX + key,
-      JSON.stringify({ ...store, savedAt: new Date().toISOString() }),
+      JSON.stringify({
+        ...store,
+        savedAt: now.toISOString(),
+        expiresAt: new Date(now.getTime() + CVS_STORE_TTL_MS).toISOString(),
+      }),
     );
   } catch {
     // ignore storage errors
@@ -66,7 +72,21 @@ export function loadCvsStore(key: string): CvsStore | null {
   try {
     const raw = localStorage.getItem(CVS_STORAGE_KEY_PREFIX + key);
     if (!raw) return null;
-    return JSON.parse(raw) as CvsStore;
+    const parsed = JSON.parse(raw);
+
+    // Determine expiry: prefer expiresAt, fall back to savedAt + TTL, else treat as expired
+    const expiresAt = parsed.expiresAt
+      ? new Date(parsed.expiresAt)
+      : parsed.savedAt
+        ? new Date(new Date(parsed.savedAt).getTime() + CVS_STORE_TTL_MS)
+        : null;
+
+    if (!expiresAt || Date.now() > expiresAt.getTime()) {
+      localStorage.removeItem(CVS_STORAGE_KEY_PREFIX + key);
+      return null;
+    }
+
+    return parsed as CvsStore;
   } catch {
     return null;
   }
