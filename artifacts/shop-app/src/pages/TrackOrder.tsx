@@ -30,14 +30,23 @@ function formatDate(iso: string): string {
 
 export default function TrackOrderPage({ publicToken }: Props) {
   const [, setLocation] = useLocation();
-  const [copied, setCopied] = useState(false);
+  const [copiedToken, setCopiedToken] = useState(false);
+  const [copiedTracking, setCopiedTracking] = useState(false);
   const { data: order, isLoading, error } = useGetPublicOrder(publicToken);
 
-  const handleCopy = (token: string) => {
+  const handleCopyToken = (text: string) => {
     if (!navigator.clipboard) return;
-    navigator.clipboard.writeText(token).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedToken(true);
+      setTimeout(() => setCopiedToken(false), 2000);
+    }).catch(() => {});
+  };
+
+  const handleCopyTracking = (text: string) => {
+    if (!navigator.clipboard) return;
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedTracking(true);
+      setTimeout(() => setCopiedTracking(false), 2000);
     }).catch(() => {});
   };
 
@@ -176,18 +185,52 @@ export default function TrackOrderPage({ publicToken }: Props) {
           </div>
         </div>
 
-        {/* Copy public token (order query code) */}
-        <div className="mt-4">
+        {/* Shipment info card */}
+        <div className="bg-white rounded-2xl border border-border overflow-hidden mt-3">
+          <div className="px-5 py-3 border-b border-border">
+            <h2 className="text-xs font-semibold text-muted-foreground">物流資訊</h2>
+          </div>
+          <div className="px-5 py-4 space-y-3">
+            <InfoRow label="物流狀態" value={order.shippingStatusLabel ?? order.shippingStatus} />
+            {order.trackingCode ? (
+              <>
+                {order.trackingProvider && (
+                  <InfoRow label="物流商" value={order.trackingProvider} />
+                )}
+                <InfoRow label="物流追蹤碼" value={order.trackingCode} />
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                尚未提供物流追蹤碼。店家出貨後會更新物流資訊。
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Copy buttons */}
+        <div className="mt-4 space-y-2">
+          {order.trackingCode && (
+            <button
+              onClick={() => handleCopyTracking(order.trackingCode!)}
+              className="w-full h-11 rounded-xl border border-border bg-white text-sm font-medium text-foreground"
+            >
+              {copiedTracking ? "已複製！" : "複製物流追蹤碼"}
+            </button>
+          )}
+          {/* Copy public token (order query code, not logistics tracking code) */}
           <button
-            onClick={() => handleCopy(order.publicToken)}
+            onClick={() => handleCopyToken(order.publicToken)}
             className="w-full h-11 rounded-xl border border-border bg-white text-sm font-medium text-foreground"
           >
-            {copied ? "已複製！" : "複製訂單查詢碼"}
+            {copiedToken ? "已複製！" : "複製訂單查詢碼"}
           </button>
         </div>
 
+        <p className="text-xs text-muted-foreground text-center mt-4 leading-relaxed">
+          物流資訊可能因物流商更新延遲而有所落差，實際狀態仍以物流商或門市通知為準。
+        </p>
         {!isCancelled && (
-          <p className="text-xs text-muted-foreground text-center mt-4 leading-relaxed">
+          <p className="text-xs text-muted-foreground text-center mt-1 leading-relaxed">
             如有疑問，請聯繫商家。
           </p>
         )}
