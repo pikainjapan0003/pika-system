@@ -1238,3 +1238,114 @@ describe('Step 5F-C: POST /orders/shipping-list.csv', () => {
     assert.ok(cd.includes('.csv'), 'filename should have .csv extension');
   });
 });
+
+// ─────────────────────────────────────────────────────────────
+// Step 6C: CVS snapshot fields on PATCH /orders/:orderId
+// ─────────────────────────────────────────────────────────────
+describe('Step 6C: CVS snapshot fields', () => {
+  let cvs6cOrderId;
+  let cvs6cPublicToken;
+
+  before(async () => {
+    const token = `tok-6c-${Date.now()}`;
+    const [order] = await db
+      .insert(ordersTable)
+      .values({
+        productId: testProductId,
+        storeId: testStoreId,
+        productName: '__test_product__',
+        publicToken: token,
+        buyerName: 'CVS Buyer',
+        buyerPhone: '0966666666',
+        pickupMethod: '7-11 取貨（先付款）',
+        quantity: 1,
+        unitPrice: '100.00',
+        shippingFee: '60.00',
+        totalPrice: '100.00',
+        status: 'pending',
+        specValues: {},
+      })
+      .returning();
+    cvs6cOrderId = order.id;
+    cvs6cPublicToken = token;
+  });
+
+  // ── PATCH can set full CVS snapshot ──────────────────────────
+  test('200 — PATCH can update cvsStoreAddress via general update endpoint', async () => {
+    const { status, data } = await req('PATCH', `/orders/${cvs6cOrderId}`, {
+      storeCode: '171717',
+      storeName: '7-11 測試門市',
+      cvsStoreAddress: '台北市信義區松仁路28號',
+      cvsStorePhone: '02-12345678',
+      storeSelectedBy: 'admin',
+    });
+    assert.strictEqual(status, 200, `expected 200, got ${status}: ${JSON.stringify(data)}`);
+    assert.strictEqual(data.storeCode, '171717');
+    assert.strictEqual(data.storeName, '7-11 測試門市');
+    assert.strictEqual(data.cvsStoreAddress, '台北市信義區松仁路28號');
+    assert.strictEqual(data.cvsStorePhone, '02-12345678');
+    assert.strictEqual(data.storeSelectedBy, 'admin');
+    assert.ok(data.storeSelectedAt, 'storeSelectedAt should be set automatically');
+  });
+
+  test('200 — PATCH can clear cvsStoreAddress with null', async () => {
+    const { status, data } = await req('PATCH', `/orders/${cvs6cOrderId}`, {
+      cvsStoreAddress: null,
+    });
+    assert.strictEqual(status, 200, `expected 200, got ${status}: ${JSON.stringify(data)}`);
+    assert.strictEqual(data.cvsStoreAddress, null);
+  });
+
+  test('200 — PATCH storeSelectedBy=customer sets storeSelectedAt', async () => {
+    const { status, data } = await req('PATCH', `/orders/${cvs6cOrderId}`, {
+      storeSelectedBy: 'customer',
+    });
+    assert.strictEqual(status, 200);
+    assert.strictEqual(data.storeSelectedBy, 'customer');
+    assert.ok(data.storeSelectedAt, 'storeSelectedAt should be set when storeSelectedBy changes');
+  });
+
+  // ── GET list returns CVS snapshot fields ─────────────────────
+  test('200 — GET list order includes CVS snapshot fields in response', async () => {
+    // First set known values
+    await req('PATCH', `/orders/${cvs6cOrderId}`, {
+      storeCode: '180180',
+      storeName: '7-11 清水門市',
+      cvsStoreAddress: '台中市清水區中山路1號',
+      cvsStorePhone: '04-26222222',
+      storeSelectedBy: 'admin',
+    });
+
+    const { status, data } = await req('GET', `/stores/${testStoreId}/orders`);
+    assert.strictEqual(status, 200);
+    const order = data.find((o) => o.id === cvs6cOrderId);
+    assert.ok(order, 'order should appear in list');
+    assert.strictEqual(order.storeCode, '180180');
+    assert.strictEqual(order.storeName, '7-11 清水門市');
+    assert.strictEqual(order.cvsStoreAddress, '台中市清水區中山路1號');
+    assert.strictEqual(order.cvsStorePhone, '04-26222222');
+    assert.strictEqual(order.storeSelectedBy, 'admin');
+    assert.ok(order.storeSelectedAt, 'storeSelectedAt should be present');
+  });
+
+  // ── Public tracking does NOT expose CVS store details ─────────
+  test('public tracking MUST NOT return cvsStoreAddress', async () => {
+    const { data } = await req('GET', `/orders/track/${cvs6cPublicToken}`, null, null);
+    assert.strictEqual(data.cvsStoreAddress, undefined, 'cvsStoreAddress MUST NOT be in public response');
+  });
+
+  test('public tracking MUST NOT return cvsStorePhone', async () => {
+    const { data } = await req('GET', `/orders/track/${cvs6cPublicToken}`, null, null);
+    assert.strictEqual(data.cvsStorePhone, undefined, 'cvsStorePhone MUST NOT be in public response');
+  });
+
+  test('public tracking MUST NOT return storeSelectedBy', async () => {
+    const { data } = await req('GET', `/orders/track/${cvs6cPublicToken}`, null, null);
+    assert.strictEqual(data.storeSelectedBy, undefined, 'storeSelectedBy MUST NOT be in public response');
+  });
+
+  test('public tracking MUST NOT return storeSelectedAt', async () => {
+    const { data } = await req('GET', `/orders/track/${cvs6cPublicToken}`, null, null);
+    assert.strictEqual(data.storeSelectedAt, undefined, 'storeSelectedAt MUST NOT be in public response');
+  });
+});

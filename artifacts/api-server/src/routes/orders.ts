@@ -512,7 +512,7 @@ router.patch("/orders/:orderId", requireAuth, async (req: any, res) => {
     paymentMethod, paymentStatus, paidAmount, paymentNote,
     shippingMethod, shippingStatus, shippingFee,
     recipientName, recipientPhone, recipientAddress,
-    storeCode, storeName,
+    storeCode, storeName, cvsStoreAddress, cvsStorePhone, storeSelectedBy,
     trackingCode, trackingProvider, shippingNote, internalNote,
   } = parsed.data;
 
@@ -539,8 +539,15 @@ router.patch("/orders/:orderId", requireAuth, async (req: any, res) => {
   if (recipientName !== undefined) updates.recipientName = recipientName;
   if (recipientPhone !== undefined) updates.recipientPhone = recipientPhone;
   if (recipientAddress !== undefined) updates.recipientAddress = recipientAddress;
+  // CVS store snapshot fields
   if (storeCode !== undefined) updates.cvsStoreId = storeCode;
   if (storeName !== undefined) updates.cvsStoreName = storeName;
+  if (cvsStoreAddress !== undefined) updates.cvsStoreAddress = cvsStoreAddress;
+  if (cvsStorePhone !== undefined) updates.cvsStorePhone = cvsStorePhone;
+  if (storeSelectedBy !== undefined) updates.storeSelectedBy = storeSelectedBy;
+  if (storeCode !== undefined || storeName !== undefined || cvsStoreAddress !== undefined || cvsStorePhone !== undefined || storeSelectedBy !== undefined) {
+    updates.storeSelectedAt = new Date();
+  }
   if (trackingCode !== undefined) updates.trackingCode = trackingCode;
   if (trackingProvider !== undefined) updates.trackingProvider = trackingProvider;
   if (shippingNote !== undefined) updates.shippingNote = shippingNote;

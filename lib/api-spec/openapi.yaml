@@ -964,6 +964,14 @@ components:
           type: ["string", "null"]
         storeName:
           type: ["string", "null"]
+        cvsStoreAddress:
+          type: ["string", "null"]
+        cvsStorePhone:
+          type: ["string", "null"]
+        storeSelectedBy:
+          type: ["string", "null"]
+        storeSelectedAt:
+          type: ["string", "null"]
         trackingCode:
           type: ["string", "null"]
         trackingProvider:
@@ -1102,6 +1110,13 @@ components:
           type: ["string", "null"]
         storeName:
           type: ["string", "null"]
+        cvsStoreAddress:
+          type: ["string", "null"]
+        cvsStorePhone:
+          type: ["string", "null"]
+        storeSelectedBy:
+          type: string
+          enum: [customer, admin, system]
         trackingCode:
           type: ["string", "null"]
         trackingProvider:

@@ -294,6 +294,14 @@ export interface Order {
   /** @nullable */
   storeName?: string | null;
   /** @nullable */
+  cvsStoreAddress?: string | null;
+  /** @nullable */
+  cvsStorePhone?: string | null;
+  /** @nullable */
+  storeSelectedBy?: string | null;
+  /** @nullable */
+  storeSelectedAt?: string | null;
+  /** @nullable */
   trackingCode?: string | null;
   /** @nullable */
   trackingProvider?: string | null;
@@ -409,6 +417,11 @@ export interface OrderUpdate {
   storeCode?: string | null;
   /** @nullable */
   storeName?: string | null;
+  /** @nullable */
+  cvsStoreAddress?: string | null;
+  /** @nullable */
+  cvsStorePhone?: string | null;
+  storeSelectedBy?: 'customer' | 'admin' | 'system';
   /** @nullable */
   trackingCode?: string | null;
   /** @nullable */

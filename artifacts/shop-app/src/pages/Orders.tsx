@@ -583,19 +583,15 @@ export default function OrdersPage() {
                             {o.storeCode ? (
                               <div className="bg-white rounded-xl border border-primary/20 px-4 py-3 space-y-1">
                                 <div className="text-sm font-semibold text-foreground">7-11 {o.storeName}</div>
-                                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                                <div className="text-xs text-muted-foreground">{(o as any).cvsStoreAddress}</div>
+                                <div className="text-xs text-muted-foreground">{o.cvsStoreAddress}</div>
                                 <div className="text-xs text-muted-foreground/70">門市編號：{o.storeCode}</div>
                                 <div className="flex items-center gap-3 mt-1 pt-1 border-t border-border/40">
                                   <span className="text-xs text-muted-foreground/60">
-                                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                                    選擇來源：{(o as any).storeSelectedBy === "admin" ? "老闆代選" : "客人選擇"}
+                                    選擇來源：{o.storeSelectedBy === "admin" ? "老闆代選" : "客人選擇"}
                                   </span>
-                                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                                  {(o as any).storeSelectedAt && (
+                                  {o.storeSelectedAt && (
                                     <span className="text-xs text-muted-foreground/60">
-                                      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                                      {formatDate((o as any).storeSelectedAt)}
+                                      {formatDate(o.storeSelectedAt)}
                                     </span>
                                   )}
                                 </div>
@@ -630,19 +626,15 @@ export default function OrdersPage() {
                             {o.storeCode ? (
                               <div className="bg-white rounded-xl border border-primary/20 px-4 py-3 space-y-1">
                                 <div className="text-sm font-semibold text-foreground">全家 {o.storeName}</div>
-                                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                                <div className="text-xs text-muted-foreground">{(o as any).cvsStoreAddress}</div>
+                                <div className="text-xs text-muted-foreground">{o.cvsStoreAddress}</div>
                                 <div className="text-xs text-muted-foreground/70">門市編號：{o.storeCode}</div>
                                 <div className="flex items-center gap-3 mt-1 pt-1 border-t border-border/40">
                                   <span className="text-xs text-muted-foreground/60">
-                                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                                    選擇來源：{(o as any).storeSelectedBy === "admin" ? "老闆代選" : "客人選擇"}
+                                    選擇來源：{o.storeSelectedBy === "admin" ? "老闆代選" : "客人選擇"}
                                   </span>
-                                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                                  {(o as any).storeSelectedAt && (
+                                  {o.storeSelectedAt && (
                                     <span className="text-xs text-muted-foreground/60">
-                                      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                                      {formatDate((o as any).storeSelectedAt)}
+                                      {formatDate(o.storeSelectedAt)}
                                     </span>
                                   )}
                                 </div>
