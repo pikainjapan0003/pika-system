@@ -518,7 +518,7 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
                   placeholder="輸入門市名稱或地址關鍵字"
                   value={cvsSearchQuery}
                   onChange={(e) => setCvsSearchQuery(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void handleCvsSearch(); } }}
+                  onKeyDown={(e) => { if (e.key === "Enter" && cvsSearchStatus !== "loading") { e.preventDefault(); void handleCvsSearch(); } }}
                 />
                 <button
                   type="button"
