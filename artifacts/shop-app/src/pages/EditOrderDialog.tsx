@@ -9,12 +9,21 @@ import {
   ShippingMethod,
   ShippingStatus,
 } from "@workspace/api-client-react";
+import { isFamilyMartMethod } from "@/lib/cvs711";
 import { toast } from "@/hooks/use-toast";
 import {
   Sheet,
   SheetContent,
   SheetClose,
 } from "@/components/ui/sheet";
+
+interface CvsStoreResult {
+  provider: string;
+  storeId: string;
+  storeName: string;
+  storeAddress: string;
+  storePhone?: string | null;
+}
 
 interface Props {
   order: Order | null;
@@ -61,6 +70,17 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
   const [shippingNote, setShippingNote] = useState<string>("");
   const [internalNote, setInternalNote] = useState<string>("");
 
+  // CVS snapshot state
+  const [cvsStoreAddress, setCvsStoreAddress] = useState<string>("");
+  const [cvsStorePhone, setCvsStorePhone] = useState<string>("");
+  const [storeSelectedBy, setStoreSelectedBy] = useState<string>("");
+  // CVS store picker
+  const [cvsPickerProvider, setCvsPickerProvider] = useState<"seven" | "family">("seven");
+  const [cvsSearchQuery, setCvsSearchQuery] = useState<string>("");
+  const [cvsSearchStatus, setCvsSearchStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [cvsSearchResults, setCvsSearchResults] = useState<CvsStoreResult[]>([]);
+  const [cvsSearchError, setCvsSearchError] = useState<string>("");
+
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -89,6 +109,14 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
       setTrackingProvider(order.trackingProvider ?? "");
       setShippingNote(order.shippingNote ?? "");
       setInternalNote(order.internalNote ?? "");
+      setCvsStoreAddress(order.cvsStoreAddress ?? "");
+      setCvsStorePhone(order.cvsStorePhone ?? "");
+      setStoreSelectedBy(order.storeSelectedBy ?? "");
+      setCvsPickerProvider(isFamilyMartMethod(order.pickupMethod) ? "family" : "seven");
+      setCvsSearchQuery("");
+      setCvsSearchStatus("idle");
+      setCvsSearchResults([]);
+      setCvsSearchError("");
       setFieldErrors({});
       setSubmitError(null);
     }
@@ -104,6 +132,33 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
   const handleClose = () => {
     if (isPending) return;
     onClose();
+  };
+
+  const handleCvsSearch = async () => {
+    const q = cvsSearchQuery.trim();
+    if (!q) return;
+    setCvsSearchStatus("loading");
+    setCvsSearchError("");
+    try {
+      const qs = new URLSearchParams({ provider: cvsPickerProvider, q, limit: "20" });
+      const resp = await fetch(`/api/cvs/stores?${qs}`);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const json = await resp.json() as { stores: CvsStoreResult[] };
+      setCvsSearchResults(json.stores ?? []);
+      setCvsSearchStatus("success");
+    } catch {
+      setCvsSearchStatus("error");
+      setCvsSearchError("搜尋失敗，請稍後再試");
+      setCvsSearchResults([]);
+    }
+  };
+
+  const handleCvsStoreSelect = (store: CvsStoreResult) => {
+    setStoreCode(store.storeId);
+    setStoreName(store.storeName);
+    setCvsStoreAddress(store.storeAddress);
+    setCvsStorePhone(store.storePhone ?? "");
+    setStoreSelectedBy("admin");
   };
 
   const validate = (): boolean => {
@@ -155,6 +210,9 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
           recipientAddress: recipientAddress.trim() || null,
           storeCode: storeCode.trim() || null,
           storeName: storeName.trim() || null,
+          cvsStoreAddress: cvsStoreAddress.trim() || null,
+          cvsStorePhone: cvsStorePhone.trim() || null,
+          storeSelectedBy: storeSelectedBy ? (storeSelectedBy as 'customer' | 'admin' | 'system') : undefined,
           trackingCode: trackingCode.trim() || null,
           trackingProvider: trackingProvider.trim() || null,
           shippingNote: shippingNote.trim() || null,
@@ -442,6 +500,79 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
                 onChange={(e) => setStoreName(e.target.value)}
               />
             </div>
+            {/* CVS Store Picker */}
+            <div>
+              <label className={LABEL}>超商門市搜尋（選填）</label>
+              <div className="flex gap-1.5 mb-2">
+                <select
+                  className="h-9 pl-2 pr-1 rounded-xl border border-input bg-secondary/40 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 cursor-pointer shrink-0"
+                  value={cvsPickerProvider}
+                  onChange={(e) => setCvsPickerProvider(e.target.value as "seven" | "family")}
+                >
+                  <option value="seven">7-11</option>
+                  <option value="family">全家</option>
+                </select>
+                <input
+                  type="text"
+                  className={`${INPUT} flex-1`}
+                  placeholder="輸入門市名稱或地址關鍵字"
+                  value={cvsSearchQuery}
+                  onChange={(e) => setCvsSearchQuery(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void handleCvsSearch(); } }}
+                />
+                <button
+                  type="button"
+                  onClick={() => void handleCvsSearch()}
+                  disabled={!cvsSearchQuery.trim() || cvsSearchStatus === "loading"}
+                  className="h-9 px-3 rounded-xl bg-primary text-white text-xs font-medium disabled:opacity-50 shrink-0"
+                >
+                  {cvsSearchStatus === "loading" ? "搜尋中…" : "搜尋"}
+                </button>
+              </div>
+              {cvsSearchStatus === "idle" && (
+                <p className="text-[11px] text-muted-foreground/60 text-center py-1">尚未搜尋</p>
+              )}
+              {cvsSearchStatus === "error" && (
+                <p className="text-xs text-destructive py-1">{cvsSearchError}</p>
+              )}
+              {cvsSearchStatus === "success" && cvsSearchResults.length === 0 && (
+                <p className="text-[11px] text-muted-foreground/60 text-center py-1">查無符合門市，請換關鍵字再試</p>
+              )}
+              {cvsSearchStatus === "success" && cvsSearchResults.length > 0 && (
+                <div className="border border-border rounded-xl overflow-hidden max-h-44 overflow-y-auto">
+                  {cvsSearchResults.map((s) => (
+                    <div
+                      key={`${s.provider}-${s.storeId}`}
+                      className="flex items-start justify-between gap-2 px-3 py-2 border-b border-border last:border-b-0"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-medium text-foreground">{s.storeName}</div>
+                        <div className="text-[11px] text-muted-foreground">{s.storeAddress}</div>
+                        {s.storePhone && <div className="text-[11px] text-muted-foreground">{s.storePhone}</div>}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleCvsStoreSelect(s)}
+                        className="shrink-0 h-7 px-2.5 rounded-lg bg-primary text-white text-[11px] font-medium"
+                      >
+                        選擇
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            {cvsStoreAddress && (
+              <div className="bg-primary/5 border border-primary/20 rounded-xl px-3 py-2">
+                <div className="text-[10px] font-semibold text-primary/70 uppercase tracking-wide mb-1">已選門市</div>
+                <div className="text-xs font-medium text-foreground">{storeName || storeCode}</div>
+                <div className="text-[11px] text-muted-foreground">{cvsStoreAddress}</div>
+                {cvsStorePhone && <div className="text-[11px] text-muted-foreground">{cvsStorePhone}</div>}
+                <p className="text-[10px] text-muted-foreground/50 mt-1">
+                  門市資料可能因超商更新而異動，實際資訊以超商公告為準。
+                </p>
+              </div>
+            )}
             <div>
               <label className={LABEL}>物流備註（選填）</label>
               <textarea
