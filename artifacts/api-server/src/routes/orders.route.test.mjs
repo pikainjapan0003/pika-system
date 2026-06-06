@@ -1590,3 +1590,116 @@ describe('POST /orders/tracking-import', () => {
     assert.strictEqual(status, 400);
   });
 });
+
+// ─────────────────────────────────────────────────────────────
+// Step 6D-Fix: storeSelectedAt dirty tracking
+//   storeSelectedAt must only update when a CVS store field
+//   actually changes value — not on payment / logistics edits.
+// ─────────────────────────────────────────────────────────────
+describe('Step 6D-Fix: storeSelectedAt dirty tracking', () => {
+  let fixOrderId;
+  let baseStoreSelectedAt;
+
+  before(async () => {
+    const token = `tok-6dfix-${Date.now()}`;
+    const [order] = await db
+      .insert(ordersTable)
+      .values({
+        productId: testProductId,
+        storeId: testStoreId,
+        productName: '__test_product__',
+        publicToken: token,
+        buyerName: '6DFix Buyer',
+        buyerPhone: '0977777777',
+        pickupMethod: '7-11 取貨（先付款）',
+        quantity: 1,
+        unitPrice: '100.00',
+        shippingFee: '60.00',
+        totalPrice: '100.00',
+        status: 'pending',
+        specValues: {},
+      })
+      .returning();
+    fixOrderId = order.id;
+
+    // Establish an initial CVS snapshot so storeSelectedAt is non-null.
+    const { data } = await req('PATCH', `/orders/${fixOrderId}`, {
+      storeCode: '284754',
+      storeName: '懷民門市',
+      cvsStoreAddress: '新北市板橋區民治街111號',
+      cvsStorePhone: '02-11111111',
+      storeSelectedBy: 'admin',
+    });
+    baseStoreSelectedAt = data.storeSelectedAt;
+    assert.ok(baseStoreSelectedAt, 'before: storeSelectedAt must be set after initial CVS PATCH');
+  });
+
+  test('paymentStatus update does NOT change storeSelectedAt', async () => {
+    const { status, data } = await req('PATCH', `/orders/${fixOrderId}`, {
+      paymentStatus: 'paid',
+    });
+    assert.strictEqual(status, 200);
+    assert.strictEqual(
+      data.storeSelectedAt,
+      baseStoreSelectedAt,
+      'storeSelectedAt must not change on payment-only update'
+    );
+  });
+
+  test('shippingStatus update does NOT change storeSelectedAt', async () => {
+    const { status, data } = await req('PATCH', `/orders/${fixOrderId}`, {
+      shippingStatus: 'shipped',
+    });
+    assert.strictEqual(status, 200);
+    assert.strictEqual(
+      data.storeSelectedAt,
+      baseStoreSelectedAt,
+      'storeSelectedAt must not change on shippingStatus-only update'
+    );
+  });
+
+  test('trackingCode update does NOT change storeSelectedAt', async () => {
+    const { status, data } = await req('PATCH', `/orders/${fixOrderId}`, {
+      trackingCode: 'TRK123456',
+    });
+    assert.strictEqual(status, 200);
+    assert.strictEqual(
+      data.storeSelectedAt,
+      baseStoreSelectedAt,
+      'storeSelectedAt must not change on trackingCode-only update'
+    );
+  });
+
+  test('sending identical CVS snapshot does NOT change storeSelectedAt', async () => {
+    const { status, data } = await req('PATCH', `/orders/${fixOrderId}`, {
+      storeCode: '284754',
+      storeName: '懷民門市',
+      cvsStoreAddress: '新北市板橋區民治街111號',
+      cvsStorePhone: '02-11111111',
+      storeSelectedBy: 'admin',
+    });
+    assert.strictEqual(status, 200);
+    assert.strictEqual(
+      data.storeSelectedAt,
+      baseStoreSelectedAt,
+      'storeSelectedAt must not change when CVS snapshot is identical to existing'
+    );
+  });
+
+  test('changing cvsStoreAddress DOES update storeSelectedAt', async () => {
+    const { status, data } = await req('PATCH', `/orders/${fixOrderId}`, {
+      storeCode: '999999',
+      storeName: '新測試門市',
+      cvsStoreAddress: '台北市中山區中山北路1號',
+      cvsStorePhone: null,
+      storeSelectedBy: 'admin',
+    });
+    assert.strictEqual(status, 200);
+    assert.ok(data.storeSelectedAt, 'storeSelectedAt must be present after CVS store change');
+    assert.notStrictEqual(
+      data.storeSelectedAt,
+      baseStoreSelectedAt,
+      'storeSelectedAt must update when CVS store fields actually change'
+    );
+  });
+});

@@ -94,6 +94,9 @@ export default function OrdersPage() {
   const [isBulkLoading, setIsBulkLoading] = useState(false);
   const bulkUpdateOrders = useBulkUpdateOrders();
 
+  // Tracking import state
+  const [trackingImportOpen, setTrackingImportOpen] = useState(false);
+
   // Picking / shipping list state
   const [pickingListOpen, setPickingListOpen] = useState(false);
   const [shippingListOpen, setShippingListOpen] = useState(false);
@@ -349,6 +352,13 @@ export default function OrdersPage() {
               className="h-9 px-3 text-xs font-medium text-primary bg-primary/10 rounded-xl"
             >
               匯出 CSV
+            </button>
+            <button
+              onClick={() => setTrackingImportOpen(true)}
+              disabled={!storeId}
+              className="h-9 px-3 text-xs font-medium text-muted-foreground bg-secondary rounded-xl disabled:opacity-50"
+            >
+              物流匯入
             </button>
           </div>
         </div>
@@ -911,6 +921,14 @@ export default function OrdersPage() {
         onClose={() => setShippingListOpen(false)}
         data={shippingListData}
       />
+
+      <TrackingImportDialog
+        open={trackingImportOpen}
+        onClose={() => setTrackingImportOpen(false)}
+        onSuccess={() => {
+          if (storeId) qc.invalidateQueries({ queryKey: getListOrdersQueryKey(storeId) });
+        }}
+      />
     </div>
   );
 }
@@ -948,6 +966,244 @@ function DetailRow({ label, value, bold }: { label: string; value: string; bold?
     <div className="flex items-center justify-between px-3 py-2.5 gap-2">
       <span className="text-xs text-muted-foreground shrink-0">{label}</span>
       <span className={`text-sm text-right break-all ${bold ? "font-bold" : "font-medium"} text-foreground`}>{value}</span>
+    </div>
+  );
+}
+
+// ─── Tracking Import ────────────────────────────────────────────────────────
+
+interface _TrackingImportRow {
+  orderId: string;
+  trackingProvider: string;
+  trackingCode: string;
+}
+
+interface _TrackingImportError {
+  row: number;
+  orderId?: string;
+  reason: string;
+}
+
+interface _TrackingImportResponse {
+  totalRows: number;
+  successCount: number;
+  failedCount: number;
+  errors: _TrackingImportError[];
+}
+
+function parseCsvRows(raw: string): { rows: _TrackingImportRow[]; error: string | null } {
+  const lines = raw.split("\n").map((l) => l.trim()).filter((l) => l.length > 0);
+  if (lines.length === 0) return { rows: [], error: "CSV 內容不可為空" };
+
+  const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
+
+  if (headers.some((h) => h === "publictoken")) {
+    return { rows: [], error: "publicToken 不可作為匯入欄位" };
+  }
+
+  const required = ["orderid", "trackingprovider", "trackingcode"] as const;
+  const missing = required.filter((r) => !headers.includes(r));
+  if (missing.length > 0) {
+    const labelMap: Record<string, string> = {
+      orderid: "orderId",
+      trackingprovider: "trackingProvider",
+      trackingcode: "trackingCode",
+    };
+    return { rows: [], error: `缺少必要欄位：${missing.map((m) => labelMap[m]).join("、")}` };
+  }
+
+  const iIdx = headers.indexOf("orderid");
+  const pIdx = headers.indexOf("trackingprovider");
+  const cIdx = headers.indexOf("trackingcode");
+
+  const rows: _TrackingImportRow[] = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].split(",").map((c) => c.trim());
+    rows.push({
+      orderId: cols[iIdx] ?? "",
+      trackingProvider: cols[pIdx] ?? "",
+      trackingCode: cols[cIdx] ?? "",
+    });
+  }
+  return { rows, error: null };
+}
+
+function TrackingImportDialog({
+  open,
+  onClose,
+  onSuccess,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const { getToken } = useAuth();
+  const [csvText, setCsvText] = useState("");
+  const [parseError, setParseError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [result, setResult] = useState<_TrackingImportResponse | null>(null);
+
+  const handleImport = async () => {
+    setParseError(null);
+    setResult(null);
+
+    const { rows, error } = parseCsvRows(csvText);
+    if (error) { setParseError(error); return; }
+    if (rows.length === 0) { setParseError("CSV 內容不可為空"); return; }
+
+    setIsLoading(true);
+    try {
+      const token = await getToken();
+      const res = await fetch("/api/orders/tracking-import", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ rows }),
+      });
+
+      const data = await res.json().catch(() => null) as { error?: string } & Partial<_TrackingImportResponse>;
+
+      if (res.status === 422) {
+        setParseError(data?.error ?? "publicToken 不可作為匯入欄位");
+        return;
+      }
+      if (!res.ok) {
+        setParseError(data?.error ?? "匯入失敗，請稍後再試");
+        return;
+      }
+
+      const importResult = data as _TrackingImportResponse;
+      setResult(importResult);
+      if (importResult.successCount > 0) onSuccess();
+    } catch {
+      setParseError("匯入失敗，請確認網路連線後再試");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleClose = () => {
+    setCsvText("");
+    setParseError(null);
+    setResult(null);
+    onClose();
+  };
+
+  const handleReset = () => {
+    setResult(null);
+    setCsvText("");
+    setParseError(null);
+  };
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50" onClick={handleClose}>
+      <div
+        className="bg-white w-full max-w-[480px] rounded-t-2xl px-5 pt-5 pb-8 max-h-[85dvh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-base font-bold text-foreground">匯入物流號碼</h2>
+          <button type="button" onClick={handleClose} className="text-xs text-muted-foreground">關閉</button>
+        </div>
+
+        <p className="text-xs text-muted-foreground mb-1">
+          請貼上 CSV 內容，欄位需包含 <code className="text-[11px] bg-secondary px-1 rounded">orderId</code>、
+          <code className="text-[11px] bg-secondary px-1 rounded">trackingProvider</code>、
+          <code className="text-[11px] bg-secondary px-1 rounded">trackingCode</code>。
+        </p>
+        <p className="text-[11px] text-muted-foreground/70 mb-1">支援物流商：711、familymart、home_delivery、other</p>
+        <p className="text-[10px] text-muted-foreground/50 mb-3">注意：欄位中請勿包含逗號。publicToken 不可作為匯入欄位。</p>
+
+        <div className="bg-secondary/40 rounded-xl p-3 mb-3 text-[11px] font-mono text-muted-foreground whitespace-pre leading-relaxed">
+          {"orderId,trackingProvider,trackingCode\n123,711,F45913208600\n#124,familymart,FM123456789"}
+        </div>
+
+        {!result && (
+          <>
+            <textarea
+              value={csvText}
+              onChange={(e) => { setCsvText(e.target.value); setParseError(null); }}
+              placeholder="在此貼上 CSV 內容..."
+              className="w-full h-32 px-3 py-2.5 rounded-xl border border-input bg-white text-sm font-mono text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none mb-3"
+            />
+            {parseError && (
+              <p className="text-xs text-destructive mb-3">{parseError}</p>
+            )}
+            <button
+              type="button"
+              disabled={!csvText.trim() || isLoading}
+              onClick={handleImport}
+              className="w-full h-10 rounded-xl bg-primary text-white text-sm font-semibold disabled:opacity-50"
+            >
+              {isLoading ? "匯入中…" : "開始匯入"}
+            </button>
+          </>
+        )}
+
+        {result && (
+          <div className="space-y-3">
+            <div className="grid grid-cols-3 gap-2">
+              <div className="bg-secondary/40 rounded-xl p-3 text-center">
+                <div className="text-lg font-bold text-foreground">{result.totalRows}</div>
+                <div className="text-[10px] text-muted-foreground mt-0.5">總列數</div>
+              </div>
+              <div className="bg-green-50 rounded-xl p-3 text-center">
+                <div className="text-lg font-bold text-green-600">{result.successCount}</div>
+                <div className="text-[10px] text-muted-foreground mt-0.5">成功</div>
+              </div>
+              <div className={`${result.failedCount > 0 ? "bg-red-50" : "bg-secondary/40"} rounded-xl p-3 text-center`}>
+                <div className={`text-lg font-bold ${result.failedCount > 0 ? "text-destructive" : "text-foreground"}`}>
+                  {result.failedCount}
+                </div>
+                <div className="text-[10px] text-muted-foreground mt-0.5">失敗</div>
+              </div>
+            </div>
+
+            {result.errors.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground mb-2">錯誤列表</p>
+                <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                  {result.errors.map((err, i) => (
+                    <div key={i} className="bg-red-50 border border-red-100 rounded-xl px-3 py-2 text-xs">
+                      <span className="font-medium text-destructive">列 {err.row}</span>
+                      {err.orderId && <span className="text-muted-foreground ml-1">(#{err.orderId})</span>}
+                      <span className="text-foreground/80 ml-1">— {err.reason}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {result.successCount > 0 && (
+              <p className="text-[11px] text-muted-foreground/70 text-center">
+                已成功匯入 {result.successCount} 筆。訂單出貨狀態需另行更新。
+              </p>
+            )}
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={handleReset}
+                className="flex-1 h-10 rounded-xl border border-primary/40 bg-primary/5 text-sm font-medium text-primary"
+              >
+                再次匯入
+              </button>
+              <button
+                type="button"
+                onClick={handleClose}
+                className="flex-1 h-10 rounded-xl bg-primary text-white text-sm font-semibold"
+              >
+                關閉
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
