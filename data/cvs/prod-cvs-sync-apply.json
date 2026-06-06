@@ -1,0 +1,59 @@
+{
+  "generatedAt": "2026-06-06T09:53:43.001Z",
+  "mode": "apply",
+  "providerFilter": null,
+  "rowLimit": null,
+  "source": {
+    "available": true,
+    "activeTotal": 11878,
+    "providerCounts": {
+      "family:inactive": 2509,
+      "family:active": 4492,
+      "seven:inactive": 4,
+      "seven:active": 7386
+    },
+    "sourceCounts": {
+      "family:family_official_map": 4492,
+      "seven:emap_district_batch": 7347,
+      "seven:manual_seed": 2,
+      "seven:twcoupon_emap_verified": 1,
+      "seven:twcoupon_unverified": 36
+    }
+  },
+  "target": {
+    "available": true,
+    "activeTotal": 11878,
+    "providerCounts": {
+      "family:inactive": 2509,
+      "family:active": 4492,
+      "seven:inactive": 4,
+      "seven:active": 7386
+    },
+    "sourceCounts": {
+      "family:family_official_map": 4492,
+      "seven:emap_district_batch": 7347,
+      "seven:manual_seed": 2,
+      "seven:twcoupon_emap_verified": 1,
+      "seven:twcoupon_unverified": 36
+    }
+  },
+  "diff": {
+    "wouldInsert": 0,
+    "wouldUpdate": 0,
+    "wouldSkip": 0,
+    "note": "apply 模式，請查看 target 同步後統計"
+  },
+  "applyResult": {
+    "totalProcessed": 14391
+  },
+  "safety": {
+    "writesEnabled": true,
+    "tablesAllowed": [
+      "cvs_stores"
+    ],
+    "tablesTouched": [
+      "cvs_stores"
+    ]
+  },
+  "notes": []
+}
