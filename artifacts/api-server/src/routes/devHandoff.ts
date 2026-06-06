@@ -10,6 +10,14 @@ const HANDOFF_PATH = path.resolve(
   path.dirname(process.argv[1]),
   "../../../dev-handoff/latest.json"
 );
+const HANDOFF_PATH_A = path.resolve(
+  path.dirname(process.argv[1]),
+  "../../../dev-handoff/latest-A.json"
+);
+const HANDOFF_PATH_B = path.resolve(
+  path.dirname(process.argv[1]),
+  "../../../dev-handoff/latest-B.json"
+);
 
 const SECRET_PATTERNS: RegExp[] = [
   /\b(SECRET|ACCESS[_-]?KEY|SECRET[_-]?KEY|API[_-]?KEY|ACCOUNT[_-]?ID|PASSWORD|PRIVATE[_-]?KEY)\s*[=:"'`]\s*\S{4,}/gi,
@@ -40,6 +48,40 @@ function maskValue(val: unknown): unknown {
   }
   return val;
 }
+
+router.get("/dev/handoff/data/a", async (_req, res) => {
+  if (process.env.NODE_ENV === "production") {
+    return res.status(404).json({ error: "Not found" });
+  }
+  try {
+    const raw = await readFile(HANDOFF_PATH_A, "utf-8");
+    const parsed = JSON.parse(raw) as unknown;
+    return res.json(maskValue(parsed));
+  } catch (err: unknown) {
+    const fsErr = err as NodeJS.ErrnoException;
+    if (fsErr?.code === "ENOENT") {
+      return res.json({ notFound: true });
+    }
+    return res.status(500).json({ error: "Failed to read handoff file" });
+  }
+});
+
+router.get("/dev/handoff/data/b", async (_req, res) => {
+  if (process.env.NODE_ENV === "production") {
+    return res.status(404).json({ error: "Not found" });
+  }
+  try {
+    const raw = await readFile(HANDOFF_PATH_B, "utf-8");
+    const parsed = JSON.parse(raw) as unknown;
+    return res.json(maskValue(parsed));
+  } catch (err: unknown) {
+    const fsErr = err as NodeJS.ErrnoException;
+    if (fsErr?.code === "ENOENT") {
+      return res.json({ notFound: true });
+    }
+    return res.status(500).json({ error: "Failed to read handoff file" });
+  }
+});
 
 router.get("/dev/handoff/data", async (_req, res) => {
   if (process.env.NODE_ENV === "production") {
