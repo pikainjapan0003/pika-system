@@ -585,6 +585,7 @@ export default function OrdersPage() {
                                 <div className="text-sm font-semibold text-foreground">7-11 {o.storeName}</div>
                                 <div className="text-xs text-muted-foreground">{o.cvsStoreAddress}</div>
                                 <div className="text-xs text-muted-foreground/70">門市編號：{o.storeCode}</div>
+                                {o.cvsStorePhone && <div className="text-xs text-muted-foreground/70">電話：{o.cvsStorePhone}</div>}
                                 <div className="flex items-center gap-3 mt-1 pt-1 border-t border-border/40">
                                   <span className="text-xs text-muted-foreground/60">
                                     選擇來源：{o.storeSelectedBy === "admin" ? "老闆代選" : "客人選擇"}
@@ -628,6 +629,7 @@ export default function OrdersPage() {
                                 <div className="text-sm font-semibold text-foreground">全家 {o.storeName}</div>
                                 <div className="text-xs text-muted-foreground">{o.cvsStoreAddress}</div>
                                 <div className="text-xs text-muted-foreground/70">門市編號：{o.storeCode}</div>
+                                {o.cvsStorePhone && <div className="text-xs text-muted-foreground/70">電話：{o.cvsStorePhone}</div>}
                                 <div className="flex items-center gap-3 mt-1 pt-1 border-t border-border/40">
                                   <span className="text-xs text-muted-foreground/60">
                                     選擇來源：{o.storeSelectedBy === "admin" ? "老闆代選" : "客人選擇"}

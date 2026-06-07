@@ -137,7 +137,26 @@ export default function PublicOrderPage({ shareToken }: Props) {
 
   useEffect(() => {
     const stored = loadCvsStore(shareToken);
-    if (stored) setCvsStore(stored);
+    if (stored) {
+      setCvsStore(stored);
+      try {
+        const savedMethod = localStorage.getItem(`cvs711_method_${shareToken}`);
+        if (savedMethod && isStorePickupMethod(savedMethod)) {
+          setPickupMethod(savedMethod);
+        }
+      } catch {}
+    }
+    try {
+      const rawDraft = sessionStorage.getItem(`public_order_draft_${shareToken}`);
+      if (rawDraft) {
+        const draft = JSON.parse(rawDraft);
+        if (draft.buyerName) setBuyerName(draft.buyerName);
+        if (draft.buyerPhone) setBuyerPhone(draft.buyerPhone);
+        if (draft.notes) setNotes(draft.notes);
+        if (typeof draft.quantity === "number" && draft.quantity >= 1) setQuantity(draft.quantity);
+        if (draft.specValues && typeof draft.specValues === "object") setSpecValues(draft.specValues);
+      }
+    } catch {}
   }, [shareToken]);
 
   useEffect(() => {
@@ -184,6 +203,10 @@ export default function PublicOrderPage({ shareToken }: Props) {
   };
 
   const handleSelectStore = () => {
+    try {
+      localStorage.setItem(`cvs711_method_${shareToken}`, pickupMethod);
+      sessionStorage.setItem(`public_order_draft_${shareToken}`, JSON.stringify({ buyerName, buyerPhone, notes, quantity, specValues }));
+    } catch {}
     const basePath = (import.meta as any).env?.BASE_URL?.replace(/\/$/, "") ?? "";
     openCvsStoreMap({
       provider: getPickupProvider(pickupMethod),
@@ -254,7 +277,11 @@ export default function PublicOrderPage({ shareToken }: Props) {
       const order = await submitOrder.mutateAsync({ shareToken, data: body });
       setSubmittedOrder(order);
       setSubmittedCvsStore(capturedCvsStore);
-      if (needsCvsStore) clearCvsStore(shareToken);
+      if (needsCvsStore) {
+        clearCvsStore(shareToken);
+        try { localStorage.removeItem(`cvs711_method_${shareToken}`); } catch {}
+      }
+      try { sessionStorage.removeItem(`public_order_draft_${shareToken}`); } catch {}
     } catch (err: any) {
       setFormError(err?.data?.message || err?.data?.error || "下單失敗，請稍後再試");
     }
@@ -486,14 +513,14 @@ export default function PublicOrderPage({ shareToken }: Props) {
                   <button
                     type="button"
                     onClick={() => setPickupMethod(m)}
-                    className={`w-full flex items-center justify-between min-h-[96px] px-5 py-4 rounded-2xl border-2 transition-colors text-left shadow-sm ${
+                    className={`w-full flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:min-h-[96px] px-5 py-4 rounded-2xl border-2 transition-colors text-left shadow-sm ${
                       isSelected
                         ? "bg-primary/10 border-primary"
                         : "bg-white border-border hover:border-primary/40 hover:bg-primary/5"
                     }`}
                   >
-                    {/* Left: radio + logo + label */}
-                    <div className="flex items-center gap-4 min-w-0">
+                    {/* Row 1 (mobile) / Left (desktop): radio + logo + fee(mobile only) */}
+                    <div className="flex items-center gap-3 sm:gap-4 min-w-0">
                       {/* Radio circle */}
                       <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
                         isSelected ? "border-primary" : "border-muted-foreground/40"
@@ -502,12 +529,17 @@ export default function PublicOrderPage({ shareToken }: Props) {
                       </div>
                       {/* Logo / icon */}
                       <PickupMethodLogo method={m} />
-                      <span className={`text-base font-semibold leading-snug whitespace-normal ${isSelected ? "text-primary" : "text-foreground"}`}>
-                        {m}
+                      {/* Fee — mobile only */}
+                      <span className={`sm:hidden ml-auto text-sm font-semibold shrink-0 ${isSelected ? "text-primary" : "text-muted-foreground"}`}>
+                        {getShippingFeeLabel(m)}
                       </span>
                     </div>
-                    {/* Right: shipping fee */}
-                    <span className={`text-base font-semibold shrink-0 ml-3 ${isSelected ? "text-primary" : "text-muted-foreground"}`}>
+                    {/* Row 2 (mobile) / Middle (desktop): method label */}
+                    <span className={`text-sm sm:text-base font-semibold leading-snug sm:flex-1 sm:px-3 ${isSelected ? "text-primary" : "text-foreground"}`}>
+                      {m}
+                    </span>
+                    {/* Fee — desktop only */}
+                    <span className={`hidden sm:block text-base font-semibold shrink-0 ml-3 ${isSelected ? "text-primary" : "text-muted-foreground"}`}>
                       {getShippingFeeLabel(m)}
                     </span>
                   </button>
@@ -518,9 +550,15 @@ export default function PublicOrderPage({ shareToken }: Props) {
 
                       {/* 7-11 detail */}
                       {isSevenElevenMethod(m) && (
-                        <div className="bg-white border border-border rounded-2xl px-4 py-3 space-y-2">
+                        <div className={`rounded-2xl px-4 py-3 space-y-2 border ${cvsStore ? "bg-green-50/30 border-green-200" : "bg-white border-border"}`}>
                           {cvsStore ? (
                             <>
+                              <div className="flex items-center gap-1.5">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5 text-green-600 shrink-0">
+                                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" />
+                                </svg>
+                                <span className="text-xs font-semibold text-green-700">已選取門市</span>
+                              </div>
                               <div className="flex items-start justify-between gap-2">
                                 <span className="text-sm font-semibold text-foreground">{cvsStore.storeName}</span>
                                 <button
@@ -533,6 +571,9 @@ export default function PublicOrderPage({ shareToken }: Props) {
                               </div>
                               <div className="text-xs text-muted-foreground">{cvsStore.storeAddress || "地址未回傳"}</div>
                               <div className="text-xs text-muted-foreground/70">門市編號：{cvsStore.storeId}</div>
+                              {cvsStore.storePhone && (
+                                <div className="text-xs text-muted-foreground/70">電話：{cvsStore.storePhone}</div>
+                              )}
                               {!cvsStore.storeAddress && (
                                 <div className="text-xs text-amber-600">地址資料未完整回傳，請確認門市資訊</div>
                               )}
@@ -559,9 +600,15 @@ export default function PublicOrderPage({ shareToken }: Props) {
 
                       {/* 全家 detail */}
                       {isFamilyMartMethod(m) && (
-                        <div className="bg-white border border-border rounded-2xl px-4 py-3 space-y-2">
+                        <div className={`rounded-2xl px-4 py-3 space-y-2 border ${cvsStore ? "bg-green-50/30 border-green-200" : "bg-white border-border"}`}>
                           {cvsStore ? (
                             <>
+                              <div className="flex items-center gap-1.5">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5 text-green-600 shrink-0">
+                                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" />
+                                </svg>
+                                <span className="text-xs font-semibold text-green-700">已選取門市</span>
+                              </div>
                               <div className="flex items-start justify-between gap-2">
                                 <span className="text-sm font-semibold text-foreground">{cvsStore.storeName}</span>
                                 <button
@@ -574,6 +621,9 @@ export default function PublicOrderPage({ shareToken }: Props) {
                               </div>
                               <div className="text-xs text-muted-foreground">{cvsStore.storeAddress || "地址未回傳"}</div>
                               <div className="text-xs text-muted-foreground/70">門市編號：{cvsStore.storeId}</div>
+                              {cvsStore.storePhone && (
+                                <div className="text-xs text-muted-foreground/70">電話：{cvsStore.storePhone}</div>
+                              )}
                               {!cvsStore.storeAddress && (
                                 <div className="text-xs text-amber-600">地址資料未完整回傳，請確認門市資訊</div>
                               )}
