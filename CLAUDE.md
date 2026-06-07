@@ -196,6 +196,75 @@ ChatGPT 給指令
 
 ---
 
+## Claude A / Claude B Worker 身份判定規則
+
+本專案使用 Fixed Latest File Mode 時，Claude 的 worker 身份以「本次任務提示詞」為最高優先級。
+
+如果本次任務提示詞明確寫：
+
+- 「你是 Claude A」或「worker = claude-a」
+  - 本次 worker 必須視為 `claude-a`
+  - 本次只能更新：
+    - `dev-handoff/latest-A.json`
+    - `dev-handoff/latest-A.md`
+
+- 「你是 Claude B」或「worker = claude-b」
+  - 本次 worker 必須視為 `claude-b`
+  - 本次只能更新：
+    - `dev-handoff/latest-B.json`
+    - `dev-handoff/latest-B.md`
+
+不得用以下任何資訊覆蓋本次任務提示詞指定的 worker 身份：
+
+- 上一輪任務使用的 worker
+- 歷史 handoff 內容
+- `dev-handoff/latest-A.json` 或 `dev-handoff/latest-B.json` 的既有內容
+- 目前 Git 分支名稱
+- 目前對話習慣
+- Claude 自我推定
+- 舊的 CLAUDE.md 記憶
+- 任務是否由同一個模型或同一個視窗執行
+
+Claude A / Claude B 是「本次任務指定的工作線」，不是固定人格或永久身份。
+
+同一個 Claude 執行環境，今天可以被使用者指定為 Claude A，明天也可以被使用者指定為 Claude B。
+
+如果本次任務提示詞沒有明確指定 Claude A 或 Claude B，必須停止並詢問使用者，不得自行推定 worker 身份。
+
+### 禁止跨 worker 修改 handoff
+
+- worker = `claude-a` 時，不得修改：
+  - `dev-handoff/latest-B.json`
+  - `dev-handoff/latest-B.md`
+
+- worker = `claude-b` 時，不得修改：
+  - `dev-handoff/latest-A.json`
+  - `dev-handoff/latest-A.md`
+
+- 任何 worker 都不得自行更新：
+  - `dev-handoff/latest.json`
+
+除非使用者明確提出「整合 handoff」或「更新 latest.json」任務。
+
+---
+
+## Dev Handoff Relay 顯示原則
+
+Dev Handoff Relay 應分線顯示 A / B 狀態：
+
+- Claude A 區塊固定讀取 `dev-handoff/latest-A.json`
+- Claude B 區塊固定讀取 `dev-handoff/latest-B.json`
+
+Relay 不應自動把 A / B 合併成單一「最新 handoff」狀態。
+Relay 不應用 `updatedAt` 較新的 handoff 覆蓋另一條工作線。
+Relay 不應依賴 `dev-handoff/latest.json` 作為 A/B 工作線的唯一狀態來源。
+
+A blocked 就讓 A 顯示 blocked。
+B completed 就讓 B 顯示 completed。
+A / B 是並行工作線，不是排行榜。
+
+---
+
 ## Git 規範
 
 - 每次 commit 前確認 `.claude/` 未被 stage
