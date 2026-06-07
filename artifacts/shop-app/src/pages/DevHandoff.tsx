@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useLocation } from "wouter";
 
 const IS_PROD = import.meta.env.PROD;
@@ -223,7 +223,7 @@ function WorkerCard({
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/dev/handoff/data/${worker}`);
+      const res = await fetch(`/api/dev/handoff/data/${worker}?t=${Date.now()}`);
       if (!res.ok) {
         setError(`API returned ${res.status}`);
         return;
@@ -368,6 +368,203 @@ function WorkerCard({
               <Section title="風險" content={data.risks} />
             ) : null}
             {data.pendingQuestions && data.pendingQuestions.length > 0 ? (
+              <Section title="待確認問題" content={data.pendingQuestions} />
+            ) : null}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Latest handoff card (auto-selects A or B by updatedAt) ─────────────────
+
+function LatestHandoffCard() {
+  const [data, setData] = useState<HandoffDataV2 | null>(null);
+  const [chosenFile, setChosenFile] = useState<string | null>(null);
+  const [warnings, setWarnings] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const { copiedKey, copy } = useCopy();
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setFetchError(null);
+    try {
+      const ts = Date.now();
+      const [resA, resB] = await Promise.allSettled([
+        fetch(`/api/dev/handoff/data/a?t=${ts}`).then(async (r) => {
+          if (!r.ok) throw new Error(`latest-A.json: API ${r.status}`);
+          return r.json() as Promise<HandoffDataV2>;
+        }),
+        fetch(`/api/dev/handoff/data/b?t=${ts}`).then(async (r) => {
+          if (!r.ok) throw new Error(`latest-B.json: API ${r.status}`);
+          return r.json() as Promise<HandoffDataV2>;
+        }),
+      ]);
+
+      const errs: string[] = [];
+      const entries: Array<{ data: HandoffDataV2; file: string; ms: number }> = [];
+
+      if (resA.status === "fulfilled" && !resA.value.notFound) {
+        const d = resA.value;
+        entries.push({
+          data: d,
+          file: "dev-handoff/latest-A.json",
+          ms: d.updatedAt ? new Date(d.updatedAt).getTime() : 0,
+        });
+      } else if (resA.status === "rejected") {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        errs.push(String((resA.reason as any)?.message ?? "latest-A.json 讀取失敗"));
+      }
+
+      if (resB.status === "fulfilled" && !resB.value.notFound) {
+        const d = resB.value;
+        entries.push({
+          data: d,
+          file: "dev-handoff/latest-B.json",
+          ms: d.updatedAt ? new Date(d.updatedAt).getTime() : 0,
+        });
+      } else if (resB.status === "rejected") {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        errs.push(String((resB.reason as any)?.message ?? "latest-B.json 讀取失敗"));
+      }
+
+      setWarnings(errs);
+
+      if (entries.length === 0) {
+        setData(null);
+        setChosenFile(null);
+        return;
+      }
+
+      // Newest updatedAt wins; ties → prefer A (index 0 stays first)
+      entries.sort((a, b) => b.ms - a.ms);
+      const chosen = entries[0];
+      setData(chosen.data);
+      setChosenFile(chosen.file);
+    } catch {
+      setFetchError("無法連線到 API server，請確認 pnpm dev 已啟動");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const hasData = data !== null;
+  const workerLabel =
+    data?.worker === "claude-a" ? "Claude A" :
+    data?.worker === "claude-b" ? "Claude B" :
+    "Latest";
+  const copyPayload = hasData ? buildV2CopyPayload(workerLabel, data) : "";
+  const rawLen = data?.rawReply?.length ?? 0;
+
+  return (
+    <div className="bg-white rounded-2xl border-2 border-primary/40 overflow-hidden">
+      <div className="px-5 py-4 border-b border-border bg-primary/5">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-primary text-primary-foreground flex-shrink-0">
+                最新 Handoff
+              </span>
+              {hasData && data.worker && (
+                <span className="text-xs font-medium text-foreground">{data.worker}</span>
+              )}
+              {hasData && data.status && (
+                <span className={`text-xs font-medium ${
+                  data.status === "completed" ? "text-green-600" : "text-yellow-600"
+                }`}>
+                  {data.status}
+                </span>
+              )}
+            </div>
+            {chosenFile && (
+              <p className="text-xs text-muted-foreground mt-1">
+                <code className="bg-secondary px-1 rounded">{chosenFile}</code>
+              </p>
+            )}
+            {hasData && data.updatedAt && (
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {new Date(data.updatedAt).toLocaleString("zh-TW")}
+              </p>
+            )}
+            {hasData && data.taskTitle && (
+              <p className="text-xs text-foreground font-medium mt-1 truncate">{data.taskTitle}</p>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={load}
+            disabled={loading}
+            className="h-8 px-3 text-xs font-medium bg-secondary text-foreground rounded-xl disabled:opacity-50 flex-shrink-0"
+          >
+            {loading ? "載入中..." : "重新載入"}
+          </button>
+        </div>
+      </div>
+
+      <div className="px-5 py-4 space-y-3">
+        {fetchError && (
+          <div className="bg-destructive/10 text-destructive text-sm px-4 py-3 rounded-xl">
+            {fetchError}
+          </div>
+        )}
+        {warnings.length > 0 && (
+          <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 text-xs px-4 py-2 rounded-xl space-y-0.5">
+            {warnings.map((w, i) => (
+              <p key={i}>{w}</p>
+            ))}
+          </div>
+        )}
+        {loading && (
+          <p className="text-sm text-muted-foreground text-center py-4">載入中...</p>
+        )}
+        {!loading && !hasData && !fetchError && (
+          <p className="text-sm text-muted-foreground text-center py-4">
+            {warnings.length > 0 ? "A/B 皆不可用" : "尚無任何 handoff 資料"}
+          </p>
+        )}
+        {hasData && (
+          <>
+            <button
+              type="button"
+              onClick={() => copy("latest-copy", copyPayload)}
+              disabled={!copyPayload.trim()}
+              className="w-full h-11 text-sm font-semibold rounded-xl bg-primary text-primary-foreground disabled:opacity-40"
+            >
+              {copiedKey === "latest-copy"
+                ? `✓ 已複製 ${workerLabel} 給 Codex`
+                : `複製 ${workerLabel} 給 Codex`}
+            </button>
+            {data.rawReply !== undefined && (
+              <div className={`rounded-xl px-3 py-2 text-xs ${
+                rawLen > 0
+                  ? "bg-green-50 border border-green-200 text-green-800"
+                  : "bg-yellow-50 border border-yellow-200 text-yellow-800"
+              }`}>
+                rawReply：{rawLen > 0 ? `${rawLen} chars` : "⚠ 空"}
+              </div>
+            )}
+            {data.rawReply ? (
+              <Section title={`完整回覆 (rawReply) — ${rawLen} 字`} content={data.rawReply} />
+            ) : null}
+            {data.summary?.length ? (
+              <Section title="變更摘要" content={data.summary} />
+            ) : null}
+            {data.modifiedFiles?.length ? (
+              <Section title="修改檔案" content={data.modifiedFiles} />
+            ) : null}
+            {data.testsRun?.length ? (
+              <Section title="已執行測試" content={data.testsRun} />
+            ) : null}
+            {data.risks?.length ? (
+              <Section title="風險" content={data.risks} />
+            ) : null}
+            {data.pendingQuestions?.length ? (
               <Section title="待確認問題" content={data.pendingQuestions} />
             ) : null}
           </>
@@ -672,6 +869,7 @@ function DevHandoffInner() {
       </header>
 
       <div className="px-5 py-5 space-y-4">
+        <LatestHandoffCard />
         <WorkerCard
           label="Claude A"
           worker="a"
