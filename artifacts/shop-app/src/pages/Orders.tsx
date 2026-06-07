@@ -3,8 +3,19 @@ import { useAuth } from "@clerk/react";
 import { useGetMyStore, useListOrders, useUpdateOrderStatus, useBulkUpdateOrders, useGetPickingList, useGetShippingList, getListOrdersQueryKey, type Order, type PickingListResponse, type ShippingListResponse } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { BottomNav } from "./Dashboard";
-import { STATUS_LABELS, STATUS_COLORS, ALL_STATUSES, VALID_NEXT_STATUSES } from "../lib/orderStatus";
+import { STATUS_LABELS, STATUS_COLORS, ALL_STATUSES, STATUS_STEPS, VALID_NEXT_STATUSES } from "../lib/orderStatus";
 import { isSevenElevenMethod, isFamilyMartMethod, openSevenElevenMap, openCvsStoreMap } from "@/lib/cvs711";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
+import { buttonVariants } from "@/components/ui/button";
 
 const DEPRECATED_METHODS: Record<string, string> = {
   "OK Mart": "OK Mart",
@@ -83,6 +94,13 @@ export default function OrdersPage() {
   const [statusErrors, setStatusErrors] = useState<Record<number, string>>({});
   const [loadingOrderId, setLoadingOrderId] = useState<number | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  // Step 8E: App 內狀態操作確認彈窗（取代 window.confirm）
+  const [statusConfirm, setStatusConfirm] = useState<{
+    orderId: number;
+    fromStatus: string;
+    toStatus: string;
+    kind: "cancel" | "restore";
+  } | null>(null);
   const [showAddOrder, setShowAddOrder] = useState(false);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
 
@@ -147,6 +165,14 @@ export default function OrdersPage() {
     } finally {
       setLoadingOrderId(null);
     }
+  };
+
+  // Step 8E: 確認彈窗按下「確認」後才真正呼叫既有 handleStatusChange / API
+  const handleConfirmStatusChange = () => {
+    if (!statusConfirm) return;
+    const { orderId, toStatus } = statusConfirm;
+    setStatusConfirm(null);
+    handleStatusChange(orderId, toStatus);
   };
 
   const copyToClipboard = (text: string, key: string) => {
@@ -735,35 +761,71 @@ export default function OrdersPage() {
                           {copiedKey === `${o.id}-link` ? "已複製追蹤連結" : "複製追蹤連結"}
                         </button>
 
-                        {/* 更新狀態 */}
-                        {(VALID_NEXT_STATUSES[o.status]?.length ?? 0) > 0 ? (
-                          <div>
-                            <SectionLabel>更新狀態</SectionLabel>
-                            <div className="flex flex-wrap gap-2">
-                              {VALID_NEXT_STATUSES[o.status]?.map((s) => (
-                                <button
-                                  key={s}
-                                  type="button"
-                                  disabled={loadingOrderId === o.id}
-                                  onClick={() => handleStatusChange(o.id, s)}
-                                  className={`h-9 px-4 rounded-xl text-sm font-medium border transition-colors disabled:opacity-60 ${STATUS_COLORS[s] ? `border-transparent ${STATUS_COLORS[s]}` : "border-input bg-white text-foreground"}`}
-                                >
-                                  {loadingOrderId === o.id ? "更新中..." : STATUS_LABELS[s]}
-                                </button>
-                              ))}
-                            </div>
-                            {statusErrors[o.id] && (
-                              <p className="text-xs text-destructive mt-1.5">{statusErrors[o.id]}</p>
-                            )}
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[o.status] ?? "bg-gray-100 text-gray-600"}`}>
-                              {STATUS_LABELS[o.status] ?? o.status}
-                            </span>
-                            <span className="text-xs text-muted-foreground">此訂單已結束，無法更新狀態</span>
-                          </div>
-                        )}
+                        {/* 更新狀態 / 危險操作 */}
+                        {(() => {
+                          const nextStatuses = VALID_NEXT_STATUSES[o.status] ?? [];
+                          const hasCancelOption = nextStatuses.includes("cancelled");
+                          // Step 8C: completed / cancelled 不再是死路，老闆可手動復原成其他狀態，
+                          // 但因為這類變更會「復原一筆已結束的訂單」，需要額外二次確認。
+                          const isRestoringFromTerminal = o.status === "completed" || o.status === "cancelled";
+                          const handleNormalStatusClick = (s: string) => {
+                            if (s === o.status) return;
+                            if (isRestoringFromTerminal) {
+                              setStatusConfirm({ orderId: o.id, fromStatus: o.status, toStatus: s, kind: "restore" });
+                              return;
+                            }
+                            handleStatusChange(o.id, s);
+                          };
+                          return (
+                            <>
+                              <div>
+                                <SectionLabel>更新狀態</SectionLabel>
+                                {isRestoringFromTerminal && (
+                                  <p className="text-xs text-muted-foreground mb-1.5">
+                                    此訂單目前已結束（{STATUS_LABELS[o.status] ?? o.status}），選擇以下狀態將會復原並變更此訂單。
+                                  </p>
+                                )}
+                                <div className="flex flex-wrap gap-2">
+                                  {STATUS_STEPS.map((s) => {
+                                    const isCurrent = s === o.status;
+                                    return (
+                                      <button
+                                        key={s}
+                                        type="button"
+                                        disabled={isCurrent || loadingOrderId === o.id}
+                                        aria-current={isCurrent ? "true" : undefined}
+                                        onClick={() => handleNormalStatusClick(s)}
+                                        className={`h-9 px-4 rounded-xl text-sm font-medium border transition-colors ${
+                                          isCurrent
+                                            ? "border-primary bg-primary/10 text-primary cursor-default disabled:opacity-100"
+                                            : `${STATUS_COLORS[s] ? `border-transparent ${STATUS_COLORS[s]}` : "border-input bg-white text-foreground"} disabled:opacity-60`
+                                        }`}
+                                      >
+                                        {!isCurrent && loadingOrderId === o.id ? "更新中..." : STATUS_LABELS[s]}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                              {hasCancelOption && (
+                                <div className="border border-red-200 rounded-xl px-3 py-3 bg-red-50/40">
+                                  <SectionLabel>危險操作</SectionLabel>
+                                  <button
+                                    type="button"
+                                    disabled={loadingOrderId === o.id}
+                                    onClick={() => setStatusConfirm({ orderId: o.id, fromStatus: o.status, toStatus: "cancelled", kind: "cancel" })}
+                                    className="h-9 px-4 rounded-xl text-sm font-medium border border-red-300 bg-white text-red-600 hover:bg-red-50 transition-colors disabled:opacity-60"
+                                  >
+                                    {loadingOrderId === o.id ? "更新中..." : "取消訂單"}
+                                  </button>
+                                </div>
+                              )}
+                              {statusErrors[o.id] && (
+                                <p className="text-xs text-destructive mt-0.5">{statusErrors[o.id]}</p>
+                              )}
+                            </>
+                          );
+                        })()}
                       </div>
                     )}
                   </div>
@@ -913,6 +975,37 @@ export default function OrdersPage() {
         onClose={() => setShippingListOpen(false)}
         data={shippingListData}
       />
+
+      {/* Step 8E: 狀態操作確認彈窗（取代 window.confirm，App 內樣式，手機可用） */}
+      <AlertDialog
+        open={!!statusConfirm}
+        onOpenChange={(open) => { if (!open) setStatusConfirm(null); }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {statusConfirm?.kind === "cancel" ? "取消訂單" : "復原訂單狀態"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {statusConfirm?.kind === "cancel"
+                ? "確定要取消這筆訂單嗎？取消後仍可由後台重新改回其他狀態，但此操作可能影響後續處理。"
+                : statusConfirm
+                ? `此訂單目前為「${STATUS_LABELS[statusConfirm.fromStatus] ?? statusConfirm.fromStatus}」，確定要改回「${STATUS_LABELS[statusConfirm.toStatus] ?? statusConfirm.toStatus}」嗎？這會復原一筆已結束的訂單。`
+                : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setStatusConfirm(null)}>先不要</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmStatusChange}
+              disabled={!!statusConfirm && loadingOrderId === statusConfirm.orderId}
+              className={statusConfirm?.kind === "cancel" ? buttonVariants({ variant: "destructive" }) : undefined}
+            >
+              {statusConfirm?.kind === "cancel" ? "確認取消" : "確認變更"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

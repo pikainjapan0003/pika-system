@@ -1462,3 +1462,83 @@ describe('Step 6D-Fix: storeSelectedAt dirty tracking', () => {
     );
   });
 });
+
+// ─────────────────────────────────────────────────────────────
+// 11. Step 8C: every order status is manually switchable (no dead ends)
+// ─────────────────────────────────────────────────────────────
+describe('Step 8C: order status transitions are no longer one-way', () => {
+  async function makeOrder(status) {
+    const [order] = await db
+      .insert(ordersTable)
+      .values({
+        productId: testProductId,
+        storeId: testStoreId,
+        productName: '__test_product__',
+        publicToken: `tok-8c-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        buyerName: 'Step8C Buyer',
+        buyerPhone: '0922222222',
+        pickupMethod: 'pickup',
+        quantity: 1,
+        unitPrice: '100.00',
+        totalPrice: '100.00',
+        status,
+        specValues: {},
+      })
+      .returning();
+    return order.id;
+  }
+
+  test('200 — cancelled order can be restored to pending', async () => {
+    const orderId = await makeOrder('cancelled');
+    const { status, data } = await req('PATCH', `/orders/${orderId}/status`, {
+      status: 'pending',
+    });
+    assert.strictEqual(status, 200);
+    assert.strictEqual(data.status, 'pending');
+  });
+
+  test('200 — completed order can be restored to pending', async () => {
+    const orderId = await makeOrder('completed');
+    const { status, data } = await req('PATCH', `/orders/${orderId}/status`, {
+      status: 'pending',
+    });
+    assert.strictEqual(status, 200);
+    assert.strictEqual(data.status, 'pending');
+  });
+
+  test('200 — completed order can be switched to cancelled', async () => {
+    const orderId = await makeOrder('completed');
+    const { status, data } = await req('PATCH', `/orders/${orderId}/status`, {
+      status: 'cancelled',
+    });
+    assert.strictEqual(status, 200);
+    assert.strictEqual(data.status, 'cancelled');
+  });
+
+  test('200 — pending order can still move forward to awaiting_payment', async () => {
+    const orderId = await makeOrder('pending');
+    const { status, data } = await req('PATCH', `/orders/${orderId}/status`, {
+      status: 'awaiting_payment',
+    });
+    assert.strictEqual(status, 200);
+    assert.strictEqual(data.status, 'awaiting_payment');
+  });
+
+  test('400 — invalid status string is still rejected by schema validation', async () => {
+    const orderId = await makeOrder('pending');
+    const { status, data } = await req('PATCH', `/orders/${orderId}/status`, {
+      status: 'not_a_real_status',
+    });
+    assert.strictEqual(status, 400);
+    assert.ok(data.error, 'should return error message');
+  });
+
+  test('422 — setting status to its current value is rejected', async () => {
+    const orderId = await makeOrder('pending');
+    const { status, data } = await req('PATCH', `/orders/${orderId}/status`, {
+      status: 'pending',
+    });
+    assert.strictEqual(status, 422);
+    assert.ok(data.error, 'should return error message');
+  });
+});

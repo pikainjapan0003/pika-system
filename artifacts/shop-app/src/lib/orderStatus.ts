@@ -27,12 +27,9 @@ export const STATUS_STEPS = [
   "completed",
 ] as const;
 
-// Valid next states per current state — mirrors backend orderStatusMachine.ts
-export const VALID_NEXT_STATUSES: Record<string, string[]> = {
-  pending: ["awaiting_payment", "cancelled"],
-  awaiting_payment: ["preparing", "cancelled"],
-  preparing: ["shipped", "cancelled"],
-  shipped: ["completed", "cancelled"],
-  completed: [],
-  cancelled: [],
-};
+// Admin override: every status can be manually switched to any other status
+// — mirrors backend orderStatusMachine.ts (Step 8C: terminal states are no
+// longer dead ends; admins can restore completed/cancelled orders).
+export const VALID_NEXT_STATUSES: Record<string, string[]> = Object.fromEntries(
+  ALL_STATUSES.map((s) => [s, ALL_STATUSES.filter((other) => other !== s)])
+);
