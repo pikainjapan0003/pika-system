@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, integer, jsonb, index } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, integer, jsonb, index, unique } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { shipmentTrackingsTable } from "./shipmentTrackings.ts";
@@ -28,10 +28,14 @@ export const shipmentTrackingEventsTable = pgTable("shipment_tracking_events", {
   occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull(),
   // 原始資料保留
   rawData: jsonb("raw_data"),               // 業者 API 原始回傳
+  // Step 7D Agent Write API 應用層防重複寫入用；nullable，非 Agent 來源可不提供
+  idempotencyKey: text("idempotency_key"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
   index("shipment_tracking_events_tracking_id_idx").on(t.shipmentTrackingId),
   index("shipment_tracking_events_occurred_at_idx").on(t.occurredAt),
+  // PostgreSQL 的 unique constraint 對 NULL 值不做唯一性檢查，允許同一 shipmentTrackingId 下有多筆 idempotencyKey = NULL 的事件
+  unique("shipment_tracking_events_tracking_id_idempotency_key_unique").on(t.shipmentTrackingId, t.idempotencyKey),
 ]);
 
 export const insertShipmentTrackingEventSchema = createInsertSchema(shipmentTrackingEventsTable).omit({ id: true, createdAt: true });
