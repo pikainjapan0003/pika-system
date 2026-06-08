@@ -51,6 +51,8 @@ export const ordersTable = pgTable("orders", {
   trackingProvider: text("tracking_provider"),
   shippingNote: text("shipping_note"),
   internalNote: text("internal_note"),
+  discountAmount: integer("discount_amount").notNull().default(0),
+  discountNote: text("discount_note"),
   // CVS store fields (7-11, FamilyMart, etc.) — DB cols cvsStoreId/cvsStoreName map to API storeCode/storeName
   cvsStoreId: text("cvs_store_id"),
   cvsStoreName: text("cvs_store_name"),
