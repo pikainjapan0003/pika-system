@@ -8,6 +8,7 @@ import publicRouter from "./public";
 import uploadRouter from "./upload";
 import devHandoffRouter from "./devHandoff";
 import cvsRouter from "./cvs";
+import agentRouter from "./agent";
 
 const router: IRouter = Router();
 
@@ -19,6 +20,7 @@ router.use(categoriesRouter);
 router.use(ordersRouter);
 router.use(cvsRouter);
 router.use(uploadRouter);
+router.use("/internal/agent", agentRouter);
 if (process.env.NODE_ENV !== "production") {
   router.use(devHandoffRouter);
 }
