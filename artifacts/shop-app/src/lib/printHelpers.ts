@@ -1,4 +1,4 @@
-import type { PickingListResponse, ShippingListResponse, ShippingListOrder } from "@workspace/api-client-react";
+import type { Order, PickingListResponse, ShippingListResponse, ShippingListOrder } from "@workspace/api-client-react";
 
 function esc(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -192,4 +192,120 @@ ${excludedHtml}
 ${ordersHtml}`;
 
   openPrint(htmlDoc("出貨單", body));
+}
+
+const ORDER_STATUS_RECEIPT_LABELS: Record<string, string> = {
+  pending: "待確認",
+  confirmed: "已確認",
+  preparing: "備貨中",
+  shipped: "已出貨",
+  arrived: "已到貨",
+  completed: "已完成",
+  cancelled: "已取消",
+};
+
+function formatCurrency(value: number): string {
+  return `NT$ ${Number(value).toLocaleString()}`;
+}
+
+export function printOrderReceipt(order: Order): void {
+  const now = new Date().toLocaleString("zh-TW");
+
+  const productSubtotal = Number(order.totalPrice ?? 0);
+  const shippingFee = Number(order.shippingFee ?? 0);
+  const discountAmount = Number(order.discountAmount ?? 0);
+  const orderTotal = order.orderTotal ?? (productSubtotal + shippingFee);
+  const paidAmount = Number(order.paidAmount ?? 0);
+  const remainingAmount = order.remainingAmount ?? Math.max(orderTotal - paidAmount, 0);
+
+  const paymentStatusText = order.paymentStatus
+    ? (PAYMENT_STATUS_LABELS[order.paymentStatus] ?? order.paymentStatus)
+    : null;
+
+  const shippingMethodText = order.shippingMethod
+    ? (SHIPPING_METHOD_LABELS[order.shippingMethod] ?? order.shippingMethod)
+    : null;
+
+  const specText =
+    order.specValues && Object.keys(order.specValues).length > 0
+      ? Object.entries(order.specValues)
+          .map(([k, v]) => `${esc(k)}: ${esc(String(v))}`)
+          .join("、")
+      : null;
+
+  const discountRow =
+    discountAmount > 0
+      ? `<tr><td style="color:#555;padding:4px 0">折讓</td><td style="text-align:right;padding:4px 0;color:#e11d48">-${formatCurrency(discountAmount)}</td></tr>`
+      : "";
+
+  const discountNoteRow =
+    (order.discountNote ?? "").trim()
+      ? `<tr><td style="color:#555;padding:4px 0">折讓備註</td><td style="text-align:right;padding:4px 0">${esc((order.discountNote ?? "").trim())}</td></tr>`
+      : "";
+
+  const storeRows = [
+    order.storeName ? `<div class="row"><span class="row-label">超商店名</span><span class="row-value">${esc(order.storeName)}</span></div>` : "",
+    order.storeCode ? `<div class="row"><span class="row-label">超商店號</span><span class="row-value">${esc(order.storeCode)}</span></div>` : "",
+    order.cvsStoreAddress ? `<div class="row"><span class="row-label">門市地址</span><span class="row-value">${esc(order.cvsStoreAddress)}</span></div>` : "",
+  ].filter(Boolean).join("");
+
+  const notesHtml = (order.notes ?? "").trim()
+    ? `<div style="border-top:1px dashed #d1d5db;margin-top:12px;padding-top:10px">
+  <div style="font-size:11px;color:#555;margin-bottom:4px">訂單備註</div>
+  <div style="font-size:11px">${esc((order.notes ?? "").trim())}</div>
+</div>`
+    : "";
+
+  const body = `
+<div style="text-align:center;border-bottom:2px solid #fb7185;padding-bottom:12px;margin-bottom:16px">
+  <div style="font-size:22px;font-weight:bold;color:#fb7185">PickBee 代購蜂</div>
+  <div style="font-size:16px;font-weight:600;margin-top:4px">銷貨單</div>
+  <div style="font-size:11px;color:#777;margin-top:4px">列印時間：${esc(now)}</div>
+</div>
+
+<div class="card">
+  <div style="font-weight:700;font-size:12px;margin-bottom:6px;color:#555">訂單資訊</div>
+  <div class="row"><span class="row-label">訂單編號</span><span class="row-value">#${order.id}</span></div>
+  <div class="row"><span class="row-label">客戶名稱</span><span class="row-value">${esc(order.buyerName)}</span></div>
+  <div class="row"><span class="row-label">客戶電話</span><span class="row-value">${esc(order.buyerPhone)}</span></div>
+  <div class="row"><span class="row-label">訂單狀態</span><span class="row-value">${esc(ORDER_STATUS_RECEIPT_LABELS[order.status] ?? order.status)}</span></div>
+  ${paymentStatusText ? `<div class="row"><span class="row-label">付款狀態</span><span class="row-value">${esc(paymentStatusText)}</span></div>` : ""}
+  ${shippingMethodText ? `<div class="row"><span class="row-label">物流方式</span><span class="row-value">${esc(shippingMethodText)}</span></div>` : ""}
+  ${storeRows}
+</div>
+
+<div class="card">
+  <div style="font-weight:700;font-size:12px;margin-bottom:6px;color:#555">商品明細</div>
+  <div class="row"><span class="row-label">商品名稱</span><span class="row-value">${esc(order.productName ?? "（未設定）")}</span></div>
+  ${specText ? `<div class="row"><span class="row-label">規格</span><span class="row-value">${specText}</span></div>` : ""}
+  <div class="row"><span class="row-label">數量</span><span class="row-value">× ${order.quantity}</span></div>
+  ${order.unitPrice != null ? `<div class="row"><span class="row-label">單價</span><span class="row-value">${formatCurrency(Number(order.unitPrice))}</span></div>` : ""}
+  <div class="row"><span class="row-label">商品小計</span><span class="row-value" style="font-weight:700">${formatCurrency(productSubtotal)}</span></div>
+</div>
+
+<div class="card">
+  <div style="font-weight:700;font-size:12px;margin-bottom:6px;color:#555">金額明細</div>
+  <table style="width:100%;border-collapse:collapse;font-size:12px">
+    <tr><td style="color:#555;padding:4px 0">商品小計</td><td style="text-align:right;padding:4px 0">${formatCurrency(productSubtotal)}</td></tr>
+    <tr><td style="color:#555;padding:4px 0">運費</td><td style="text-align:right;padding:4px 0">${formatCurrency(shippingFee)}</td></tr>
+    ${discountRow}
+    ${discountNoteRow}
+    <tr style="border-top:1px solid #d1d5db">
+      <td style="padding:6px 0;font-weight:700">訂單總額</td>
+      <td style="text-align:right;padding:6px 0;font-weight:700;font-size:14px;color:#fb7185">${formatCurrency(orderTotal)}</td>
+    </tr>
+    <tr><td style="color:#555;padding:4px 0">已收金額</td><td style="text-align:right;padding:4px 0">${formatCurrency(paidAmount)}</td></tr>
+    <tr>
+      <td style="padding:4px 0;font-weight:600">待收金額</td>
+      <td style="text-align:right;padding:4px 0;font-weight:600;color:#e11d48">${formatCurrency(remainingAmount)}</td>
+    </tr>
+  </table>
+  ${notesHtml}
+</div>
+
+<div style="text-align:center;font-size:10px;color:#999;margin-top:20px;padding-top:10px;border-top:1px solid #e5e7eb">
+  本銷貨單由 PickBee 代購蜂管理系統產生
+</div>`;
+
+  openPrint(htmlDoc("銷貨單 — PickBee 代購蜂", body));
 }

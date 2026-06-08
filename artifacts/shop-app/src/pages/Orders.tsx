@@ -79,6 +79,7 @@ import { EditOrderDialog } from "./EditOrderDialog";
 import { PickingListDialog } from "./PickingListDialog";
 import { ShippingListDialog } from "./ShippingListDialog";
 import { toast } from "@/hooks/use-toast";
+import { printOrderReceipt } from "../lib/printHelpers";
 
 export default function OrdersPage() {
   const qc = useQueryClient();
@@ -147,7 +148,7 @@ export default function OrdersPage() {
   const sortedFiltered = [...searched].reverse();
 
   // Stats (computed from all orders, ignoring current filter)
-  const totalRevenue = allOrders.reduce((sum, o) => sum + Number(o.totalPrice), 0);
+  const totalRevenue = allOrders.reduce((sum, o) => sum + Number(o.orderTotal ?? (Number(o.totalPrice) + Number(o.shippingFee ?? 0))), 0);
   const pendingCount = allOrders.filter((o) => o.status === "pending").length;
 
   const handleStatusChange = async (orderId: number, status: string) => {
@@ -456,7 +457,7 @@ export default function OrdersPage() {
                           </div>
                           <span className="text-sm font-bold text-primary tracking-wide">#{o.id}</span>
                         </div>
-                        <span className="text-xl font-bold text-primary">NT${Number(o.totalPrice).toLocaleString()}</span>
+                        <span className="text-xl font-bold text-primary">NT${Number(o.orderTotal ?? (Number(o.totalPrice) + Number(o.shippingFee ?? 0))).toLocaleString()}</span>
                       </div>
                       {/* Row 2: Buyer name (left) + date (right) */}
                       <div className="flex items-center justify-between gap-2 mb-2">
@@ -768,6 +769,15 @@ export default function OrdersPage() {
                           className="w-full h-9 rounded-xl border border-border bg-white text-xs font-medium text-foreground"
                         >
                           {copiedKey === `${o.id}-link` ? "已複製追蹤連結" : "複製追蹤連結"}
+                        </button>
+
+                        {/* 列印銷貨單 */}
+                        <button
+                          type="button"
+                          onClick={() => printOrderReceipt(o)}
+                          className="w-full h-9 rounded-xl border border-border bg-white text-xs font-medium text-foreground"
+                        >
+                          列印銷貨單
                         </button>
 
                         {/* 更新狀態 / 危險操作 */}
