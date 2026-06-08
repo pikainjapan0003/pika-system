@@ -1,5 +1,5 @@
 /**
- * Unit/integration tests for Agent token middleware + routes (Step 7D-3B/3C/3D/3E-1)
+ * Unit/integration tests for Agent token middleware + routes (Step 7D-3B/3C/3D/3E-1/3E-2)
  *
  * Runtime: Node.js v24 built-in test runner (node:test)
  * Auth:    agentTokenAuth middleware — reads Authorization: Bearer <token> header
@@ -59,6 +59,11 @@ let mockUpdateResult = [];
 let mockUpdateShouldThrow = null;
 let mockUpdateCapture = null;
 
+// Run-log insert mock (POST /run-log)
+let mockRunLogInsertResult = [];
+let mockRunLogInsertShouldThrow = null;
+let mockRunLogInsertCapture = null;
+
 // ─────────────────────────────────────────────────────────────
 // 4. Sample data
 // ─────────────────────────────────────────────────────────────
@@ -116,6 +121,20 @@ const MOCK_UPDATE_RESULT = {
   updatedAt: new Date('2026-06-08T09:00:00.000Z'),
 };
 
+const MOCK_RUN_LOG_RESULT = {
+  id: 200,
+  runType: 'scheduled',
+  status: 'completed',
+  startedAt: new Date('2026-06-08T08:00:00.000Z'),
+  finishedAt: new Date('2026-06-08T08:02:00.000Z'),
+  checkedCount: 10,
+  successCount: 8,
+  failedCount: 2,
+  errorCode: null,
+  errorMessage: null,
+  createdAt: new Date('2026-06-08T08:00:00.000Z'),
+};
+
 // ─────────────────────────────────────────────────────────────
 // 5. Import drizzle sql() BEFORE mocking @workspace/db
 // ─────────────────────────────────────────────────────────────
@@ -153,6 +172,8 @@ const mockOrdersTable = {
   shippingStatus: sql`"o"."shipping_status"`,
 };
 
+const mockAgentRunLogsTable = { _mockName: 'agentRunLogsTable' };
+
 const mockShipmentTrackingEventsTable = {
   id:                  sql`"ste"."id"`,
   shipmentTrackingId:  sql`"ste"."shipment_tracking_id"`,
@@ -176,7 +197,9 @@ const mockShipmentTrackingEventsTable = {
 //          .innerJoin().where().limit()            → ownership check (shared)
 //      - shipmentTrackingEventsTable  → events chain: .where().limit()
 //
-//    db.insert() → captures values, returns mockInsertResult or throws
+//    db.insert() → routes by table:
+//      - agentRunLogsTable           → mockRunLogInsertResult / mockRunLogInsertShouldThrow
+//      - default (events)            → mockInsertResult / mockInsertShouldThrow
 //    db.update() → captures set values, returns mockUpdateResult or throws
 // ─────────────────────────────────────────────────────────────
 mock.module('@workspace/db', {
@@ -211,8 +234,17 @@ mock.module('@workspace/db', {
           };
         },
       }),
-      insert: (_table) => ({
+      insert: (table) => ({
         values: (vals) => {
+          if (table === mockAgentRunLogsTable) {
+            mockRunLogInsertCapture = vals ? { ...vals } : null;
+            return {
+              returning: async () => {
+                if (mockRunLogInsertShouldThrow) throw mockRunLogInsertShouldThrow;
+                return [...mockRunLogInsertResult];
+              },
+            };
+          }
           mockInsertCapture = vals ? { ...vals } : null;
           return {
             returning: async () => {
@@ -241,6 +273,7 @@ mock.module('@workspace/db', {
     shipmentTrackingsTable: mockShipmentTrackingsTable,
     ordersTable: mockOrdersTable,
     shipmentTrackingEventsTable: mockShipmentTrackingEventsTable,
+    agentRunLogsTable: mockAgentRunLogsTable,
     storesTable: {},
     pool: { end: async () => {} },
   },
@@ -388,11 +421,11 @@ describe('Agent route skeleton', () => {
     assert.equal(r.data.error, 'invalid_tracking_id');
   });
 
-  test('POST /run-log → 501', async () => {
+  test('POST /run-log with empty body → 400 (requires runType)', async () => {
     mockQueryResult = [VALID_RECORD];
     const r = await req('POST', '/run-log', { token: VALID_TOKEN, body: {} });
-    assert.equal(r.status, 501);
-    assert.equal(r.data.error, 'not_implemented');
+    assert.equal(r.status, 400);
+    assert.equal(r.data.error, 'invalid_run_type');
   });
 
   test('route mounted at /api/internal/agent', () => {
@@ -527,11 +560,11 @@ describe('GET /orders/tracking-jobs', () => {
     assert.notEqual(r.data.error, 'not_implemented');
   });
 
-  test('POST /run-log still 501', async () => {
+  test('POST /run-log implemented (not 501)', async () => {
     mockQueryResult = [VALID_RECORD];
     const r = await req('POST', '/run-log', { token: VALID_TOKEN, body: {} });
-    assert.equal(r.status, 501);
-    assert.equal(r.data.error, 'not_implemented');
+    assert.notEqual(r.status, 501);
+    assert.notEqual(r.data.error, 'not_implemented');
   });
 });
 
@@ -754,11 +787,11 @@ describe('POST /shipment-events', () => {
     assert.notEqual(r.data.error, 'not_implemented');
   });
 
-  test('POST /run-log still 501', async () => {
+  test('POST /run-log implemented (not 501)', async () => {
     mockQueryResult = [VALID_RECORD];
     const r = await req('POST', '/run-log', { token: VALID_TOKEN, body: {} });
-    assert.equal(r.status, 501);
-    assert.equal(r.data.error, 'not_implemented');
+    assert.notEqual(r.status, 501);
+    assert.notEqual(r.data.error, 'not_implemented');
   });
 });
 
@@ -939,10 +972,200 @@ describe('PATCH /shipment-status', () => {
     assert.ok('event' in r.data);
   });
 
-  test('POST /run-log still 501', async () => {
+  test('POST /run-log implemented (not 501)', async () => {
     mockQueryResult = [VALID_RECORD];
     const r = await req('POST', '/run-log', { token: VALID_TOKEN, body: {} });
-    assert.equal(r.status, 501);
-    assert.equal(r.data.error, 'not_implemented');
+    assert.notEqual(r.status, 501);
+    assert.notEqual(r.data.error, 'not_implemented');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────
+// 15. POST /run-log — full implementation tests (16 tests)
+// ─────────────────────────────────────────────────────────────
+describe('POST /run-log', () => {
+  test('unauthenticated → 401', async () => {
+    const r = await reqRaw('POST', '/run-log');
+    assert.equal(r.status, 401);
+  });
+
+  test('valid token + valid run log → 201', async () => {
+    mockQueryResult = [VALID_RECORD];
+    mockRunLogInsertShouldThrow = null;
+    mockRunLogInsertResult = [MOCK_RUN_LOG_RESULT];
+    const r = await req('POST', '/run-log', {
+      token: VALID_TOKEN,
+      body: {
+        runType: 'scheduled',
+        status: 'completed',
+        startedAt: '2026-06-08T08:00:00.000Z',
+        finishedAt: '2026-06-08T08:02:00.000Z',
+        checkedCount: 10,
+        successCount: 8,
+        failedCount: 2,
+      },
+    });
+    assert.equal(r.status, 201);
+    assert.ok('runLog' in r.data);
+    assert.ok('runLogId' in r.data.runLog);
+    assert.ok('runType' in r.data.runLog);
+    assert.ok('status' in r.data.runLog);
+    assert.ok('createdAt' in r.data.runLog);
+    assert.equal(r.data.runLog.runType, 'scheduled');
+    assert.equal(r.data.runLog.status, 'completed');
+  });
+
+  test('response does not expose token / tokenHash / rawPayload / rawData / raw_data', async () => {
+    mockQueryResult = [VALID_RECORD];
+    mockRunLogInsertShouldThrow = null;
+    mockRunLogInsertResult = [MOCK_RUN_LOG_RESULT];
+    const r = await req('POST', '/run-log', {
+      token: VALID_TOKEN,
+      body: { runType: 'manual', status: 'running' },
+    });
+    assert.equal(r.status, 201);
+    const body = JSON.stringify(r.data);
+    assert.ok(!body.includes(VALID_TOKEN), 'must not expose raw token');
+    assert.ok(!body.includes('tokenHash'), 'must not expose tokenHash');
+    assert.ok(!body.includes('rawPayload'), 'must not expose rawPayload');
+    assert.ok(!body.includes('rawData'), 'must not expose rawData');
+    assert.ok(!body.includes('raw_data'), 'must not expose raw_data');
+  });
+
+  test('missing runType → 400 invalid_run_type', async () => {
+    mockQueryResult = [VALID_RECORD];
+    const r = await req('POST', '/run-log', {
+      token: VALID_TOKEN,
+      body: { status: 'completed' },
+    });
+    assert.equal(r.status, 400);
+    assert.equal(r.data.error, 'invalid_run_type');
+  });
+
+  test('invalid runType → 400 invalid_run_type', async () => {
+    mockQueryResult = [VALID_RECORD];
+    const r = await req('POST', '/run-log', {
+      token: VALID_TOKEN,
+      body: { runType: 'unknown_type', status: 'completed' },
+    });
+    assert.equal(r.status, 400);
+    assert.equal(r.data.error, 'invalid_run_type');
+  });
+
+  test('missing status → 400 invalid_run_status', async () => {
+    mockQueryResult = [VALID_RECORD];
+    const r = await req('POST', '/run-log', {
+      token: VALID_TOKEN,
+      body: { runType: 'scheduled' },
+    });
+    assert.equal(r.status, 400);
+    assert.equal(r.data.error, 'invalid_run_status');
+  });
+
+  test('invalid status → 400 invalid_run_status', async () => {
+    mockQueryResult = [VALID_RECORD];
+    const r = await req('POST', '/run-log', {
+      token: VALID_TOKEN,
+      body: { runType: 'scheduled', status: 'success' },
+    });
+    assert.equal(r.status, 400);
+    assert.equal(r.data.error, 'invalid_run_status');
+  });
+
+  test('invalid startedAt → 400 invalid_started_at', async () => {
+    mockQueryResult = [VALID_RECORD];
+    const r = await req('POST', '/run-log', {
+      token: VALID_TOKEN,
+      body: { runType: 'scheduled', status: 'completed', startedAt: 'not-a-date' },
+    });
+    assert.equal(r.status, 400);
+    assert.equal(r.data.error, 'invalid_started_at');
+  });
+
+  test('invalid finishedAt → 400 invalid_finished_at', async () => {
+    mockQueryResult = [VALID_RECORD];
+    const r = await req('POST', '/run-log', {
+      token: VALID_TOKEN,
+      body: { runType: 'scheduled', status: 'completed', finishedAt: 'not-a-date' },
+    });
+    assert.equal(r.status, 400);
+    assert.equal(r.data.error, 'invalid_finished_at');
+  });
+
+  test('invalid checkedCount (negative) → 400 invalid_checked_count', async () => {
+    mockQueryResult = [VALID_RECORD];
+    const r = await req('POST', '/run-log', {
+      token: VALID_TOKEN,
+      body: { runType: 'scheduled', status: 'completed', checkedCount: -1 },
+    });
+    assert.equal(r.status, 400);
+    assert.equal(r.data.error, 'invalid_checked_count');
+  });
+
+  test('invalid successCount (negative) → 400 invalid_success_count', async () => {
+    mockQueryResult = [VALID_RECORD];
+    const r = await req('POST', '/run-log', {
+      token: VALID_TOKEN,
+      body: { runType: 'scheduled', status: 'completed', successCount: -5 },
+    });
+    assert.equal(r.status, 400);
+    assert.equal(r.data.error, 'invalid_success_count');
+  });
+
+  test('invalid failedCount (negative) → 400 invalid_failed_count', async () => {
+    mockQueryResult = [VALID_RECORD];
+    const r = await req('POST', '/run-log', {
+      token: VALID_TOKEN,
+      body: { runType: 'scheduled', status: 'completed', failedCount: -3 },
+    });
+    assert.equal(r.status, 400);
+    assert.equal(r.data.error, 'invalid_failed_count');
+  });
+
+  test('DB insert failed → 500 agent_run_log_failed', async () => {
+    mockQueryResult = [VALID_RECORD];
+    mockRunLogInsertShouldThrow = new Error('DB connection lost');
+    mockRunLogInsertResult = [];
+    const r = await req('POST', '/run-log', {
+      token: VALID_TOKEN,
+      body: { runType: 'scheduled', status: 'completed' },
+    });
+    assert.equal(r.status, 500);
+    assert.equal(r.data.error, 'agent_run_log_failed');
+  });
+
+  test('GET /orders/tracking-jobs still 200', async () => {
+    mockQueryResult = [VALID_RECORD];
+    mockTrackingJobsResult = [];
+    const r = await req('GET', '/orders/tracking-jobs', { token: VALID_TOKEN });
+    assert.equal(r.status, 200);
+    assert.ok(Array.isArray(r.data.jobs));
+  });
+
+  test('POST /shipment-events still works (201 for valid body)', async () => {
+    mockQueryResult = [VALID_RECORD];
+    mockOwnershipCheckResult = [MOCK_OWNERSHIP_ROW];
+    mockFindEventFn = async () => [];
+    mockInsertShouldThrow = null;
+    mockInsertResult = [MOCK_INSERT_RESULT];
+    const r = await req('POST', '/shipment-events', {
+      token: VALID_TOKEN,
+      body: { trackingId: 123, eventStatus: 'in_transit' },
+    });
+    assert.equal(r.status, 201);
+    assert.ok('event' in r.data);
+  });
+
+  test('PATCH /shipment-status still works (200 for valid body)', async () => {
+    mockQueryResult = [VALID_RECORD];
+    mockOwnershipCheckResult = [MOCK_OWNERSHIP_ROW];
+    mockUpdateShouldThrow = null;
+    mockUpdateResult = [MOCK_UPDATE_RESULT];
+    const r = await req('PATCH', '/shipment-status', {
+      token: VALID_TOKEN,
+      body: { trackingId: 123, trackingStatus: 'active' },
+    });
+    assert.equal(r.status, 200);
+    assert.ok('tracking' in r.data);
   });
 });

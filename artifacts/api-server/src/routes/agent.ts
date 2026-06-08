@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { eq, and, or, isNull, lte } from "drizzle-orm";
-import { db, shipmentTrackingsTable, ordersTable, shipmentTrackingEventsTable } from "@workspace/db";
+import { db, shipmentTrackingsTable, ordersTable, shipmentTrackingEventsTable, agentRunLogsTable } from "@workspace/db";
 import { agentTokenAuth, type AgentTokenLocals } from "../middlewares/agentAuth.ts";
 import { logger } from "../lib/logger.ts";
 
@@ -18,6 +18,9 @@ const VALID_TRACKING_STATUSES = new Set([
 const VALID_EVENT_STATUSES = new Set([
   "unknown", "pending", "in_transit", "arrived_store", "picked_up", "delivered", "returned", "exception",
 ]);
+
+const VALID_RUN_TYPES = new Set(["manual", "scheduled", "webhook", "csv_after_import", "test"]);
+const VALID_RUN_STATUSES = new Set(["running", "completed", "failed", "partial"]);
 
 const SENSITIVE_KEY_PATTERNS = [
   "phone", "tel", "mobile", "address", "addr", "name", "email",
@@ -444,8 +447,126 @@ router.patch("/shipment-status", agentTokenAuth, async (req: any, res: any) => {
   }
 });
 
-router.post("/run-log", agentTokenAuth, (_req, res) => {
-  res.status(501).json(NOT_IMPLEMENTED);
+router.post("/run-log", agentTokenAuth, async (req: any, res: any) => {
+  try {
+    const { tokenId, merchantId, storeId } = res.locals.agentToken as AgentTokenLocals;
+    const body = req.body ?? {};
+
+    // Validate runType (required)
+    const runType = typeof body.runType === "string" ? body.runType : "";
+    if (!VALID_RUN_TYPES.has(runType)) {
+      return res.status(400).json({
+        error: "invalid_run_type",
+        message: `runType must be one of: ${[...VALID_RUN_TYPES].join(", ")}`,
+      });
+    }
+
+    // Validate status (required)
+    const status = typeof body.status === "string" ? body.status : "";
+    if (!VALID_RUN_STATUSES.has(status)) {
+      return res.status(400).json({
+        error: "invalid_run_status",
+        message: `status must be one of: ${[...VALID_RUN_STATUSES].join(", ")}`,
+      });
+    }
+
+    // Parse startedAt (optional, defaults to now)
+    let startedAt: Date;
+    if (body.startedAt !== undefined) {
+      const d = new Date(body.startedAt as string);
+      if (isNaN(d.getTime())) {
+        return res.status(400).json({
+          error: "invalid_started_at",
+          message: "startedAt must be a valid ISO date string",
+        });
+      }
+      startedAt = d;
+    } else {
+      startedAt = new Date();
+    }
+
+    // Parse finishedAt (optional)
+    let finishedAt: Date | undefined;
+    if (body.finishedAt !== undefined) {
+      const d = new Date(body.finishedAt as string);
+      if (isNaN(d.getTime())) {
+        return res.status(400).json({
+          error: "invalid_finished_at",
+          message: "finishedAt must be a valid ISO date string",
+        });
+      }
+      finishedAt = d;
+    }
+
+    // Validate checkedCount (optional, non-negative integer, default 0)
+    let checkedCount = 0;
+    if (body.checkedCount !== undefined) {
+      const n = Number(body.checkedCount);
+      if (!Number.isInteger(n) || n < 0) {
+        return res.status(400).json({
+          error: "invalid_checked_count",
+          message: "checkedCount must be a non-negative integer",
+        });
+      }
+      checkedCount = n;
+    }
+
+    // Validate successCount (optional, non-negative integer, default 0)
+    let successCount = 0;
+    if (body.successCount !== undefined) {
+      const n = Number(body.successCount);
+      if (!Number.isInteger(n) || n < 0) {
+        return res.status(400).json({
+          error: "invalid_success_count",
+          message: "successCount must be a non-negative integer",
+        });
+      }
+      successCount = n;
+    }
+
+    // Validate failedCount (optional, non-negative integer, default 0)
+    let failedCount = 0;
+    if (body.failedCount !== undefined) {
+      const n = Number(body.failedCount);
+      if (!Number.isInteger(n) || n < 0) {
+        return res.status(400).json({
+          error: "invalid_failed_count",
+          message: "failedCount must be a non-negative integer",
+        });
+      }
+      failedCount = n;
+    }
+
+    const errorCode = body.errorCode != null ? String(body.errorCode).slice(0, 120) : null;
+    const errorMessage = body.errorMessage != null ? String(body.errorMessage).slice(0, 500) : null;
+
+    const [inserted] = await db
+      .insert(agentRunLogsTable)
+      .values({ tokenId, merchantId, storeId, runType, status, startedAt, finishedAt, checkedCount, successCount, failedCount, errorCode, errorMessage })
+      .returning();
+
+    return res.status(201).json({
+      runLog: {
+        runLogId: inserted.id,
+        runType: inserted.runType,
+        status: inserted.status,
+        startedAt: inserted.startedAt,
+        finishedAt: inserted.finishedAt ?? null,
+        checkedCount: inserted.checkedCount,
+        successCount: inserted.successCount,
+        failedCount: inserted.failedCount,
+        errorCode: inserted.errorCode ?? null,
+        errorMessage: inserted.errorMessage ?? null,
+        createdAt: inserted.createdAt,
+      },
+    });
+  } catch (err) {
+    logger.error({ err }, "agent_run_log_failed");
+    return res.status(500).json({
+      error: "agent_run_log_failed",
+      message: "Failed to insert run log",
+    });
+  }
 });
 
 export default router;
