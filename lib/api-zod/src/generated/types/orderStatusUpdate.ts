@@ -5,7 +5,7 @@
  * 團購/代購訂單管理 API
  * OpenAPI spec version: 0.1.0
  */
-import type { OrderStatusUpdateStatus } from './orderStatusUpdateStatus.ts';
+import type { OrderStatusUpdateStatus } from './orderStatusUpdateStatus';
 
 export interface OrderStatusUpdate {
   status: OrderStatusUpdateStatus;

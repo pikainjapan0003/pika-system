@@ -274,6 +274,9 @@ export interface Order {
   totalPrice: number;
   orderTotal?: number;
   remainingAmount?: number;
+  discountAmount?: number;
+  /** @nullable */
+  discountNote?: string | null;
   status: OrderStatus;
   paymentMethod?: PaymentMethod | null;
   paymentStatus?: PaymentStatus;
@@ -386,6 +389,15 @@ export interface MerchantOrderInput {
 
 export type OrderUpdateSpecValues = { [key: string]: unknown };
 
+export type OrderUpdateStoreSelectedBy = typeof OrderUpdateStoreSelectedBy[keyof typeof OrderUpdateStoreSelectedBy];
+
+
+export const OrderUpdateStoreSelectedBy = {
+  customer: 'customer',
+  admin: 'admin',
+  system: 'system',
+} as const;
+
 export interface OrderUpdate {
   /** @minLength 1 */
   buyerName?: string;
@@ -425,7 +437,7 @@ export interface OrderUpdate {
   cvsStoreAddress?: string | null;
   /** @nullable */
   cvsStorePhone?: string | null;
-  storeSelectedBy?: 'customer' | 'admin' | 'system';
+  storeSelectedBy?: OrderUpdateStoreSelectedBy;
   /** @nullable */
   trackingCode?: string | null;
   /** @nullable */
@@ -434,6 +446,10 @@ export interface OrderUpdate {
   shippingNote?: string | null;
   /** @nullable */
   internalNote?: string | null;
+  /** @minimum 0 */
+  discountAmount?: number;
+  /** @nullable */
+  discountNote?: string | null;
 }
 
 export type OrderStatusUpdateStatus = typeof OrderStatusUpdateStatus[keyof typeof OrderStatusUpdateStatus];

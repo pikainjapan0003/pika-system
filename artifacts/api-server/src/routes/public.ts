@@ -238,7 +238,7 @@ router.get("/orders/track/:publicToken", trackOrderLimiter, async (req, res) => 
     unitPrice: parseFloat(order.unitPrice as string),
     shippingFee,
     totalPrice,
-    orderTotal: totalPrice + shippingFee,
+    orderTotal: Math.max(totalPrice + shippingFee - (order.discountAmount ?? 0), 0),
     pickupMethod: order.pickupMethod,
     specValues: order.specValues ?? {},
     status: order.status,

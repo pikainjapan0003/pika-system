@@ -331,6 +331,8 @@ export const ListOrdersResponseItem = zod.object({
   "totalPrice": zod.number(),
   "orderTotal": zod.number().optional(),
   "remainingAmount": zod.number().optional(),
+  "discountAmount": zod.number().optional(),
+  "discountNote": zod.string().nullish(),
   "status": zod.enum(['pending', 'awaiting_payment', 'preparing', 'shipped', 'completed', 'cancelled']),
   "paymentMethod": zod.union([zod.literal('cash'),zod.literal('bank_transfer'),zod.literal('line_pay'),zod.literal('other'),zod.literal(null)]).nullish(),
   "paymentStatus": zod.enum(['unpaid', 'pending', 'partially_paid', 'paid', 'refunded', 'failed']).optional(),
@@ -343,6 +345,10 @@ export const ListOrdersResponseItem = zod.object({
   "recipientAddress": zod.string().nullish(),
   "storeCode": zod.string().nullish(),
   "storeName": zod.string().nullish(),
+  "cvsStoreAddress": zod.string().nullish(),
+  "cvsStorePhone": zod.string().nullish(),
+  "storeSelectedBy": zod.string().nullish(),
+  "storeSelectedAt": zod.string().nullish(),
   "trackingCode": zod.string().nullish(),
   "trackingProvider": zod.string().nullish(),
   "shippingNote": zod.string().nullish(),
@@ -419,6 +425,8 @@ export const updateOrderBodyPaidAmountMin = 0;
 
 export const updateOrderBodyShippingFeeMin = 0;
 
+export const updateOrderBodyDiscountAmountMin = 0;
+
 
 
 export const UpdateOrderBody = zod.object({
@@ -448,7 +456,9 @@ export const UpdateOrderBody = zod.object({
   "trackingCode": zod.string().nullish(),
   "trackingProvider": zod.string().nullish(),
   "shippingNote": zod.string().nullish(),
-  "internalNote": zod.string().nullish()
+  "internalNote": zod.string().nullish(),
+  "discountAmount": zod.number().min(updateOrderBodyDiscountAmountMin).optional(),
+  "discountNote": zod.string().nullish()
 })
 
 export const UpdateOrderResponse = zod.object({
@@ -470,6 +480,8 @@ export const UpdateOrderResponse = zod.object({
   "totalPrice": zod.number(),
   "orderTotal": zod.number().optional(),
   "remainingAmount": zod.number().optional(),
+  "discountAmount": zod.number().optional(),
+  "discountNote": zod.string().nullish(),
   "status": zod.enum(['pending', 'awaiting_payment', 'preparing', 'shipped', 'completed', 'cancelled']),
   "paymentMethod": zod.union([zod.literal('cash'),zod.literal('bank_transfer'),zod.literal('line_pay'),zod.literal('other'),zod.literal(null)]).nullish(),
   "paymentStatus": zod.enum(['unpaid', 'pending', 'partially_paid', 'paid', 'refunded', 'failed']).optional(),
@@ -524,6 +536,8 @@ export const UpdateOrderStatusResponse = zod.object({
   "totalPrice": zod.number(),
   "orderTotal": zod.number().optional(),
   "remainingAmount": zod.number().optional(),
+  "discountAmount": zod.number().optional(),
+  "discountNote": zod.string().nullish(),
   "status": zod.enum(['pending', 'awaiting_payment', 'preparing', 'shipped', 'completed', 'cancelled']),
   "paymentMethod": zod.union([zod.literal('cash'),zod.literal('bank_transfer'),zod.literal('line_pay'),zod.literal('other'),zod.literal(null)]).nullish(),
   "paymentStatus": zod.enum(['unpaid', 'pending', 'partially_paid', 'paid', 'refunded', 'failed']).optional(),

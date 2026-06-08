@@ -1542,3 +1542,192 @@ describe('Step 8C: order status transitions are no longer one-way', () => {
     assert.ok(data.error, 'should return error message');
   });
 });
+
+// ─────────────────────────────────────────────────────────────
+// Step 8J: discountAmount + discountNote
+// ─────────────────────────────────────────────────────────────
+describe('Step 8J: discountAmount + discountNote', () => {
+  let discountOrderId;
+  let discountPublicToken;
+
+  before(async () => {
+    const token = `discount-tok-${Date.now()}`;
+    const [order] = await db
+      .insert(ordersTable)
+      .values({
+        productId: testProductId,
+        storeId: testStoreId,
+        productName: '__test_discount__',
+        publicToken: token,
+        buyerName: 'Discount Buyer',
+        buyerPhone: '0966666666',
+        pickupMethod: 'pickup',
+        quantity: 3,
+        unitPrice: '100.00',
+        shippingFee: '100.00',
+        totalPrice: '300.00',
+        status: 'pending',
+        specValues: {},
+      })
+      .returning();
+    discountOrderId = order.id;
+    discountPublicToken = token;
+  });
+
+  // ── Defaults ─────────────────────────────────────────────────
+  test('GET — discountAmount defaults to 0', async () => {
+    const { status, data } = await req('GET', `/stores/${testStoreId}/orders`);
+    assert.strictEqual(status, 200);
+    const order = data.find((o) => o.id === discountOrderId);
+    assert.ok(order, 'created order should appear in list');
+    assert.strictEqual(order.discountAmount, 0, 'discountAmount defaults to 0');
+  });
+
+  test('GET — discountNote defaults to null', async () => {
+    const { status, data } = await req('GET', `/stores/${testStoreId}/orders`);
+    assert.strictEqual(status, 200);
+    const order = data.find((o) => o.id === discountOrderId);
+    assert.strictEqual(order.discountNote, null, 'discountNote defaults to null');
+  });
+
+  test('GET — orderTotal = totalPrice(300) + shippingFee(100) when discountAmount = 0', async () => {
+    const { status, data } = await req('GET', `/stores/${testStoreId}/orders`);
+    assert.strictEqual(status, 200);
+    const order = data.find((o) => o.id === discountOrderId);
+    assert.strictEqual(order.orderTotal, 400, 'orderTotal = 300 + 100 with no discount');
+  });
+
+  // ── PATCH: set discount ──────────────────────────────────────
+  test('200 — PATCH sets discountAmount and updates orderTotal', async () => {
+    const { status, data } = await req('PATCH', `/orders/${discountOrderId}`, {
+      discountAmount: 50,
+    });
+    assert.strictEqual(status, 200);
+    assert.strictEqual(data.discountAmount, 50);
+    assert.strictEqual(data.orderTotal, 350, 'orderTotal = max(300 + 100 - 50, 0)');
+  });
+
+  test('200 — PATCH sets discountNote', async () => {
+    const { status, data } = await req('PATCH', `/orders/${discountOrderId}`, {
+      discountNote: '會員折扣',
+    });
+    assert.strictEqual(status, 200);
+    assert.strictEqual(data.discountNote, '會員折扣');
+  });
+
+  test('200 — remainingAmount respects discounted orderTotal', async () => {
+    await req('PATCH', `/orders/${discountOrderId}`, { discountAmount: 100 });
+    const { status, data } = await req('PATCH', `/orders/${discountOrderId}`, { paidAmount: 200 });
+    assert.strictEqual(status, 200);
+    assert.strictEqual(data.discountAmount, 100);
+    assert.strictEqual(data.orderTotal, 300, 'orderTotal = 300 + 100 - 100');
+    assert.strictEqual(data.remainingAmount, 100, 'remainingAmount = 300 - 200');
+  });
+
+  test('200 — discountAmount = 0 resets discount', async () => {
+    const { status, data } = await req('PATCH', `/orders/${discountOrderId}`, {
+      discountAmount: 0,
+    });
+    assert.strictEqual(status, 200);
+    assert.strictEqual(data.discountAmount, 0);
+    assert.strictEqual(data.orderTotal, 400, 'orderTotal = 300 + 100 - 0');
+  });
+
+  test('200 — discountNote = null clears note', async () => {
+    await req('PATCH', `/orders/${discountOrderId}`, { discountNote: '臨時備註' });
+    const { status, data } = await req('PATCH', `/orders/${discountOrderId}`, { discountNote: null });
+    assert.strictEqual(status, 200);
+    assert.strictEqual(data.discountNote, null, 'discountNote should be cleared to null');
+  });
+
+  test('200 — discountAmount equal to totalPrice+shippingFee clamps orderTotal to 0', async () => {
+    const { status, data } = await req('PATCH', `/orders/${discountOrderId}`, {
+      discountAmount: 400,
+    });
+    assert.strictEqual(status, 200);
+    assert.strictEqual(data.discountAmount, 400);
+    assert.strictEqual(data.orderTotal, 0, 'orderTotal = max(300 + 100 - 400, 0) = 0');
+    // restore
+    await req('PATCH', `/orders/${discountOrderId}`, { discountAmount: 0 });
+  });
+
+  // ── PATCH validation → 422 ───────────────────────────────────
+  test('422 — discountAmount < 0 is rejected', async () => {
+    const { status, data } = await req('PATCH', `/orders/${discountOrderId}`, {
+      discountAmount: -1,
+    });
+    assert.strictEqual(status, 422);
+    assert.ok(data.error, 'should return error message');
+  });
+
+  test('422 — discountAmount > totalPrice + shippingFee is rejected', async () => {
+    const { status, data } = await req('PATCH', `/orders/${discountOrderId}`, {
+      discountAmount: 401,
+    });
+    assert.strictEqual(status, 422);
+    assert.ok(data.error, 'should contain error message');
+  });
+
+  // ── Public tracking: discountAmount hidden, orderTotal correct ─
+  test('public tracking — discountAmount NOT exposed in response', async () => {
+    await req('PATCH', `/orders/${discountOrderId}`, { discountAmount: 80 });
+    const { status, data } = await req('GET', `/orders/track/${discountPublicToken}`, null, null);
+    assert.strictEqual(status, 200);
+    assert.strictEqual(data.discountAmount, undefined, 'discountAmount MUST NOT appear in public response');
+  });
+
+  test('public tracking — orderTotal reflects discountAmount', async () => {
+    const { status, data } = await req('GET', `/orders/track/${discountPublicToken}`, null, null);
+    assert.strictEqual(status, 200);
+    assert.strictEqual(data.orderTotal, 320, 'public orderTotal = max(300 + 100 - 80, 0)');
+  });
+
+  test('public tracking — discountNote NOT exposed in response', async () => {
+    await req('PATCH', `/orders/${discountOrderId}`, { discountNote: '私密備註' });
+    const { status, data } = await req('GET', `/orders/track/${discountPublicToken}`, null, null);
+    assert.strictEqual(status, 200);
+    assert.strictEqual(data.discountNote, undefined, 'discountNote MUST NOT appear in public response');
+  });
+
+  test('200 — discountNote empty string is normalized to null', async () => {
+    await req('PATCH', `/orders/${discountOrderId}`, { discountNote: '先設一個值' });
+    const { status, data } = await req('PATCH', `/orders/${discountOrderId}`, { discountNote: '' });
+    assert.strictEqual(status, 200);
+    assert.strictEqual(data.discountNote, null, 'empty string discountNote should be normalized to null');
+  });
+
+  // ── Integer validation ────────────────────────────────────────
+  test('422 — discountAmount decimal (1.5) is rejected', async () => {
+    const { status, data } = await req('PATCH', `/orders/${discountOrderId}`, {
+      discountAmount: 1.5,
+    });
+    assert.strictEqual(status, 422);
+    assert.ok(data.error, 'should return error message');
+  });
+
+  test('422 — discountAmount decimal rejected and DB value unchanged', async () => {
+    await req('PATCH', `/orders/${discountOrderId}`, { discountAmount: 30 });
+    await req('PATCH', `/orders/${discountOrderId}`, { discountAmount: 1.5 });
+    const { data: orders } = await req('GET', `/stores/${testStoreId}/orders`);
+    const o = orders.find((x) => x.id === discountOrderId);
+    assert.strictEqual(o.discountAmount, 30, 'discountAmount must remain 30 after decimal rejection');
+    // restore
+    await req('PATCH', `/orders/${discountOrderId}`, { discountAmount: 0 });
+  });
+
+  // ── CSV export row values ─────────────────────────────────────
+  test('CSV export — discount row includes discountAmount and discountNote values', async () => {
+    await req('PATCH', `/orders/${discountOrderId}`, {
+      discountAmount: 50,
+      discountNote: '測試折讓',
+    });
+    const { status, data } = await req('GET', `/stores/${testStoreId}/orders/export`);
+    assert.strictEqual(status, 200);
+    assert.ok(typeof data === 'string', 'export should return text/csv');
+    assert.ok(data.includes('折讓金額'), 'CSV header should include 折讓金額');
+    assert.ok(data.includes('折讓備註'), 'CSV header should include 折讓備註');
+    assert.ok(data.includes('"50","測試折讓"'), 'CSV row should include discountAmount 50 and discountNote in sequence');
+    // restore
+    await req('PATCH', `/orders/${discountOrderId}`, { discountAmount: 0, discountNote: null });
+  });
+});

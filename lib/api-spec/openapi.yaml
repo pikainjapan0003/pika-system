@@ -939,6 +939,10 @@ components:
           type: number
         remainingAmount:
           type: number
+        discountAmount:
+          type: integer
+        discountNote:
+          type: ["string", "null"]
         status:
           type: string
           enum: [pending, awaiting_payment, preparing, shipped, completed, cancelled]
@@ -1136,6 +1140,11 @@ components:
         shippingNote:
           type: ["string", "null"]
         internalNote:
+          type: ["string", "null"]
+        discountAmount:
+          type: integer
+          minimum: 0
+        discountNote:
           type: ["string", "null"]
 
     OrderStatusUpdate:

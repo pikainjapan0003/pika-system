@@ -5,7 +5,7 @@
  * 團購/代購訂單管理 API
  * OpenAPI spec version: 0.1.0
  */
-import type { ShippingListOrder } from './shippingListOrder.ts';
+import type { ShippingListOrder } from './shippingListOrder';
 
 export interface ShippingListResponse {
   generatedAt: Date;

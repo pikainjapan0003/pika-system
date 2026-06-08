@@ -487,7 +487,7 @@ router.patch("/orders/:orderId", requireAuth, async (req: any, res) => {
 
   const parsed = UpdateOrderBody.safeParse(req.body);
   if (!parsed.success) {
-    const AMOUNT_PATHS = ["paidAmount", "shippingFee"];
+    const AMOUNT_PATHS = ["paidAmount", "shippingFee", "discountAmount"];
     const ENUM_UNION_PATHS = new Set(["paymentMethod", "shippingMethod"]);
     const is422 = parsed.error.issues.some(
       (i) =>
@@ -514,6 +514,7 @@ router.patch("/orders/:orderId", requireAuth, async (req: any, res) => {
     recipientName, recipientPhone, recipientAddress,
     storeCode, storeName, cvsStoreAddress, cvsStorePhone, storeSelectedBy,
     trackingCode, trackingProvider, shippingNote, internalNote,
+    discountAmount, discountNote,
   } = parsed.data;
 
   const updates: Record<string, unknown> = {};
@@ -558,6 +559,23 @@ router.patch("/orders/:orderId", requireAuth, async (req: any, res) => {
   if (trackingProvider !== undefined) updates.trackingProvider = trackingProvider;
   if (shippingNote !== undefined) updates.shippingNote = shippingNote;
   if (internalNote !== undefined) updates.internalNote = internalNote;
+  // Discount fields — validate after shippingFee / totalPrice may be updated
+  if (discountAmount !== undefined) {
+    if (!Number.isInteger(discountAmount)) {
+      return res.status(422).json({ error: "discountAmount must be an integer" });
+    }
+    const effectiveTotalPrice = updates.totalPrice !== undefined
+      ? parseFloat(updates.totalPrice as string)
+      : parseFloat(order.totalPrice as string);
+    const effectiveShippingFee = updates.shippingFee !== undefined
+      ? parseFloat(updates.shippingFee as string)
+      : parseFloat(order.shippingFee as string ?? "0");
+    if (discountAmount > effectiveTotalPrice + effectiveShippingFee) {
+      return res.status(422).json({ error: "discountAmount cannot exceed totalPrice + shippingFee" });
+    }
+    updates.discountAmount = discountAmount;
+  }
+  if (discountNote !== undefined) updates.discountNote = discountNote === "" ? null : discountNote;
 
   if (Object.keys(updates).length === 0) {
     return res.json(formatOrder(order));
@@ -584,7 +602,7 @@ router.get("/stores/:storeId/orders/export", requireAuth, async (req: any, res) 
     .where(eq(ordersTable.storeId, storeId))
     .orderBy(ordersTable.createdAt);
 
-  const headers = ["訂單編號", "商品名稱", "買家姓名", "買家電話", "取貨方式", "數量", "單價", "總金額", "狀態", "備註", "規格", "下單時間"];
+  const headers = ["訂單編號", "商品名稱", "買家姓名", "買家電話", "取貨方式", "數量", "單價", "總金額", "折讓金額", "折讓備註", "狀態", "備註", "規格", "下單時間"];
 
   const statusLabels: Record<string, string> = {
     pending: "待確認",
@@ -604,6 +622,8 @@ router.get("/stores/:storeId/orders/export", requireAuth, async (req: any, res) 
     o.quantity,
     parseFloat(o.unitPrice as string).toFixed(2),
     parseFloat(o.totalPrice as string).toFixed(2),
+    o.discountAmount ?? 0,
+    o.discountNote ?? "",
     statusLabels[o.status] ?? o.status,
     o.notes ?? "",
     o.specValues ? JSON.stringify(o.specValues) : "",
@@ -694,7 +714,8 @@ function formatOrder(o: any) {
   const shippingFee = parseFloat(o.shippingFee ?? "0");
   const totalPrice = parseFloat(o.totalPrice);
   const paidAmount = o.paidAmount != null ? parseFloat(o.paidAmount as string) : null;
-  const orderTotal = totalPrice + shippingFee;
+  const discountAmount = o.discountAmount ?? 0;
+  const orderTotal = Math.max(totalPrice + shippingFee - discountAmount, 0);
   const remainingAmount = Math.max(orderTotal - (paidAmount ?? 0), 0);
   return {
     ...o,
@@ -702,6 +723,8 @@ function formatOrder(o: any) {
     shippingFee,
     totalPrice,
     paidAmount,
+    discountAmount,
+    discountNote: o.discountNote ?? null,
     storeSelectedAt: o.storeSelectedAt?.toISOString() ?? null,
     storeCode: o.cvsStoreId ?? null,
     storeName: o.cvsStoreName ?? null,
