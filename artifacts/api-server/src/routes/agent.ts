@@ -298,8 +298,150 @@ router.post("/shipment-events", agentTokenAuth, async (req: any, res: any) => {
   }
 });
 
-router.patch("/shipment-status", agentTokenAuth, (_req, res) => {
-  res.status(501).json(NOT_IMPLEMENTED);
+router.patch("/shipment-status", agentTokenAuth, async (req: any, res: any) => {
+  try {
+    const { storeId } = res.locals.agentToken as AgentTokenLocals;
+    const body = req.body ?? {};
+
+    // Validate trackingId
+    const rawTrackingId = body.trackingId;
+    const trackingId = rawTrackingId !== undefined ? Number(rawTrackingId) : NaN;
+    if (!Number.isInteger(trackingId) || trackingId <= 0) {
+      return res.status(400).json({
+        error: "invalid_tracking_id",
+        message: "trackingId is required and must be a positive integer",
+      });
+    }
+
+    // Validate trackingStatus (required)
+    const trackingStatus = typeof body.trackingStatus === "string" ? body.trackingStatus : "";
+    if (!VALID_TRACKING_STATUSES.has(trackingStatus)) {
+      return res.status(400).json({
+        error: "invalid_tracking_status",
+        message: `trackingStatus must be one of: ${[...VALID_TRACKING_STATUSES].join(", ")}`,
+      });
+    }
+
+    // Validate latestEventStatus (optional)
+    let latestEventStatus: string | undefined;
+    if (body.latestEventStatus !== undefined) {
+      const les = typeof body.latestEventStatus === "string" ? body.latestEventStatus : "";
+      if (!VALID_EVENT_STATUSES.has(les)) {
+        return res.status(400).json({
+          error: "invalid_event_status",
+          message: `latestEventStatus must be one of: ${[...VALID_EVENT_STATUSES].join(", ")}`,
+        });
+      }
+      latestEventStatus = les;
+    }
+
+    // Parse latestEventAt (optional)
+    let latestEventAt: Date | undefined;
+    if (body.latestEventAt !== undefined) {
+      const d = new Date(body.latestEventAt as string);
+      if (isNaN(d.getTime())) {
+        return res.status(400).json({
+          error: "invalid_latest_event_at",
+          message: "latestEventAt must be a valid ISO date string",
+        });
+      }
+      latestEventAt = d;
+    }
+
+    // Parse lastCheckedAt (optional)
+    let lastCheckedAt: Date | undefined;
+    if (body.lastCheckedAt !== undefined) {
+      const d = new Date(body.lastCheckedAt as string);
+      if (isNaN(d.getTime())) {
+        return res.status(400).json({
+          error: "invalid_last_checked_at",
+          message: "lastCheckedAt must be a valid ISO date string",
+        });
+      }
+      lastCheckedAt = d;
+    }
+
+    // Parse nextCheckAt (optional)
+    let nextCheckAt: Date | undefined;
+    if (body.nextCheckAt !== undefined) {
+      const d = new Date(body.nextCheckAt as string);
+      if (isNaN(d.getTime())) {
+        return res.status(400).json({
+          error: "invalid_next_check_at",
+          message: "nextCheckAt must be a valid ISO date string",
+        });
+      }
+      nextCheckAt = d;
+    }
+
+    // Validate failureCount (optional)
+    let failureCount: number | undefined;
+    if (body.failureCount !== undefined) {
+      const fc = Number(body.failureCount);
+      if (!Number.isInteger(fc) || fc < 0) {
+        return res.status(400).json({
+          error: "invalid_failure_count",
+          message: "failureCount must be a non-negative integer",
+        });
+      }
+      failureCount = fc;
+    }
+
+    // Verify ownership: tracking must belong to this store and be active
+    const [tracking] = await db
+      .select({ trackingId: shipmentTrackingsTable.id })
+      .from(shipmentTrackingsTable)
+      .innerJoin(ordersTable, eq(shipmentTrackingsTable.orderId, ordersTable.id))
+      .where(
+        and(
+          eq(shipmentTrackingsTable.id, trackingId),
+          eq(ordersTable.storeId, storeId),
+          eq(shipmentTrackingsTable.isActive, true),
+        ),
+      )
+      .limit(1);
+
+    if (!tracking) {
+      return res.status(404).json({ error: "tracking_not_found", message: "Tracking job not found or not accessible" });
+    }
+
+    // Build update values — only include fields provided in the request
+    const setValues: Record<string, unknown> = { trackingStatus, updatedAt: new Date() };
+    if (latestEventStatus !== undefined) setValues.latestEventStatus = latestEventStatus;
+    if (body.latestEventDescription !== undefined) {
+      setValues.latestEventDescription = typeof body.latestEventDescription === "string" ? body.latestEventDescription : null;
+    }
+    if (latestEventAt !== undefined) setValues.latestEventAt = latestEventAt;
+    if (lastCheckedAt !== undefined) setValues.lastCheckedAt = lastCheckedAt;
+    if (nextCheckAt !== undefined) setValues.nextCheckAt = nextCheckAt;
+    if (failureCount !== undefined) setValues.failureCount = failureCount;
+
+    const [updated] = await db
+      .update(shipmentTrackingsTable)
+      .set(setValues as any)
+      .where(eq(shipmentTrackingsTable.id, trackingId))
+      .returning();
+
+    return res.status(200).json({
+      tracking: {
+        trackingId: updated.id,
+        trackingStatus: updated.trackingStatus,
+        latestEventStatus: updated.latestEventStatus ?? null,
+        latestEventDescription: updated.latestEventDescription ?? null,
+        latestEventAt: updated.latestEventAt ?? null,
+        lastCheckedAt: updated.lastCheckedAt ?? null,
+        nextCheckAt: updated.nextCheckAt ?? null,
+        failureCount: updated.failureCount,
+        updatedAt: updated.updatedAt,
+      },
+    });
+  } catch (err) {
+    logger.error({ err }, "agent_shipment_status_failed");
+    return res.status(500).json({
+      error: "agent_shipment_status_failed",
+      message: "Failed to update shipment status",
+    });
+  }
 });
 
 router.post("/run-log", agentTokenAuth, (_req, res) => {

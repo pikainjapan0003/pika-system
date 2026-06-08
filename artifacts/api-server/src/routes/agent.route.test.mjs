@@ -1,5 +1,5 @@
 /**
- * Unit/integration tests for Agent token middleware + routes (Step 7D-3B/3C/3D)
+ * Unit/integration tests for Agent token middleware + routes (Step 7D-3B/3C/3D/3E-1)
  *
  * Runtime: Node.js v24 built-in test runner (node:test)
  * Auth:    agentTokenAuth middleware — reads Authorization: Bearer <token> header
@@ -43,16 +43,21 @@ const VALID_RECORD = {
 // ─────────────────────────────────────────────────────────────
 let mockQueryResult = [];         // auth: seller_agent_tokens query
 let mockTrackingJobsResult = [];  // GET tracking-jobs: orderBy path
-let mockOwnershipCheckResult = [];// POST shipment-events: ownership verification
+let mockOwnershipCheckResult = [];// ownership verification (shared: POST shipment-events / PATCH shipment-status)
 
 // Events table select — configurable per-test via mockFindEventFn
 let mockIdempotencyCheckResult = [];
 let mockFindEventFn = async () => [...mockIdempotencyCheckResult];
 
-// Insert mock
+// Insert mock (POST /shipment-events)
 let mockInsertResult = [];
 let mockInsertShouldThrow = null;
-let mockInsertCapture = null; // captures values() argument for assertions
+let mockInsertCapture = null;
+
+// Update mock (PATCH /shipment-status)
+let mockUpdateResult = [];
+let mockUpdateShouldThrow = null;
+let mockUpdateCapture = null;
 
 // ─────────────────────────────────────────────────────────────
 // 4. Sample data
@@ -99,6 +104,18 @@ const MOCK_INSERT_RESULT = {
   createdAt: new Date(),
 };
 
+const MOCK_UPDATE_RESULT = {
+  id: 123,
+  trackingStatus: 'active',
+  latestEventStatus: 'in_transit',
+  latestEventDescription: '包裹配送中',
+  latestEventAt: new Date('2026-06-08T08:00:00.000Z'),
+  lastCheckedAt: new Date('2026-06-08T08:01:00.000Z'),
+  nextCheckAt: new Date('2026-06-08T14:00:00.000Z'),
+  failureCount: 0,
+  updatedAt: new Date('2026-06-08T09:00:00.000Z'),
+};
+
 // ─────────────────────────────────────────────────────────────
 // 5. Import drizzle sql() BEFORE mocking @workspace/db
 // ─────────────────────────────────────────────────────────────
@@ -126,6 +143,7 @@ const mockShipmentTrackingsTable = {
   nextCheckAt:            sql`"st"."next_check_at"`,
   failureCount:           sql`"st"."failure_count"`,
   createdAt:              sql`"st"."created_at"`,
+  updatedAt:              sql`"st"."updated_at"`,
 };
 
 const mockOrdersTable = {
@@ -155,10 +173,11 @@ const mockShipmentTrackingEventsTable = {
 //      - sellerAgentTokensTable      → auth chain: .where().limit()
 //      - shipmentTrackingsTable       → join chain:
 //          .innerJoin().where().orderBy().limit() → tracking-jobs
-//          .innerJoin().where().limit()            → ownership check
+//          .innerJoin().where().limit()            → ownership check (shared)
 //      - shipmentTrackingEventsTable  → events chain: .where().limit()
 //
 //    db.insert() → captures values, returns mockInsertResult or throws
+//    db.update() → captures set values, returns mockUpdateResult or throws
 // ─────────────────────────────────────────────────────────────
 mock.module('@workspace/db', {
   namedExports: {
@@ -179,7 +198,7 @@ mock.module('@workspace/db', {
               }),
             };
           }
-          // shipmentTrackingsTable: supports both orderBy path and direct limit
+          // shipmentTrackingsTable: supports orderBy path (tracking-jobs) and direct limit (ownership check)
           return {
             innerJoin: () => ({
               where: () => ({
@@ -203,12 +222,19 @@ mock.module('@workspace/db', {
           };
         },
       }),
-      update: () => ({
-        set: () => ({
-          where: () => ({
-            catch: () => undefined,
-          }),
-        }),
+      update: (_table) => ({
+        set: (vals) => {
+          mockUpdateCapture = vals ? { ...vals } : null;
+          return {
+            where: () => ({
+              catch: () => undefined,
+              returning: async () => {
+                if (mockUpdateShouldThrow) throw mockUpdateShouldThrow;
+                return [...mockUpdateResult];
+              },
+            }),
+          };
+        },
       }),
     },
     sellerAgentTokensTable: mockSellerAgentTokensTable,
@@ -269,7 +295,7 @@ async function reqRaw(method, path, headers = {}) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// 10. Agent auth middleware tests
+// 10. Agent auth middleware tests (9 tests)
 // ─────────────────────────────────────────────────────────────
 describe('Agent auth middleware', () => {
   test('missing Authorization header → 401 agent_auth_missing', async () => {
@@ -337,7 +363,7 @@ describe('Agent auth middleware', () => {
 });
 
 // ─────────────────────────────────────────────────────────────
-// 11. Agent route skeleton tests
+// 11. Agent route skeleton tests (6 tests)
 // ─────────────────────────────────────────────────────────────
 describe('Agent route skeleton', () => {
   test('GET /orders/tracking-jobs → 200', async () => {
@@ -355,11 +381,11 @@ describe('Agent route skeleton', () => {
     assert.equal(r.data.error, 'invalid_tracking_id');
   });
 
-  test('PATCH /shipment-status → 501', async () => {
+  test('PATCH /shipment-status with empty body → 400 (requires trackingId)', async () => {
     mockQueryResult = [VALID_RECORD];
     const r = await req('PATCH', '/shipment-status', { token: VALID_TOKEN, body: {} });
-    assert.equal(r.status, 501);
-    assert.equal(r.data.error, 'not_implemented');
+    assert.equal(r.status, 400);
+    assert.equal(r.data.error, 'invalid_tracking_id');
   });
 
   test('POST /run-log → 501', async () => {
@@ -382,7 +408,7 @@ describe('Agent route skeleton', () => {
 });
 
 // ─────────────────────────────────────────────────────────────
-// 12. GET /orders/tracking-jobs — full implementation tests
+// 12. GET /orders/tracking-jobs — full implementation tests (15 tests)
 // ─────────────────────────────────────────────────────────────
 describe('GET /orders/tracking-jobs', () => {
   test('unauthenticated → 401', async () => {
@@ -494,11 +520,11 @@ describe('GET /orders/tracking-jobs', () => {
     assert.notEqual(r.data.error, 'not_implemented');
   });
 
-  test('PATCH /shipment-status still 501', async () => {
+  test('PATCH /shipment-status implemented (not 501)', async () => {
     mockQueryResult = [VALID_RECORD];
     const r = await req('PATCH', '/shipment-status', { token: VALID_TOKEN, body: {} });
-    assert.equal(r.status, 501);
-    assert.equal(r.data.error, 'not_implemented');
+    assert.notEqual(r.status, 501);
+    assert.notEqual(r.data.error, 'not_implemented');
   });
 
   test('POST /run-log still 501', async () => {
@@ -510,7 +536,7 @@ describe('GET /orders/tracking-jobs', () => {
 });
 
 // ─────────────────────────────────────────────────────────────
-// 13. POST /shipment-events — full implementation tests
+// 13. POST /shipment-events — full implementation tests (16 tests)
 // ─────────────────────────────────────────────────────────────
 describe('POST /shipment-events', () => {
   test('unauthenticated → 401', async () => {
@@ -648,7 +674,7 @@ describe('POST /shipment-events', () => {
 
   test('tracking not found (ownership check fails) → 404 tracking_not_found', async () => {
     mockQueryResult = [VALID_RECORD];
-    mockOwnershipCheckResult = []; // no tracking found
+    mockOwnershipCheckResult = [];
     const r = await req('POST', '/shipment-events', {
       token: VALID_TOKEN,
       body: { trackingId: 999, eventStatus: 'in_transit' },
@@ -660,7 +686,7 @@ describe('POST /shipment-events', () => {
   test('idempotencyKey already exists → 200 idempotent true', async () => {
     mockQueryResult = [VALID_RECORD];
     mockOwnershipCheckResult = [MOCK_OWNERSHIP_ROW];
-    mockFindEventFn = async () => [MOCK_EVENT]; // pre-check finds existing event
+    mockFindEventFn = async () => [MOCK_EVENT];
     mockInsertShouldThrow = null;
     const r = await req('POST', '/shipment-events', {
       token: VALID_TOKEN,
@@ -679,7 +705,6 @@ describe('POST /shipment-events', () => {
   test('23505 unique conflict + re-query success → 200 idempotent true', async () => {
     mockQueryResult = [VALID_RECORD];
     mockOwnershipCheckResult = [MOCK_OWNERSHIP_ROW];
-    // Simulate race condition: pre-check returns nothing, insert fails, re-query succeeds
     let callCount = 0;
     mockFindEventFn = async () => {
       callCount++;
@@ -722,11 +747,196 @@ describe('POST /shipment-events', () => {
     assert.ok(Array.isArray(r.data.jobs));
   });
 
-  test('PATCH /shipment-status still 501', async () => {
+  test('PATCH /shipment-status implemented (not 501)', async () => {
     mockQueryResult = [VALID_RECORD];
     const r = await req('PATCH', '/shipment-status', { token: VALID_TOKEN, body: {} });
+    assert.notEqual(r.status, 501);
+    assert.notEqual(r.data.error, 'not_implemented');
+  });
+
+  test('POST /run-log still 501', async () => {
+    mockQueryResult = [VALID_RECORD];
+    const r = await req('POST', '/run-log', { token: VALID_TOKEN, body: {} });
     assert.equal(r.status, 501);
     assert.equal(r.data.error, 'not_implemented');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────
+// 14. PATCH /shipment-status — full implementation tests (15 tests)
+// ─────────────────────────────────────────────────────────────
+describe('PATCH /shipment-status', () => {
+  test('unauthenticated → 401', async () => {
+    const r = await reqRaw('PATCH', '/shipment-status');
+    assert.equal(r.status, 401);
+  });
+
+  test('valid token + valid update → 200', async () => {
+    mockQueryResult = [VALID_RECORD];
+    mockOwnershipCheckResult = [MOCK_OWNERSHIP_ROW];
+    mockUpdateShouldThrow = null;
+    mockUpdateResult = [MOCK_UPDATE_RESULT];
+    const r = await req('PATCH', '/shipment-status', {
+      token: VALID_TOKEN,
+      body: {
+        trackingId: 123,
+        trackingStatus: 'active',
+        latestEventStatus: 'in_transit',
+        latestEventDescription: '包裹配送中',
+        latestEventAt: '2026-06-08T08:00:00.000Z',
+        lastCheckedAt: '2026-06-08T08:01:00.000Z',
+        nextCheckAt: '2026-06-08T14:00:00.000Z',
+        failureCount: 0,
+      },
+    });
+    assert.equal(r.status, 200);
+    assert.ok('tracking' in r.data);
+    assert.ok('trackingId' in r.data.tracking);
+    assert.ok('trackingStatus' in r.data.tracking);
+    assert.ok('updatedAt' in r.data.tracking);
+    assert.equal(r.data.tracking.trackingStatus, 'active');
+  });
+
+  test('response does not include rawPayload or rawData or raw_data', async () => {
+    mockQueryResult = [VALID_RECORD];
+    mockOwnershipCheckResult = [MOCK_OWNERSHIP_ROW];
+    mockUpdateShouldThrow = null;
+    mockUpdateResult = [MOCK_UPDATE_RESULT];
+    const r = await req('PATCH', '/shipment-status', {
+      token: VALID_TOKEN,
+      body: { trackingId: 123, trackingStatus: 'active' },
+    });
+    assert.equal(r.status, 200);
+    const body = JSON.stringify(r.data);
+    assert.ok(!body.includes('rawPayload'), 'must not expose rawPayload');
+    assert.ok(!body.includes('rawData'), 'must not expose rawData');
+    assert.ok(!body.includes('raw_data'), 'must not expose raw_data');
+  });
+
+  test('missing trackingId → 400 invalid_tracking_id', async () => {
+    mockQueryResult = [VALID_RECORD];
+    const r = await req('PATCH', '/shipment-status', {
+      token: VALID_TOKEN,
+      body: { trackingStatus: 'active' },
+    });
+    assert.equal(r.status, 400);
+    assert.equal(r.data.error, 'invalid_tracking_id');
+  });
+
+  test('invalid trackingStatus → 400 invalid_tracking_status', async () => {
+    mockQueryResult = [VALID_RECORD];
+    const r = await req('PATCH', '/shipment-status', {
+      token: VALID_TOKEN,
+      body: { trackingId: 123, trackingStatus: 'INVALID_STATUS' },
+    });
+    assert.equal(r.status, 400);
+    assert.equal(r.data.error, 'invalid_tracking_status');
+  });
+
+  test('missing trackingStatus → 400 invalid_tracking_status', async () => {
+    mockQueryResult = [VALID_RECORD];
+    const r = await req('PATCH', '/shipment-status', {
+      token: VALID_TOKEN,
+      body: { trackingId: 123 },
+    });
+    assert.equal(r.status, 400);
+    assert.equal(r.data.error, 'invalid_tracking_status');
+  });
+
+  test('invalid latestEventStatus → 400 invalid_event_status', async () => {
+    mockQueryResult = [VALID_RECORD];
+    const r = await req('PATCH', '/shipment-status', {
+      token: VALID_TOKEN,
+      body: { trackingId: 123, trackingStatus: 'active', latestEventStatus: 'BAD_STATUS' },
+    });
+    assert.equal(r.status, 400);
+    assert.equal(r.data.error, 'invalid_event_status');
+  });
+
+  test('invalid latestEventAt → 400 invalid_latest_event_at', async () => {
+    mockQueryResult = [VALID_RECORD];
+    const r = await req('PATCH', '/shipment-status', {
+      token: VALID_TOKEN,
+      body: { trackingId: 123, trackingStatus: 'active', latestEventAt: 'not-a-date' },
+    });
+    assert.equal(r.status, 400);
+    assert.equal(r.data.error, 'invalid_latest_event_at');
+  });
+
+  test('invalid lastCheckedAt → 400 invalid_last_checked_at', async () => {
+    mockQueryResult = [VALID_RECORD];
+    const r = await req('PATCH', '/shipment-status', {
+      token: VALID_TOKEN,
+      body: { trackingId: 123, trackingStatus: 'active', lastCheckedAt: 'not-a-date' },
+    });
+    assert.equal(r.status, 400);
+    assert.equal(r.data.error, 'invalid_last_checked_at');
+  });
+
+  test('invalid nextCheckAt → 400 invalid_next_check_at', async () => {
+    mockQueryResult = [VALID_RECORD];
+    const r = await req('PATCH', '/shipment-status', {
+      token: VALID_TOKEN,
+      body: { trackingId: 123, trackingStatus: 'active', nextCheckAt: 'not-a-date' },
+    });
+    assert.equal(r.status, 400);
+    assert.equal(r.data.error, 'invalid_next_check_at');
+  });
+
+  test('invalid failureCount (negative) → 400 invalid_failure_count', async () => {
+    mockQueryResult = [VALID_RECORD];
+    const r = await req('PATCH', '/shipment-status', {
+      token: VALID_TOKEN,
+      body: { trackingId: 123, trackingStatus: 'active', failureCount: -1 },
+    });
+    assert.equal(r.status, 400);
+    assert.equal(r.data.error, 'invalid_failure_count');
+  });
+
+  test('tracking not found / wrong store → 404 tracking_not_found', async () => {
+    mockQueryResult = [VALID_RECORD];
+    mockOwnershipCheckResult = [];
+    const r = await req('PATCH', '/shipment-status', {
+      token: VALID_TOKEN,
+      body: { trackingId: 999, trackingStatus: 'active' },
+    });
+    assert.equal(r.status, 404);
+    assert.equal(r.data.error, 'tracking_not_found');
+  });
+
+  test('DB update failed → 500 agent_shipment_status_failed', async () => {
+    mockQueryResult = [VALID_RECORD];
+    mockOwnershipCheckResult = [MOCK_OWNERSHIP_ROW];
+    mockUpdateShouldThrow = new Error('DB connection lost');
+    mockUpdateResult = [];
+    const r = await req('PATCH', '/shipment-status', {
+      token: VALID_TOKEN,
+      body: { trackingId: 123, trackingStatus: 'active' },
+    });
+    assert.equal(r.status, 500);
+    assert.equal(r.data.error, 'agent_shipment_status_failed');
+  });
+
+  test('GET /orders/tracking-jobs still 200', async () => {
+    mockQueryResult = [VALID_RECORD];
+    mockTrackingJobsResult = [];
+    const r = await req('GET', '/orders/tracking-jobs', { token: VALID_TOKEN });
+    assert.equal(r.status, 200);
+    assert.ok(Array.isArray(r.data.jobs));
+  });
+
+  test('POST /shipment-events still works (201 for valid body)', async () => {
+    mockQueryResult = [VALID_RECORD];
+    mockOwnershipCheckResult = [MOCK_OWNERSHIP_ROW];
+    mockFindEventFn = async () => [];
+    mockInsertShouldThrow = null;
+    mockInsertResult = [MOCK_INSERT_RESULT];
+    const r = await req('POST', '/shipment-events', {
+      token: VALID_TOKEN,
+      body: { trackingId: 123, eventStatus: 'in_transit' },
+    });
+    assert.equal(r.status, 201);
+    assert.ok('event' in r.data);
   });
 
   test('POST /run-log still 501', async () => {
