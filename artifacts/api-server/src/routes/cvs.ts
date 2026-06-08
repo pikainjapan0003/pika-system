@@ -160,7 +160,7 @@ router.post("/cvs/711/import-from-emap", requireAuth, async (req: any, res) => {
     return res.status(404).json({ error: "找不到符合的 7-11 門市" });
   }
 
-  const geo = geoMatch[1];
+  const geo = geoMatch?.[1] ?? "";
   const storeId = getTag(geo, "POIID");
   if (!storeId) {
     return res.status(404).json({ error: "找不到符合的 7-11 門市" });
