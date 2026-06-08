@@ -7,3 +7,4 @@ export * from "./shipmentTrackings.ts";
 export * from "./shipmentTrackingEvents.ts";
 export * from "./sellerAgentTokens.ts";
 export * from "./agentRunLogs.ts";
+export * from "./sellerAgentSettings.ts";
