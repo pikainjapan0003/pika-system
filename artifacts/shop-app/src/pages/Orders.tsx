@@ -548,6 +548,15 @@ export default function OrdersPage() {
                               label="運費"
                               value={`NT$ ${Number(o.shippingFee ?? 0).toLocaleString()}`}
                             />
+                            {o.discountAmount != null && o.discountAmount > 0 && (
+                              <DetailRow
+                                label="折讓"
+                                value={`-NT$ ${Number(o.discountAmount).toLocaleString()}`}
+                              />
+                            )}
+                            {o.discountNote && (
+                              <DetailRow label="折讓備註" value={o.discountNote} />
+                            )}
                             <DetailRow
                               label="訂單總額"
                               value={`NT$ ${Number(o.orderTotal ?? (Number(o.totalPrice) + Number(o.shippingFee ?? 0))).toLocaleString()}`}
