@@ -411,6 +411,88 @@ export const GetStoreStatsResponse = zod.object({
 
 
 /**
+ * @summary Get seller agent settings for a store
+ */
+export const GetSellerAgentSettingsParams = zod.object({
+  "storeId": zod.coerce.number()
+})
+
+export const GetSellerAgentSettingsResponse = zod.object({
+  "data": zod.object({
+  "id": zod.number().optional(),
+  "storeId": zod.number(),
+  "merchantId": zod.string(),
+  "agentStatus": zod.enum(['disabled', 'enabled']),
+  "agentMode": zod.enum(['rule_worker', 'external_agent', 'self_hosted_webhook', 'platform_managed_reserved']),
+  "enabledLogistics": zod.array(zod.enum(['seven_eleven', 'family_mart', 'home_delivery', 'other', 'webhook'])),
+  "queryMethods": zod.array(zod.enum(['manual', 'csv_import', 'webhook', 'scheduled'])),
+  "queryFrequency": zod.enum(['manual', 'daily', 'every_6_hours', 'every_2_hours_high_tier']),
+  "notifyOnUnknown": zod.boolean(),
+  "requireConfirmOnException": zod.boolean(),
+  "requireConfirmOnReturned": zod.boolean(),
+  "requireConfirmOnDelivered": zod.boolean(),
+  "hideErrorDetailsFromBuyer": zod.boolean(),
+  "webhookEnabled": zod.boolean(),
+  "webhookUrl": zod.string().nullish(),
+  "hasWebhookSecret": zod.boolean(),
+  "lastTestRunAt": zod.coerce.date().nullish(),
+  "lastRunAt": zod.coerce.date().nullish(),
+  "createdAt": zod.string().nullish(),
+  "updatedAt": zod.string().nullish()
+})
+})
+
+
+/**
+ * @summary Update seller agent settings for a store
+ */
+export const UpdateSellerAgentSettingsParams = zod.object({
+  "storeId": zod.coerce.number()
+})
+
+export const UpdateSellerAgentSettingsBody = zod.object({
+  "agentStatus": zod.enum(['disabled', 'enabled']).optional(),
+  "agentMode": zod.enum(['rule_worker', 'external_agent', 'self_hosted_webhook']).optional(),
+  "enabledLogistics": zod.array(zod.enum(['seven_eleven', 'family_mart', 'home_delivery', 'other', 'webhook'])).optional(),
+  "queryMethods": zod.array(zod.enum(['manual', 'csv_import', 'webhook', 'scheduled'])).optional(),
+  "queryFrequency": zod.enum(['manual', 'daily', 'every_6_hours', 'every_2_hours_high_tier']).optional(),
+  "notifyOnUnknown": zod.boolean().optional(),
+  "requireConfirmOnException": zod.boolean().optional(),
+  "requireConfirmOnReturned": zod.boolean().optional(),
+  "requireConfirmOnDelivered": zod.boolean().optional(),
+  "hideErrorDetailsFromBuyer": zod.boolean().optional(),
+  "webhookEnabled": zod.boolean().optional(),
+  "webhookUrl": zod.string().nullish(),
+  "webhookSecret": zod.string().nullish().describe('Plaintext secret (min 16, max 256 chars). Pass null to clear.')
+})
+
+export const UpdateSellerAgentSettingsResponse = zod.object({
+  "data": zod.object({
+  "id": zod.number().optional(),
+  "storeId": zod.number(),
+  "merchantId": zod.string(),
+  "agentStatus": zod.enum(['disabled', 'enabled']),
+  "agentMode": zod.enum(['rule_worker', 'external_agent', 'self_hosted_webhook', 'platform_managed_reserved']),
+  "enabledLogistics": zod.array(zod.enum(['seven_eleven', 'family_mart', 'home_delivery', 'other', 'webhook'])),
+  "queryMethods": zod.array(zod.enum(['manual', 'csv_import', 'webhook', 'scheduled'])),
+  "queryFrequency": zod.enum(['manual', 'daily', 'every_6_hours', 'every_2_hours_high_tier']),
+  "notifyOnUnknown": zod.boolean(),
+  "requireConfirmOnException": zod.boolean(),
+  "requireConfirmOnReturned": zod.boolean(),
+  "requireConfirmOnDelivered": zod.boolean(),
+  "hideErrorDetailsFromBuyer": zod.boolean(),
+  "webhookEnabled": zod.boolean(),
+  "webhookUrl": zod.string().nullish(),
+  "hasWebhookSecret": zod.boolean(),
+  "lastTestRunAt": zod.coerce.date().nullish(),
+  "lastRunAt": zod.coerce.date().nullish(),
+  "createdAt": zod.string().nullish(),
+  "updatedAt": zod.string().nullish()
+})
+})
+
+
+/**
  * @summary Update order basic info (merchant)
  */
 export const UpdateOrderParams = zod.object({
@@ -675,6 +757,34 @@ export const BulkUpdateOrdersResponse = zod.object({
   "updatedCount": zod.number(),
   "skippedCount": zod.number(),
   "skippedOrderIds": zod.array(zod.number())
+})
+
+
+/**
+ * @summary Batch import tracking codes for orders (merchant, auth required)
+ */
+export const importOrderTrackingBodyRowsItemTrackingCodeMax = 100;
+
+
+
+
+export const ImportOrderTrackingBody = zod.object({
+  "rows": zod.array(zod.object({
+  "orderId": zod.string().describe('Order ID as plain integer string (e.g. \"123\") or \"#123\" format'),
+  "trackingProvider": zod.enum(['711', 'familymart', 'home_delivery', 'other']).describe('Carrier provider code. Note: \"familymart\" here is distinct from cvsStores.provider value \"family\" — these are different enum contexts.\n'),
+  "trackingCode": zod.string().min(1).max(importOrderTrackingBodyRowsItemTrackingCodeMax).describe('Carrier tracking number (trimmed, max 100 chars)')
+})).min(1).describe('Must not contain any row with a \"publicToken\" key. Presence of publicToken in any row rejects the entire request (HTTP 422).\n')
+})
+
+export const ImportOrderTrackingResponse = zod.object({
+  "totalRows": zod.number(),
+  "successCount": zod.number(),
+  "failedCount": zod.number(),
+  "errors": zod.array(zod.object({
+  "row": zod.number().describe('1-based row index in the submitted rows array'),
+  "orderId": zod.string().optional().describe('The orderId from the row that failed (if available)'),
+  "reason": zod.string().describe('Human-readable error reason')
+}))
 })
 
 

@@ -22,6 +22,7 @@ import type {
 import type {
   BulkOrderUpdate,
   BulkOrderUpdateResponse,
+  GetSellerAgentSettings200,
   HealthStatus,
   MerchantOrderInput,
   Order,
@@ -41,7 +42,11 @@ import type {
   Store,
   StoreInput,
   StoreStats,
-  StoreUpdate
+  StoreUpdate,
+  TrackingImportBody,
+  TrackingImportResponse,
+  UpdateSellerAgentSettings200,
+  UpdateSellerAgentSettingsRequest
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -1328,6 +1333,155 @@ export function useGetStoreStats<TData = Awaited<ReturnType<typeof getStoreStats
 
 
 
+export const getGetSellerAgentSettingsUrl = (storeId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/agent/settings`
+}
+
+/**
+ * @summary Get seller agent settings for a store
+ */
+export const getSellerAgentSettings = async (storeId: number, options?: RequestInit): Promise<GetSellerAgentSettings200> => {
+
+  return customFetch<GetSellerAgentSettings200>(getGetSellerAgentSettingsUrl(storeId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSellerAgentSettingsQueryKey = (storeId: number,) => {
+    return [
+    `/api/stores/${storeId}/agent/settings`
+    ] as const;
+    }
+
+
+export const getGetSellerAgentSettingsQueryOptions = <TData = Awaited<ReturnType<typeof getSellerAgentSettings>>, TError = ErrorType<void>>(storeId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSellerAgentSettings>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSellerAgentSettingsQueryKey(storeId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSellerAgentSettings>>> = ({ signal }) => getSellerAgentSettings(storeId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(storeId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSellerAgentSettings>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSellerAgentSettingsQueryResult = NonNullable<Awaited<ReturnType<typeof getSellerAgentSettings>>>
+export type GetSellerAgentSettingsQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get seller agent settings for a store
+ */
+
+export function useGetSellerAgentSettings<TData = Awaited<ReturnType<typeof getSellerAgentSettings>>, TError = ErrorType<void>>(
+ storeId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSellerAgentSettings>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSellerAgentSettingsQueryOptions(storeId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getUpdateSellerAgentSettingsUrl = (storeId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/agent/settings`
+}
+
+/**
+ * @summary Update seller agent settings for a store
+ */
+export const updateSellerAgentSettings = async (storeId: number,
+    updateSellerAgentSettingsRequest: UpdateSellerAgentSettingsRequest, options?: RequestInit): Promise<UpdateSellerAgentSettings200> => {
+
+  return customFetch<UpdateSellerAgentSettings200>(getUpdateSellerAgentSettingsUrl(storeId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateSellerAgentSettingsRequest,)
+  }
+);}
+
+
+
+
+export const getUpdateSellerAgentSettingsMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSellerAgentSettings>>, TError,{storeId: number;data: BodyType<UpdateSellerAgentSettingsRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateSellerAgentSettings>>, TError,{storeId: number;data: BodyType<UpdateSellerAgentSettingsRequest>}, TContext> => {
+
+const mutationKey = ['updateSellerAgentSettings'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateSellerAgentSettings>>, {storeId: number;data: BodyType<UpdateSellerAgentSettingsRequest>}> = (props) => {
+          const {storeId,data} = props ?? {};
+
+          return  updateSellerAgentSettings(storeId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateSellerAgentSettingsMutationResult = NonNullable<Awaited<ReturnType<typeof updateSellerAgentSettings>>>
+    export type UpdateSellerAgentSettingsMutationBody = BodyType<UpdateSellerAgentSettingsRequest>
+    export type UpdateSellerAgentSettingsMutationError = ErrorType<void>
+
+    /**
+ * @summary Update seller agent settings for a store
+ */
+export const useUpdateSellerAgentSettings = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSellerAgentSettings>>, TError,{storeId: number;data: BodyType<UpdateSellerAgentSettingsRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateSellerAgentSettings>>,
+        TError,
+        {storeId: number;data: BodyType<UpdateSellerAgentSettingsRequest>},
+        TContext
+      > => {
+      return useMutation(getUpdateSellerAgentSettingsMutationOptions(options));
+    }
+
 export const getUpdateOrderUrl = (orderId: number,) => {
 
 
@@ -1825,6 +1979,77 @@ export const useBulkUpdateOrders = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getBulkUpdateOrdersMutationOptions(options));
+    }
+
+export const getImportOrderTrackingUrl = () => {
+
+
+
+
+  return `/api/orders/tracking-import`
+}
+
+/**
+ * @summary Batch import tracking codes for orders (merchant, auth required)
+ */
+export const importOrderTracking = async (trackingImportBody: TrackingImportBody, options?: RequestInit): Promise<TrackingImportResponse> => {
+
+  return customFetch<TrackingImportResponse>(getImportOrderTrackingUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      trackingImportBody,)
+  }
+);}
+
+
+
+
+export const getImportOrderTrackingMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof importOrderTracking>>, TError,{data: BodyType<TrackingImportBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof importOrderTracking>>, TError,{data: BodyType<TrackingImportBody>}, TContext> => {
+
+const mutationKey = ['importOrderTracking'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof importOrderTracking>>, {data: BodyType<TrackingImportBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  importOrderTracking(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ImportOrderTrackingMutationResult = NonNullable<Awaited<ReturnType<typeof importOrderTracking>>>
+    export type ImportOrderTrackingMutationBody = BodyType<TrackingImportBody>
+    export type ImportOrderTrackingMutationError = ErrorType<void>
+
+    /**
+ * @summary Batch import tracking codes for orders (merchant, auth required)
+ */
+export const useImportOrderTracking = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof importOrderTracking>>, TError,{data: BodyType<TrackingImportBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof importOrderTracking>>,
+        TError,
+        {data: BodyType<TrackingImportBody>},
+        TContext
+      > => {
+      return useMutation(getImportOrderTrackingMutationOptions(options));
     }
 
 export const getGetPublicProductUrl = (shareToken: string,) => {

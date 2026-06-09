@@ -3,3 +3,8 @@ export * from "./productCategories.ts";
 export * from "./products.ts";
 export * from "./orders.ts";
 export * from "./cvsStores.ts";
+export * from "./shipmentTrackings.ts";
+export * from "./shipmentTrackingEvents.ts";
+export * from "./sellerAgentTokens.ts";
+export * from "./agentRunLogs.ts";
+export * from "./sellerAgentSettings.ts";

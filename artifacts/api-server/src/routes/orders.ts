@@ -481,6 +481,143 @@ router.patch("/orders/bulk", requireAuth, async (req: any, res) => {
   });
 });
 
+// ─── Step 7B: Batch tracking import ────────────────────────────────────────
+// trackingProvider: familymart ≠ cvsStores.provider family (different contexts)
+const ALLOWED_TRACKING_PROVIDERS = ["711", "familymart", "home_delivery", "other"] as const;
+
+router.post("/orders/tracking-import", requireAuth, async (req: any, res) => {
+  const body = req.body;
+
+  // Reject entire request if any row contains publicToken key (D10)
+  const rows: unknown = body?.rows;
+  if (!Array.isArray(rows)) {
+    return res.status(400).json({ error: "rows must be an array" });
+  }
+  if (rows.length === 0) {
+    return res.status(400).json({ error: "rows must not be empty" });
+  }
+  const hasPublicToken = rows.some(
+    (row) => row && typeof row === "object" && "publicToken" in row,
+  );
+  if (hasPublicToken) {
+    return res.status(422).json({
+      error: "CSV 不應包含 publicToken 欄位，請改用 orderId 或 orderNumber 作為訂單識別",
+    });
+  }
+
+  type ImportError = { row: number; orderId: string; reason: string };
+  const errors: ImportError[] = [];
+  let successCount = 0;
+  const totalRows = rows.length;
+
+  // Parse and validate each row first
+  type ParsedRow = { rowIndex: number; rawOrderId: string; numericOrderId: number; trackingProvider: string; trackingCode: string };
+  const parsedRows: ParsedRow[] = [];
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const rowNum = i + 1;
+    if (!row || typeof row !== "object") {
+      errors.push({ row: rowNum, orderId: "", reason: "缺少必要欄位" });
+      continue;
+    }
+    const r = row as Record<string, unknown>;
+    const rawOrderId = String(r.orderId ?? "").trim();
+    const rawProvider = String(r.trackingProvider ?? "").trim();
+    const rawTrackingCode = String(r.trackingCode ?? "").trim();
+
+    // Validate orderId: pure number or #123 format (D1)
+    if (!rawOrderId) {
+      errors.push({ row: rowNum, orderId: rawOrderId, reason: "缺少必要欄位：orderId" });
+      continue;
+    }
+    const normalizedId = rawOrderId.startsWith("#") ? rawOrderId.slice(1) : rawOrderId;
+    const numericOrderId = parseInt(normalizedId, 10);
+    if (isNaN(numericOrderId) || String(numericOrderId) !== normalizedId) {
+      errors.push({ row: rowNum, orderId: rawOrderId, reason: "orderId 格式錯誤：需為純數字或 #數字" });
+      continue;
+    }
+
+    // Validate provider (D2, D6)
+    if (!rawProvider) {
+      errors.push({ row: rowNum, orderId: rawOrderId, reason: "缺少必要欄位：trackingProvider" });
+      continue;
+    }
+    if (!(ALLOWED_TRACKING_PROVIDERS as readonly string[]).includes(rawProvider.toLowerCase())) {
+      errors.push({ row: rowNum, orderId: rawOrderId, reason: `trackingProvider 不支援：'${rawProvider}'，允許值為 ${ALLOWED_TRACKING_PROVIDERS.join(" / ")}` });
+      continue;
+    }
+
+    // Validate trackingCode (D5)
+    if (!rawTrackingCode) {
+      errors.push({ row: rowNum, orderId: rawOrderId, reason: "trackingCode 空白" });
+      continue;
+    }
+    if (rawTrackingCode.length > 100) {
+      errors.push({ row: rowNum, orderId: rawOrderId, reason: "trackingCode 超過 100 字元上限" });
+      continue;
+    }
+
+    parsedRows.push({
+      rowIndex: rowNum,
+      rawOrderId,
+      numericOrderId,
+      trackingProvider: rawProvider.toLowerCase(),
+      trackingCode: rawTrackingCode,
+    });
+  }
+
+  // Batch fetch all validated orders
+  if (parsedRows.length > 0) {
+    const orderIds = parsedRows.map((r) => r.numericOrderId);
+    const orders = await db
+      .select()
+      .from(ordersTable)
+      .where(inArray(ordersTable.id, orderIds));
+
+    const orderMap = new Map(orders.map((o) => [o.id, o]));
+
+    // Verify store ownership for all found orders
+    const uniqueStoreIds = [...new Set(orders.map((o) => o.storeId))];
+    for (const storeId of uniqueStoreIds) {
+      if (!(await verifyStoreOwner(req, res, storeId))) return;
+    }
+
+    // Process each parsed row
+    for (const pr of parsedRows) {
+      const order = orderMap.get(pr.numericOrderId);
+      if (!order) {
+        errors.push({ row: pr.rowIndex, orderId: pr.rawOrderId, reason: "找不到訂單" });
+        continue;
+      }
+
+      // Reject if order does not belong to this store (already verified above, but double-check)
+      // verifyStoreOwner already returns early if any store fails, so this is safe
+
+      // D3 / D4: reject if trackingCode already exists
+      if (order.trackingCode != null && order.trackingCode.trim() !== "") {
+        errors.push({ row: pr.rowIndex, orderId: pr.rawOrderId, reason: "訂單已有物流追蹤碼，如需修改請至後台手動更新" });
+        continue;
+      }
+
+      // D9: only update trackingCode + trackingProvider, never shippingStatus
+      await db
+        .update(ordersTable)
+        .set({ trackingCode: pr.trackingCode, trackingProvider: pr.trackingProvider })
+        .where(eq(ordersTable.id, pr.numericOrderId));
+
+      successCount++;
+    }
+  }
+
+  return res.json({
+    totalRows,
+    successCount,
+    failedCount: totalRows - successCount,
+    errors,
+  });
+});
+
 router.patch("/orders/:orderId", requireAuth, async (req: any, res) => {
   const orderId = parseInt(req.params.orderId);
   if (isNaN(orderId)) return res.status(400).json({ error: "Invalid orderId" });
