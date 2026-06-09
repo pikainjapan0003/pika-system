@@ -1,0 +1,133 @@
+<!DOCTYPE html><html lang="zh-TW"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>銷貨單 — PickBee 代購蜂</title><style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: system-ui, -apple-system, 'Helvetica Neue', sans-serif;
+  font-size: 12px; color: #1a1a1a; background: white;
+  max-width: 680px; margin: 0 auto; padding: 12px 16px;
+}
+.brand-hero {
+  background: linear-gradient(135deg, #fff7ed 0%, #fef9f5 60%, #fff1f2 100%);
+  border: 2px solid #fb7185; border-radius: 12px;
+  text-align: center; padding: 20px 16px 16px; margin-bottom: 16px;
+}
+.brand-badge { font-size: 36px; line-height: 1; margin-bottom: 6px; }
+.brand-name { font-size: 24px; font-weight: 800; color: #fb7185; letter-spacing: 0.02em; }
+.brand-sub { font-size: 13px; font-weight: 600; color: #78350f; margin-top: 4px; }
+.brand-tagline {
+  font-size: 11px; color: #92400e; margin-top: 8px;
+  background: rgba(251,113,133,0.08); border-radius: 6px;
+  padding: 6px 12px; display: inline-block;
+}
+.section-card {
+  border: 1px solid #e5e7eb; border-radius: 8px;
+  padding: 12px 14px; margin-bottom: 12px;
+}
+.section-title {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.06em; color: #6b7280;
+  border-bottom: 1px solid #f3f4f6; padding-bottom: 5px; margin-bottom: 8px;
+}
+.info-grid { display: table; width: 100%; }
+.info-row { display: table-row; }
+.info-label { display: table-cell; color: #6b7280; font-size: 11px; padding: 3px 8px 3px 0; white-space: nowrap; width: 72px; vertical-align: top; }
+.info-value { display: table-cell; font-weight: 500; font-size: 12px; padding: 3px 0; word-break: break-word; }
+.info-value.mono { font-family: 'Courier New', monospace; letter-spacing: 0.02em; }
+.status-badge { display: inline-block; background: #fef3c7; color: #92400e; font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 10px; border: 1px solid #fcd34d; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.two-col .section-card { margin-bottom: 0; }
+.product-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.product-table thead tr { background: #f9fafb; }
+.product-table th { padding: 6px 8px; text-align: left; font-weight: 600; font-size: 11px; color: #4b5563; border-bottom: 2px solid #e5e7eb; }
+.product-table td { padding: 8px; border-bottom: 1px solid #f3f4f6; vertical-align: top; }
+.th-qty, .td-qty { width: 44px; text-align: center; }
+.th-price, .td-price { width: 80px; text-align: right; }
+.th-sub, .td-sub { width: 80px; text-align: right; font-weight: 600; }
+.product-name { font-weight: 500; word-break: break-word; }
+.product-spec { font-size: 11px; color: #6b7280; margin-top: 2px; }
+.payment-card { background: #fff9f9; border-color: #fecdd3; }
+.summary-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 8px; }
+.sl { color: #555; padding: 4px 8px 4px 0; vertical-align: middle; }
+.sr { text-align: right; padding: 4px 0; vertical-align: middle; }
+.total-row td { padding-top: 10px; font-weight: 700; font-size: 14px; border-top: 1.5px solid #e5e7eb; }
+.total-amount { color: #fb7185; }
+.pay-divider { border: none; border-top: 2px dashed #fecdd3; margin: 10px 0; }
+.remaining-due { background: #fff1f2; border: 2px solid #fb7185; border-radius: 8px; text-align: center; padding: 10px 12px; color: #be123c; font-size: 12px; font-weight: 600; line-height: 1.4; }
+.remaining-amount { font-size: 22px; font-weight: 800; color: #e11d48; display: block; margin-top: 3px; }
+.paid-clear { background: #f0fdf4; border: 2px solid #86efac; border-radius: 8px; text-align: center; padding: 10px 12px; color: #166534; font-size: 16px; font-weight: 700; }
+.notice-card { background: #fffbeb; border-color: #fde68a; }
+.notice-list { padding-left: 16px; font-size: 11px; color: #92400e; line-height: 1.9; }
+.notes-section { background: #f9fafb; }
+.receipt-footer { text-align: center; font-size: 10px; color: #9ca3af; margin-top: 16px; padding-top: 10px; border-top: 1px solid #e5e7eb; }
+</style></head><body>
+<div class="brand-hero">
+  <div class="brand-badge">&#x1F41D;</div>
+  <div class="brand-name">PickBee 代購蜂</div>
+  <div class="brand-sub">銷貨單 &middot; Order Receipt</div>
+  <div class="brand-tagline">感謝您使用 PickBee 代購蜂，請確認以下訂單、付款與取貨資訊。</div>
+</div>
+<div class="section-card">
+  <div class="section-title">訂單摘要</div>
+  <div class="info-grid">
+    <div class="info-row"><span class="info-label">訂單編號</span><span class="info-value mono">#10043</span></div>
+    <div class="info-row"><span class="info-label">列印時間</span><span class="info-value">2026/6/9 上午4:52:06</span></div>
+    <div class="info-row"><span class="info-label">訂單狀態</span><span class="info-value"><span class="status-badge">已到貨</span></span></div>
+    <div class="info-row"><span class="info-label">付款狀態</span><span class="info-value"><span class="status-badge">已付款</span></span></div>
+    <div class="info-row"><span class="info-label">取貨方式</span><span class="info-value">超商取貨</span></div>
+  </div>
+</div>
+<div class="two-col">
+  <div class="section-card">
+    <div class="section-title">客戶資訊</div>
+    <div class="info-grid">
+      <div class="info-row"><span class="info-label">姓名</span><span class="info-value">李小花</span></div>
+      <div class="info-row"><span class="info-label">電話</span><span class="info-value">0988-xxx-xxx</span></div>
+    </div>
+  </div>
+  <div class="section-card">
+    <div class="section-title">取貨資訊</div>
+    <div class="info-grid">
+      <div class="info-row"><span class="info-label">超商店名</span><span class="info-value">FamilyMart 信義誠品店</span></div>
+      <div class="info-row"><span class="info-label">超商店號</span><span class="info-value mono">369258</span></div>
+      <div class="info-row"><span class="info-label">門市地址</span><span class="info-value" style="word-break:break-word">台北市信義區松高路11號B2（誠品信義店）</span></div>
+    </div>
+  </div>
+</div>
+<div class="section-card">
+  <div class="section-title">商品明細</div>
+  <table class="product-table">
+    <thead><tr><th>商品名稱</th><th class="th-qty">數量</th><th class="th-price">單價</th><th class="th-sub">小計</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><div class="product-name">韓國首爾明洞 THE FACE SHOP 保濕精華面膜</div></td>
+        <td class="td-qty">&times;&nbsp;5</td>
+        <td class="td-price">NT$ 180</td>
+        <td class="td-sub">NT$ 900</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+<div class="section-card payment-card">
+  <div class="section-title">付款摘要</div>
+  <table class="summary-table">
+    <tr><td class="sl">商品小計</td><td class="sr">NT$ 900</td></tr>
+    <tr><td class="sl">運費</td><td class="sr">NT$ 60</td></tr>
+    
+    <tr class="total-row"><td class="sl">訂單總額</td><td class="sr total-amount">NT$ 960</td></tr>
+    <tr><td class="sl" style="padding-top:6px">已收金額</td><td class="sr" style="padding-top:6px">NT$ 960</td></tr>
+  </table>
+  <hr class="pay-divider">
+  <div class="paid-clear">&#x2713; 已付清</div>
+</div>
+
+<div class="section-card notice-card">
+  <div class="section-title">注意事項</div>
+  <ul class="notice-list">
+    <li>請確認商品、金額與取貨資訊是否正確。</li>
+    <li>代購商品可能因缺貨、價格異動或賣場狀態調整而另行通知。</li>
+    <li>訂單付款與取消規則請依賣家公告為準。</li>
+    <li>超商取貨請留意簡訊與取貨期限。</li>
+    <li>如有問題請盡快聯繫客服。</li>
+  </ul>
+</div>
+<div class="receipt-footer">本銷貨單由 PickBee 代購蜂管理系統產生</div>
+</body></html>

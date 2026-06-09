@@ -208,6 +208,123 @@ function formatCurrency(value: number): string {
   return `NT$ ${Number(value).toLocaleString()}`;
 }
 
+const RECEIPT_CSS = `
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: system-ui, -apple-system, "Helvetica Neue", sans-serif;
+  font-size: 12px; color: #1a1a1a; background: white;
+  max-width: 680px; margin: 0 auto; padding: 12px 16px;
+}
+.brand-hero {
+  background: linear-gradient(135deg, #fff7ed 0%, #fef9f5 60%, #fff1f2 100%);
+  border: 2px solid #fb7185; border-radius: 12px;
+  text-align: center; padding: 20px 16px 16px; margin-bottom: 16px;
+  page-break-inside: avoid; break-inside: avoid;
+}
+.brand-badge { font-size: 36px; line-height: 1; margin-bottom: 6px; }
+.brand-name { font-size: 24px; font-weight: 800; color: #fb7185; letter-spacing: 0.02em; }
+.brand-sub { font-size: 13px; font-weight: 600; color: #78350f; margin-top: 4px; }
+.brand-tagline {
+  font-size: 11px; color: #92400e; margin-top: 8px;
+  background: rgba(251,113,133,0.08); border-radius: 6px;
+  padding: 6px 12px; display: inline-block;
+}
+.section-card {
+  border: 1px solid #e5e7eb; border-radius: 8px;
+  padding: 12px 14px; margin-bottom: 12px;
+  page-break-inside: avoid; break-inside: avoid;
+}
+.section-title {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.06em; color: #6b7280;
+  border-bottom: 1px solid #f3f4f6; padding-bottom: 5px; margin-bottom: 8px;
+}
+.info-grid { display: table; width: 100%; }
+.info-row { display: table-row; }
+.info-label {
+  display: table-cell; color: #6b7280; font-size: 11px;
+  padding: 3px 8px 3px 0; white-space: nowrap; width: 72px; vertical-align: top;
+}
+.info-value {
+  display: table-cell; font-weight: 500; font-size: 12px;
+  padding: 3px 0; word-break: break-word;
+}
+.info-value.mono { font-family: "Courier New", monospace; letter-spacing: 0.02em; }
+.status-badge {
+  display: inline-block; background: #fef3c7; color: #92400e;
+  font-size: 10px; font-weight: 600; padding: 2px 7px;
+  border-radius: 10px; border: 1px solid #fcd34d;
+}
+.two-col {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;
+}
+.two-col .section-card { margin-bottom: 0; }
+.product-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.product-table thead tr { background: #f9fafb; }
+.product-table th {
+  padding: 6px 8px; text-align: left; font-weight: 600;
+  font-size: 11px; color: #4b5563; border-bottom: 2px solid #e5e7eb;
+}
+.product-table td { padding: 8px; border-bottom: 1px solid #f3f4f6; vertical-align: top; }
+.th-qty, .td-qty { width: 44px; text-align: center; }
+.th-price, .td-price { width: 80px; text-align: right; }
+.th-sub, .td-sub { width: 80px; text-align: right; font-weight: 600; }
+.product-name { font-weight: 500; word-break: break-word; }
+.product-spec { font-size: 11px; color: #6b7280; margin-top: 2px; }
+.payment-card { background: #fff9f9; border-color: #fecdd3; }
+.summary-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 8px; }
+.sl { color: #555; padding: 4px 8px 4px 0; vertical-align: middle; }
+.sr { text-align: right; padding: 4px 0; vertical-align: middle; }
+.total-row td { padding-top: 10px; font-weight: 700; font-size: 14px; border-top: 1.5px solid #e5e7eb; }
+.total-amount { color: #fb7185; }
+.pay-divider { border: none; border-top: 2px dashed #fecdd3; margin: 10px 0; }
+.remaining-due {
+  background: #fff1f2; border: 2px solid #fb7185; border-radius: 8px;
+  text-align: center; padding: 10px 12px; color: #be123c;
+  font-size: 12px; font-weight: 600; line-height: 1.4;
+}
+.remaining-amount {
+  font-size: 22px; font-weight: 800; color: #e11d48;
+  display: block; margin-top: 3px;
+}
+.paid-clear {
+  background: #f0fdf4; border: 2px solid #86efac; border-radius: 8px;
+  text-align: center; padding: 10px 12px; color: #166534;
+  font-size: 16px; font-weight: 700;
+}
+.notice-card { background: #fffbeb; border-color: #fde68a; }
+.notice-list { padding-left: 16px; font-size: 11px; color: #92400e; line-height: 1.9; }
+.notes-section { background: #f9fafb; }
+.receipt-footer {
+  text-align: center; font-size: 10px; color: #9ca3af;
+  margin-top: 16px; padding-top: 10px; border-top: 1px solid #e5e7eb;
+  page-break-inside: avoid; break-inside: avoid;
+}
+@media print {
+  @page { size: A4; margin: 10mm 12mm; }
+  body { padding: 0; }
+  .brand-hero, .section-card, .two-col, .receipt-footer {
+    page-break-inside: avoid; break-inside: avoid;
+  }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+`;
+
+function receiptHtmlDoc(title: string, body: string): string {
+  return `<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${esc(title)}</title>
+<style>${RECEIPT_CSS}</style>
+</head>
+<body>
+${body}
+</body>
+</html>`;
+}
+
 export function printOrderReceipt(order: Order): void {
   const now = new Date().toLocaleString("zh-TW");
 
@@ -235,77 +352,141 @@ export function printOrderReceipt(order: Order): void {
 
   const discountRow =
     discountAmount > 0
-      ? `<tr><td style="color:#555;padding:4px 0">折讓</td><td style="text-align:right;padding:4px 0;color:#e11d48">-${formatCurrency(discountAmount)}</td></tr>`
+      ? `<tr><td class="sl">折讓</td><td class="sr" style="color:#e11d48">-${formatCurrency(discountAmount)}</td></tr>`
       : "";
 
   const discountNoteRow =
     (order.discountNote ?? "").trim()
-      ? `<tr><td style="color:#555;padding:4px 0">折讓備註</td><td style="text-align:right;padding:4px 0">${esc((order.discountNote ?? "").trim())}</td></tr>`
+      ? `<tr><td class="sl" style="padding-left:10px;font-size:11px;color:#888">折讓備註</td><td class="sr" style="font-size:11px;color:#888">${esc((order.discountNote ?? "").trim())}</td></tr>`
       : "";
 
-  const storeRows = [
-    order.storeName ? `<div class="row"><span class="row-label">超商店名</span><span class="row-value">${esc(order.storeName)}</span></div>` : "",
-    order.storeCode ? `<div class="row"><span class="row-label">超商店號</span><span class="row-value">${esc(order.storeCode)}</span></div>` : "",
-    order.cvsStoreAddress ? `<div class="row"><span class="row-label">門市地址</span><span class="row-value">${esc(order.cvsStoreAddress)}</span></div>` : "",
-  ].filter(Boolean).join("");
+  const remainingBlock =
+    remainingAmount <= 0
+      ? `<div class="paid-clear">&#x2713; 已付清</div>`
+      : `<div class="remaining-due">待收金額<span class="remaining-amount">${formatCurrency(remainingAmount)}</span></div>`;
 
-  const notesHtml = (order.notes ?? "").trim()
-    ? `<div style="border-top:1px dashed #d1d5db;margin-top:12px;padding-top:10px">
-  <div style="font-size:11px;color:#555;margin-bottom:4px">訂單備註</div>
-  <div style="font-size:11px">${esc((order.notes ?? "").trim())}</div>
+  const orderNotesHtml =
+    (order.notes ?? "").trim()
+      ? `<div class="section-card notes-section">
+  <div class="section-title">訂單備註</div>
+  <div style="font-size:12px;line-height:1.6;word-break:break-word">${esc((order.notes ?? "").trim())}</div>
 </div>`
-    : "";
+      : "";
 
   const body = `
-<div style="text-align:center;border-bottom:2px solid #fb7185;padding-bottom:12px;margin-bottom:16px">
-  <div style="font-size:22px;font-weight:bold;color:#fb7185">PickBee 代購蜂</div>
-  <div style="font-size:16px;font-weight:600;margin-top:4px">銷貨單</div>
-  <div style="font-size:11px;color:#777;margin-top:4px">列印時間：${esc(now)}</div>
+<div class="brand-hero">
+  <div class="brand-badge">&#x1F41D;</div>
+  <div class="brand-name">PickBee 代購蜂</div>
+  <div class="brand-sub">銷貨單 &middot; Order Receipt</div>
+  <div class="brand-tagline">感謝您使用 PickBee 代購蜂，請確認以下訂單、付款與取貨資訊。</div>
 </div>
 
-<div class="card">
-  <div style="font-weight:700;font-size:12px;margin-bottom:6px;color:#555">訂單資訊</div>
-  <div class="row"><span class="row-label">訂單編號</span><span class="row-value">#${order.id}</span></div>
-  <div class="row"><span class="row-label">客戶名稱</span><span class="row-value">${esc(order.buyerName)}</span></div>
-  <div class="row"><span class="row-label">客戶電話</span><span class="row-value">${esc(order.buyerPhone)}</span></div>
-  <div class="row"><span class="row-label">訂單狀態</span><span class="row-value">${esc(ORDER_STATUS_RECEIPT_LABELS[order.status] ?? order.status)}</span></div>
-  ${paymentStatusText ? `<div class="row"><span class="row-label">付款狀態</span><span class="row-value">${esc(paymentStatusText)}</span></div>` : ""}
-  ${shippingMethodText ? `<div class="row"><span class="row-label">物流方式</span><span class="row-value">${esc(shippingMethodText)}</span></div>` : ""}
-  ${storeRows}
+<div class="section-card">
+  <div class="section-title">訂單摘要</div>
+  <div class="info-grid">
+    <div class="info-row">
+      <span class="info-label">訂單編號</span>
+      <span class="info-value mono">#${order.id}</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">列印時間</span>
+      <span class="info-value">${esc(now)}</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">訂單狀態</span>
+      <span class="info-value"><span class="status-badge">${esc(ORDER_STATUS_RECEIPT_LABELS[order.status] ?? order.status)}</span></span>
+    </div>
+    ${paymentStatusText ? `<div class="info-row"><span class="info-label">付款狀態</span><span class="info-value"><span class="status-badge">${esc(paymentStatusText)}</span></span></div>` : ""}
+    ${shippingMethodText ? `<div class="info-row"><span class="info-label">取貨方式</span><span class="info-value">${esc(shippingMethodText)}</span></div>` : ""}
+  </div>
 </div>
 
-<div class="card">
-  <div style="font-weight:700;font-size:12px;margin-bottom:6px;color:#555">商品明細</div>
-  <div class="row"><span class="row-label">商品名稱</span><span class="row-value">${esc(order.productName ?? "（未設定）")}</span></div>
-  ${specText ? `<div class="row"><span class="row-label">規格</span><span class="row-value">${specText}</span></div>` : ""}
-  <div class="row"><span class="row-label">數量</span><span class="row-value">× ${order.quantity}</span></div>
-  ${order.unitPrice != null ? `<div class="row"><span class="row-label">單價</span><span class="row-value">${formatCurrency(Number(order.unitPrice))}</span></div>` : ""}
-  <div class="row"><span class="row-label">商品小計</span><span class="row-value" style="font-weight:700">${formatCurrency(productSubtotal)}</span></div>
+<div class="two-col">
+  <div class="section-card">
+    <div class="section-title">客戶資訊</div>
+    <div class="info-grid">
+      <div class="info-row">
+        <span class="info-label">姓名</span>
+        <span class="info-value">${esc(order.buyerName)}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">電話</span>
+        <span class="info-value">${esc(order.buyerPhone)}</span>
+      </div>
+    </div>
+  </div>
+  <div class="section-card">
+    <div class="section-title">取貨資訊</div>
+    <div class="info-grid">
+      ${order.storeName ? `<div class="info-row"><span class="info-label">超商店名</span><span class="info-value">${esc(order.storeName)}</span></div>` : ""}
+      ${order.storeCode ? `<div class="info-row"><span class="info-label">超商店號</span><span class="info-value mono">${esc(order.storeCode)}</span></div>` : ""}
+      ${order.cvsStoreAddress ? `<div class="info-row"><span class="info-label">門市地址</span><span class="info-value" style="word-break:break-word">${esc(order.cvsStoreAddress)}</span></div>` : ""}
+      ${!order.storeName && !order.storeCode && !order.cvsStoreAddress ? `<div class="info-row"><span class="info-label" style="color:#bbb">－</span><span class="info-value" style="color:#bbb">取貨資訊未設定</span></div>` : ""}
+    </div>
+  </div>
 </div>
 
-<div class="card">
-  <div style="font-weight:700;font-size:12px;margin-bottom:6px;color:#555">金額明細</div>
-  <table style="width:100%;border-collapse:collapse;font-size:12px">
-    <tr><td style="color:#555;padding:4px 0">商品小計</td><td style="text-align:right;padding:4px 0">${formatCurrency(productSubtotal)}</td></tr>
-    <tr><td style="color:#555;padding:4px 0">運費</td><td style="text-align:right;padding:4px 0">${formatCurrency(shippingFee)}</td></tr>
+<div class="section-card">
+  <div class="section-title">商品明細</div>
+  <table class="product-table">
+    <thead>
+      <tr>
+        <th>商品名稱</th>
+        <th class="th-qty">數量</th>
+        <th class="th-price">單價</th>
+        <th class="th-sub">小計</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>
+          <div class="product-name">${esc(order.productName ?? "（未設定）")}</div>
+          ${specText ? `<div class="product-spec">${specText}</div>` : ""}
+        </td>
+        <td class="td-qty">&times;&nbsp;${order.quantity}</td>
+        <td class="td-price">${order.unitPrice != null ? formatCurrency(Number(order.unitPrice)) : "－"}</td>
+        <td class="td-sub">${formatCurrency(productSubtotal)}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="section-card payment-card">
+  <div class="section-title">付款摘要</div>
+  <table class="summary-table">
+    <tr><td class="sl">商品小計</td><td class="sr">${formatCurrency(productSubtotal)}</td></tr>
+    <tr><td class="sl">運費</td><td class="sr">${formatCurrency(shippingFee)}</td></tr>
     ${discountRow}
     ${discountNoteRow}
-    <tr style="border-top:1px solid #d1d5db">
-      <td style="padding:6px 0;font-weight:700">訂單總額</td>
-      <td style="text-align:right;padding:6px 0;font-weight:700;font-size:14px;color:#fb7185">${formatCurrency(orderTotal)}</td>
+    <tr class="total-row">
+      <td class="sl">訂單總額</td>
+      <td class="sr total-amount">${formatCurrency(orderTotal)}</td>
     </tr>
-    <tr><td style="color:#555;padding:4px 0">已收金額</td><td style="text-align:right;padding:4px 0">${formatCurrency(paidAmount)}</td></tr>
     <tr>
-      <td style="padding:4px 0;font-weight:600">待收金額</td>
-      <td style="text-align:right;padding:4px 0;font-weight:600;color:#e11d48">${formatCurrency(remainingAmount)}</td>
+      <td class="sl" style="padding-top:6px">已收金額</td>
+      <td class="sr" style="padding-top:6px">${formatCurrency(paidAmount)}</td>
     </tr>
   </table>
-  ${notesHtml}
+  <hr class="pay-divider">
+  ${remainingBlock}
 </div>
 
-<div style="text-align:center;font-size:10px;color:#999;margin-top:20px;padding-top:10px;border-top:1px solid #e5e7eb">
+${orderNotesHtml}
+
+<div class="section-card notice-card">
+  <div class="section-title">注意事項</div>
+  <ul class="notice-list">
+    <li>請確認商品、金額與取貨資訊是否正確。</li>
+    <li>代購商品可能因缺貨、價格異動或賣場狀態調整而另行通知。</li>
+    <li>訂單付款與取消規則請依賣家公告為準。</li>
+    <li>超商取貨請留意簡訊與取貨期限。</li>
+    <li>如有問題請盡快聯繫客服。</li>
+  </ul>
+</div>
+
+<div class="receipt-footer">
   本銷貨單由 PickBee 代購蜂管理系統產生
 </div>`;
 
-  openPrint(htmlDoc("銷貨單 — PickBee 代購蜂", body));
+  openPrint(receiptHtmlDoc("銷貨單 — PickBee 代購蜂", body));
 }
