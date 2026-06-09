@@ -212,6 +212,22 @@ const SHIPPING_METHOD_LABELS: Record<string, string> = {
   other: "其他",
 };
 
+type ReceiptFulfillmentCat = "self_pickup" | "cvs_711" | "cvs_family" | "home_black_cat" | "home_post" | "other";
+
+function getReceiptFulfillmentCat(order: Order): ReceiptFulfillmentCat {
+  const m = (order.pickupMethod ?? "").trim();
+  if (m === "自取" || m === "面交") return "self_pickup";
+  if (m.startsWith("7-11") || m.includes("711") || m.includes("統一")) return "cvs_711";
+  if (m.startsWith("全家")) return "cvs_family";
+  if (m.includes("黑貓") || m.includes("宅急便")) return "home_black_cat";
+  if (m.includes("郵局")) return "home_post";
+  if (m === "宅配") return "home_black_cat";
+  if (order.shippingMethod === "self_pickup") return "self_pickup";
+  if (order.shippingMethod === "convenience_store") return "cvs_711";
+  if (order.shippingMethod === "home_delivery") return "home_black_cat";
+  return "other";
+}
+
 function shippingOrderHtml(order: ShippingListOrder): string {
   const specText = order.specValues && Object.keys(order.specValues).length > 0
     ? Object.entries(order.specValues).map(([k, v]) => `${k}: ${v}`).join("、")
@@ -408,9 +424,9 @@ export function printOrderReceipt(order: Order): void {
     ? (PAYMENT_STATUS_LABELS[order.paymentStatus] ?? order.paymentStatus)
     : null;
 
-  const shippingMethodText = order.shippingMethod
-    ? (SHIPPING_METHOD_LABELS[order.shippingMethod] ?? order.shippingMethod)
-    : null;
+  const receiptCat = getReceiptFulfillmentCat(order);
+  const fulfillmentLabel = (order.pickupMethod ?? "").trim() ||
+    (order.shippingMethod ? (SHIPPING_METHOD_LABELS[order.shippingMethod] ?? order.shippingMethod) : null);
 
   const specText =
     order.specValues && Object.keys(order.specValues).length > 0
@@ -444,23 +460,31 @@ export function printOrderReceipt(order: Order): void {
 
   const noPickupInfo = `<div class="info-row"><span class="info-label" style="color:#bbb">－</span><span class="info-value" style="color:#bbb">取貨資訊未設定</span></div>`;
   let pickupRows: string;
-  if (order.shippingMethod === "convenience_store") {
-    // CVS: store name only — no store code, no store address
-    pickupRows = order.storeName
-      ? `<div class="info-row"><span class="info-label">超商店名</span><span class="info-value">${esc(order.storeName)}</span></div>`
-      : noPickupInfo;
-  } else if (order.shippingMethod === "home_delivery") {
-    // Home delivery: recipient address + carrier info
+  let pickupSectionTitle: string;
+  if (receiptCat === "self_pickup") {
+    pickupSectionTitle = "取貨資訊";
+    pickupRows = `<div class="info-row"><span class="info-label">取貨方式</span><span class="info-value">自取</span></div>`;
+  } else if (receiptCat === "cvs_711" || receiptCat === "cvs_family") {
+    pickupSectionTitle = "取貨資訊";
+    const cvsLabel = receiptCat === "cvs_711" ? "7-11" : "全家";
     const parts = [
-      order.recipientAddress ? `<div class="info-row"><span class="info-label">配送地址</span><span class="info-value" style="word-break:break-word">${esc(order.recipientAddress)}</span></div>` : "",
-      order.trackingProvider ? `<div class="info-row"><span class="info-label">物流商</span><span class="info-value">${esc(order.trackingProvider)}</span></div>` : "",
-      order.trackingCode ? `<div class="info-row"><span class="info-label">追蹤碼</span><span class="info-value mono">${esc(order.trackingCode)}</span></div>` : "",
+      `<div class="info-row"><span class="info-label">超商</span><span class="info-value">${esc(cvsLabel)}</span></div>`,
+      order.storeName ? `<div class="info-row"><span class="info-label">門市</span><span class="info-value">${esc(order.storeName)}</span></div>` : "",
+    ].filter(Boolean).join("");
+    pickupRows = parts;
+  } else if (receiptCat === "home_black_cat" || receiptCat === "home_post") {
+    pickupSectionTitle = "配送資訊";
+    const carrierLabel = order.trackingProvider || (receiptCat === "home_black_cat" ? "黑貓宅急便" : "郵局宅配");
+    const parts = [
+      `<div class="info-row"><span class="info-label">物流方式</span><span class="info-value">${esc(carrierLabel)}</span></div>`,
+      order.recipientAddress ? `<div class="info-row"><span class="info-label">收件地址</span><span class="info-value" style="word-break:break-word">${esc(order.recipientAddress)}</span></div>` : "",
+      order.trackingCode ? `<div class="info-row"><span class="info-label">物流追蹤碼</span><span class="info-value mono">${esc(order.trackingCode)}</span></div>` : "",
     ].filter(Boolean).join("");
     pickupRows = parts || noPickupInfo;
   } else {
-    // Self-pickup, other, or unknown: show whatever is available
+    pickupSectionTitle = "取貨資訊";
     const parts = [
-      order.storeName ? `<div class="info-row"><span class="info-label">超商店名</span><span class="info-value">${esc(order.storeName)}</span></div>` : "",
+      order.storeName ? `<div class="info-row"><span class="info-label">門市</span><span class="info-value">${esc(order.storeName)}</span></div>` : "",
       order.recipientAddress ? `<div class="info-row"><span class="info-label">收件地址</span><span class="info-value" style="word-break:break-word">${esc(order.recipientAddress)}</span></div>` : "",
     ].filter(Boolean).join("");
     pickupRows = parts || noPickupInfo;
@@ -490,7 +514,7 @@ export function printOrderReceipt(order: Order): void {
       <span class="info-value"><span class="status-badge">${esc(ORDER_STATUS_RECEIPT_LABELS[order.status] ?? order.status)}</span></span>
     </div>
     ${paymentStatusText ? `<div class="info-row"><span class="info-label">付款狀態</span><span class="info-value"><span class="status-badge">${esc(paymentStatusText)}</span></span></div>` : ""}
-    ${shippingMethodText ? `<div class="info-row"><span class="info-label">取貨方式</span><span class="info-value">${esc(shippingMethodText)}</span></div>` : ""}
+    ${fulfillmentLabel ? `<div class="info-row"><span class="info-label">取貨方式</span><span class="info-value">${esc(fulfillmentLabel)}</span></div>` : ""}
   </div>
 </div>
 
@@ -509,7 +533,7 @@ export function printOrderReceipt(order: Order): void {
     </div>
   </div>
   <div class="section-card">
-    <div class="section-title">取貨資訊</div>
+    <div class="section-title">${pickupSectionTitle}</div>
     <div class="info-grid">
       ${pickupRows}
     </div>
