@@ -80,7 +80,7 @@ export default function AgentSettingsPage() {
     isError,
     refetch,
   } = useGetSellerAgentSettings(storeId ?? 0, {
-    query: { enabled: !!storeId },
+    query: { enabled: !!storeId } as any,
   });
   const settings = settingsResp?.data;
 
