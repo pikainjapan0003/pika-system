@@ -32,15 +32,86 @@ ${body}
 </html>`;
 }
 
+function showReceiptPreviewOverlay(html: string): void {
+  const existing = document.getElementById("__receipt_overlay__");
+  if (existing) existing.remove();
+
+  const overlay = document.createElement("div");
+  overlay.id = "__receipt_overlay__";
+  overlay.style.cssText =
+    "position:fixed;top:0;left:0;right:0;bottom:0;z-index:99999;background:rgba(0,0,0,0.72);display:flex;flex-direction:column;font-family:system-ui,-apple-system,sans-serif;";
+
+  const bar = document.createElement("div");
+  bar.style.cssText =
+    "background:#fb7185;color:white;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;";
+  bar.innerHTML =
+    `<span style="font-weight:700;font-size:15px">PickBee 銷貨單預覽</span>` +
+    `<div style="display:flex;gap:8px;">` +
+    `<button id="__receipt_open_tab__" style="background:white;color:#e11d48;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;">開新分頁</button>` +
+    `<button id="__receipt_close__" style="background:rgba(255,255,255,0.22);color:white;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;">✕ 關閉</button>` +
+    `</div>`;
+
+  const hint = document.createElement("div");
+  hint.style.cssText =
+    "background:#fff7ed;color:#92400e;font-size:11px;padding:6px 16px;flex-shrink:0;text-align:center;";
+  hint.textContent =
+    "手機 Chrome 若無法直接開啟新分頁，請在此預覽銷貨單，或改用 Safari / 分享 / 列印。";
+
+  const wrap = document.createElement("div");
+  wrap.style.cssText = "flex:1;overflow:hidden;background:white;";
+
+  const preview = document.createElement("iframe");
+  preview.style.cssText = "width:100%;height:100%;border:none;";
+  wrap.appendChild(preview);
+
+  overlay.appendChild(bar);
+  overlay.appendChild(hint);
+  overlay.appendChild(wrap);
+  document.body.appendChild(overlay);
+
+  const pdoc = preview.contentDocument ?? preview.contentWindow?.document;
+  if (pdoc) { pdoc.open(); pdoc.write(html); pdoc.close(); }
+
+  document.getElementById("__receipt_close__")?.addEventListener("click", () => overlay.remove());
+  document.getElementById("__receipt_open_tab__")?.addEventListener("click", () => {
+    const p = window.open("", "_blank");
+    if (p) { p.document.open(); p.document.write(html); p.document.close(); }
+  });
+}
+
 function openPrint(html: string): void {
-  // Clean up any leftover iframe from a prior call
+  if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+    // Store receipt HTML in localStorage and navigate to the dedicated /receipt-preview
+    // route. This ensures iOS Chrome / Google App share / PDF captures only the receipt
+    // page, not the surrounding Orders page.
+    try {
+      const key = (crypto as { randomUUID?: () => string }).randomUUID?.()
+        ?? `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+      localStorage.setItem(
+        `pickbee-receipt-preview:${key}`,
+        JSON.stringify({ html, title: "銷貨單", createdAt: Date.now() }),
+      );
+      const base = (import.meta.env.BASE_URL as string ?? "/").replace(/\/$/, "");
+      const url = `${base}/receipt-preview?key=${encodeURIComponent(key)}`;
+      const opened = window.open(url, "_blank");
+      if (opened) return;
+      // window.open blocked: navigate current tab to receipt-preview
+      window.location.href = url;
+      return;
+    } catch {
+      // localStorage or navigation failed — fall through to overlay
+    }
+    // Last resort: visible overlay (no navigation needed)
+    showReceiptPreviewOverlay(html);
+    return;
+  }
+
   const prev = document.getElementById("__print_frame__");
   if (prev) prev.remove();
 
   const iframe = document.createElement("iframe");
   iframe.id = "__print_frame__";
   iframe.setAttribute("aria-hidden", "true");
-  // Hidden visually but still renderable; position:fixed keeps it out of layout
   iframe.style.cssText =
     "position:fixed;top:0;left:0;width:100%;height:100%;visibility:hidden;border:none;z-index:-9999;pointer-events:none;";
 
@@ -60,7 +131,6 @@ function openPrint(html: string): void {
   doc.write(html);
   doc.close();
 
-  // Wait for content to render, then print from within the iframe
   setTimeout(() => {
     const cw = iframe.contentWindow;
     if (!cw) { cleanup(); return; }
@@ -70,7 +140,6 @@ function openPrint(html: string): void {
     } catch {
       // ignore
     }
-    // afterprint fires when the print dialog closes; fallback after 5 min
     cw.addEventListener("afterprint", cleanup, { once: true });
     setTimeout(cleanup, 5 * 60_000);
   }, 250);
@@ -373,6 +442,30 @@ export function printOrderReceipt(order: Order): void {
 </div>`
       : "";
 
+  const noPickupInfo = `<div class="info-row"><span class="info-label" style="color:#bbb">－</span><span class="info-value" style="color:#bbb">取貨資訊未設定</span></div>`;
+  let pickupRows: string;
+  if (order.shippingMethod === "convenience_store") {
+    // CVS: store name only — no store code, no store address
+    pickupRows = order.storeName
+      ? `<div class="info-row"><span class="info-label">超商店名</span><span class="info-value">${esc(order.storeName)}</span></div>`
+      : noPickupInfo;
+  } else if (order.shippingMethod === "home_delivery") {
+    // Home delivery: recipient address + carrier info
+    const parts = [
+      order.recipientAddress ? `<div class="info-row"><span class="info-label">配送地址</span><span class="info-value" style="word-break:break-word">${esc(order.recipientAddress)}</span></div>` : "",
+      order.trackingProvider ? `<div class="info-row"><span class="info-label">物流商</span><span class="info-value">${esc(order.trackingProvider)}</span></div>` : "",
+      order.trackingCode ? `<div class="info-row"><span class="info-label">追蹤碼</span><span class="info-value mono">${esc(order.trackingCode)}</span></div>` : "",
+    ].filter(Boolean).join("");
+    pickupRows = parts || noPickupInfo;
+  } else {
+    // Self-pickup, other, or unknown: show whatever is available
+    const parts = [
+      order.storeName ? `<div class="info-row"><span class="info-label">超商店名</span><span class="info-value">${esc(order.storeName)}</span></div>` : "",
+      order.recipientAddress ? `<div class="info-row"><span class="info-label">收件地址</span><span class="info-value" style="word-break:break-word">${esc(order.recipientAddress)}</span></div>` : "",
+    ].filter(Boolean).join("");
+    pickupRows = parts || noPickupInfo;
+  }
+
   const body = `
 <div class="brand-hero">
   <div class="brand-badge">&#x1F41D;</div>
@@ -418,10 +511,7 @@ export function printOrderReceipt(order: Order): void {
   <div class="section-card">
     <div class="section-title">取貨資訊</div>
     <div class="info-grid">
-      ${order.storeName ? `<div class="info-row"><span class="info-label">超商店名</span><span class="info-value">${esc(order.storeName)}</span></div>` : ""}
-      ${order.storeCode ? `<div class="info-row"><span class="info-label">超商店號</span><span class="info-value mono">${esc(order.storeCode)}</span></div>` : ""}
-      ${order.cvsStoreAddress ? `<div class="info-row"><span class="info-label">門市地址</span><span class="info-value" style="word-break:break-word">${esc(order.cvsStoreAddress)}</span></div>` : ""}
-      ${!order.storeName && !order.storeCode && !order.cvsStoreAddress ? `<div class="info-row"><span class="info-label" style="color:#bbb">－</span><span class="info-value" style="color:#bbb">取貨資訊未設定</span></div>` : ""}
+      ${pickupRows}
     </div>
   </div>
 </div>
