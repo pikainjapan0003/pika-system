@@ -247,9 +247,35 @@ export default function SettingsPage() {
         )}
       </div>
 
+      <AgentSettingsEntry />
+
       {IS_DEV && <DevHandoffEntry />}
 
       <BottomNav active="settings" />
+    </div>
+  );
+}
+
+function AgentSettingsEntry() {
+  const [, setLocation] = useLocation();
+  return (
+    <div className="px-5 pb-3">
+      <button
+        type="button"
+        onClick={() => setLocation("/settings/agent")}
+        className="w-full bg-white border border-border rounded-2xl px-4 py-4 flex items-center justify-between text-left hover:bg-secondary/50 transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <span className="w-9 h-9 rounded-xl bg-indigo-100 flex items-center justify-center text-lg flex-shrink-0">
+            🤖
+          </span>
+          <div>
+            <p className="text-sm font-semibold text-foreground">AI 代查設定</p>
+            <p className="text-xs text-muted-foreground">Seller Agent / 物流自動查詢設定</p>
+          </div>
+        </div>
+        <span className="text-muted-foreground text-sm">›</span>
+      </button>
     </div>
   );
 }
