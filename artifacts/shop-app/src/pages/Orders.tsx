@@ -24,8 +24,23 @@ const DEPRECATED_METHODS: Record<string, string> = {
 const HOME_DELIVERY_LABELS: Record<string, string> = {
   "黑貓宅急便": "黑貓宅急便",
   "郵局": "郵局",
+  "郵局宅配": "郵局宅配",
   "宅配": "宅配（已停用）",
 };
+
+function isHomeDeliveryMethod(pickupMethod: string): boolean {
+  return Object.prototype.hasOwnProperty.call(HOME_DELIVERY_LABELS, pickupMethod);
+}
+
+function isCvsMethod(pickupMethod: string): boolean {
+  return isSevenElevenMethod(pickupMethod) || isFamilyMartMethod(pickupMethod);
+}
+
+function orderIsHome(pickupMethod: string, shippingMethod?: string | null): boolean {
+  if (isHomeDeliveryMethod(pickupMethod)) return true;
+  if (isCvsMethod(pickupMethod)) return false;
+  return shippingMethod === "home_delivery";
+}
 
 const PAYMENT_STATUS_LABELS: Record<string, string> = {
   unpaid: "未付款",
@@ -595,16 +610,15 @@ export default function OrdersPage() {
                               />
                             )}
                             <DetailRow label="取貨方式" value={o.pickupMethod} />
-                            {o.trackingCode && <DetailRow label="物流追蹤碼" value={o.trackingCode} />}
-                            {o.trackingProvider && <DetailRow label="物流商" value={o.trackingProvider} />}
-                            {o.recipientName && <DetailRow label="收件人" value={o.recipientName} />}
-                            {o.recipientPhone && <DetailRow label="收件電話" value={o.recipientPhone} />}
-                            {o.recipientAddress && <DetailRow label="收件地址" value={o.recipientAddress} />}
-                            {o.storeCode && !isSevenElevenMethod(o.pickupMethod) && (
-                              <DetailRow label="超商店號" value={o.storeCode} />
-                            )}
-                            {o.storeName && !isSevenElevenMethod(o.pickupMethod) && (
-                              <DetailRow label="超商店名" value={o.storeName} />
+                            {/* 宅配欄位：只有黑貓/郵局/宅配才顯示 */}
+                            {orderIsHome(o.pickupMethod, o.shippingMethod) && (
+                              <>
+                                {o.trackingCode && <DetailRow label="物流追蹤碼" value={o.trackingCode} />}
+                                {o.trackingProvider && <DetailRow label="物流商" value={o.trackingProvider} />}
+                                {o.recipientName && <DetailRow label="收件人" value={o.recipientName} />}
+                                {o.recipientPhone && <DetailRow label="收件電話" value={o.recipientPhone} />}
+                                {o.recipientAddress && <DetailRow label="收件地址" value={o.recipientAddress} />}
+                              </>
                             )}
                             {o.shippingNote && <DetailRow label="物流備註" value={o.shippingNote} />}
                             {o.internalNote && <DetailRow label="內部備註（後台）" value={o.internalNote} />}
@@ -702,11 +716,11 @@ export default function OrdersPage() {
                         )}
 
                         {/* 宅配顯示（黑貓 / 郵局） */}
-                        {HOME_DELIVERY_LABELS[o.pickupMethod] && (
+                        {orderIsHome(o.pickupMethod, o.shippingMethod) && (
                           <div>
                             <SectionLabel>物流方式</SectionLabel>
                             <div className="bg-white rounded-xl border border-border/50 px-4 py-3">
-                              <span className="text-sm font-medium text-foreground">{HOME_DELIVERY_LABELS[o.pickupMethod]}</span>
+                              <span className="text-sm font-medium text-foreground">{HOME_DELIVERY_LABELS[o.pickupMethod] ?? o.pickupMethod}</span>
                             </div>
                           </div>
                         )}

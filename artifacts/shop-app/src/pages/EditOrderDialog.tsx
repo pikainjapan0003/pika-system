@@ -211,6 +211,25 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
     );
     if (cat === "cvs_family") setCvsPickerProvider("family");
     else if (cat === "cvs_711") setCvsPickerProvider("seven");
+    // Clear incompatible fields on switch
+    if (cat === "self_pickup" || cat === "home_black_cat" || cat === "home_post") {
+      setStoreCode("");
+      setStoreName("");
+      setCvsStoreAddress("");
+      setCvsStorePhone("");
+      setStoreSelectedBy("");
+      setCvsSearchQuery("");
+      setCvsSearchStatus("idle");
+      setCvsSearchResults([]);
+      setCvsSearchError("");
+    }
+    if (cat === "self_pickup" || cat === "cvs_711" || cat === "cvs_family") {
+      setRecipientAddress("");
+      setRecipientName("");
+      setRecipientPhone("");
+      setTrackingCode("");
+      setTrackingProvider("");
+    }
   };
 
   const handleClose = () => {
@@ -377,9 +396,9 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
             </FormSection>
           </div>
 
-          {/* 數量與取貨 */}
+          {/* 數量 */}
           <div className="space-y-1.5">
-            <SectionTitle>數量與取貨</SectionTitle>
+            <SectionTitle>數量</SectionTitle>
             <FormSection>
               <div>
                 <FieldLabel icon={Hash}>數量 *</FieldLabel>
@@ -396,23 +415,6 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
                   }}
                 />
                 {fieldErrors.quantity && <p className={ERR}>{fieldErrors.quantity}</p>}
-              </div>
-              <div>
-                <FieldLabel icon={Truck}>取貨方式 *</FieldLabel>
-                <select
-                  className={SELECT}
-                  value={pickupMethod}
-                  onChange={(e) => handlePickupMethodChange(e.target.value)}
-                >
-                  <option value="">請選擇取貨方式</option>
-                  {!PICKUP_METHOD_OPTIONS.some((o) => o.value === pickupMethod) && pickupMethod && (
-                    <option value={pickupMethod}>{pickupMethod}</option>
-                  )}
-                  {PICKUP_METHOD_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
-                </select>
-                {fieldErrors.pickupMethod && <p className={ERR}>{fieldErrors.pickupMethod}</p>}
               </div>
             </FormSection>
           </div>
@@ -499,6 +501,23 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
             <SectionTitle>物流資訊</SectionTitle>
             <FormSection>
               <p className="text-[11px] text-muted-foreground/70">店家手動記錄，尚未串接物流</p>
+              <div>
+                <FieldLabel icon={Truck}>取貨方式 *</FieldLabel>
+                <select
+                  className={SELECT}
+                  value={pickupMethod}
+                  onChange={(e) => handlePickupMethodChange(e.target.value)}
+                >
+                  <option value="">請選擇取貨方式</option>
+                  {!PICKUP_METHOD_OPTIONS.some((o) => o.value === pickupMethod) && pickupMethod && (
+                    <option value={pickupMethod}>{pickupMethod}</option>
+                  )}
+                  {PICKUP_METHOD_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
+                {fieldErrors.pickupMethod && <p className={ERR}>{fieldErrors.pickupMethod}</p>}
+              </div>
               <div>
                 <FieldLabel icon={Truck}>出貨狀態</FieldLabel>
                 <select
