@@ -636,3 +636,157 @@ export interface TrackingImportResponse {
   errors: TrackingImportError[];
 }
 
+export type SellerAgentSettingsAgentStatus = typeof SellerAgentSettingsAgentStatus[keyof typeof SellerAgentSettingsAgentStatus];
+
+
+export const SellerAgentSettingsAgentStatus = {
+  disabled: 'disabled',
+  enabled: 'enabled',
+} as const;
+
+export type SellerAgentSettingsAgentMode = typeof SellerAgentSettingsAgentMode[keyof typeof SellerAgentSettingsAgentMode];
+
+
+export const SellerAgentSettingsAgentMode = {
+  rule_worker: 'rule_worker',
+  external_agent: 'external_agent',
+  self_hosted_webhook: 'self_hosted_webhook',
+  platform_managed_reserved: 'platform_managed_reserved',
+} as const;
+
+export type SellerAgentSettingsEnabledLogisticsItem = typeof SellerAgentSettingsEnabledLogisticsItem[keyof typeof SellerAgentSettingsEnabledLogisticsItem];
+
+
+export const SellerAgentSettingsEnabledLogisticsItem = {
+  seven_eleven: 'seven_eleven',
+  family_mart: 'family_mart',
+  home_delivery: 'home_delivery',
+  other: 'other',
+  webhook: 'webhook',
+} as const;
+
+export type SellerAgentSettingsQueryMethodsItem = typeof SellerAgentSettingsQueryMethodsItem[keyof typeof SellerAgentSettingsQueryMethodsItem];
+
+
+export const SellerAgentSettingsQueryMethodsItem = {
+  manual: 'manual',
+  csv_import: 'csv_import',
+  webhook: 'webhook',
+  scheduled: 'scheduled',
+} as const;
+
+export type SellerAgentSettingsQueryFrequency = typeof SellerAgentSettingsQueryFrequency[keyof typeof SellerAgentSettingsQueryFrequency];
+
+
+export const SellerAgentSettingsQueryFrequency = {
+  manual: 'manual',
+  daily: 'daily',
+  every_6_hours: 'every_6_hours',
+  every_2_hours_high_tier: 'every_2_hours_high_tier',
+} as const;
+
+export interface SellerAgentSettings {
+  id?: number;
+  storeId: number;
+  merchantId: string;
+  agentStatus: SellerAgentSettingsAgentStatus;
+  agentMode: SellerAgentSettingsAgentMode;
+  enabledLogistics: SellerAgentSettingsEnabledLogisticsItem[];
+  queryMethods: SellerAgentSettingsQueryMethodsItem[];
+  queryFrequency: SellerAgentSettingsQueryFrequency;
+  notifyOnUnknown: boolean;
+  requireConfirmOnException: boolean;
+  requireConfirmOnReturned: boolean;
+  requireConfirmOnDelivered: boolean;
+  hideErrorDetailsFromBuyer: boolean;
+  webhookEnabled: boolean;
+  /** @nullable */
+  webhookUrl?: string | null;
+  hasWebhookSecret: boolean;
+  /** @nullable */
+  lastTestRunAt?: string | null;
+  /** @nullable */
+  lastRunAt?: string | null;
+  /** @nullable */
+  createdAt?: string | null;
+  /** @nullable */
+  updatedAt?: string | null;
+}
+
+export type UpdateSellerAgentSettingsRequestAgentStatus = typeof UpdateSellerAgentSettingsRequestAgentStatus[keyof typeof UpdateSellerAgentSettingsRequestAgentStatus];
+
+
+export const UpdateSellerAgentSettingsRequestAgentStatus = {
+  disabled: 'disabled',
+  enabled: 'enabled',
+} as const;
+
+export type UpdateSellerAgentSettingsRequestAgentMode = typeof UpdateSellerAgentSettingsRequestAgentMode[keyof typeof UpdateSellerAgentSettingsRequestAgentMode];
+
+
+export const UpdateSellerAgentSettingsRequestAgentMode = {
+  rule_worker: 'rule_worker',
+  external_agent: 'external_agent',
+  self_hosted_webhook: 'self_hosted_webhook',
+} as const;
+
+export type UpdateSellerAgentSettingsRequestEnabledLogisticsItem = typeof UpdateSellerAgentSettingsRequestEnabledLogisticsItem[keyof typeof UpdateSellerAgentSettingsRequestEnabledLogisticsItem];
+
+
+export const UpdateSellerAgentSettingsRequestEnabledLogisticsItem = {
+  seven_eleven: 'seven_eleven',
+  family_mart: 'family_mart',
+  home_delivery: 'home_delivery',
+  other: 'other',
+  webhook: 'webhook',
+} as const;
+
+export type UpdateSellerAgentSettingsRequestQueryMethodsItem = typeof UpdateSellerAgentSettingsRequestQueryMethodsItem[keyof typeof UpdateSellerAgentSettingsRequestQueryMethodsItem];
+
+
+export const UpdateSellerAgentSettingsRequestQueryMethodsItem = {
+  manual: 'manual',
+  csv_import: 'csv_import',
+  webhook: 'webhook',
+  scheduled: 'scheduled',
+} as const;
+
+export type UpdateSellerAgentSettingsRequestQueryFrequency = typeof UpdateSellerAgentSettingsRequestQueryFrequency[keyof typeof UpdateSellerAgentSettingsRequestQueryFrequency];
+
+
+export const UpdateSellerAgentSettingsRequestQueryFrequency = {
+  manual: 'manual',
+  daily: 'daily',
+  every_6_hours: 'every_6_hours',
+  every_2_hours_high_tier: 'every_2_hours_high_tier',
+} as const;
+
+export interface UpdateSellerAgentSettingsRequest {
+  agentStatus?: UpdateSellerAgentSettingsRequestAgentStatus;
+  agentMode?: UpdateSellerAgentSettingsRequestAgentMode;
+  enabledLogistics?: UpdateSellerAgentSettingsRequestEnabledLogisticsItem[];
+  queryMethods?: UpdateSellerAgentSettingsRequestQueryMethodsItem[];
+  queryFrequency?: UpdateSellerAgentSettingsRequestQueryFrequency;
+  notifyOnUnknown?: boolean;
+  requireConfirmOnException?: boolean;
+  requireConfirmOnReturned?: boolean;
+  requireConfirmOnDelivered?: boolean;
+  hideErrorDetailsFromBuyer?: boolean;
+  webhookEnabled?: boolean;
+  /** @nullable */
+  webhookUrl?: string | null;
+  /**
+     * Plaintext secret (min 16, max 256 chars). Pass null to clear.
+     * @nullable
+     */
+  webhookSecret?: string | null;
+}
+
+export type GetSellerAgentSettings200 = {
+  data: SellerAgentSettings;
+};
+
+export type UpdateSellerAgentSettings200 = {
+  data: SellerAgentSettings;
+};
+

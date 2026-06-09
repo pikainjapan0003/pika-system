@@ -20,6 +20,8 @@ tags:
     description: Order management
   - name: public
     description: Public endpoints (no auth required)
+  - name: sellerAgent
+    description: Seller agent settings management
 paths:
   /healthz:
     get:
@@ -394,6 +396,68 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/StoreStats"
+
+  /stores/{storeId}/agent/settings:
+    get:
+      operationId: getSellerAgentSettings
+      tags: [sellerAgent]
+      summary: Get seller agent settings for a store
+      parameters:
+        - name: storeId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Seller agent settings
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: "#/components/schemas/SellerAgentSettings"
+        "400":
+          description: Invalid storeId
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+    patch:
+      operationId: updateSellerAgentSettings
+      tags: [sellerAgent]
+      summary: Update seller agent settings for a store
+      parameters:
+        - name: storeId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSellerAgentSettingsRequest"
+      responses:
+        "200":
+          description: Updated seller agent settings
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: "#/components/schemas/SellerAgentSettings"
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
 
   /orders/{orderId}:
     patch:
@@ -1420,3 +1484,113 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/TrackingImportError"
+
+    SellerAgentSettings:
+      type: object
+      required:
+        - storeId
+        - merchantId
+        - agentStatus
+        - agentMode
+        - enabledLogistics
+        - queryMethods
+        - queryFrequency
+        - notifyOnUnknown
+        - requireConfirmOnException
+        - requireConfirmOnReturned
+        - requireConfirmOnDelivered
+        - hideErrorDetailsFromBuyer
+        - webhookEnabled
+        - hasWebhookSecret
+      properties:
+        id:
+          type: integer
+        storeId:
+          type: integer
+        merchantId:
+          type: string
+        agentStatus:
+          type: string
+          enum: [disabled, enabled]
+        agentMode:
+          type: string
+          enum: [rule_worker, external_agent, self_hosted_webhook, platform_managed_reserved]
+        enabledLogistics:
+          type: array
+          items:
+            type: string
+            enum: [seven_eleven, family_mart, home_delivery, other, webhook]
+        queryMethods:
+          type: array
+          items:
+            type: string
+            enum: [manual, csv_import, webhook, scheduled]
+        queryFrequency:
+          type: string
+          enum: [manual, daily, every_6_hours, every_2_hours_high_tier]
+        notifyOnUnknown:
+          type: boolean
+        requireConfirmOnException:
+          type: boolean
+        requireConfirmOnReturned:
+          type: boolean
+        requireConfirmOnDelivered:
+          type: boolean
+        hideErrorDetailsFromBuyer:
+          type: boolean
+        webhookEnabled:
+          type: boolean
+        webhookUrl:
+          type: ["string", "null"]
+        hasWebhookSecret:
+          type: boolean
+        lastTestRunAt:
+          type: ["string", "null"]
+          format: date-time
+        lastRunAt:
+          type: ["string", "null"]
+          format: date-time
+        createdAt:
+          type: ["string", "null"]
+        updatedAt:
+          type: ["string", "null"]
+
+    UpdateSellerAgentSettingsRequest:
+      type: object
+      properties:
+        agentStatus:
+          type: string
+          enum: [disabled, enabled]
+        agentMode:
+          type: string
+          enum: [rule_worker, external_agent, self_hosted_webhook]
+        enabledLogistics:
+          type: array
+          items:
+            type: string
+            enum: [seven_eleven, family_mart, home_delivery, other, webhook]
+        queryMethods:
+          type: array
+          items:
+            type: string
+            enum: [manual, csv_import, webhook, scheduled]
+        queryFrequency:
+          type: string
+          enum: [manual, daily, every_6_hours, every_2_hours_high_tier]
+        notifyOnUnknown:
+          type: boolean
+        requireConfirmOnException:
+          type: boolean
+        requireConfirmOnReturned:
+          type: boolean
+        requireConfirmOnDelivered:
+          type: boolean
+        hideErrorDetailsFromBuyer:
+          type: boolean
+        webhookEnabled:
+          type: boolean
+        webhookUrl:
+          type: ["string", "null"]
+        webhookSecret:
+          type: ["string", "null"]
+          description: Plaintext secret (min 16, max 256 chars). Pass null to clear.
