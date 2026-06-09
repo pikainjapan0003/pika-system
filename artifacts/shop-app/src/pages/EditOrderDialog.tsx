@@ -67,8 +67,14 @@ interface CvsStoreResult {
   storePhone?: string | null;
 }
 
+// Local augmentation: generated Order may lag behind DB schema on these fields.
+type EditableOrder = Order & {
+  discountAmount?: number | null;
+  discountNote?: string | null;
+};
+
 interface Props {
-  order: Order | null;
+  order: EditableOrder | null;
   storeId: number;
   open: boolean;
   onClose: () => void;
@@ -419,23 +425,6 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
             </FormSection>
           </div>
 
-          {/* 買家備註 */}
-          <div className="space-y-1.5">
-            <SectionTitle>買家備註</SectionTitle>
-            <FormSection>
-              <div>
-                <FieldLabel icon={MessageSquare}>備註（選填）</FieldLabel>
-                <textarea
-                  className={`${INPUT} h-auto pt-2 pb-2 resize-none`}
-                  rows={2}
-                  placeholder="選填備註"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                />
-              </div>
-            </FormSection>
-          </div>
-
           {/* 付款資訊 */}
           <div className="space-y-1.5">
             <SectionTitle>付款資訊</SectionTitle>
@@ -497,8 +486,9 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
           </div>
 
           {/* 物流資訊 */}
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <SectionTitle>物流資訊</SectionTitle>
+            {/* 基本物流：取貨方式 / 出貨狀態 / 運費 */}
             <FormSection>
               <p className="text-[11px] text-muted-foreground/70">店家手動記錄，尚未串接物流</p>
               <div>
@@ -547,176 +537,167 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
                 />
                 {fieldErrors.shippingFee && <p className={ERR}>{fieldErrors.shippingFee}</p>}
               </div>
-              {/* 超商欄位：7-11 / 全家 */}
-              {isCvs && (
-                <>
-                  <div>
-                    <FieldLabel icon={Hash}>超商店號（選填）</FieldLabel>
+            </FormSection>
+            {/* 超商取貨門市：7-11 / 全家 */}
+            {isCvs && (
+              <div className="bg-white rounded-2xl border border-primary/20 px-4 py-3 space-y-3">
+                <SectionHeading icon={MapPin}>超商取貨門市</SectionHeading>
+                <div>
+                  <FieldLabel icon={Hash}>超商店號（選填）</FieldLabel>
+                  <input
+                    type="text"
+                    className={INPUT}
+                    placeholder="超商門市店號"
+                    value={storeCode}
+                    onChange={(e) => setStoreCode(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <FieldLabel icon={MapPin}>超商店名（選填）</FieldLabel>
+                  <input
+                    type="text"
+                    className={INPUT}
+                    placeholder="超商門市名稱"
+                    value={storeName}
+                    onChange={(e) => setStoreName(e.target.value)}
+                  />
+                </div>
+                {/* CVS Store Picker */}
+                <div>
+                  <FieldLabel icon={MapPin}>超商門市搜尋（選填）</FieldLabel>
+                  <p className="text-[11px] text-muted-foreground/60 mb-1.5">
+                    搜尋 {cvsPickerProvider === "family" ? "全家" : "7-11"} 門市
+                  </p>
+                  <div className="flex gap-1.5 mb-2">
                     <input
                       type="text"
-                      className={INPUT}
-                      placeholder="超商門市店號"
-                      value={storeCode}
-                      onChange={(e) => setStoreCode(e.target.value)}
+                      className={`${INPUT} flex-1`}
+                      placeholder="輸入門市名稱或地址關鍵字"
+                      value={cvsSearchQuery}
+                      onChange={(e) => setCvsSearchQuery(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter" && cvsSearchStatus !== "loading") { e.preventDefault(); void handleCvsSearch(); } }}
                     />
+                    <button
+                      type="button"
+                      onClick={() => void handleCvsSearch()}
+                      disabled={!cvsSearchQuery.trim() || cvsSearchStatus === "loading"}
+                      className="h-9 px-3 rounded-xl bg-primary text-white text-xs font-medium disabled:opacity-50 shrink-0"
+                    >
+                      {cvsSearchStatus === "loading" ? "搜尋中…" : "搜尋"}
+                    </button>
                   </div>
-                  <div>
-                    <FieldLabel icon={MapPin}>超商店名（選填）</FieldLabel>
-                    <input
-                      type="text"
-                      className={INPUT}
-                      placeholder="超商門市名稱"
-                      value={storeName}
-                      onChange={(e) => setStoreName(e.target.value)}
-                    />
-                  </div>
-                  {/* CVS Store Picker */}
-                  <div>
-                    <FieldLabel icon={MapPin}>超商門市搜尋（選填）</FieldLabel>
-                    <p className="text-[11px] text-muted-foreground/60 mb-1.5">
-                      搜尋 {cvsPickerProvider === "family" ? "全家" : "7-11"} 門市
-                    </p>
-                    <div className="flex gap-1.5 mb-2">
-                      <input
-                        type="text"
-                        className={`${INPUT} flex-1`}
-                        placeholder="輸入門市名稱或地址關鍵字"
-                        value={cvsSearchQuery}
-                        onChange={(e) => setCvsSearchQuery(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === "Enter" && cvsSearchStatus !== "loading") { e.preventDefault(); void handleCvsSearch(); } }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => void handleCvsSearch()}
-                        disabled={!cvsSearchQuery.trim() || cvsSearchStatus === "loading"}
-                        className="h-9 px-3 rounded-xl bg-primary text-white text-xs font-medium disabled:opacity-50 shrink-0"
-                      >
-                        {cvsSearchStatus === "loading" ? "搜尋中…" : "搜尋"}
-                      </button>
-                    </div>
-                    {cvsSearchStatus === "idle" && (
-                      <p className="text-[11px] text-muted-foreground/60 text-center py-1">尚未搜尋</p>
-                    )}
-                    {cvsSearchStatus === "error" && (
-                      <p className="text-xs text-destructive py-1">{cvsSearchError}</p>
-                    )}
-                    {cvsSearchStatus === "success" && cvsSearchResults.length === 0 && (
-                      <p className="text-[11px] text-muted-foreground/60 text-center py-1">查無符合門市，請換關鍵字再試</p>
-                    )}
-                    {cvsSearchStatus === "success" && cvsSearchResults.length > 0 && (
-                      <div className="border border-border rounded-xl overflow-hidden max-h-44 overflow-y-auto">
-                        {cvsSearchResults.map((s) => (
-                          <div
-                            key={`${s.provider}-${s.storeId}`}
-                            className="flex items-start justify-between gap-2 px-3 py-2 border-b border-border last:border-b-0"
-                          >
-                            <div className="flex-1 min-w-0">
-                              <div className="text-xs font-medium text-foreground">{s.storeName}</div>
-                              <div className="text-[11px] text-muted-foreground">{s.storeAddress}</div>
-                              {s.storePhone && <div className="text-[11px] text-muted-foreground">{s.storePhone}</div>}
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => handleCvsStoreSelect(s)}
-                              className="shrink-0 h-7 px-2.5 rounded-lg bg-primary text-white text-[11px] font-medium"
-                            >
-                              選擇
-                            </button>
+                  {cvsSearchStatus === "idle" && (
+                    <p className="text-[11px] text-muted-foreground/60 text-center py-1">尚未搜尋</p>
+                  )}
+                  {cvsSearchStatus === "error" && (
+                    <p className="text-xs text-destructive py-1">{cvsSearchError}</p>
+                  )}
+                  {cvsSearchStatus === "success" && cvsSearchResults.length === 0 && (
+                    <p className="text-[11px] text-muted-foreground/60 text-center py-1">查無符合門市，請換關鍵字再試</p>
+                  )}
+                  {cvsSearchStatus === "success" && cvsSearchResults.length > 0 && (
+                    <div className="border border-border rounded-xl overflow-hidden max-h-44 overflow-y-auto">
+                      {cvsSearchResults.map((s) => (
+                        <div
+                          key={`${s.provider}-${s.storeId}`}
+                          className="flex items-start justify-between gap-2 px-3 py-2 border-b border-border last:border-b-0"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="text-xs font-medium text-foreground">{s.storeName}</div>
+                            <div className="text-[11px] text-muted-foreground">{s.storeAddress}</div>
+                            {s.storePhone && <div className="text-[11px] text-muted-foreground">{s.storePhone}</div>}
                           </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  {cvsStoreAddress && (
-                    <div className="bg-primary/5 border border-primary/20 rounded-xl px-3 py-2">
-                      <div className="text-[10px] font-semibold text-primary/70 uppercase tracking-wide mb-1">已選門市</div>
-                      <div className="text-xs font-medium text-foreground">{storeName || storeCode}</div>
-                      <div className="text-[11px] text-muted-foreground">{cvsStoreAddress}</div>
-                      {cvsStorePhone && <div className="text-[11px] text-muted-foreground">{cvsStorePhone}</div>}
-                      <p className="text-[10px] text-muted-foreground/50 mt-1">
-                        門市資料可能因超商更新而異動，實際資訊以超商公告為準。
-                      </p>
+                          <button
+                            type="button"
+                            onClick={() => handleCvsStoreSelect(s)}
+                            className="shrink-0 h-7 px-2.5 rounded-lg bg-primary text-white text-[11px] font-medium"
+                          >
+                            選擇
+                          </button>
+                        </div>
+                      ))}
                     </div>
                   )}
-                </>
-              )}
-              {/* 宅配欄位：黑貓 / 郵局 */}
-              {isHome && (
-                <>
-                  <div>
-                    <FieldLabel icon={User}>收件人（選填）</FieldLabel>
-                    <input
-                      type="text"
-                      className={INPUT}
-                      placeholder="收件人姓名"
-                      value={recipientName}
-                      onChange={(e) => setRecipientName(e.target.value)}
-                    />
+                </div>
+                {cvsStoreAddress && (
+                  <div className="bg-primary/5 border border-primary/20 rounded-xl px-3 py-2">
+                    <div className="text-[10px] font-semibold text-primary/70 uppercase tracking-wide mb-1">已選門市</div>
+                    <div className="text-xs font-medium text-foreground">{storeName || storeCode}</div>
+                    <div className="text-[11px] text-muted-foreground">{cvsStoreAddress}</div>
+                    {cvsStorePhone && <div className="text-[11px] text-muted-foreground">{cvsStorePhone}</div>}
+                    <p className="text-[10px] text-muted-foreground/50 mt-1">
+                      門市資料可能因超商更新而異動，實際資訊以超商公告為準。
+                    </p>
                   </div>
-                  <div>
-                    <FieldLabel icon={Phone}>收件電話（選填）</FieldLabel>
-                    <input
-                      type="tel"
-                      className={INPUT}
-                      placeholder="收件人電話"
-                      value={recipientPhone}
-                      onChange={(e) => setRecipientPhone(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <FieldLabel icon={MapPin}>收件地址（選填）</FieldLabel>
-                    <input
-                      type="text"
-                      className={INPUT}
-                      placeholder="完整收件地址"
-                      value={recipientAddress}
-                      onChange={(e) => setRecipientAddress(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <FieldLabel icon={Hash}>物流追蹤碼（選填）</FieldLabel>
-                    <input
-                      type="text"
-                      className={INPUT}
-                      placeholder="例如：TC123456789TW"
-                      value={trackingCode}
-                      onChange={(e) => setTrackingCode(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <FieldLabel icon={Truck}>物流商（選填）</FieldLabel>
-                    <input
-                      type="text"
-                      className={INPUT}
-                      placeholder="例如：黑貓宅急便"
-                      value={trackingProvider}
-                      onChange={(e) => setTrackingProvider(e.target.value)}
-                    />
-                  </div>
-                </>
-              )}
-              <div>
-                <FieldLabel icon={FileText}>物流備註（選填）</FieldLabel>
-                <textarea
-                  className={`${INPUT} h-auto pt-2 pb-2 resize-none`}
-                  rows={2}
-                  placeholder="物流相關備註"
-                  value={shippingNote}
-                  onChange={(e) => setShippingNote(e.target.value)}
-                />
+                )}
               </div>
-              <div>
-                <FieldLabel icon={FileText}>內部備註（後台可見，選填）</FieldLabel>
-                <textarea
-                  className={`${INPUT} h-auto pt-2 pb-2 resize-none`}
-                  rows={2}
-                  placeholder="僅後台可見的備註"
-                  value={internalNote}
-                  onChange={(e) => setInternalNote(e.target.value)}
-                />
+            )}
+            {/* 宅配收件人資訊：黑貓 / 郵局 */}
+            {isHome && (
+              <div className="bg-white rounded-2xl border border-primary/20 px-4 py-3 space-y-3">
+                <SectionHeading icon={User}>收件人資訊</SectionHeading>
+                <div>
+                  <FieldLabel icon={User}>收件人（選填）</FieldLabel>
+                  <input
+                    type="text"
+                    className={INPUT}
+                    placeholder="收件人姓名"
+                    value={recipientName}
+                    onChange={(e) => setRecipientName(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <FieldLabel icon={Phone}>收件電話（選填）</FieldLabel>
+                  <input
+                    type="tel"
+                    className={INPUT}
+                    placeholder="收件人電話"
+                    value={recipientPhone}
+                    onChange={(e) => setRecipientPhone(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <FieldLabel icon={MapPin}>收件地址（選填）</FieldLabel>
+                  <input
+                    type="text"
+                    className={INPUT}
+                    placeholder="完整收件地址"
+                    value={recipientAddress}
+                    onChange={(e) => setRecipientAddress(e.target.value)}
+                  />
+                </div>
               </div>
-            </FormSection>
+            )}
           </div>
+
+          {/* 包裹追蹤 */}
+          {isHome && (
+            <div className="space-y-1.5">
+              <SectionTitle>包裹追蹤</SectionTitle>
+              <FormSection>
+                <div>
+                  <FieldLabel icon={Truck}>物流商（選填）</FieldLabel>
+                  <input
+                    type="text"
+                    className={INPUT}
+                    placeholder="例如：黑貓宅急便"
+                    value={trackingProvider}
+                    onChange={(e) => setTrackingProvider(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <FieldLabel icon={Hash}>物流追蹤碼（選填）</FieldLabel>
+                  <input
+                    type="text"
+                    className={INPUT}
+                    placeholder="例如：TC123456789TW"
+                    value={trackingCode}
+                    onChange={(e) => setTrackingCode(e.target.value)}
+                  />
+                </div>
+              </FormSection>
+            </div>
+          )}
 
           {/* 訂單折讓 */}
           <div className="space-y-1.5">
@@ -791,6 +772,33 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
               單價與正式金額由系統計算，此處僅供參考；實際結果以儲存後的訂單資料為準。
             </p>
           </FormSection>
+          </div>
+
+          {/* 備註 */}
+          <div className="space-y-1.5">
+            <SectionTitle>備註</SectionTitle>
+            <FormSection>
+              <div>
+                <FieldLabel icon={MessageSquare}>買家備註</FieldLabel>
+                <textarea
+                  className={`${INPUT} h-auto pt-2 pb-2 resize-none`}
+                  rows={2}
+                  placeholder="選填備註"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                />
+              </div>
+              <div>
+                <FieldLabel icon={FileText}>內部備註（後台可見，選填）</FieldLabel>
+                <textarea
+                  className={`${INPUT} h-auto pt-2 pb-2 resize-none`}
+                  rows={2}
+                  placeholder="僅後台可見的備註"
+                  value={internalNote}
+                  onChange={(e) => setInternalNote(e.target.value)}
+                />
+              </div>
+            </FormSection>
           </div>
 
           {submitError && (

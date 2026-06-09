@@ -1,5 +1,11 @@
 import type { Order, PickingListResponse, ShippingListResponse, ShippingListOrder } from "@workspace/api-client-react";
 
+// Local augmentation: generated Order may lag behind DB schema on these fields.
+type PrintableOrder = Order & {
+  discountAmount?: number | null;
+  discountNote?: string | null;
+};
+
 function esc(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
@@ -214,7 +220,7 @@ const SHIPPING_METHOD_LABELS: Record<string, string> = {
 
 type ReceiptFulfillmentCat = "self_pickup" | "cvs_711" | "cvs_family" | "home_black_cat" | "home_post" | "other";
 
-function getReceiptFulfillmentCat(order: Order): ReceiptFulfillmentCat {
+function getReceiptFulfillmentCat(order: PrintableOrder): ReceiptFulfillmentCat {
   const m = (order.pickupMethod ?? "").trim();
   if (m === "自取" || m === "面交") return "self_pickup";
   if (m.startsWith("7-11") || m.includes("711") || m.includes("統一")) return "cvs_711";
@@ -410,7 +416,7 @@ ${body}
 </html>`;
 }
 
-export function printOrderReceipt(order: Order): void {
+export function printOrderReceipt(order: PrintableOrder): void {
   const now = new Date().toLocaleString("zh-TW");
 
   const productSubtotal = Number(order.totalPrice ?? 0);
