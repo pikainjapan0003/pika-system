@@ -1146,6 +1146,9 @@ components:
         cvsStorePhone:
           type: string
           nullable: true
+        recipientAddress:
+          type: string
+          nullable: true
 
     MerchantOrderInput:
       type: object

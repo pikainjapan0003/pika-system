@@ -850,7 +850,8 @@ export const SubmitOrderBody = zod.object({
   "cvsStoreId": zod.string().nullish(),
   "cvsStoreName": zod.string().nullish(),
   "cvsStoreAddress": zod.string().nullish(),
-  "cvsStorePhone": zod.string().nullish()
+  "cvsStorePhone": zod.string().nullish(),
+  "recipientAddress": zod.string().nullish()
 })
 
 

@@ -251,16 +251,18 @@ export default function PublicOrderPage({ shareToken }: Props) {
       }
     }
 
-    const notesPayload = isHomeDeliveryMethod(pickupMethod)
+    // 黑貓 / 郵局：完整收件地址走 recipientAddress 欄位，notes 保留買家自己的備註
+    const recipientAddressPayload = isHomeDeliveryMethod(pickupMethod)
       ? `${shippingZip} ${shippingCity}${shippingDistrict}${shippingAddressLine.trim()}`
-      : notes.trim() || undefined;
+      : undefined;
 
     try {
       const body = {
         buyerName: buyerName.trim(),
         buyerPhone: buyerPhone.trim(),
         pickupMethod,
-        notes: notesPayload,
+        notes: notes.trim() || undefined,
+        ...(recipientAddressPayload ? { recipientAddress: recipientAddressPayload } : {}),
         specValues: Object.keys(specValues).length > 0 ? specValues : undefined,
         quantity,
         ...(cvsStore && needsCvsStore
@@ -309,8 +311,9 @@ export default function PublicOrderPage({ shareToken }: Props) {
 
   if (submittedOrder) {
     const productName = submittedOrder.productName ?? product.name;
+    // 訂單總額 = 商品小計（totalPrice）+ 運費（shippingFee）
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const orderTotal = Number((submittedOrder as any).totalPrice ?? 0);
+    const orderTotal = Number((submittedOrder as any).totalPrice ?? 0) + Number((submittedOrder as any).shippingFee ?? 0);
     const token = submittedOrder.publicToken;
 
     const handleCopy = () => {

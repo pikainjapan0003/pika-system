@@ -5,6 +5,7 @@ import { db, ordersTable, productsTable, shipmentTrackingsTable } from "@workspa
 import type { OrderStatus } from "@workspace/db";
 import { CreateMerchantOrderBody, UpdateOrderBody, UpdateOrderStatusBody, BulkUpdateOrdersBody, GetPickingListBody, GetShippingListBody } from "@workspace/api-zod";
 import { requireAuth, verifyStoreOwner } from "../middlewares/auth.ts";
+import { getShippingFee } from "../lib/shippingFee.ts";
 import { isValidTransition, getTransitionError } from "../lib/orderStatusMachine.ts";
 
 const router = Router();
@@ -75,6 +76,8 @@ router.post("/stores/:storeId/orders", requireAuth, async (req: any, res) => {
 
         const unitPrice = parseFloat(product.price as string);
         const totalPrice = unitPrice * quantity;
+        // Step 7H-3: 與買家端同一套運費規則（黑貓 100 / 郵局 80 / 超商 60 / 自取 0）
+        const shippingFee = getShippingFee(pickupMethod);
 
         const [newOrder] = await tx
           .insert(ordersTable)
@@ -91,6 +94,7 @@ router.post("/stores/:storeId/orders", requireAuth, async (req: any, res) => {
             quantity,
             unitPrice: String(unitPrice),
             totalPrice: String(totalPrice),
+            shippingFee: String(shippingFee),
             status: "pending",
             // Step 7H-2: 新增訂單即可帶入物流 / 門市 / 收件資訊（與編輯訂單一致）
             shippingMethod: shippingMethod ?? null,
