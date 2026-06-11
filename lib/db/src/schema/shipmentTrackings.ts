@@ -1,4 +1,5 @@
-import { pgTable, text, serial, timestamp, integer, boolean, index } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, integer, boolean, index, uniqueIndex, check } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { ordersTable } from "./orders.ts";
@@ -18,6 +19,8 @@ export const shipmentTrackingsTable = pgTable("shipment_trackings", {
   orderId: integer("order_id").notNull().references(() => ordersTable.id, { onDelete: "cascade" }),
   trackingCode: text("tracking_code").notNull(),
   trackingProvider: text("tracking_provider").notNull(),
+  // 物流號來源：file_import（7-11/全家 Excel 匯入）、manual（老闆手動輸入）、agent（worker/agent 自動補入）
+  sourceType: text("source_type").notNull().default("manual"),
   // 查詢控制欄位
   isActive: boolean("is_active").notNull().default(true),
   trackingStatus: text("tracking_status").notNull().default("pending"),
@@ -34,6 +37,11 @@ export const shipmentTrackingsTable = pgTable("shipment_trackings", {
 }, (t) => [
   index("shipment_trackings_order_id_idx").on(t.orderId),
   index("shipment_trackings_active_next_check_idx").on(t.isActive, t.nextCheckAt),
+  // DB 層防重：同一物流商的同一單號不可被兩筆 tracking 占用（partial：排除空字串防呆）
+  uniqueIndex("shipment_trackings_provider_code_unique_idx")
+    .on(t.trackingProvider, t.trackingCode)
+    .where(sql`${t.trackingCode} <> ''`),
+  check("shipment_trackings_source_type_valid", sql`${t.sourceType} IN ('file_import', 'manual', 'agent')`),
 ]);
 
 export const insertShipmentTrackingSchema = createInsertSchema(shipmentTrackingsTable).omit({ id: true, createdAt: true, updatedAt: true });

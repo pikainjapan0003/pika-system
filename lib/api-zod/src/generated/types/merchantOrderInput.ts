@@ -6,6 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { MerchantOrderInputSpecValues } from './merchantOrderInputSpecValues';
+import type { MerchantOrderInputStoreSelectedBy } from './merchantOrderInputStoreSelectedBy';
+import type { ShippingMethod } from './shippingMethod';
 
 export interface MerchantOrderInput {
   productId: number;
@@ -20,4 +22,20 @@ export interface MerchantOrderInput {
   /** @nullable */
   notes?: string | null;
   specValues?: MerchantOrderInputSpecValues;
+  shippingMethod?: ShippingMethod | null;
+  /** @nullable */
+  recipientName?: string | null;
+  /** @nullable */
+  recipientPhone?: string | null;
+  /** @nullable */
+  recipientAddress?: string | null;
+  /** @nullable */
+  storeCode?: string | null;
+  /** @nullable */
+  storeName?: string | null;
+  /** @nullable */
+  cvsStoreAddress?: string | null;
+  /** @nullable */
+  cvsStorePhone?: string | null;
+  storeSelectedBy?: MerchantOrderInputStoreSelectedBy;
 }

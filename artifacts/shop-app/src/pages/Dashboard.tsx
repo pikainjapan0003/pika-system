@@ -1,7 +1,50 @@
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useGetMyStore, useGetStoreStats, useListOrders } from "@workspace/api-client-react";
-import { useClerk } from "@clerk/react";
+import { useAuth, useClerk } from "@clerk/react";
 import { STATUS_LABELS, STATUS_COLORS } from "../lib/orderStatus";
+
+// 物流異常待處理數（open + reviewing）。現有 API 的 total 受 limit 影響，
+// 因此各抓 limit=100 計數；達上限以 "100+" 顯示。失敗不影響 Dashboard 主功能。
+function useLogisticsPendingCount(storeId: number | undefined) {
+  const { getToken } = useAuth();
+  const [state, setState] = useState<{ loading: boolean; failed: boolean; count: number; capped: boolean }>({
+    loading: true,
+    failed: false,
+    count: 0,
+    capped: false,
+  });
+
+  useEffect(() => {
+    if (!storeId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const token = await getToken();
+        const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+        const fetchCount = async (status: string) => {
+          const res = await fetch(
+            `/api/stores/${storeId}/logistics/exceptions?status=${status}&limit=100`,
+            { credentials: "include", headers },
+          );
+          const body = await res.json().catch(() => ({}));
+          if (!res.ok || !body.ok) throw new Error("load failed");
+          return (body.items ?? []).length as number;
+        };
+        const [open, reviewing] = await Promise.all([fetchCount("open"), fetchCount("reviewing")]);
+        if (!cancelled)
+          setState({ loading: false, failed: false, count: open + reviewing, capped: open >= 100 || reviewing >= 100 });
+      } catch {
+        if (!cancelled) setState({ loading: false, failed: true, count: 0, capped: false });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [storeId, getToken]);
+
+  return state;
+}
 
 export default function DashboardPage() {
   const [, setLocation] = useLocation();
@@ -10,6 +53,7 @@ export default function DashboardPage() {
 
   const { data: store } = useGetMyStore();
   const storeId = store?.id;
+  const pending = useLogisticsPendingCount(storeId);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: stats } = useGetStoreStats(storeId!, { query: { enabled: !!storeId } as any });
@@ -98,6 +142,31 @@ export default function DashboardPage() {
             onClick={() => setLocation("/settings")}
           />
           <ActionCard
+            label="物流匯入"
+            desc="上傳 7-11 / 全家 Excel"
+            icon="🚚"
+            onClick={() => setLocation("/logistics/import")}
+          />
+          <ActionCard
+            label="物流異常"
+            desc={
+              pending.loading
+                ? "檢查中..."
+                : pending.failed
+                  ? "數量載入失敗"
+                  : pending.count > 0
+                    ? `${pending.capped ? "100+" : pending.count} 筆待處理`
+                    : "目前無待處理"
+            }
+            icon="⚠️"
+            badge={
+              !pending.loading && !pending.failed && pending.count > 0
+                ? `待處理 ${pending.capped ? "100+" : pending.count}`
+                : undefined
+            }
+            onClick={() => setLocation("/logistics/exceptions")}
+          />
+          <ActionCard
             label="使用說明"
             desc="如何開始接單"
             icon="📖"
@@ -168,15 +237,20 @@ function StatCard({ label, value, accent, onClick }: { label: string; value: str
   );
 }
 
-function ActionCard({ label, desc, icon, onClick }: { label: string; desc: string; icon: string; onClick: () => void }) {
+function ActionCard({ label, desc, icon, badge, onClick }: { label: string; desc: string; icon: string; badge?: string; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="bg-white rounded-2xl p-4 border border-border text-left active:bg-secondary transition-colors"
+      className="bg-white rounded-2xl p-4 border border-border text-left active:bg-secondary transition-colors relative"
     >
+      {badge && (
+        <span className="absolute top-3 right-3 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 max-w-[45%] truncate">
+          {badge}
+        </span>
+      )}
       <div className="text-2xl mb-2">{icon}</div>
       <div className="font-semibold text-foreground text-sm">{label}</div>
-      <div className="text-xs text-muted-foreground mt-0.5">{desc}</div>
+      <div className={`text-xs mt-0.5 ${badge ? "text-red-600" : "text-muted-foreground"}`}>{desc}</div>
     </button>
   );
 }
