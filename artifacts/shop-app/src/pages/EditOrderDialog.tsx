@@ -894,8 +894,10 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
                   const statusLabel = tracking ? (TRACKING_STATUS_LABELS[tracking.trackingStatus] ?? "待查詢") : "待查詢";
                   const eventDescription = tracking?.latestEventDescription?.trim() || null;
                   const sourceLabel = tracking ? (TRACKING_SOURCE_LABELS[tracking.sourceType] ?? "物流資料") : "物流資料";
-                  const lastUpdate = tracking
-                    ? formatTrackingTime(tracking.latestEventAt) ?? formatTrackingTime(tracking.lastCheckedAt) ?? formatTrackingTime(tracking.updatedAt)
+                  // 貨態時間 = 物流商最新事件時間；上次查詢 = 系統最後查詢時間（與訂單列表卡片語意一致）
+                  const eventTime = tracking ? formatTrackingTime(tracking.latestEventAt) : null;
+                  const lastChecked = tracking
+                    ? formatTrackingTime(tracking.lastCheckedAt) ?? formatTrackingTime(tracking.updatedAt)
                     : null;
                   return (
                   <>
@@ -928,8 +930,12 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
                         <p className="text-sm text-foreground">{sourceLabel}</p>
                       </div>
                       <div>
-                        <FieldLabel icon={Clock}>最後更新</FieldLabel>
-                        <p className={`text-sm ${lastUpdate ? "text-foreground" : "text-muted-foreground"}`}>{lastUpdate ?? "尚未查詢"}</p>
+                        <FieldLabel icon={Clock}>貨態時間</FieldLabel>
+                        <p className={`text-sm ${eventTime ? "text-foreground" : "text-muted-foreground"}`}>{eventTime ?? "尚無貨態時間"}</p>
+                      </div>
+                      <div>
+                        <FieldLabel icon={Clock}>上次查詢</FieldLabel>
+                        <p className={`text-sm ${lastChecked ? "text-foreground" : "text-muted-foreground"}`}>{lastChecked ?? "尚未查詢"}</p>
                       </div>
                       <div>
                         <FieldLabel icon={Hourglass}>取件期限</FieldLabel>
