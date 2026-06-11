@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { useAuth } from "@clerk/react";
 import { useGetMyStore } from "@workspace/api-client-react";
 import { BottomNav } from "./Dashboard";
+import { LogisticsSyncStatusNotice } from "../components/LogisticsSyncStatusNotice";
 
 type Provider = "711" | "familymart";
 
@@ -250,6 +251,8 @@ export default function LogisticsImportPage() {
       </header>
 
       <div className="px-5 py-5 space-y-5">
+        <LogisticsSyncStatusNotice />
+
         {/* provider + file */}
         <div className="bg-white rounded-2xl border border-border p-5 space-y-4">
           <div>
