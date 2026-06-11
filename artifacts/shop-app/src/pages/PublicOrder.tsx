@@ -19,6 +19,7 @@ import familymartLogo from "@/assets/logistics/familymart-logo-official.png";
 import blackcatLogo from "@/assets/logistics/blackcat-logo-official.svg";
 import postofficeLogo from "@/assets/logistics/postoffice-logo.svg";
 import { TAIWAN_ZIPCODE_REGIONS, getDistricts } from "@/lib/taiwanZipcodes";
+import { RecipientAddressFields } from "@/components/RecipientAddressFields";
 
 interface Props {
   shareToken: string;
@@ -255,6 +256,12 @@ export default function PublicOrderPage({ shareToken }: Props) {
       }
     }
 
+    // 面交：地點選填，但填了詳細地點就要先選縣市與行政區
+    if (isMeetupMethod(pickupMethod) && shippingAddressLine.trim() && (!shippingCity || !shippingDistrict)) {
+      setFormError("請先選擇縣市與行政區");
+      return;
+    }
+
     // 收件資訊：勾「同買家資訊」→ 帶買家；否則必填收件人 / 收件電話
     const recipientNamePayload = sameAsBuyer ? buyerName.trim() : recipientNameInput.trim();
     const recipientPhonePayload = sameAsBuyer ? buyerPhone.trim() : recipientPhoneInput.trim();
@@ -264,9 +271,12 @@ export default function PublicOrderPage({ shareToken }: Props) {
     }
 
     // 黑貓 / 郵局：完整收件地址走 recipientAddress 欄位，notes 保留買家自己的備註
+    // 面交：地點選填，有選縣市 / 行政區才送，沿用同一欄位與格式
     const recipientAddressPayload = isHomeDeliveryMethod(pickupMethod)
       ? `${shippingZip} ${shippingCity}${shippingDistrict}${shippingAddressLine.trim()}`
-      : undefined;
+      : isMeetupMethod(pickupMethod) && shippingCity && shippingDistrict
+        ? `${shippingZip} ${shippingCity}${shippingDistrict}${shippingAddressLine.trim()}`.trim()
+        : undefined;
 
     try {
       const body = {
@@ -774,17 +784,34 @@ export default function PublicOrderPage({ shareToken }: Props) {
                         </div>
                       )}
 
-                      {/* 面交 detail */}
+                      {/* 面交 detail — 與黑貓 / 郵局相同的結構化地點欄位（選填） */}
                       {isMeetupMethod(m) && (
-                        <div className="bg-white border border-border rounded-2xl px-4 py-3 space-y-2">
-                          <p className="text-xs font-semibold text-muted-foreground">面交資訊（選填）</p>
-                          <textarea
-                            value={notes}
-                            onChange={(e) => setNotes(e.target.value)}
-                            placeholder="請填寫希望面交的地點與可面交時間，例如：台北車站一號出口 / 週末下午"
-                            rows={3}
-                            className={`${inputClass} h-auto resize-none py-3`}
+                        <div className="bg-white border border-border rounded-2xl px-4 py-3 space-y-3">
+                          <p className="text-sm font-semibold text-foreground">面交地點資訊（選填）</p>
+                          <RecipientAddressFields
+                            city={shippingCity}
+                            district={shippingDistrict}
+                            zip={shippingZip}
+                            addressLine={shippingAddressLine}
+                            addressLineLabel="詳細地點"
+                            addressLinePlaceholder="例如：台北車站東三門"
+                            onCityChange={handleShippingCityChange}
+                            onDistrictChange={(d, z) => { setShippingDistrict(d); setShippingZip(z); }}
+                            onAddressLineChange={setShippingAddressLine}
                           />
+                          {formError === "請先選擇縣市與行政區" && (
+                            <p className="text-xs text-destructive">請先選擇縣市與行政區</p>
+                          )}
+                          <div>
+                            <p className="text-xs font-semibold text-muted-foreground mb-1">面交備註（選填）</p>
+                            <textarea
+                              value={notes}
+                              onChange={(e) => setNotes(e.target.value)}
+                              placeholder="例如：可面交時間（週末下午）"
+                              rows={3}
+                              className={`${inputClass} h-auto resize-none py-3`}
+                            />
+                          </div>
                         </div>
                       )}
 

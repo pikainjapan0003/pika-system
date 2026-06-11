@@ -82,10 +82,15 @@ function maskPhone(phone: string | null): string | null {
   return phone.slice(0, 4) + "***" + phone.slice(-3);
 }
 
-// 地址摘要：只保留前段（縣市 + 行政區層級），不暴露完整門牌
+// 地址摘要：只保留縣市 + 行政區，不暴露郵遞區號、路名、門牌
 function summarizeAddress(address: string | null): string | null {
   if (!address) return null;
-  const trimmed = address.trim();
+  const trimmed = address.trim().replace(/^\d{3,6}\s*/, "");
+  if (!trimmed) return null;
+  const match = trimmed.match(/^(.{1,3}[市縣])(.{1,3}[區鄉鎮市])?/);
+  if (match && match[1]) {
+    return match[1] + (match[2] ?? "");
+  }
   if (trimmed.length <= 9) return trimmed;
   return trimmed.slice(0, 9) + "…";
 }

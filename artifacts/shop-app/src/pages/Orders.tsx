@@ -832,6 +832,15 @@ export default function OrdersPage() {
                                 })()}
                               </>
                             )}
+                            {/* 面交 / 自取地點：沿用 recipientAddress 欄位，label 依取貨方式 */}
+                            {(o.pickupMethod === "面交" || o.pickupMethod === "自取") && o.recipientAddress && (() => {
+                              const label = o.pickupMethod === "面交" ? "面交地點" : "自取地點";
+                              const parsed = parseRecipientAddress(o.recipientAddress);
+                              const value = parsed
+                                ? `${parsed.city}${parsed.district}${parsed.line}`.trim()
+                                : o.recipientAddress;
+                              return <DetailRow label={label} value={value} />;
+                            })()}
                             {o.shippingNote && <DetailRow label="物流備註" value={o.shippingNote} />}
                             {o.internalNote && <DetailRow label="內部備註（後台）" value={o.internalNote} />}
                             {o.notes && <DetailRow label="買家備註" value={o.notes} />}
