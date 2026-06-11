@@ -288,8 +288,16 @@ export default function TrackOrderPage({ publicToken }: Props) {
                 {order.recipientPhoneMasked && (
                   <InfoRow label="收件電話" value={order.recipientPhoneMasked} />
                 )}
-                {order.recipientAddressMasked && (
-                  <InfoRow label="收件地址" value={order.recipientAddressMasked} />
+                {/* 面交 / 自取：顯示地點摘要（public-safe），未填則請依店家通知 */}
+                {order.pickupMethod === "面交" || order.pickupMethod === "自取" ? (
+                  <InfoRow
+                    label={order.pickupMethod === "面交" ? "面交地點" : "自取地點"}
+                    value={order.recipientAddressMasked ?? "請依店家通知為準"}
+                  />
+                ) : (
+                  order.recipientAddressMasked && (
+                    <InfoRow label="收件地址" value={order.recipientAddressMasked} />
+                  )
                 )}
               </>
             )}
@@ -316,7 +324,7 @@ export default function TrackOrderPage({ publicToken }: Props) {
         </div>
 
         <p className="text-xs text-muted-foreground text-center mt-4 leading-relaxed">
-          物流資訊可能因物流商更新延遲而有所落差，實際狀態仍以物流商或門市通知為準。
+          物流狀態以物流商或門市實際通知為準。
         </p>
         {!isCancelled && (
           <p className="text-xs text-muted-foreground text-center mt-1 leading-relaxed">

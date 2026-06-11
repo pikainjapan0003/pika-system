@@ -225,6 +225,10 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
     if ((cat === "home_black_cat" || cat === "home_post") && (!addrCity || !addrDistrict || !addrLine.trim())) {
       errs.recipientAddress = "請完整填寫收件地址";
     }
+    // 面交 / 自取：地點選填，但填了詳細地點就要先選縣市與行政區
+    if (cat === "self_pickup" && addrLine.trim() && (!addrCity || !addrDistrict)) {
+      errs.recipientAddress = "請先選擇縣市與行政區";
+    }
     setFieldErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -254,7 +258,11 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
           shippingMethod,
           recipientName: sameAsBuyer ? buyerName.trim() : recipientName.trim(),
           recipientPhone: sameAsBuyer ? buyerPhone.trim() : recipientPhone.trim(),
-          recipientAddress: isHome ? combineRecipientAddress(addrZip, addrCity, addrDistrict, addrLine) : null,
+          recipientAddress: isHome
+            ? combineRecipientAddress(addrZip, addrCity, addrDistrict, addrLine)
+            : (cat === "self_pickup" && addrCity && addrDistrict)
+              ? combineRecipientAddress(addrZip, addrCity, addrDistrict, addrLine)
+              : null,
           storeCode: isCvs ? (storeCode || null) : null,
           storeName: isCvs ? (storeName || null) : null,
           cvsStoreAddress: isCvs ? (cvsStoreAddress || null) : null,
@@ -525,15 +533,32 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
                             </div>
                           )}
                           {cat === "self_pickup" && (
-                            <div className="bg-white border border-border rounded-2xl px-4 py-3 space-y-2">
-                              <p className="text-xs font-semibold text-muted-foreground">面交資訊（選填）</p>
-                              <textarea
-                                value={notes}
-                                onChange={(e) => setNotes(e.target.value)}
-                                placeholder="請填寫希望面交的地點與可面交時間，例如：台北車站一號出口 / 週末下午"
-                                rows={3}
-                                className={`${INPUT} h-auto resize-none py-3`}
+                            <div className="bg-white border border-border rounded-2xl px-4 py-3 space-y-3">
+                              <p className="text-sm font-semibold text-foreground">
+                                {pickupMethod === "面交" ? "面交地點資訊（選填）" : "自取地點資訊（選填）"}
+                              </p>
+                              <RecipientAddressFields
+                                city={addrCity}
+                                district={addrDistrict}
+                                zip={addrZip}
+                                addressLine={addrLine}
+                                addressLineLabel="詳細地點"
+                                addressLinePlaceholder="例如：台北車站東三門、店面地址、約定地點"
+                                onCityChange={(c) => { setAddrCity(c); setAddrDistrict(""); setAddrZip(""); clearFieldError("recipientAddress"); }}
+                                onDistrictChange={(d, z) => { setAddrDistrict(d); setAddrZip(z); clearFieldError("recipientAddress"); }}
+                                onAddressLineChange={(l) => { setAddrLine(l); clearFieldError("recipientAddress"); }}
                               />
+                              {fieldErrors.recipientAddress && <p className={ERR}>{fieldErrors.recipientAddress}</p>}
+                              <div>
+                                <p className="text-xs font-semibold text-muted-foreground mb-1">面交 / 自取備註（選填）</p>
+                                <textarea
+                                  value={notes}
+                                  onChange={(e) => setNotes(e.target.value)}
+                                  placeholder="例如：可面交時間（週末下午）"
+                                  rows={3}
+                                  className={`${INPUT} h-auto resize-none py-3`}
+                                />
+                              </div>
                             </div>
                           )}
                         </div>

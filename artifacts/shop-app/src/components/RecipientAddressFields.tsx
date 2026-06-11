@@ -11,6 +11,8 @@ interface Props {
   zip: string;
   addressLine: string;
   required?: boolean;
+  addressLineLabel?: string;
+  addressLinePlaceholder?: string;
   onCityChange: (city: string) => void;
   onDistrictChange: (district: string, zip: string) => void;
   onAddressLineChange: (line: string) => void;
@@ -20,6 +22,8 @@ interface Props {
 // 縣市 / 行政區 / 郵遞區號（自動帶入）/ 詳細地址
 export function RecipientAddressFields({
   city, district, zip, addressLine, required,
+  addressLineLabel = "詳細地址",
+  addressLinePlaceholder = "路名、門牌號、樓層，例如：信義路三段100號5樓",
   onCityChange, onDistrictChange, onAddressLineChange,
 }: Props) {
   const districts = getDistricts(city);
@@ -68,12 +72,12 @@ export function RecipientAddressFields({
         <p className="text-[10px] text-muted-foreground mt-0.5">郵遞區號依縣市與行政區自動帶入</p>
       </div>
       <div>
-        <label className="block text-xs font-medium text-foreground mb-1">詳細地址{star}</label>
+        <label className="block text-xs font-medium text-foreground mb-1">{addressLineLabel}{star}</label>
         <input
           type="text"
           value={addressLine}
           onChange={(e) => onAddressLineChange(e.target.value)}
-          placeholder="路名、門牌號、樓層，例如：信義路三段100號5樓"
+          placeholder={addressLinePlaceholder}
           className={INPUT}
         />
       </div>

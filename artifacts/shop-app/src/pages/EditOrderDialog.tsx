@@ -414,6 +414,10 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
         errs.recipientAddress = "請完整填寫收件地址";
       }
     }
+    // 面交 / 自取：地點選填，但填了詳細地點就要先選縣市與行政區
+    if (getFulfillmentCategory(pickupMethod) === "self_pickup" && addrLine.trim() && (!addrCity || !addrDistrict)) {
+      errs.recipientAddress = "請先選擇縣市與行政區";
+    }
     if (paidAmountStr.trim() !== "") {
       const pa = parseFloat(paidAmountStr);
       if (isNaN(pa) || pa < 0) errs.paidAmount = "已收金額不可為負數";
@@ -681,13 +685,16 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
               <FieldLabel icon={Truck}>取貨方式 *</FieldLabel>
               <div className="space-y-3 mt-1">
                 {SHIPPING_CARD_OPTIONS.map((opt) => {
-                  const isSelected = pickupMethod === opt.value;
+                  // 「面交 / 自取」卡片同時代表舊值「面交」與「自取」，避免舊資料掉到未知值 fallback
+                  const isSelected =
+                    pickupMethod === opt.value ||
+                    (opt.value === "自取" && getFulfillmentCategory(pickupMethod) === "self_pickup");
                   const cat = getFulfillmentCategory(opt.value);
                   return (
                     <div key={opt.value}>
                       <button
                         type="button"
-                        onClick={() => handlePickupMethodChange(opt.value)}
+                        onClick={() => { if (!isSelected) handlePickupMethodChange(opt.value); }}
                         className={`w-full flex items-center gap-3 min-h-[64px] px-4 py-3 rounded-2xl border-2 transition-colors text-left shadow-sm ${
                           isSelected
                             ? "bg-primary/10 border-primary"
@@ -831,15 +838,32 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
                             </div>
                           )}
                           {cat === "self_pickup" && (
-                            <div className="bg-white border border-border rounded-2xl px-4 py-3 space-y-2">
-                              <p className="text-xs font-semibold text-muted-foreground">面交資訊（選填）</p>
-                              <textarea
-                                value={notes}
-                                onChange={(e) => setNotes(e.target.value)}
-                                placeholder="請填寫希望面交的地點與可面交時間，例如：台北車站一號出口 / 週末下午"
-                                rows={3}
-                                className={`${INPUT} h-auto resize-none py-3`}
+                            <div className="bg-white border border-border rounded-2xl px-4 py-3 space-y-3">
+                              <p className="text-sm font-semibold text-foreground">
+                                {pickupMethod === "面交" ? "面交地點資訊（選填）" : "自取地點資訊（選填）"}
+                              </p>
+                              <RecipientAddressFields
+                                city={addrCity}
+                                district={addrDistrict}
+                                zip={addrZip}
+                                addressLine={addrLine}
+                                addressLineLabel="詳細地點"
+                                addressLinePlaceholder="例如：台北車站東三門、店面地址、約定地點"
+                                onCityChange={(c) => { setAddrCity(c); setAddrDistrict(""); setAddrZip(""); clearFieldError("recipientAddress"); }}
+                                onDistrictChange={(d, z) => { setAddrDistrict(d); setAddrZip(z); clearFieldError("recipientAddress"); }}
+                                onAddressLineChange={(l) => { setAddrLine(l); clearFieldError("recipientAddress"); }}
                               />
+                              {fieldErrors.recipientAddress && <p className={ERR}>{fieldErrors.recipientAddress}</p>}
+                              <div>
+                                <p className="text-xs font-semibold text-muted-foreground mb-1">面交 / 自取備註（選填）</p>
+                                <textarea
+                                  value={notes}
+                                  onChange={(e) => setNotes(e.target.value)}
+                                  placeholder="例如：可面交時間（週末下午）"
+                                  rows={3}
+                                  className={`${INPUT} h-auto resize-none py-3`}
+                                />
+                              </div>
                             </div>
                           )}
                         </div>
@@ -847,13 +871,14 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
                     </div>
                   );
                 })}
-                {pickupMethod && !SHIPPING_CARD_OPTIONS.some((o) => o.value === pickupMethod) && (
+                {pickupMethod &&
+                  !SHIPPING_CARD_OPTIONS.some((o) => o.value === pickupMethod) &&
+                  getFulfillmentCategory(pickupMethod) !== "self_pickup" && (
                   <div className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-primary bg-primary/5">
                     <span className="shrink-0 w-4 h-4 rounded-full border-2 border-primary flex items-center justify-center">
                       <span className="w-2 h-2 rounded-full bg-primary" />
                     </span>
                     <span className="flex-1 text-sm font-medium text-primary">{pickupMethod}</span>
-                    <span className="text-[10px] text-muted-foreground/60">（原始值）</span>
                   </div>
                 )}
               </div>
