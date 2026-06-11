@@ -380,7 +380,16 @@ export const CreateMerchantOrderBody = zod.object({
   "notes": zod.string().nullish(),
   "specValues": zod.object({
 
-}).passthrough().optional()
+}).passthrough().optional(),
+  "shippingMethod": zod.union([zod.literal('self_pickup'),zod.literal('convenience_store'),zod.literal('home_delivery'),zod.literal('other'),zod.literal(null)]).nullish(),
+  "recipientName": zod.string().nullish(),
+  "recipientPhone": zod.string().nullish(),
+  "recipientAddress": zod.string().nullish(),
+  "storeCode": zod.string().nullish(),
+  "storeName": zod.string().nullish(),
+  "cvsStoreAddress": zod.string().nullish(),
+  "cvsStorePhone": zod.string().nullish(),
+  "storeSelectedBy": zod.enum(['customer', 'admin', 'system']).optional()
 })
 
 

@@ -1972,3 +1972,92 @@ describe('Step 8J: discountAmount + discountNote', () => {
     await req('PATCH', `/orders/${discountOrderId}`, { discountAmount: 0, discountNote: null });
   });
 });
+
+// ─────────────────────────────────────────────────────────────
+// Step 7G — orders list includes active shipmentTracking summary
+// ─────────────────────────────────────────────────────────────
+describe('GET /stores/:storeId/orders — shipmentTracking summary', () => {
+  let trackOrderId;
+
+  before(async () => {
+    const [order] = await db
+      .insert(ordersTable)
+      .values({
+        productId: testProductId,
+        storeId: testStoreId,
+        publicToken: `track-${Date.now()}`,
+        buyerName: 'Track Buyer',
+        buyerPhone: '0900000077',
+        pickupMethod: 'cvs',
+        quantity: 1,
+        unitPrice: '100',
+        totalPrice: '100',
+        status: 'preparing',
+      })
+      .returning();
+    trackOrderId = order.id;
+  });
+
+  test('order without tracking → shipmentTracking is null, order still returned', async () => {
+    const { status, data } = await req('GET', `/stores/${testStoreId}/orders`);
+    assert.strictEqual(status, 200);
+    const order = data.find((o) => o.id === trackOrderId);
+    assert.ok(order, 'order present');
+    assert.strictEqual(order.shipmentTracking, null);
+  });
+
+  test('active tracking → summary returned with correct fields, no rawData', async () => {
+    const { shipmentTrackingsTable } = await import('@workspace/db');
+    const code = `7GTEST${Date.now()}`;
+    await db.insert(shipmentTrackingsTable).values({
+      orderId: trackOrderId,
+      trackingCode: code,
+      trackingProvider: 'familymart',
+      sourceType: 'file_import',
+      trackingStatus: 'pending',
+      isActive: true,
+    });
+
+    const { status, data } = await req('GET', `/stores/${testStoreId}/orders`);
+    assert.strictEqual(status, 200);
+    const order = data.find((o) => o.id === trackOrderId);
+    const t = order.shipmentTracking;
+    assert.ok(t, 'shipmentTracking present');
+    assert.strictEqual(t.trackingCode, code);
+    assert.strictEqual(t.trackingProvider, 'familymart');
+    assert.strictEqual(t.sourceType, 'file_import');
+    assert.strictEqual(t.trackingStatus, 'pending');
+    assert.strictEqual(t.latestEventStatus, null);
+    assert.strictEqual(t.latestEventAt, null);
+    assert.strictEqual(t.lastCheckedAt, null);
+    assert.strictEqual(t.checkError, null);
+    assert.strictEqual(t.isActive, true);
+    assert.ok(!('rawData' in t) && !('raw_data' in t), 'must not expose raw data');
+  });
+
+  test('multiple trackings → only latest active returned', async () => {
+    const { shipmentTrackingsTable } = await import('@workspace/db');
+    // deactivate the first, add an inactive and a newer active one
+    await db
+      .update(shipmentTrackingsTable)
+      .set({ isActive: false, trackingStatus: 'inactive' })
+      .where(eq(shipmentTrackingsTable.orderId, trackOrderId));
+    const newCode = `7GNEW${Date.now()}`;
+    await db.insert(shipmentTrackingsTable).values({
+      orderId: trackOrderId,
+      trackingCode: newCode,
+      trackingProvider: 'familymart',
+      sourceType: 'manual',
+      trackingStatus: 'active',
+      isActive: true,
+    });
+
+    const { status, data } = await req('GET', `/stores/${testStoreId}/orders`);
+    assert.strictEqual(status, 200);
+    const t = data.find((o) => o.id === trackOrderId).shipmentTracking;
+    assert.ok(t);
+    assert.strictEqual(t.trackingCode, newCode, 'latest active tracking wins');
+    assert.strictEqual(t.sourceType, 'manual');
+    assert.strictEqual(t.trackingStatus, 'active');
+  });
+});

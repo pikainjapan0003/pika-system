@@ -372,6 +372,15 @@ export interface OrderInput {
 
 export type MerchantOrderInputSpecValues = { [key: string]: unknown };
 
+export type MerchantOrderInputStoreSelectedBy = typeof MerchantOrderInputStoreSelectedBy[keyof typeof MerchantOrderInputStoreSelectedBy];
+
+
+export const MerchantOrderInputStoreSelectedBy = {
+  customer: 'customer',
+  admin: 'admin',
+  system: 'system',
+} as const;
+
 export interface MerchantOrderInput {
   productId: number;
   /** @minLength 1 */
@@ -385,6 +394,22 @@ export interface MerchantOrderInput {
   /** @nullable */
   notes?: string | null;
   specValues?: MerchantOrderInputSpecValues;
+  shippingMethod?: ShippingMethod | null;
+  /** @nullable */
+  recipientName?: string | null;
+  /** @nullable */
+  recipientPhone?: string | null;
+  /** @nullable */
+  recipientAddress?: string | null;
+  /** @nullable */
+  storeCode?: string | null;
+  /** @nullable */
+  storeName?: string | null;
+  /** @nullable */
+  cvsStoreAddress?: string | null;
+  /** @nullable */
+  cvsStorePhone?: string | null;
+  storeSelectedBy?: MerchantOrderInputStoreSelectedBy;
 }
 
 export type OrderUpdateSpecValues = { [key: string]: unknown };

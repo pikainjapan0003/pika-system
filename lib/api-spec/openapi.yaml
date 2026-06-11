@@ -1169,6 +1169,25 @@ components:
           type: ["string", "null"]
         specValues:
           type: object
+        shippingMethod:
+          $ref: "#/components/schemas/ShippingMethod"
+        recipientName:
+          type: ["string", "null"]
+        recipientPhone:
+          type: ["string", "null"]
+        recipientAddress:
+          type: ["string", "null"]
+        storeCode:
+          type: ["string", "null"]
+        storeName:
+          type: ["string", "null"]
+        cvsStoreAddress:
+          type: ["string", "null"]
+        cvsStorePhone:
+          type: ["string", "null"]
+        storeSelectedBy:
+          type: string
+          enum: [customer, admin, system]
 
     OrderUpdate:
       type: object

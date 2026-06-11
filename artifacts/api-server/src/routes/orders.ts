@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { and, eq, inArray } from "drizzle-orm";
 import { randomBytes } from "crypto";
-import { db, ordersTable, productsTable } from "@workspace/db";
+import { db, ordersTable, productsTable, shipmentTrackingsTable } from "@workspace/db";
 import type { OrderStatus } from "@workspace/db";
 import { CreateMerchantOrderBody, UpdateOrderBody, UpdateOrderStatusBody, BulkUpdateOrdersBody, GetPickingListBody, GetShippingListBody } from "@workspace/api-zod";
 import { requireAuth, verifyStoreOwner } from "../middlewares/auth.ts";
@@ -21,7 +21,21 @@ router.get("/stores/:storeId/orders", requireAuth, async (req: any, res) => {
     .where(eq(ordersTable.storeId, storeId))
     .orderBy(ordersTable.createdAt);
 
-  return res.json(orders.map(formatOrder));
+  // Active shipment tracking summary per order — single IN query, latest per order.
+  const orderIds = orders.map((o) => o.id);
+  const trackingByOrderId = new Map<number, ReturnType<typeof formatShipmentTracking>>();
+  if (orderIds.length) {
+    const trackings = await db
+      .select()
+      .from(shipmentTrackingsTable)
+      .where(and(inArray(shipmentTrackingsTable.orderId, orderIds), eq(shipmentTrackingsTable.isActive, true)));
+    for (const t of trackings) {
+      const existing = trackingByOrderId.get(t.orderId);
+      if (!existing || t.id > existing.id) trackingByOrderId.set(t.orderId, formatShipmentTracking(t));
+    }
+  }
+
+  return res.json(orders.map((o) => ({ ...formatOrder(o), shipmentTracking: trackingByOrderId.get(o.id) ?? null })));
 });
 
 router.post("/stores/:storeId/orders", requireAuth, async (req: any, res) => {
@@ -35,7 +49,12 @@ router.post("/stores/:storeId/orders", requireAuth, async (req: any, res) => {
     return res.status(400).json({ error: parsed.error.message });
   }
 
-  const { productId, buyerName, buyerPhone, quantity, pickupMethod, notes, specValues } = parsed.data;
+  const {
+    productId, buyerName, buyerPhone, quantity, pickupMethod, notes, specValues,
+    shippingMethod, recipientName, recipientPhone, recipientAddress,
+    storeCode, storeName, cvsStoreAddress, cvsStorePhone, storeSelectedBy,
+  } = parsed.data;
+  const hasCvsStore = !!(storeCode || storeName || cvsStoreAddress || cvsStorePhone);
 
   let retries = 0;
   while (retries <= 3) {
@@ -73,6 +92,17 @@ router.post("/stores/:storeId/orders", requireAuth, async (req: any, res) => {
             unitPrice: String(unitPrice),
             totalPrice: String(totalPrice),
             status: "pending",
+            // Step 7H-2: 新增訂單即可帶入物流 / 門市 / 收件資訊（與編輯訂單一致）
+            shippingMethod: shippingMethod ?? null,
+            recipientName: recipientName ?? null,
+            recipientPhone: recipientPhone ?? null,
+            recipientAddress: recipientAddress ?? null,
+            cvsStoreId: storeCode ?? null,
+            cvsStoreName: storeName ?? null,
+            cvsStoreAddress: cvsStoreAddress ?? null,
+            cvsStorePhone: cvsStorePhone ?? null,
+            storeSelectedBy: hasCvsStore ? (storeSelectedBy ?? "admin") : null,
+            storeSelectedAt: hasCvsStore ? new Date() : null,
           })
           .returning();
 
@@ -606,6 +636,35 @@ router.post("/orders/tracking-import", requireAuth, async (req: any, res) => {
         .set({ trackingCode: pr.trackingCode, trackingProvider: pr.trackingProvider })
         .where(eq(ordersTable.id, pr.numericOrderId));
 
+      // Step 7B-FIX-1: seed shipment_trackings so the agent tracking-jobs queue has a row
+      const [existingTracking] = await db
+        .select()
+        .from(shipmentTrackingsTable)
+        .where(
+          and(
+            eq(shipmentTrackingsTable.orderId, pr.numericOrderId),
+            eq(shipmentTrackingsTable.isActive, true),
+          ),
+        )
+        .limit(1);
+
+      if (existingTracking && existingTracking.trackingCode === pr.trackingCode) {
+        // Same active tracking already registered — nothing to do
+      } else {
+        if (existingTracking) {
+          // trackingCode changed — retire the old row instead of mutating it
+          await db
+            .update(shipmentTrackingsTable)
+            .set({ isActive: false, trackingStatus: "inactive" })
+            .where(eq(shipmentTrackingsTable.id, existingTracking.id));
+        }
+        await db.insert(shipmentTrackingsTable).values({
+          orderId: pr.numericOrderId,
+          trackingCode: pr.trackingCode,
+          trackingProvider: pr.trackingProvider,
+        });
+      }
+
       successCount++;
     }
   }
@@ -777,6 +836,43 @@ router.get("/stores/:storeId/orders/export", requireAuth, async (req: any, res) 
   return res.send(bom + csvLines);
 });
 
+// Step 7H: 刪除誤建立 / 誤下的訂單。第一版僅允許未出貨、未完成且無物流追蹤的訂單。
+router.delete("/stores/:storeId/orders/:orderId", requireAuth, async (req: any, res) => {
+  const storeId = parseInt(req.params.storeId);
+  const orderId = parseInt(req.params.orderId);
+  if (isNaN(storeId)) return res.status(400).json({ error: "Invalid storeId" });
+  if (isNaN(orderId)) return res.status(400).json({ error: "Invalid orderId" });
+
+  if (!(await verifyStoreOwner(req, res, storeId))) return;
+
+  const [order] = await db
+    .select()
+    .from(ordersTable)
+    .where(and(eq(ordersTable.id, orderId), eq(ordersTable.storeId, storeId)))
+    .limit(1);
+  if (!order) return res.status(404).json({ error: "找不到此訂單" });
+
+  const BLOCKED_DELETE_MESSAGE =
+    "這筆訂單已有物流或完成紀錄，為避免帳務與物流資料不一致，請保留紀錄或改用取消訂單。";
+
+  if (order.status === "shipped" || order.status === "completed") {
+    return res.status(409).json({ error: BLOCKED_DELETE_MESSAGE });
+  }
+
+  const [tracking] = await db
+    .select({ id: shipmentTrackingsTable.id })
+    .from(shipmentTrackingsTable)
+    .where(eq(shipmentTrackingsTable.orderId, orderId))
+    .limit(1);
+  if (tracking) {
+    return res.status(409).json({ error: BLOCKED_DELETE_MESSAGE });
+  }
+
+  await db.delete(ordersTable).where(and(eq(ordersTable.id, orderId), eq(ordersTable.storeId, storeId)));
+
+  return res.json({ ok: true });
+});
+
 router.patch("/orders/:orderId/status", requireAuth, async (req: any, res) => {
   const orderId = parseInt(req.params.orderId);
   if (isNaN(orderId)) return res.status(400).json({ error: "Invalid orderId" });
@@ -845,6 +941,27 @@ async function fetchAndValidate(
   const productMap = new Map(products.map((p) => [p.id, p]));
 
   return { excludedOrderIds, activeOrders, productMap };
+}
+
+// Safe summary of an active shipment tracking — no raw_data, no PII.
+function formatShipmentTracking(t: any) {
+  return {
+    id: t.id as number,
+    trackingCode: t.trackingCode as string,
+    trackingProvider: t.trackingProvider as string,
+    sourceType: t.sourceType as string,
+    trackingStatus: t.trackingStatus as string,
+    latestEventStatus: t.latestEventStatus ?? null,
+    latestEventDescription: t.latestEventDescription ?? null,
+    latestEventAt: t.latestEventAt?.toISOString() ?? null,
+    lastCheckedAt: t.lastCheckedAt?.toISOString() ?? null,
+    nextCheckAt: t.nextCheckAt?.toISOString() ?? null,
+    failureCount: t.failureCount as number,
+    checkError: t.checkError ?? null,
+    isActive: t.isActive as boolean,
+    createdAt: t.createdAt?.toISOString() ?? null,
+    updatedAt: t.updatedAt?.toISOString() ?? null,
+  };
 }
 
 function formatOrder(o: any) {

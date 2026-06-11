@@ -12,6 +12,7 @@ export * from './getSellerAgentSettings200';
 export * from './healthStatus';
 export * from './merchantOrderInput';
 export * from './merchantOrderInputSpecValues';
+export * from './merchantOrderInputStoreSelectedBy';
 export * from './order';
 export * from './orderIdsBody';
 export * from './orderInput';

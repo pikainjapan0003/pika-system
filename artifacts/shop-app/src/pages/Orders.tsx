@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { useAuth } from "@clerk/react";
 import { useGetMyStore, useListOrders, useUpdateOrderStatus, useBulkUpdateOrders, useGetPickingList, useGetShippingList, getListOrdersQueryKey, type Order, type PickingListResponse, type ShippingListResponse } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -89,6 +90,86 @@ const SHIPPING_METHOD_LABELS: Record<string, string> = {
   other: "其他",
 };
 
+// Step 7G: 訂單卡片物流摘要（資料來自 orders list API 的 shipmentTracking）
+const TRACKING_STATUS_LABELS: Record<string, string> = {
+  pending: "待查詢",
+  checking: "查詢中",
+  active: "運送中",
+  delivered: "已完成",
+  failed: "查詢失敗",
+  inactive: "已停用",
+};
+const TRACKING_PROVIDER_LABELS: Record<string, string> = {
+  familymart: "全家",
+  "711": "7-11",
+  tcat: "黑貓",
+  postoffice: "郵局",
+};
+
+// Local augmentation: generated Order may lag behind DB schema on shipmentTracking.
+interface OrderShipmentTrackingSummary {
+  trackingCode: string;
+  trackingProvider: string;
+  trackingStatus: string;
+  latestEventStatus: string | null;
+  latestEventDescription: string | null;
+  latestEventAt: string | null;
+  lastCheckedAt: string | null;
+  checkError: string | null;
+  updatedAt: string | null;
+}
+type OrderWithTracking = Order & { shipmentTracking?: OrderShipmentTrackingSummary | null };
+
+const TRACKING_TONE_PINK = "bg-pink-50/70 border-pink-200/70 text-pink-900";
+const TRACKING_TONE_YELLOW = "bg-yellow-50/80 border-yellow-200/80 text-yellow-900";
+const TRACKING_TONE_GREEN = "bg-green-50/75 border-green-200/75 text-green-900";
+const TRACKING_TONE_GRAY = "bg-gray-50/80 border-gray-200/80 text-gray-700";
+const TRACKING_TONE_RED = "bg-red-50/75 border-red-200/75 text-red-900";
+
+function includesAny(text: string, keywords: string[]): boolean {
+  return keywords.some((k) => text.includes(k));
+}
+
+// 物流摘要整框底色：紅（查詢異常/failed）> 綠（已寄達）> 粉（尚未出貨）> 黃（運送中）> 灰（未查到/無法判斷）
+function getTrackingSummaryToneClass(
+  statusText: string,
+  trackingStatus: string | null,
+  checkError: string | null,
+  latestEventStatus: string | null,
+): string {
+  if (
+    checkError ||
+    trackingStatus === "failed" ||
+    includesAny(statusText, ["失敗", "異常", "錯誤", "遺失", "取消", "逾期"])
+  ) return TRACKING_TONE_RED;
+  // 「已完成寄件」是出貨事件，需先於綠色的「已完成」判斷
+  if (includesAny(statusText, ["已完成寄件"])) return TRACKING_TONE_YELLOW;
+  if (
+    trackingStatus === "delivered" ||
+    (latestEventStatus !== null && ["arrived_store", "picked_up", "delivered"].includes(latestEventStatus)) ||
+    includesAny(statusText, ["已寄達", "已送達", "已到店", "配達取件店舖", "已取貨", "已取件", "取件完成", "已完成"])
+  ) return TRACKING_TONE_GREEN;
+  if (
+    trackingStatus === "pending" ||
+    includesAny(statusText, ["尚未出貨", "待查詢", "訂單成立未寄件", "未寄件"])
+  ) return TRACKING_TONE_PINK;
+  if (
+    trackingStatus === "active" ||
+    trackingStatus === "checking" ||
+    includesAny(statusText, ["已出貨", "貨件前往", "物流中心", "運送", "配送", "轉運"])
+  ) return TRACKING_TONE_YELLOW;
+  // 未查到 / 查無資料 / 無 shipmentTracking / 無法判斷 → 灰
+  return TRACKING_TONE_GRAY;
+}
+
+function formatTrackingTime(iso: string | null | undefined): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return null;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 import { CreateOrderDialog } from "./CreateOrderDialog";
 import { EditOrderDialog } from "./EditOrderDialog";
 import { PickingListDialog } from "./PickingListDialog";
@@ -119,6 +200,9 @@ export default function OrdersPage() {
   } | null>(null);
   const [showAddOrder, setShowAddOrder] = useState(false);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
+  // Step 7H: 刪除訂單（與取消訂單分開的危險操作）
+  const [deleteConfirm, setDeleteConfirm] = useState<{ orderId: number; buyerName: string } | null>(null);
+  const [deletingOrderId, setDeletingOrderId] = useState<number | null>(null);
 
   // Bulk selection state
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
@@ -128,8 +212,7 @@ export default function OrdersPage() {
   const [isBulkLoading, setIsBulkLoading] = useState(false);
   const bulkUpdateOrders = useBulkUpdateOrders();
 
-  // Tracking import state
-  const [trackingImportOpen, setTrackingImportOpen] = useState(false);
+  const [, setLocation] = useLocation();
 
   // Picking / shipping list state
   const [pickingListOpen, setPickingListOpen] = useState(false);
@@ -192,6 +275,37 @@ export default function OrdersPage() {
     const { orderId, toStatus } = statusConfirm;
     setStatusConfirm(null);
     handleStatusChange(orderId, toStatus);
+  };
+
+  const handleDeleteOrder = async () => {
+    if (!deleteConfirm || !storeId) return;
+    const { orderId } = deleteConfirm;
+    setDeletingOrderId(orderId);
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/stores/${storeId}/orders/${orderId}`, {
+        method: "DELETE",
+        credentials: "include",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok || !body.ok) {
+        const msg = typeof body?.error === "string" && body.error
+          ? body.error
+          : "刪除訂單失敗，請稍後再試。";
+        setStatusErrors((prev) => ({ ...prev, [orderId]: msg }));
+        return;
+      }
+      toast({ title: "訂單已刪除" });
+      setStatusErrors((prev) => { const next = { ...prev }; delete next[orderId]; return next; });
+      setExpandedId(null);
+      qc.invalidateQueries({ queryKey: getListOrdersQueryKey(storeId) });
+    } catch {
+      setStatusErrors((prev) => ({ ...prev, [orderId]: "刪除訂單失敗，請稍後再試。" }));
+    } finally {
+      setDeletingOrderId(null);
+      setDeleteConfirm(null);
+    }
   };
 
   const copyToClipboard = (text: string, key: string) => {
@@ -381,7 +495,7 @@ export default function OrdersPage() {
       <header className="bg-white border-b border-border px-5 pt-10 pb-3 sticky top-0 z-10">
         <div className="flex items-center justify-between mb-3">
           <h1 className="text-lg font-bold text-foreground">訂單管理</h1>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap justify-end">
             <button
               onClick={() => setShowAddOrder(true)}
               disabled={!storeId}
@@ -396,11 +510,18 @@ export default function OrdersPage() {
               匯出 CSV
             </button>
             <button
-              onClick={() => setTrackingImportOpen(true)}
+              onClick={() => setLocation("/logistics/import")}
               disabled={!storeId}
               className="h-9 px-3 text-xs font-medium text-muted-foreground bg-secondary rounded-xl disabled:opacity-50"
             >
               物流匯入
+            </button>
+            <button
+              onClick={() => setLocation("/logistics/exceptions")}
+              disabled={!storeId}
+              className="h-9 px-3 text-xs font-medium text-muted-foreground bg-secondary rounded-xl disabled:opacity-50"
+            >
+              物流異常
             </button>
           </div>
         </div>
@@ -515,6 +636,44 @@ export default function OrdersPage() {
                           {expandedId === o.id ? "▲" : "▼"}
                         </span>
                       </div>
+                      {/* Row 5: 物流摘要（Step 7G） */}
+                      {(() => {
+                        const t = (o as OrderWithTracking).shipmentTracking ?? null;
+                        const code = (t?.trackingCode ?? o.trackingCode ?? "").trim();
+                        if (!code) return null;
+                        const providerKey = t?.trackingProvider ?? o.trackingProvider ?? "";
+                        const provider = TRACKING_PROVIDER_LABELS[providerKey] ?? "物流";
+                        const statusText = t
+                          ? (t.latestEventDescription?.trim() || (TRACKING_STATUS_LABELS[t.trackingStatus] ?? "待查詢"))
+                          : "已建立物流追蹤";
+                        const lastUpdate = t
+                          ? formatTrackingTime(t.latestEventAt) ?? formatTrackingTime(t.lastCheckedAt) ?? formatTrackingTime(t.updatedAt)
+                          : null;
+                        const toneClass = getTrackingSummaryToneClass(
+                          statusText,
+                          t?.trackingStatus ?? null,
+                          t?.checkError ?? null,
+                          t?.latestEventStatus ?? null,
+                        );
+                        return (
+                          <div className={`mt-2 rounded-2xl border px-3 py-2.5 space-y-1 min-w-0 shadow-sm ${toneClass}`}>
+                            <p className="text-[11px] font-semibold">{provider}</p>
+                            <p className="text-[11px] font-medium">貨態：{statusText}</p>
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="text-[11px] break-all min-w-0">貨號：{code}</span>
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); copyToClipboard(code, `${o.id}-tracking`); }}
+                                className="text-[11px] text-primary font-medium shrink-0"
+                              >
+                                {copiedKey === `${o.id}-tracking` ? "已複製" : "複製"}
+                              </button>
+                            </div>
+                            <p className="text-[11px] opacity-80">最後更新：{lastUpdate ?? "尚未查詢"}</p>
+                            {t?.checkError && <p className="text-[11px] font-medium">物流查詢異常</p>}
+                          </div>
+                        );
+                      })()}
                     </div>
 
                     {/* Expanded detail panel */}
@@ -850,19 +1009,44 @@ export default function OrdersPage() {
                                   })}
                                 </div>
                               </div>
-                              {hasCancelOption && (
-                                <div className="border border-red-200 rounded-xl px-3 py-3 bg-red-50/40">
-                                  <SectionLabel>危險操作</SectionLabel>
-                                  <button
-                                    type="button"
-                                    disabled={loadingOrderId === o.id}
-                                    onClick={() => setStatusConfirm({ orderId: o.id, fromStatus: o.status, toStatus: "cancelled", kind: "cancel" })}
-                                    className="h-9 px-4 rounded-xl text-sm font-medium border border-red-300 bg-white text-red-600 hover:bg-red-50 transition-colors disabled:opacity-60"
-                                  >
-                                    {loadingOrderId === o.id ? "更新中..." : "取消訂單"}
-                                  </button>
-                                </div>
-                              )}
+                              {(() => {
+                                // Step 7H: 刪除限制 — 已出貨 / 已完成 / 已有物流追蹤的訂單不可刪除
+                                const hasTracking = !!(o as OrderWithTracking).shipmentTracking || !!(o.trackingCode ?? "").trim();
+                                const deleteBlocked = o.status === "shipped" || o.status === "completed" || hasTracking;
+                                return (
+                                  <div className="border border-red-200 rounded-xl px-3 py-3 bg-red-50/40 space-y-2">
+                                    <SectionLabel>危險操作</SectionLabel>
+                                    <p className="text-[11px] text-muted-foreground">
+                                      取消訂單：保留紀錄，狀態改為已取消。刪除訂單：移除誤建立或誤下的訂單，刪除後不可復原。
+                                    </p>
+                                    <div className="flex flex-wrap gap-2">
+                                      {hasCancelOption && (
+                                        <button
+                                          type="button"
+                                          disabled={loadingOrderId === o.id}
+                                          onClick={() => setStatusConfirm({ orderId: o.id, fromStatus: o.status, toStatus: "cancelled", kind: "cancel" })}
+                                          className="h-9 px-4 rounded-xl text-sm font-medium border border-red-300 bg-white text-red-600 hover:bg-red-50 transition-colors disabled:opacity-60"
+                                        >
+                                          {loadingOrderId === o.id ? "更新中..." : "取消訂單"}
+                                        </button>
+                                      )}
+                                      <button
+                                        type="button"
+                                        disabled={deleteBlocked || deletingOrderId === o.id}
+                                        onClick={() => setDeleteConfirm({ orderId: o.id, buyerName: o.buyerName })}
+                                        className="h-9 px-4 rounded-xl text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50"
+                                      >
+                                        {deletingOrderId === o.id ? "刪除中..." : "刪除訂單"}
+                                      </button>
+                                    </div>
+                                    {deleteBlocked && (
+                                      <p className="text-[11px] text-muted-foreground">
+                                        這筆訂單已有物流或完成紀錄，為避免帳務與物流資料不一致，請保留紀錄或改用取消訂單。
+                                      </p>
+                                    )}
+                                  </div>
+                                );
+                              })()}
                               {statusErrors[o.id] && (
                                 <p className="text-xs text-destructive mt-0.5">{statusErrors[o.id]}</p>
                               )}
@@ -1050,13 +1234,38 @@ export default function OrdersPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <TrackingImportDialog
-        open={trackingImportOpen}
-        onClose={() => setTrackingImportOpen(false)}
-        onSuccess={() => {
-          if (storeId) qc.invalidateQueries({ queryKey: getListOrdersQueryKey(storeId) });
-        }}
-      />
+      {/* Step 7H: 刪除訂單二次確認 */}
+      <AlertDialog
+        open={!!deleteConfirm}
+        onOpenChange={(open) => { if (!open && deletingOrderId === null) setDeleteConfirm(null); }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>刪除訂單</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteConfirm
+                ? `確定要刪除訂單 #${deleteConfirm.orderId}${deleteConfirm.buyerName ? `（買家：${deleteConfirm.buyerName}）` : ""} 嗎？刪除後不可復原。`
+                : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              disabled={deletingOrderId !== null}
+              onClick={() => setDeleteConfirm(null)}
+            >
+              取消
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); void handleDeleteOrder(); }}
+              disabled={deletingOrderId !== null}
+              className={buttonVariants({ variant: "destructive" })}
+            >
+              {deletingOrderId !== null ? "刪除中..." : "確認刪除"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </div>
   );
 }
@@ -1094,244 +1303,6 @@ function DetailRow({ label, value, bold }: { label: string; value: string; bold?
     <div className="flex items-center justify-between px-3 py-2.5 gap-2">
       <span className="text-xs text-muted-foreground shrink-0">{label}</span>
       <span className={`text-sm text-right break-all ${bold ? "font-bold" : "font-medium"} text-foreground`}>{value}</span>
-    </div>
-  );
-}
-
-// ─── Tracking Import ────────────────────────────────────────────────────────
-
-interface _TrackingImportRow {
-  orderId: string;
-  trackingProvider: string;
-  trackingCode: string;
-}
-
-interface _TrackingImportError {
-  row: number;
-  orderId?: string;
-  reason: string;
-}
-
-interface _TrackingImportResponse {
-  totalRows: number;
-  successCount: number;
-  failedCount: number;
-  errors: _TrackingImportError[];
-}
-
-function parseCsvRows(raw: string): { rows: _TrackingImportRow[]; error: string | null } {
-  const lines = raw.split("\n").map((l) => l.trim()).filter((l) => l.length > 0);
-  if (lines.length === 0) return { rows: [], error: "CSV 內容不可為空" };
-
-  const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
-
-  if (headers.some((h) => h === "publictoken")) {
-    return { rows: [], error: "publicToken 不可作為匯入欄位" };
-  }
-
-  const required = ["orderid", "trackingprovider", "trackingcode"] as const;
-  const missing = required.filter((r) => !headers.includes(r));
-  if (missing.length > 0) {
-    const labelMap: Record<string, string> = {
-      orderid: "orderId",
-      trackingprovider: "trackingProvider",
-      trackingcode: "trackingCode",
-    };
-    return { rows: [], error: `缺少必要欄位：${missing.map((m) => labelMap[m]).join("、")}` };
-  }
-
-  const iIdx = headers.indexOf("orderid");
-  const pIdx = headers.indexOf("trackingprovider");
-  const cIdx = headers.indexOf("trackingcode");
-
-  const rows: _TrackingImportRow[] = [];
-  for (let i = 1; i < lines.length; i++) {
-    const cols = lines[i].split(",").map((c) => c.trim());
-    rows.push({
-      orderId: cols[iIdx] ?? "",
-      trackingProvider: cols[pIdx] ?? "",
-      trackingCode: cols[cIdx] ?? "",
-    });
-  }
-  return { rows, error: null };
-}
-
-function TrackingImportDialog({
-  open,
-  onClose,
-  onSuccess,
-}: {
-  open: boolean;
-  onClose: () => void;
-  onSuccess: () => void;
-}) {
-  const { getToken } = useAuth();
-  const [csvText, setCsvText] = useState("");
-  const [parseError, setParseError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [result, setResult] = useState<_TrackingImportResponse | null>(null);
-
-  const handleImport = async () => {
-    setParseError(null);
-    setResult(null);
-
-    const { rows, error } = parseCsvRows(csvText);
-    if (error) { setParseError(error); return; }
-    if (rows.length === 0) { setParseError("CSV 內容不可為空"); return; }
-
-    setIsLoading(true);
-    try {
-      const token = await getToken();
-      const res = await fetch("/api/orders/tracking-import", {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ rows }),
-      });
-
-      const data = await res.json().catch(() => null) as { error?: string } & Partial<_TrackingImportResponse>;
-
-      if (res.status === 422) {
-        setParseError(data?.error ?? "publicToken 不可作為匯入欄位");
-        return;
-      }
-      if (!res.ok) {
-        setParseError(data?.error ?? "匯入失敗，請稍後再試");
-        return;
-      }
-
-      const importResult = data as _TrackingImportResponse;
-      setResult(importResult);
-      if (importResult.successCount > 0) onSuccess();
-    } catch {
-      setParseError("匯入失敗，請確認網路連線後再試");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleClose = () => {
-    setCsvText("");
-    setParseError(null);
-    setResult(null);
-    onClose();
-  };
-
-  const handleReset = () => {
-    setResult(null);
-    setCsvText("");
-    setParseError(null);
-  };
-
-  if (!open) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50" onClick={handleClose}>
-      <div
-        className="bg-white w-full max-w-[480px] rounded-t-2xl px-5 pt-5 pb-8 max-h-[85dvh] overflow-y-auto"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-bold text-foreground">匯入物流號碼</h2>
-          <button type="button" onClick={handleClose} className="text-xs text-muted-foreground">關閉</button>
-        </div>
-
-        <p className="text-xs text-muted-foreground mb-1">
-          請貼上 CSV 內容，欄位需包含 <code className="text-[11px] bg-secondary px-1 rounded">orderId</code>、
-          <code className="text-[11px] bg-secondary px-1 rounded">trackingProvider</code>、
-          <code className="text-[11px] bg-secondary px-1 rounded">trackingCode</code>。
-        </p>
-        <p className="text-[11px] text-muted-foreground/70 mb-1">支援物流商：711、familymart、home_delivery、other</p>
-        <p className="text-[10px] text-muted-foreground/50 mb-3">注意：欄位中請勿包含逗號。publicToken 不可作為匯入欄位。</p>
-
-        <div className="bg-secondary/40 rounded-xl p-3 mb-3 text-[11px] font-mono text-muted-foreground whitespace-pre leading-relaxed">
-          {"orderId,trackingProvider,trackingCode\n123,711,F45913208600\n#124,familymart,FM123456789"}
-        </div>
-
-        {!result && (
-          <>
-            <textarea
-              value={csvText}
-              onChange={(e) => { setCsvText(e.target.value); setParseError(null); }}
-              placeholder="在此貼上 CSV 內容..."
-              className="w-full h-32 px-3 py-2.5 rounded-xl border border-input bg-white text-sm font-mono text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none mb-3"
-            />
-            {parseError && (
-              <p className="text-xs text-destructive mb-3">{parseError}</p>
-            )}
-            <button
-              type="button"
-              disabled={!csvText.trim() || isLoading}
-              onClick={handleImport}
-              className="w-full h-10 rounded-xl bg-primary text-white text-sm font-semibold disabled:opacity-50"
-            >
-              {isLoading ? "匯入中…" : "開始匯入"}
-            </button>
-          </>
-        )}
-
-        {result && (
-          <div className="space-y-3">
-            <div className="grid grid-cols-3 gap-2">
-              <div className="bg-secondary/40 rounded-xl p-3 text-center">
-                <div className="text-lg font-bold text-foreground">{result.totalRows}</div>
-                <div className="text-[10px] text-muted-foreground mt-0.5">總列數</div>
-              </div>
-              <div className="bg-green-50 rounded-xl p-3 text-center">
-                <div className="text-lg font-bold text-green-600">{result.successCount}</div>
-                <div className="text-[10px] text-muted-foreground mt-0.5">成功</div>
-              </div>
-              <div className={`${result.failedCount > 0 ? "bg-red-50" : "bg-secondary/40"} rounded-xl p-3 text-center`}>
-                <div className={`text-lg font-bold ${result.failedCount > 0 ? "text-destructive" : "text-foreground"}`}>
-                  {result.failedCount}
-                </div>
-                <div className="text-[10px] text-muted-foreground mt-0.5">失敗</div>
-              </div>
-            </div>
-
-            {result.errors.length > 0 && (
-              <div>
-                <p className="text-xs font-semibold text-muted-foreground mb-2">錯誤列表</p>
-                <div className="space-y-1.5 max-h-48 overflow-y-auto">
-                  {result.errors.map((err, i) => (
-                    <div key={i} className="bg-red-50 border border-red-100 rounded-xl px-3 py-2 text-xs">
-                      <span className="font-medium text-destructive">列 {err.row}</span>
-                      {err.orderId && <span className="text-muted-foreground ml-1">(#{err.orderId})</span>}
-                      <span className="text-foreground/80 ml-1">— {err.reason}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {result.successCount > 0 && (
-              <p className="text-[11px] text-muted-foreground/70 text-center">
-                已成功匯入 {result.successCount} 筆。訂單出貨狀態需另行更新。
-              </p>
-            )}
-
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={handleReset}
-                className="flex-1 h-10 rounded-xl border border-primary/40 bg-primary/5 text-sm font-medium text-primary"
-              >
-                再次匯入
-              </button>
-              <button
-                type="button"
-                onClick={handleClose}
-                className="flex-1 h-10 rounded-xl bg-primary text-white text-sm font-semibold"
-              >
-                關閉
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
     </div>
   );
 }
