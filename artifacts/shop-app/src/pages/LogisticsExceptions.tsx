@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@clerk/react";
 import { useGetMyStore } from "@workspace/api-client-react";
 import { BottomNav } from "./Dashboard";
+import { LogisticsSyncStatusHint } from "../components/LogisticsSyncStatusNotice";
 
 interface TrackingException {
   id: number;
@@ -373,6 +374,7 @@ export default function LogisticsExceptionsPage() {
       </header>
 
       <div className="px-5 py-4 space-y-3">
+        <LogisticsSyncStatusHint />
         {actionError && !loading && !error && (
           <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">{actionError}</div>
         )}

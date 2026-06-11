@@ -53,6 +53,14 @@ function getTrackingBadge(order: {
   return { label: "店家處理中", className: "bg-secondary text-muted-foreground" };
 }
 
+// 面交 / 自取同屬 self_pickup，文案與判斷需一致（同 printHelpers 的 fulfillment category 邏輯）
+function isSelfPickup(pickupMethod?: string | null): boolean {
+  const m = (pickupMethod ?? "").trim();
+  if (m === "面交" || m === "自取" || m === "self_pickup") return true;
+  // 涵蓋「面交 / 自取」等合併寫法
+  return m.includes("面交") || m.includes("自取");
+}
+
 function formatDate(iso: string): string {
   const d = new Date(iso);
   const pad = (n: number) => String(n).padStart(2, "0");
@@ -258,6 +266,10 @@ export default function TrackOrderPage({ publicToken }: Props) {
                   </p>
                 )}
               </>
+            ) : isSelfPickup(order.pickupMethod) ? (
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                此訂單為面交 / 自取，不會有物流貨態。取貨地點請見下方資訊，實際時間與地點請依店家通知為準。
+              </p>
             ) : (
               <p className="text-sm text-muted-foreground leading-relaxed">
                 店家正在處理訂單，目前尚未建立物流資料。出貨後這裡會更新物流資訊。
@@ -289,9 +301,9 @@ export default function TrackOrderPage({ publicToken }: Props) {
                   <InfoRow label="收件電話" value={order.recipientPhoneMasked} />
                 )}
                 {/* 面交 / 自取：顯示地點摘要（public-safe），未填則請依店家通知 */}
-                {order.pickupMethod === "面交" || order.pickupMethod === "自取" ? (
+                {isSelfPickup(order.pickupMethod) ? (
                   <InfoRow
-                    label={order.pickupMethod === "面交" ? "面交地點" : "自取地點"}
+                    label={order.pickupMethod === "面交" ? "面交地點" : order.pickupMethod === "自取" ? "自取地點" : "取貨地點"}
                     value={order.recipientAddressMasked ?? "請依店家通知為準"}
                   />
                 ) : (
