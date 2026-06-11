@@ -1111,6 +1111,28 @@ components:
           type: ["string", "null"]
         trackingProvider:
           type: ["string", "null"]
+        trackingProviderLabel:
+          type: ["string", "null"]
+        latestTrackingStatus:
+          type: ["string", "null"]
+        latestTrackingStatusLabel:
+          type: ["string", "null"]
+        latestTrackingTime:
+          type: ["string", "null"]
+        shipmentUpdatedAt:
+          type: ["string", "null"]
+        storeName:
+          type: ["string", "null"]
+        cvsStoreName:
+          type: ["string", "null"]
+        cvsStoreAddress:
+          type: ["string", "null"]
+        recipientNameMasked:
+          type: ["string", "null"]
+        recipientPhoneMasked:
+          type: ["string", "null"]
+        recipientAddressMasked:
+          type: ["string", "null"]
         createdAt:
           type: string
 

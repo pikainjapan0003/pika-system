@@ -22,6 +22,37 @@ function getStepState(step: StepStatus, currentStatus: string): StepState {
   return "future";
 }
 
+// 客人端大狀態 badge：依物流最新貨態與訂單狀態歸納
+function getTrackingBadge(order: {
+  status: string;
+  trackingCode?: string | null;
+  latestTrackingStatus?: string | null;
+}): { label: string; className: string } {
+  if (order.status === "cancelled") {
+    return { label: "已取消", className: "bg-gray-100 text-gray-600" };
+  }
+  switch (order.latestTrackingStatus) {
+    case "delivered":
+      return { label: "已送達", className: "bg-green-100 text-green-700" };
+    case "picked_up":
+      return { label: "已取貨", className: "bg-green-100 text-green-700" };
+    case "arrived_store":
+      return { label: "待取貨", className: "bg-blue-100 text-blue-700" };
+    case "in_transit":
+      return { label: "運送中", className: "bg-blue-100 text-blue-700" };
+    case "pending":
+      return { label: "已出貨", className: "bg-blue-100 text-blue-700" };
+    case "returned":
+    case "exception":
+    case "unknown":
+      return { label: "需店家確認", className: "bg-amber-100 text-amber-700" };
+  }
+  if (order.trackingCode) {
+    return { label: "已出貨", className: "bg-blue-100 text-blue-700" };
+  }
+  return { label: "店家處理中", className: "bg-secondary text-muted-foreground" };
+}
+
 function formatDate(iso: string): string {
   const d = new Date(iso);
   const pad = (n: number) => String(n).padStart(2, "0");
@@ -97,10 +128,26 @@ export default function TrackOrderPage({ publicToken }: Props) {
             ←
           </button>
           <div className="flex-1 text-center">
-            <h1 className="text-xl font-bold text-foreground">訂單追蹤</h1>
+            {order.storeName && (
+              <p className="text-xs text-muted-foreground mb-0.5">{order.storeName}</p>
+            )}
+            <h1 className="text-xl font-bold text-foreground">物流查詢</h1>
           </div>
           <div className="w-6" />
         </div>
+
+        {/* Big status badge */}
+        {(() => {
+          const badge = getTrackingBadge(order);
+          return (
+            <div className="bg-white rounded-2xl border border-border px-5 py-4 mb-3 flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">物流狀態</span>
+              <span className={`text-sm px-3 py-1.5 rounded-full font-semibold ${badge.className}`}>
+                {badge.label}
+              </span>
+            </div>
+          );
+        })()}
 
         {/* Cancelled notice OR progress timeline */}
         {isCancelled ? (
@@ -191,18 +238,60 @@ export default function TrackOrderPage({ publicToken }: Props) {
             <h2 className="text-xs font-semibold text-muted-foreground">物流資訊</h2>
           </div>
           <div className="px-5 py-4 space-y-3">
-            <InfoRow label="物流狀態" value={order.shippingStatusLabel ?? order.shippingStatus} />
             {order.trackingCode ? (
               <>
-                {order.trackingProvider && (
-                  <InfoRow label="物流商" value={order.trackingProvider} />
+                {(order.trackingProviderLabel ?? order.trackingProvider) && (
+                  <InfoRow label="物流商" value={order.trackingProviderLabel ?? order.trackingProvider!} />
                 )}
-                <InfoRow label="物流追蹤碼" value={order.trackingCode} />
+                <InfoRow label="物流貨號" value={order.trackingCode} />
+                {order.latestTrackingStatusLabel ? (
+                  <InfoRow label="最新貨態" value={order.latestTrackingStatusLabel} />
+                ) : (
+                  <InfoRow label="最新貨態" value="等待物流商更新" />
+                )}
+                {(order.latestTrackingTime ?? order.shipmentUpdatedAt) && (
+                  <InfoRow label="最後更新" value={formatDate((order.latestTrackingTime ?? order.shipmentUpdatedAt)!)} />
+                )}
+                {(order.latestTrackingStatus === "exception" || order.latestTrackingStatus === "unknown" || order.latestTrackingStatus === "returned") && (
+                  <p className="text-xs text-amber-700 leading-relaxed">
+                    物流資料需要店家確認，請稍後再查看，或聯絡店家。
+                  </p>
+                )}
               </>
             ) : (
               <p className="text-sm text-muted-foreground leading-relaxed">
-                尚未提供物流追蹤碼。店家出貨後會更新物流資訊。
+                店家正在處理訂單，目前尚未建立物流資料。出貨後這裡會更新物流資訊。
               </p>
+            )}
+          </div>
+        </div>
+
+        {/* Pickup / recipient info card */}
+        <div className="bg-white rounded-2xl border border-border overflow-hidden mt-3">
+          <div className="px-5 py-3 border-b border-border">
+            <h2 className="text-xs font-semibold text-muted-foreground">取貨 / 收件資訊</h2>
+          </div>
+          <div className="px-5 py-4 space-y-3">
+            <InfoRow label="取貨方式" value={order.pickupMethod} />
+            {order.cvsStoreName ? (
+              <>
+                <InfoRow label="門市名稱" value={order.cvsStoreName} />
+                {order.cvsStoreAddress && (
+                  <InfoRow label="門市地址" value={order.cvsStoreAddress} />
+                )}
+              </>
+            ) : (
+              <>
+                {order.recipientNameMasked && (
+                  <InfoRow label="收件人" value={order.recipientNameMasked} />
+                )}
+                {order.recipientPhoneMasked && (
+                  <InfoRow label="收件電話" value={order.recipientPhoneMasked} />
+                )}
+                {order.recipientAddressMasked && (
+                  <InfoRow label="收件地址" value={order.recipientAddressMasked} />
+                )}
+              </>
             )}
           </div>
         </div>

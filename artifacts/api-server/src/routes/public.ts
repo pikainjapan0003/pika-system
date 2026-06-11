@@ -1,8 +1,8 @@
 import { Router } from "express";
-import { eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { rateLimit } from "express-rate-limit";
 import { randomBytes } from "crypto";
-import { db, storesTable, productsTable, ordersTable } from "@workspace/db";
+import { db, storesTable, productsTable, ordersTable, shipmentTrackingsTable } from "@workspace/db";
 import { SubmitOrderBody } from "@workspace/api-zod";
 import { getShippingFee } from "../lib/shippingFee.ts";
 
@@ -44,6 +44,51 @@ const SHIPPING_STATUS_LABELS: Record<string, string> = {
   returned: "退貨處理中",
   cancelled: "物流取消，請聯繫店家",
 };
+
+// 客人端顯示用：物流商代碼 → 繁中名稱（已是中文名稱者原樣顯示）
+const TRACKING_PROVIDER_LABELS: Record<string, string> = {
+  familymart: "全家",
+  "711": "7-11",
+  seven: "7-11",
+  seven_eleven: "7-11",
+  tcat: "黑貓宅急便",
+  blackcat: "黑貓宅急便",
+  postoffice: "郵局",
+  other: "其他物流",
+};
+
+// 客人端顯示用：標準化貨態（shipment_tracking_events.eventStatus）→ 繁中文案
+const TRACKING_EVENT_STATUS_LABELS: Record<string, string> = {
+  pending: "物流單已建立",
+  in_transit: "運送中",
+  arrived_store: "已到店，待取貨",
+  picked_up: "已取貨",
+  delivered: "已送達",
+  returned: "已退回，請聯絡店家",
+  exception: "物流資料需要店家確認",
+  unknown: "物流資料需要店家確認",
+};
+
+function maskName(name: string | null): string | null {
+  if (!name) return null;
+  const chars = [...name];
+  if (chars.length <= 1) return name;
+  return chars[0] + "○".repeat(chars.length - 1);
+}
+
+function maskPhone(phone: string | null): string | null {
+  if (!phone) return null;
+  if (phone.length <= 6) return phone.slice(0, 2) + "***";
+  return phone.slice(0, 4) + "***" + phone.slice(-3);
+}
+
+// 地址摘要：只保留前段（縣市 + 行政區層級），不暴露完整門牌
+function summarizeAddress(address: string | null): string | null {
+  if (!address) return null;
+  const trimmed = address.trim();
+  if (trimmed.length <= 9) return trimmed;
+  return trimmed.slice(0, 9) + "…";
+}
 
 const router = Router();
 
@@ -216,6 +261,33 @@ router.get("/orders/track/:publicToken", trackOrderLimiter, async (req, res) => 
     return res.status(404).json({ error: "Order not found" });
   }
 
+  const [store] = await db
+    .select({ name: storesTable.name })
+    .from(storesTable)
+    .where(eq(storesTable.id, order.storeId))
+    .limit(1);
+
+  const [tracking] = await db
+    .select({
+      trackingCode: shipmentTrackingsTable.trackingCode,
+      trackingProvider: shipmentTrackingsTable.trackingProvider,
+      trackingStatus: shipmentTrackingsTable.trackingStatus,
+      latestEventStatus: shipmentTrackingsTable.latestEventStatus,
+      latestEventAt: shipmentTrackingsTable.latestEventAt,
+      updatedAt: shipmentTrackingsTable.updatedAt,
+    })
+    .from(shipmentTrackingsTable)
+    .where(and(eq(shipmentTrackingsTable.orderId, order.id), eq(shipmentTrackingsTable.isActive, true)))
+    .orderBy(desc(shipmentTrackingsTable.id))
+    .limit(1);
+
+  const trackingCode = tracking?.trackingCode ?? order.trackingCode ?? null;
+  const trackingProvider = tracking?.trackingProvider ?? order.trackingProvider ?? null;
+  // 查詢任務連續失敗（failed）對客人顯示為「需店家確認」，不暴露技術錯誤
+  const latestTrackingStatus = tracking
+    ? (tracking.trackingStatus === "failed" ? "exception" : tracking.latestEventStatus)
+    : null;
+
   const shippingFee = parseFloat(order.shippingFee as string ?? "0");
   const totalPrice = parseFloat(order.totalPrice as string);
   return res.json({
@@ -232,12 +304,28 @@ router.get("/orders/track/:publicToken", trackOrderLimiter, async (req, res) => 
     statusLabel: STATUS_LABELS[order.status] ?? order.status,
     shippingStatus: order.shippingStatus ?? "not_shipped",
     shippingStatusLabel: SHIPPING_STATUS_LABELS[order.shippingStatus ?? "not_shipped"] ?? order.shippingStatus,
-    trackingCode: order.trackingCode ?? null,
-    trackingProvider: order.trackingProvider ?? null,
+    trackingCode,
+    trackingProvider,
+    trackingProviderLabel: trackingProvider
+      ? (TRACKING_PROVIDER_LABELS[trackingProvider.toLowerCase()] ?? trackingProvider)
+      : null,
+    latestTrackingStatus,
+    latestTrackingStatusLabel: latestTrackingStatus
+      ? (TRACKING_EVENT_STATUS_LABELS[latestTrackingStatus] ?? "物流資料需要店家確認")
+      : null,
+    latestTrackingTime: tracking?.latestEventAt?.toISOString() ?? null,
+    shipmentUpdatedAt: tracking?.updatedAt?.toISOString() ?? null,
+    storeName: store?.name ?? null,
+    cvsStoreName: order.cvsStoreName ?? null,
+    cvsStoreAddress: order.cvsStoreAddress ?? null,
+    recipientNameMasked: maskName(order.recipientName ?? order.buyerName ?? null),
+    recipientPhoneMasked: maskPhone(order.recipientPhone ?? null),
+    recipientAddressMasked: summarizeAddress(order.recipientAddress ?? null),
     createdAt: order.createdAt,
     // STRICTLY EXCLUDED (private / personal info):
-    // internalNote, paymentNote, paidAmount, recipientPhone, recipientAddress,
-    // shippingNote, recipientName, paymentMethod, paymentStatus, remainingAmount
+    // internalNote, paymentNote, paidAmount, recipientPhone (full), recipientAddress (full),
+    // shippingNote, recipientName (full), paymentMethod, paymentStatus, remainingAmount,
+    // checkError, eventCode, rawData
   });
 });
 
