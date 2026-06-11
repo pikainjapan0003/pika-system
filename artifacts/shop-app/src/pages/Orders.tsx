@@ -702,6 +702,37 @@ export default function OrdersPage() {
                           </div>
                         </div>
 
+                        {/* 收件資訊（Step 7H-4） */}
+                        <div>
+                          <SectionLabel>收件資訊</SectionLabel>
+                          <div className="bg-white rounded-xl border border-border/50 divide-y divide-border/40">
+                            {(() => {
+                              const rName = (o.recipientName ?? "").trim();
+                              const rPhone = (o.recipientPhone ?? "").trim();
+                              const isSame =
+                                (!rName && !rPhone) ||
+                                (rName === o.buyerName && rPhone === o.buyerPhone);
+                              if (isSame) {
+                                return (
+                                  <>
+                                    <DetailRow label="收件人" value={rName || o.buyerName} />
+                                    <DetailRow label="收件電話" value={rPhone || o.buyerPhone} />
+                                    <div className="px-3 py-2">
+                                      <span className="text-[11px] text-muted-foreground/60">同買家資訊</span>
+                                    </div>
+                                  </>
+                                );
+                              }
+                              return (
+                                <>
+                                  <DetailRow label="收件人" value={rName || "—"} />
+                                  <DetailRow label="收件電話" value={rPhone || "—"} />
+                                </>
+                              );
+                            })()}
+                          </div>
+                        </div>
+
                         {/* 商品明細 */}
                         <div>
                           <SectionLabel>商品明細</SectionLabel>

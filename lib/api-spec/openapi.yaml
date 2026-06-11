@@ -1149,6 +1149,12 @@ components:
         recipientAddress:
           type: string
           nullable: true
+        recipientName:
+          type: string
+          nullable: true
+        recipientPhone:
+          type: string
+          nullable: true
 
     MerchantOrderInput:
       type: object

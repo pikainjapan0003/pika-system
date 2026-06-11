@@ -23,4 +23,6 @@ export interface OrderInput {
   cvsStoreAddress?: string | null;
   cvsStorePhone?: string | null;
   recipientAddress?: string | null;
+  recipientName?: string | null;
+  recipientPhone?: string | null;
 }

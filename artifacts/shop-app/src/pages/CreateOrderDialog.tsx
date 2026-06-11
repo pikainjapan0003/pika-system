@@ -89,9 +89,11 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
   const [pickupMethod, setPickupMethod] = useState("");
   const [notes, setNotes] = useState("");
 
-  // 宅配收件資訊（黑貓 / 郵局）— 與買家端相同的結構化地址欄位
+  // Step 7H-4: 收件資訊（買家不一定是收件人）
+  const [sameAsBuyer, setSameAsBuyer] = useState(true);
   const [recipientName, setRecipientName] = useState("");
   const [recipientPhone, setRecipientPhone] = useState("");
+  // 宅配收件地址（黑貓 / 郵局）— 與買家端相同的結構化地址欄位
   const [addrCity, setAddrCity] = useState("");
   const [addrDistrict, setAddrDistrict] = useState("");
   const [addrZip, setAddrZip] = useState("");
@@ -141,6 +143,7 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
     setQuantity(1);
     setPickupMethod("");
     setNotes("");
+    setSameAsBuyer(true);
     setRecipientName("");
     setRecipientPhone("");
     setAddrCity("");
@@ -170,8 +173,6 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
       handleCvsReset();
     }
     if (cat === "self_pickup" || cat === "cvs_711" || cat === "cvs_family") {
-      setRecipientName("");
-      setRecipientPhone("");
       setAddrCity("");
       setAddrDistrict("");
       setAddrZip("");
@@ -217,6 +218,10 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
     const cat = getFulfillmentCategory(pickupMethod);
     if (cat === "cvs_family" && !storeCode) errs.cvsStore = "請先選擇全家門市";
     if (cat === "cvs_711" && !storeCode) errs.cvsStore = "請先選擇 7-11 門市";
+    if (!sameAsBuyer) {
+      if (!recipientName.trim()) errs.recipientName = "請輸入收件人";
+      if (!recipientPhone.trim()) errs.recipientPhone = "請輸入收件電話";
+    }
     if ((cat === "home_black_cat" || cat === "home_post") && (!addrCity || !addrDistrict || !addrLine.trim())) {
       errs.recipientAddress = "請完整填寫收件地址";
     }
@@ -247,8 +252,8 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
           notes: notes.trim() || null,
           specValues: {},
           shippingMethod,
-          recipientName: isHome ? (recipientName.trim() || null) : null,
-          recipientPhone: isHome ? (recipientPhone.trim() || null) : null,
+          recipientName: sameAsBuyer ? buyerName.trim() : recipientName.trim(),
+          recipientPhone: sameAsBuyer ? buyerPhone.trim() : recipientPhone.trim(),
           recipientAddress: isHome ? combineRecipientAddress(addrZip, addrCity, addrDistrict, addrLine) : null,
           storeCode: isCvs ? (storeCode || null) : null,
           storeName: isCvs ? (storeName || null) : null,
@@ -335,6 +340,54 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
                   onChange={(e) => { setBuyerPhone(e.target.value); clearFieldError("buyerPhone"); }}
                 />
                 {fieldErrors.buyerPhone && <p className={ERR}>{fieldErrors.buyerPhone}</p>}
+              </div>
+            </FormSection>
+          </div>
+
+          {/* 收件資訊（Step 7H-4：買家不一定是收件人） */}
+          <div className="space-y-1.5">
+            <SectionTitle>收件資訊</SectionTitle>
+            <FormSection>
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={sameAsBuyer}
+                  onChange={(e) => {
+                    setSameAsBuyer(e.target.checked);
+                    clearFieldError("recipientName");
+                    clearFieldError("recipientPhone");
+                    if (!e.target.checked) {
+                      setRecipientName(buyerName);
+                      setRecipientPhone(buyerPhone);
+                    }
+                  }}
+                  className="w-4 h-4 accent-primary"
+                />
+                <span className="text-sm text-foreground">同買家資訊</span>
+              </label>
+              <div>
+                <FieldLabel icon={User}>收件人 *</FieldLabel>
+                <input
+                  type="text"
+                  className={`${INPUT} ${sameAsBuyer ? "bg-muted/30 cursor-default" : ""}`}
+                  placeholder="請輸入收件人姓名"
+                  value={sameAsBuyer ? buyerName : recipientName}
+                  readOnly={sameAsBuyer}
+                  onChange={(e) => { setRecipientName(e.target.value); clearFieldError("recipientName"); }}
+                />
+                {fieldErrors.recipientName && <p className={ERR}>{fieldErrors.recipientName}</p>}
+              </div>
+              <div>
+                <FieldLabel icon={Phone}>收件電話 *</FieldLabel>
+                <input
+                  type="tel"
+                  className={`${INPUT} ${sameAsBuyer ? "bg-muted/30 cursor-default" : ""}`}
+                  placeholder="請輸入收件電話"
+                  value={sameAsBuyer ? buyerPhone : recipientPhone}
+                  readOnly={sameAsBuyer}
+                  onChange={(e) => { setRecipientPhone(e.target.value); clearFieldError("recipientPhone"); }}
+                />
+                {fieldErrors.recipientPhone && <p className={ERR}>{fieldErrors.recipientPhone}</p>}
               </div>
             </FormSection>
           </div>
@@ -457,14 +510,7 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
                               <p className="text-sm font-semibold text-foreground">
                                 {cat === "home_black_cat" ? "黑貓宅急便收件資訊" : "郵局收件資訊"}
                               </p>
-                              <div>
-                                <label className="block text-xs font-medium text-foreground mb-1">收件人（選填）</label>
-                                <input type="text" className={INPUT} placeholder="收件人姓名" value={recipientName} onChange={(e) => setRecipientName(e.target.value)} />
-                              </div>
-                              <div>
-                                <label className="block text-xs font-medium text-foreground mb-1">收件電話（選填）</label>
-                                <input type="tel" className={INPUT} placeholder="收件人電話" value={recipientPhone} onChange={(e) => setRecipientPhone(e.target.value)} />
-                              </div>
+                              <p className="text-[11px] text-muted-foreground">收件人與收件電話請在上方「收件資訊」填寫。</p>
                               <RecipientAddressFields
                                 city={addrCity}
                                 district={addrDistrict}
