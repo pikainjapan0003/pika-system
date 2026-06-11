@@ -1,7 +1,8 @@
 /**
  * 物流同步狀態卡（Step 7F）：讀取 GET /stores/:storeId/logistics/sync/status，
  * 顯示自動/手動同步狀態、支援的物流商與最近同步紀錄，並提供整批手動同步按鈕。
- * 自動排程尚未啟用（autoSyncEnabled=false），不顯示假的下次同步時間。
+ * 自動同步是否啟用由 API 的 autoSyncEnabled 決定；排程設定在平台端，無可靠來源，
+ * 故不顯示下次同步時間。
  */
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@clerk/react";
@@ -136,6 +137,7 @@ export function LogisticsSyncStatusNotice() {
   };
 
   const manualSyncEnabled = status?.manualSyncEnabled === true;
+  const autoSyncEnabled = status?.autoSyncEnabled === true;
   const recentRuns = status?.recentRuns ?? [];
 
   return (
@@ -155,7 +157,9 @@ export function LogisticsSyncStatusNotice() {
       <div className="grid grid-cols-2 gap-3 text-xs">
         <div className="bg-secondary rounded-xl px-3 py-2">
           <div className="text-muted-foreground">自動同步</div>
-          <div className="font-medium text-foreground">尚未啟用</div>
+          <div className="font-medium text-foreground">
+            {status ? (autoSyncEnabled ? "已啟用" : "尚未啟用") : "—"}
+          </div>
         </div>
         <div className="bg-secondary rounded-xl px-3 py-2">
           <div className="text-muted-foreground">手動同步</div>
@@ -233,7 +237,9 @@ export function LogisticsSyncStatusNotice() {
       </div>
 
       <p className="text-[11px] text-muted-foreground/80">
-        自動同步尚未啟用，目前僅支援全家。匯入 Excel 後系統不會自動查詢貨態，請手動同步，或等待後續排程功能啟用。
+        {autoSyncEnabled
+          ? "自動同步已啟用，系統會定期查詢已支援物流商（目前僅支援全家）的貨態；也可隨時手動同步。"
+          : "自動同步尚未啟用，目前僅支援全家。匯入 Excel 後系統不會自動查詢貨態，請手動同步，或等待後續排程功能啟用。"}
       </p>
     </div>
   );

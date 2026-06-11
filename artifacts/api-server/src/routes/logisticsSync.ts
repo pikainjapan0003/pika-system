@@ -10,7 +10,8 @@ const fail = (res: any, status: number, errorCode: string, message: string) =>
 /**
  * Step 7F：物流同步（最小閉環）。
  * 目前只有全家 adapter / worker，故僅支援 familymart；其餘 provider 誠實列為尚未支援。
- * 沒有排程 → autoSyncEnabled 固定 false，不回傳假的下次同步時間。
+ * autoSyncEnabled 由 AUTO_SYNC_ENABLED env 控制（排程啟用 SOP：先建排程驗證成功再開此 flag）；
+ * 排程設定存在 Replit 平台，app 無可靠來源，故不回傳下次同步時間。
  */
 const SUPPORTED_PROVIDERS = ["familymart"] as const;
 const UNSUPPORTED_PROVIDERS = ["711", "tcat", "postoffice"] as const;
@@ -97,15 +98,18 @@ router.get("/stores/:storeId/logistics/sync/status", requireAuth, async (req: an
       skippedCount: r.skippedCount,
     });
 
+    const autoSyncEnabled = process.env.AUTO_SYNC_ENABLED === "true";
     return res.json({
       ok: true,
-      autoSyncEnabled: false,
+      autoSyncEnabled,
       manualSyncEnabled: true,
       supportedProviders: SUPPORTED_PROVIDERS,
       unsupportedProviders: UNSUPPORTED_PROVIDERS,
       lastRun: runs.length > 0 ? toRunPayload(runs[0]) : null,
       recentRuns: runs.map(toRunPayload),
-      message: "目前自動同步尚未啟用，可手動同步已支援的物流商（目前僅支援全家）。",
+      message: autoSyncEnabled
+        ? "自動同步已啟用，系統會定期同步已支援的物流商。"
+        : "目前自動同步尚未啟用，可手動同步已支援的物流商。",
     });
   } catch (err) {
     console.error("[logistics-sync] status failed:", err);
