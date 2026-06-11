@@ -647,8 +647,10 @@ export default function OrdersPage() {
                         const statusText = t
                           ? (t.latestEventDescription?.trim() || (TRACKING_STATUS_LABELS[t.trackingStatus] ?? "待查詢"))
                           : "已建立物流追蹤";
-                        const lastUpdate = t
-                          ? formatTrackingTime(t.latestEventAt) ?? formatTrackingTime(t.lastCheckedAt) ?? formatTrackingTime(t.updatedAt)
+                        // 貨態時間 = 物流商最新事件時間；上次查詢 = 系統最後查詢時間（語意拆開避免誤判排程失效）
+                        const eventTime = t ? formatTrackingTime(t.latestEventAt) : null;
+                        const lastChecked = t
+                          ? formatTrackingTime(t.lastCheckedAt) ?? formatTrackingTime(t.updatedAt)
                           : null;
                         const toneClass = getTrackingSummaryToneClass(
                           statusText,
@@ -670,7 +672,8 @@ export default function OrdersPage() {
                                 {copiedKey === `${o.id}-tracking` ? "已複製" : "複製"}
                               </button>
                             </div>
-                            <p className="text-[11px] opacity-80">最後更新：{lastUpdate ?? "尚未查詢"}</p>
+                            <p className="text-[11px] opacity-80">貨態時間：{eventTime ?? "尚無貨態時間"}</p>
+                            <p className="text-[11px] opacity-80">上次查詢：{lastChecked ?? "尚未查詢"}</p>
                             {t?.checkError && <p className="text-[11px] font-medium">物流查詢異常</p>}
                           </div>
                         );
