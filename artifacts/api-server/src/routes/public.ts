@@ -4,26 +4,7 @@ import { rateLimit } from "express-rate-limit";
 import { randomBytes } from "crypto";
 import { db, storesTable, productsTable, ordersTable } from "@workspace/db";
 import { SubmitOrderBody } from "@workspace/api-zod";
-
-
-const SHIPPING_FEE_MAP: Record<string, number> = {
-  "面交": 0,
-  "7-11 貨到付款": 60,
-  "7-11 取貨（先付款）": 60,
-  "全家貨到付款": 60,
-  "全家取貨（先付款）": 60,
-  "黑貓宅急便": 100,
-  "郵局": 80,
-  // Deprecated (kept for backward compat with old orders)
-  "宅配": 100,
-  "OK Mart": 60,
-  "萊爾富物流": 60,
-};
-
-function getShippingFee(pickupMethod: string, overrideShippingFee?: number): number {
-  if (overrideShippingFee !== undefined) return overrideShippingFee;
-  return SHIPPING_FEE_MAP[pickupMethod] ?? 0;
-}
+import { getShippingFee } from "../lib/shippingFee.ts";
 
 const submitOrderLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
@@ -148,8 +129,9 @@ router.post("/p/:shareToken/orders", submitOrderLimiter, async (req, res) => {
 
         const unitPrice = parseFloat(product.price as string);
         const shippingFee = getShippingFee(parsed.data.pickupMethod, shippingFeeOverride);
-        const subtotal = unitPrice * parsed.data.quantity;
-        const totalPrice = subtotal + shippingFee;
+        // totalPrice = 商品小計（不含運費）。訂單總額由 shippingFee + totalPrice 計算
+        // （與 merchant orders 的 formatOrder 語意一致，避免運費被重複計算）。
+        const totalPrice = unitPrice * parsed.data.quantity;
 
         // Decrement inventory only when it is being tracked (not null)
         if (product.inventory !== null) {
@@ -186,6 +168,8 @@ router.post("/p/:shareToken/orders", submitOrderLimiter, async (req, res) => {
             cvsStorePhone: hasCvs ? (parsed.data.cvsStorePhone ?? null) : null,
             storeSelectedBy: hasCvs ? "customer" : null,
             storeSelectedAt: hasCvs ? new Date() : null,
+            // 黑貓 / 郵局：買家填的完整收件地址（郵遞區號 縣市行政區 詳細地址）
+            recipientAddress: parsed.data.recipientAddress ?? null,
           })
           .returning();
 

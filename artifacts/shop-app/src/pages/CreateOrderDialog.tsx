@@ -6,7 +6,9 @@ import {
   getListOrdersQueryKey,
   ShippingMethod,
 } from "@workspace/api-client-react";
-import { isFamilyMartMethod, isSevenElevenMethod } from "@/lib/cvs711";
+import { isFamilyMartMethod, isSevenElevenMethod, getShippingFee } from "@/lib/cvs711";
+import { combineRecipientAddress } from "@/lib/taiwanZipcodes";
+import { RecipientAddressFields } from "@/components/RecipientAddressFields";
 import sevenElevenLogo from "@/assets/logistics/seven-eleven-logo-official.png";
 import familymartLogo from "@/assets/logistics/familymart-logo-official.png";
 import blackcatLogo from "@/assets/logistics/blackcat-logo-official.svg";
@@ -87,10 +89,13 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
   const [pickupMethod, setPickupMethod] = useState("");
   const [notes, setNotes] = useState("");
 
-  // 宅配收件資訊（黑貓 / 郵局）
+  // 宅配收件資訊（黑貓 / 郵局）— 與買家端相同的結構化地址欄位
   const [recipientName, setRecipientName] = useState("");
   const [recipientPhone, setRecipientPhone] = useState("");
-  const [recipientAddress, setRecipientAddress] = useState("");
+  const [addrCity, setAddrCity] = useState("");
+  const [addrDistrict, setAddrDistrict] = useState("");
+  const [addrZip, setAddrZip] = useState("");
+  const [addrLine, setAddrLine] = useState("");
 
   // 超商門市 snapshot（與 EditOrderDialog 相同欄位）
   const [storeCode, setStoreCode] = useState("");
@@ -138,7 +143,10 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
     setNotes("");
     setRecipientName("");
     setRecipientPhone("");
-    setRecipientAddress("");
+    setAddrCity("");
+    setAddrDistrict("");
+    setAddrZip("");
+    setAddrLine("");
     handleCvsReset();
     setFieldErrors({});
     setSubmitError(null);
@@ -162,9 +170,13 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
       handleCvsReset();
     }
     if (cat === "self_pickup" || cat === "cvs_711" || cat === "cvs_family") {
-      setRecipientAddress("");
       setRecipientName("");
       setRecipientPhone("");
+      setAddrCity("");
+      setAddrDistrict("");
+      setAddrZip("");
+      setAddrLine("");
+      clearFieldError("recipientAddress");
     }
   };
 
@@ -205,6 +217,9 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
     const cat = getFulfillmentCategory(pickupMethod);
     if (cat === "cvs_family" && !storeCode) errs.cvsStore = "請先選擇全家門市";
     if (cat === "cvs_711" && !storeCode) errs.cvsStore = "請先選擇 7-11 門市";
+    if ((cat === "home_black_cat" || cat === "home_post") && (!addrCity || !addrDistrict || !addrLine.trim())) {
+      errs.recipientAddress = "請完整填寫收件地址";
+    }
     setFieldErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -234,7 +249,7 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
           shippingMethod,
           recipientName: isHome ? (recipientName.trim() || null) : null,
           recipientPhone: isHome ? (recipientPhone.trim() || null) : null,
-          recipientAddress: isHome ? (recipientAddress.trim() || null) : null,
+          recipientAddress: isHome ? combineRecipientAddress(addrZip, addrCity, addrDistrict, addrLine) : null,
           storeCode: isCvs ? (storeCode || null) : null,
           storeName: isCvs ? (storeName || null) : null,
           cvsStoreAddress: isCvs ? (cvsStoreAddress || null) : null,
@@ -450,10 +465,17 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
                                 <label className="block text-xs font-medium text-foreground mb-1">收件電話（選填）</label>
                                 <input type="tel" className={INPUT} placeholder="收件人電話" value={recipientPhone} onChange={(e) => setRecipientPhone(e.target.value)} />
                               </div>
-                              <div>
-                                <label className="block text-xs font-medium text-foreground mb-1">收件地址（選填）</label>
-                                <input type="text" className={INPUT} placeholder="完整收件地址" value={recipientAddress} onChange={(e) => setRecipientAddress(e.target.value)} />
-                              </div>
+                              <RecipientAddressFields
+                                city={addrCity}
+                                district={addrDistrict}
+                                zip={addrZip}
+                                addressLine={addrLine}
+                                required
+                                onCityChange={(c) => { setAddrCity(c); setAddrDistrict(""); setAddrZip(""); clearFieldError("recipientAddress"); }}
+                                onDistrictChange={(d, z) => { setAddrDistrict(d); setAddrZip(z); clearFieldError("recipientAddress"); }}
+                                onAddressLineChange={(l) => { setAddrLine(l); clearFieldError("recipientAddress"); }}
+                              />
+                              {fieldErrors.recipientAddress && <p className={ERR}>{fieldErrors.recipientAddress}</p>}
                             </div>
                           )}
                           {cat === "self_pickup" && (
@@ -484,12 +506,25 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
             <div className="space-y-1.5">
               <SectionTitle>金額預覽</SectionTitle>
               <FormSection>
-                <div className="bg-primary/5 rounded-xl px-3 py-2 flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">預估總額</span>
-                  <span className="text-sm font-semibold text-primary">
-                    NT${unitPrice.toLocaleString()} × {quantity}{" "}
-                    = <strong>NT${totalPreview.toLocaleString()}</strong>
-                  </span>
+                <div className="bg-white rounded-xl border border-border/50 divide-y divide-border/40">
+                  <div className="flex items-center justify-between px-3 py-2 gap-2">
+                    <span className="text-xs text-muted-foreground">商品小計</span>
+                    <span className="text-sm text-foreground font-medium">
+                      NT$ {totalPreview.toLocaleString()}（NT${unitPrice.toLocaleString()} × {quantity}）
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between px-3 py-2 gap-2">
+                    <span className="text-xs text-muted-foreground">運費</span>
+                    <span className="text-sm text-foreground font-medium">
+                      NT$ {getShippingFee(pickupMethod).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between px-3 py-2.5 gap-2">
+                    <span className="text-xs font-semibold text-foreground/80">訂單總額</span>
+                    <span className="text-sm font-bold text-primary">
+                      NT$ {(totalPreview + getShippingFee(pickupMethod)).toLocaleString()}
+                    </span>
+                  </div>
                 </div>
                 <p className="text-[11px] text-muted-foreground/60">
                   單價與正式金額由系統計算，此處僅供參考；實際結果以儲存後的訂單資料為準。

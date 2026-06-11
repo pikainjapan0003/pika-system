@@ -6,6 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { BottomNav } from "./Dashboard";
 import { STATUS_LABELS, STATUS_COLORS, ALL_STATUSES, STATUS_STEPS, VALID_NEXT_STATUSES } from "../lib/orderStatus";
 import { isSevenElevenMethod, isFamilyMartMethod, openSevenElevenMap, openCvsStoreMap } from "@/lib/cvs711";
+import { parseRecipientAddress } from "@/lib/taiwanZipcodes";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -786,7 +787,18 @@ export default function OrdersPage() {
                                 {o.trackingProvider && <DetailRow label="物流商" value={o.trackingProvider} />}
                                 {o.recipientName && <DetailRow label="收件人" value={o.recipientName} />}
                                 {o.recipientPhone && <DetailRow label="收件電話" value={o.recipientPhone} />}
-                                {o.recipientAddress && <DetailRow label="收件地址" value={o.recipientAddress} />}
+                                {o.recipientAddress && (() => {
+                                  const parsed = parseRecipientAddress(o.recipientAddress);
+                                  if (!parsed) return <DetailRow label="收件地址" value={o.recipientAddress!} />;
+                                  return (
+                                    <>
+                                      {parsed.zip && <DetailRow label="郵遞區號" value={parsed.zip} />}
+                                      <DetailRow label="縣市" value={parsed.city} />
+                                      {parsed.district && <DetailRow label="行政區" value={parsed.district} />}
+                                      {parsed.line && <DetailRow label="詳細地址" value={parsed.line} />}
+                                    </>
+                                  );
+                                })()}
                               </>
                             )}
                             {o.shippingNote && <DetailRow label="物流備註" value={o.shippingNote} />}

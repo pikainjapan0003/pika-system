@@ -9,7 +9,9 @@ import {
   ShippingMethod,
   ShippingStatus,
 } from "@workspace/api-client-react";
-import { isFamilyMartMethod, isSevenElevenMethod } from "@/lib/cvs711";
+import { isFamilyMartMethod, isSevenElevenMethod, getShippingFee } from "@/lib/cvs711";
+import { combineRecipientAddress, parseRecipientAddress } from "@/lib/taiwanZipcodes";
+import { RecipientAddressFields } from "@/components/RecipientAddressFields";
 import sevenElevenLogo from "@/assets/logistics/seven-eleven-logo-official.png";
 import familymartLogo from "@/assets/logistics/familymart-logo-official.png";
 import blackcatLogo from "@/assets/logistics/blackcat-logo-official.svg";
@@ -184,7 +186,11 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
   const [shippingFeeStr, setShippingFeeStr] = useState<string>("");
   const [recipientName, setRecipientName] = useState<string>("");
   const [recipientPhone, setRecipientPhone] = useState<string>("");
-  const [recipientAddress, setRecipientAddress] = useState<string>("");
+  // 收件地址（黑貓 / 郵局）：與買家端相同的結構化欄位
+  const [addrCity, setAddrCity] = useState<string>("");
+  const [addrDistrict, setAddrDistrict] = useState<string>("");
+  const [addrZip, setAddrZip] = useState<string>("");
+  const [addrLine, setAddrLine] = useState<string>("");
   const [storeCode, setStoreCode] = useState<string>("");
   const [storeName, setStoreName] = useState<string>("");
   const [trackingCode, setTrackingCode] = useState<string>("");
@@ -237,7 +243,21 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
       setShippingFeeStr(order.shippingFee != null ? String(order.shippingFee) : "");
       setRecipientName(order.recipientName ?? "");
       setRecipientPhone(order.recipientPhone ?? "");
-      setRecipientAddress(order.recipientAddress ?? "");
+      {
+        // 回填收件地址：可解析 → 結構化欄位；不可解析（舊自由輸入）→ 全文放詳細地址
+        const parsed = parseRecipientAddress(order.recipientAddress);
+        if (parsed) {
+          setAddrCity(parsed.city);
+          setAddrDistrict(parsed.district);
+          setAddrZip(parsed.zip);
+          setAddrLine(parsed.line);
+        } else {
+          setAddrCity("");
+          setAddrDistrict("");
+          setAddrZip("");
+          setAddrLine(order.recipientAddress ?? "");
+        }
+      }
       setStoreCode(order.storeCode ?? "");
       setStoreName(order.storeName ?? "");
       setTrackingCode(order.trackingCode ?? "");
@@ -300,6 +320,9 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
     );
     if (cat === "cvs_family") setCvsPickerProvider("family");
     else if (cat === "cvs_711") setCvsPickerProvider("seven");
+    // Step 7H-3: 切換取貨方式時，運費跟著同步為對應費率（仍可手動再修改）
+    setShippingFeeStr(String(getShippingFee(value)));
+    clearFieldError("shippingFee");
     // Clear incompatible fields on switch
     if (cat === "self_pickup" || cat === "home_black_cat" || cat === "home_post") {
       setStoreCode("");
@@ -313,9 +336,13 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
       setCvsSearchError("");
     }
     if (cat === "self_pickup" || cat === "cvs_711" || cat === "cvs_family") {
-      setRecipientAddress("");
       setRecipientName("");
       setRecipientPhone("");
+      setAddrCity("");
+      setAddrDistrict("");
+      setAddrZip("");
+      setAddrLine("");
+      clearFieldError("recipientAddress");
       setTrackingCode("");
       setTrackingProvider("");
     }
@@ -371,6 +398,13 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
     if (!buyerPhone.trim()) errs.buyerPhone = "請輸入電話";
     if (!quantity || quantity < 1 || !Number.isInteger(quantity)) errs.quantity = "數量至少為 1";
     if (!pickupMethod.trim()) errs.pickupMethod = "請輸入取貨方式";
+    if (isHome) {
+      // 全空（沿用舊資料可為空）允許；填了一部分就必須填完整
+      const anyFilled = !!(addrCity || addrDistrict || addrLine.trim());
+      if (anyFilled && (!addrCity || !addrDistrict || !addrLine.trim())) {
+        errs.recipientAddress = "請完整填寫收件地址";
+      }
+    }
     if (paidAmountStr.trim() !== "") {
       const pa = parseFloat(paidAmountStr);
       if (isNaN(pa) || pa < 0) errs.paidAmount = "已收金額不可為負數";
@@ -424,7 +458,9 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
           shippingFee,
           recipientName: recipientName.trim() || null,
           recipientPhone: recipientPhone.trim() || null,
-          recipientAddress: recipientAddress.trim() || null,
+          recipientAddress: (addrCity && addrDistrict && addrLine.trim())
+            ? combineRecipientAddress(addrZip, addrCity, addrDistrict, addrLine)
+            : (addrLine.trim() || null),
           storeCode: storeCode.trim() || null,
           storeName: storeName.trim() || null,
           cvsStoreAddress: cvsStoreAddress.trim() || null,
@@ -732,10 +768,16 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
                                 <label className="block text-xs font-medium text-foreground mb-1">收件電話（選填）</label>
                                 <input type="tel" className={INPUT} placeholder="收件人電話" value={recipientPhone} onChange={(e) => setRecipientPhone(e.target.value)} />
                               </div>
-                              <div>
-                                <label className="block text-xs font-medium text-foreground mb-1">收件地址（選填）</label>
-                                <input type="text" className={INPUT} placeholder="完整收件地址" value={recipientAddress} onChange={(e) => setRecipientAddress(e.target.value)} />
-                              </div>
+                              <RecipientAddressFields
+                                city={addrCity}
+                                district={addrDistrict}
+                                zip={addrZip}
+                                addressLine={addrLine}
+                                onCityChange={(c) => { setAddrCity(c); setAddrDistrict(""); setAddrZip(""); clearFieldError("recipientAddress"); }}
+                                onDistrictChange={(d, z) => { setAddrDistrict(d); setAddrZip(z); clearFieldError("recipientAddress"); }}
+                                onAddressLineChange={(l) => { setAddrLine(l); clearFieldError("recipientAddress"); }}
+                              />
+                              {fieldErrors.recipientAddress && <p className={ERR}>{fieldErrors.recipientAddress}</p>}
                             </div>
                           )}
                           {cat === "self_pickup" && (

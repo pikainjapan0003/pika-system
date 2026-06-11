@@ -20,6 +20,7 @@ export const PICKUP_METHOD_SHIPPING_FEE: Record<string, number> = {
   "全家取貨（先付款）": 60,
   "黑貓宅急便": 100,
   "郵局": 80,
+  "郵局宅配": 80,
   // Legacy mappings
   "自取": 0,
   "其他": 0,

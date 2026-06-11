@@ -499,3 +499,39 @@ export function findZip(city: string, district: string): string {
 export function getDistricts(city: string): ZipcodeDistrict[] {
   return TAIWAN_ZIPCODE_REGIONS.find((c) => c.city === city)?.districts ?? [];
 }
+
+export interface ParsedRecipientAddress {
+  zip: string;
+  city: string;
+  district: string;
+  line: string;
+}
+
+// 「郵遞區號 縣市行政區詳細地址」←→ 結構化欄位（與買家端 recipientAddress 格式一致）
+export function combineRecipientAddress(zip: string, city: string, district: string, line: string): string {
+  return `${zip} ${city}${district}${line.trim()}`;
+}
+
+export function parseRecipientAddress(full: string | null | undefined): ParsedRecipientAddress | null {
+  const text = (full ?? "").trim();
+  if (!text) return null;
+  const m = text.match(/^(\d{3,6})?\s*(.*)$/);
+  const rest = (m?.[2] ?? text).trim();
+  for (const region of TAIWAN_ZIPCODE_REGIONS) {
+    if (rest.startsWith(region.city)) {
+      const afterCity = rest.slice(region.city.length);
+      for (const d of region.districts) {
+        if (afterCity.startsWith(d.district)) {
+          return {
+            zip: m?.[1] ?? d.zip,
+            city: region.city,
+            district: d.district,
+            line: afterCity.slice(d.district.length).trim(),
+          };
+        }
+      }
+      return { zip: m?.[1] ?? "", city: region.city, district: "", line: afterCity.trim() };
+    }
+  }
+  return null;
+}
