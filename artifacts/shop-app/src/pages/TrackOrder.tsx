@@ -258,7 +258,7 @@ export default function TrackOrderPage({ publicToken }: Props) {
                   <InfoRow label="最新貨態" value="等待物流商更新" />
                 )}
                 {(order.latestTrackingTime ?? order.shipmentUpdatedAt) && (
-                  <InfoRow label="最後更新" value={formatDate((order.latestTrackingTime ?? order.shipmentUpdatedAt)!)} />
+                  <InfoRow label="貨態時間" value={formatDate((order.latestTrackingTime ?? order.shipmentUpdatedAt)!)} />
                 )}
                 {(order.latestTrackingStatus === "exception" || order.latestTrackingStatus === "unknown" || order.latestTrackingStatus === "returned") && (
                   <p className="text-xs text-amber-700 leading-relaxed">
