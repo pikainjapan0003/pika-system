@@ -170,6 +170,9 @@ router.post("/p/:shareToken/orders", submitOrderLimiter, async (req, res) => {
             storeSelectedAt: hasCvs ? new Date() : null,
             // 黑貓 / 郵局：買家填的完整收件地址（郵遞區號 縣市行政區 詳細地址）
             recipientAddress: parsed.data.recipientAddress ?? null,
+            // Step 7H-4: 收件資訊（買家可指定與本人不同的收件人）
+            recipientName: parsed.data.recipientName ?? null,
+            recipientPhone: parsed.data.recipientPhone ?? null,
           })
           .returning();
 

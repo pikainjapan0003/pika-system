@@ -112,6 +112,10 @@ export default function PublicOrderPage({ shareToken }: Props) {
 
   const [buyerName, setBuyerName] = useState("");
   const [buyerPhone, setBuyerPhone] = useState("");
+  // Step 7H-4: 收件資訊（買家本人不一定是收件人）
+  const [sameAsBuyer, setSameAsBuyer] = useState(true);
+  const [recipientNameInput, setRecipientNameInput] = useState("");
+  const [recipientPhoneInput, setRecipientPhoneInput] = useState("");
   const [pickupMethod, setPickupMethod] = useState("");
   const [notes, setNotes] = useState("");
   const [quantity, setQuantity] = useState(1);
@@ -251,6 +255,14 @@ export default function PublicOrderPage({ shareToken }: Props) {
       }
     }
 
+    // 收件資訊：勾「同買家資訊」→ 帶買家；否則必填收件人 / 收件電話
+    const recipientNamePayload = sameAsBuyer ? buyerName.trim() : recipientNameInput.trim();
+    const recipientPhonePayload = sameAsBuyer ? buyerPhone.trim() : recipientPhoneInput.trim();
+    if (!sameAsBuyer) {
+      if (!recipientNamePayload) { setFormError("請輸入收件人"); return; }
+      if (!recipientPhonePayload) { setFormError("請輸入收件電話"); return; }
+    }
+
     // 黑貓 / 郵局：完整收件地址走 recipientAddress 欄位，notes 保留買家自己的備註
     const recipientAddressPayload = isHomeDeliveryMethod(pickupMethod)
       ? `${shippingZip} ${shippingCity}${shippingDistrict}${shippingAddressLine.trim()}`
@@ -262,6 +274,8 @@ export default function PublicOrderPage({ shareToken }: Props) {
         buyerPhone: buyerPhone.trim(),
         pickupMethod,
         notes: notes.trim() || undefined,
+        recipientName: recipientNamePayload,
+        recipientPhone: recipientPhonePayload,
         ...(recipientAddressPayload ? { recipientAddress: recipientAddressPayload } : {}),
         specValues: Object.keys(specValues).length > 0 ? specValues : undefined,
         quantity,
@@ -502,6 +516,51 @@ export default function PublicOrderPage({ shareToken }: Props) {
             placeholder="09xx-xxx-xxx"
             className={inputClass}
           />
+        </div>
+
+        {/* 收件資訊（Step 7H-4：買家不一定是收件人） */}
+        <div className="bg-white border border-border rounded-2xl px-4 py-3 space-y-3">
+          <p className="text-sm font-semibold text-foreground">收件資訊</p>
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={sameAsBuyer}
+              onChange={(e) => {
+                setSameAsBuyer(e.target.checked);
+                if (!e.target.checked) {
+                  setRecipientNameInput(buyerName);
+                  setRecipientPhoneInput(buyerPhone);
+                }
+              }}
+              className="w-4 h-4 accent-primary"
+            />
+            <span className="text-sm text-foreground">同買家資訊</span>
+          </label>
+          <div>
+            <label className="block text-xs font-medium text-foreground mb-1">收件人 *</label>
+            <input
+              type="text"
+              value={sameAsBuyer ? buyerName : recipientNameInput}
+              onChange={(e) => setRecipientNameInput(e.target.value)}
+              readOnly={sameAsBuyer}
+              placeholder="請輸入收件人姓名"
+              className={`${inputClass} ${sameAsBuyer ? "bg-muted/30 cursor-default" : ""}`}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-foreground mb-1">收件電話 *</label>
+            <input
+              type="tel"
+              value={sameAsBuyer ? buyerPhone : recipientPhoneInput}
+              onChange={(e) => setRecipientPhoneInput(e.target.value)}
+              readOnly={sameAsBuyer}
+              placeholder="09xx-xxx-xxx"
+              className={`${inputClass} ${sameAsBuyer ? "bg-muted/30 cursor-default" : ""}`}
+            />
+          </div>
+          {(formError === "請輸入收件人" || formError === "請輸入收件電話") && (
+            <p className="text-xs text-destructive">{formError}</p>
+          )}
         </div>
 
         {/* Pickup method — card button rows with inline detail */}
