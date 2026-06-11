@@ -12,6 +12,7 @@ import agentRouter from "./agent";
 import sellerAgentRouter from "./sellerAgent.ts";
 import logisticsImportsRouter from "./logisticsImports.ts";
 import logisticsExceptionsRouter from "./logisticsExceptions.ts";
+import logisticsSyncRouter from "./logisticsSync.ts";
 
 const router: IRouter = Router();
 
@@ -27,6 +28,7 @@ router.use("/internal/agent", agentRouter);
 router.use(sellerAgentRouter);
 router.use(logisticsImportsRouter);
 router.use(logisticsExceptionsRouter);
+router.use(logisticsSyncRouter);
 if (process.env.NODE_ENV !== "production") {
   router.use(devHandoffRouter);
 }
