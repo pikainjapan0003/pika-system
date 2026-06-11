@@ -28,5 +28,27 @@ export interface PublicOrder {
   trackingCode?: string | null;
   /** @nullable */
   trackingProvider?: string | null;
+  /** @nullable */
+  trackingProviderLabel?: string | null;
+  /** @nullable */
+  latestTrackingStatus?: string | null;
+  /** @nullable */
+  latestTrackingStatusLabel?: string | null;
+  /** @nullable */
+  latestTrackingTime?: string | null;
+  /** @nullable */
+  shipmentUpdatedAt?: string | null;
+  /** @nullable */
+  storeName?: string | null;
+  /** @nullable */
+  cvsStoreName?: string | null;
+  /** @nullable */
+  cvsStoreAddress?: string | null;
+  /** @nullable */
+  recipientNameMasked?: string | null;
+  /** @nullable */
+  recipientPhoneMasked?: string | null;
+  /** @nullable */
+  recipientAddressMasked?: string | null;
   createdAt: string;
 }

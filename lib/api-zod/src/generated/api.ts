@@ -882,6 +882,17 @@ export const GetPublicOrderResponse = zod.object({
   "shippingStatusLabel": zod.string().optional(),
   "trackingCode": zod.string().nullish(),
   "trackingProvider": zod.string().nullish(),
+  "trackingProviderLabel": zod.string().nullish(),
+  "latestTrackingStatus": zod.string().nullish(),
+  "latestTrackingStatusLabel": zod.string().nullish(),
+  "latestTrackingTime": zod.string().nullish(),
+  "shipmentUpdatedAt": zod.string().nullish(),
+  "storeName": zod.string().nullish(),
+  "cvsStoreName": zod.string().nullish(),
+  "cvsStoreAddress": zod.string().nullish(),
+  "recipientNameMasked": zod.string().nullish(),
+  "recipientPhoneMasked": zod.string().nullish(),
+  "recipientAddressMasked": zod.string().nullish(),
   "createdAt": zod.string()
 })
 
