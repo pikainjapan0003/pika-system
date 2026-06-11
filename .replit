@@ -69,3 +69,8 @@ externalPort = 4200
 [[ports]]
 localPort = 22696
 externalPort = 3000
+
+[userenv]
+
+[userenv.shared]
+AUTO_SYNC_ENABLED = "true"
