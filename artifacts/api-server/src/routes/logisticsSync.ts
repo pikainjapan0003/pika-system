@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { desc, eq, inArray, and } from "drizzle-orm";
+import { desc, eq, inArray, and, isNull, or } from "drizzle-orm";
 import { db, shipmentTrackingRunLogsTable } from "@workspace/db";
 import { requireAuth, verifyStoreOwner } from "../middlewares/auth";
 import { runFamilyMartTrackingWorker } from "../lib/logistics/workers/familyMartTrackingWorker.ts";
@@ -78,8 +78,16 @@ router.get("/stores/:storeId/logistics/sync/status", requireAuth, async (req: an
       .from(shipmentTrackingRunLogsTable)
       .where(
         and(
-          eq(shipmentTrackingRunLogsTable.storeId, storeId),
           inArray(shipmentTrackingRunLogsTable.runType, SYNC_RUN_TYPES),
+          // 排程是全店域掃描（storeId=null），各店狀態卡都應看得到；
+          // 全域紀錄僅限 scheduled_worker，避免 storeId=null 的手動/重試紀錄混入
+          or(
+            eq(shipmentTrackingRunLogsTable.storeId, storeId),
+            and(
+              isNull(shipmentTrackingRunLogsTable.storeId),
+              eq(shipmentTrackingRunLogsTable.runType, "scheduled_worker"),
+            ),
+          ),
         ),
       )
       .orderBy(desc(shipmentTrackingRunLogsTable.startedAt))
