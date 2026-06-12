@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@clerk/react";
 import { useGetMyStore } from "@workspace/api-client-react";
 import { BottomNav } from "./Dashboard";
+import { getProviderShortName } from "@/lib/logisticsProviders";
 
 interface ImportBatch {
   id: number;
@@ -28,12 +29,7 @@ interface ImportRow {
   createdAt: string | null;
 }
 
-const PROVIDER_LABELS: Record<string, string> = {
-  familymart: "全家",
-  "711": "7-11",
-  tcat: "黑貓",
-  postoffice: "郵局",
-};
+// provider label 收斂至 @/lib/logisticsProviders（Step 7H-B）
 
 const SOURCE_LABELS: Record<string, string> = {
   excel: "Excel",
@@ -329,7 +325,7 @@ export default function LogisticsImportHistoryPage() {
               <div key={batch.id} className="bg-white rounded-2xl border border-border px-4 py-3.5 space-y-2">
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <span className="text-xs font-bold text-foreground">
-                    {PROVIDER_LABELS[batch.provider] ?? "其他物流"} {SOURCE_LABELS[batch.sourceType] ?? "Excel"}
+                    {getProviderShortName(batch.provider) ?? "其他物流"} {SOURCE_LABELS[batch.sourceType] ?? "Excel"}
                   </span>
                   {batch.id === latestBatchId && (
                     <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-primary/10 text-primary">最新</span>

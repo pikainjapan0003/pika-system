@@ -427,7 +427,40 @@ describe('Step 5C: payment / logistics fields', () => {
     assert.strictEqual(status, 200);
     assert.strictEqual(data.shippingStatus, 'shipped');
     assert.strictEqual(data.trackingCode, 'TEST12345');
-    assert.strictEqual(data.trackingProvider, '黑貓宅急便');
+    // Step 7H-C：別名 soft normalize 成 canonical code
+    assert.strictEqual(data.trackingProvider, 'tcat');
+  });
+
+  // ── Step 7H-C: trackingProvider soft normalize ─────────────
+  test('200 — PATCH normalizes "7-11" alias to canonical "711"', async () => {
+    const { status, data } = await req('PATCH', `/orders/${step5OrderId}`, {
+      trackingProvider: '7-11',
+    });
+    assert.strictEqual(status, 200);
+    assert.strictEqual(data.trackingProvider, '711');
+  });
+
+  test('200 — PATCH normalizes "全家" / "郵局宅配" aliases', async () => {
+    let r = await req('PATCH', `/orders/${step5OrderId}`, { trackingProvider: '全家' });
+    assert.strictEqual(r.data.trackingProvider, 'familymart');
+    r = await req('PATCH', `/orders/${step5OrderId}`, { trackingProvider: '郵局宅配' });
+    assert.strictEqual(r.data.trackingProvider, 'postoffice');
+  });
+
+  test('200 — PATCH keeps unknown trackingProvider as-is (no silent "other")', async () => {
+    const { status, data } = await req('PATCH', `/orders/${step5OrderId}`, {
+      trackingProvider: '某快遞XYZ',
+    });
+    assert.strictEqual(status, 200);
+    assert.strictEqual(data.trackingProvider, '某快遞XYZ');
+  });
+
+  test('200 — PATCH trackingProvider null clears the field', async () => {
+    const { status, data } = await req('PATCH', `/orders/${step5OrderId}`, {
+      trackingProvider: null,
+    });
+    assert.strictEqual(status, 200);
+    assert.strictEqual(data.trackingProvider, null);
   });
 
   test('200 — PATCH updates shippingFee recalculates orderTotal', async () => {

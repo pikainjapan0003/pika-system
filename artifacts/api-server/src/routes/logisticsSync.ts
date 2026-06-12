@@ -3,6 +3,10 @@ import { desc, eq, inArray, and, isNull, or } from "drizzle-orm";
 import { db, shipmentTrackingRunLogsTable } from "@workspace/db";
 import { requireAuth, verifyStoreOwner } from "../middlewares/auth";
 import { runFamilyMartTrackingWorker } from "../lib/logistics/workers/familyMartTrackingWorker.ts";
+import {
+  getSupportedAutoSyncProviders,
+  getUnsupportedAutoSyncProviders,
+} from "../lib/logistics/providers.ts";
 
 const fail = (res: any, status: number, errorCode: string, message: string) =>
   res.status(status).json({ ok: false, errorCode, message });
@@ -13,8 +17,8 @@ const fail = (res: any, status: number, errorCode: string, message: string) =>
  * autoSyncEnabled 由 AUTO_SYNC_ENABLED env 控制（排程啟用 SOP：先建排程驗證成功再開此 flag）；
  * 排程設定存在 Replit 平台，app 無可靠來源，故不回傳下次同步時間。
  */
-const SUPPORTED_PROVIDERS = ["familymart"] as const;
-const UNSUPPORTED_PROVIDERS = ["711", "tcat", "postoffice"] as const;
+const SUPPORTED_PROVIDERS = getSupportedAutoSyncProviders();
+const UNSUPPORTED_PROVIDERS = getUnsupportedAutoSyncProviders();
 /** 同步狀態卡只看 worker 跑的紀錄，不混入 import_confirm 等批次紀錄 */
 const SYNC_RUN_TYPES = ["scheduled_worker", "manual_worker", "exception_retry"];
 

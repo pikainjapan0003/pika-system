@@ -7,6 +7,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@clerk/react";
 import { useGetMyStore } from "@workspace/api-client-react";
+import { getProviderShortName } from "@/lib/logisticsProviders";
 
 interface SyncRun {
   id: number;
@@ -33,12 +34,8 @@ interface SyncStatusResponse {
   errorCode?: string;
 }
 
-const PROVIDER_LABEL: Record<string, string> = {
-  familymart: "全家",
-  "711": "7-11",
-  tcat: "黑貓",
-  postoffice: "郵局",
-};
+// provider label 收斂至 @/lib/logisticsProviders（Step 7H-B）
+const providerLabel = (c: string) => getProviderShortName(c) ?? c;
 
 const RUN_STATUS_LABEL: Record<string, string> = {
   success: "成功",
@@ -62,7 +59,7 @@ function formatTime(iso: string | null): string {
 
 function providerLabels(codes: string[] | undefined): string {
   if (!codes || codes.length === 0) return "—";
-  return codes.map((c) => PROVIDER_LABEL[c] ?? c).join(" / ");
+  return codes.map((c) => providerLabel(c)).join(" / ");
 }
 
 export function LogisticsSyncStatusNotice() {
@@ -185,7 +182,7 @@ export function LogisticsSyncStatusNotice() {
         上次同步：
         {status?.lastRun ? (
           <span className="text-foreground">
-            {formatTime(status.lastRun.startedAt)}（{PROVIDER_LABEL[status.lastRun.provider] ?? status.lastRun.provider}・
+            {formatTime(status.lastRun.startedAt)}（{providerLabel(status.lastRun.provider)}・
             {RUN_STATUS_LABEL[status.lastRun.status] ?? status.lastRun.status}）
           </span>
         ) : (
@@ -223,7 +220,7 @@ export function LogisticsSyncStatusNotice() {
             {recentRuns.slice(0, 5).map((run) => (
               <li key={run.id} className="text-[11px] text-muted-foreground bg-secondary rounded-xl px-3 py-2">
                 <span className="text-foreground font-medium">
-                  {formatTime(run.startedAt)}・{PROVIDER_LABEL[run.provider] ?? run.provider}・
+                  {formatTime(run.startedAt)}・{providerLabel(run.provider)}・
                   {RUN_TYPE_LABEL[run.runType] ?? run.runType}・{RUN_STATUS_LABEL[run.status] ?? run.status}
                 </span>
                 <span className="block">

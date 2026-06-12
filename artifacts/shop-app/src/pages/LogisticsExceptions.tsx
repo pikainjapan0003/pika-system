@@ -3,6 +3,7 @@ import { useAuth } from "@clerk/react";
 import { useGetMyStore } from "@workspace/api-client-react";
 import { BottomNav } from "./Dashboard";
 import { LogisticsSyncStatusHint } from "../components/LogisticsSyncStatusNotice";
+import { getProviderShortName } from "@/lib/logisticsProviders";
 
 interface TrackingException {
   id: number;
@@ -24,12 +25,7 @@ interface TrackingException {
   resolvedBy: string | null;
 }
 
-const PROVIDER_LABELS: Record<string, string> = {
-  familymart: "全家",
-  "711": "7-11",
-  tcat: "黑貓",
-  postoffice: "郵局",
-};
+// provider label 收斂至 @/lib/logisticsProviders（Step 7H-B）
 
 const SOURCE_LABELS: Record<string, string> = {
   file_import: "Excel 匯入",
@@ -413,7 +409,7 @@ export default function LogisticsExceptionsPage() {
                     {group.orderId != null ? `#${group.orderId}` : "未配對訂單"}
                   </span>
                   <span className="text-[11px] px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">
-                    {PROVIDER_LABELS[group.provider] ?? "物流"}
+                    {getProviderShortName(group.provider) ?? "物流"}
                   </span>
                   <span className="text-[11px] px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">
                     {SOURCE_LABELS[group.sourceType] ?? "系統"}

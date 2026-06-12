@@ -7,6 +7,7 @@ import { CreateMerchantOrderBody, UpdateOrderBody, UpdateOrderStatusBody, BulkUp
 import { requireAuth, verifyStoreOwner } from "../middlewares/auth.ts";
 import { getShippingFee } from "../lib/shippingFee.ts";
 import { isValidTransition, getTransitionError } from "../lib/orderStatusMachine.ts";
+import { TRACKING_IMPORT_ALLOWED_PROVIDERS, normalizeTrackingProvider } from "../lib/logistics/providers.ts";
 
 const router = Router();
 
@@ -517,7 +518,8 @@ router.patch("/orders/bulk", requireAuth, async (req: any, res) => {
 
 // ─── Step 7B: Batch tracking import ────────────────────────────────────────
 // trackingProvider: familymart ≠ cvsStores.provider family (different contexts)
-const ALLOWED_TRACKING_PROVIDERS = ["711", "familymart", "home_delivery", "other"] as const;
+// 允許值集中於 provider registry（Step 7H-B），與 openapi TrackingProvider enum 同步
+const ALLOWED_TRACKING_PROVIDERS = TRACKING_IMPORT_ALLOWED_PROVIDERS;
 
 router.post("/orders/tracking-import", requireAuth, async (req: any, res) => {
   const body = req.body;
@@ -756,7 +758,14 @@ router.patch("/orders/:orderId", requireAuth, async (req: any, res) => {
     (storeSelectedBy !== undefined && (storeSelectedBy ?? null) !== (order.storeSelectedBy ?? null));
   if (cvsChanged) updates.storeSelectedAt = new Date();
   if (trackingCode !== undefined) updates.trackingCode = trackingCode;
-  if (trackingProvider !== undefined) updates.trackingProvider = trackingProvider;
+  // Step 7H-C soft normalize：認得的別名轉 canonical（如 "7-11" → "711"），
+  // 認不得的保留原值不拒絕（避免 breaking，髒值由 7H-D 處理）
+  if (trackingProvider !== undefined) {
+    updates.trackingProvider =
+      trackingProvider === null
+        ? null
+        : (normalizeTrackingProvider(trackingProvider) ?? trackingProvider);
+  }
   if (shippingNote !== undefined) updates.shippingNote = shippingNote;
   if (internalNote !== undefined) updates.internalNote = internalNote;
   // Discount fields — validate after shippingFee / totalPrice may be updated

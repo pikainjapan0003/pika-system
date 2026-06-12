@@ -5,6 +5,7 @@ import { randomBytes } from "crypto";
 import { db, storesTable, productsTable, ordersTable, shipmentTrackingsTable } from "@workspace/db";
 import { SubmitOrderBody } from "@workspace/api-zod";
 import { getShippingFee } from "../lib/shippingFee.ts";
+import { getProviderMeta } from "../lib/logistics/providers.ts";
 
 const submitOrderLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
@@ -45,17 +46,14 @@ const SHIPPING_STATUS_LABELS: Record<string, string> = {
   cancelled: "物流取消，請聯繫店家",
 };
 
-// 客人端顯示用：物流商代碼 → 繁中名稱（已是中文名稱者原樣顯示）
-const TRACKING_PROVIDER_LABELS: Record<string, string> = {
-  familymart: "全家",
-  "711": "7-11",
-  seven: "7-11",
-  seven_eleven: "7-11",
-  tcat: "黑貓宅急便",
-  blackcat: "黑貓宅急便",
-  postoffice: "郵局",
-  other: "其他物流",
-};
+// 客人端顯示用：物流商代碼 → 繁中名稱（已是中文名稱者原樣顯示）。
+// 來源收斂至 provider registry（Step 7H-B）；維持既有頁面文案：黑貓用全名、其餘用短名。
+function publicTrackingProviderLabel(raw: string): string {
+  if (raw.trim().toLowerCase() === "other") return "其他物流";
+  const meta = getProviderMeta(raw);
+  if (!meta) return raw;
+  return meta.code === "tcat" ? meta.displayName : meta.shortName;
+}
 
 // 客人端顯示用：標準化貨態（shipment_tracking_events.eventStatus）→ 繁中文案
 const TRACKING_EVENT_STATUS_LABELS: Record<string, string> = {
@@ -312,7 +310,7 @@ router.get("/orders/track/:publicToken", trackOrderLimiter, async (req, res) => 
     trackingCode,
     trackingProvider,
     trackingProviderLabel: trackingProvider
-      ? (TRACKING_PROVIDER_LABELS[trackingProvider.toLowerCase()] ?? trackingProvider)
+      ? publicTrackingProviderLabel(trackingProvider)
       : null,
     latestTrackingStatus,
     latestTrackingStatusLabel: latestTrackingStatus
