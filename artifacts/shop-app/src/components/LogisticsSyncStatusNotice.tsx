@@ -34,8 +34,9 @@ interface SyncStatusResponse {
   errorCode?: string;
 }
 
-// provider label 收斂至 @/lib/logisticsProviders（Step 7H-B）
-const providerLabel = (c: string) => getProviderShortName(c) ?? c;
+// provider label 收斂至 @/lib/logisticsProviders（Step 7H-B）。
+// "all" 是 run log 的跨物流商彙總值（非 canonical provider），registry 查不到，這裡補顯示用 label（Step 7N-E）
+const providerLabel = (c: string) => (c === "all" ? "全部物流" : (getProviderShortName(c) ?? c));
 
 const RUN_STATUS_LABEL: Record<string, string> = {
   success: "成功",

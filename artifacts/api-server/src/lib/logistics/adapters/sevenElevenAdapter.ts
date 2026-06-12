@@ -12,6 +12,12 @@
  * OCR 以可注入方式設計（deps.solveCaptcha），預設實作假設執行環境 PATH 有 tesseract。
  */
 
+import type {
+  NormalizedTrackingStatus,
+  TrackingAdapterErrorCode,
+  TrackingAdapterResult,
+} from "./types.ts";
+
 const BASE_URL = "https://eservice.7-11.com.tw/e-tracking/";
 const SEARCH_URL = `${BASE_URL}search.aspx`;
 const USER_AGENT =
@@ -420,3 +426,74 @@ const defaultTesseractSolver: CaptchaSolver = async (imageBytes) => {
     proc.stdin.end();
   });
 };
+
+// ---------------------------------------------------------------------------
+// Common-result bridge（Step 7N-C）— 型別轉換 only，不打外部、不寫 DB、不改既有行為
+// ---------------------------------------------------------------------------
+
+/** 7-11 狀態文字 → 標準化貨態（bridge 用最小規則，待正式整合時細化） */
+export function normalizeSevenElevenStatus(
+  statusText: string,
+): NormalizedTrackingStatus {
+  const s = (statusText ?? "").trim();
+  if (!s) return "unknown";
+  if (/(已取件|完成取件|取貨完成)/.test(s)) return "picked_up";
+  if (/(到達門市|門市取貨|已到店|到店)/.test(s)) return "arrived_store";
+  if (/(退回|退貨|退件)/.test(s)) return "returned";
+  if (/(異常|遺失|閉店)/.test(s)) return "exception";
+  if (/(配送|運送|轉運|出貨)/.test(s)) return "in_transit";
+  if (/(交寄|建立|收件)/.test(s)) return "pending";
+  return "unknown";
+}
+
+/** 7-11 errorCode 皆已存在於共用 enum；retryable 對齊 7N-A 計畫（OCR/captcha → 人工 fallback 不自動重試） */
+const SEVEN_ELEVEN_RETRYABLE: Record<SevenElevenErrorCode, boolean> = {
+  OCR_FAILED: false,
+  VERIFY_FAILED: false,
+  NO_RESULT: false,
+  PARSER_FAILED: false,
+  NETWORK_FAILED: true,
+  REMOTE_CHANGED: false,
+  UNKNOWN_ERROR: true,
+};
+
+/**
+ * SevenElevenTrackingResult → 共用 TrackingAdapterResult<"711">。
+ * 純資料轉換：不查外部、不查 DB。供未來 controlled worker 接 7-11 時使用。
+ */
+export function bridgeSevenElevenResult(
+  result: SevenElevenTrackingResult,
+): TrackingAdapterResult<"711"> {
+  if (!result.ok) {
+    return {
+      ok: false,
+      provider: "711",
+      trackingCode: result.trackingCode,
+      errorCode: result.errorCode as TrackingAdapterErrorCode,
+      message: result.message,
+      retryable: SEVEN_ELEVEN_RETRYABLE[result.errorCode] ?? false,
+    };
+  }
+  const events = result.events.map((e) => ({
+    eventStatus: e.statusText || "unknown",
+    eventDescription: e.statusText || e.rawText || "unknown",
+    eventLocation: null,
+    occurredAt: e.occurredAt,
+    rawData: { rawText: e.rawText },
+  }));
+  const latest = events[0] ?? null;
+  return {
+    ok: true,
+    provider: "711",
+    trackingCode: result.trackingCode,
+    normalizedStatus: normalizeSevenElevenStatus(result.latestStatus),
+    latestStatusText: result.latestStatus,
+    latestEventAt: latest?.occurredAt ?? null,
+    events,
+    rawSummary: {
+      pickupStoreName: result.pickupStoreName ?? null,
+      pickupDeadline: result.pickupDeadline ?? null,
+      eventCount: events.length,
+    },
+  };
+}

@@ -24,11 +24,17 @@ export interface TrackingEvent {
 export type TrackingAdapterErrorCode =
   | "INVALID_TRACKING_CODE"
   | "NO_RESULT"
+  | "EMPTY_LIST"
   | "REMOTE_ERROR"
   | "NETWORK_FAILED"
   | "TIMEOUT"
   | "PARSER_FAILED"
+  | "HTML_PARSE_FAILED"
   | "REMOTE_CHANGED"
+  | "CAPTCHA_REQUIRED"
+  | "OCR_FAILED"
+  | "VERIFY_FAILED"
+  | "BLOCKED"
   | "UNKNOWN_ERROR";
 
 export type TrackingAdapterResult<P extends string> =
