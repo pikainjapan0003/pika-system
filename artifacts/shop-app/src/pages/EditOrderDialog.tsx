@@ -11,6 +11,7 @@ import {
 } from "@workspace/api-client-react";
 import { isFamilyMartMethod, isSevenElevenMethod, getShippingFee } from "@/lib/cvs711";
 import { combineRecipientAddress, parseRecipientAddress } from "@/lib/taiwanZipcodes";
+import { normalizeTrackingProvider } from "@/lib/logisticsProviders";
 import { RecipientAddressFields } from "@/components/RecipientAddressFields";
 import sevenElevenLogo from "@/assets/logistics/seven-eleven-logo-official.png";
 import familymartLogo from "@/assets/logistics/familymart-logo-official.png";
@@ -30,12 +31,13 @@ const PICKUP_METHOD_OPTIONS = [
 
 type FulfillmentCategory = "self_pickup" | "cvs_711" | "cvs_family" | "home_black_cat" | "home_post" | "other";
 
+// 寫入 canonical provider code（Step 7H-C）：不再寫中文 trackingProvider
 function deriveTrackingProvider(method: string): string | null {
   switch (getFulfillmentCategory(method)) {
-    case "cvs_711": return "7-11";
-    case "cvs_family": return "全家";
-    case "home_black_cat": return "黑貓宅急便";
-    case "home_post": return "郵局宅配";
+    case "cvs_711": return "711";
+    case "cvs_family": return "familymart";
+    case "home_black_cat": return "tcat";
+    case "home_post": return "postoffice";
     default: return null;
   }
 }
@@ -480,7 +482,11 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
           cvsStorePhone: cvsStorePhone.trim() || null,
           storeSelectedBy: storeSelectedBy ? (storeSelectedBy as 'customer' | 'admin' | 'system') : undefined,
           trackingCode: trackingCode.trim() || null,
-          trackingProvider: trackingProvider.trim() || (trackingCode.trim() ? deriveTrackingProvider(pickupMethod) : null),
+          // Step 7H-C：舊值先 normalize 成 canonical（如 "7-11" → "711"）；
+          // 認不得的值保留原樣送出（不默默轉 other，留給 7H-D 人工處理）
+          trackingProvider: trackingProvider.trim()
+            ? (normalizeTrackingProvider(trackingProvider) ?? trackingProvider.trim())
+            : (trackingCode.trim() ? deriveTrackingProvider(pickupMethod) : null),
           shippingNote: shippingNote.trim() || null,
           internalNote: internalNote.trim() || null,
         },

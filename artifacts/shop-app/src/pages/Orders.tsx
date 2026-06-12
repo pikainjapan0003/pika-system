@@ -7,6 +7,7 @@ import { BottomNav } from "./Dashboard";
 import { STATUS_LABELS, STATUS_COLORS, ALL_STATUSES, STATUS_STEPS, VALID_NEXT_STATUSES } from "../lib/orderStatus";
 import { isSevenElevenMethod, isFamilyMartMethod, openSevenElevenMap, openCvsStoreMap } from "@/lib/cvs711";
 import { parseRecipientAddress } from "@/lib/taiwanZipcodes";
+import { getProviderShortName } from "@/lib/logisticsProviders";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -100,12 +101,7 @@ const TRACKING_STATUS_LABELS: Record<string, string> = {
   failed: "查詢失敗",
   inactive: "已停用",
 };
-const TRACKING_PROVIDER_LABELS: Record<string, string> = {
-  familymart: "全家",
-  "711": "7-11",
-  tcat: "黑貓",
-  postoffice: "郵局",
-};
+// provider label 收斂至 @/lib/logisticsProviders（Step 7H-B）
 
 // Local augmentation: generated Order may lag behind DB schema on shipmentTracking.
 interface OrderShipmentTrackingSummary {
@@ -643,7 +639,7 @@ export default function OrdersPage() {
                         const code = (t?.trackingCode ?? o.trackingCode ?? "").trim();
                         if (!code) return null;
                         const providerKey = t?.trackingProvider ?? o.trackingProvider ?? "";
-                        const provider = TRACKING_PROVIDER_LABELS[providerKey] ?? "物流";
+                        const provider = getProviderShortName(providerKey) ?? "物流";
                         const statusText = t
                           ? (t.latestEventDescription?.trim() || (TRACKING_STATUS_LABELS[t.trackingStatus] ?? "待查詢"))
                           : "已建立物流追蹤";
