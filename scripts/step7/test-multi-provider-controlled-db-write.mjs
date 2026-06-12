@@ -35,10 +35,43 @@ const {
 } = dbMod;
 const { eq } = await import(pathToFileURL(path.join(ROOT, "artifacts/api-server/node_modules/drizzle-orm/index.js")));
 
-const PO_CODE = "97300922002170830005";
-const TCAT_CODE = "135063214096";
+// Step 7N-I8C2：原本用真實單號（97300922002170830005 / 135063214096）打外部站台，
+// 但郵局單號已被正式訂單 #1012 的 tracking row 占用（DB unique index provider+code），
+// 測試建 row 會撞 constraint。改為合成單號 + fixture adapter（worker 支援 deps.adapters
+// 注入），事件內容比照真實回應形狀，斷言不變；本測試不再打任何外部站台。
+const PO_CODE = "97300922002170838800";
+const TCAT_CODE = "135063218800";
 const FAKE_TCAT_CODE = "000000000000";
 const noSleep = async () => {};
+
+/** fixture：形狀比照 postOfficeAdapter / tcatAdapter 真實成功回應（7N-D 當時的快照） */
+const PO_EVENTS = [
+  { eventStatus: "投遞成功", eventDescription: "投遞成功", eventLocation: "臺中英才郵局", occurredAt: "2026/06/08 11:21:53", rawData: { fixture: true } },
+  { eventStatus: "投遞中", eventDescription: "投遞中", eventLocation: "臺中英才郵局", occurredAt: "2026/06/08 08:10:00", rawData: { fixture: true } },
+  { eventStatus: "到達投遞局", eventDescription: "到達投遞局", eventLocation: "臺中英才郵局", occurredAt: "2026/06/07 19:02:11", rawData: { fixture: true } },
+  { eventStatus: "運送中", eventDescription: "運送中", eventLocation: "臺中郵件處理中心", occurredAt: "2026/06/07 10:30:45", rawData: { fixture: true } },
+  { eventStatus: "已收寄", eventDescription: "已收寄", eventLocation: "臺北北門郵局", occurredAt: "2026/06/06 15:00:00", rawData: { fixture: true } },
+];
+// tcat：含兩筆同時間同狀態、不同 location 的事件（驗證 idempotency key 含 location、兩筆都保留）
+const TCAT_EVENTS = [
+  { eventStatus: "順利送達", eventDescription: "順利送達", eventLocation: "台中營業所", occurredAt: "2026/05/29 08:31", rawData: { fixture: true } },
+  { eventStatus: "配送中", eventDescription: "配送中", eventLocation: "台中營業所", occurredAt: "2026/05/29 07:00", rawData: { fixture: true } },
+  { eventStatus: "轉運中", eventDescription: "轉運中", eventLocation: "台中轉運中心", occurredAt: "2026/05/28 22:15", rawData: { fixture: true } },
+  { eventStatus: "轉運中", eventDescription: "轉運中", eventLocation: "桃園轉運中心", occurredAt: "2026/05/28 22:15", rawData: { fixture: true } },
+  { eventStatus: "已集貨", eventDescription: "已集貨", eventLocation: "台北營業所", occurredAt: "2026/05/28 18:40", rawData: { fixture: true } },
+];
+const fixtureAdapters = {
+  postoffice: async ({ trackingCode }) => ({
+    ok: true, provider: "postoffice", trackingCode,
+    normalizedStatus: "delivered", latestStatusText: "投遞成功",
+    latestEventAt: "2026/06/08 11:21:53", events: PO_EVENTS, rawSummary: { fixture: true },
+  }),
+  tcat: async ({ trackingCode }) => ({
+    ok: true, provider: "tcat", trackingCode,
+    normalizedStatus: "delivered", latestStatusText: "順利送達",
+    latestEventAt: "2026/05/29 08:31", events: TCAT_EVENTS, rawSummary: { fixture: true },
+  }),
+};
 
 let failures = 0;
 function check(name, cond, detail) {
@@ -104,7 +137,7 @@ try {
   console.log("\n--- [1] safety gates ---");
   let batchRejected = false;
   try {
-    await runControlledDbWrite(Array.from({ length: 6 }, () => ({ provider: "tcat", trackingId: tc.trackingId, trackingCode: TCAT_CODE, writeMode: "dryRun" })), { sleep: noSleep });
+    await runControlledDbWrite(Array.from({ length: 6 }, () => ({ provider: "tcat", trackingId: tc.trackingId, trackingCode: TCAT_CODE, writeMode: "dryRun" })), { sleep: noSleep, adapters: fixtureAdapters });
   } catch (e) { batchRejected = String(e.message).startsWith("BATCH_SIZE_EXCEEDED"); }
   check("batch>5 rejected", batchRejected);
 
@@ -113,7 +146,7 @@ try {
     { provider: "familymart", trackingId: tc.trackingId, trackingCode: "X", writeMode: "write" },
     { provider: "postoffice", trackingId: 999999999, trackingCode: PO_CODE, writeMode: "dryRun" },
     { provider: "postoffice", trackingId: tc.trackingId, trackingCode: PO_CODE, writeMode: "dryRun" },
-  ], { sleep: noSleep });
+  ], { sleep: noSleep, adapters: fixtureAdapters });
   check("711 controlled write disabled", gates.jobs[0]?.skippedReason?.startsWith("CONTROLLED_WRITE_DISABLED"), gates.jobs[0]?.skippedReason);
   check("familymart skipped (existing worker)", gates.jobs[1]?.skippedReason?.startsWith("USE_EXISTING_WORKER"));
   check("unknown trackingId skipped", gates.jobs[2]?.skippedReason?.startsWith("TRACKING_NOT_FOUND"));
@@ -126,7 +159,7 @@ try {
   const dry = await runControlledDbWrite([
     { provider: "postoffice", trackingId: po.trackingId, trackingCode: PO_CODE, writeMode: "dryRun" },
     { provider: "tcat", trackingId: tc.trackingId, trackingCode: TCAT_CODE, writeMode: "dryRun" },
-  ], { sleep: noSleep });
+  ], { sleep: noSleep, adapters: fixtureAdapters });
   check("dryRun: runLogId=null（不留 run log）", dry.runLogId === null);
   check("dryRun postoffice: wouldWriteEvents=5", dry.jobs[0]?.wouldWriteEvents === 5, JSON.stringify(dry.jobs[0]));
   check("dryRun postoffice: latestStatusText=投遞成功", dry.jobs[0]?.latestStatusText === "投遞成功");
@@ -140,7 +173,7 @@ try {
   console.log("\n--- [3] postoffice first write ---");
   const w1 = await runControlledDbWrite([
     { provider: "postoffice", trackingId: po.trackingId, trackingCode: PO_CODE, writeMode: "write" },
-  ], { sleep: noSleep });
+  ], { sleep: noSleep, adapters: fixtureAdapters });
   check("write: success", w1.jobs[0]?.status === "success", JSON.stringify(w1.jobs[0]));
   check("write: insertedEventCount=5", w1.jobs[0]?.insertedEventCount === 5, w1.jobs[0]?.insertedEventCount);
   check("write: runLogId 有值", typeof w1.runLogId === "number");
@@ -158,7 +191,7 @@ try {
   console.log("\n--- [4] postoffice repeat write ---");
   const w2 = await runControlledDbWrite([
     { provider: "postoffice", trackingId: po.trackingId, trackingCode: PO_CODE, writeMode: "write" },
-  ], { sleep: noSleep });
+  ], { sleep: noSleep, adapters: fixtureAdapters });
   check("repeat: success / insertedEventCount=0", w2.jobs[0]?.status === "success" && w2.jobs[0]?.insertedEventCount === 0, w2.jobs[0]?.insertedEventCount);
   check("repeat: events 仍是 5（no duplicates）", (await countEvents(po.trackingId)) === 5);
   const poT2 = await getTracking(po.trackingId);
@@ -168,7 +201,7 @@ try {
   console.log("\n--- [5] tcat first write + repeat ---");
   const w3 = await runControlledDbWrite([
     { provider: "tcat", trackingId: tc.trackingId, trackingCode: TCAT_CODE, writeMode: "write" },
-  ], { sleep: noSleep });
+  ], { sleep: noSleep, adapters: fixtureAdapters });
   check("tcat write: success / inserted=5", w3.jobs[0]?.status === "success" && w3.jobs[0]?.insertedEventCount === 5, JSON.stringify(w3.jobs[0]));
   const tcT1 = await getTracking(tc.trackingId);
   check("tcat snapshot: 順利送達 / delivered / 終態停查", tcT1.latestEventDescription === "順利送達" && tcT1.latestEventStatus === "delivered" && tcT1.nextCheckAt === null);
@@ -176,7 +209,7 @@ try {
   check("tcat events=5（同時間同狀態兩筆都保留）", (await countEvents(tc.trackingId)) === 5);
   const w4 = await runControlledDbWrite([
     { provider: "tcat", trackingId: tc.trackingId, trackingCode: TCAT_CODE, writeMode: "write" },
-  ], { sleep: noSleep });
+  ], { sleep: noSleep, adapters: fixtureAdapters });
   check("tcat repeat: inserted=0 / events 仍 5", w4.jobs[0]?.insertedEventCount === 0 && (await countEvents(tc.trackingId)) === 5);
 
   // --- 6. mixed small batch（再跑一次兩家，全部去重） ---
@@ -184,7 +217,7 @@ try {
   const wb = await runControlledDbWrite([
     { provider: "postoffice", trackingId: po.trackingId, trackingCode: PO_CODE, writeMode: "write" },
     { provider: "tcat", trackingId: tc.trackingId, trackingCode: TCAT_CODE, writeMode: "write" },
-  ], { sleep: noSleep });
+  ], { sleep: noSleep, adapters: fixtureAdapters });
   check("batch: totalJobs=2 / successCount=2", wb.totalJobs === 2 && wb.successCount === 2, JSON.stringify(wb.jobs.map(j => j.status)));
   check("batch: no duplicate events", (await countEvents(po.trackingId)) === 5 && (await countEvents(tc.trackingId)) === 5);
   const [batchLog] = await db.select().from(shipmentTrackingRunLogsTable).where(eq(shipmentTrackingRunLogsTable.id, wb.runLogId));

@@ -8,6 +8,7 @@ import { requireAuth, verifyStoreOwner } from "../middlewares/auth.ts";
 import { getShippingFee } from "../lib/shippingFee.ts";
 import { isValidTransition, getTransitionError } from "../lib/orderStatusMachine.ts";
 import { TRACKING_IMPORT_ALLOWED_PROVIDERS, normalizeTrackingProvider } from "../lib/logistics/providers.ts";
+import { ensureManualProviderTrackingRow } from "../lib/logistics/trackingSeed.ts";
 
 const router = Router();
 
@@ -795,6 +796,22 @@ router.patch("/orders/:orderId", requireAuth, async (req: any, res) => {
     .set(updates)
     .where(eq(ordersTable.id, orderId))
     .returning();
+
+  // Step 7N-I8B：手動填郵局 / 黑貓貨號時 seed shipment_trackings，
+  // 讓 EditOrderDialog 的手動查詢按鈕拿得到 tracking row。
+  // helper 內部只處理 postoffice / tcat（711 / familymart 一律 skip），idempotent。
+  if (trackingCode !== undefined || trackingProvider !== undefined) {
+    try {
+      await ensureManualProviderTrackingRow({
+        orderId: updated.id,
+        trackingCode: updated.trackingCode,
+        trackingProvider: updated.trackingProvider,
+      });
+    } catch (err) {
+      // seed 失敗不應讓訂單編輯整體失敗；訂單欄位已更新成功
+      console.error("[orders] manual tracking seed failed:", err);
+    }
+  }
 
   return res.json(formatOrder(updated));
 });
