@@ -1,8 +1,14 @@
 import { Router } from "express";
 import { desc, eq, inArray, and, isNull, or } from "drizzle-orm";
-import { db, shipmentTrackingRunLogsTable } from "@workspace/db";
+import {
+  db,
+  ordersTable,
+  shipmentTrackingsTable,
+  shipmentTrackingRunLogsTable,
+} from "@workspace/db";
 import { requireAuth, verifyStoreOwner } from "../middlewares/auth";
 import { runFamilyMartTrackingWorker } from "../lib/logistics/workers/familyMartTrackingWorker.ts";
+import { runControlledDbWrite } from "../lib/logistics/workers/multiProviderControlledWriteWorker.ts";
 import {
   getSupportedAutoSyncProviders,
   getUnsupportedAutoSyncProviders,
@@ -58,6 +64,135 @@ router.post("/stores/:storeId/logistics/sync", requireAuth, async (req: any, res
     return fail(res, 500, "SYNC_FAILED", "物流同步執行失敗，請稍後再試。");
   }
 });
+
+/**
+ * 郵局 / 黑貓手動查詢（Step 7N-I）：explicit trackingIds only、一次最多 5 筆、
+ * 預設 dryRun=true（不寫 DB）。不影響全家既有 manual / scheduled sync，
+ * 不開排程、不改 supportsAutoSync。711 / familymart 一律拒絕。
+ */
+const MANUAL_PROVIDER_WHITELIST = ["postoffice", "tcat"] as const;
+const MANUAL_PROVIDER_MAX_TRACKING_IDS = 5;
+
+router.post(
+  "/stores/:storeId/logistics/sync/manual-provider",
+  requireAuth,
+  async (req: any, res: any) => {
+    const storeId = parseInt(req.params.storeId);
+    if (isNaN(storeId)) return fail(res, 400, "INVALID_STORE", "Invalid storeId");
+    if (!(await verifyStoreOwner(req, res, storeId))) return;
+
+    const body = req.body ?? {};
+    const provider = typeof body.provider === "string" ? body.provider.trim() : "";
+
+    if (!provider) {
+      return fail(res, 400, "PROVIDER_REQUIRED", "provider is required");
+    }
+    if (!MANUAL_PROVIDER_WHITELIST.includes(provider as any)) {
+      const message =
+        provider === "familymart"
+          ? "全家請使用既有的整批手動同步。"
+          : provider === "711"
+            ? "7-11 目前不支援手動查詢（半自動，需人工處理）。"
+            : `provider must be one of: ${MANUAL_PROVIDER_WHITELIST.join(", ")}`;
+      return fail(res, 400, "PROVIDER_NOT_ALLOWED", message);
+    }
+
+    const rawIds = body.trackingIds;
+    if (!Array.isArray(rawIds) || rawIds.length === 0) {
+      return fail(res, 400, "TRACKING_IDS_REQUIRED", "trackingIds must be a non-empty array");
+    }
+    if (rawIds.length > MANUAL_PROVIDER_MAX_TRACKING_IDS) {
+      return fail(
+        res,
+        400,
+        "TOO_MANY_TRACKING_IDS",
+        `一次最多查詢 ${MANUAL_PROVIDER_MAX_TRACKING_IDS} 筆。`,
+      );
+    }
+    const trackingIds = rawIds.map((v: unknown) => Number(v));
+    if (trackingIds.some((n: number) => !Number.isInteger(n) || n <= 0)) {
+      return fail(res, 400, "INVALID_TRACKING_IDS", "trackingIds must be positive integers");
+    }
+
+    // 預設 dryRun=true：只有明確傳 dryRun === false 才實寫
+    const writeMode = body.dryRun === false ? "write" : "dryRun";
+
+    try {
+      // store scope + provider 比對（worker 的 SAFETY_MISMATCH 為第二道防線）
+      const rows = await db
+        .select({
+          id: shipmentTrackingsTable.id,
+          trackingCode: shipmentTrackingsTable.trackingCode,
+          trackingProvider: shipmentTrackingsTable.trackingProvider,
+          storeId: ordersTable.storeId,
+        })
+        .from(shipmentTrackingsTable)
+        .innerJoin(ordersTable, eq(shipmentTrackingsTable.orderId, ordersTable.id))
+        .where(inArray(shipmentTrackingsTable.id, trackingIds));
+
+      const rowById = new Map(rows.map((r) => [r.id, r]));
+      const missing = trackingIds.filter((id: number) => !rowById.has(id));
+      if (missing.length > 0) {
+        return fail(res, 400, "TRACKING_NOT_FOUND", `找不到物流追蹤紀錄：${missing.join(", ")}`);
+      }
+      // 跨店一律整批拒絕，不可只 skip（避免誤用）
+      if (rows.some((r) => r.storeId !== storeId)) {
+        return fail(res, 400, "CROSS_STORE_TRACKING", "trackingIds 包含不屬於此店家的紀錄。");
+      }
+      if (rows.some((r) => r.trackingProvider !== provider)) {
+        return fail(
+          res,
+          400,
+          "PROVIDER_MISMATCH",
+          "trackingIds 包含與 provider 不符的紀錄。",
+        );
+      }
+
+      const result = await runControlledDbWrite(
+        trackingIds.map((id: number) => ({
+          provider,
+          trackingId: id,
+          trackingCode: rowById.get(id)!.trackingCode,
+          writeMode,
+        })),
+        { storeId, createdBy: req.userId ?? "owner-ui" },
+      );
+
+      return res.json({
+        ok: true,
+        dryRun: writeMode === "dryRun",
+        provider,
+        runId: result.runLogId,
+        totalJobs: result.totalJobs,
+        successCount: result.successCount,
+        failedCount: result.failedCount,
+        skippedCount: result.skippedCount,
+        emptyCount: result.emptyCount,
+        jobs: result.jobs.map((j) => ({
+          trackingId: j.trackingId,
+          trackingCode: j.trackingCode,
+          status: j.status,
+          latestStatusText: j.latestStatusText ?? null,
+          latestEventAt: j.latestEventAt ?? null,
+          wouldWriteEvents: j.wouldWriteEvents ?? 0,
+          insertedEventCount: j.insertedEventCount,
+          errorCode: j.errorCode,
+          skippedReason: j.skippedReason,
+        })),
+        message:
+          writeMode === "dryRun"
+            ? "測試模式：本次僅預覽查詢結果，未寫入任何資料。"
+            : `手動查詢完成：成功 ${result.successCount} 筆、失敗 ${result.failedCount} 筆、查無 ${result.emptyCount} 筆。`,
+      });
+    } catch (err) {
+      if (err instanceof Error && err.message.startsWith("BATCH_SIZE_EXCEEDED")) {
+        return fail(res, 400, "TOO_MANY_TRACKING_IDS", "一次最多查詢 5 筆。");
+      }
+      console.error("[logistics-sync] manual-provider sync failed:", err);
+      return fail(res, 500, "MANUAL_PROVIDER_SYNC_FAILED", "手動查詢執行失敗，請稍後再試。");
+    }
+  },
+);
 
 /** 同步狀態：給前端動態狀態卡。lastRun / recentRuns 讀 shipment_tracking_run_logs。 */
 router.get("/stores/:storeId/logistics/sync/status", requireAuth, async (req: any, res: any) => {

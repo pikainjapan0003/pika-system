@@ -1,4 +1,5 @@
 import { useState, useEffect, type ReactNode } from "react";
+import { useAuth } from "@clerk/react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useUpdateOrder,
@@ -216,6 +217,7 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [trackingCopied, setTrackingCopied] = useState(false);
+  const { getToken } = useAuth();
 
   const handleCopyTrackingCode = async (code: string) => {
     try {
@@ -224,6 +226,49 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
       setTimeout(() => setTrackingCopied(false), 1500);
     } catch {
       toast({ title: "複製失敗", description: "瀏覽器不支援剪貼簿", variant: "destructive" });
+    }
+  };
+
+  // 郵局 / 黑貓單筆手動查詢（Step 7N-I2）：dryRun preview only，不寫資料、不開排程。
+  // familymart 走既有整批同步、711 半自動不提供按鈕。
+  const [manualQuerying, setManualQuerying] = useState(false);
+  const [manualQueryResult, setManualQueryResult] = useState<{
+    dryRun: boolean;
+    message: string;
+    job: { status: string; latestStatusText: string | null; latestEventAt: string | null; wouldWriteEvents: number; errorCode?: string } | null;
+  } | null>(null);
+  const [manualQueryError, setManualQueryError] = useState<string | null>(null);
+
+  const handleManualProviderQuery = async (provider: "postoffice" | "tcat", trackingId: number) => {
+    if (manualQuerying) return;
+    setManualQuerying(true);
+    setManualQueryError(null);
+    setManualQueryResult(null);
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/stores/${storeId}/logistics/sync/manual-provider`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ provider, trackingIds: [trackingId], dryRun: true }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok || !body.ok) {
+        setManualQueryError(`查詢失敗（${body.errorCode ?? res.status}），請稍後再試。`);
+        return;
+      }
+      setManualQueryResult({
+        dryRun: body.dryRun === true,
+        message: body.message ?? "",
+        job: body.jobs?.[0] ?? null,
+      });
+    } catch {
+      setManualQueryError("網路錯誤，查詢未完成。");
+    } finally {
+      setManualQuerying(false);
     }
   };
 
@@ -952,6 +997,56 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
                       <div>
                         <FieldLabel icon={AlertTriangle}>異常</FieldLabel>
                         <p className="text-sm text-destructive">查詢失敗：{tracking.checkError}</p>
+                      </div>
+                    )}
+                    {/* 郵局 / 黑貓單筆手動查詢（Step 7N-I2，dryRun preview only）。
+                        familymart 用既有整批同步、711 半自動不提供。 */}
+                    {tracking &&
+                      (tracking.trackingProvider === "postoffice" || tracking.trackingProvider === "tcat") &&
+                      tracking.trackingCode.trim() && (
+                      <div className="space-y-2 pt-1 border-t border-border">
+                        <button
+                          type="button"
+                          disabled={manualQuerying}
+                          onClick={() =>
+                            void handleManualProviderQuery(
+                              tracking.trackingProvider as "postoffice" | "tcat",
+                              tracking.id,
+                            )
+                          }
+                          className="w-full h-9 rounded-xl border border-primary/40 text-primary text-sm font-medium disabled:opacity-50"
+                        >
+                          {manualQuerying
+                            ? "查詢中…"
+                            : tracking.trackingProvider === "postoffice"
+                              ? "手動查詢郵局貨態（測試中）"
+                              : "手動查詢黑貓貨態（測試中）"}
+                        </button>
+                        <p className="text-[11px] text-muted-foreground leading-relaxed">
+                          這是手動查詢，不會開啟自動排程。測試模式：本次僅預覽，不會寫入資料。正式自動同步目前仍只有全家。
+                        </p>
+                        {manualQueryError && (
+                          <p className="text-xs text-destructive bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+                            {manualQueryError}
+                          </p>
+                        )}
+                        {manualQueryResult && (
+                          <div className="text-xs text-foreground bg-secondary rounded-xl px-3 py-2 space-y-1">
+                            <p className="font-medium">
+                              {manualQueryResult.dryRun ? "（測試模式：僅預覽，未寫入）" : ""}
+                              {manualQueryResult.message}
+                            </p>
+                            {manualQueryResult.job && (
+                              <p className="text-muted-foreground">
+                                {manualQueryResult.job.status === "success"
+                                  ? `最新貨態：${manualQueryResult.job.latestStatusText ?? "—"}（${manualQueryResult.job.latestEventAt ?? "—"}）・可寫入事件 ${manualQueryResult.job.wouldWriteEvents} 筆`
+                                  : manualQueryResult.job.status === "empty"
+                                    ? "目前查無貨態資料（單號可能尚未上網）。"
+                                    : `查詢失敗：${manualQueryResult.job.errorCode ?? "未知錯誤"}，已列入異常紀錄，不會覆蓋既有貨態。`}
+                              </p>
+                            )}
+                          </div>
+                        )}
                       </div>
                     )}
                   </>

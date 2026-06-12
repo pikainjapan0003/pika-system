@@ -97,6 +97,8 @@ export interface ControlledWriteDeps {
   delayMs?: number;
   sleep?: (ms: number) => Promise<void>;
   createdBy?: string;
+  /** manual route（7N-I）傳入：run log 以該 store scope 記錄，讓 sync status 卡可見 */
+  storeId?: number;
 }
 
 /** postoffice 事件時間（台灣時區 YYYY/MM/DD HH:mm:ss）→ +08:00 Date；parse 失敗回 null */
@@ -176,7 +178,7 @@ export async function runControlledDbWrite(
     const [runLog] = await db
       .insert(shipmentTrackingRunLogsTable)
       .values({
-        storeId: null,
+        storeId: deps.storeId ?? null,
         runType: "manual_worker",
         provider: providers.length === 1 ? (providers[0] as string) : "all",
         startedAt: now,
