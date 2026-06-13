@@ -216,7 +216,7 @@ function MerchantPortal() {
       <div className="flex min-h-[100dvh] items-center justify-center px-5">
         <div className="w-full max-w-sm bg-white rounded-2xl p-6 border border-border space-y-4 text-center">
           <p className="font-medium text-foreground">登入狀態已失效</p>
-          <p className="text-sm text-muted-foreground">請重新登入後繼續使用代購系統。</p>
+          <p className="text-sm text-muted-foreground">請重新登入後繼續使用畫夢代購。</p>
           <button
             onClick={() => void signOut({ redirectUrl: basePath || "/" })}
             className="w-full h-11 bg-primary text-white font-semibold rounded-xl text-sm"
@@ -345,7 +345,7 @@ function ClerkProviderWithRoutes() {
         signIn: {
           start: {
             title: "商家登入",
-            subtitle: "登入您的揪單帳號",
+            subtitle: "登入您的畫夢代購帳號",
           },
         },
         signUp: {
