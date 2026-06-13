@@ -8,9 +8,9 @@ export default function HomePage() {
       <header className="px-6 pt-10 pb-6">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">揪</span>
+            <span className="text-white font-bold text-sm">畫</span>
           </div>
-          <span className="font-bold text-xl text-foreground">揪單</span>
+          <span className="font-bold text-xl text-foreground">畫夢代購</span>
         </div>
       </header>
 
@@ -60,7 +60,7 @@ export default function HomePage() {
       </main>
 
       <footer className="px-6 py-8 text-center text-xs text-muted-foreground">
-        揪單 — 小型商家訂單管理
+        畫夢代購 DrawDream — 小型商家訂單管理
       </footer>
     </div>
   );

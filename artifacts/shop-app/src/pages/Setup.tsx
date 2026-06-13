@@ -63,7 +63,7 @@ export default function SetupPage() {
       <div className="w-full max-w-sm">
         <div className="mb-8">
           <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center mb-4">
-            <span className="text-white font-bold text-xl">揪</span>
+            <span className="text-white font-bold text-xl">畫</span>
           </div>
           <h1 className="text-2xl font-bold text-foreground">建立您的店鋪</h1>
           <p className="text-muted-foreground text-sm mt-1">設定完成後即可開始新增商品</p>
