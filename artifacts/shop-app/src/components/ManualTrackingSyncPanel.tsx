@@ -13,6 +13,11 @@
  *          commitError（polish）/ drifted（polish）；不改 COMMIT_ENABLED，不送 /commit。
  * J5F-7E：確認 post-commit refresh wiring；新增 refreshOrderAfterCommit helper；
  *          error / drifted / COMMIT_DISABLED 不 refresh；不改 COMMIT_ENABLED，不送 /commit。
+ * J5F-8：Safe-preview-only 收尾；更新 footer 文案；COMMIT_ENABLED 維持 false。
+ * J5F-7H-B：one-shot production commit gate（單次授權）。COMMIT_ENABLED=true，但僅
+ *           ONE_SHOT_COMMIT_TARGET（provider=tcat / orderId=36 / trackingCode 末四碼 4096 /
+ *           expectedEventCount=5）可真正送出 /commit；其他訂單一律視為
+ *           ONE_SHOT_TARGET_MISMATCH（行為等同 COMMIT_DISABLED）。
  */
 import { useState, useEffect } from "react";
 import { useAuth } from "@clerk/react";
@@ -127,8 +132,32 @@ type SyncPhase =
   | { phase: "commitError"; errorCode: string; message: string }
   | { phase: "drifted"; message: string };
 
-// J5F-7B：commit feature gate — hardcoded false; set to true only in J5F-7C after explicit authorization
-const COMMIT_ENABLED: boolean = false;
+// J5F-7B：commit feature gate.
+// J5F-7H-B：ONE-SHOT PRODUCTION GATE — COMMIT_ENABLED=true is gated further by
+// isOneShotCommitOrder() + the expectedEventCount check in handleCommit, so only the single
+// explicitly-authorized order (ONE_SHOT_COMMIT_TARGET below) can actually send /commit.
+// Every other order falls through to ONE_SHOT_TARGET_MISMATCH, which behaves like
+// COMMIT_DISABLED — no /commit request is sent.
+const COMMIT_ENABLED: boolean = true;
+
+// J5F-7H-B：single authorized production commit target.
+// Authorization: storeId=2, provider=tcat, orderId=36, trackingCode last4=4096, wouldWriteEvents=5.
+const ONE_SHOT_COMMIT_TARGET = {
+  provider: "tcat",
+  orderId: 36,
+  trackingCodeLast4: "4096",
+  expectedEventCount: 5,
+} as const;
+
+// J5F-7H-B：true only for the single authorized order/provider/trackingCode combination.
+// Event count is re-checked separately in handleCommit against the live preview job.
+function isOneShotCommitOrder(orderId: number, provider: string, trackingCode: string): boolean {
+  return (
+    orderId === ONE_SHOT_COMMIT_TARGET.orderId &&
+    provider === ONE_SHOT_COMMIT_TARGET.provider &&
+    trackingCode.slice(-4) === ONE_SHOT_COMMIT_TARGET.trackingCodeLast4
+  );
+}
 
 const TRACKING_STATUS_LABELS: Record<string, string> = {
   pending: "待查詢",
@@ -211,6 +240,7 @@ function getCommitErrorMessage(errorCode?: string | null, httpStatus?: number): 
     case "CONFIRM_TEXT_REQUIRED":             return "系統確認參數缺失，請重新查詢。";
     case "CONFIRM_TEXT_INVALID":              return "系統確認參數錯誤，請重新查詢。";
     case "COMMIT_DISABLED":                   return "寫入功能尚未啟用。";
+    case "ONE_SHOT_TARGET_MISMATCH":          return "此操作僅限本次授權的單筆訂單，目前不可寫入。";
     case "NETWORK_ERROR":                     return "網路錯誤，寫入未完成。";
     default:                                  return "寫入失敗，請稍後再試。";
   }
@@ -218,6 +248,7 @@ function getCommitErrorMessage(errorCode?: string | null, httpStatus?: number): 
 
 export function ManualTrackingSyncPanel({
   storeId,
+  orderId,
   shipmentTracking,
   disabled = false,
   onOrderRefresh,
@@ -266,6 +297,9 @@ export function ManualTrackingSyncPanel({
   const providerLabel = getProviderDisplayName(provider) ?? provider;
   const statusLabel =
     TRACKING_STATUS_LABELS[shipmentTracking?.trackingStatus ?? ""] ?? "待查詢";
+
+  // J5F-7H-B：true only for the single explicitly-authorized order (see ONE_SHOT_COMMIT_TARGET).
+  const isOneShotOrder = isOneShotCommitOrder(orderId, provider, trackingCode);
 
   const handlePreview = async () => {
     if (syncState.phase === "previewLoading" || disabled) return;
@@ -329,11 +363,12 @@ export function ManualTrackingSyncPanel({
   };
 
   // J5F-7E：post-commit refresh — only commitSuccess / commitIdempotentNoop refresh the order list.
-  // error / drifted / COMMIT_DISABLED intentionally do NOT refresh (nothing was written).
-  // While COMMIT_ENABLED=false, refreshOrderAfterCommit is never actually invoked.
+  // error / drifted / COMMIT_DISABLED / ONE_SHOT_TARGET_MISMATCH intentionally do NOT refresh
+  // (nothing was written).
   const refreshOrderAfterCommit = () => { onOrderRefresh?.(); };
 
-  // J5F-7C/7E：commit handler — COMMIT_ENABLED=false のため guard が常に early return し /commit は送出されない。
+  // J5F-7C/7E/7H-B：commit handler — COMMIT_ENABLED=true だが ONE_SHOT_COMMIT_TARGET 以外は
+  // 第二層 gate（ONE_SHOT_TARGET_MISMATCH）で early return し /commit は送出されない。
   // refresh は commitSuccess / commitIdempotentNoop のみ（refreshOrderAfterCommit 経由）。
   const handleCommit = async () => {
     // Gate: COMMIT_ENABLED must be true before any /commit request is sent.
@@ -348,9 +383,24 @@ export function ManualTrackingSyncPanel({
       return;
     }
 
-    // Below runs only when COMMIT_ENABLED = true（enabled in J5F-7C after explicit authorization）
+    // Below runs only when COMMIT_ENABLED = true（J5F-7H-B：one-shot production gate）
     if (syncState.phase !== "previewReadyCanCommit") return;
     const commitJob = syncState.job;
+
+    // J5F-7H-B：second-layer gate — only ONE_SHOT_COMMIT_TARGET may proceed past this point.
+    // Any other order/provider/trackingCode/event-count combination behaves like COMMIT_DISABLED.
+    if (
+      !isOneShotCommitOrder(orderId, provider, trackingCode) ||
+      commitJob.wouldWriteEvents !== ONE_SHOT_COMMIT_TARGET.expectedEventCount
+    ) {
+      setModalOpen(false);
+      setSyncState({
+        phase: "commitError",
+        errorCode: "ONE_SHOT_TARGET_MISMATCH",
+        message: getCommitErrorMessage("ONE_SHOT_TARGET_MISMATCH"),
+      });
+      return;
+    }
 
     setSyncState({ phase: "commitLoading", job: commitJob });
     setModalOpen(false);
@@ -515,7 +565,7 @@ export function ManualTrackingSyncPanel({
                     onClick={() => setModalOpen(true)}
                     className="w-full h-8 rounded-xl bg-primary/10 border border-primary/30 text-primary text-xs font-medium"
                   >
-                    寫入事件（尚未啟用）
+                    {isOneShotOrder ? "寫入事件" : "寫入事件（尚未啟用）"}
                   </button>
                 </div>
               )}
@@ -612,11 +662,13 @@ export function ManualTrackingSyncPanel({
         </button>
 
         <p className="text-[11px] text-muted-foreground leading-relaxed">
-          這次查詢只會預覽，不會寫入資料。正式自動同步目前仍只有全家。
+          {isOneShotOrder
+            ? "本訂單為單次授權寫入對象：「確認寫入」將會寫入正式貨態事件，且僅限本訂單。"
+            : "目前為安全預覽模式：可查詢與預覽，不會寫入正式貨態事件。正式自動同步仍只有全家。"}
         </p>
       </div>
 
-      {/* 確認寫入 modal skeleton — 確認按鈕本輪 disabled，不串 /commit */}
+      {/* 確認寫入 modal — J5F-7H-B one-shot gate：僅 ONE_SHOT_COMMIT_TARGET 符合時才會真正送出 /commit */}
       <AlertDialog
         open={modalOpen && canShowModal}
         onOpenChange={(open) => { if (!open) setModalOpen(false); }}
@@ -625,7 +677,9 @@ export function ManualTrackingSyncPanel({
           <AlertDialogHeader>
             <AlertDialogTitle>確認寫入貨態事件</AlertDialogTitle>
             <AlertDialogDescription>
-              將寫入正式貨態事件，寫入後不可直接復原。此步驟目前尚未接入正式寫入 API。
+              {isOneShotOrder
+                ? "將寫入正式貨態事件，寫入後不可直接復原。請確認以上資訊正確後再按「確認寫入」。"
+                : "將寫入正式貨態事件，寫入後不可直接復原。此步驟目前尚未接入正式寫入 API。"}
             </AlertDialogDescription>
           </AlertDialogHeader>
 
@@ -671,7 +725,7 @@ export function ManualTrackingSyncPanel({
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
             <AlertDialogAction onClick={() => void handleCommit()}>
-              確認寫入（尚未啟用）
+              {isOneShotOrder ? "確認寫入" : "確認寫入（尚未啟用）"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
