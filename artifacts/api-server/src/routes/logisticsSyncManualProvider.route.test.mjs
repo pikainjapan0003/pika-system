@@ -39,10 +39,14 @@ const fixtureResult = (provider, latestStatusText, latestEventAt, occurredAtList
   })),
   rawSummary: { fixture: true },
 });
-const poFixture = fixtureResult("postoffice", "投遞成功", "2026/06/08 11:21:53",
+let poFixture = fixtureResult("postoffice", "投遞成功", "2026/06/08 11:21:53",
   ["2026/06/08 11:21:53", "2026/06/08 08:10:00", "2026/06/07 19:02:11", "2026/06/07 10:30:45", "2026/06/06 15:00:00"]);
-const tcatFixture = fixtureResult("tcat", "順利送達", "2026/05/29 08:31",
+let tcatFixture = fixtureResult("tcat", "順利送達", "2026/05/29 08:31",
   ["2026/05/29 08:31", "2026/05/29 07:00", "2026/05/28 22:15", "2026/05/28 21:15", "2026/05/28 18:40"]);
+// J4C drift test：兩次外部查詢之間切換 fixture（closure captures variable binding）
+const DEFAULT_PO_FIXTURE = poFixture;
+const poDriftFixture = fixtureResult("postoffice", "轉寄成功", "2026/06/13 09:00:00",
+  ["2026/06/13 09:00:00", "2026/06/08 11:21:53", "2026/06/08 08:10:00", "2026/06/07 19:02:11", "2026/06/07 10:30:45", "2026/06/06 15:00:00"]);
 
 mock.module(path.join(ROOT, "artifacts/api-server/src/lib/logistics/adapters/postOfficeAdapter.ts"), {
   namedExports: {
@@ -76,17 +80,23 @@ const TCAT_CODE = "135063214096";
 
 let server, baseUrl, storeId, otherStoreId, productId;
 let poTrackingId, tcatTrackingId, otherStoreTrackingId;
+// J4C commit test rows（合成單號，不使用 #1012 / id=153）
+let poCommitId, tcatCommitId, inactiveCommitId, driftCommitId;
+const PO_COMMIT_CODE = `PO-J4C-${Math.floor(Math.random() * 1e9)}`;
+const TCAT_COMMIT_CODE = `TC-J4C-${Math.floor(Math.random() * 1e9)}`;
+const PO_DRIFT_CODE = `PO-DRIFT-${Math.floor(Math.random() * 1e9)}`;
+const PO_INACTIVE_CODE = `PO-INACT-${Math.floor(Math.random() * 1e9)}`;
 
-async function makeOrderTracking(stId, prodId, provider, code) {
+async function makeOrderTracking(stId, prodId, provider, code, { isActive = true } = {}) {
   const order = await pool.query(
     `INSERT INTO orders (product_id, store_id, public_token, buyer_name, buyer_phone, pickup_method, unit_price, total_price)
      VALUES ($1, $2, 'mp-' || floor(random()*1e9), 'MP-ROUTE-TEST', '0900000000', 'home_delivery', '100', '100') RETURNING id`,
     [prodId, stId],
   );
   const t = await pool.query(
-    `INSERT INTO shipment_trackings (order_id, tracking_code, tracking_provider, source_type, tracking_status)
-     VALUES ($1, $2, $3, 'manual', 'pending') RETURNING id`,
-    [order.rows[0].id, code, provider],
+    `INSERT INTO shipment_trackings (order_id, tracking_code, tracking_provider, source_type, tracking_status, is_active)
+     VALUES ($1, $2, $3, 'manual', 'pending', $4) RETURNING id`,
+    [order.rows[0].id, code, provider, isActive],
   );
   return t.rows[0].id;
 }
@@ -119,10 +129,17 @@ before(async () => {
   poTrackingId = await makeOrderTracking(storeId, productId, "postoffice", PO_CODE);
   tcatTrackingId = await makeOrderTracking(storeId, productId, "tcat", TCAT_CODE);
   otherStoreTrackingId = await makeOrderTracking(otherStoreId, otherProduct.rows[0].id, "postoffice", "97300922002170839998");
+  // J4C commit-specific rows
+  poCommitId = await makeOrderTracking(storeId, productId, "postoffice", PO_COMMIT_CODE);
+  tcatCommitId = await makeOrderTracking(storeId, productId, "tcat", TCAT_COMMIT_CODE);
+  driftCommitId = await makeOrderTracking(storeId, productId, "postoffice", PO_DRIFT_CODE);
+  inactiveCommitId = await makeOrderTracking(storeId, productId, "postoffice", PO_INACTIVE_CODE, { isActive: false });
 });
 
 after(async () => {
-  // store cascade 清 products/orders/trackings/events；run logs（dryRun 不產生）不需清
+  // J4C write tests 會產生 run logs（store_id → ON DELETE SET NULL），先手動清
+  await pool.query(`DELETE FROM shipment_tracking_run_logs WHERE store_id = ANY($1)`, [[storeId, otherStoreId]]);
+  // store cascade 清 products/orders/trackings/events
   await pool.query(`DELETE FROM stores WHERE id = ANY($1)`, [[storeId, otherStoreId]]);
   await new Promise((resolve) => server.close(resolve));
   await pool.end();
@@ -267,6 +284,47 @@ const callPreview = (body, { user = TEST_USER, store = () => storeId } = {}) =>
     body: JSON.stringify(body),
   });
 
+// J4C helpers ─────────────────────────────────────────────────────────────────
+const callCommit = (body, { user = TEST_USER, store = () => storeId } = {}) =>
+  fetch(`${baseUrl}/stores/${store()}/logistics/sync/manual-provider/commit`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(user ? { "x-test-user-id": user } : {}),
+    },
+    body: JSON.stringify(body),
+  });
+
+async function getPreviewFor(provider, trackingId, { store: storeFn = () => storeId, user = TEST_USER } = {}) {
+  const res = await callPreview({ provider, trackingIds: [trackingId] }, { user, store: storeFn });
+  if (res.status !== 200) throw new Error(`getPreviewFor failed ${res.status}: ${await res.text()}`);
+  const body = await res.json();
+  const job = body.jobs?.[0];
+  if (!job || !job.previewHash) throw new Error(`getPreviewFor: no job/previewHash: ${JSON.stringify(job)}`);
+  return {
+    previewHash: job.previewHash,
+    expectedEventCount: job.wouldWriteEvents,
+    expectedLatestStatusText: job.latestStatusText,
+    expectedLatestEventAt: job.latestEventAt,
+    trackingCode: job.trackingCode,
+  };
+}
+
+function buildCommitBody(provider, trackingId, preview, overrides = {}) {
+  return {
+    provider,
+    trackingId,
+    trackingCode: preview.trackingCode,
+    previewHash: preview.previewHash,
+    confirmText: "WRITE_TRACKING_EVENTS",
+    expectedEventCount: preview.expectedEventCount,
+    expectedLatestStatusText: preview.expectedLatestStatusText,
+    expectedLatestEventAt: preview.expectedLatestEventAt,
+    ...overrides,
+  };
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 describe("7N-J2 — dryRun:false safety lock", () => {
   const countEvents = async (id) =>
     Number((await pool.query(`SELECT count(*) FROM shipment_tracking_events WHERE shipment_tracking_id = $1`, [id])).rows[0].count);
@@ -409,5 +467,456 @@ describe("7N-J2 — previewToken helper", () => {
     const v = verifyPreviewToken(token, elevenMinLater);
     assert.equal(v.ok, false);
     assert.equal(v.errorCode, "PREVIEW_EXPIRED");
+  });
+});
+
+// ─── Step 7N-J4C：/commit endpoint ───────────────────────────────────────────
+
+describe("7N-J4C — /commit auth / permission", () => {
+  test("commit_401_no_auth", async () => {
+    const res = await callCommit({ provider: "postoffice", trackingId: 1 }, { user: null });
+    assert.equal(res.status, 401);
+  });
+
+  test("commit_403_non_owner", async () => {
+    const res = await callCommit(
+      { provider: "postoffice", trackingId: poCommitId },
+      { user: OTHER_USER },
+    );
+    assert.ok([403, 404].includes(res.status), `got ${res.status}`);
+  });
+});
+
+describe("7N-J4C — /commit validation gates (no DB write)", () => {
+  // helper：建一個 valid signed token（用 signPreviewToken 直簽，不走 /preview）
+  function makeToken(overrides = {}) {
+    const { token } = signPreviewToken({
+      storeId,
+      trackingId: poCommitId,
+      provider: "postoffice",
+      trackingCode: PO_COMMIT_CODE,
+      latestStatusText: "投遞成功",
+      latestEventAt: "2026/06/08 11:21:53",
+      expectedEventCount: 5,
+      normalizedStatus: "delivered",
+      ...overrides,
+    });
+    return token;
+  }
+
+  test("commit_400_invalid_provider", async () => {
+    const res = await callCommit({ provider: "dhl", trackingId: poCommitId });
+    assert.equal(res.status, 400);
+    assert.equal((await res.json()).errorCode, "INVALID_PROVIDER");
+  });
+
+  test("commit_400_711_rejected", async () => {
+    const res = await callCommit({ provider: "711", trackingId: poCommitId });
+    assert.equal(res.status, 400);
+    const body = await res.json();
+    assert.equal(body.errorCode, "INVALID_PROVIDER");
+    assert.ok(body.message.includes("7-11"), `message: ${body.message}`);
+  });
+
+  test("commit_400_familymart_rejected", async () => {
+    const res = await callCommit({ provider: "familymart", trackingId: poCommitId });
+    assert.equal(res.status, 400);
+    const body = await res.json();
+    assert.equal(body.errorCode, "INVALID_PROVIDER");
+    assert.ok(body.message.includes("全家"), `message: ${body.message}`);
+  });
+
+  test("commit_400_invalid_tracking_id", async () => {
+    const res = await callCommit({ provider: "postoffice", trackingId: 0 });
+    assert.equal(res.status, 400);
+    assert.equal((await res.json()).errorCode, "INVALID_TRACKING_ID");
+  });
+
+  test("commit_400_preview_hash_missing", async () => {
+    const res = await callCommit({
+      provider: "postoffice", trackingId: poCommitId, trackingCode: PO_COMMIT_CODE,
+    });
+    assert.equal(res.status, 400);
+    assert.equal((await res.json()).errorCode, "PREVIEW_HASH_REQUIRED");
+  });
+
+  test("commit_400_preview_hash_invalid", async () => {
+    const res = await callCommit({
+      provider: "postoffice", trackingId: poCommitId, trackingCode: PO_COMMIT_CODE,
+      previewHash: "garbage.garbage",
+    });
+    assert.equal(res.status, 400);
+    assert.equal((await res.json()).errorCode, "PREVIEW_HASH_INVALID");
+  });
+
+  test("commit_400_preview_expired", async () => {
+    // 建立一個在 11 分鐘前簽署（已超過 10 分鐘 TTL）的 token
+    const elevenMinAgo = new Date(Date.now() - 11 * 60 * 1000);
+    const { token: expiredToken } = signPreviewToken({
+      storeId, trackingId: poCommitId, provider: "postoffice",
+      trackingCode: PO_COMMIT_CODE, latestStatusText: "投遞成功",
+      latestEventAt: "2026/06/08 11:21:53", expectedEventCount: 5,
+      normalizedStatus: "delivered",
+    }, elevenMinAgo);
+    const res = await callCommit({
+      provider: "postoffice", trackingId: poCommitId, trackingCode: PO_COMMIT_CODE,
+      previewHash: expiredToken,
+    });
+    assert.equal(res.status, 400);
+    assert.equal((await res.json()).errorCode, "PREVIEW_EXPIRED");
+  });
+
+  test("commit_400_preview_scope_mismatch_store", async () => {
+    const token = makeToken({ storeId: 99999 });
+    const res = await callCommit({
+      provider: "postoffice", trackingId: poCommitId, trackingCode: PO_COMMIT_CODE,
+      previewHash: token,
+    });
+    assert.equal(res.status, 400);
+    assert.equal((await res.json()).errorCode, "PREVIEW_SCOPE_MISMATCH");
+  });
+
+  test("commit_400_preview_scope_mismatch_tracking", async () => {
+    const token = makeToken({ trackingId: 99999 });
+    const res = await callCommit({
+      provider: "postoffice", trackingId: poCommitId, trackingCode: PO_COMMIT_CODE,
+      previewHash: token,
+    });
+    assert.equal(res.status, 400);
+    assert.equal((await res.json()).errorCode, "PREVIEW_SCOPE_MISMATCH");
+  });
+
+  test("commit_400_preview_scope_mismatch_provider", async () => {
+    // token 說 tcat，request 說 postoffice
+    const token = makeToken({ provider: "tcat" });
+    const res = await callCommit({
+      provider: "postoffice", trackingId: poCommitId, trackingCode: PO_COMMIT_CODE,
+      previewHash: token,
+    });
+    assert.equal(res.status, 400);
+    assert.equal((await res.json()).errorCode, "PREVIEW_SCOPE_MISMATCH");
+  });
+
+  test("commit_400_preview_scope_mismatch_code", async () => {
+    // token 說 SCOPE_TOKEN_CODE，request 說 PO_COMMIT_CODE（不同）
+    const token = makeToken({ trackingCode: "SCOPE_TOKEN_CODE" });
+    const res = await callCommit({
+      provider: "postoffice", trackingId: poCommitId, trackingCode: PO_COMMIT_CODE,
+      previewHash: token,
+    });
+    assert.equal(res.status, 400);
+    assert.equal((await res.json()).errorCode, "PREVIEW_SCOPE_MISMATCH");
+  });
+
+  test("commit_400_confirm_text_missing", async () => {
+    const token = makeToken();
+    const res = await callCommit({
+      provider: "postoffice", trackingId: poCommitId, trackingCode: PO_COMMIT_CODE,
+      previewHash: token,
+      // confirmText 缺失
+      expectedEventCount: 5, expectedLatestStatusText: "投遞成功", expectedLatestEventAt: "2026/06/08 11:21:53",
+    });
+    assert.equal(res.status, 400);
+    assert.equal((await res.json()).errorCode, "CONFIRM_TEXT_REQUIRED");
+  });
+
+  test("commit_400_confirm_text_invalid", async () => {
+    const token = makeToken();
+    const res = await callCommit({
+      provider: "postoffice", trackingId: poCommitId, trackingCode: PO_COMMIT_CODE,
+      previewHash: token, confirmText: "yes",
+      expectedEventCount: 5, expectedLatestStatusText: "投遞成功", expectedLatestEventAt: "2026/06/08 11:21:53",
+    });
+    assert.equal(res.status, 400);
+    assert.equal((await res.json()).errorCode, "CONFIRM_TEXT_INVALID");
+  });
+
+  test("commit_400_expected_event_count_mismatch", async () => {
+    const token = makeToken(); // token.expectedEventCount = 5
+    const res = await callCommit({
+      provider: "postoffice", trackingId: poCommitId, trackingCode: PO_COMMIT_CODE,
+      previewHash: token, confirmText: "WRITE_TRACKING_EVENTS",
+      expectedEventCount: 99, // 不符
+      expectedLatestStatusText: "投遞成功", expectedLatestEventAt: "2026/06/08 11:21:53",
+    });
+    assert.equal(res.status, 400);
+    assert.equal((await res.json()).errorCode, "EXPECTED_EVENT_COUNT_MISMATCH");
+  });
+
+  test("commit_400_expected_latest_status_mismatch", async () => {
+    const token = makeToken(); // token.latestStatusText = "投遞成功"
+    const res = await callCommit({
+      provider: "postoffice", trackingId: poCommitId, trackingCode: PO_COMMIT_CODE,
+      previewHash: token, confirmText: "WRITE_TRACKING_EVENTS",
+      expectedEventCount: 5, expectedLatestStatusText: "不符狀態", // 不符
+      expectedLatestEventAt: "2026/06/08 11:21:53",
+    });
+    assert.equal(res.status, 400);
+    assert.equal((await res.json()).errorCode, "EXPECTED_LATEST_STATUS_MISMATCH");
+  });
+
+  test("commit_400_expected_latest_event_at_mismatch", async () => {
+    const token = makeToken(); // token.latestEventAt = "2026/06/08 11:21:53"
+    const res = await callCommit({
+      provider: "postoffice", trackingId: poCommitId, trackingCode: PO_COMMIT_CODE,
+      previewHash: token, confirmText: "WRITE_TRACKING_EVENTS",
+      expectedEventCount: 5, expectedLatestStatusText: "投遞成功",
+      expectedLatestEventAt: "2000-01-01T00:00:00.000Z", // 不符
+    });
+    assert.equal(res.status, 400);
+    assert.equal((await res.json()).errorCode, "EXPECTED_LATEST_EVENT_AT_MISMATCH");
+  });
+});
+
+describe("7N-J4C — /commit DB lookup gates", () => {
+  test("commit_404_tracking_not_found", async () => {
+    const { token } = signPreviewToken({
+      storeId, trackingId: 999999999, provider: "postoffice",
+      trackingCode: "NONEXISTENT_CODE", latestStatusText: null, latestEventAt: null,
+      expectedEventCount: 0, normalizedStatus: null,
+    });
+    const res = await callCommit({
+      provider: "postoffice", trackingId: 999999999, trackingCode: "NONEXISTENT_CODE",
+      previewHash: token, confirmText: "WRITE_TRACKING_EVENTS",
+      expectedEventCount: 0, expectedLatestStatusText: null, expectedLatestEventAt: null,
+    });
+    assert.equal(res.status, 404);
+    assert.equal((await res.json()).errorCode, "TRACKING_NOT_FOUND");
+  });
+
+  test("commit_404_cross_store", async () => {
+    // otherStoreTrackingId 屬於 otherStoreId，用 storeId 的 URL 查 → 404
+    const { token } = signPreviewToken({
+      storeId, trackingId: otherStoreTrackingId, provider: "postoffice",
+      trackingCode: "97300922002170839998", latestStatusText: null, latestEventAt: null,
+      expectedEventCount: 0, normalizedStatus: null,
+    });
+    const res = await callCommit({
+      provider: "postoffice", trackingId: otherStoreTrackingId, trackingCode: "97300922002170839998",
+      previewHash: token, confirmText: "WRITE_TRACKING_EVENTS",
+      expectedEventCount: 0, expectedLatestStatusText: null, expectedLatestEventAt: null,
+    });
+    assert.equal(res.status, 404);
+    assert.equal((await res.json()).errorCode, "TRACKING_NOT_FOUND");
+  });
+
+  test("commit_400_tracking_inactive", async () => {
+    // inactiveCommitId 的 is_active = false
+    const { token } = signPreviewToken({
+      storeId, trackingId: inactiveCommitId, provider: "postoffice",
+      trackingCode: PO_INACTIVE_CODE, latestStatusText: null, latestEventAt: null,
+      expectedEventCount: 0, normalizedStatus: null,
+    });
+    const res = await callCommit({
+      provider: "postoffice", trackingId: inactiveCommitId, trackingCode: PO_INACTIVE_CODE,
+      previewHash: token, confirmText: "WRITE_TRACKING_EVENTS",
+      expectedEventCount: 0, expectedLatestStatusText: null, expectedLatestEventAt: null,
+    });
+    assert.equal(res.status, 400);
+    assert.equal((await res.json()).errorCode, "TRACKING_INACTIVE");
+  });
+
+  test("commit_400_provider_mismatch", async () => {
+    // tcatCommitId 的 DB provider=tcat，但 token/request 說 postoffice
+    const { token } = signPreviewToken({
+      storeId, trackingId: tcatCommitId, provider: "postoffice",
+      trackingCode: TCAT_COMMIT_CODE, latestStatusText: "投遞成功",
+      latestEventAt: "2026/06/08 11:21:53", expectedEventCount: 5, normalizedStatus: "delivered",
+    });
+    const res = await callCommit({
+      provider: "postoffice", trackingId: tcatCommitId, trackingCode: TCAT_COMMIT_CODE,
+      previewHash: token, confirmText: "WRITE_TRACKING_EVENTS",
+      expectedEventCount: 5, expectedLatestStatusText: "投遞成功", expectedLatestEventAt: "2026/06/08 11:21:53",
+    });
+    assert.equal(res.status, 400);
+    assert.equal((await res.json()).errorCode, "PROVIDER_MISMATCH");
+  });
+
+  test("commit_400_tracking_code_mismatch", async () => {
+    // token/request trackingCode="WRONG_CODE"，但 DB row 的 code 是 PO_COMMIT_CODE
+    const { token } = signPreviewToken({
+      storeId, trackingId: poCommitId, provider: "postoffice",
+      trackingCode: "WRONG_CODE", latestStatusText: "投遞成功",
+      latestEventAt: "2026/06/08 11:21:53", expectedEventCount: 5, normalizedStatus: "delivered",
+    });
+    const res = await callCommit({
+      provider: "postoffice", trackingId: poCommitId, trackingCode: "WRONG_CODE",
+      previewHash: token, confirmText: "WRITE_TRACKING_EVENTS",
+      expectedEventCount: 5, expectedLatestStatusText: "投遞成功", expectedLatestEventAt: "2026/06/08 11:21:53",
+    });
+    assert.equal(res.status, 400);
+    assert.equal((await res.json()).errorCode, "TRACKING_CODE_MISMATCH");
+  });
+});
+
+describe("7N-J4C — /commit drift", () => {
+  const countEvents = (id) =>
+    pool.query(`SELECT count(*) FROM shipment_tracking_events WHERE shipment_tracking_id = $1`, [id])
+      .then((r) => Number(r.rows[0].count));
+
+  test("commit_409_preview_drifted", async () => {
+    // 1. preview with DEFAULT fixture (5 events)
+    const preview = await getPreviewFor("postoffice", driftCommitId);
+    assert.equal(preview.expectedEventCount, 5);
+    // 2. swap fixture → drift (6 events, 不同 status)
+    poFixture = poDriftFixture;
+    try {
+      const res = await callCommit(buildCommitBody("postoffice", driftCommitId, preview));
+      assert.equal(res.status, 409);
+      const body = await res.json();
+      assert.equal(body.code, "PREVIEW_DRIFTED");
+      assert.ok(body.freshPreview, "freshPreview should exist");
+      assert.equal(body.freshPreview.expectedEventCount, 6);
+      assert.equal(body.freshPreview.latestStatusText, "轉寄成功");
+      // DB 不寫
+      assert.equal(await countEvents(driftCommitId), 0);
+    } finally {
+      poFixture = DEFAULT_PO_FIXTURE;
+    }
+  });
+});
+
+describe("7N-J4C — /commit success", () => {
+  const countEvents = (id) =>
+    pool.query(`SELECT count(*) FROM shipment_tracking_events WHERE shipment_tracking_id = $1`, [id])
+      .then((r) => Number(r.rows[0].count));
+
+  test("commit_200_postoffice_success", async () => {
+    const preview = await getPreviewFor("postoffice", poCommitId);
+    const res = await callCommit(buildCommitBody("postoffice", poCommitId, preview));
+    assert.equal(res.status, 200);
+    const body = await res.json();
+    assert.equal(body.ok, true);
+    assert.equal(body.committed, true);
+    assert.equal(body.insertedEventCount, 5);
+    assert.equal(body.idempotentNoop, false);
+    assert.ok(body.runLogId != null, "runLogId should not be null");
+    assert.equal(body.latestStatusText, "投遞成功");
+    assert.equal(body.latestEventAt, "2026/06/08 11:21:53");
+    // DB: events 已寫入
+    assert.equal(await countEvents(poCommitId), 5);
+    // DB: snapshot updated
+    const snap = await pool.query(
+      `SELECT last_checked_at, latest_event_status, tracking_status FROM shipment_trackings WHERE id = $1`,
+      [poCommitId],
+    );
+    assert.ok(snap.rows[0].last_checked_at != null, "last_checked_at should be set");
+    assert.equal(snap.rows[0].latest_event_status, "delivered");
+    assert.equal(snap.rows[0].tracking_status, "delivered");
+  });
+
+  test("commit_200_tcat_success", async () => {
+    const preview = await getPreviewFor("tcat", tcatCommitId);
+    const res = await callCommit(buildCommitBody("tcat", tcatCommitId, preview));
+    assert.equal(res.status, 200);
+    const body = await res.json();
+    assert.equal(body.ok, true);
+    assert.equal(body.committed, true);
+    assert.equal(body.insertedEventCount, 5);
+    assert.equal(body.idempotentNoop, false);
+    assert.ok(body.runLogId != null);
+    assert.equal(body.latestStatusText, "順利送達");
+    assert.equal(await countEvents(tcatCommitId), 5);
+  });
+
+  test("commit_200_idempotent_noop", async () => {
+    // poCommitId 已在 commit_200_postoffice_success 寫入 5 events
+    // 再次 preview → duplicate=5, wouldWriteEvents=5 → re-commit → insertedEventCount=0
+    const preview = await getPreviewFor("postoffice", poCommitId);
+    const res = await callCommit(buildCommitBody("postoffice", poCommitId, preview));
+    assert.equal(res.status, 200);
+    const body = await res.json();
+    assert.equal(body.ok, true);
+    assert.equal(body.insertedEventCount, 0);
+    assert.equal(body.idempotentNoop, true);
+    assert.ok(body.runLogId != null);
+    // DB events 數量不變（仍是 5）
+    assert.equal(await countEvents(poCommitId), 5);
+  });
+
+  test("commit_runlog_store_id_not_null", async () => {
+    const r = await pool.query(
+      `SELECT store_id FROM shipment_tracking_run_logs WHERE store_id = $1 ORDER BY id DESC LIMIT 1`,
+      [storeId],
+    );
+    assert.ok(r.rows.length > 0, "should have at least one run log for storeId");
+    assert.equal(r.rows[0].store_id, storeId);
+  });
+
+  test("commit_runlog_created_by_not_null", async () => {
+    const r = await pool.query(
+      `SELECT created_by FROM shipment_tracking_run_logs WHERE store_id = $1 ORDER BY id DESC LIMIT 1`,
+      [storeId],
+    );
+    assert.ok(r.rows.length > 0);
+    assert.equal(r.rows[0].created_by, TEST_USER);
+  });
+
+  test("commit_orders_main_status_unchanged", async () => {
+    const before = await pool.query(
+      `SELECT o.status FROM orders o JOIN shipment_trackings st ON st.order_id = o.id WHERE st.id = $1`,
+      [poCommitId],
+    );
+    const statusBefore = before.rows[0]?.status ?? null;
+    // poCommitId 已 commit，再跑一次 idempotent commit
+    const preview = await getPreviewFor("postoffice", poCommitId);
+    await callCommit(buildCommitBody("postoffice", poCommitId, preview));
+    const after = await pool.query(
+      `SELECT o.status FROM orders o JOIN shipment_trackings st ON st.order_id = o.id WHERE st.id = $1`,
+      [poCommitId],
+    );
+    assert.equal(after.rows[0]?.status, statusBefore, "orders.status should not change after commit");
+  });
+
+  test("commit_preview_still_zero_write", async () => {
+    const runLogsBefore = await pool.query(
+      `SELECT count(*) FROM shipment_tracking_run_logs WHERE store_id = $1`, [storeId],
+    ).then((r) => Number(r.rows[0].count));
+    const res = await callPreview({ provider: "postoffice", trackingIds: [poCommitId] });
+    assert.equal(res.status, 200);
+    const body = await res.json();
+    assert.equal(body.dryRun, true);
+    // run log 數量不變（/preview 不留 run log）
+    const runLogsAfter = await pool.query(
+      `SELECT count(*) FROM shipment_tracking_run_logs WHERE store_id = $1`, [storeId],
+    ).then((r) => Number(r.rows[0].count));
+    assert.equal(runLogsAfter, runLogsBefore);
+  });
+});
+
+describe("7N-J4C — /commit J2 regression", () => {
+  test("commit_dryrun_false_lock_still_active", async () => {
+    const res = await call({ provider: "postoffice", trackingIds: [poCommitId], dryRun: false });
+    assert.equal(res.status, 400);
+    assert.equal((await res.json()).errorCode, "USE_COMMIT_ENDPOINT");
+  });
+
+  test("commit_supportsAutoSync_only_familymart", async () => {
+    const res = await fetch(`${baseUrl}/stores/${storeId}/logistics/sync/status`, {
+      headers: { "x-test-user-id": TEST_USER },
+    });
+    assert.equal(res.status, 200);
+    const body = await res.json();
+    assert.deepEqual(body.supportedProviders, ["familymart"]);
+    assert.ok(body.unsupportedProviders.includes("postoffice"), "postoffice should be unsupported");
+    assert.ok(body.unsupportedProviders.includes("tcat"), "tcat should be unsupported");
+  });
+});
+
+describe("7N-J4C — final safety check", () => {
+  test("commit_1012_row_untouched_by_tests", async () => {
+    const row = await pool.query(
+      `SELECT id, order_id, tracking_provider, tracking_code, tracking_status, is_active
+       FROM shipment_trackings WHERE id = 153`,
+    );
+    assert.equal(row.rows.length, 1, "#1012 tracking row id=153 should still exist");
+    assert.equal(row.rows[0].tracking_provider, "postoffice");
+    assert.equal(row.rows[0].tracking_code, "97300922002170830005");
+    assert.equal(row.rows[0].tracking_status, "pending");
+    assert.equal(row.rows[0].is_active, true);
+    const events = await pool.query(
+      `SELECT count(*) FROM shipment_tracking_events WHERE shipment_tracking_id = 153`,
+    );
+    assert.equal(Number(events.rows[0].count), 0, "#1012 events should remain 0");
   });
 });

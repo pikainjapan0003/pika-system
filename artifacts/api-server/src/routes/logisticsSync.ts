@@ -10,7 +10,11 @@ import {
 import { requireAuth, verifyStoreOwner } from "../middlewares/auth";
 import { runFamilyMartTrackingWorker } from "../lib/logistics/workers/familyMartTrackingWorker.ts";
 import { runControlledDbWrite } from "../lib/logistics/workers/multiProviderControlledWriteWorker.ts";
-import { signPreviewToken, isPreviewTokenAvailable } from "../lib/logistics/previewToken.ts";
+import {
+  signPreviewToken,
+  isPreviewTokenAvailable,
+  verifyPreviewToken,
+} from "../lib/logistics/previewToken.ts";
 import {
   getSupportedAutoSyncProviders,
   getUnsupportedAutoSyncProviders,
@@ -318,6 +322,216 @@ router.post(
       console.error("[logistics-sync] manual-provider preview failed:", err);
       return fail(res, 500, "MANUAL_PROVIDER_SYNC_FAILED", "手動查詢執行失敗，請稍後再試。");
     }
+  },
+);
+
+const COMMIT_CONFIRM_TEXT = "WRITE_TRACKING_EVENTS";
+
+/**
+ * 郵局 / 黑貓 commit（Step 7N-J4B）：驗證 previewHash、re-dryRun drift 檢查、正式寫入。
+ * provider whitelist postoffice / tcat only；711 / familymart 一律拒絕。
+ * 寫入路徑唯一來源：runControlledDbWrite writeMode=write。
+ * run log storeId 必須傳入；orders 主狀態不得更新。
+ */
+router.post(
+  "/stores/:storeId/logistics/sync/manual-provider/commit",
+  requireAuth,
+  async (req: any, res: any) => {
+    const storeId = parseInt(req.params.storeId);
+    if (isNaN(storeId)) return fail(res, 400, "INVALID_STORE", "Invalid storeId");
+    if (!(await verifyStoreOwner(req, res, storeId))) return;
+
+    const body = req.body ?? {};
+    const rawProvider = body.provider;
+    const rawTrackingId = body.trackingId;
+    const rawTrackingCode = body.trackingCode;
+    const { previewHash, confirmText } = body;
+    const expectedEventCount = body.expectedEventCount;
+    const expectedLatestStatusText = body.expectedLatestStatusText !== undefined ? body.expectedLatestStatusText : null;
+    const expectedLatestEventAt = body.expectedLatestEventAt !== undefined ? body.expectedLatestEventAt : null;
+
+    // provider whitelist
+    const provider = typeof rawProvider === "string" ? rawProvider.trim() : "";
+    if (!provider || !MANUAL_PROVIDER_WHITELIST.includes(provider as any)) {
+      const message =
+        provider === "711"
+          ? "7-11 目前不支援手動查詢（半自動，需人工處理）。"
+          : provider === "familymart"
+            ? "全家請使用既有的整批手動同步。"
+            : `provider must be one of: ${MANUAL_PROVIDER_WHITELIST.join(", ")}`;
+      return fail(res, 400, "INVALID_PROVIDER", message);
+    }
+
+    // trackingId
+    const trackingId = Number(rawTrackingId);
+    if (!Number.isInteger(trackingId) || trackingId <= 0) {
+      return fail(res, 400, "INVALID_TRACKING_ID", "trackingId must be a positive integer");
+    }
+
+    // trackingCode
+    const trackingCode = typeof rawTrackingCode === "string" ? rawTrackingCode.trim() : "";
+    if (!trackingCode) {
+      return fail(res, 400, "TRACKING_CODE_MISMATCH", "trackingCode is required");
+    }
+
+    // previewHash
+    if (!previewHash || typeof previewHash !== "string") {
+      return fail(res, 400, "PREVIEW_HASH_REQUIRED", "請提供 previewHash");
+    }
+    if (!isPreviewTokenAvailable()) {
+      return fail(res, 503, "PREVIEW_HASH_UNAVAILABLE", "服務暫時無法處理，請稍後再試。");
+    }
+    const verified = verifyPreviewToken(previewHash);
+    if (!verified.ok) {
+      return fail(
+        res,
+        400,
+        verified.errorCode,
+        verified.errorCode === "PREVIEW_EXPIRED"
+          ? "預覽已過期（10 分鐘），請重新預覽後再送出。"
+          : "previewHash 無效或已被竄改。",
+      );
+    }
+    const tokenPayload = verified.payload;
+
+    // scope check
+    if (
+      tokenPayload.storeId !== storeId ||
+      tokenPayload.trackingId !== trackingId ||
+      tokenPayload.provider !== provider ||
+      tokenPayload.trackingCode !== trackingCode
+    ) {
+      return fail(res, 400, "PREVIEW_SCOPE_MISMATCH", "previewHash 與請求內容不符。");
+    }
+
+    // confirmText
+    if (!confirmText || typeof confirmText !== "string") {
+      return fail(res, 400, "CONFIRM_TEXT_REQUIRED", "請提供 confirmText");
+    }
+    if (confirmText !== COMMIT_CONFIRM_TEXT) {
+      return fail(res, 400, "CONFIRM_TEXT_INVALID", "confirmText 錯誤，必須填入 WRITE_TRACKING_EVENTS");
+    }
+
+    // compare expected fields vs token payload
+    const reqEventCount = Number(expectedEventCount);
+    if (!Number.isInteger(reqEventCount) || reqEventCount < 0 || reqEventCount !== tokenPayload.expectedEventCount) {
+      return fail(res, 400, "EXPECTED_EVENT_COUNT_MISMATCH", "expectedEventCount 與預覽不符");
+    }
+    const normReqStatus = expectedLatestStatusText === null ? null : String(expectedLatestStatusText);
+    const normReqAt = expectedLatestEventAt === null ? null : String(expectedLatestEventAt);
+    if (normReqStatus !== (tokenPayload.latestStatusText ?? null)) {
+      return fail(res, 400, "EXPECTED_LATEST_STATUS_MISMATCH", "expectedLatestStatusText 與預覽不符");
+    }
+    if (normReqAt !== (tokenPayload.latestEventAt ?? null)) {
+      return fail(res, 400, "EXPECTED_LATEST_EVENT_AT_MISMATCH", "expectedLatestEventAt 與預覽不符");
+    }
+
+    // load tracking row scoped by storeId
+    let trackingRow: { trackingCode: string; trackingProvider: string; isActive: boolean } | undefined;
+    try {
+      const rows = await db
+        .select({
+          trackingCode: shipmentTrackingsTable.trackingCode,
+          trackingProvider: shipmentTrackingsTable.trackingProvider,
+          isActive: shipmentTrackingsTable.isActive,
+          ownerStoreId: ordersTable.storeId,
+        })
+        .from(shipmentTrackingsTable)
+        .innerJoin(ordersTable, eq(shipmentTrackingsTable.orderId, ordersTable.id))
+        .where(eq(shipmentTrackingsTable.id, trackingId));
+
+      const row = rows[0];
+      if (!row || row.ownerStoreId !== storeId) {
+        return fail(res, 404, "TRACKING_NOT_FOUND", "找不到此物流追蹤紀錄");
+      }
+      trackingRow = row;
+    } catch (err) {
+      console.error("[logistics-sync/commit] DB lookup failed:", err);
+      return fail(res, 500, "WRITE_FAILED", "寫入失敗，請稍後再試。");
+    }
+
+    if (!trackingRow.isActive) {
+      return fail(res, 400, "TRACKING_INACTIVE", "此物流追蹤紀錄已停用");
+    }
+    if (trackingRow.trackingProvider !== provider) {
+      return fail(res, 400, "PROVIDER_MISMATCH", "provider 與紀錄不符");
+    }
+    if (trackingRow.trackingCode !== trackingCode) {
+      return fail(res, 400, "TRACKING_CODE_MISMATCH", "trackingCode 與紀錄不符");
+    }
+
+    const createdBy = req.userId ?? "owner-ui";
+
+    // re-dryRun drift check
+    let dryResult: Awaited<ReturnType<typeof runControlledDbWrite>>;
+    try {
+      dryResult = await runControlledDbWrite(
+        [{ provider, trackingId, trackingCode, writeMode: "dryRun" }],
+        { storeId, createdBy },
+      );
+    } catch (err) {
+      console.error("[logistics-sync/commit] re-dryRun failed:", err);
+      return fail(res, 502, "WRITE_FAILED", "寫入失敗，請稍後再試。");
+    }
+
+    const dryJob = dryResult.jobs[0];
+    if (!dryJob || dryJob.status === "failed" || dryJob.status === "skipped") {
+      return fail(res, 502, "WRITE_FAILED", "寫入失敗，請稍後再試。");
+    }
+
+    const freshEventCount = dryJob.wouldWriteEvents ?? 0;
+    const freshStatusText = dryJob.latestStatusText ?? null;
+    const freshEventAt = dryJob.latestEventAt ?? null;
+
+    if (
+      freshEventCount !== tokenPayload.expectedEventCount ||
+      freshStatusText !== (tokenPayload.latestStatusText ?? null) ||
+      freshEventAt !== (tokenPayload.latestEventAt ?? null)
+    ) {
+      return res.status(409).json({
+        ok: false,
+        code: "PREVIEW_DRIFTED",
+        message: "外部貨態已更新，請重新預覽後再寫入。",
+        freshPreview: {
+          expectedEventCount: freshEventCount,
+          latestStatusText: freshStatusText,
+          latestEventAt: freshEventAt,
+        },
+      });
+    }
+
+    // write
+    let writeResult: Awaited<ReturnType<typeof runControlledDbWrite>>;
+    try {
+      writeResult = await runControlledDbWrite(
+        [{ provider, trackingId, trackingCode, writeMode: "write" }],
+        { storeId, createdBy },
+      );
+    } catch (err) {
+      console.error("[logistics-sync/commit] write failed:", err);
+      return fail(res, 500, "WRITE_FAILED", "寫入失敗，請稍後再試。");
+    }
+
+    const writeJob = writeResult.jobs[0];
+    if (!writeJob || writeJob.status === "failed" || writeJob.status === "skipped") {
+      return fail(res, 500, "WRITE_FAILED", "寫入失敗，請稍後再試。");
+    }
+
+    const insertedEventCount = writeJob.insertedEventCount ?? 0;
+    const idempotentNoop = insertedEventCount === 0 && tokenPayload.expectedEventCount > 0;
+
+    return res.json({
+      ok: true,
+      provider,
+      trackingId,
+      trackingCode,
+      committed: true,
+      insertedEventCount,
+      idempotentNoop,
+      runLogId: writeResult.runLogId,
+      latestStatusText: writeJob.latestStatusText ?? null,
+      latestEventAt: writeJob.latestEventAt ?? null,
+    });
   },
 );
 
