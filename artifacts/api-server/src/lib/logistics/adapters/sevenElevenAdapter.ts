@@ -431,18 +431,22 @@ const defaultTesseractSolver: CaptchaSolver = async (imageBytes) => {
 // Common-result bridge（Step 7N-C）— 型別轉換 only，不打外部、不寫 DB、不改既有行為
 // ---------------------------------------------------------------------------
 
-/** 7-11 狀態文字 → 標準化貨態（bridge 用最小規則，待正式整合時細化） */
+/** 7-11 狀態文字 → 標準化貨態（Step 7O-STABILITY-RETRY で実 E2E 8 patterns 追加） */
 export function normalizeSevenElevenStatus(
   statusText: string,
 ): NormalizedTrackingStatus {
   const s = (statusText ?? "").trim();
   if (!s) return "unknown";
-  if (/(已取件|完成取件|取貨完成)/.test(s)) return "picked_up";
-  if (/(到達門市|門市取貨|已到店|到店)/.test(s)) return "arrived_store";
+  // 取件完成（「成功取件」「已完成包裹成功取件」等）
+  if (/(已取件|完成取件|取貨完成|成功取件)/.test(s)) return "picked_up";
+  // 抵達取件門市（「配達取件門市」等）
+  if (/(到達門市|門市取貨|已到店|到店|配達)/.test(s)) return "arrived_store";
   if (/(退回|退貨|退件)/.test(s)) return "returned";
   if (/(異常|遺失|閉店)/.test(s)) return "exception";
-  if (/(配送|運送|轉運|出貨)/.test(s)) return "in_transit";
-  if (/(交寄|建立|收件)/.test(s)) return "pending";
+  // 配送中 / 物流中心通過（「物流中心」は離開・到達・驗收 含む）
+  if (/(配送|運送|轉運|出貨|物流中心|送達)/.test(s)) return "in_transit";
+  // 訂單建立 / 待出貨（「已成立」「尚未寄件」を追加）
+  if (/(交寄|建立|收件|已成立|尚未寄件)/.test(s)) return "pending";
   return "unknown";
 }
 
