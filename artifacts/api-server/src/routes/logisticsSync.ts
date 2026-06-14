@@ -19,6 +19,10 @@ import {
   getSupportedAutoSyncProviders,
   getUnsupportedAutoSyncProviders,
 } from "../lib/logistics/providers.ts";
+import {
+  trackSevenElevenShipment,
+  bridgeSevenElevenResult,
+} from "../lib/logistics/adapters/sevenElevenAdapter.ts";
 
 const fail = (res: any, status: number, errorCode: string, message: string) =>
   res.status(status).json({ ok: false, errorCode, message });
@@ -224,15 +228,138 @@ router.post(
 );
 
 /**
+ * 7-11 preview-only handler（Step 7O-MANUAL-PREVIEW）。
+ * 走 sevenElevenAdapter，不走 runControlledDbWrite，永不寫 DB。
+ * 不簽發 previewHash（7-11 無 commit 路徑），回傳 commitDisabled: true。
+ */
+async function handle711Preview(req: any, res: any): Promise<void> {
+  const storeId = parseInt(req.params.storeId);
+  if (isNaN(storeId)) { fail(res, 400, "INVALID_STORE", "Invalid storeId"); return; }
+  if (!(await verifyStoreOwner(req, res, storeId))) return;
+
+  const body = req.body ?? {};
+  const rawIds = body.trackingIds;
+  if (!Array.isArray(rawIds) || rawIds.length === 0) {
+    fail(res, 400, "TRACKING_IDS_REQUIRED", "trackingIds must be a non-empty array"); return;
+  }
+  if (rawIds.length > MANUAL_PROVIDER_MAX_TRACKING_IDS) {
+    fail(res, 400, "TOO_MANY_TRACKING_IDS", `一次最多查詢 ${MANUAL_PROVIDER_MAX_TRACKING_IDS} 筆。`); return;
+  }
+  const trackingIds = rawIds.map((v: unknown) => Number(v));
+  if (trackingIds.some((n: number) => !Number.isInteger(n) || n <= 0)) {
+    fail(res, 400, "INVALID_TRACKING_IDS", "trackingIds must be positive integers"); return;
+  }
+
+  let rows: Array<{ id: number; trackingCode: string; trackingProvider: string; storeId: number }>;
+  try {
+    rows = await db
+      .select({
+        id: shipmentTrackingsTable.id,
+        trackingCode: shipmentTrackingsTable.trackingCode,
+        trackingProvider: shipmentTrackingsTable.trackingProvider,
+        storeId: ordersTable.storeId,
+      })
+      .from(shipmentTrackingsTable)
+      .innerJoin(ordersTable, eq(shipmentTrackingsTable.orderId, ordersTable.id))
+      .where(inArray(shipmentTrackingsTable.id, trackingIds));
+  } catch (err) {
+    console.error("[logistics-sync] 711-preview DB lookup failed:", err);
+    fail(res, 500, "MANUAL_PROVIDER_SYNC_FAILED", "手動查詢執行失敗，請稍後再試。"); return;
+  }
+
+  const rowById = new Map(rows.map((r) => [r.id, r]));
+  const missing = trackingIds.filter((id: number) => !rowById.has(id));
+  if (missing.length > 0) {
+    fail(res, 400, "TRACKING_NOT_FOUND", `找不到物流追蹤紀錄：${missing.join(", ")}`); return;
+  }
+  if (rows.some((r) => r.storeId !== storeId)) {
+    fail(res, 400, "CROSS_STORE_TRACKING", "trackingIds 包含不屬於此店家的紀錄。"); return;
+  }
+  if (rows.some((r) => r.trackingProvider !== "711")) {
+    fail(res, 400, "PROVIDER_MISMATCH", "trackingIds 包含與 provider 不符的紀錄。"); return;
+  }
+
+  const jobs = [];
+  for (const id of trackingIds) {
+    const row = rowById.get(id)!;
+    try {
+      const raw = await trackSevenElevenShipment({ trackingCode: row.trackingCode });
+      const bridged = bridgeSevenElevenResult(raw);
+      if (!bridged.ok) {
+        jobs.push({
+          success: false, status: "failed", provider: "711",
+          trackingId: id, trackingCode: row.trackingCode,
+          latestStatusText: null, latestEventAt: null,
+          wouldWriteEvents: 0, duplicateEvents: 0, normalizedStatus: null,
+          errorCode: bridged.errorCode, skippedReason: bridged.message,
+          previewHash: null, previewExpiresAt: null,
+          commitDisabled: true, pickupStoreName: null, pickupDeadline: null,
+          eventCount: 0, events: [],
+        });
+      } else {
+        const evts = bridged.events.map((e) => ({
+          statusText: e.eventDescription,
+          occurredAt: e.occurredAt,
+        }));
+        jobs.push({
+          success: true, status: "success", provider: "711",
+          trackingId: id, trackingCode: row.trackingCode,
+          latestStatusText: bridged.latestStatusText ?? null,
+          latestEventAt: bridged.latestEventAt ?? null,
+          wouldWriteEvents: bridged.events.length, duplicateEvents: 0,
+          normalizedStatus: bridged.normalizedStatus,
+          errorCode: null, skippedReason: null,
+          previewHash: null, previewExpiresAt: null,
+          commitDisabled: true,
+          pickupStoreName: (bridged.rawSummary?.pickupStoreName as string | null) ?? null,
+          pickupDeadline: (bridged.rawSummary?.pickupDeadline as string | null) ?? null,
+          eventCount: bridged.events.length, events: evts,
+        });
+      }
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message.slice(0, 200) : "unknown error";
+      jobs.push({
+        success: false, status: "failed", provider: "711",
+        trackingId: id, trackingCode: row.trackingCode,
+        latestStatusText: null, latestEventAt: null,
+        wouldWriteEvents: 0, duplicateEvents: 0, normalizedStatus: null,
+        errorCode: "UNKNOWN_ERROR", skippedReason: errMsg,
+        previewHash: null, previewExpiresAt: null,
+        commitDisabled: true, pickupStoreName: null, pickupDeadline: null,
+        eventCount: 0, events: [],
+      });
+    }
+  }
+
+  const successCount = jobs.filter((j) => j.success).length;
+  res.json({
+    ok: true, dryRun: true, provider: "711",
+    previewHashAvailable: false, commitDisabled: true,
+    totalJobs: jobs.length, successCount,
+    failedCount: jobs.length - successCount, skippedCount: 0, emptyCount: 0,
+    jobs,
+    message: "7-11 預覽結果：僅供預覽，未寫入任何資料。正式寫入尚未開放。",
+  });
+}
+
+/**
  * 郵局 / 黑貓 preview（Step 7N-J2）：dryRun 查詢 + 簽發 previewHash，
  * 供未來 /commit（J3）綁定「看到的 preview = 要寫入的內容」。
  * 永遠 dryRun、不寫 DB / events / snapshot / last_checked_at、不開排程。
  * duplicateEvents 以 idempotencyKeysPreview 唯讀比對既有 events 計算。
+ * 7-11（Step 7O）：provider=711 時走 handle711Preview（上方），不走此路徑。
  */
 router.post(
   "/stores/:storeId/logistics/sync/manual-provider/preview",
   requireAuth,
   async (req: any, res: any) => {
+    // 7-11 preview-only path（不走 validateManualProviderRequest，不打 runControlledDbWrite）
+    const reqBody = req.body ?? {};
+    const reqProvider = typeof reqBody.provider === "string" ? reqBody.provider.trim() : "";
+    if (reqProvider === "711") {
+      return await handle711Preview(req, res);
+    }
+
     const validated = await validateManualProviderRequest(req, res);
     if (!validated) return;
     const { storeId, provider, trackingIds, rowById } = validated;

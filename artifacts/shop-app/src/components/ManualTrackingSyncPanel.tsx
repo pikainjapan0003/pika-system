@@ -34,7 +34,8 @@ import {
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
 
-const MANUAL_SYNC_PROVIDERS = ["postoffice", "tcat"] as const;
+// Step 7O："711" 加入預覽支援（preview-only，不開 commit / write）
+const MANUAL_SYNC_PROVIDERS = ["postoffice", "tcat", "711"] as const;
 type ManualSyncProvider = (typeof MANUAL_SYNC_PROVIDERS)[number];
 
 function isManualSyncProvider(p: string | null | undefined): p is ManualSyncProvider {
@@ -72,6 +73,11 @@ interface PreviewJob {
   previewExpiresAt: string | null;
   errorCode?: string | null;
   skippedReason?: string | null;
+  // 7-11 preview-only fields（Step 7O）
+  commitDisabled?: boolean | null;
+  pickupStoreName?: string | null;
+  pickupDeadline?: string | null;
+  eventCount?: number | null;
 }
 
 // J5F-7A：commit request / response types
@@ -273,7 +279,9 @@ export function ManualTrackingSyncPanel({
     return null;
   }
 
-  const providerLabel = getProviderDisplayName(provider) ?? provider;
+  // 7-11 は preview-only なので表示名に（預覽）を付加
+  const providerLabel =
+    provider === "711" ? "7-11（預覽）" : (getProviderDisplayName(provider) ?? provider);
   const statusLabel =
     TRACKING_STATUS_LABELS[shipmentTracking?.trackingStatus ?? ""] ?? "待查詢";
 
@@ -436,7 +444,9 @@ export function ManualTrackingSyncPanel({
   };
 
   const isLoading = syncState.phase === "previewLoading" || syncState.phase === "commitLoading";
-  const canShowModal = syncState.phase === "previewReadyCanCommit";
+  // 7-11 は commit 不可なので modal も開かない
+  const canShowModal =
+    syncState.phase === "previewReadyCanCommit" && syncState.job.provider !== "711";
   const modalJob = canShowModal ? syncState.job : null;
 
   return (
@@ -492,15 +502,27 @@ export function ManualTrackingSyncPanel({
 
               <div className="space-y-0.5 text-muted-foreground">
                 <p>外部查到事件：{job.wouldWriteEvents} 筆</p>
-                <p>已存在於 DB：{job.duplicateEvents} 筆</p>
-                <p className={netNew > 0 ? "text-foreground font-medium" : ""}>
-                  可新寫入：{netNew} 筆
-                </p>
+                {/* 7-11 preview-only：不查 DB 重複數，隱藏此行 */}
+                {job.provider !== "711" && (
+                  <p>已存在於 DB：{job.duplicateEvents} 筆</p>
+                )}
+                {job.provider !== "711" && (
+                  <p className={netNew > 0 ? "text-foreground font-medium" : ""}>
+                    可新寫入：{netNew} 筆
+                  </p>
+                )}
                 {job.latestStatusText && (
                   <p>
                     最新貨態：{job.latestStatusText}
                     {job.latestEventAt ? `（${job.latestEventAt}）` : ""}
                   </p>
+                )}
+                {/* 7-11 pickup 資訊 */}
+                {job.pickupStoreName && (
+                  <p>取件門市：{job.pickupStoreName}</p>
+                )}
+                {job.pickupDeadline && (
+                  <p>取件期限：{job.pickupDeadline}</p>
                 )}
                 {!isExpired && remainingSeconds !== null && (
                   <p className={remainingSeconds <= 30 ? "text-amber-600" : ""}>
@@ -514,7 +536,14 @@ export function ManualTrackingSyncPanel({
                 )}
               </div>
 
-              {syncState.phase === "previewReadyCanCommit" && (
+              {/* 7-11 preview-only 標示（取代 commit 按鈕） */}
+              {syncState.phase === "previewReadyCanCommit" && job.provider === "711" && (
+                <p className="text-amber-700 text-[11px] font-medium pt-0.5">
+                  7-11 目前為預覽模式，尚未開放寫入。
+                </p>
+              )}
+              {/* postoffice / tcat：commit 按鈕（COMMIT_ENABLED=false guard 仍在） */}
+              {syncState.phase === "previewReadyCanCommit" && job.provider !== "711" && (
                 <div className="space-y-1.5 pt-0.5">
                   <p className="text-foreground font-medium text-[11px]">
                     目前有 {netNew} 筆新貨態事件可寫入。
@@ -621,7 +650,9 @@ export function ManualTrackingSyncPanel({
         </button>
 
         <p className="text-[11px] text-muted-foreground leading-relaxed">
-          目前為安全預覽模式：可查詢與預覽，不會寫入正式貨態事件。正式自動同步仍只有全家。
+          {provider === "711"
+            ? "7-11 目前為預覽模式，尚未開放寫入。此查詢不寫入任何資料。"
+            : "目前為安全預覽模式：可查詢與預覽，不會寫入正式貨態事件。正式自動同步仍只有全家。"}
         </p>
       </div>
 

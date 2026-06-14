@@ -59,6 +59,46 @@ mock.module(path.join(ROOT, "artifacts/api-server/src/lib/logistics/adapters/tca
   },
 });
 
+// Step 7O：mock sevenElevenAdapter（不打真外部 + 不需要 tesseract）
+let sevenElevenAdapterCallCount = 0;
+mock.module(path.join(ROOT, "artifacts/api-server/src/lib/logistics/adapters/sevenElevenAdapter.ts"), {
+  namedExports: {
+    trackSevenElevenShipment: async ({ trackingCode }) => {
+      sevenElevenAdapterCallCount++;
+      return {
+        ok: true, provider: "711", trackingCode,
+        latestStatus: "配達取件門市",
+        pickupStoreName: "台北測試門市",
+        pickupDeadline: "2026/06/20",
+        events: [
+          { occurredAt: "2026/06/15 10:00:00", statusText: "配達取件門市", rawText: "配達取件門市" },
+          { occurredAt: "2026/06/14 08:00:00", statusText: "物流中心出貨", rawText: "物流中心出貨" },
+        ],
+      };
+    },
+    bridgeSevenElevenResult: (result) => {
+      if (!result.ok) {
+        return { ok: false, provider: "711", trackingCode: result.trackingCode, errorCode: result.errorCode, message: result.message, retryable: false };
+      }
+      const events = result.events.map((e) => ({
+        eventStatus: e.statusText, eventDescription: e.statusText || e.rawText,
+        eventLocation: null, occurredAt: e.occurredAt, rawData: {},
+      }));
+      return {
+        ok: true, provider: "711", trackingCode: result.trackingCode,
+        normalizedStatus: "arrived_store", latestStatusText: result.latestStatus,
+        latestEventAt: events[0]?.occurredAt ?? null, events,
+        rawSummary: {
+          pickupStoreName: result.pickupStoreName ?? null,
+          pickupDeadline: result.pickupDeadline ?? null,
+          eventCount: events.length,
+        },
+      };
+    },
+    normalizeSevenElevenStatus: () => "arrived_store",
+  },
+});
+
 const { default: express } = await import("express");
 const { pool } = await import("@workspace/db");
 const { default: logisticsSyncRouter } = await import(
@@ -86,6 +126,9 @@ const PO_COMMIT_CODE = `PO-J4C-${Math.floor(Math.random() * 1e9)}`;
 const TCAT_COMMIT_CODE = `TC-J4C-${Math.floor(Math.random() * 1e9)}`;
 const PO_DRIFT_CODE = `PO-DRIFT-${Math.floor(Math.random() * 1e9)}`;
 const PO_INACTIVE_CODE = `PO-INACT-${Math.floor(Math.random() * 1e9)}`;
+// Step 7O：7-11 preview test row（mock adapter，不打真外部）
+let sevenElevenTrackingId;
+const SE_CODE = `711-TEST-${Math.floor(Math.random() * 1e9)}`;
 
 async function makeOrderTracking(stId, prodId, provider, code, { isActive = true } = {}) {
   const order = await pool.query(
@@ -134,6 +177,8 @@ before(async () => {
   tcatCommitId = await makeOrderTracking(storeId, productId, "tcat", TCAT_COMMIT_CODE);
   driftCommitId = await makeOrderTracking(storeId, productId, "postoffice", PO_DRIFT_CODE);
   inactiveCommitId = await makeOrderTracking(storeId, productId, "postoffice", PO_INACTIVE_CODE, { isActive: false });
+  // Step 7O：7-11 preview test row
+  sevenElevenTrackingId = await makeOrderTracking(storeId, productId, "711", SE_CODE);
 });
 
 after(async () => {
@@ -375,9 +420,38 @@ describe("7N-J2 — /preview endpoint", () => {
     assert.equal(res.status, 400);
   });
 
-  test("711 rejected 400", async () => {
+  // Step 7O：provider=711 but trackingIds has postoffice row → PROVIDER_MISMATCH 400
+  test("711 preview PROVIDER_MISMATCH（非 711 の tracking id）400", async () => {
     const res = await callPreview({ provider: "711", trackingIds: [poTrackingId] });
     assert.equal(res.status, 400);
+    const body = await res.json();
+    assert.equal(body.errorCode, "PROVIDER_MISMATCH");
+  });
+
+  // Step 7O：7-11 preview 成功（mock adapter、DB 不寫、commitDisabled、previewHash null）
+  test("711 preview：mock adapter 成功（dryRun、commitDisabled=true、previewHash null）", async () => {
+    const callsBefore = sevenElevenAdapterCallCount;
+    const logsBefore = await totalRunLogs();
+    const res = await callPreview({ provider: "711", trackingIds: [sevenElevenTrackingId] });
+    assert.equal(res.status, 200);
+    const body = await res.json();
+    assert.equal(body.dryRun, true);
+    assert.equal(body.commitDisabled, true);
+    assert.equal(body.previewHashAvailable, false);
+    assert.equal(body.provider, "711");
+    assert.equal(body.successCount, 1);
+    const job = body.jobs[0];
+    assert.equal(job.success, true);
+    assert.equal(job.previewHash, null);
+    assert.equal(job.commitDisabled, true);
+    assert.ok(job.wouldWriteEvents >= 1);
+    assert.equal(job.duplicateEvents, 0);
+    assert.ok(typeof job.pickupStoreName === "string");
+    assert.ok(typeof job.pickupDeadline === "string");
+    // DB 不寫
+    assert.equal(await countEvents(sevenElevenTrackingId), 0);
+    assert.equal(await totalRunLogs(), logsBefore);
+    assert.ok(sevenElevenAdapterCallCount > callsBefore, "711 adapter must have been called");
   });
 
   test("familymart rejected 400", async () => {
