@@ -9,14 +9,36 @@
  * - ThanatosDi/E-Tracking（captcha 影像前處理概念）
  *
  * 本檔不寫 DB、不接正式 worker、不呼叫 /internal/agent/shipment-events。
- * OCR 以可注入方式設計（deps.solveCaptcha），預設實作假設執行環境 PATH 有 tesseract。
+ * OCR 以可注入方式設計（deps.solveCaptcha），預設實作以 resolveTesseractBinary 找 binary。
  */
 
+import { existsSync } from "node:fs";
 import type {
   NormalizedTrackingStatus,
   TrackingAdapterErrorCode,
   TrackingAdapterResult,
 } from "./types.ts";
+
+// Known nix store paths for tesseract, checked in order after TESSERACT_BIN env var.
+const TESSERACT_KNOWN_PATHS = [
+  "/nix/store/44vcjbcy1p2yhc974bcw250k2r5x5cpa-tesseract-5.3.4/bin/tesseract",
+  "/nix/store/89jwgijqcyl56r4h3vwv6v5dprd7xnr9-tesseract-3.05.00/bin/tesseract",
+];
+
+/**
+ * Resolve tesseract binary path. Priority:
+ * 1. TESSERACT_BIN env var
+ * 2. Known nix store paths (first that exists)
+ * 3. "tesseract" (relies on PATH; may fail with ENOENT if not installed)
+ */
+export function resolveTesseractBinary(): string {
+  const envBin = process.env.TESSERACT_BIN;
+  if (envBin) return envBin;
+  for (const p of TESSERACT_KNOWN_PATHS) {
+    if (existsSync(p)) return p;
+  }
+  return "tesseract";
+}
 
 const BASE_URL = "https://eservice.7-11.com.tw/e-tracking/";
 const SEARCH_URL = `${BASE_URL}search.aspx`;
@@ -402,14 +424,16 @@ function errMessage(err: unknown): string {
 }
 
 /**
- * 預設 OCR：呼叫環境 PATH 上的 tesseract。
- * 假設正式環境已安裝 tesseract；測試環境可改用 deps.solveCaptcha 注入。
+ * 預設 OCR：以 resolveTesseractBinary() 找 tesseract binary 後 spawn。
+ * 優先 TESSERACT_BIN env → 已知 nix store 路徑 → fallback "tesseract"。
+ * 若 binary 不存在，reject 的 ENOENT 會被上層包成 OCR_FAILED。
  */
 const defaultTesseractSolver: CaptchaSolver = async (imageBytes) => {
   const { spawn } = await import("node:child_process");
+  const tesseractBin = resolveTesseractBinary();
   return await new Promise<string>((resolve, reject) => {
     const proc = spawn(
-      "tesseract",
+      tesseractBin,
       ["stdin", "stdout", "--psm", "8", "-c", "tessedit_char_whitelist=0123456789"],
       { stdio: ["pipe", "pipe", "pipe"] },
     );
