@@ -83,6 +83,14 @@ router.post("/stores/:storeId/logistics/sync", requireAuth, async (req: any, res
 const MANUAL_PROVIDER_WHITELIST = ["postoffice", "tcat"] as const;
 const MANUAL_PROVIDER_MAX_TRACKING_IDS = 5;
 
+/** Preview-only: normalize any known 7-11 alias to canonical "711". Returns null for non-7-11 input. */
+function normalizeSevenElevenProvider(provider: string | null | undefined): "711" | null {
+  if (!provider) return null;
+  const s = provider.trim().toLowerCase();
+  if (s === "711" || s === "7-11" || s === "seven-eleven" || s === "seveneleven" || s === "seven_eleven") return "711";
+  return null;
+}
+
 /**
  * 共用驗證（Step 7N-J2 抽出，供 manual-provider 與 /preview 共用）：
  * owner、provider whitelist、trackingIds 形狀、store scope、provider 比對。
@@ -275,7 +283,7 @@ async function handle711Preview(req: any, res: any): Promise<void> {
   if (rows.some((r) => r.storeId !== storeId)) {
     fail(res, 400, "CROSS_STORE_TRACKING", "trackingIds 包含不屬於此店家的紀錄。"); return;
   }
-  if (rows.some((r) => r.trackingProvider !== "711")) {
+  if (rows.some((r) => normalizeSevenElevenProvider(r.trackingProvider) !== "711")) {
     fail(res, 400, "PROVIDER_MISMATCH", "trackingIds 包含與 provider 不符的紀錄。"); return;
   }
 
@@ -354,9 +362,10 @@ router.post(
   requireAuth,
   async (req: any, res: any) => {
     // 7-11 preview-only path（不走 validateManualProviderRequest，不打 runControlledDbWrite）
+    // Accepts "711", "7-11", "seven-eleven", "seveneleven", "seven_eleven" as provider aliases.
     const reqBody = req.body ?? {};
     const reqProvider = typeof reqBody.provider === "string" ? reqBody.provider.trim() : "";
-    if (reqProvider === "711") {
+    if (normalizeSevenElevenProvider(reqProvider) === "711") {
       return await handle711Preview(req, res);
     }
 
