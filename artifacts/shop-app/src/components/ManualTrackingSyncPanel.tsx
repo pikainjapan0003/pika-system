@@ -155,6 +155,12 @@ const TRACKING_STATUS_LABELS: Record<string, string> = {
   inactive: "已停用",
 };
 
+function isSevenElevenProvider(p: string | null | undefined): boolean {
+  if (!p) return false;
+  const s = p.trim().toLowerCase();
+  return s === "711" || s === "7-11" || s === "seven-eleven" || s === "seveneleven" || s === "seven_eleven";
+}
+
 function maskTrackingCode(code: string): string {
   if (code.length <= 4) return code;
   return `****${code.slice(-4)}`;
@@ -270,7 +276,9 @@ export function ManualTrackingSyncPanel({
     return () => clearInterval(id);
   }, [syncState]);
 
-  const provider = shipmentTracking?.trackingProvider ?? null;
+  const rawProvider = shipmentTracking?.trackingProvider ?? null;
+  // Normalize any 7-11 alias ("7-11", "seven-eleven", etc.) to canonical "711" before API calls.
+  const provider = isSevenElevenProvider(rawProvider) ? ("711" as const) : rawProvider;
   const trackingCode = (shipmentTracking?.trackingCode ?? "").trim();
   const isActive = shipmentTracking?.isActive !== false;
   const trackingId = shipmentTracking?.id;

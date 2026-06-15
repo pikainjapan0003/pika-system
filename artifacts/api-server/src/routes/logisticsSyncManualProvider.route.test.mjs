@@ -129,6 +129,9 @@ const PO_INACTIVE_CODE = `PO-INACT-${Math.floor(Math.random() * 1e9)}`;
 // Step 7O：7-11 preview test row（mock adapter，不打真外部）
 let sevenElevenTrackingId;
 const SE_CODE = `711-TEST-${Math.floor(Math.random() * 1e9)}`;
+// Step 7O-FIX：7-11 alias test row（trackingProvider="7-11"，驗證 alias normalization）
+let sevenElevenAliasTrackingId;
+const SE_ALIAS_CODE = `711-ALIAS-${Math.floor(Math.random() * 1e9)}`;
 
 async function makeOrderTracking(stId, prodId, provider, code, { isActive = true } = {}) {
   const order = await pool.query(
@@ -179,6 +182,8 @@ before(async () => {
   inactiveCommitId = await makeOrderTracking(storeId, productId, "postoffice", PO_INACTIVE_CODE, { isActive: false });
   // Step 7O：7-11 preview test row
   sevenElevenTrackingId = await makeOrderTracking(storeId, productId, "711", SE_CODE);
+  // Step 7O-FIX：alias row（trackingProvider="7-11"，直接插入不經 PATCH normalization）
+  sevenElevenAliasTrackingId = await makeOrderTracking(storeId, productId, "7-11", SE_ALIAS_CODE);
 });
 
 after(async () => {
@@ -454,6 +459,35 @@ describe("7N-J2 — /preview endpoint", () => {
     assert.ok(sevenElevenAdapterCallCount > callsBefore, "711 adapter must have been called");
   });
 
+  // Step 7O-FIX：provider alias "7-11" with alias DB row → 200
+  test("711-alias preview：payload provider='7-11' + DB trackingProvider='7-11' → 200 dryRun", async () => {
+    const callsBefore = sevenElevenAdapterCallCount;
+    const res = await callPreview({ provider: "7-11", trackingIds: [sevenElevenAliasTrackingId] });
+    assert.equal(res.status, 200, `Expected 200 but got ${res.status}`);
+    const body = await res.json();
+    assert.equal(body.dryRun, true);
+    assert.equal(body.commitDisabled, true);
+    assert.equal(body.provider, "711");
+    assert.ok(sevenElevenAdapterCallCount > callsBefore, "711 adapter must have been called for alias");
+  });
+
+  // Step 7O-FIX：provider alias "seven-eleven" with canonical "711" DB row → 200
+  test("711-alias preview：payload provider='seven-eleven' + DB trackingProvider='711' → 200 dryRun", async () => {
+    const res = await callPreview({ provider: "seven-eleven", trackingIds: [sevenElevenTrackingId] });
+    assert.equal(res.status, 200, `Expected 200 but got ${res.status}`);
+    const body = await res.json();
+    assert.equal(body.dryRun, true);
+    assert.equal(body.provider, "711");
+  });
+
+  // Step 7O-FIX：alias payload but wrong (non-711) DB row → PROVIDER_MISMATCH
+  test("711-alias preview PROVIDER_MISMATCH（alias payload + postoffice DB row）400", async () => {
+    const res = await callPreview({ provider: "7-11", trackingIds: [poTrackingId] });
+    assert.equal(res.status, 400);
+    const body = await res.json();
+    assert.equal(body.errorCode, "PROVIDER_MISMATCH");
+  });
+
   test("familymart rejected 400", async () => {
     const res = await callPreview({ provider: "familymart", trackingIds: [poTrackingId] });
     assert.equal(res.status, 400);
@@ -590,6 +624,14 @@ describe("7N-J4C — /commit validation gates (no DB write)", () => {
     const body = await res.json();
     assert.equal(body.errorCode, "INVALID_PROVIDER");
     assert.ok(body.message.includes("7-11"), `message: ${body.message}`);
+  });
+
+  // Step 7O-FIX：commit with "7-11" alias also rejected（commit route must NOT allow any 7-11 alias）
+  test("commit_400_7_11_alias_rejected", async () => {
+    const res = await callCommit({ provider: "7-11", trackingId: poCommitId });
+    assert.equal(res.status, 400);
+    const body = await res.json();
+    assert.equal(body.errorCode, "INVALID_PROVIDER");
   });
 
   test("commit_400_familymart_rejected", async () => {
