@@ -13,6 +13,7 @@
  */
 
 import { existsSync } from "node:fs";
+import { execSync } from "node:child_process";
 import type {
   NormalizedTrackingStatus,
   TrackingAdapterErrorCode,
@@ -20,16 +21,23 @@ import type {
 } from "./types.ts";
 
 // Known nix store paths for tesseract, checked in order after TESSERACT_BIN env var.
+// These hashes are specific to the Replit workspace nix store and may not exist in
+// the Published deployment container (built from modules = ["nodejs-24"] only).
 const TESSERACT_KNOWN_PATHS = [
   "/nix/store/44vcjbcy1p2yhc974bcw250k2r5x5cpa-tesseract-5.3.4/bin/tesseract",
+  "/nix/store/nprhbhaa9j23xm07hvl3fw27mm81nl1z-tesseract-5.3.4/bin/tesseract",
   "/nix/store/89jwgijqcyl56r4h3vwv6v5dprd7xnr9-tesseract-3.05.00/bin/tesseract",
 ];
 
 /**
  * Resolve tesseract binary path. Priority:
- * 1. TESSERACT_BIN env var
- * 2. Known nix store paths (first that exists)
- * 3. "tesseract" (relies on PATH; may fail with ENOENT if not installed)
+ * 1. TESSERACT_BIN env var (set this in Replit deployment secrets to fix Published runtime)
+ * 2. Known nix store paths (first that exists — workspace/preview only)
+ * 3. PATH-based `which tesseract` (works if tesseract is installed in system PATH)
+ * 4. Bare "tesseract" (last resort; ENOENT if not installed — Published deployment fails here)
+ *
+ * Published deployment fix: add tesseract to replit.nix, or set TESSERACT_BIN in
+ * Replit deployment environment variables, then re-publish.
  */
 export function resolveTesseractBinary(): string {
   const envBin = process.env.TESSERACT_BIN;
@@ -37,6 +45,22 @@ export function resolveTesseractBinary(): string {
   for (const p of TESSERACT_KNOWN_PATHS) {
     if (existsSync(p)) return p;
   }
+  // PATH-based fallback: covers environments where tesseract is installed but
+  // not at any known nix store path (e.g. Docker images, apt-installed tesseract).
+  try {
+    const found = execSync("which tesseract", {
+      stdio: ["pipe", "pipe", "pipe"],
+      timeout: 2000,
+    })
+      .toString()
+      .trim();
+    if (found) return found;
+  } catch {
+    // tesseract not in PATH
+  }
+  // Bare fallback — will ENOENT in Published deployment without tesseract.
+  // To fix: set TESSERACT_BIN=/path/to/tesseract in Replit deployment env vars,
+  // or create replit.nix with tesseract package, then re-publish.
   return "tesseract";
 }
 
@@ -441,7 +465,19 @@ const defaultTesseractSolver: CaptchaSolver = async (imageBytes) => {
     let err = "";
     proc.stdout.on("data", (d) => (out += d.toString()));
     proc.stderr.on("data", (d) => (err += d.toString()));
-    proc.on("error", (e) => reject(e));
+    proc.on("error", (e) => {
+      const nodeErr = e as NodeJS.ErrnoException;
+      if (nodeErr.code === "ENOENT") {
+        reject(
+          new Error(
+            `Tesseract binary not found at "${tesseractBin}". ` +
+              `In published deployment, set TESSERACT_BIN env var or add tesseract to replit.nix. (${e.message})`,
+          ),
+        );
+      } else {
+        reject(e);
+      }
+    });
     proc.on("close", (codeNum) => {
       if (codeNum === 0) resolve(out.trim());
       else reject(new Error(`tesseract exited ${codeNum}: ${err}`));
