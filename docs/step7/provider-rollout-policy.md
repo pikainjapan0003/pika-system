@@ -16,7 +16,9 @@
 本文件不代表 Step 7 全部完成。
 ```
 
-本文件依據 `docs/step7/provider-rollout-decision-matrix.md` 的決策結果（familymart=Level 3 / postoffice=Level 1 / tcat=Level 1 / 7-11=Level 0），轉換為後續 Claude / Codex 必須遵守的可執行規則。本輪 Claude A 角色為「施工員」，僅產出政策文件，不做任何程式施工。
+本文件依據 `docs/step7/provider-rollout-decision-matrix.md` 的決策結果（familymart=Level 4 / postoffice=Level 1 / tcat=Level 1 / 7-11=Level 1），轉換為後續 Claude / Codex 必須遵守的可執行規則。本輪 Claude A 角色為「施工員」，僅產出政策文件，不做任何程式施工。
+
+> **版本說明**：7-11 已於 Step 7O（2026-06-26）由 Level 0 升至 Level 1。familymart 層級已修正為 Level 4（原文件誤植 Level 3）。
 
 Step 7 目前整體狀態為 `IN PROGRESS / PARTIAL PASS`（見 `docs/step7/Step7完整計畫核取清單_總表版_更新至7N-STATUS-CORRECTION.md`），本文件不更動該整體狀態。
 
@@ -38,7 +40,7 @@ Step 7 的核心目的，是完成物流追蹤層，
 
 ### familymart
 
-* **Support Level**：Level 3 — Formal Auto Sync
+* **Support Level**：Level 4 — Formal Auto Sync
 * `supportsAutoSync = true`
 * scheduled / batch sync allowed（維持既有正式自動同步機制）
 * manual provider UI hidden / not needed（不在 `MANUAL_SYNC_PROVIDERS` 內）
@@ -177,7 +179,7 @@ Step 7P-MANUAL-PREVIEW-ALL-PROVIDERS-QA = COMPLETED / PARTIAL
 
 | Provider | Level | 狀態 |
 |----------|-------|------|
-| familymart | Level 3 — Formal Auto Sync | ✅ unchanged |
+| familymart | Level 4 — Formal Auto Sync | ✅ unchanged |
 | postoffice | Level 1 — Manual Preview-Only | ✅ confirmed |
 | tcat | Level 1 — Manual Preview-Only | ✅ confirmed |
 | 7-11 | Level 1 — Manual Preview-Only | ✅ confirmed |
