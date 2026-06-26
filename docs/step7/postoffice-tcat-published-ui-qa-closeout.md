@@ -11,14 +11,14 @@
 
 | 項目 | 結果 |
 |------|------|
-| postoffice Published UI QA | ✅ CODE REVIEW PASS |
-| tcat Published UI QA | ✅ CODE REVIEW PASS |
+| postoffice Published UI QA | ✅ **Published UI Screenshot Evidence PASS** |
+| tcat Published UI QA | ✅ **Published UI Screenshot Evidence PASS** |
 | 未改 runtime code | ✅ 確認 |
 | 未 DB write | ✅ 確認 |
 | 未呼叫 commit route | ✅ 確認 |
 | Step 7P 整體狀態 | **COMPLETED / PASS** |
 
-**備註**：本輪以原始碼驗查代替 Published 網站截圖驗收。如需截圖驗收，使用者可另行提供截圖；不影響本步驟 PASS 結論。
+**更新紀錄**：本文件原以原始碼驗查代替截圖驗收。截圖已於 Step 7P-SCREENSHOT-EVIDENCE-CLOSEOUT 補驗，QA 狀態更新為 Published UI Screenshot Evidence PASS。見 `docs/step7/step7p-published-ui-screenshot-evidence-closeout.md`。
 
 ---
 
