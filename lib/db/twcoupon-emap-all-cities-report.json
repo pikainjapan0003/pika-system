@@ -1,0 +1,36 @@
+{
+  "totalCities": 1,
+  "processedCities": 1,
+  "totalStoresParsed": 646,
+  "totalVerified": 642,
+  "totalUnverified": 4,
+  "totalMultipleCandidates": 53,
+  "totalEmapFailed": 0,
+  "totalInserted": 613,
+  "totalUpdated": 33,
+  "totalDbFailed": 0,
+  "cityReports": [
+    {
+      "cityName": "新北市",
+      "url": "https://twcoupon.com/brandshopcity-7_11-%e6%96%b0%e5%8c%97%e5%b8%82-%e9%9b%bb%e8%a9%b1-%e5%9c%b0%e5%9d%80.html",
+      "cityInlineCount": 606,
+      "areaPageCount": 29,
+      "rawCount": 1219,
+      "dedupedCount": 646,
+      "verifiedCount": 642,
+      "unverifiedCount": 4,
+      "multipleCandidatesCount": 53,
+      "insertedCount": 613,
+      "updatedCount": 33,
+      "failedCount": 0,
+      "dbTotalAfterCity": 4245,
+      "status": "completed"
+    }
+  ],
+  "completedCities": [
+    "新北市"
+  ],
+  "failedCities": [],
+  "dbTotalFinal": 4245,
+  "completedAt": "2026-06-04T06:08:06.078Z"
+}

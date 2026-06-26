@@ -1,0 +1,13 @@
+{
+  "file": "/home/runner/workspace/data/cvs/taiwan-district-keywords.txt",
+  "total": 310,
+  "processed": 10,
+  "hasResult": 9,
+  "noResult": 1,
+  "inserted": 12,
+  "updated": 0,
+  "failed": 0,
+  "failedKeywords": [],
+  "totalStoresInDb": 588,
+  "completedAt": "2026-06-03T17:29:23.826Z"
+}
