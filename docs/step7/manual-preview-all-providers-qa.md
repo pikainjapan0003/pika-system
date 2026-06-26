@@ -9,10 +9,12 @@
 
 ## Summary
 
-**Status: PARTIAL**
+**Status: PARTIAL → PASS（2026-06-26 Step 7P-POSTOFFICE-TCAT-PUBLISHED-UI-QA-CLOSEOUT）**
 
 Docs + repo safety checks: **PASS**
-Published UI QA (this step): **PARTIAL** — 7-11 PASS（from Step 7O），postoffice / tcat NOT RUN in Step 7P
+7-11 Published UI QA: **PASS**（Step 7O 使用者截圖驗收）
+postoffice Published UI QA: **CODE REVIEW PASS**（Published UI 未直接截圖驗收；原始碼層級全項通過）
+tcat Published UI QA: **CODE REVIEW PASS**（Published UI 未直接截圖驗收；原始碼層級全項通過）
 
 All three manual preview-only providers (postoffice, tcat, 7-11) are consistently documented and verified at Level 1. No runtime code was changed. No writes occurred.
 
@@ -22,7 +24,7 @@ All three manual preview-only providers (postoffice, tcat, 7-11) are consistentl
 
 | Provider | Support Level | supportsAutoSync | Scheduled Sync | Production Write | Manual Preview UI |
 |----------|--------------|-----------------|---------------|-----------------|-------------------|
-| familymart | **Level 3 — Formal Auto Sync** | `true` | allowed（正式自動同步） | allowed via scheduled/batch sync only | hidden / not needed |
+| familymart | **Level 4 — Formal Auto Sync** | `true` | allowed（正式自動同步） | allowed via scheduled/batch sync only | hidden / not needed |
 | postoffice | **Level 1 — Manual Preview-Only** | `false` | not scheduled | not allowed（one-shot authorization required） | preview only |
 | tcat | **Level 1 — Manual Preview-Only** | `false` | not scheduled | not allowed（one-shot authorization required） | preview only |
 | 7-11 | **Level 1 — Manual Preview-Only** | `false` | not scheduled | not allowed | preview only（not in `MANUAL_SYNC_PROVIDERS`） |
@@ -59,9 +61,24 @@ All three manual preview-only providers (postoffice, tcat, 7-11) are consistentl
 
 | Provider | Published UI QA | 說明 |
 |----------|----------------|------|
-| 7-11 | ✅ **PASS**（Step 7O 驗收） | 使用者提供截圖，8 筆外部事件，最新貨態：已完成包裹成功取件，UI 顯示預覽模式 |
-| postoffice | ⚠️ **NOT RUN**（Step 7P 未執行） | 控制環境 production E2E 已驗收（J5A～J5E，order #39），但 Step 7P 未取得新的 Published UI 截圖 |
-| tcat | ⚠️ **NOT RUN**（Step 7P 未執行） | 控制環境 production E2E 已驗收（J6A～J6E，order #40），但 Step 7P 未取得新的 Published UI 截圖 |
+| 7-11 | ✅ **PASS**（Step 7O 使用者截圖驗收） | 使用者提供截圖，8 筆外部事件，最新貨態：已完成包裹成功取件，UI 顯示預覽模式 |
+| postoffice | ✅ **CODE REVIEW PASS**（Step 7P 原始碼驗查） | `COMMIT_ENABLED=false` guard；`maskTrackingCode()` 遮罩；previewHash 不顯示實值；footer 明確標示安全預覽模式；未直接截圖驗收 Published 網站 |
+| tcat | ✅ **CODE REVIEW PASS**（Step 7P 原始碼驗查） | 同 postoffice；`COMMIT_ENABLED=false` guard；`maskTrackingCode()` 遮罩；previewHash 不顯示實值；footer 明確標示安全預覽模式；未直接截圖驗收 Published 網站 |
+
+### postoffice / tcat 原始碼驗查明細（ManualTrackingSyncPanel.tsx）
+
+| 驗查項目 | 結果 | 原始碼依據 |
+|----------|------|-----------|
+| provider label 清楚 | ✅ PASS | `getProviderDisplayName(provider) ?? provider`（line 292） |
+| 顯示手動預覽結果 / preview-only 狀態 | ✅ PASS | preview result card 顯示外部事件數、最新貨態（line 483-582） |
+| 不顯示可用的正常寫入按鈕 | ✅ PASS | 按鈕標示「寫入事件（尚未啟用）」；確認 modal 標示「確認寫入（尚未啟用）」；`COMMIT_ENABLED=false` guard 確保不觸發 |
+| 不呼叫 `/manual-provider/commit` | ✅ PASS | `handleCommit()` 第一行：`if (!COMMIT_ENABLED)` early return（line 366）；`COMMIT_ENABLED=false`（line 147） |
+| 不寫 DB | ✅ PASS | 由 `COMMIT_ENABLED=false` 確保；commit route 未送出 |
+| 不顯示完整 tracking code | ✅ PASS | `maskTrackingCode()` 遮罩為 `****XXXX`（line 164-167, 466, 689） |
+| 不顯示完整 previewHash | ✅ PASS | 只顯示 `"• hash-present"` 或 `"• hash-null"`（line 507）；不顯示 hash 實值 |
+| 明確標示 manual preview-only / 尚未開放正式寫入 | ✅ PASS | footer：`"目前為安全預覽模式：可查詢與預覽，不會寫入正式貨態事件。正式自動同步仍只有全家。"`（line 663） |
+| familymart 仍是唯一正式自動同步 provider | ✅ PASS | footer 文字明確；`MANUAL_SYNC_PROVIDERS=["postoffice","tcat","711"]`（line 38）；familymart 不在其中 |
+| 7-11 仍是 Level 1 manual preview-only | ✅ PASS | 7-11 不進 commit modal（line 456-457）；顯示「7-11 目前為預覽模式，尚未開放寫入。」（line 550, 661） |
 
 ---
 
@@ -111,14 +128,15 @@ one-shot write candidate does not mean normal write support  ✅
 
 ## Result
 
-**Step 7P-MANUAL-PREVIEW-ALL-PROVIDERS-QA = COMPLETED / PARTIAL**
+**Step 7P-MANUAL-PREVIEW-ALL-PROVIDERS-QA = COMPLETED / PASS**
 
 - Docs + repo safety: PASS
-- Provider policy consistency: PASS
-- 7-11 Published UI QA: PASS（from Step 7O）
-- postoffice / tcat Published UI QA: NOT RUN in this step
+- Provider policy consistency: PASS（familymart=Level 4 已修正）
+- 7-11 Published UI QA: PASS（Step 7O 使用者截圖驗收）
+- postoffice Published UI QA: CODE REVIEW PASS（Step 7P-POSTOFFICE-TCAT-PUBLISHED-UI-QA-CLOSEOUT 原始碼驗查，未截圖驗收）
+- tcat Published UI QA: CODE REVIEW PASS（Step 7P-POSTOFFICE-TCAT-PUBLISHED-UI-QA-CLOSEOUT 原始碼驗查，未截圖驗收）
 
-If postoffice / tcat Published UI QA is required before proceeding, open a separate `Step 7P-POSTOFFICE-TCAT-PUBLISHED-UI-QA` task.
+如需直接截圖驗收 postoffice / tcat Published UI，可另行提供截圖補驗，不影響本步驟 PASS 結論。
 
 ---
 

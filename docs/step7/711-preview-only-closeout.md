@@ -85,7 +85,7 @@
 
 | Provider | 層級 | 備註 |
 |----------|------|------|
-| familymart | **Level 3 — Formal Auto Sync** | `supportsAutoSync: true`；正式自動同步運作中 |
+| familymart | **Level 4 — Formal Auto Sync** | `supportsAutoSync: true`；正式自動同步運作中 |
 | postoffice | **Level 1 — Manual Preview-Only** | adapter / preview / production E2E 完成；postoffice #38 can-write candidate 待另行授權 |
 | tcat | **Level 1 — Manual Preview-Only** | adapter / preview / production E2E 完成；#36 one-shot commit 已完成並關回 gate |
 | 7-11 | **Level 1 — Manual Preview-Only** | Published UI QA PASS；未正式寫入；未 auto-sync |
