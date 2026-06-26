@@ -2,7 +2,7 @@
 
 **日期**：2026-06-26
 **分支**：qa/step6f-cvs-store-selection-browser-mobile
-**步驟**：7P-POSTOFFICE-ONE-SHOT-AUTHORIZATION-PRECHECK
+**步驟**：7P-POSTOFFICE-ONE-SHOT-AUTHORIZATION-PRECHECK → CLOSEOUT
 **作者**：Claude A（worker = claude-a）
 
 ---
@@ -10,31 +10,18 @@
 ## 結論
 
 ```text
-Step 7P-POSTOFFICE-ONE-SHOT-AUTHORIZATION-PRECHECK = BLOCKED
-原因：需要使用者提供最新 preview 截圖
+Step 7P-POSTOFFICE-ONE-SHOT-AUTHORIZATION-PRECHECK = COMPLETED / READY-FOR-USER-AUTHORIZATION
 ```
 
-**說明**：
-
-Claude Code terminal 環境無法直接操作 Published UI，原因如下：
-
-1. `/stores/:storeId/logistics/sync/manual-provider/preview` 路由需要有效的 Clerk session token（`requireAuth` middleware）
-2. 資料庫查詢需要 `DATABASE_URL` 環境變數，terminal 環境下無法存取
-3. 本輪嚴格禁止硬編（hardcode）preview 結果
-
-上一輪記錄（Step 7P-ONE-SHOT-WRITE-SAFETY-GATE）的 postoffice #38 資料（外部 6 / DB 0 / 可寫 6）可能已過期，**不得直接使用舊資料產生授權草稿**。
+使用者已提供 postoffice #38 最新 Published UI preview 截圖。所有前置條件確認通過。**但尚未取得使用者明確授權文字，仍不得寫入。**
 
 ---
 
 ## 本輪是否有重新 preview
 
 ```text
-否。
-
-原因：
-- API server 在本機 port 8080 運行，但端點需要 Clerk session token
-- 無法從 Claude Code terminal 直接呼叫受保護端點
-- 不可硬編上一輪的舊 preview 結果
+是。由使用者在 Published 正式網站 Owner UI 執行重新 preview 並截圖提供。
+截圖日期：2026-06-26
 ```
 
 ---
@@ -42,121 +29,97 @@ Claude Code terminal 環境無法直接操作 Published UI，原因如下：
 ## Provider / Order / Tracking
 
 ```text
-Provider: postoffice
+Provider: postoffice（中華郵政）
 Order: #38
-Tracking last4: ____（待使用者提供最新截圖）
+Tracking last4: ****3004
 ```
+
+（不顯示完整 tracking code）
 
 ---
 
 ## Preview 結果
 
-```text
-狀態：BLOCKED — 待使用者提供最新截圖
-
-使用者需要：
-1. 開啟 Published 正式網站 Owner UI
-2. 進入訂單管理 → 找到 postoffice order #38
-3. 點擊「手動物流查詢」或「查詢」按鈕，執行重新 preview
-4. 截圖以下資訊：
-   - Tracking last4（masked 顯示，例如 ****XXXX 的後 4 碼）
-   - 外部事件數（External events count）
-   - DB 既有事件數（DB existing events count）
-   - 可新增事件數（Writable events count）
-   - Latest status text（最新貨態文字）
-   - previewHash 狀態（顯示 hash-present 或 hash-null）
-   - preview 是否顯示過期（previewExpiresAt 剩餘時間）
-```
+| 欄位 | 數值 |
+|------|------|
+| provider | postoffice / 中華郵政 |
+| order | #38 |
+| tracking last4 | ****3004 |
+| previewHash | hash-present |
+| external events | 6 |
+| DB existing events | 0 |
+| writable events | 6 |
+| latest status | 投遞成功 |
+| latest status time | 2026/06/11 10:32:48 |
+| preview 剩餘時間 | 599 秒（截圖當下） |
+| UI 訊息 | 目前有 6 筆新貨態事件可寫入 |
+| 寫入按鈕狀態 | 寫入事件（尚未啟用）— COMMIT_ENABLED=false 安全鎖定 |
 
 ---
 
 ## 是否符合安全門
 
 ```text
-狀態：待確認
+狀態：PASS（授權前條件全部符合）
 
 安全門前置條件（來自 docs/step7/one-shot-write-safety-gate.md 第 1 節）：
 1. ✅ Provider 為第一順位 candidate（postoffice）
-2. ⏳ previewHash = hash-present（待截圖確認）
-3. ⏳ 外部事件數、DB 事件數、可新增事件數明確（待截圖確認）
-4. ⏳ latest status 確認（待截圖確認）
-5. ⏳ preview 未過期（待截圖確認）
-6. ⏳ 使用者填妥完整授權格式（待本輪確認資料後再填寫）
+2. ✅ previewHash = hash-present（截圖確認）
+3. ✅ 外部事件數 6、DB 事件數 0、可新增事件數 6（截圖確認）
+4. ✅ latest status = 投遞成功（截圖確認）
+5. ✅ preview 未過期（截圖當下剩餘 599 秒）
+6. ⏳ 使用者填妥完整授權格式（待使用者明確貼出授權文字）
 ```
 
-上一輪已知資訊（可能過期，需重新確認）：
-
-```text
-外部 6 筆 / DB 0 筆 / 可寫 6 筆 / 最新貨態「投遞成功」（2026-06-26 以前的紀錄）
-```
+條件 1–5 已全部通過。條件 6 為最後一項，需使用者明確授權後才可進入 one-shot write。
 
 ---
 
 ## 是否可產生授權文字
 
 ```text
-狀態：尚不可產生確定授權文字
+狀態：可產生授權草稿（已填入實際數值）
 
-原因：未取得最新 preview 資料，無法確認以下欄位：
-- Tracking last4
-- Expected external events
-- Expected DB existing events
-- Expected writable events
-- Expected latest status
-- previewHash 是否仍為 hash-present
+所有欄位均已確認：
+- Tracking last4: 3004
+- Expected external events: 6
+- Expected DB existing events: 0
+- Expected writable events: 6
+- Expected latest status: 投遞成功
+- previewHash: hash-present
 ```
 
 ---
 
-## 授權草稿模板（待使用者填入）
+## 授權草稿（已填入實際數值）
 
-使用者確認 preview 截圖後，請依以下模板填入實際數值，並貼出以完成授權。
-
-**注意：以下為空白模板，尚未生效。必須由使用者填入實際數值並明確貼出後，才可執行寫入。**
+**注意：以下為授權草稿，尚未生效。必須由使用者明確完整貼出此文字後，才可執行寫入。**
 
 ```text
 我明確授權執行 one-shot write：
 
 Provider: postoffice
 Order ID: #38
-Tracking ID: 不顯示完整，只記錄 last4=____
-Tracking last4: ____
-Expected external events: ____
-Expected DB existing events: ____
-Expected writable events: ____
-Expected latest status: ____
+Tracking ID: 不顯示完整，只記錄 last4=3004
+Tracking last4: 3004
+Expected external events: 6
+Expected DB existing events: 0
+Expected writable events: 6
+Expected latest status: 投遞成功
 允許行為：只允許本次單筆寫入
 禁止行為：不得開 scheduled sync、不得開常態正式寫入、不得修改其他 provider、不得寫入其他 order/tracking
 授權有效範圍：本次任務完成即失效
 ```
 
----
-
-## 使用者下一步行動
-
-請使用者完成以下步驟：
-
-```text
-1. 開啟 Published 正式網站 Owner UI
-2. 找到 postoffice order #38，執行重新 preview 查詢
-3. 截圖 preview 結果（tracking last4 / 外部事件數 / DB 事件數 / 可新增事件數 / latest status / hash 狀態）
-4. 確認所有欄位後，依上方授權草稿模板填入實際數值
-5. 把填妥的授權文字完整貼給 Claude A
-```
-
-Claude A 收到授權文字後，才可進入下一輪 one-shot write 任務。
+**使用者操作**：請確認以上數值正確無誤後，把上方文字完整貼給 Claude A，即視為明確授權。
 
 ---
 
 ## 尚未執行的事項
 
 ```text
-1. 重新 preview postoffice #38（待使用者截圖）
-2. 確認 previewHash 狀態（待截圖）
-3. 確認 external / DB / writable event counts（待截圖）
-4. 確認 latest status text（待截圖）
-5. 授權文字最終確認（待使用者填寫）
-6. Step 7P-POSTOFFICE-ONE-SHOT-WRITE（待授權完成後另開）
+1. 使用者明確授權（把授權草稿完整貼出）← 目前停在這一步
+2. Step 7P-POSTOFFICE-ONE-SHOT-WRITE（待授權後另開）
 ```
 
 ---
