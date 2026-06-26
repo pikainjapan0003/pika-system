@@ -49,8 +49,8 @@
 | Manual Preview All Providers QA | docs + repo safety check | ✅ **PASS** | Step 7P-MANUAL-PREVIEW-ALL-PROVIDERS-QA；2026-06-26；runtime 未變動 |
 | Manual Preview All Providers QA | provider policy consistency | ✅ **PASS** | postoffice / tcat / 7-11 均確認為 Level 1；familymart 確認為 Level 4（已修正） |
 | Manual Preview All Providers QA | 7-11 Published UI QA | ✅ **PASS** | 沿用 Step 7O 使用者截圖驗收結果 |
-| Manual Preview All Providers QA | postoffice Published UI QA | ✅ **CODE REVIEW PASS** | Step 7P-POSTOFFICE-TCAT-PUBLISHED-UI-QA-CLOSEOUT 原始碼驗查；`COMMIT_ENABLED=false`；`maskTrackingCode()`；previewHash 不顯示實值；footer 明確標示 safe preview |
-| Manual Preview All Providers QA | tcat Published UI QA | ✅ **CODE REVIEW PASS** | 同 postoffice；Step 7P-POSTOFFICE-TCAT-PUBLISHED-UI-QA-CLOSEOUT 原始碼驗查通過 |
+| Manual Preview All Providers QA | postoffice Published UI QA | ✅ **Published UI Screenshot Evidence PASS** | Step 7P-SCREENSHOT-EVIDENCE-CLOSEOUT；order #39；tracking ****0005；5 筆外部 / DB 5 筆；最新貨態：投遞成功；無寫入按鈕 |
+| Manual Preview All Providers QA | tcat Published UI QA | ✅ **Published UI Screenshot Evidence PASS** | Step 7P-SCREENSHOT-EVIDENCE-CLOSEOUT；order #40；tracking ****7146；4 筆外部 / DB 4 筆；最新貨態：順利送達；無寫入按鈕 |
 | Provider — postoffice #38 | one-shot production commit | ⏸️ Blocked（待授權） | can-write candidate（外部6 / DB0 / 可寫6，最新貨態「投遞成功」），須使用者另行提供完整 Authorization Text |
 
 ---

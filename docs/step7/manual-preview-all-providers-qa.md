@@ -9,12 +9,12 @@
 
 ## Summary
 
-**Status: PARTIAL → PASS（2026-06-26 Step 7P-POSTOFFICE-TCAT-PUBLISHED-UI-QA-CLOSEOUT）**
+**Status: COMPLETED / PASS**
 
 Docs + repo safety checks: **PASS**
-7-11 Published UI QA: **PASS**（Step 7O 使用者截圖驗收）
-postoffice Published UI QA: **CODE REVIEW PASS**（Published UI 未直接截圖驗收；原始碼層級全項通過）
-tcat Published UI QA: **CODE REVIEW PASS**（Published UI 未直接截圖驗收；原始碼層級全項通過）
+7-11 Published UI QA: **PASS**（Step 7O / Step 7P 使用者截圖驗收）
+postoffice Published UI QA: **Published UI Screenshot Evidence PASS**（Step 7P-SCREENSHOT-EVIDENCE-CLOSEOUT）
+tcat Published UI QA: **Published UI Screenshot Evidence PASS**（Step 7P-SCREENSHOT-EVIDENCE-CLOSEOUT）
 
 All three manual preview-only providers (postoffice, tcat, 7-11) are consistently documented and verified at Level 1. No runtime code was changed. No writes occurred.
 
@@ -61,9 +61,18 @@ All three manual preview-only providers (postoffice, tcat, 7-11) are consistentl
 
 | Provider | Published UI QA | 說明 |
 |----------|----------------|------|
-| 7-11 | ✅ **PASS**（Step 7O 使用者截圖驗收） | 使用者提供截圖，8 筆外部事件，最新貨態：已完成包裹成功取件，UI 顯示預覽模式 |
-| postoffice | ✅ **CODE REVIEW PASS**（Step 7P 原始碼驗查） | `COMMIT_ENABLED=false` guard；`maskTrackingCode()` 遮罩；previewHash 不顯示實值；footer 明確標示安全預覽模式；未直接截圖驗收 Published 網站 |
-| tcat | ✅ **CODE REVIEW PASS**（Step 7P 原始碼驗查） | 同 postoffice；`COMMIT_ENABLED=false` guard；`maskTrackingCode()` 遮罩；previewHash 不顯示實值；footer 明確標示安全預覽模式；未直接截圖驗收 Published 網站 |
+| 7-11 | ✅ **PASS**（Step 7O / Step 7P 使用者截圖驗收） | order #42；tracking ****0295；8 筆外部事件；最新貨態：已完成包裹成功取件；取件門市：麟林；UI 顯示「7-11 目前為預覽模式，尚未開放寫入」；無寫入按鈕 |
+| postoffice | ✅ **Published UI Screenshot Evidence PASS** | order #39；tracking ****0005；5 筆外部事件；已存在 DB 5 筆；可新增 0 筆；最新貨態：投遞成功；提示「查到的事件皆已存在，不需要重複寫入」；無寫入按鈕 |
+| tcat | ✅ **Published UI Screenshot Evidence PASS** | order #40；tracking ****7146；4 筆外部事件；已存在 DB 4 筆；可新增 0 筆；最新貨態：順利送達；提示「查到的事件皆已存在，不需要重複寫入」；無寫入按鈕 |
+
+### 誠實註記
+
+```text
+preview 結果區塊：使用 masked last4，不顯示完整 tracking code。✅
+previewHash：只顯示 hash-present / hash-null，不顯示實值。✅
+owner 物流貨號主欄位：仍顯示完整物流號碼。
+  → 屬既有 owner 管理畫面設計，本輪未修改，不在本輪 QA 範圍內。
+```
 
 ### postoffice / tcat 原始碼驗查明細（ManualTrackingSyncPanel.tsx）
 
@@ -132,11 +141,10 @@ one-shot write candidate does not mean normal write support  ✅
 
 - Docs + repo safety: PASS
 - Provider policy consistency: PASS（familymart=Level 4 已修正）
-- 7-11 Published UI QA: PASS（Step 7O 使用者截圖驗收）
-- postoffice Published UI QA: CODE REVIEW PASS（Step 7P-POSTOFFICE-TCAT-PUBLISHED-UI-QA-CLOSEOUT 原始碼驗查，未截圖驗收）
-- tcat Published UI QA: CODE REVIEW PASS（Step 7P-POSTOFFICE-TCAT-PUBLISHED-UI-QA-CLOSEOUT 原始碼驗查，未截圖驗收）
-
-如需直接截圖驗收 postoffice / tcat Published UI，可另行提供截圖補驗，不影響本步驟 PASS 結論。
+- 7-11 Published UI QA: PASS（Step 7O / Step 7P 使用者截圖驗收）
+- postoffice Published UI QA: **Published UI Screenshot Evidence PASS**（Step 7P-SCREENSHOT-EVIDENCE-CLOSEOUT）
+- tcat Published UI QA: **Published UI Screenshot Evidence PASS**（Step 7P-SCREENSHOT-EVIDENCE-CLOSEOUT）
+- familymart 對照確認: PASS（Level 4 正式自動同步，不在 manual preview 流程）
 
 ---
 
