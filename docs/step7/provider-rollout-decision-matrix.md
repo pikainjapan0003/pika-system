@@ -38,7 +38,7 @@ Step 7 目前整體狀態為 `IN PROGRESS / PARTIAL PASS`（見 `docs/step7/Step
 | familymart | 正式自動同步已上線運作中；`supportsAutoSync: true`（`logisticsProviders.ts` / `providers.ts`）；scheduled / batch sync 目前僅 familymart | **Level 3 — Formal Auto Sync** | allowed via existing scheduled/batch sync only | `true` | hidden / not needed（不在 `MANUAL_SYNC_PROVIDERS` 內） | keep as-is | 無；維持現狀 |
 | postoffice | adapter / preview / controlled production E2E 已驗證（J5A～J5E：order #39 / trackingId=2，insertedEventCount=5，delivered）；#38 為 can-write candidate（外部6 / DB0 / 可寫6，最新貨態「投遞成功」），尚未授權 | **Level 1 — Formal Manual Preview-Only** | no broad write; one-shot authorization required | `false` | preview only（`MANUAL_SYNC_PROVIDERS` 含 postoffice） | partial rollout, not full formal write | keep preview-only; postoffice #38 requires separate authorization |
 | tcat | adapter / preview / controlled production E2E 已驗證（J6A～J6E：order #40 / trackingId=3，insertedEventCount=4，delivered）；#36 owner UI one-shot production commit 已成功（外部5 / DB0 → 寫入5筆，最新貨態「順利送達」），one-shot gate 已關回 | **Level 1 — Formal Manual Preview-Only** | no broad write; one-shot authorization required | `false` | preview only（`MANUAL_SYNC_PROVIDERS` 含 tcat） | partial rollout, not full formal write | keep preview-only |
-| 7-11 | 未施工；blocked / research only；未列入 `MANUAL_SYNC_PROVIDERS`；`supportsAutoSync: false` | **Level 0 — Blocked / Research Only** | none | `false` | hidden | not started | 另開 research task only；不可新增正式支援 |
+| 7-11 | manual preview-only 已完成；Published 正式網站 UI QA PASS（8 筆外部事件，最新貨態：已完成包裹成功取件）；未列入 `MANUAL_SYNC_PROVIDERS`；`supportsAutoSync: false`；未 production write；未開 auto-sync；見 `docs/step7/711-preview-only-closeout.md` | **Level 1 — Manual Preview-Only** | none（7-11 preview-only；不支援正式寫入；不支援 auto-sync；不進 commit route） | `false` | preview only（7-11 可進 manual preview，但不在 `MANUAL_SYNC_PROVIDERS` 正式清單中） | Level 1 manual preview-only PASS（**updated 2026-06-26**） | Step 7P-MANUAL-PREVIEW-ALL-PROVIDERS-QA；之後再評估 write candidate decision |
 
 ---
 
@@ -58,7 +58,7 @@ Any future write test must be one-shot authorized.
 familymart：Formal Auto Sync
 postoffice：Formal Manual Preview-Only；正式寫入需另行 one-shot authorization
 tcat：Formal Manual Preview-Only；正式寫入需另行 one-shot authorization
-7-11：Blocked / Research Only
+7-11：Formal Manual Preview-Only（updated 2026-06-26；Published UI QA PASS；不支援正式寫入；不支援 auto-sync）
 ```
 
 ---
