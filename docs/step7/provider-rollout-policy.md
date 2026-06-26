@@ -70,13 +70,14 @@ Step 7 的核心目的，是完成物流追蹤層，
 
 ### 7-11
 
-* **Support Level**：Level 0 — Blocked / Research Only
+* **Support Level**：Level 1 — Manual Preview-Only（**updated 2026-06-26**，原 Level 0）
+* 7-11 目前已達 Level 1 manual preview-only。
 * `supportsAutoSync = false`
-* 不進 manual UI
-* 不可 production write
-* 不可加入正式 provider whitelist（含 `MANUAL_SYNC_PROVIDERS`、任何 auto-sync provider 清單）
-* 若要做，必須另開獨立 research / integration plan
-* 不可在 Step 7 目前狀態直接施工
+* manual preview 可查詢（owner 端可查詢、顯示貨態摘要）；Published 正式網站 UI QA PASS
+* 不進 `MANUAL_SYNC_PROVIDERS` 正式清單；不支援 commit route；不支援 auto-sync
+* 不可 production write；不可 DB mutation
+* 未來若要進入 write candidate，必須另開 one-shot authorization（同 postoffice / tcat 規範）
+* 不可把 Level 1 preview PASS 誤解為正式寫入授權
 
 ---
 
@@ -103,7 +104,7 @@ one-shot gate must be closed immediately after test
 
 * postoffice / tcat manual UI 可以 preview（owner 端可查詢、顯示貨態摘要、可重新查詢）
 * familymart 不顯示 manual provider UI（維持現有正式自動同步，不需要、也不可加入 manual preview 流程）
-* 7-11 不顯示 manual provider UI（Level 0，不進 UI）
+* 7-11 manual preview 可查詢（Level 1；但不進 `MANUAL_SYNC_PROVIDERS` 正式清單，不進 commit route）
 * duplicate-only 不顯示寫入按鈕（當判斷為 duplicate-only 時，UI 僅顯示查詢結果，不提供任何寫入操作）
 * safe-preview-only footer 必須保留（提示使用者目前為安全預覽模式，不會寫入 production）
 * previewHash 不可完整顯示（避免洩漏可用於重放 / 推測 production 資料的雜湊值，僅可顯示遮罩或部分片段）
