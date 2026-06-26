@@ -79,14 +79,14 @@ Remaining work is rollout policy / implementation alignment, not uncontrolled pr
 ## 5. Required Next Step
 
 ```text
-Step 7P-PROVIDER-WRITE-CANDIDATE-DECISION
+Step 7P-ONE-SHOT-WRITE-SAFETY-GATE
 ```
 
 用途：
 
-- 評估 postoffice / tcat / 7-11 是否進入 one-shot write candidate
-- 或維持 Level 1 manual preview-only 至 Step 8 之後再決定
-- 不直接開寫入
+- 正式建立 postoffice / tcat one-shot write safety gate 規格
+- 確認 Authorization Text 格式、gate 開關流程、close gate 後驗收步驟
+- 不直接開寫入，只建立規格文件與流程
 
 ---
 
@@ -104,10 +104,30 @@ Step 7P-MANUAL-PREVIEW-ALL-PROVIDERS-QA = COMPLETED / PARTIAL
 | 7-11 | Level 1 — Manual Preview-Only | ✅ confirmed |
 
 - Docs + repo safety: PASS
-- 7-11 Published UI QA: PASS（Step 7O 截圖驗收）
-- postoffice / tcat Published UI QA: NOT RUN in Step 7P
+- 7-11 Published UI QA: PASS（Step 7O / Step 7P 截圖驗收）
+- postoffice Published UI QA: Published UI Screenshot Evidence PASS（Step 7P-SCREENSHOT-EVIDENCE-CLOSEOUT）
+- tcat Published UI QA: Published UI Screenshot Evidence PASS（Step 7P-SCREENSHOT-EVIDENCE-CLOSEOUT）
 - Runtime files unchanged; no DB write; no commit route called
 - See: `docs/step7/manual-preview-all-providers-qa.md`
+
+---
+
+## Step 7P-PROVIDER-WRITE-CANDIDATE-DECISION Closeout（2026-06-26）
+
+```text
+Step 7P-PROVIDER-WRITE-CANDIDATE-DECISION = COMPLETED / PASS
+```
+
+| Provider | 決策 | 說明 |
+|----------|------|------|
+| familymart | 不參與 | 維持 Level 4 正式自動同步 |
+| postoffice | **第一順位 one-shot write candidate** | hash-present；duplicate-only PASS；Published UI PASS；Level 不升 |
+| tcat | **第二順位 one-shot write candidate** | hash-present；duplicate-only PASS；Published UI PASS；Level 不升 |
+| 711 | **暫不列入第一批** | hash-null；不計算 duplicate-only；維持 Level 1 preview-only |
+
+- postoffice / tcat 列為候選不等於已授權寫入；下一步需另開 one-shot authorization task
+- 安全門規則：13 條，見 `docs/step7/provider-write-candidate-decision.md` Section 7
+- See: `docs/step7/provider-write-candidate-decision.md`
 
 ---
 
