@@ -1,0 +1,51 @@
+{
+  "handoffVersion": "fixed-latest-v1",
+  "mode": "fixed-latest-file",
+  "worker": "claude-b",
+  "taskTitle": "Step 7-CURRENT-INVENTORY：目前架構與檔案盤點",
+  "branch": "qa/step6f-cvs-store-selection-browser-mobile",
+  "status": "completed",
+  "summary": [
+    "盤點 Step 7 全架構：DB / API / OpenAPI / generated client / UI / docs / branches / worktrees",
+    "Step 7E：已完成（DB + API + generated client + UI + user browser check PASS）",
+    "Step 7D：agent.ts code 已在 target，DB tables 已 push，但整合狀態需確認",
+    "Step 7B：POST /orders/tracking-import API 存在，UI 整合狀態需確認",
+    "Step 7C：schema 已定義並 push 至 DB，但 migration SQL 記錄只有 1 個（seller_agent_settings）",
+    "Step 6F WIP：EditOrderDialog.tsx +221/-178 lines，不可碰",
+    "新增 docs/order-step7-current-inventory.md，commit 68c6517"
+  ],
+  "modifiedFiles": [
+    "docs/order-step7-current-inventory.md"
+  ],
+  "testsRun": [
+    "DB: 盤點 10 tables，seller_agent_settings WHERE store_id=1 → 0 rows ✓",
+    "API routes: sellerAgent.ts（Step 7E）、agent.ts（Step 7D）、orders.ts tracking-import（Step 7B）確認存在",
+    "OpenAPI: GET/PATCH /stores/{storeId}/agent/settings ✓，/orders/tracking-import ✓",
+    "Generated hooks: useGetSellerAgentSettings ✓，useUpdateSellerAgentSettings ✓",
+    "UI routes: /settings/agent ✓，/settings ✓"
+  ],
+  "testsNotRun": [],
+  "risks": [
+    "Step 7D agent.ts 整合狀態需確認（是否已正式 merge）",
+    "DB migration SQL 只有 1 個（0001_seller_agent_settings.sql），其他 3 個 table 無 migration 記錄",
+    "Step 7B TrackingImportDialog UI 是否存在需確認",
+    "EditOrderDialog.tsx Step 6F WIP 仍未 commit",
+    "stash@{0}: step7e-active-preview-switch-preserve-tracked-changes 是否需要？",
+    "大量 prunable worktrees 和 Step 7E 舊 branches 可清理"
+  ],
+  "pendingQuestions": [
+    "Step 7D：agent.ts routes 是否已正式 merge 至 target branch？",
+    "DB migration：seller_agent_tokens 等 3 table 無 migration SQL，是否需要補？",
+    "Step 7B：TrackingImportDialog UI 在哪個 branch？",
+    "下一步 Step 7 整合計畫如何排序？"
+  ],
+  "inventoryCommit": "68c6517",
+  "step7Status": {
+    "7E": "已完成",
+    "7D": "部分完成（code 已寫，整合狀態需確認）",
+    "7B": "部分完成（API 存在，UI 未確認）",
+    "7C": "Schema 已 push，無 migration SQL 記錄"
+  },
+  "rawReply": "## Step 7-CURRENT-INVENTORY 完成\n\n### 1. Step 7 Inventory 摘要\n\n| 項目 | 結果 |\n|------|------|\n| Inventory 文件 | `docs/order-step7-current-inventory.md` |\n| Commit | `68c6517 docs-step7-current-inventory` |\n| 盤點涵蓋 | DB / API / OpenAPI / generated client / UI / docs / branches / worktrees |\n| 未修改 code | ✓（唯讀盤點）|\n\n### 2. 目前可辨識的大架構\n\n| 子系統 | Step | 完成狀態 |\n|--------|------|----------|\n| AI 代查設定 UI | Step 7E | **已完成**（merge + user browser check PASS）|\n| Agent Worker API | Step 7D | 部分完成（code 已寫，整合狀態需確認）|\n| 批次追蹤碼匯入 | Step 7B | 部分完成（API 存在，UI 未確認）|\n| Shipment Tracking Schema | Step 7C | Schema 已 push，無 migration SQL 記錄 |\n\n### 3. DB / Schema / Migration 盤點\n\n**DB Tables（10 個）**：\n\n| Table | Step | 狀態 |\n|-------|------|------|\n| `seller_agent_settings` | Step 7E | ✓ 已完成（有 migration SQL）|\n| `seller_agent_tokens` | Step 7D | DB 已 push，無 migration SQL |\n| `agent_run_logs` | Step 7D | DB 已 push，無 migration SQL |\n| `shipment_trackings` | Step 7C | DB 已 push，無 migration SQL |\n| `shipment_tracking_events` | Step 7C | DB 已 push，無 migration SQL |\n| 其他 5 個 | 基礎 / Step 6 | 已完成 |\n\n**Migration 檔案**：只有 `0001_seller_agent_settings.sql`（1 個）。\n\n### 4. API / Middleware / Tests 盤點\n\n| Route | Step | 狀態 |\n|-------|------|------|\n| `GET /stores/:storeId/agent/settings` | Step 7E | ✓ 已完成 |\n| `PATCH /stores/:storeId/agent/settings` | Step 7E | ✓ 已完成 |\n| `GET /orders/tracking-jobs` | Step 7D | code 已在 target（agent.ts）|\n| `POST /shipment-events` | Step 7D | code 已在 target（agent.ts）|\n| `PATCH /shipment-status` | Step 7D | code 已在 target（agent.ts）|\n| `POST /run-log` | Step 7D | code 已在 target（agent.ts）|\n| `POST /orders/tracking-import` | Step 7B | code 已在 target（orders.ts）|\n\n**Middleware**：`auth.ts`（requireAuth + verifyStoreOwner）、`agentAuth.ts`（agentTokenAuth）\n\n**Tests**：sellerAgent.route.test.mjs ✓、sellerAgent.integration.test.mjs ✓、agent.route.test.mjs ✓（Step 7D）\n\n### 5. OpenAPI / Generated Client 盤點\n\n| 項目 | 狀態 |\n|------|------|\n| `GET/PATCH /stores/{storeId}/agent/settings` | ✓ 已定義 |\n| `POST /orders/tracking-import` | ✓ 已定義 |\n| `useGetSellerAgentSettings` hook | ✓ 已 generated |\n| `useUpdateSellerAgentSettings` hook | ✓ 已 generated |\n| `SellerAgentSettings` types（含 6 個 enum）| ✓ 已 generated |\n| `TrackingImport` types | ✓ 已 generated |\n| Step 7D agent API | 未加入 OpenAPI spec |\n\n### 6. UI / Routes / Components 盤點\n\n| 頁面 / Route | Step | 狀態 |\n|-------------|------|------|\n| `/settings/agent` → `AgentSettings.tsx` | Step 7E | ✓ 已完成（5 區塊 UI）|\n| `/settings` → `Settings.tsx`（AI 代查設定入口）| Step 7E | ✓ 已完成 |\n| `EditOrderDialog.tsx` | Step 6F | **WIP，+221/-178 lines，不可碰** |\n| CVS 門市相關頁面 | Step 6D/6E | ✓ 已完成 |\n\n### 7. Docs 盤點\n\n- Step 7E docs：約 40 個文件，完整記錄從 DB 到 UI 到 merge 到 user check\n- Step 7B/7C/7D docs：約 12 個文件，規格和稽查已完成，整合記錄待補\n\n### 8. Branch / Worktree / Stash 盤點\n\n| 類別 | 數量 | 說明 |\n|------|------|------|\n| Step 7E 舊 branches | ~9 個 | 可清理（已 merge）|\n| Step 7C/7D/7B branches | ~3 個 | 需確認後清理 |\n| Prunable worktrees | ~17 個 | 可 `git worktree prune` |\n| Stash | 2 個 | stash@{0}: step7e-active-preview-switch（需確認）、stash@{1}: wip-step6e（可 drop）|\n\n### 9. Step 7E 狀態\n\n**已完成**。DB + API + generated client + UI + user browser check PASS。\n\n### 10. 交疊項目\n\n| 項目 | 交疊說明 |\n|------|----------|\n| `EditOrderDialog.tsx` | Step 6F WIP + Step 7E target branch 共存 |\n| `34066e8 feat-step8m-fulfillment-ui-and-receipt-split` | Step 8M 已在 target branch |\n| `agent.ts` | Step 7D code 已在 target，但整合驗證未完成 |\n\n### 11. WIP / 不可碰項目\n\n| 項目 | 原因 |\n|------|------|\n| `EditOrderDialog.tsx` | Step 6F 使用者主動開發中 |\n| `.replit` | Replit 系統自動修改 |\n\n### 12. 建議下一步整合 Step 7 Master Plan\n\n1. 確認 Step 7D agent.ts 整合狀態（是否已 merge？tests 是否通過？）\n2. 確認 Step 7B TrackingImportDialog UI 在哪個 branch\n3. 決定 DB migration 補齊策略（seller_agent_tokens 等 3 table）\n4. 收尾 Step 6F EditOrderDialog.tsx WIP\n5. 清理 prunable worktrees 和 Step 7E 舊 branches\n\n### 13. Commit 結果\n\n- Inventory commit：`68c6517 docs-step7-current-inventory`\n- Stage：只有 `docs/order-step7-current-inventory.md`\n- 未修改 code，未 stage `.replit` / `EditOrderDialog.tsx` / `dev-handoff/` / `.claude/`\n\n### 14. dev-handoff 更新結果\n\n- `dev-handoff/latest-B.json`：已更新（worker = claude-b，taskTitle = Step 7-CURRENT-INVENTORY）\n- `dev-handoff/latest-B.md`：已更新\n- `dev-handoff/latest.json`：已同步 relay copy（rawReply exact copy）\n- 均未 stage\n\n### 15. 未執行項目\n\n- 未修改任何 code / schema / API / UI\n- 未套用任何 stash\n- 未 drop 任何 stash\n- 未刪除任何 branch\n- 未 DB push / migrate / seed\n- 未 push GitHub\n- 未 stage 任何非 docs 檔案\n\n### 16. Git 狀態摘要\n\n| 項目 | 狀態 |\n|------|------|\n| Current branch | `qa/step6f-cvs-store-selection-browser-mobile` |\n| Inventory commit | `68c6517 docs-step7-current-inventory` ✓ HEAD |\n| 是否修改 code | 否 |\n| 是否 DB push / migrate / seed | 否 |\n| 是否 push GitHub | 否 |\n| `.replit` 是否 staged | 否 |\n| `EditOrderDialog.tsx` 是否 staged | 否 |\n| dev-handoff 是否 staged | 否 |\n| `.claude/` 是否 staged | 否 |\n| latest-B 是否 Step 7-CURRENT-INVENTORY | 是 |\n| latest.json rawReply 是否 exact copy | 是 |\n| 是否有 staged changes | 否 |",
+  "updatedAt": "2026-06-09T18:30:00Z"
+}

@@ -1,0 +1,73 @@
+{
+  "sourceUrl": "https://twcoupon.com/brandshopcity-7_11-%e5%ae%9c%e8%98%ad%e7%b8%a3-%e9%9b%bb%e8%a9%b1-%e5%9c%b0%e5%9d%80.html",
+  "twcouponTotal": 78,
+  "processed": 78,
+  "emapVerified": 78,
+  "emapMultiCandidates": 6,
+  "emapUnverified": 0,
+  "emapFailed": 0,
+  "dbInserted": 0,
+  "dbUpdated": 78,
+  "dbFailed": 0,
+  "totalStoresInDb": 698,
+  "unverifiedList": [],
+  "multipleCandidatesList": [
+    {
+      "storeName": "冬山門市",
+      "keyword": "冬山",
+      "candidates": [
+        "931928 冬山門市 宜蘭縣冬山鄉冬山路一段984號",
+        "257383 冬山成興門市 宜蘭縣冬山鄉成興路251.253號",
+        "256117 冬山武淵門市 宜蘭縣冬山鄉富農路二段276號1+2樓"
+      ],
+      "chosen": "931928"
+    },
+    {
+      "storeName": "廣達門市",
+      "keyword": "廣達",
+      "candidates": [
+        "192543 廣達門市 宜蘭縣冬山鄉廣興路166號168號1樓",
+        "942216 龜山廣達門市 桃園市龜山區文化二路211號"
+      ],
+      "chosen": "192543"
+    },
+    {
+      "storeName": "佳旺門市",
+      "keyword": "佳旺",
+      "candidates": [
+        "199555 佳旺門市 宜蘭縣宜蘭市舊城東路47號",
+        "970691 金佳旺門市 彰化縣社頭鄉中山路一段516號"
+      ],
+      "chosen": "199555"
+    },
+    {
+      "storeName": "永聖門市",
+      "keyword": "永聖",
+      "candidates": [
+        "965909 永聖門市 宜蘭縣礁溪鄉大忠村大忠路120、122號1樓",
+        "234863 虎尾永聖門市 雲林縣虎尾鎮廉使里永興南七路79號"
+      ],
+      "chosen": "965909"
+    },
+    {
+      "storeName": "蘇澳門市",
+      "keyword": "蘇澳",
+      "candidates": [
+        "209133 蘇澳門市 宜蘭縣蘇澳鎮中山路一段66號",
+        "921183 蘇澳港門市 宜蘭縣蘇澳鎮蘇東中路4號"
+      ],
+      "chosen": "209133"
+    },
+    {
+      "storeName": "新馬門市",
+      "keyword": "新馬",
+      "candidates": [
+        "130316 新馬門市 宜蘭縣蘇澳鎮海山西路489號1樓",
+        "280132 新馬偕門市 新竹市東區光復路二段690號1樓"
+      ],
+      "chosen": "130316"
+    }
+  ],
+  "failedList": [],
+  "completedAt": "2026-06-03T18:10:41.523Z"
+}

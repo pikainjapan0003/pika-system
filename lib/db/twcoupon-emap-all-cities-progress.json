@@ -1,0 +1,9 @@
+{
+  "processedCities": 1,
+  "currentCity": "新北市",
+  "completedCities": [
+    "新北市"
+  ],
+  "failedCities": [],
+  "lastUpdatedAt": "2026-06-04T06:08:06.076Z"
+}
