@@ -169,7 +169,8 @@
       "WebFetch(domain:corp.7-eleven.com)",
       "WebFetch(domain:www.7-11.com.tw)",
       "WebFetch(domain:ir.7-11.com.tw)",
-      "WebFetch(domain:family.com.tw)"
+      "WebFetch(domain:family.com.tw)",
+      "Bash(grep -E \"C[0-9]{10,}|[A-Z0-9]{10,}\")"
     ]
   }
 }
