@@ -131,6 +131,26 @@ Step 7P-PROVIDER-WRITE-CANDIDATE-DECISION = COMPLETED / PASS
 
 ---
 
+## Step 7P-ONE-SHOT-WRITE-SAFETY-GATE Closeout（2026-06-26）
+
+```text
+Step 7P-ONE-SHOT-WRITE-SAFETY-GATE = COMPLETED / PASS
+```
+
+安全門規格已建立：`docs/step7/one-shot-write-safety-gate.md`
+
+| Provider | 安全門狀態 | 說明 |
+|----------|-----------|------|
+| familymart | 不適用 | 維持 Level 4 正式自動同步 |
+| postoffice | **規格已建立；尚未授權寫入** | 待使用者提供完整授權文字後方可進入寫入流程 |
+| tcat | **規格已建立；尚未授權寫入** | 待使用者提供完整授權文字後方可進入寫入流程 |
+| 711 | 不適用 | 不列入第一批 candidate |
+
+- postoffice #38（外部 6 / DB 0 / 可寫 6）尚未授權；不得直接操作
+- 下一步：`Step 7P-POSTOFFICE-ONE-SHOT-AUTHORIZATION`
+
+---
+
 ## 嚴格禁止（沿用至下一輪）
 
 ```text

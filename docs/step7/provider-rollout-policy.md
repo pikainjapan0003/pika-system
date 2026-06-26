@@ -158,15 +158,16 @@ One-shot authorization required fields:
 ## 8. Next Step
 
 ```text
-Step 7P-ONE-SHOT-WRITE-SAFETY-GATE
+Step 7P-POSTOFFICE-ONE-SHOT-AUTHORIZATION
+（安全門規格已建立於 docs/step7/one-shot-write-safety-gate.md）
 ```
 
 用途：
 
 ```text
-正式建立 postoffice / tcat one-shot write safety gate 規格
-確認 Authorization Text 格式、gate 開關流程、close gate 後驗收步驟
-不直接開寫入，只建立規格文件與流程
+使用者決定對特定 postoffice order 執行 one-shot write 時，
+依安全門規格提供完整授權文字，然後依規格執行並收尾。
+不得在無授權文字的情況下執行寫入。
 ```
 
 ---
@@ -189,6 +190,17 @@ Step 7P-PROVIDER-WRITE-CANDIDATE-DECISION = COMPLETED / PASS
 - Runtime files unchanged; no DB write; no commit route called; Level 不升
 - postoffice / tcat 候選不等於已授權寫入；下一步需另開 one-shot authorization task
 - See: `docs/step7/provider-write-candidate-decision.md`
+
+```text
+Step 7P-ONE-SHOT-WRITE-SAFETY-GATE = COMPLETED / PASS（2026-06-26）
+```
+
+安全門規格已建立：`docs/step7/one-shot-write-safety-gate.md`
+- 授權格式：Section 4（使用者明確授權模板）
+- 寫入前檢查：Section 5（10 條）
+- 寫入期間限制：Section 6（8 條）
+- close gate 步驟：Section 7（9 步驟）
+- postoffice #38 尚未授權；下一步：`Step 7P-POSTOFFICE-ONE-SHOT-AUTHORIZATION`
 
 ---
 
