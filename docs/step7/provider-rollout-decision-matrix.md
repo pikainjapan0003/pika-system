@@ -78,15 +78,35 @@ Remaining work is rollout policy / implementation alignment, not uncontrolled pr
 ## 5. Required Next Step
 
 ```text
-Step 7N-PROVIDER-ROLLOUT-POLICY-DOC
+Step 7P-PROVIDER-WRITE-CANDIDATE-DECISION
 ```
 
 用途：
 
-- 把 decision matrix 變成正式規則文件
-- 明確定義 UI 顯示、preview-only、one-shot authorization、blocked provider 的規則
-- 決定是否需要 code alignment
+- 評估 postoffice / tcat / 7-11 是否進入 one-shot write candidate
+- 或維持 Level 1 manual preview-only 至 Step 8 之後再決定
 - 不直接開寫入
+
+---
+
+## Step 7P Closeout（2026-06-26）
+
+```text
+Step 7P-MANUAL-PREVIEW-ALL-PROVIDERS-QA = COMPLETED / PARTIAL
+```
+
+| Provider | Level | 狀態 |
+|----------|-------|------|
+| familymart | Level 3 — Formal Auto Sync | ✅ unchanged |
+| postoffice | Level 1 — Manual Preview-Only | ✅ confirmed |
+| tcat | Level 1 — Manual Preview-Only | ✅ confirmed |
+| 7-11 | Level 1 — Manual Preview-Only | ✅ confirmed |
+
+- Docs + repo safety: PASS
+- 7-11 Published UI QA: PASS（Step 7O 截圖驗收）
+- postoffice / tcat Published UI QA: NOT RUN in Step 7P
+- Runtime files unchanged; no DB write; no commit route called
+- See: `docs/step7/manual-preview-all-providers-qa.md`
 
 ---
 
