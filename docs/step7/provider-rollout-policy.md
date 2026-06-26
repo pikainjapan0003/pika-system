@@ -156,17 +156,37 @@ One-shot authorization required fields:
 ## 8. Next Step
 
 ```text
-Step 7N-IMPLEMENT-ROLLOUT-POLICY-CHECK
+Step 7P-PROVIDER-WRITE-CANDIDATE-DECISION
 ```
 
 用途：
 
 ```text
-只檢查目前 code 是否已符合 policy
-如果已符合，就不改 code
-如果有不一致，才提出最小修正方案
-不得直接開寫入
+評估 postoffice / tcat / 7-11 是否進入 one-shot write candidate
+或維持 Level 1 manual preview-only 至 Step 8 之後再決定
+不直接開寫入
 ```
+
+---
+
+## Step 7P Closeout（2026-06-26）
+
+```text
+Step 7P-MANUAL-PREVIEW-ALL-PROVIDERS-QA = COMPLETED / PARTIAL
+```
+
+| Provider | Level | 狀態 |
+|----------|-------|------|
+| familymart | Level 3 — Formal Auto Sync | ✅ unchanged |
+| postoffice | Level 1 — Manual Preview-Only | ✅ confirmed |
+| tcat | Level 1 — Manual Preview-Only | ✅ confirmed |
+| 7-11 | Level 1 — Manual Preview-Only | ✅ confirmed |
+
+- Docs + repo safety: PASS
+- 7-11 Published UI QA: PASS（Step 7O 截圖驗收）
+- postoffice / tcat Published UI QA: NOT RUN in Step 7P
+- Runtime files unchanged; no DB write; no commit route called
+- See: `docs/step7/manual-preview-all-providers-qa.md`
 
 ---
 
