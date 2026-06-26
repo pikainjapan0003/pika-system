@@ -222,19 +222,21 @@ DB write：未執行
 ## 8. 下一步
 
 ```text
-Step 7P-ONE-SHOT-WRITE-SAFETY-GATE
+Step 7P-POSTOFFICE-ONE-SHOT-AUTHORIZATION
+（安全門規格已建立於 docs/step7/one-shot-write-safety-gate.md）
 ```
 
 目的：
 
 ```text
-正式建立 postoffice / tcat one-shot write safety gate 規格。
-確認 Authorization Text 格式、gate 開關流程、close gate 後驗收步驟。
-不直接開寫入，只建立規格文件與流程。
+使用者決定對特定 postoffice order 執行 one-shot write 時，
+依 docs/step7/one-shot-write-safety-gate.md 第 4 節格式提供授權文字，
+然後依第 5～9 節步驟執行並收尾。
 ```
 
-> 注意：若使用者決定不立即開 one-shot write，可直接跳至 Step 8 進行其他功能。
+> 注意：若使用者決定不立即執行 one-shot write，可直接跳至 Step 8。
 > 本輪決策僅代表「postoffice / tcat 技術條件符合候選門檻」，不代表「已獲授權寫入」。
+> 安全門規格：`docs/step7/one-shot-write-safety-gate.md`
 
 ---
 
