@@ -158,15 +158,15 @@ One-shot authorization required fields:
 ## 8. Next Step
 
 ```text
-Step 7P-PROVIDER-WRITE-CANDIDATE-DECISION
+Step 7P-ONE-SHOT-WRITE-SAFETY-GATE
 ```
 
 用途：
 
 ```text
-評估 postoffice / tcat / 7-11 是否進入 one-shot write candidate
-或維持 Level 1 manual preview-only 至 Step 8 之後再決定
-不直接開寫入
+正式建立 postoffice / tcat one-shot write safety gate 規格
+確認 Authorization Text 格式、gate 開關流程、close gate 後驗收步驟
+不直接開寫入，只建立規格文件與流程
 ```
 
 ---
@@ -174,21 +174,21 @@ Step 7P-PROVIDER-WRITE-CANDIDATE-DECISION
 ## Step 7P Closeout（2026-06-26）
 
 ```text
-Step 7P-MANUAL-PREVIEW-ALL-PROVIDERS-QA = COMPLETED / PARTIAL
+Step 7P-MANUAL-PREVIEW-ALL-PROVIDERS-QA = COMPLETED / PASS
+Step 7P-SCREENSHOT-EVIDENCE-CLOSEOUT = COMPLETED / PASS
+Step 7P-PROVIDER-WRITE-CANDIDATE-DECISION = COMPLETED / PASS
 ```
 
-| Provider | Level | 狀態 |
-|----------|-------|------|
-| familymart | Level 4 — Formal Auto Sync | ✅ unchanged |
-| postoffice | Level 1 — Manual Preview-Only | ✅ confirmed |
-| tcat | Level 1 — Manual Preview-Only | ✅ confirmed |
-| 7-11 | Level 1 — Manual Preview-Only | ✅ confirmed |
+| Provider | Level | Published UI QA | Write Candidate Decision |
+|----------|-------|-----------------|-------------------------|
+| familymart | Level 4 — Formal Auto Sync | PASS（對照確認） | 不參與；維持正式自動同步 |
+| postoffice | Level 1 — Manual Preview-Only | Screenshot Evidence PASS | **第一順位 one-shot write candidate** |
+| tcat | Level 1 — Manual Preview-Only | Screenshot Evidence PASS | **第二順位 one-shot write candidate** |
+| 7-11 | Level 1 — Manual Preview-Only | Screenshot Evidence PASS | 暫不列入第一批；維持 preview-only |
 
-- Docs + repo safety: PASS
-- 7-11 Published UI QA: PASS（Step 7O 截圖驗收）
-- postoffice / tcat Published UI QA: NOT RUN in Step 7P
-- Runtime files unchanged; no DB write; no commit route called
-- See: `docs/step7/manual-preview-all-providers-qa.md`
+- Runtime files unchanged; no DB write; no commit route called; Level 不升
+- postoffice / tcat 候選不等於已授權寫入；下一步需另開 one-shot authorization task
+- See: `docs/step7/provider-write-candidate-decision.md`
 
 ---
 
