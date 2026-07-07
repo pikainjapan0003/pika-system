@@ -68,6 +68,14 @@
 
 ## Lessons Log
 
+### 2026-07-07 - 同一本機 clone 被兩個 AI session 同時操作，分支被互相覆蓋
+- 觸發情境：Fable 5 主 session 在 `Desktop\pika-system` commit+push 期間，制度庫另一個 session 在同一目錄 `git reset` 回舊 commit，導致本機分支倒退、已 push 的檔案從磁碟消失（remote 未受損，靠 `git merge --ff-only origin/main` 恢復）。
+- 發生錯誤：兩條工作線在同一個 working copy 上互踩；若當時尚未 push，工作會直接遺失。
+- 根因：CLAUDE.md 的 A/B 協議只隔離了 dev-handoff 檔案，沒有隔離 git 分支與 working tree。
+- 正確做法：**動 git 前先 `git status`＋`git log --oneline -3` 確認狀態與自己上一步一致；發現 HEAD 不是自己留下的樣子，先 `git fetch` 比對 origin，用 fast-forward 恢復，不得 force**；重要產出完成就立即 commit（＋授權時 push），不留在工作區過夜。
+- 要更新的規則：已含在 06 檔「你不是唯一的手」；再犯就升級成 AGENTS.md 最小規則。
+- 可刪除或合併的舊規則：無。
+
 ### 2026-07-07 - 初始化
 - 觸發情境：Fable 5 制度建立 session。
 - 發生錯誤：（非錯誤）記錄基準事實：pika-system 原不在本機，clone 至 `C:\Users\Lnovo\Desktop\pika-system`；成本/毛利模組與 Sheet 整合當時不存在；成本 Sheet 匿名 401 需 SA。

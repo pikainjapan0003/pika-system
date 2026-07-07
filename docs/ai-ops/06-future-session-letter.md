@@ -27,15 +27,15 @@
 
 ## 四、尚未完成（2026-07-07 交接）
 
-- [x] `docs/ai-ops/10-cost-sheet-mapping.md`：**已完成（2026-07-07，制度庫 session 用 SA 實讀）**——涵蓋 TEST.10（1）面板全值＋30 條公式＋逐欄解讀；其餘 23 分頁未對照。注意：面板有六項歧義待使用者裁決，清單在制度庫 `Claude library\projects\pika-system\BUYING_SYSTEM_ROADMAP.md` §4b，無裁決的公式不可實作。
-- [ ] gogo.gs 官方 API 有無的最終確認（用 04 檔模板 4；目前安全假設＝無 API，走手動輸入）。
-- [ ] 本 session 的制度檔已 commit 到本機 clone；**未 push**（CLAUDE.md 禁止 AI push）——需使用者自行 push 或授權。
+- [x] `docs/ai-ops/10-cost-sheet-mapping.md`：**已完成並改版（2026-07-07）**——現行版本對照的是正確目標試算表「PIKA_TEMPLATE_北海道嗶咔代購清單(製單系統)26.06」（21 分頁，重點 7 分頁逐欄＋公式＋3 筆 fixture）；舊版（東京輕井澤 26.03 的 TEST.10 面板）快照在制度庫 `Claude library\projects\pika-system\SHEET_TEST10_SNAPSHOT.md`。**實作前必讀 10 檔 §5 的 12 條未確認項**（含正式表 vs SHADOW「最後單件成本」口徑不一致等需老闆裁決項；另見制度庫 `BUYING_SYSTEM_ROADMAP.md` §4b），無裁決的公式不可實作。
+- [x] gogo.gs：**已定案（2026-07-07）**——官方 API 曾存在但已終止支援（api.gogo.gs 官方公告原文），不整合，手動輸入。定案與方案在 `docs/ai-ops/11-fuel-price-research.md`，不要再開這個題目。
+- [x] push：使用者已於 2026-07-07 明確授權，制度檔＋Sheet 對照檔已 push 至 origin/main。後續 push 仍需使用者逐次授權（CLAUDE.md 禁止自行 push 不變）。
 - [ ] `.agents/memory/MEMORY.md` 未加入 ai-ops 的交叉引用（低優先）。
 
 ## 五、未確認事實（四件套）
 
-1. 未確認：gogo.gs 是否有官方 API／資料下載。原因：本 session 只驗證了首頁可達（200，需 UA），未逐頁查文件。下次怎麼確認：讀 gogo.gs 頁尾/ヘルプ、robots.txt、利用規約；搜「gogo.gs API 公式」。目前安全假設：無 API，油價手動輸入。
-2. 未確認：成本 Sheet 的實際欄位與公式。原因：匿名 401，本 session 未動用 SA 憑證。下次怎麼確認：SA（金鑰在使用者 Windows 桌面，勿入 repo）讀取，或請使用者匯出 CSV。目前安全假設：欄位以使用者口述清單為候選，但寫程式前必須實讀。
+1. ~~gogo.gs~~ → **已確認（2026-07-07）**：官方 API 已終止支援，定案手動輸入，見 11 檔。
+2. ~~成本 Sheet 可讀性~~ → **已確認（2026-07-07）**：SA（cc-663@my-openclaw-491003）可讀，欄位對照在 10 檔；但 10 檔 §5 仍有 12 條表內未確認項（每分頁只讀前 40 列、正式表 vs SHADOW 口徑不一致等），實作前逐條處理。
 3. 未確認：Replit 部署目前是否存活、production DB 在哪。原因：本 session 未碰部署。下次怎麼確認：問使用者，或看 Replit 專案。目前安全假設：存在 production 環境，測試絕不指向它。
 4. 未確認：付款是否有第三方金流。原因：掃描未見金流 SDK，但未讀 api-server 全部依賴。目前安全假設：手動記錄付款金額。
 
