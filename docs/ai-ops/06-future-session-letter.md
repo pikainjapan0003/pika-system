@@ -33,6 +33,7 @@
 - [x] `.agents/memory/MEMORY.md` 已加入 ai-ops 交叉引用（2026-07-07）。
 - [x] 老闆已答覆 12 檔三題（2026-07-07）——交通成本分攤線解鎖。
 - [ ] （下一個最高價值）**實作交通成本分攤模組**：照 `docs/ai-ops/13-transport-cost-spec.md` 做，公式與 fixture 都已定案並手算驗證過，不要回頭重讀 Sheet。完成後依 spec §7 驗收。
+- 老闆的三方工作流（2026-07-07 起）：ChatGPT 規劃審查（看不到 repo）＋ Claude Code 寫代碼＋老闆傳話拍板——協議與可複製模板在 `docs/plan/AI_HANDOFF.md`（自給自足，可整份丟給 ChatGPT）。
 
 ## 五、未確認事實（四件套）
 

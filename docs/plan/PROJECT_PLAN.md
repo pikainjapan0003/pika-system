@@ -3,6 +3,7 @@
 - 日期：2026-07-07｜維護者：AI（依 `docs/ai-ops/` 制度）｜給老闆看的版本，白話優先
 - 一式三份：本檔（.md，以此為準）＋ `PROJECT_PLAN.doc`（Word）＋ `PROJECT_PLAN.pdf`（列印/手機看）
 - 更新規則：改 .md 後由 AI 重新產出另外兩份；三份不一致時以 .md 為準
+- **給 AI 用的詳細版在同目錄 `AI_HANDOFF.md`**：要讓 ChatGPT 規劃/審查→整份上傳給它；要讓 Claude Code 開工→照該檔 §6 模板貼任務單。本檔（人類版）只是摘要
 
 ---
 
