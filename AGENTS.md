@@ -40,7 +40,7 @@
 - 歷史 spec 在 `docs/order-step*.md`（90 份，扁平）；技術踩坑筆記在 `.agents/memory/`（沿用，見 05 檔分工）。
 - 禁止 push GitHub、禁止 stage `dev-handoff/` 與 `.claude/`（CLAUDE.md 規定）。commit message 用 kebab-case。
 - 與使用者溝通用繁體中文；程式碼英文。
-- **戰略層計畫（做什麼、順序、驗收、進度）在制度庫**：`C:\Users\Lnovo\Desktop\Claude library\projects\pika-system\BUYING_SYSTEM_ROADMAP.md`（2026-07-07 起）。本目錄 ai-ops 管「怎麼做」；兩邊衝突時優先序見該檔 §2b。成本 Sheet 欄位對照已落 `docs/ai-ops/10-cost-sheet-mapping.md`。
+- 成本 Sheet 欄位對照在 `docs/ai-ops/10-cost-sheet-mapping.md`；**成本公式待老闆拍板清單在 `docs/ai-ops/12-owner-decisions.md`（未答覆的公式禁止實作）**。戰略層 roadmap（做什麼、順序、驗收）在外部資料夾 `C:\Users\Lnovo\Desktop\pika-buying-ops\BUYING_SYSTEM_ROADMAP.md`（唯讀參考；本 repo 內文件與其衝突時，以本 repo＋使用者當下指示為準）。
 
 ## 誠實條款
 
