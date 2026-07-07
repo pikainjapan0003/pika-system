@@ -31,7 +31,8 @@
 - [x] gogo.gs：**已定案（2026-07-07）**——官方 API 曾存在但已終止支援（api.gogo.gs 官方公告原文），不整合，手動輸入。定案與方案在 `docs/ai-ops/11-fuel-price-research.md`，不要再開這個題目。
 - [x] push：使用者已於 2026-07-07 明確授權，制度檔＋Sheet 對照檔已 push 至 origin/main。後續 push 仍需使用者逐次授權（CLAUDE.md 禁止自行 push 不變）。
 - [x] `.agents/memory/MEMORY.md` 已加入 ai-ops 交叉引用（2026-07-07）。
-- [ ] （下一個最高價值）老闆答覆 `12-owner-decisions.md` 三題（1、5、8）後，開工交通成本分攤模組——計畫在 `docs/plan/PROJECT_PLAN.md` 第 1 步。
+- [x] 老闆已答覆 12 檔三題（2026-07-07）——交通成本分攤線解鎖。
+- [ ] （下一個最高價值）**實作交通成本分攤模組**：照 `docs/ai-ops/13-transport-cost-spec.md` 做，公式與 fixture 都已定案並手算驗證過，不要回頭重讀 Sheet。完成後依 spec §7 驗收。
 
 ## 五、未確認事實（四件套）
 
