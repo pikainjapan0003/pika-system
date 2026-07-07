@@ -37,8 +37,10 @@ dev-handoff/              ← A/B handoff 狀態檔（不 commit，依 CLAUDE.md
 ```text
 typecheck 全部： pnpm run typecheck
 build 全部：     pnpm run build
-API 測試：       cd artifacts/api-server/src/routes && node --test --import tsx/esm <name>.test.mjs
-                 （需 DATABASE_URL；測試會建立/清除真實資料，禁止指向 production）
+API 測試：       node --experimental-test-module-mocks --import tsx/esm --test src/routes/<name>.test.mjs
+                 （在 artifacts/api-server 下執行；部分測試 mock @clerk/express，缺
+                 --experimental-test-module-mocks 會失敗——正確 runner 以各測試檔頭註解為準。
+                 需 DATABASE_URL；測試會建立/清除真實資料，禁止指向 production）
 DB schema push： pnpm --filter @workspace/db run push   （lib/db/package.json name=@workspace/db）
 codegen：        lib/api-spec 的 orval codegen（改 API spec 後必跑，生成物在 lib/api-zod、lib/api-client-react）
 前端 dev：       artifacts/shop-app → pnpm dev

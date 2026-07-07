@@ -43,7 +43,7 @@
 
 **每個 session 先查當下環境實際可用什麼，不可照抄本檔。**
 
-- 2026-07-07 本環境實查：Agent 工具的 `model` 參數接受 `sonnet` / `opus` / `haiku` / `fable`；agent 類型有 `Explore`（唯讀搜索）、`general-purpose`（全工具）、`Plan`、`claude` 等（完整清單以 session 內 system 提示為準）。effort 參數在本環境由 agent 定義檔控制，主對話無法逐次指定（未確認未來版本；確認方法：看 Agent 工具 schema 是否有 effort 欄位）。
+- 2026-07-07 本環境實查（**環境事實會過期：距此日期超過 7 天，或發現 agent 清單對不上，必須重查 session 內 system 提示，不可沿用本條**）：Agent 工具的 `model` 參數接受 `sonnet` / `opus` / `haiku` / `fable`；agent 類型有 `Explore`（唯讀搜索）、`general-purpose`（全工具）、`Plan`、`claude` 等（完整清單以 session 內 system 提示為準）。effort 參數在本環境由 agent 定義檔控制，主對話無法逐次指定（未確認未來版本；確認方法：看 Agent 工具 schema 是否有 effort 欄位）。
 - 查不到可用模型時的暫定策略：低風險批次（掃檔、格式化、批次改 MD）用最便宜可用模型；高風險決策（成本公式、訂單總額）用最強可用模型；失敗後帶失敗軌跡升級。
 
 ## 4. 回報合約

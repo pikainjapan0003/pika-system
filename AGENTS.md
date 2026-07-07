@@ -17,7 +17,7 @@
    - 踩坑了／要改規則 → `docs/ai-ops/05-maintenance-protocol.md`
    - 接手上個 session → `docs/ai-ops/06-future-session-letter.md`
    - 環境事實速查（指令、Sheet、gogo.gs）→ `docs/ai-ops/00-quick-diagnosis.md` 附錄
-3. 若本 repo 的 `CLAUDE.md`（Dev Handoff Relay A/B 協議）與任務相關，遵守它；它與本檔衝突時，**CLAUDE.md 的禁止事項優先**（不 push、不 stage dev-handoff/ 與 .claude/）。
+3. 規則優先序（永遠適用，高→低）：**使用者當下指示 > CLAUDE.md 禁止事項 > 本檔最小規則 > docs/ai-ops 細則 > 歷史 spec**。CLAUDE.md（Dev Handoff Relay A/B 協議）不可被本檔或 docs/ai-ops 任何內容覆寫（不 push、不 stage dev-handoff/ 與 .claude/）。
 
 ## 最小規則（違反任一條 = 任務不合格）
 
@@ -34,7 +34,7 @@
 
 ## 本 repo 硬事實（2026-07-07 查證）
 
-- pnpm workspace；`pnpm run typecheck` / `pnpm run build`（root package.json）。root 無 test script；API 測試用 Node 內建 `node:test`：`node --test --import tsx/esm <file>.test.mjs`（需 `DATABASE_URL`，測試會寫真 DB——**不可對 production DB 跑**）。
+- pnpm workspace；`pnpm run typecheck` / `pnpm run build`（root package.json）。root 無 test script；API 測試用 Node 內建 `node:test`，完整指令見 `docs/ai-ops/01-session-plan.md` 速查（需 `--experimental-test-module-mocks` 與 `DATABASE_URL`；測試會寫真 DB——**不可對 production DB 跑**）。
 - 主要程式：`artifacts/api-server`（Express 5 + Drizzle）、`artifacts/shop-app`（React+Vite）、`lib/db`（schema）、`lib/api-spec`（Orval codegen 來源，`lib/api-zod`、`lib/api-client-react` 是生成物勿手改）。物流 adapter（7-11／全家／郵局／黑貓）在 `artifacts/api-server/src/lib/logistics/`。部署：Replit autoscale。
 - **成本／毛利計算目前不存在**（orders schema 只有 unitPrice/totalPrice/paidAmount/discountAmount）；Google Sheet 整合也不存在。這是待遷移核心，動工前必讀 `docs/ai-ops/03-judgment-rubrics.md`「Sheet 欄位遷移」。
 - 歷史 spec 在 `docs/order-step*.md`（90 份，扁平）；技術踩坑筆記在 `.agents/memory/`（沿用，見 05 檔分工）。
