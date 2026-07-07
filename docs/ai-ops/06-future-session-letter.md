@@ -27,7 +27,7 @@
 
 ## 四、尚未完成（2026-07-07 交接）
 
-- [ ] `docs/ai-ops/10-cost-sheet-mapping.md`：成本 Sheet 實讀與欄位對照（前置：SA 憑證或使用者匯出 CSV）。
+- [x] `docs/ai-ops/10-cost-sheet-mapping.md`：**已完成（2026-07-07，制度庫 session 用 SA 實讀）**——涵蓋 TEST.10（1）面板全值＋30 條公式＋逐欄解讀；其餘 23 分頁未對照。注意：面板有六項歧義待使用者裁決，清單在制度庫 `Claude library\projects\pika-system\BUYING_SYSTEM_ROADMAP.md` §4b，無裁決的公式不可實作。
 - [ ] gogo.gs 官方 API 有無的最終確認（用 04 檔模板 4；目前安全假設＝無 API，走手動輸入）。
 - [ ] 本 session 的制度檔已 commit 到本機 clone；**未 push**（CLAUDE.md 禁止 AI push）——需使用者自行 push 或授權。
 - [ ] `.agents/memory/MEMORY.md` 未加入 ai-ops 的交叉引用（低優先）。
