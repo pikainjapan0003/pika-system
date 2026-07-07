@@ -100,7 +100,7 @@
 **產品底線**：客人快速選店、少輸入、選店結果回填訂單；老闆後台直接看到門市店號店名。不是地圖玩具。
 
 **操作步驟**：
-1. 改動後跑 `cvs.route.test.mjs` 與相關 logistics 測試（需 DATABASE_URL，非 production）。
+1. 改動後跑 `cvs.route.test.mjs` 與相關 logistics 測試（完整指令見 01 檔速查：需 `--experimental-test-module-mocks` flag 與 DATABASE_URL，非 production；runner 以測試檔頭註解為準）。
 2. 手動驗一次完整流程：公開下單頁 → 選 7-11 → 選店 → 回到訂單 → 門市資訊出現在訂單與後台。
 3. 運費檢查：每種物流方式（7-11／全家／黑貓／郵局／面交）各下一筆，總額 = 商品小計＋該方式運費（費率表 `shippingFee.ts`）。
 4. 匯入類改動：先跑 dry-run worker（`multiProviderDryRunWorker.ts`），比對 dry-run 輸出再開 controlled write。
