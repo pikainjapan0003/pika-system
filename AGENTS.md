@@ -40,7 +40,7 @@
 - 歷史 spec 在 `docs/order-step*.md`（90 份，扁平）；技術踩坑筆記在 `.agents/memory/`（沿用，見 05 檔分工）。
 - 禁止 push GitHub、禁止 stage `dev-handoff/` 與 `.claude/`（CLAUDE.md 規定）。commit message 用 kebab-case。
 - 與使用者溝通用繁體中文；程式碼英文。
-- 成本 Sheet 欄位對照在 `docs/ai-ops/10-cost-sheet-mapping.md`；**成本公式待老闆拍板清單在 `docs/ai-ops/12-owner-decisions.md`（未答覆的公式禁止實作）**。戰略層 roadmap（做什麼、順序、驗收）在外部資料夾 `C:\Users\Lnovo\Desktop\pika-buying-ops\BUYING_SYSTEM_ROADMAP.md`（唯讀參考；本 repo 內文件與其衝突時，以本 repo＋使用者當下指示為準）。
+- 成本 Sheet 欄位對照在 `docs/ai-ops/10-cost-sheet-mapping.md`；**成本公式待老闆拍板清單在 `docs/ai-ops/12-owner-decisions.md`（未答覆的公式禁止實作）**。**老闆已裁決範圍（2026-07-07）：該 Sheet 僅用於「交通成本分攤到每件商品」這條線（gid=0 規劃成本暫存區）；整體成本計算是另一條線，勿混**（詳見 12 檔檔頭）。戰略層 roadmap（做什麼、順序、驗收）在外部資料夾 `C:\Users\Lnovo\Desktop\pika-buying-ops\BUYING_SYSTEM_ROADMAP.md`（唯讀參考；本 repo 內文件與其衝突時，以本 repo＋使用者當下指示為準）。
 
 ## 誠實條款
 
