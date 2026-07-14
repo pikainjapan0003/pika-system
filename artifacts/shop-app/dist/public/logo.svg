@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 40" fill="none">
-  <rect width="120" height="40" rx="8" fill="#C2532B"/>
-  <text x="12" y="27" font-family="PingFang TC, Noto Sans TC, sans-serif" font-size="18" font-weight="700" fill="white">揪單</text>
-  <circle cx="95" cy="20" r="10" fill="rgba(255,255,255,0.2)"/>
-  <path d="M90 20 L95 15 L100 20 L95 25 Z" fill="white" opacity="0.9"/>
-</svg>
