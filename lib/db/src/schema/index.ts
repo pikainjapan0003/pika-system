@@ -12,3 +12,5 @@ export * from "./logisticsImportBatches.ts";
 export * from "./logisticsImportRows.ts";
 export * from "./shipmentTrackingExceptions.ts";
 export * from "./shipmentTrackingRunLogs.ts";
+export * from "./trips.ts";
+export * from "./tripRoutes.ts";
