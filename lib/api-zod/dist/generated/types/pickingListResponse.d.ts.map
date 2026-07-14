@@ -1,1 +1,0 @@
-{"version":3,"file":"pickingListResponse.d.ts","sourceRoot":"","sources":["../../../src/generated/types/pickingListResponse.ts"],"names":[],"mappings":"AAAA;;;;;;GAMG;AACH,OAAO,KAAK,EAAE,eAAe,EAAE,MAAM,mBAAmB,CAAC;AAEzD,MAAM,WAAW,mBAAmB;IAClC,WAAW,EAAE,IAAI,CAAC;IAClB,UAAU,EAAE,MAAM,CAAC;IACnB,gBAAgB,EAAE,MAAM,EAAE,CAAC;IAC3B,KAAK,EAAE,eAAe,EAAE,CAAC;CAC1B"}

@@ -144,7 +144,7 @@ type SyncPhase =
 
 // J5F-7P-A: one-shot gate — postoffice ****3004, order #38, authorized 2026-06-26.
 // Close immediately after write: COMMIT_ENABLED=false, remove ONE_SHOT_COMMIT_PROVIDER/TRACKING_LAST4/isOneShotCommitOrder.
-const COMMIT_ENABLED: boolean = true;
+const COMMIT_ENABLED: boolean = false;
 const ONE_SHOT_COMMIT_PROVIDER = "postoffice" as const;
 const ONE_SHOT_COMMIT_TRACKING_LAST4 = "3004";
 function isOneShotCommitOrder(job: PreviewJob): boolean {
