@@ -4,6 +4,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { storesTable } from "./stores.ts";
 import { productCategoriesTable } from "./productCategories.ts";
+import { tripRoutesTable } from "./tripRoutes.ts";
 
 export const productsTable = pgTable("products", {
   id: serial("id").primaryKey(),
@@ -27,8 +28,12 @@ export const productsTable = pgTable("products", {
   categoryId: integer("category_id").references(() => productCategoriesTable.id, {
     onDelete: "set null",
   }),
+  tripRouteId: integer("trip_route_id").references(() => tripRoutesTable.id, {
+    onDelete: "set null",
+  }),
 }, (t) => [
   index("products_store_id_idx").on(t.storeId),
+  index("products_trip_route_id_idx").on(t.tripRouteId),
   check("inventory_non_negative", sql`${t.inventory} >= 0`),
   check(
     "storage_temp_valid",
