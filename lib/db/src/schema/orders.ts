@@ -20,6 +20,9 @@ export type ShippingMethod = typeof shippingMethodEnum[number];
 export const shippingStatusEnum = ["not_shipped", "preparing", "shipped", "arrived", "picked_up", "returned", "cancelled"] as const;
 export type ShippingStatus = typeof shippingStatusEnum[number];
 
+export const profitSnapshotStatusEnum = ["captured", "pending", "exempt"] as const;
+export type ProfitSnapshotStatus = typeof profitSnapshotStatusEnum[number];
+
 export const ordersTable = pgTable("orders", {
   id: serial("id").primaryKey(),
   productId: integer("product_id").notNull().references(() => productsTable.id),
@@ -53,6 +56,18 @@ export const ordersTable = pgTable("orders", {
   internalNote: text("internal_note"),
   discountAmount: integer("discount_amount").notNull().default(0),
   discountNote: text("discount_note"),
+  // Order-time unit cost/profit snapshot (Q63/Q67/Q68/Q69).
+  // numeric(30,12) is the approved terminal half-up capture scale; these
+  // values must never feed the live product cost calculation back upstream.
+  profitSnapshotCostJpy: numeric("profit_snapshot_cost_jpy", { precision: 30, scale: 12 }),
+  profitSnapshotExchangeRate: numeric("profit_snapshot_exchange_rate", { precision: 30, scale: 12 }),
+  profitSnapshotProductCostTwd: numeric("profit_snapshot_product_cost_twd", { precision: 30, scale: 12 }),
+  profitSnapshotTransportCostTwd: numeric("profit_snapshot_transport_cost_twd", { precision: 30, scale: 12 }),
+  profitSnapshotUnitProfitTwd: numeric("profit_snapshot_unit_profit_twd", { precision: 30, scale: 12 }),
+  profitSnapshotFullUnitProfitTwd: numeric("profit_snapshot_full_unit_profit_twd", { precision: 30, scale: 12 }),
+  profitSnapshotStatus: text("profit_snapshot_status"),
+  profitSnapshotCapturedAt: timestamp("profit_snapshot_captured_at", { withTimezone: true }),
+  profitSnapshotBackfilledAt: timestamp("profit_snapshot_backfilled_at", { withTimezone: true }),
   // CVS store fields (7-11, FamilyMart, etc.) — DB cols cvsStoreId/cvsStoreName map to API storeCode/storeName
   cvsStoreId: text("cvs_store_id"),
   cvsStoreName: text("cvs_store_name"),
@@ -66,6 +81,52 @@ export const ordersTable = pgTable("orders", {
   index("orders_store_id_idx").on(t.storeId),
   index("orders_product_id_idx").on(t.productId),
   check("orders_status_valid", sql`${t.status} IN ('pending', 'awaiting_payment', 'preparing', 'shipped', 'completed', 'cancelled')`),
+  check(
+    "orders_profit_snapshot_status_valid",
+    sql`${t.profitSnapshotStatus} IS NULL OR ${t.profitSnapshotStatus} IN ('captured', 'pending', 'exempt')`,
+  ),
+  check(
+    "orders_profit_snapshot_costs_non_negative",
+    sql`(${t.profitSnapshotCostJpy} IS NULL OR ${t.profitSnapshotCostJpy} >= 0)
+      AND (${t.profitSnapshotExchangeRate} IS NULL OR ${t.profitSnapshotExchangeRate} >= 0)
+      AND (${t.profitSnapshotProductCostTwd} IS NULL OR ${t.profitSnapshotProductCostTwd} >= 0)
+      AND (${t.profitSnapshotTransportCostTwd} IS NULL OR ${t.profitSnapshotTransportCostTwd} >= 0)`,
+  ),
+  check(
+    "orders_profit_snapshot_shape_valid",
+    sql`(
+        ${t.profitSnapshotStatus} IS NULL
+        AND ${t.profitSnapshotCostJpy} IS NULL
+        AND ${t.profitSnapshotExchangeRate} IS NULL
+        AND ${t.profitSnapshotProductCostTwd} IS NULL
+        AND ${t.profitSnapshotTransportCostTwd} IS NULL
+        AND ${t.profitSnapshotUnitProfitTwd} IS NULL
+        AND ${t.profitSnapshotFullUnitProfitTwd} IS NULL
+        AND ${t.profitSnapshotCapturedAt} IS NULL
+        AND ${t.profitSnapshotBackfilledAt} IS NULL
+      ) OR (
+        ${t.profitSnapshotStatus} = 'pending'
+        AND ${t.profitSnapshotProductCostTwd} IS NULL
+        AND ${t.profitSnapshotTransportCostTwd} IS NULL
+        AND ${t.profitSnapshotUnitProfitTwd} IS NULL
+        AND ${t.profitSnapshotFullUnitProfitTwd} IS NULL
+        AND ${t.profitSnapshotCapturedAt} IS NOT NULL
+        AND ${t.profitSnapshotBackfilledAt} IS NULL
+      ) OR (
+        ${t.profitSnapshotStatus} IN ('captured', 'exempt')
+        AND ${t.profitSnapshotCostJpy} IS NOT NULL
+        AND ${t.profitSnapshotExchangeRate} IS NOT NULL
+        AND ${t.profitSnapshotProductCostTwd} IS NOT NULL
+        AND ${t.profitSnapshotTransportCostTwd} IS NOT NULL
+        AND ${t.profitSnapshotUnitProfitTwd} IS NOT NULL
+        AND ${t.profitSnapshotFullUnitProfitTwd} IS NOT NULL
+        AND ${t.profitSnapshotCapturedAt} IS NOT NULL
+      )`,
+  ),
+  check(
+    "orders_profit_snapshot_exempt_transport_zero",
+    sql`${t.profitSnapshotStatus} <> 'exempt' OR ${t.profitSnapshotTransportCostTwd} = 0`,
+  ),
 ]);
 
 export const insertOrderSchema = createInsertSchema(ordersTable).omit({ id: true, createdAt: true, updatedAt: true });

@@ -2,10 +2,36 @@ import { Router } from "express";
 import { and, desc, eq } from "drizzle-orm";
 import { rateLimit } from "express-rate-limit";
 import { randomBytes } from "crypto";
-import { db, storesTable, productsTable, ordersTable, shipmentTrackingsTable } from "@workspace/db";
+import {
+  createInitialOrderProfitSnapshot,
+  db,
+  storesTable,
+  productsTable,
+  ordersTable,
+  shipmentTrackingsTable,
+} from "@workspace/db";
 import { SubmitOrderBody } from "@workspace/api-zod";
 import { getShippingFee } from "../lib/shippingFee.ts";
 import { getProviderMeta } from "../lib/logistics/providers.ts";
+import { loadOrderProfitSnapshotInput } from "../lib/orderProfitSnapshot.ts";
+
+const INTERNAL_PROFIT_SNAPSHOT_FIELDS = [
+  "profitSnapshotCostJpy",
+  "profitSnapshotExchangeRate",
+  "profitSnapshotProductCostTwd",
+  "profitSnapshotTransportCostTwd",
+  "profitSnapshotUnitProfitTwd",
+  "profitSnapshotFullUnitProfitTwd",
+  "profitSnapshotStatus",
+  "profitSnapshotCapturedAt",
+  "profitSnapshotBackfilledAt",
+] as const;
+
+function omitInternalProfitSnapshot(order: Record<string, unknown>): Record<string, unknown> {
+  const publicOrder = { ...order };
+  for (const field of INTERNAL_PROFIT_SNAPSHOT_FIELDS) delete publicOrder[field];
+  return publicOrder;
+}
 
 const submitOrderLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
@@ -180,6 +206,15 @@ router.post("/p/:shareToken/orders", submitOrderLimiter, async (req, res) => {
         // totalPrice = 商品小計（不含運費）。訂單總額由 shippingFee + totalPrice 計算
         // （與 merchant orders 的 formatOrder 語意一致，避免運費被重複計算）。
         const totalPrice = unitPrice * parsed.data.quantity;
+        const profitSnapshotInput = await loadOrderProfitSnapshotInput(
+          tx,
+          product,
+          product.price,
+        );
+        const profitSnapshot = createInitialOrderProfitSnapshot(
+          profitSnapshotInput,
+          new Date(),
+        );
 
         // Decrement inventory only when it is being tracked (not null)
         if (product.inventory !== null) {
@@ -209,6 +244,7 @@ router.post("/p/:shareToken/orders", submitOrderLimiter, async (req, res) => {
             unitPrice: String(unitPrice),
             shippingFee: String(shippingFee),
             totalPrice: String(totalPrice),
+            ...profitSnapshot,
             status: "pending",
             cvsStoreId: hasCvs ? (parsed.data.cvsStoreId ?? null) : null,
             cvsStoreName: hasCvs ? (parsed.data.cvsStoreName ?? null) : null,
@@ -229,7 +265,7 @@ router.post("/p/:shareToken/orders", submitOrderLimiter, async (req, res) => {
       });
 
       return res.status(201).json({
-        ...order,
+        ...omitInternalProfitSnapshot(order),
         unitPrice: parseFloat(order.unitPrice as string),
         shippingFee: parseFloat(order.shippingFee as string),
         totalPrice: parseFloat(order.totalPrice as string),
