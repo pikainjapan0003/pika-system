@@ -1,7 +1,14 @@
 import { Router } from "express";
 import { and, eq, inArray } from "drizzle-orm";
 import { randomBytes } from "crypto";
-import { db, ordersTable, productsTable, shipmentTrackingsTable } from "@workspace/db";
+import {
+  backfillPendingOrderProfitSnapshot,
+  db,
+  displayOrderProfitSnapshotAmount,
+  ordersTable,
+  productsTable,
+  shipmentTrackingsTable,
+} from "@workspace/db";
 import type { OrderStatus } from "@workspace/db";
 import { CreateMerchantOrderBody, UpdateOrderBody, UpdateOrderStatusBody, BulkUpdateOrdersBody, GetPickingListBody, GetShippingListBody } from "@workspace/api-zod";
 import { requireAuth, verifyStoreOwner } from "../middlewares/auth.ts";
@@ -9,6 +16,7 @@ import { getShippingFee } from "../lib/shippingFee.ts";
 import { isValidTransition, getTransitionError } from "../lib/orderStatusMachine.ts";
 import { TRACKING_IMPORT_ALLOWED_PROVIDERS, normalizeTrackingProvider } from "../lib/logistics/providers.ts";
 import { ensureManualProviderTrackingRow } from "../lib/logistics/trackingSeed.ts";
+import { loadOrderProfitSnapshotInput } from "../lib/orderProfitSnapshot.ts";
 
 const router = Router();
 
@@ -903,6 +911,89 @@ router.delete("/stores/:storeId/orders/:orderId", requireAuth, async (req: any, 
   return res.json({ ok: true });
 });
 
+router.post("/orders/:orderId/profit-snapshot/backfill", requireAuth, async (req: any, res) => {
+  const orderId = parseInt(req.params.orderId);
+  if (isNaN(orderId)) return res.status(400).json({ error: "Invalid orderId" });
+
+  const [order] = await db
+    .select()
+    .from(ordersTable)
+    .where(eq(ordersTable.id, orderId))
+    .limit(1);
+  if (!order) return res.status(404).json({ error: "Order not found" });
+  if (!(await verifyStoreOwner(req, res, order.storeId))) return;
+
+  try {
+    const updated = await db.transaction(async (tx) => {
+      const [lockedOrder] = await tx
+        .select()
+        .from(ordersTable)
+        .where(eq(ordersTable.id, orderId))
+        .for("update")
+        .limit(1);
+      if (!lockedOrder) {
+        const err = new Error("Order not found") as Error & { status?: number };
+        err.status = 404;
+        throw err;
+      }
+
+      const [product] = await tx
+        .select()
+        .from(productsTable)
+        .where(eq(productsTable.id, lockedOrder.productId))
+        .limit(1);
+      if (!product) {
+        const err = new Error("Product not found") as Error & { status?: number };
+        err.status = 409;
+        throw err;
+      }
+
+      const snapshotInput = await loadOrderProfitSnapshotInput(
+        tx,
+        product,
+        lockedOrder.unitPrice,
+      );
+      const backfill = backfillPendingOrderProfitSnapshot(
+        lockedOrder.profitSnapshotStatus,
+        snapshotInput,
+        new Date(),
+      );
+      if (backfill.outcome === "rejected") {
+        const err = new Error("成本快照已定格，不能再次補拍") as Error & { status?: number };
+        err.status = 409;
+        throw err;
+      }
+      if (backfill.outcome === "still_pending") {
+        const err = new Error("成本資料仍待確認，尚無法補拍") as Error & { status?: number };
+        err.status = 409;
+        throw err;
+      }
+
+      const [backfilledOrder] = await tx
+        .update(ordersTable)
+        .set({
+          ...backfill.values,
+          profitSnapshotBackfilledAt: backfill.profitSnapshotBackfilledAt,
+        })
+        .where(and(
+          eq(ordersTable.id, orderId),
+          eq(ordersTable.profitSnapshotStatus, "pending"),
+        ))
+        .returning();
+      if (!backfilledOrder) throw new Error("Profit snapshot backfill updated no row");
+      return backfilledOrder;
+    });
+
+    return res.json(formatOrder(updated));
+  } catch (err) {
+    const status = (err as { status?: number }).status;
+    if (status === 404 || status === 409) {
+      return res.status(status).json({ error: (err as Error).message });
+    }
+    throw err;
+  }
+});
+
 router.patch("/orders/:orderId/status", requireAuth, async (req: any, res) => {
   const orderId = parseInt(req.params.orderId);
   if (isNaN(orderId)) return res.status(400).json({ error: "Invalid orderId" });
@@ -1001,6 +1092,15 @@ function formatOrder(o: any) {
   const discountAmount = o.discountAmount ?? 0;
   const orderTotal = Math.max(totalPrice + shippingFee - discountAmount, 0);
   const remainingAmount = Math.max(orderTotal - (paidAmount ?? 0), 0);
+  const profitSnapshotDisplay = o.profitSnapshotStatus === "captured"
+    || o.profitSnapshotStatus === "exempt"
+    ? {
+      productCostTwd: displayOrderProfitSnapshotAmount(o.profitSnapshotProductCostTwd),
+      transportCostTwd: displayOrderProfitSnapshotAmount(o.profitSnapshotTransportCostTwd),
+      unitProfitTwd: displayOrderProfitSnapshotAmount(o.profitSnapshotUnitProfitTwd),
+      fullUnitProfitTwd: displayOrderProfitSnapshotAmount(o.profitSnapshotFullUnitProfitTwd),
+    }
+    : null;
   return {
     ...o,
     unitPrice: parseFloat(o.unitPrice),
@@ -1014,6 +1114,9 @@ function formatOrder(o: any) {
     storeName: o.cvsStoreName ?? null,
     orderTotal,
     remainingAmount,
+    profitSnapshotCapturedAt: o.profitSnapshotCapturedAt?.toISOString() ?? null,
+    profitSnapshotBackfilledAt: o.profitSnapshotBackfilledAt?.toISOString() ?? null,
+    profitSnapshotDisplay,
   };
 }
 

@@ -115,7 +115,25 @@ interface OrderShipmentTrackingSummary {
   checkError: string | null;
   updatedAt: string | null;
 }
-type OrderWithTracking = Order & { shipmentTracking?: OrderShipmentTrackingSummary | null };
+interface ProfitSnapshotDisplay {
+  productCostTwd: string | null;
+  transportCostTwd: string | null;
+  unitProfitTwd: string | null;
+  fullUnitProfitTwd: string | null;
+}
+type OrderWithTracking = Order & {
+  shipmentTracking?: OrderShipmentTrackingSummary | null;
+  profitSnapshotCostJpy?: string | null;
+  profitSnapshotExchangeRate?: string | null;
+  profitSnapshotProductCostTwd?: string | null;
+  profitSnapshotTransportCostTwd?: string | null;
+  profitSnapshotUnitProfitTwd?: string | null;
+  profitSnapshotFullUnitProfitTwd?: string | null;
+  profitSnapshotStatus?: "captured" | "pending" | "exempt" | null;
+  profitSnapshotCapturedAt?: string | null;
+  profitSnapshotBackfilledAt?: string | null;
+  profitSnapshotDisplay?: ProfitSnapshotDisplay | null;
+};
 
 const TRACKING_TONE_PINK = "bg-pink-50/70 border-pink-200/70 text-pink-900";
 const TRACKING_TONE_YELLOW = "bg-yellow-50/80 border-yellow-200/80 text-yellow-900";
@@ -200,6 +218,7 @@ export default function OrdersPage() {
   // Step 7H: 刪除訂單（與取消訂單分開的危險操作）
   const [deleteConfirm, setDeleteConfirm] = useState<{ orderId: number; buyerName: string } | null>(null);
   const [deletingOrderId, setDeletingOrderId] = useState<number | null>(null);
+  const [backfillingOrderId, setBackfillingOrderId] = useState<number | null>(null);
 
   // Bulk selection state
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
@@ -225,7 +244,7 @@ export default function OrdersPage() {
 
   const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
-  const allOrders = orders ?? [];
+  const allOrders = (orders ?? []) as OrderWithTracking[];
 
   // Status filter
   const statusFiltered = filter === "all"
@@ -302,6 +321,37 @@ export default function OrdersPage() {
     } finally {
       setDeletingOrderId(null);
       setDeleteConfirm(null);
+    }
+  };
+
+  const handleBackfillProfitSnapshot = async (orderId: number) => {
+    if (!storeId) return;
+    setBackfillingOrderId(orderId);
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/orders/${orderId}/profit-snapshot/backfill`, {
+        method: "POST",
+        credentials: "include",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const message = typeof body?.error === "string" && body.error
+          ? body.error
+          : "成本快照補拍失敗，請稍後再試。";
+        setStatusErrors((prev) => ({ ...prev, [orderId]: message }));
+        return;
+      }
+      setStatusErrors((prev) => { const next = { ...prev }; delete next[orderId]; return next; });
+      toast({ title: "成本快照已補拍並定格" });
+      qc.invalidateQueries({ queryKey: getListOrdersQueryKey(storeId) });
+    } catch {
+      setStatusErrors((prev) => ({
+        ...prev,
+        [orderId]: "成本快照補拍失敗，請確認網路後再試。",
+      }));
+    } finally {
+      setBackfillingOrderId(null);
     }
   };
 
@@ -615,6 +665,7 @@ export default function OrdersPage() {
                         <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium shrink-0 ${STATUS_COLORS[o.status] ?? "bg-gray-100 text-gray-600"}`}>
                           {STATUS_LABELS[o.status] ?? o.status}
                         </span>
+                        <ProfitSnapshotBadge order={o} />
                       </div>
                       {/* Row 4: Item count + shipping status badge + expand arrow */}
                       <div className="flex items-center gap-1.5">
@@ -742,6 +793,83 @@ export default function OrdersPage() {
                               <DetailRow label="單價" value={`NT$ ${Number(o.unitPrice).toLocaleString()}`} />
                             )}
                             <DetailRow label="商品小計" value={`NT$ ${Number(o.totalPrice).toLocaleString()}`} bold />
+                          </div>
+                        </div>
+
+                        {/* 成本與單件毛利快照（只顯示訂單建立/補拍時定格值） */}
+                        <div>
+                          <SectionLabel>成本與單件毛利</SectionLabel>
+                          <div className="bg-white rounded-xl border border-border/50 divide-y divide-border/40">
+                            <DetailRow
+                              label="快照狀態"
+                              value={profitSnapshotStatusLabel(o.profitSnapshotStatus)}
+                              bold
+                            />
+                            {o.profitSnapshotStatus === "pending" ? (
+                              <>
+                                <DetailRow label="商品日圓成本" value="待確認" />
+                                <DetailRow label="店鋪進貨匯率" value="待確認" />
+                                <DetailRow label="單件交通成本" value="待確認" />
+                                <DetailRow label="單件毛利" value="待確認" bold />
+                                <div className="px-3 py-3 space-y-2">
+                                  <p className="text-xs text-amber-700">
+                                    成本資料補齊後可補拍一次；成功後即永久定格。
+                                  </p>
+                                  <button
+                                    type="button"
+                                    onClick={() => void handleBackfillProfitSnapshot(o.id)}
+                                    disabled={backfillingOrderId === o.id}
+                                    className="w-full h-10 rounded-xl bg-primary text-white text-sm font-semibold disabled:opacity-50"
+                                  >
+                                    {backfillingOrderId === o.id ? "補拍中…" : "補拍成本快照"}
+                                  </button>
+                                </div>
+                              </>
+                            ) : o.profitSnapshotStatus === "captured" || o.profitSnapshotStatus === "exempt" ? (
+                              <>
+                                <DetailRow
+                                  label="商品日圓成本"
+                                  value={`¥ ${trimSnapshotDecimal(o.profitSnapshotCostJpy)}`}
+                                />
+                                <DetailRow
+                                  label="店鋪進貨匯率"
+                                  value={trimSnapshotDecimal(o.profitSnapshotExchangeRate)}
+                                />
+                                <DetailRow
+                                  label="商品台幣成本"
+                                  value={formatSnapshotMoney(o.profitSnapshotDisplay?.productCostTwd)}
+                                />
+                                <DetailRow
+                                  label="單件交通成本"
+                                  value={o.profitSnapshotStatus === "exempt"
+                                    ? "免攤"
+                                    : formatSnapshotMoney(o.profitSnapshotDisplay?.transportCostTwd)}
+                                />
+                                <DetailRow
+                                  label="單件毛利"
+                                  value={formatSnapshotMoney(o.profitSnapshotDisplay?.unitProfitTwd)}
+                                  bold
+                                />
+                                <DetailRow
+                                  label="全毛利（未扣交通）"
+                                  value={formatSnapshotMoney(o.profitSnapshotDisplay?.fullUnitProfitTwd)}
+                                />
+                                <DetailRow
+                                  label="成交快照時間"
+                                  value={o.profitSnapshotCapturedAt
+                                    ? formatDate(o.profitSnapshotCapturedAt)
+                                    : "待確認"}
+                                />
+                                {o.profitSnapshotBackfilledAt && (
+                                  <DetailRow
+                                    label="補拍時間"
+                                    value={formatDate(o.profitSnapshotBackfilledAt)}
+                                  />
+                                )}
+                              </>
+                            ) : (
+                              <DetailRow label="成本快照" value="尚未建立" />
+                            )}
                           </div>
                         </div>
 
@@ -1340,6 +1468,52 @@ function StatCard({ label, value, urgent }: { label: string; value: string; urge
       <div className={`text-lg font-bold ${urgent ? "text-amber-600" : "text-primary"}`}>{value}</div>
       <div className="text-[10px] text-muted-foreground mt-0.5 leading-tight">{label}</div>
     </div>
+  );
+}
+
+function formatSnapshotInteger(value: string): string {
+  const negative = value.startsWith("-");
+  const digits = negative ? value.slice(1) : value;
+  const grouped = digits.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return `${negative ? "-" : ""}${grouped}`;
+}
+
+function formatSnapshotMoney(value: string | null | undefined): string {
+  return value == null ? "待確認" : `NT$ ${formatSnapshotInteger(value)}`;
+}
+
+function trimSnapshotDecimal(value: string | null | undefined): string {
+  if (value == null) return "待確認";
+  return value.replace(/(\.\d*?[1-9])0+$|\.0+$/, "$1");
+}
+
+function profitSnapshotStatusLabel(status: OrderWithTracking["profitSnapshotStatus"]): string {
+  if (status === "captured") return "已定格";
+  if (status === "exempt") return "免攤・已定格";
+  if (status === "pending") return "待確認";
+  return "尚未建立";
+}
+
+function ProfitSnapshotBadge({ order }: { order: OrderWithTracking }) {
+  if (order.profitSnapshotStatus === "pending") {
+    return (
+      <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-amber-50 text-amber-700 shrink-0">
+        毛利待確認
+      </span>
+    );
+  }
+  if (order.profitSnapshotStatus === "captured" || order.profitSnapshotStatus === "exempt") {
+    return (
+      <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-emerald-50 text-emerald-700 shrink-0">
+        毛利 {formatSnapshotMoney(order.profitSnapshotDisplay?.unitProfitTwd)}
+        {order.profitSnapshotStatus === "exempt" ? "・免攤" : ""}
+      </span>
+    );
+  }
+  return (
+    <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-gray-100 text-gray-600 shrink-0">
+      毛利尚無快照
+    </span>
   );
 }
 
