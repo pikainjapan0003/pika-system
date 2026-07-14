@@ -25,6 +25,8 @@ export const productsTable = pgTable("products", {
   storageTemp: text("storage_temp"),
   shelfLife: text("shelf_life"),
   weightKg: numeric("weight_kg", { precision: 8, scale: 3 }),
+  costJpy: numeric("cost_jpy"),
+  isTransportCostExempt: boolean("is_transport_cost_exempt").notNull().default(false),
   categoryId: integer("category_id").references(() => productCategoriesTable.id, {
     onDelete: "set null",
   }),
@@ -35,6 +37,7 @@ export const productsTable = pgTable("products", {
   index("products_store_id_idx").on(t.storeId),
   index("products_trip_route_id_idx").on(t.tripRouteId),
   check("inventory_non_negative", sql`${t.inventory} >= 0`),
+  check("products_cost_jpy_non_negative", sql`${t.costJpy} IS NULL OR ${t.costJpy} >= 0`),
   check(
     "storage_temp_valid",
     sql`${t.storageTemp} IS NULL OR ${t.storageTemp} IN ('ambient','chilled','frozen')`
