@@ -27,6 +27,40 @@ import {
 const fail = (res: any, status: number, errorCode: string, message: string) =>
   res.status(status).json({ ok: false, errorCode, message });
 
+/** Parse tracking event timestamp (YYYY/MM/DD HH:mm[:ss], TW +08:00) → Date. */
+function parseTrackingTs(raw: string | null | undefined): Date | null {
+  if (!raw) return null;
+  const m = raw.trim().match(/^(\d{4})\/(\d{2})\/(\d{2})\s+(\d{2}):(\d{2})(?::(\d{2}))?$/);
+  if (!m) return null;
+  const d = new Date(`${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:${m[6] ?? "00"}+08:00`);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+/**
+ * Manual Tracking Status Snapshot — save latest status summary after manual query.
+ * Writes latestEventDescription, latestEventStatus, latestEventAt, lastCheckedAt only.
+ * Does NOT write events, does NOT change trackingStatus or failureCount. Errors are silenced.
+ */
+async function saveManualQuerySnapshot(
+  trackingId: number,
+  latestStatusText: string | null,
+  latestEventAtStr: string | null,
+  normalizedStatus?: string | null,
+): Promise<void> {
+  if (!latestStatusText) return;
+  const parsedAt = parseTrackingTs(latestEventAtStr);
+  try {
+    await db.update(shipmentTrackingsTable).set({
+      latestEventDescription: latestStatusText,
+      ...(parsedAt !== null ? { latestEventAt: parsedAt } : {}),
+      ...(normalizedStatus ? { latestEventStatus: normalizedStatus } : {}),
+      lastCheckedAt: new Date(),
+    }).where(eq(shipmentTrackingsTable.id, trackingId));
+  } catch (err) {
+    console.error(`[logistics-sync] saveManualQuerySnapshot trackingId=${trackingId}:`, err);
+  }
+}
+
 /**
  * Step 7F：物流同步（最小閉環）。
  * 目前只有全家 adapter / worker，故僅支援 familymart；其餘 provider 誠實列為尚未支援。
@@ -340,13 +374,21 @@ async function handle711Preview(req: any, res: any): Promise<void> {
   }
 
   const successCount = jobs.filter((j) => j.success).length;
+
+  // Manual Tracking Status Snapshot：save latest summary to DB so F5 preserves it.
+  await Promise.all(
+    jobs
+      .filter((j) => j.success && j.latestStatusText)
+      .map((j) => saveManualQuerySnapshot(j.trackingId, j.latestStatusText ?? null, j.latestEventAt ?? null, j.normalizedStatus ?? null)),
+  );
+
   res.json({
-    ok: true, dryRun: true, provider: "711",
+    ok: true, dryRun: true, snapshotSaved: true, provider: "711",
     previewHashAvailable: false, commitDisabled: true,
     totalJobs: jobs.length, successCount,
     failedCount: jobs.length - successCount, skippedCount: 0, emptyCount: 0,
     jobs,
-    message: "7-11 預覽結果：僅供預覽，未寫入任何資料。正式寫入尚未開放。",
+    message: "7-11 查詢完成：最新貨態摘要已更新，重整後仍保留。",
   });
 }
 
@@ -438,9 +480,17 @@ router.post(
         });
       }
 
+      // Manual Tracking Status Snapshot：save latest summary to DB so F5 preserves it.
+      await Promise.all(
+        result.jobs
+          .filter((j) => j.status === "success" && j.latestStatusText)
+          .map((j) => saveManualQuerySnapshot(j.trackingId, j.latestStatusText ?? null, j.latestEventAt ?? null, j.normalizedStatus ?? null)),
+      );
+
       return res.json({
         ok: true,
         dryRun: true,
+        snapshotSaved: true,
         provider,
         previewHashAvailable: hashAvailable,
         totalJobs: result.totalJobs,
@@ -449,7 +499,7 @@ router.post(
         skippedCount: result.skippedCount,
         emptyCount: result.emptyCount,
         jobs,
-        message: "測試模式：本次僅預覽查詢結果，未寫入任何資料。",
+        message: "查詢完成：最新貨態摘要已更新，重整後仍保留。（完整物流事件未寫入）",
       });
     } catch (err) {
       if (err instanceof Error && err.message.startsWith("BATCH_SIZE_EXCEEDED")) {

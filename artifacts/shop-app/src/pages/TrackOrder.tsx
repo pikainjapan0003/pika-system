@@ -67,6 +67,44 @@ function formatDate(iso: string): string {
   return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+interface OrderItem {
+  productName: string;
+  specValues: Record<string, string>;
+  quantity: number;
+  unitPrice: number;
+  subtotal: number;
+  productImageUrl?: string | null;
+}
+
+// Returns a normalized items array. If order.items (JSONB multi-item) exists, use it.
+// Otherwise fall back to legacy single-product fields so old orders keep working.
+function normalizeOrderItems(order: {
+  items?: unknown;
+  productName?: string | null;
+  specValues?: unknown;
+  quantity?: number;
+  unitPrice?: number;
+  totalPrice?: number;
+}): OrderItem[] {
+  const raw = order.items as OrderItem[] | null | undefined;
+  if (Array.isArray(raw) && raw.length > 0) return raw;
+  const qty = order.quantity ?? 1;
+  const unitPrice = order.unitPrice ?? (order.totalPrice != null && qty > 0 ? order.totalPrice / qty : 0);
+  return [{
+    productName: order.productName ?? "（商品）",
+    specValues: (order.specValues as Record<string, string>) ?? {},
+    quantity: qty,
+    unitPrice,
+    subtotal: unitPrice * qty,
+  }];
+}
+
+function formatSpecSummary(specValues: Record<string, string>): string {
+  const entries = Object.entries(specValues);
+  if (entries.length === 0) return "";
+  return entries.map(([k, v]) => `${k}：${v}`).join("、");
+}
+
 export default function TrackOrderPage({ publicToken }: Props) {
   const [, setLocation] = useLocation();
   const [copiedToken, setCopiedToken] = useState(false);
@@ -214,6 +252,54 @@ export default function TrackOrderPage({ publicToken }: Props) {
           </div>
         )}
 
+        {/* Items card — supports both multi-item (cart) orders and legacy single-item orders */}
+        {(() => {
+          const items = normalizeOrderItems(order as any);
+          return (
+            <div className="bg-white rounded-2xl border border-border overflow-hidden mb-3">
+              <div className="px-5 py-3 border-b border-border">
+                <h2 className="text-xs font-semibold text-muted-foreground">商品明細</h2>
+              </div>
+              <div className="divide-y divide-border">
+                {items.map((item, idx) => {
+                  const specSummary = formatSpecSummary(item.specValues);
+                  return (
+                    <div key={idx} className="px-5 py-3 flex items-start gap-3">
+                      {item.productImageUrl && (
+                        <img
+                          src={item.productImageUrl}
+                          alt={item.productName}
+                          className="w-12 h-12 rounded-lg object-cover flex-shrink-0 mt-0.5"
+                        />
+                      )}
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <div className="text-sm font-medium text-foreground">{item.productName}</div>
+                        {specSummary && (
+                          <div className="text-xs text-muted-foreground">規格：{specSummary}</div>
+                        )}
+                        <div className="flex items-center justify-between mt-1">
+                          <span className="text-xs text-muted-foreground">
+                            × {item.quantity} 件 · NT$ {item.unitPrice.toLocaleString()} / 件
+                          </span>
+                          <span className="text-sm font-semibold text-foreground">
+                            NT$ {item.subtotal.toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="px-5 py-3 border-t border-border flex items-center justify-between">
+                <span className="text-sm font-semibold text-foreground">訂單總額</span>
+                <span className="text-base font-bold text-primary">
+                  NT$ {Number(order.orderTotal).toLocaleString()}
+                </span>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Order details card */}
         <div className="bg-white rounded-2xl border border-border overflow-hidden">
           <div className="px-5 py-4 border-b border-border flex items-center justify-between">
@@ -224,18 +310,7 @@ export default function TrackOrderPage({ publicToken }: Props) {
           </div>
 
           <div className="px-5 py-4 space-y-3">
-            {order.productName && (
-              <InfoRow label="商品" value={order.productName} />
-            )}
-            <InfoRow label="數量" value={`x${order.quantity}`} />
-            <InfoRow label="金額" value={`NT$ ${Number(order.totalPrice).toLocaleString()}`} bold />
             <InfoRow label="取貨方式" value={order.pickupMethod} />
-            {order.specValues && Object.keys(order.specValues as object).length > 0 && (
-              <InfoRow
-                label="規格"
-                value={Object.entries(order.specValues as object).map(([k, v]) => `${k}: ${v}`).join("、")}
-              />
-            )}
             <InfoRow label="下單時間" value={formatDate(order.createdAt)} />
           </div>
         </div>

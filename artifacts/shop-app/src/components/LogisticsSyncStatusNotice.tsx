@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@clerk/react";
 import { useGetMyStore } from "@workspace/api-client-react";
-import { getProviderShortName } from "@/lib/logisticsProviders";
+import { LOGISTICS_PROVIDERS, getProviderShortName } from "@/lib/logisticsProviders";
 
 interface SyncRun {
   id: number;
@@ -37,6 +37,16 @@ interface SyncStatusResponse {
 // provider label 收斂至 @/lib/logisticsProviders（Step 7H-B）。
 // "all" 是 run log 的跨物流商彙總值（非 canonical provider），registry 查不到，這裡補顯示用 label（Step 7N-E）
 const providerLabel = (c: string) => (c === "all" ? "全部物流" : (getProviderShortName(c) ?? c));
+
+const EXCEL_IMPORT_LABEL = LOGISTICS_PROVIDERS
+  .filter((p) => p.supportsExcelImport)
+  .map((p) => p.shortName)
+  .join(" / ");
+
+const NO_EXCEL_IMPORT_LABEL = LOGISTICS_PROVIDERS
+  .filter((p) => !p.supportsExcelImport)
+  .map((p) => p.shortName)
+  .join(" / ");
 
 const RUN_STATUS_LABEL: Record<string, string> = {
   success: "成功",
@@ -166,16 +176,12 @@ export function LogisticsSyncStatusNotice() {
           </div>
         </div>
         <div className="bg-secondary rounded-xl px-3 py-2">
-          <div className="text-muted-foreground">目前支援</div>
-          <div className="font-medium text-foreground">
-            {status ? providerLabels(status.supportedProviders) : "全家"}
-          </div>
+          <div className="text-muted-foreground">Excel 匯入支援</div>
+          <div className="font-medium text-foreground">{EXCEL_IMPORT_LABEL}</div>
         </div>
         <div className="bg-secondary rounded-xl px-3 py-2">
-          <div className="text-muted-foreground">尚未支援</div>
-          <div className="font-medium text-foreground">
-            {status ? providerLabels(status.unsupportedProviders) : "7-11 / 黑貓 / 郵局"}
-          </div>
+          <div className="text-muted-foreground">手動查詢</div>
+          <div className="font-medium text-foreground">{NO_EXCEL_IMPORT_LABEL}</div>
         </div>
       </div>
 
@@ -236,8 +242,8 @@ export function LogisticsSyncStatusNotice() {
 
       <p className="text-[11px] text-muted-foreground/80">
         {autoSyncEnabled
-          ? "自動同步已啟用，系統會定期查詢已支援物流商（目前僅支援全家）的貨態；也可隨時手動同步。"
-          : "自動同步尚未啟用，目前僅支援全家。匯入 Excel 後系統不會自動查詢貨態，請手動同步，或等待後續排程功能啟用。"}
+          ? "全家自動同步已啟用，系統定期更新全家貨態；也可手動同步。7-11 / 全家 支援 Excel 匯入；黑貓 / 郵局 請使用手動查詢。"
+          : "7-11 / 全家 支援 Excel 匯入物流資訊；黑貓 / 郵局 請使用手動查詢。全家自動同步尚未啟用。"}
       </p>
     </div>
   );

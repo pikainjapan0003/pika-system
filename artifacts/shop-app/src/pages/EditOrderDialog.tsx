@@ -218,6 +218,7 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [trackingCopied, setTrackingCopied] = useState(false);
+  const [previewResult, setPreviewResult] = useState<{ latestStatusText: string | null; latestEventAt: string | null } | null>(null);
   const { getToken } = useAuth();
 
   const handleCopyTrackingCode = async (code: string) => {
@@ -286,6 +287,7 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
       setCvsSearchError("");
       setFieldErrors({});
       setSubmitError(null);
+      setPreviewResult(null);
     }
   }, [order]);
 
@@ -908,6 +910,9 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
                   const lastChecked = tracking
                     ? formatTrackingTime(tracking.lastCheckedAt) ?? formatTrackingTime(tracking.updatedAt)
                     : null;
+                  // preview-only fallback：DB 尚無貨態時，用 manual preview 查詢結果暫時顯示（不寫 DB）
+                  const previewStatusText = !eventDescription ? (previewResult?.latestStatusText ?? null) : null;
+                  const previewEventTime = !eventTime ? formatTrackingTime(previewResult?.latestEventAt ?? null) : null;
                   return (
                   <>
                     <div>
@@ -926,7 +931,9 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
                     <div className="grid grid-cols-2 gap-x-3 gap-y-4">
                       <div>
                         <FieldLabel icon={Search}>目前貨態</FieldLabel>
-                        <p className="text-sm text-foreground">{eventDescription ?? statusLabel}</p>
+                        <p className="text-sm text-foreground">
+                          {eventDescription ?? (previewStatusText ?? statusLabel)}
+                        </p>
                       </div>
                       {eventDescription && (
                         <div>
@@ -940,7 +947,7 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
                       </div>
                       <div>
                         <FieldLabel icon={Clock}>貨態時間</FieldLabel>
-                        <p className={`text-sm ${eventTime ? "text-foreground" : "text-muted-foreground"}`}>{eventTime ?? "尚無貨態時間"}</p>
+                        <p className={`text-sm ${(eventTime ?? previewEventTime) ? "text-foreground" : "text-muted-foreground"}`}>{eventTime ?? previewEventTime ?? "尚無貨態時間"}</p>
                       </div>
                       <div>
                         <FieldLabel icon={Clock}>上次查詢</FieldLabel>
@@ -967,6 +974,30 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
                       disabled={isPending}
                       onOrderRefresh={() => {
                         qc.invalidateQueries({ queryKey: getListOrdersQueryKey(storeId) });
+                      }}
+                      onPreviewResult={(data) => {
+                        setPreviewResult(data);
+                        if (data.latestStatusText && order) {
+                          qc.setQueryData<Order[]>(
+                            getListOrdersQueryKey(storeId),
+                            (oldData) => {
+                              if (!oldData) return oldData;
+                              return oldData.map((o) => {
+                                if (o.id !== order.id) return o;
+                                const eo = o as EditableOrder;
+                                if (!eo.shipmentTracking) return o;
+                                return {
+                                  ...eo,
+                                  shipmentTracking: {
+                                    ...eo.shipmentTracking,
+                                    latestEventDescription: data.latestStatusText ?? eo.shipmentTracking.latestEventDescription,
+                                    latestEventAt: data.latestEventAt ?? eo.shipmentTracking.latestEventAt,
+                                  },
+                                } as Order;
+                              });
+                            },
+                          );
+                        }
                       }}
                     />
                   </>

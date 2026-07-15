@@ -75,6 +75,8 @@ export const ordersTable = pgTable("orders", {
   cvsStorePhone: text("cvs_store_phone"),
   storeSelectedBy: text("store_selected_by"), // 'customer' | 'admin' | 'system'
   storeSelectedAt: timestamp("store_selected_at", { withTimezone: true }),
+  // Multi-item cart orders: all items stored here as JSONB. Null for single-product orders (legacy compat).
+  items: jsonb("items"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 }, (t) => [

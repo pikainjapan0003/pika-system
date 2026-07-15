@@ -162,7 +162,7 @@ function getTrackingSummaryToneClass(
   if (
     trackingStatus === "delivered" ||
     (latestEventStatus !== null && ["arrived_store", "picked_up", "delivered"].includes(latestEventStatus)) ||
-    includesAny(statusText, ["已寄達", "已送達", "已到店", "配達取件店舖", "已取貨", "已取件", "取件完成", "已完成"])
+    includesAny(statusText, ["已寄達", "已送達", "已到店", "配達取件店舖", "已取貨", "已取件", "取件完成", "已完成", "投遞成功", "順利送達", "成功取件"])
   ) return TRACKING_TONE_GREEN;
   if (
     trackingStatus === "pending" ||
@@ -183,6 +183,44 @@ function formatTrackingTime(iso: string | null | undefined): string | null {
   if (isNaN(d.getTime())) return null;
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+interface OrderItem {
+  productName: string;
+  specValues: Record<string, string>;
+  quantity: number;
+  unitPrice: number;
+  subtotal: number;
+  productImageUrl?: string | null;
+}
+
+// Returns a normalized items array for multi-item (cart) orders.
+// Falls back to a single item built from legacy scalar fields for old orders.
+function normalizeOrderItems(order: {
+  items?: unknown;
+  productName?: string | null;
+  specValues?: unknown;
+  quantity?: number;
+  unitPrice?: number;
+  totalPrice?: number;
+}): OrderItem[] {
+  const raw = order.items as OrderItem[] | null | undefined;
+  if (Array.isArray(raw) && raw.length > 0) return raw;
+  const qty = order.quantity ?? 1;
+  const unitPrice = order.unitPrice ?? (order.totalPrice != null && qty > 0 ? order.totalPrice / qty : 0);
+  return [{
+    productName: order.productName ?? "（商品）",
+    specValues: (order.specValues as Record<string, string>) ?? {},
+    quantity: qty,
+    unitPrice,
+    subtotal: unitPrice * qty,
+  }];
+}
+
+function formatSpecSummary(specValues: Record<string, string>): string {
+  const entries = Object.entries(specValues);
+  if (entries.length === 0) return "";
+  return entries.map(([k, v]) => `${k}：${v}`).join("、");
 }
 
 import { CreateOrderDialog } from "./CreateOrderDialog";
@@ -669,10 +707,25 @@ export default function OrdersPage() {
                       </div>
                       {/* Row 4: Item count + shipping status badge + expand arrow */}
                       <div className="flex items-center gap-1.5">
-                        <span className="text-[11px] text-muted-foreground shrink-0">商品 {o.quantity} 件</span>
-                        {o.productName && (
-                          <span className="text-[11px] text-muted-foreground truncate flex-1 min-w-0">· {o.productName}</span>
-                        )}
+                        {(() => {
+                          const items = normalizeOrderItems(o as any);
+                          if (items.length > 1) {
+                            const totalQty = items.reduce((s, i) => s + i.quantity, 0);
+                            return (
+                              <span className="text-[11px] text-muted-foreground truncate flex-1 min-w-0">
+                                {items[0].productName} 等・共 {items.length} 項・{totalQty} 件
+                              </span>
+                            );
+                          }
+                          return (
+                            <>
+                              <span className="text-[11px] text-muted-foreground shrink-0">商品 {o.quantity} 件</span>
+                              {o.productName && (
+                                <span className="text-[11px] text-muted-foreground truncate flex-1 min-w-0">· {o.productName}</span>
+                              )}
+                            </>
+                          );
+                        })()}
                         {o.status !== "cancelled" && (
                           <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium shrink-0 ${
                             SHIPPING_STATUS_COLORS[o.shippingStatus ?? "not_shipped"] ?? "bg-secondary/80 text-muted-foreground"
@@ -786,14 +839,49 @@ export default function OrdersPage() {
                         {/* 商品明細 */}
                         <div>
                           <SectionLabel>商品明細</SectionLabel>
-                          <div className="bg-white rounded-xl border border-border/50 divide-y divide-border/40">
-                            <DetailRow label="商品名稱" value={o.productName ?? "—"} />
-                            <DetailRow label="數量" value={`× ${o.quantity}`} />
-                            {o.unitPrice != null && (
-                              <DetailRow label="單價" value={`NT$ ${Number(o.unitPrice).toLocaleString()}`} />
-                            )}
-                            <DetailRow label="商品小計" value={`NT$ ${Number(o.totalPrice).toLocaleString()}`} bold />
-                          </div>
+                          {(() => {
+                            const items = normalizeOrderItems(o as any);
+                            if (items.length > 1) {
+                              return (
+                                <div className="bg-white rounded-xl border border-border/50 divide-y divide-border/40">
+                                  {items.map((item, idx) => {
+                                    const specSummary = formatSpecSummary(item.specValues);
+                                    return (
+                                      <div key={idx} className="px-3 py-2.5 flex items-start gap-2.5">
+                                        {item.productImageUrl && (
+                                          <img
+                                            src={item.productImageUrl}
+                                            alt={item.productName}
+                                            className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
+                                          />
+                                        )}
+                                        <div className="flex-1 min-w-0 space-y-0.5">
+                                          <div className="text-xs font-semibold text-foreground">{item.productName}</div>
+                                          {specSummary && (
+                                            <div className="text-[11px] text-muted-foreground">{specSummary}</div>
+                                          )}
+                                          <div className="flex items-center justify-between mt-0.5">
+                                            <span className="text-[11px] text-muted-foreground">× {item.quantity} 件 · NT$ {item.unitPrice.toLocaleString()} / 件</span>
+                                            <span className="text-xs font-semibold text-foreground">NT$ {item.subtotal.toLocaleString()}</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              );
+                            }
+                            return (
+                              <div className="bg-white rounded-xl border border-border/50 divide-y divide-border/40">
+                                <DetailRow label="商品名稱" value={o.productName ?? "—"} />
+                                <DetailRow label="數量" value={`× ${o.quantity}`} />
+                                {o.unitPrice != null && (
+                                  <DetailRow label="單價" value={`NT$ ${Number(o.unitPrice).toLocaleString()}`} />
+                                )}
+                                <DetailRow label="商品小計" value={`NT$ ${Number(o.totalPrice).toLocaleString()}`} bold />
+                              </div>
+                            );
+                          })()}
                         </div>
 
                         {/* 成本與單件毛利快照（只顯示訂單建立/補拍時定格值） */}
@@ -1083,8 +1171,8 @@ export default function OrdersPage() {
                           </div>
                         )}
 
-                        {/* 規格 */}
-                        {o.specValues && Object.keys(o.specValues as object).length > 0 && (
+                        {/* 規格（多品項訂單的規格已顯示在商品明細各項目中，此區只給單品項訂單） */}
+                        {!(Array.isArray((o as any).items) && (o as any).items.length > 1) && o.specValues && Object.keys(o.specValues as object).length > 0 && (
                           <div>
                             <SectionLabel>規格</SectionLabel>
                             <div className="bg-white rounded-xl border border-border/50 px-3 py-2.5">
@@ -1136,7 +1224,7 @@ export default function OrdersPage() {
                         {/* 列印銷貨單 */}
                         <button
                           type="button"
-                          onClick={() => printOrderReceipt(o)}
+                          onClick={() => printOrderReceipt(o, store)}
                           className="w-full h-9 rounded-xl border border-border bg-white text-xs font-medium text-foreground"
                         >
                           列印銷貨單

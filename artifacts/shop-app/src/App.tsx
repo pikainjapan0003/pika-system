@@ -28,6 +28,7 @@ import DevHandoffPage from "@/pages/DevHandoff";
 import ProductCategoriesPage from "@/pages/ProductCategories";
 import Cvs711ReturnPage from "@/pages/Cvs711Return";
 import Cvs711SelectPage from "@/pages/Cvs711Select";
+import PublicCartPage from "@/pages/PublicCart";
 import ReceiptPreviewPage from "@/pages/ReceiptPreview";
 import NotFoundPage from "@/pages/not-found";
 
@@ -298,6 +299,7 @@ function AppRouter() {
       <Route path="/track/:publicToken">
         {(params) => <TrackOrderPage publicToken={params.publicToken} />}
       </Route>
+      <Route path="/cart" component={PublicCartPage} />
       <Route path="/cvs/711/select" component={Cvs711SelectPage} />
       <Route path="/cvs/711/return" component={Cvs711ReturnPage} />
       <Route path="/receipt-preview" component={ReceiptPreviewPage} />

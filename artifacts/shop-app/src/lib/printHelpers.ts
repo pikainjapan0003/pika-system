@@ -1,10 +1,34 @@
 import type { Order, PickingListResponse, ShippingListResponse, ShippingListOrder } from "@workspace/api-client-react";
 
 // Local augmentation: generated Order may lag behind DB schema on these fields.
+interface PrintOrderItem {
+  productName: string;
+  specValues?: Record<string, string> | null;
+  quantity: number;
+  unitPrice?: number | null;
+  subtotal?: number | null;
+}
+
 type PrintableOrder = Order & {
   discountAmount?: number | null;
   discountNote?: string | null;
+  items?: PrintOrderItem[] | null;
 };
+
+function normalizeOrderItems(order: PrintableOrder): PrintOrderItem[] {
+  if (Array.isArray(order.items) && order.items.length > 0) return order.items;
+  const qty = order.quantity ?? 1;
+  const unitPrice = order.unitPrice != null
+    ? Number(order.unitPrice)
+    : (order.totalPrice != null && qty > 0 ? Number(order.totalPrice) / qty : 0);
+  return [{
+    productName: order.productName ?? "（商品）",
+    specValues: (order.specValues as Record<string, string> | null | undefined) ?? null,
+    quantity: qty,
+    unitPrice,
+    subtotal: unitPrice * qty,
+  }];
+}
 
 function esc(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -51,7 +75,7 @@ function showReceiptPreviewOverlay(html: string): void {
   bar.style.cssText =
     "background:#fb7185;color:white;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;";
   bar.innerHTML =
-    `<span style="font-weight:700;font-size:15px">PickBee 銷貨單預覽</span>` +
+    `<span style="font-weight:700;font-size:15px">銷貨單預覽</span>` +
     `<div style="display:flex;gap:8px;">` +
     `<button id="__receipt_open_tab__" style="background:white;color:#e11d48;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;">開新分頁</button>` +
     `<button id="__receipt_close__" style="background:rgba(255,255,255,0.22);color:white;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;">✕ 關閉</button>` +
@@ -137,17 +161,37 @@ function openPrint(html: string): void {
   doc.write(html);
   doc.close();
 
-  setTimeout(() => {
+  const triggerPrint = () => {
     const cw = iframe.contentWindow;
     if (!cw) { cleanup(); return; }
-    try {
-      cw.focus();
-      cw.print();
-    } catch {
-      // ignore
-    }
+    try { cw.focus(); cw.print(); } catch { /* ignore */ }
     cw.addEventListener("afterprint", cleanup, { once: true });
     setTimeout(cleanup, 5 * 60_000);
+  };
+
+  // Wait for images to load before printing (e.g. store logo from R2).
+  setTimeout(() => {
+    const imgs = Array.from((doc as Document).images ?? []) as HTMLImageElement[];
+    const pending = imgs.filter((img) => !img.complete);
+    if (pending.length === 0) {
+      triggerPrint();
+      return;
+    }
+    let settled = 0;
+    let fired = false;
+    const onSettle = () => {
+      settled++;
+      if (settled >= pending.length && !fired) {
+        fired = true;
+        triggerPrint();
+      }
+    };
+    pending.forEach((img) => {
+      img.addEventListener("load", onSettle, { once: true });
+      img.addEventListener("error", onSettle, { once: true });
+    });
+    // Safety: print even if images don't load within 5s.
+    setTimeout(() => { if (!fired) { fired = true; triggerPrint(); } }, 5000);
   }, 250);
 }
 
@@ -307,17 +351,24 @@ body {
   max-width: 680px; margin: 0 auto; padding: 12px 16px;
 }
 .brand-hero {
-  background: linear-gradient(135deg, #fff7ed 0%, #fef9f5 60%, #fff1f2 100%);
-  border: 2px solid #fb7185; border-radius: 12px;
+  background: #fafafa;
+  border: 2px solid var(--brand-primary, #F57572); border-radius: 12px;
   text-align: center; padding: 20px 16px 16px; margin-bottom: 16px;
   page-break-inside: avoid; break-inside: avoid;
 }
-.brand-badge { font-size: 36px; line-height: 1; margin-bottom: 6px; }
-.brand-name { font-size: 24px; font-weight: 800; color: #fb7185; letter-spacing: 0.02em; }
-.brand-sub { font-size: 13px; font-weight: 600; color: #78350f; margin-top: 4px; }
+.brand-logo-img { height: 56px; width: auto; object-fit: contain; margin-bottom: 8px; display: block; margin-left: auto; margin-right: auto; }
+.brand-badge-text {
+  width: 48px; height: 48px; border-radius: 50%;
+  background: var(--brand-primary, #F57572); color: white;
+  font-size: 22px; font-weight: 800;
+  display: inline-flex; align-items: center; justify-content: center;
+  margin-bottom: 8px;
+}
+.brand-name { font-size: 22px; font-weight: 800; color: var(--brand-primary, #F57572); letter-spacing: 0.02em; }
+.brand-sub { font-size: 13px; font-weight: 600; color: #374151; margin-top: 4px; }
 .brand-tagline {
-  font-size: 11px; color: #92400e; margin-top: 8px;
-  background: rgba(251,113,133,0.08); border-radius: 6px;
+  font-size: 11px; color: #4b5563; margin-top: 8px;
+  background: #f3f4f6; border-radius: 6px;
   padding: 6px 12px; display: inline-block;
 }
 .section-card {
@@ -357,6 +408,8 @@ body {
   font-size: 11px; color: #4b5563; border-bottom: 2px solid #e5e7eb;
 }
 .product-table td { padding: 8px; border-bottom: 1px solid #f3f4f6; vertical-align: top; }
+.product-table thead { display: table-header-group; }
+.product-table tbody tr { page-break-inside: avoid; break-inside: avoid; }
 .th-qty, .td-qty { width: 44px; text-align: center; }
 .th-price, .td-price { width: 80px; text-align: right; }
 .th-sub, .td-sub { width: 80px; text-align: right; font-weight: 600; }
@@ -392,8 +445,14 @@ body {
   page-break-inside: avoid; break-inside: avoid;
 }
 @media print {
-  @page { size: A4; margin: 10mm 12mm; }
+  @page { size: A4; margin: 8mm 12mm; }
+  html, body { height: auto; }
   body { padding: 0; }
+  .brand-hero { margin-bottom: 12px; }
+  .section-card { margin-bottom: 8px; }
+  .two-col { margin-bottom: 8px; }
+  .section-card.product-section { page-break-inside: auto; break-inside: auto; }
+  .receipt-footer { margin-top: 10px; page-break-after: avoid; break-after: avoid; }
   .brand-hero, .section-card, .two-col, .receipt-footer {
     page-break-inside: avoid; break-inside: avoid;
   }
@@ -401,14 +460,15 @@ body {
 }
 `;
 
-function receiptHtmlDoc(title: string, body: string): string {
+function receiptHtmlDoc(title: string, body: string, brandColor = "#F57572"): string {
+  const safeColor = /^#[0-9a-fA-F]{6}$/.test(brandColor) ? brandColor : "#F57572";
   return `<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${esc(title)}</title>
-<style>${RECEIPT_CSS}</style>
+<style>:root{--brand-primary:${safeColor};}${RECEIPT_CSS}</style>
 </head>
 <body>
 ${body}
@@ -416,7 +476,14 @@ ${body}
 </html>`;
 }
 
-export function printOrderReceipt(order: PrintableOrder): void {
+export function printOrderReceipt(
+  order: PrintableOrder,
+  storeSettings?: { name?: string | null; logoUrl?: string | null; brandPrimaryColor?: string | null },
+): void {
+  const storeName = storeSettings?.name?.trim() || "畫夢代購";
+  const brandColor = storeSettings?.brandPrimaryColor?.trim() || "#F57572";
+  const logoUrl = storeSettings?.logoUrl?.trim() || null;
+
   const now = new Date().toLocaleString("zh-TW");
 
   const productSubtotal = Number(order.totalPrice ?? 0);
@@ -433,13 +500,6 @@ export function printOrderReceipt(order: PrintableOrder): void {
   const receiptCat = getReceiptFulfillmentCat(order);
   const fulfillmentLabel = (order.pickupMethod ?? "").trim() ||
     (order.shippingMethod ? (SHIPPING_METHOD_LABELS[order.shippingMethod] ?? order.shippingMethod) : null);
-
-  const specText =
-    order.specValues && Object.keys(order.specValues).length > 0
-      ? Object.entries(order.specValues)
-          .map(([k, v]) => `${esc(k)}: ${esc(String(v))}`)
-          .join("、")
-      : null;
 
   const discountRow =
     discountAmount > 0
@@ -498,10 +558,12 @@ export function printOrderReceipt(order: PrintableOrder): void {
 
   const body = `
 <div class="brand-hero">
-  <div class="brand-badge">&#x1F41D;</div>
-  <div class="brand-name">PickBee 代購蜂</div>
+  ${logoUrl
+    ? `<img src="${esc(logoUrl)}" class="brand-logo-img" alt="${esc(storeName)}">`
+    : `<div class="brand-badge-text">${esc(storeName.charAt(0).toUpperCase())}</div>`}
+  <div class="brand-name">${esc(storeName)}</div>
   <div class="brand-sub">銷貨單 &middot; Order Receipt</div>
-  <div class="brand-tagline">感謝您使用 PickBee 代購蜂，請確認以下訂單、付款與取貨資訊。</div>
+  <div class="brand-tagline">感謝您的購買，請確認以下訂單、付款與取貨資訊。</div>
 </div>
 
 <div class="section-card">
@@ -546,7 +608,7 @@ export function printOrderReceipt(order: PrintableOrder): void {
   </div>
 </div>
 
-<div class="section-card">
+<div class="section-card product-section">
   <div class="section-title">商品明細</div>
   <table class="product-table">
     <thead>
@@ -558,15 +620,22 @@ export function printOrderReceipt(order: PrintableOrder): void {
       </tr>
     </thead>
     <tbody>
-      <tr>
+      ${normalizeOrderItems(order).map((item) => {
+        const sv = item.specValues;
+        const itemSpec = sv && Object.keys(sv).length > 0
+          ? Object.entries(sv).map(([k, v]) => `${esc(k)}：${esc(String(v))}`).join("、")
+          : null;
+        const itemSub = item.subtotal ?? (Number(item.unitPrice ?? 0) * item.quantity);
+        return `<tr>
         <td>
-          <div class="product-name">${esc(order.productName ?? "（未設定）")}</div>
-          ${specText ? `<div class="product-spec">${specText}</div>` : ""}
+          <div class="product-name">${esc(item.productName ?? "（商品）")}</div>
+          ${itemSpec ? `<div class="product-spec">${itemSpec}</div>` : ""}
         </td>
-        <td class="td-qty">&times;&nbsp;${order.quantity}</td>
-        <td class="td-price">${order.unitPrice != null ? formatCurrency(Number(order.unitPrice)) : "－"}</td>
-        <td class="td-sub">${formatCurrency(productSubtotal)}</td>
-      </tr>
+        <td class="td-qty">&times;&nbsp;${item.quantity}</td>
+        <td class="td-price">${item.unitPrice != null ? formatCurrency(Number(item.unitPrice)) : "－"}</td>
+        <td class="td-sub">${formatCurrency(itemSub)}</td>
+      </tr>`;
+      }).join("")}
     </tbody>
   </table>
 </div>
@@ -605,8 +674,8 @@ ${orderNotesHtml}
 </div>
 
 <div class="receipt-footer">
-  本銷貨單由 PickBee 代購蜂管理系統產生
+  本銷貨單由畫夢代購系統產生
 </div>`;
 
-  openPrint(receiptHtmlDoc("銷貨單 — PickBee 代購蜂", body));
+  openPrint(receiptHtmlDoc(`銷貨單 — ${esc(storeName)}`, body, brandColor));
 }
