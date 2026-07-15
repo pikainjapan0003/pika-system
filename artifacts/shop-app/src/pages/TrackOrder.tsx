@@ -360,33 +360,23 @@ export default function TrackOrderPage({ publicToken }: Props) {
           </div>
           <div className="px-5 py-4 space-y-3">
             <InfoRow label="取貨方式" value={order.pickupMethod} />
-            {order.cvsStoreName ? (
-              <>
-                <InfoRow label="門市名稱" value={order.cvsStoreName} />
-                {order.cvsStoreAddress && (
-                  <InfoRow label="門市地址" value={order.cvsStoreAddress} />
-                )}
-              </>
+            {/* CVS 門市名稱／地址不對外公開（public tracking 政策），僅顯示買家自己的收件資訊摘要 */}
+            {order.recipientNameMasked && (
+              <InfoRow label="收件人" value={order.recipientNameMasked} />
+            )}
+            {order.recipientPhoneMasked && (
+              <InfoRow label="收件電話" value={order.recipientPhoneMasked} />
+            )}
+            {/* 面交 / 自取：顯示地點摘要（public-safe），未填則請依店家通知 */}
+            {isSelfPickup(order.pickupMethod) ? (
+              <InfoRow
+                label={order.pickupMethod === "面交" ? "面交地點" : order.pickupMethod === "自取" ? "自取地點" : "取貨地點"}
+                value={order.recipientAddressMasked ?? "請依店家通知為準"}
+              />
             ) : (
-              <>
-                {order.recipientNameMasked && (
-                  <InfoRow label="收件人" value={order.recipientNameMasked} />
-                )}
-                {order.recipientPhoneMasked && (
-                  <InfoRow label="收件電話" value={order.recipientPhoneMasked} />
-                )}
-                {/* 面交 / 自取：顯示地點摘要（public-safe），未填則請依店家通知 */}
-                {isSelfPickup(order.pickupMethod) ? (
-                  <InfoRow
-                    label={order.pickupMethod === "面交" ? "面交地點" : order.pickupMethod === "自取" ? "自取地點" : "取貨地點"}
-                    value={order.recipientAddressMasked ?? "請依店家通知為準"}
-                  />
-                ) : (
-                  order.recipientAddressMasked && (
-                    <InfoRow label="收件地址" value={order.recipientAddressMasked} />
-                  )
-                )}
-              </>
+              order.recipientAddressMasked && (
+                <InfoRow label="收件地址" value={order.recipientAddressMasked} />
+              )
             )}
           </div>
         </div>
