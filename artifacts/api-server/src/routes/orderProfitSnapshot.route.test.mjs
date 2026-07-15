@@ -100,7 +100,27 @@ if (!process.env.DATABASE_URL) {
     });
   }
 
+  async function placeMerchantOrder(buyerName) {
+    return request("POST", `/stores/${storeId}/orders`, {
+      productId,
+      buyerName,
+      buyerPhone: "0900000000",
+      pickupMethod: "假資料面交",
+      quantity: 1,
+    }, true);
+  }
+
+  async function setCostState(purchaseExchangeRate, costJpy, isTransportCostExempt) {
+    await db.update(storesTable)
+      .set({ purchaseExchangeRate })
+      .where(eq(storesTable.id, storeId));
+    await db.update(productsTable)
+      .set({ costJpy, isTransportCostExempt })
+      .where(eq(productsTable.id, productId));
+  }
+
   test("public creation captures pending, backfills once, and freezes old orders", async () => {
+    await setCostState(null, null, false);
     const pendingResponse = await placeOrder("假買家甲");
     assert.equal(pendingResponse.status, 201);
     for (const field of [
@@ -174,5 +194,51 @@ if (!process.env.DATABASE_URL) {
       .where(eq(ordersTable.publicToken, capturedAt022.data.publicToken));
     assert.equal(oldOrderAfterRateChange.profitSnapshotUnitProfitTwd, "220.000000000000");
     assert.equal(newOrder.profitSnapshotUnitProfitTwd, "140.000000000000");
+  });
+
+  test("merchant creation captures pending, backfills once, and freezes new snapshots", async () => {
+    await setCostState(null, null, false);
+    const pendingResponse = await placeMerchantOrder("假後台買家甲");
+    assert.equal(pendingResponse.status, 201);
+    assert.equal(pendingResponse.data.profitSnapshotStatus, "pending");
+    assert.equal(pendingResponse.data.profitSnapshotUnitProfitTwd, null);
+    assert.ok(pendingResponse.data.profitSnapshotCapturedAt);
+
+    await setCostState("0.21", "8000", true);
+    const backfill = await request(
+      "POST",
+      `/orders/${pendingResponse.data.id}/profit-snapshot/backfill`,
+      undefined,
+      true,
+    );
+    assert.equal(backfill.status, 200);
+    assert.equal(backfill.data.profitSnapshotStatus, "exempt");
+    assert.equal(backfill.data.profitSnapshotTransportCostTwd, "0.000000000000");
+    assert.equal(backfill.data.profitSnapshotUnitProfitTwd, "220.000000000000");
+    assert.ok(backfill.data.profitSnapshotBackfilledAt);
+
+    const secondBackfill = await request(
+      "POST",
+      `/orders/${pendingResponse.data.id}/profit-snapshot/backfill`,
+      undefined,
+      true,
+    );
+    assert.equal(secondBackfill.status, 409);
+
+    const capturedAt021 = await placeMerchantOrder("假後台買家乙");
+    assert.equal(capturedAt021.status, 201);
+    assert.equal(capturedAt021.data.profitSnapshotStatus, "exempt");
+    assert.equal(capturedAt021.data.profitSnapshotUnitProfitTwd, "220.000000000000");
+
+    await setCostState("0.22", "8000", true);
+    const capturedAt022 = await placeMerchantOrder("假後台買家丙");
+    assert.equal(capturedAt022.status, 201);
+    assert.equal(capturedAt022.data.profitSnapshotUnitProfitTwd, "140.000000000000");
+
+    const [oldOrderAfterRateChange] = await db
+      .select()
+      .from(ordersTable)
+      .where(eq(ordersTable.id, capturedAt021.data.id));
+    assert.equal(oldOrderAfterRateChange.profitSnapshotUnitProfitTwd, "220.000000000000");
   });
 }
