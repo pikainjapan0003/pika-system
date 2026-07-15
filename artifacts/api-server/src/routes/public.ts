@@ -206,6 +206,8 @@ router.post("/p/:shareToken/orders", submitOrderLimiter, async (req, res) => {
         // totalPrice = 商品小計（不含運費）。訂單總額由 shippingFee + totalPrice 計算
         // （與 merchant orders 的 formatOrder 語意一致，避免運費被重複計算）。
         const totalPrice = unitPrice * parsed.data.quantity;
+        // Snapshot sale price is product.price, the order-time unit price.
+        // If discounts later change the actual unit price, pass that order unitPrice here instead.
         const profitSnapshotInput = await loadOrderProfitSnapshotInput(
           tx,
           product,

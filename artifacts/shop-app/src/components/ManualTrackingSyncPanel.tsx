@@ -19,9 +19,8 @@
  *           （寫入 5 筆貨態事件），驗證 production insert 路徑可用。
  * J5F-7H-C：關回 one-shot gate。COMMIT_ENABLED 改回 false；移除 ONE_SHOT_COMMIT_TARGET /
  *           isOneShotCommitOrder runtime 開啟邏輯；恢復 safe-preview-only，所有訂單一致。
- * J5F-7P-A：one-shot gate for postoffice ****3004 / order #38（authorized 2026-06-26）。
- *           COMMIT_ENABLED=true；加入 ONE_SHOT_COMMIT_PROVIDER / TRACKING_LAST4 / isOneShotCommitOrder guard。
- *           寫入完成後立即關回（見 J5F-7P-B）。
+ * J5F-7P-B：one-shot write completed and its temporary runtime gate was removed；
+ *           COMMIT_ENABLED remains false，恢復 safe-preview-only。
  */
 import { useState, useEffect } from "react";
 import { useAuth } from "@clerk/react";
@@ -145,14 +144,7 @@ type SyncPhase =
   | { phase: "commitError"; errorCode: string; message: string }
   | { phase: "drifted"; message: string };
 
-// J5F-7P-A: one-shot gate — postoffice ****3004, order #38, authorized 2026-06-26.
-// Close immediately after write: COMMIT_ENABLED=false, remove ONE_SHOT_COMMIT_PROVIDER/TRACKING_LAST4/isOneShotCommitOrder.
 const COMMIT_ENABLED: boolean = false;
-const ONE_SHOT_COMMIT_PROVIDER = "postoffice" as const;
-const ONE_SHOT_COMMIT_TRACKING_LAST4 = "3004";
-function isOneShotCommitOrder(job: PreviewJob): boolean {
-  return job.provider === ONE_SHOT_COMMIT_PROVIDER && job.trackingCode.endsWith(ONE_SHOT_COMMIT_TRACKING_LAST4);
-}
 
 const TRACKING_STATUS_LABELS: Record<string, string> = {
   pending: "待查詢",
@@ -384,8 +376,7 @@ export function ManualTrackingSyncPanel({
       return;
     }
 
-    // J5F-7P-A: one-shot guard — only postoffice ****3004 may commit
-    if (syncState.phase !== "previewReadyCanCommit" || !isOneShotCommitOrder(syncState.job)) return;
+    if (syncState.phase !== "previewReadyCanCommit") return;
     const commitJob = syncState.job;
 
     setSyncState({ phase: "commitLoading", job: commitJob });
@@ -465,9 +456,9 @@ export function ManualTrackingSyncPanel({
   const isLoading = syncState.phase === "previewLoading" || syncState.phase === "commitLoading";
   // 7-11 は commit 不可なので modal も開かない
   const canShowModal =
+    COMMIT_ENABLED &&
     syncState.phase === "previewReadyCanCommit" &&
-    syncState.job.provider !== "711" &&
-    isOneShotCommitOrder(syncState.job);
+    syncState.job.provider !== "711";
   const modalJob = canShowModal ? syncState.job : null;
 
   return (
