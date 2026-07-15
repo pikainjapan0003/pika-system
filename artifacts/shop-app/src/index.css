@@ -160,3 +160,25 @@
     display: none;
   }
 }
+
+@keyframes cs-float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-3px); }
+}
+@keyframes cs-spin-gentle {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes cs-pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+@utility animate-cs-float {
+  animation: cs-float 3s ease-in-out infinite;
+}
+@utility animate-cs-spin-gentle {
+  animation: cs-spin-gentle 6s linear infinite;
+}
+@utility animate-cs-pulse-soft {
+  animation: cs-pulse-soft 2.5s ease-in-out infinite;
+}

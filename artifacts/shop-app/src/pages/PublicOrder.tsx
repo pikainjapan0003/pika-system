@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { Order } from "@workspace/api-client-react";
 import { useGetPublicProduct, useSubmitOrder } from "@workspace/api-client-react";
-import LaundryCountdownTimer from "../components/LaundryCountdownTimer";
+import { addToCart, getCart, cartTotalQty } from "@/lib/cartStorage";
 import { applyBrandColor, DEFAULT_BRAND_PRIMARY_COLOR } from "@/lib/brandColor";
 import {
   isSevenElevenMethod,
@@ -130,6 +130,9 @@ export default function PublicOrderPage({ shareToken }: Props) {
   const [shippingDistrict, setShippingDistrict] = useState("");
   const [shippingZip, setShippingZip] = useState("");
   const [shippingAddressLine, setShippingAddressLine] = useState("");
+  const [cartCount, setCartCount] = useState(() => cartTotalQty(getCart()));
+  const [cartJustAdded, setCartJustAdded] = useState(false);
+  const cartJustAddedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const specs: Spec[] = (product?.specs as Spec[]) ?? [];
   const orderDeadlineAt = product?.orderDeadlineAt ? new Date(product.orderDeadlineAt as string) : null;
@@ -190,9 +193,47 @@ export default function PublicOrderPage({ shareToken }: Props) {
 
   const isOrderClosed =
     orderDeadlineAt != null && Number.isFinite(orderDeadlineAt.getTime()) && now >= orderDeadlineAt;
-  const remainingMs = orderDeadlineAt ? Math.max(0, orderDeadlineAt.getTime() - now.getTime()) : 0;
 
   const availableDistricts = getDistricts(shippingCity);
+
+  // Reset "已加入" feedback when specs or quantity change
+  useEffect(() => {
+    if (cartJustAdded) {
+      setCartJustAdded(false);
+      if (cartJustAddedTimerRef.current) {
+        clearTimeout(cartJustAddedTimerRef.current);
+        cartJustAddedTimerRef.current = null;
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [specValues, quantity]);
+
+  const handleAddToCart = () => {
+    if (!product) return;
+    for (const spec of specs) {
+      if (!specValues[spec.name]) {
+        setFormError(`請選擇${spec.name}`);
+        return;
+      }
+    }
+    setFormError("");
+    const newCart = addToCart({
+      shareToken,
+      productId: product.id,
+      productName: product.name,
+      productImageUrl: product.imageUrl,
+      unitPrice: Number(product.price),
+      quantity,
+      specValues,
+    });
+    setCartCount(cartTotalQty(newCart));
+    setCartJustAdded(true);
+    if (cartJustAddedTimerRef.current) clearTimeout(cartJustAddedTimerRef.current);
+    cartJustAddedTimerRef.current = setTimeout(() => {
+      setCartJustAdded(false);
+      cartJustAddedTimerRef.current = null;
+    }, 2200);
+  };
 
   const handleShippingCityChange = (city: string) => {
     setShippingCity(city);
@@ -447,11 +488,17 @@ export default function PublicOrderPage({ shareToken }: Props) {
             </div>
           )}
           {orderDeadlineAt != null && (
-            <LaundryCountdownTimer
-              remainingMs={remainingMs}
-              closed={isOrderClosed}
-              deadlineLabel={formatDate(product.orderDeadlineAt as string)}
-            />
+            <div className="mt-4">
+              {isOrderClosed ? (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-100 text-red-700 text-xs font-semibold border border-red-200">
+                  已截止收單
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-50 text-red-600 text-xs font-semibold border border-red-200">
+                  {formatDate(product.orderDeadlineAt as string)} 截止
+                </span>
+              )}
+            </div>
           )}
         </div>
       </div>
@@ -503,6 +550,36 @@ export default function PublicOrderPage({ shareToken }: Props) {
               +
             </button>
           </div>
+        </div>
+
+        {/* Add to cart + cart link */}
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={handleAddToCart}
+            disabled={isOrderClosed}
+            className={`flex-1 h-11 rounded-xl font-bold text-sm transition-colors disabled:opacity-60 ${
+              cartJustAdded
+                ? "bg-green-500 text-white"
+                : "bg-primary/15 text-primary border-2 border-primary/30 hover:bg-primary/20"
+            }`}
+          >
+            {cartJustAdded ? "✓ 已加入購物車" : "加入購物車"}
+          </button>
+          <a
+            href="/cart"
+            className="relative flex items-center gap-1.5 h-11 px-4 rounded-xl border border-border bg-white text-foreground text-sm font-semibold shrink-0"
+            aria-label="購物車"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+              <path d="M2.25 2.25a.75.75 0 000 1.5h1.386c.17 0 .318.114.362.278l2.558 9.592a3.752 3.752 0 00-2.806 3.63c0 .414.336.75.75.75h15.75a.75.75 0 000-1.5H5.378A2.25 2.25 0 017.5 15h11.218a.75.75 0 00.674-.421 60.358 60.358 0 002.96-7.228.75.75 0 00-.525-.965A60.864 60.864 0 005.68 4.509l-.232-.867A1.875 1.875 0 003.636 2.25H2.25zM3.75 20.25a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zM16.5 20.25a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0z" />
+            </svg>
+            {cartCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-primary text-white text-[9px] font-bold rounded-full flex items-center justify-center leading-none">
+                {cartCount > 9 ? "9+" : cartCount}
+              </span>
+            )}
+          </a>
         </div>
 
         {/* Buyer info */}

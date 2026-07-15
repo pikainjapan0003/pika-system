@@ -51,6 +51,7 @@ interface ShipmentTrackingInput {
   trackingCode?: string | null;
   trackingStatus?: string | null;
   latestStatusText?: string | null;
+  latestEventDescription?: string | null;
   latestEventAt?: string | null;
   isActive?: boolean | null;
 }
@@ -61,6 +62,8 @@ export interface ManualTrackingSyncPanelProps {
   shipmentTracking?: ShipmentTrackingInput | null;
   disabled?: boolean;
   onOrderRefresh?: () => void;
+  // preview-only fallback：DB 尚無貨態時，讓外層可暫時顯示 manual preview 查詢結果（不寫 DB）
+  onPreviewResult?: (data: { latestStatusText: string | null; latestEventAt: string | null }) => void;
 }
 
 interface PreviewJob {
@@ -248,6 +251,7 @@ export function ManualTrackingSyncPanel({
   shipmentTracking,
   disabled = false,
   onOrderRefresh,
+  onPreviewResult,
 }: ManualTrackingSyncPanelProps) {
   const { getToken } = useAuth();
   const [syncState, setSyncState] = useState<SyncPhase>({ phase: "idle" });
@@ -341,6 +345,8 @@ export function ManualTrackingSyncPanel({
         });
         return;
       }
+
+      onPreviewResult?.({ latestStatusText: job.latestStatusText, latestEventAt: job.latestEventAt });
 
       const netNewEvents = (job.wouldWriteEvents ?? 0) - (job.duplicateEvents ?? 0);
       if (netNewEvents > 0) {

@@ -287,6 +287,146 @@ router.post("/p/:shareToken/orders", submitOrderLimiter, async (req, res) => {
   throw new Error("Failed to generate unique publicToken after retries");
 });
 
+// Cart checkout: one order with multiple items. Profit-snapshot capture intentionally does not
+// apply here (it's keyed to a single product/price) — these orders keep profit_snapshot_status
+// NULL, which satisfies the orders_profit_snapshot_shape_valid check's all-NULL branch.
+router.post("/cart/orders", submitOrderLimiter, async (req, res) => {
+  const body = req.body;
+
+  // Manual validation (no zod dep needed for inline schema)
+  if (!body.buyerName?.trim() || !body.buyerPhone?.trim() || !body.pickupMethod?.trim()) {
+    return res.status(400).json({ error: "buyerName, buyerPhone, and pickupMethod are required" });
+  }
+  if (!Array.isArray(body.items) || body.items.length === 0) {
+    return res.status(400).json({ error: "items must be a non-empty array" });
+  }
+  for (const item of body.items) {
+    if (!item.shareToken?.trim()) return res.status(400).json({ error: "each item requires shareToken" });
+    if (!Number.isInteger(item.quantity) || item.quantity < 1) {
+      return res.status(400).json({ error: "each item quantity must be a positive integer" });
+    }
+  }
+
+  const shippingFeeOverride = typeof body.shippingFee === "number" ? body.shippingFee : undefined;
+  const shippingFee = getShippingFee(body.pickupMethod, shippingFeeOverride);
+  const hasCvs = !!(body.cvsStoreId);
+
+  let retries = 0;
+  while (retries <= 3) {
+    const publicToken = randomBytes(16).toString("hex");
+    try {
+      const result = await db.transaction(async (tx) => {
+        const resolvedItems: Array<{
+          productId: number;
+          shareToken: string;
+          productName: string;
+          productImageUrl: string | null;
+          specValues: Record<string, string>;
+          quantity: number;
+          unitPrice: number;
+          subtotal: number;
+        }> = [];
+
+        for (const item of body.items) {
+          const [product] = await tx
+            .select()
+            .from(productsTable)
+            .where(eq(productsTable.shareToken, item.shareToken))
+            .for("update")
+            .limit(1);
+
+          if (!product || !product.isActive) {
+            const err = new Error("Product not found") as any;
+            err.status = 404;
+            throw err;
+          }
+          if (product.orderDeadlineAt && new Date() >= product.orderDeadlineAt) {
+            const err = new Error("PRODUCT_ORDER_DEADLINE_PASSED") as any;
+            err.status = 422;
+            err.displayMessage = `商品「${product.name}」已截止收單，無法送出訂單。`;
+            throw err;
+          }
+          const qty: number = item.quantity;
+          if (product.inventory !== null && qty > product.inventory) {
+            const err = new Error("庫存不足") as any;
+            err.status = 409;
+            throw err;
+          }
+          if (product.inventory !== null) {
+            await tx
+              .update(productsTable)
+              .set({ inventory: product.inventory - qty })
+              .where(eq(productsTable.id, product.id));
+          }
+          const unitPrice = parseFloat(product.price as string);
+          resolvedItems.push({
+            productId: product.id,
+            shareToken: item.shareToken,
+            productName: product.name,
+            productImageUrl: product.imageUrl ?? null,
+            specValues: (item.specValues ?? {}) as Record<string, string>,
+            quantity: qty,
+            unitPrice,
+            subtotal: unitPrice * qty,
+          });
+        }
+
+        const first = resolvedItems[0];
+        const itemsSubtotal = resolvedItems.reduce((sum, i) => sum + i.subtotal, 0);
+
+        const [newOrder] = await tx
+          .insert(ordersTable)
+          .values({
+            productId: first.productId,
+            storeId: (await tx.select({ storeId: productsTable.storeId }).from(productsTable).where(eq(productsTable.id, first.productId)).limit(1))[0].storeId,
+            productName: first.productName,
+            publicToken,
+            buyerName: body.buyerName.trim(),
+            buyerPhone: body.buyerPhone.trim(),
+            pickupMethod: body.pickupMethod,
+            notes: body.notes?.trim() || null,
+            specValues: first.specValues,
+            quantity: first.quantity,
+            unitPrice: String(first.unitPrice),
+            shippingFee: String(shippingFee),
+            totalPrice: String(itemsSubtotal),
+            status: "pending",
+            cvsStoreId: hasCvs ? (body.cvsStoreId ?? null) : null,
+            cvsStoreName: hasCvs ? (body.cvsStoreName ?? null) : null,
+            cvsStoreAddress: hasCvs ? (body.cvsStoreAddress ?? null) : null,
+            cvsStorePhone: hasCvs ? (body.cvsStorePhone ?? null) : null,
+            storeSelectedBy: hasCvs ? "customer" : null,
+            storeSelectedAt: hasCvs ? new Date() : null,
+            recipientAddress: body.recipientAddress ?? null,
+            recipientName: body.recipientName ?? null,
+            recipientPhone: body.recipientPhone ?? null,
+            items: resolvedItems as any,
+          })
+          .returning();
+
+        if (!newOrder) throw new Error("Insert returned no row");
+        return { order: newOrder, items: resolvedItems };
+      });
+
+      return res.status(201).json({
+        publicToken: result.order.publicToken,
+        pickupMethod: result.order.pickupMethod,
+        createdAt: result.order.createdAt,
+        shippingFee: parseFloat(result.order.shippingFee as string),
+        totalPrice: parseFloat(result.order.totalPrice as string),
+        items: result.items,
+      });
+    } catch (err: any) {
+      if (err.status === 404) return res.status(404).json({ error: err.message });
+      if (err.status === 409) return res.status(409).json({ error: err.message });
+      if (err.status === 422) return res.status(422).json({ error: err.message, message: err.displayMessage });
+      if (err.code === "23505" && retries < 3) { retries++; continue; }
+      throw err;
+    }
+  }
+  throw new Error("Failed to generate unique publicToken after retries");
+});
+
 router.get("/orders/track/:publicToken", trackOrderLimiter, async (req, res) => {
   const publicToken = req.params.publicToken as string;
 
@@ -360,6 +500,7 @@ router.get("/orders/track/:publicToken", trackOrderLimiter, async (req, res) => 
     recipientNameMasked: maskName(order.recipientName ?? order.buyerName ?? null),
     recipientPhoneMasked: maskPhone(order.recipientPhone ?? null),
     recipientAddressMasked: summarizeAddress(order.recipientAddress ?? null),
+    items: (order.items as any[] | null) ?? null,
     createdAt: order.createdAt,
     // STRICTLY EXCLUDED (private / personal info):
     // internalNote, paymentNote, paidAmount, recipientPhone (full), recipientAddress (full),
