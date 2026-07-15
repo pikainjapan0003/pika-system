@@ -3,6 +3,7 @@ import { and, eq, inArray } from "drizzle-orm";
 import { randomBytes } from "crypto";
 import {
   backfillPendingOrderProfitSnapshot,
+  createInitialOrderProfitSnapshot,
   db,
   displayOrderProfitSnapshotAmount,
   ordersTable,
@@ -88,6 +89,15 @@ router.post("/stores/:storeId/orders", requireAuth, async (req: any, res) => {
         const totalPrice = unitPrice * quantity;
         // Step 7H-3: 與買家端同一套運費規則（黑貓 100 / 郵局 80 / 超商 60 / 自取 0）
         const shippingFee = getShippingFee(pickupMethod);
+        const profitSnapshotInput = await loadOrderProfitSnapshotInput(
+          tx,
+          product,
+          product.price,
+        );
+        const profitSnapshot = createInitialOrderProfitSnapshot(
+          profitSnapshotInput,
+          new Date(),
+        );
 
         const [newOrder] = await tx
           .insert(ordersTable)
@@ -105,6 +115,7 @@ router.post("/stores/:storeId/orders", requireAuth, async (req: any, res) => {
             unitPrice: String(unitPrice),
             totalPrice: String(totalPrice),
             shippingFee: String(shippingFee),
+            ...profitSnapshot,
             status: "pending",
             // Step 7H-2: 新增訂單即可帶入物流 / 門市 / 收件資訊（與編輯訂單一致）
             shippingMethod: shippingMethod ?? null,
