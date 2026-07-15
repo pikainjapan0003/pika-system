@@ -495,8 +495,6 @@ router.get("/orders/track/:publicToken", trackOrderLimiter, async (req, res) => 
     latestTrackingTime: tracking?.latestEventAt?.toISOString() ?? null,
     shipmentUpdatedAt: tracking?.updatedAt?.toISOString() ?? null,
     storeName: store?.name ?? null,
-    cvsStoreName: order.cvsStoreName ?? null,
-    cvsStoreAddress: order.cvsStoreAddress ?? null,
     recipientNameMasked: maskName(order.recipientName ?? order.buyerName ?? null),
     recipientPhoneMasked: maskPhone(order.recipientPhone ?? null),
     recipientAddressMasked: summarizeAddress(order.recipientAddress ?? null),
@@ -505,7 +503,8 @@ router.get("/orders/track/:publicToken", trackOrderLimiter, async (req, res) => 
     // STRICTLY EXCLUDED (private / personal info):
     // internalNote, paymentNote, paidAmount, recipientPhone (full), recipientAddress (full),
     // shippingNote, recipientName (full), paymentMethod, paymentStatus, remainingAmount,
-    // checkError, eventCode, rawData
+    // checkError, eventCode, rawData, cvsStoreId, cvsStoreName, cvsStoreAddress, cvsStorePhone,
+    // storeSelectedBy, storeSelectedAt
   });
 });
 

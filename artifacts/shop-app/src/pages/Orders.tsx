@@ -67,6 +67,12 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
   line_pay: "LINE Pay",
   other: "其他",
 };
+const BACKFILL_MISSING_FIELD_INFO: Record<string, { label: string; href: string }> = {
+  productCostJpy: { label: "商品日圓成本", href: "/products" },
+  storeExchangeRate: { label: "店鋪進貨匯率", href: "/settings" },
+  tripRoute: { label: "行程路線／交通成本", href: "/trips" },
+};
+
 const SHIPPING_STATUS_LABELS: Record<string, string> = {
   not_shipped: "未出貨",
   preparing: "備貨中",
@@ -257,6 +263,7 @@ export default function OrdersPage() {
   const [deleteConfirm, setDeleteConfirm] = useState<{ orderId: number; buyerName: string } | null>(null);
   const [deletingOrderId, setDeletingOrderId] = useState<number | null>(null);
   const [backfillingOrderId, setBackfillingOrderId] = useState<number | null>(null);
+  const [backfillErrors, setBackfillErrors] = useState<Record<number, { message: string; missing: string[] }>>({});
 
   // Bulk selection state
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
@@ -365,6 +372,7 @@ export default function OrdersPage() {
   const handleBackfillProfitSnapshot = async (orderId: number) => {
     if (!storeId) return;
     setBackfillingOrderId(orderId);
+    setBackfillErrors((prev) => { const next = { ...prev }; delete next[orderId]; return next; });
     try {
       const token = await getToken();
       const res = await fetch(`/api/orders/${orderId}/profit-snapshot/backfill`, {
@@ -377,16 +385,16 @@ export default function OrdersPage() {
         const message = typeof body?.error === "string" && body.error
           ? body.error
           : "成本快照補拍失敗，請稍後再試。";
-        setStatusErrors((prev) => ({ ...prev, [orderId]: message }));
+        const missing = Array.isArray(body?.missing) ? body.missing as string[] : [];
+        setBackfillErrors((prev) => ({ ...prev, [orderId]: { message, missing } }));
         return;
       }
-      setStatusErrors((prev) => { const next = { ...prev }; delete next[orderId]; return next; });
       toast({ title: "成本快照已補拍並定格" });
       qc.invalidateQueries({ queryKey: getListOrdersQueryKey(storeId) });
     } catch {
-      setStatusErrors((prev) => ({
+      setBackfillErrors((prev) => ({
         ...prev,
-        [orderId]: "成本快照補拍失敗，請確認網路後再試。",
+        [orderId]: { message: "成本快照補拍失敗，請確認網路後再試。", missing: [] },
       }));
     } finally {
       setBackfillingOrderId(null);
@@ -907,10 +915,37 @@ export default function OrdersPage() {
                                     type="button"
                                     onClick={() => void handleBackfillProfitSnapshot(o.id)}
                                     disabled={backfillingOrderId === o.id}
-                                    className="w-full h-10 rounded-xl bg-primary text-white text-sm font-semibold disabled:opacity-50"
+                                    className="w-full h-10 rounded-xl bg-primary text-white text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
                                   >
+                                    {backfillingOrderId === o.id && (
+                                      <span className="w-3.5 h-3.5 border-2 border-white/60 border-t-white rounded-full animate-spin" />
+                                    )}
                                     {backfillingOrderId === o.id ? "補拍中…" : "補拍成本快照"}
                                   </button>
+                                  {backfillErrors[o.id] && (
+                                    <div className="bg-destructive/10 rounded-xl px-3 py-2.5 space-y-1.5">
+                                      <p className="text-xs text-destructive font-medium">
+                                        {backfillErrors[o.id].message}
+                                      </p>
+                                      {backfillErrors[o.id].missing.length > 0 && (
+                                        <ul className="space-y-1">
+                                          {backfillErrors[o.id].missing.map((field) => {
+                                            const info = BACKFILL_MISSING_FIELD_INFO[field];
+                                            if (!info) return null;
+                                            const href = field === "productCostJpy" ? `/products/${o.productId}/edit` : info.href;
+                                            return (
+                                              <li key={field} className="text-xs text-destructive/90 flex items-center justify-between gap-2">
+                                                <span>缺少：{info.label}</span>
+                                                <a href={href} className="shrink-0 text-primary font-medium underline">
+                                                  前往設定
+                                                </a>
+                                              </li>
+                                            );
+                                          })}
+                                        </ul>
+                                      )}
+                                    </div>
+                                  )}
                                 </div>
                               </>
                             ) : o.profitSnapshotStatus === "captured" || o.profitSnapshotStatus === "exempt" ? (

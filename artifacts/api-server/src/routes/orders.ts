@@ -964,8 +964,20 @@ router.post("/orders/:orderId/profit-snapshot/backfill", requireAuth, async (req
         throw err;
       }
       if (backfill.outcome === "still_pending") {
-        const err = new Error("成本資料仍待確認，尚無法補拍") as Error & { status?: number };
+        const missing: string[] = [];
+        if (snapshotInput.costJpy == null) missing.push("productCostJpy");
+        if (snapshotInput.storePurchaseExchangeRate == null) missing.push("storeExchangeRate");
+        if (
+          !snapshotInput.isTransportCostExempt &&
+          (snapshotInput.transport.product.tripRouteId == null ||
+            snapshotInput.transport.route == null ||
+            snapshotInput.transport.trip == null)
+        ) {
+          missing.push("tripRoute");
+        }
+        const err = new Error("成本資料仍待確認，尚無法補拍") as Error & { status?: number; missing?: string[] };
         err.status = 409;
+        err.missing = missing;
         throw err;
       }
 
@@ -988,7 +1000,8 @@ router.post("/orders/:orderId/profit-snapshot/backfill", requireAuth, async (req
   } catch (err) {
     const status = (err as { status?: number }).status;
     if (status === 404 || status === 409) {
-      return res.status(status).json({ error: (err as Error).message });
+      const missing = (err as { missing?: string[] }).missing;
+      return res.status(status).json({ error: (err as Error).message, ...(missing ? { missing } : {}) });
     }
     throw err;
   }

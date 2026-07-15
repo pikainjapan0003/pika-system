@@ -483,10 +483,6 @@ export interface PublicOrder {
   /** @nullable */
   storeName?: string | null;
   /** @nullable */
-  cvsStoreName?: string | null;
-  /** @nullable */
-  cvsStoreAddress?: string | null;
-  /** @nullable */
   recipientNameMasked?: string | null;
   /** @nullable */
   recipientPhoneMasked?: string | null;

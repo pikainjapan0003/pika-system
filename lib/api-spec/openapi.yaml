@@ -1423,10 +1423,6 @@ components:
           type: ["string", "null"]
         storeName:
           type: ["string", "null"]
-        cvsStoreName:
-          type: ["string", "null"]
-        cvsStoreAddress:
-          type: ["string", "null"]
         recipientNameMasked:
           type: ["string", "null"]
         recipientPhoneMasked:

@@ -1081,8 +1081,6 @@ export const GetPublicOrderResponse = zod.object({
   "latestTrackingTime": zod.string().nullish(),
   "shipmentUpdatedAt": zod.string().nullish(),
   "storeName": zod.string().nullish(),
-  "cvsStoreName": zod.string().nullish(),
-  "cvsStoreAddress": zod.string().nullish(),
   "recipientNameMasked": zod.string().nullish(),
   "recipientPhoneMasked": zod.string().nullish(),
   "recipientAddressMasked": zod.string().nullish(),
