@@ -512,6 +512,8 @@ router.post(
 );
 
 const COMMIT_CONFIRM_TEXT = "WRITE_TRACKING_EVENTS";
+const isManualProviderCommitEnabled = () =>
+  process.env.LOGISTICS_MANUAL_COMMIT_ENABLED === "true";
 
 /**
  * 郵局 / 黑貓 commit（Step 7N-J4B）：驗證 previewHash、re-dryRun drift 檢查、正式寫入。
@@ -525,6 +527,9 @@ router.post(
   async (req: any, res: any) => {
     const storeId = parseInt(req.params.storeId);
     if (isNaN(storeId)) return fail(res, 400, "INVALID_STORE", "Invalid storeId");
+    if (!isManualProviderCommitEnabled()) {
+      return fail(res, 403, "COMMIT_DISABLED", "手動物流寫入功能尚未啟用。");
+    }
     if (!(await verifyStoreOwner(req, res, storeId))) return;
 
     const body = req.body ?? {};
