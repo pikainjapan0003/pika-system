@@ -286,6 +286,7 @@ export const ListTripsResponseItem = zod.object({
   "trainJpy": zod.number(),
   "fuelJpy": zod.number(),
   "parkingJpy": zod.number(),
+  "etcJpy": zod.number().nullish(),
   "estQty": zod.number(),
   "cardboardJpy": zod.number(),
   "shippingJpy": zod.number(),
@@ -355,6 +356,8 @@ export const createTripRouteBodyFuelJpyMin = 0;
 
 export const createTripRouteBodyParkingJpyMin = 0;
 
+export const createTripRouteBodyEtcJpyMin = 0;
+
 export const createTripRouteBodyCardboardJpyMin = 0;
 
 export const createTripRouteBodyShippingJpyMin = 0;
@@ -371,6 +374,7 @@ export const CreateTripRouteBody = zod.object({
   "trainJpy": zod.number().min(createTripRouteBodyTrainJpyMin).optional(),
   "fuelJpy": zod.number().min(createTripRouteBodyFuelJpyMin).optional(),
   "parkingJpy": zod.number().min(createTripRouteBodyParkingJpyMin).optional(),
+  "etcJpy": zod.number().min(createTripRouteBodyEtcJpyMin),
   "cardboardJpy": zod.number().min(createTripRouteBodyCardboardJpyMin).optional(),
   "shippingJpy": zod.number().min(createTripRouteBodyShippingJpyMin).optional(),
   "parcelCount": zod.number().min(createTripRouteBodyParcelCountMin).optional()
@@ -395,6 +399,8 @@ export const updateTripRouteBodyFuelJpyMin = 0;
 
 export const updateTripRouteBodyParkingJpyMin = 0;
 
+export const updateTripRouteBodyEtcJpyMin = 0;
+
 export const updateTripRouteBodyCardboardJpyMin = 0;
 
 export const updateTripRouteBodyShippingJpyMin = 0;
@@ -411,6 +417,7 @@ export const UpdateTripRouteBody = zod.object({
   "trainJpy": zod.number().min(updateTripRouteBodyTrainJpyMin).optional(),
   "fuelJpy": zod.number().min(updateTripRouteBodyFuelJpyMin).optional(),
   "parkingJpy": zod.number().min(updateTripRouteBodyParkingJpyMin).optional(),
+  "etcJpy": zod.number().min(updateTripRouteBodyEtcJpyMin).nullish(),
   "cardboardJpy": zod.number().min(updateTripRouteBodyCardboardJpyMin).optional(),
   "shippingJpy": zod.number().min(updateTripRouteBodyShippingJpyMin).optional(),
   "parcelCount": zod.number().min(updateTripRouteBodyParcelCountMin).optional()
@@ -425,6 +432,7 @@ export const UpdateTripRouteResponse = zod.object({
   "trainJpy": zod.number(),
   "fuelJpy": zod.number(),
   "parkingJpy": zod.number(),
+  "etcJpy": zod.number().nullish(),
   "estQty": zod.number(),
   "cardboardJpy": zod.number(),
   "shippingJpy": zod.number(),

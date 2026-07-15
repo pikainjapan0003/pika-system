@@ -94,6 +94,7 @@ router.post("/trips/:tripId/routes", requireAuth, async (req: any, res) => {
         trainJpy: parsed.data.trainJpy != null ? String(parsed.data.trainJpy) : undefined,
         fuelJpy: parsed.data.fuelJpy != null ? String(parsed.data.fuelJpy) : undefined,
         parkingJpy: parsed.data.parkingJpy != null ? String(parsed.data.parkingJpy) : undefined,
+        etcJpy: String(parsed.data.etcJpy),
         cardboardJpy: parsed.data.cardboardJpy != null ? String(parsed.data.cardboardJpy) : undefined,
         shippingJpy: parsed.data.shippingJpy != null ? String(parsed.data.shippingJpy) : undefined,
         parcelCount: parsed.data.parcelCount ?? undefined,
@@ -126,6 +127,9 @@ router.patch("/trips/:tripId/routes/:routeId", requireAuth, async (req: any, res
   if (parsed.data.trainJpy !== undefined) updateData.trainJpy = String(parsed.data.trainJpy);
   if (parsed.data.fuelJpy !== undefined) updateData.fuelJpy = String(parsed.data.fuelJpy);
   if (parsed.data.parkingJpy !== undefined) updateData.parkingJpy = String(parsed.data.parkingJpy);
+  if (parsed.data.etcJpy !== undefined) {
+    updateData.etcJpy = parsed.data.etcJpy == null ? null : String(parsed.data.etcJpy);
+  }
   if (parsed.data.cardboardJpy !== undefined) updateData.cardboardJpy = String(parsed.data.cardboardJpy);
   if (parsed.data.shippingJpy !== undefined) updateData.shippingJpy = String(parsed.data.shippingJpy);
   if (parsed.data.parcelCount !== undefined) updateData.parcelCount = parsed.data.parcelCount;
@@ -164,6 +168,7 @@ function formatTripRoute(r: any) {
     trainJpy: parseFloat(r.trainJpy),
     fuelJpy: parseFloat(r.fuelJpy),
     parkingJpy: parseFloat(r.parkingJpy),
+    etcJpy: r.etcJpy != null ? parseFloat(r.etcJpy) : null,
     estQty: r.estQty,
     cardboardJpy: parseFloat(r.cardboardJpy),
     shippingJpy: parseFloat(r.shippingJpy),

@@ -1159,6 +1159,8 @@ components:
           type: number
         parkingJpy:
           type: number
+        etcJpy:
+          type: ["number", "null"]
         estQty:
           type: integer
         cardboardJpy:
@@ -1172,7 +1174,7 @@ components:
 
     TripRouteInput:
       type: object
-      required: [areaTitle, startPlace, endPlace, estQty]
+      required: [areaTitle, startPlace, endPlace, estQty, etcJpy]
       properties:
         areaTitle:
           type: string
@@ -1193,6 +1195,9 @@ components:
           type: number
           minimum: 0
         parkingJpy:
+          type: number
+          minimum: 0
+        etcJpy:
           type: number
           minimum: 0
         cardboardJpy:
@@ -1228,6 +1233,9 @@ components:
           minimum: 0
         parkingJpy:
           type: number
+          minimum: 0
+        etcJpy:
+          type: ["number", "null"]
           minimum: 0
         cardboardJpy:
           type: number

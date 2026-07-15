@@ -14,12 +14,15 @@ export const tripRoutesTable = pgTable("trip_routes", {
   fuelJpy: numeric("fuel_jpy").notNull().default("0"),
   parkingJpy: numeric("parking_jpy").notNull().default("0"),
   estQty: integer("est_qty").notNull(),
+  etcJpy: numeric("etc_jpy"),
   cardboardJpy: numeric("cardboard_jpy").notNull().default("0"),
   shippingJpy: numeric("shipping_jpy").notNull().default("0"),
   parcelCount: integer("parcel_count").notNull().default(0),
 
   // Calculated values remain derived in the pure module. These pairs retain
   // explicit human overrides without caching a second, drift-prone copy.
+  // The ETC override pair is legacy-only after ETC became a direct manual
+  // input; it stays in the schema for backward compatibility and is ignored.
   etcJpyOverride: numeric("etc_jpy_override"),
   etcJpyIsOverridden: boolean("etc_jpy_is_overridden").notNull().default(false),
   fee1_5PctOverride: numeric("fee_1_5pct_override"),
@@ -43,6 +46,7 @@ export const tripRoutesTable = pgTable("trip_routes", {
     "trip_routes_jpy_inputs_non_negative",
     sql`${t.trainJpy} >= 0 AND ${t.fuelJpy} >= 0 AND ${t.parkingJpy} >= 0 AND ${t.cardboardJpy} >= 0 AND ${t.shippingJpy} >= 0`,
   ),
+  check("trip_routes_etc_jpy_non_negative", sql`${t.etcJpy} IS NULL OR ${t.etcJpy} >= 0`),
   check(
     "trip_routes_overrides_valid",
     sql`(NOT ${t.etcJpyIsOverridden} OR ${t.etcJpyOverride} IS NOT NULL)

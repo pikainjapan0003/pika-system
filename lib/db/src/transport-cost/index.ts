@@ -119,7 +119,6 @@ export interface ManualOverride {
 }
 
 export interface TransportCostOverrides {
-  etcJpy?: ManualOverride;
   fee1_5Pct?: ManualOverride;
   totalJpy?: ManualOverride;
   domesticPerItem?: ManualOverride;
@@ -133,6 +132,7 @@ export interface TransportCostInput {
   trainJpy?: DecimalInput;
   fuelJpy?: DecimalInput;
   parkingJpy?: DecimalInput;
+  etcJpy?: DecimalInput;
   cardboardJpy?: DecimalInput;
   shippingJpy?: DecimalInput;
   overrides?: TransportCostOverrides;
@@ -152,7 +152,7 @@ export interface ReadyTransportCost {
 export interface PendingTransportCost {
   status: "pending_confirmation";
   label: typeof PENDING_CONFIRMATION_LABEL;
-  reason: "invalid_est_qty" | "missing_exchange_rate";
+  reason: "invalid_est_qty" | "missing_exchange_rate" | "missing_etc_jpy";
 }
 
 export type TransportCostResult = ReadyTransportCost | PendingTransportCost;
@@ -219,19 +219,23 @@ export function calculateTransportCost(input: TransportCostInput): TransportCost
     };
   }
 
+  if (isEmptyDecimal(input.etcJpy)) {
+    return {
+      status: "pending_confirmation",
+      label: PENDING_CONFIRMATION_LABEL,
+      reason: "missing_etc_jpy",
+    };
+  }
+
   const exchangeRate = parseOptionalNonNegativeDecimal(input.exchangeRate, "exchangeRate");
   const quantity = ExactDecimal.from(estQty);
   const trainJpy = parseOptionalNonNegativeDecimal(input.trainJpy, "trainJpy");
   const fuelJpy = parseOptionalNonNegativeDecimal(input.fuelJpy, "fuelJpy");
   const parkingJpy = parseOptionalNonNegativeDecimal(input.parkingJpy, "parkingJpy");
+  const etcJpy = parseOptionalNonNegativeDecimal(input.etcJpy, "etcJpy");
   const cardboardJpy = parseOptionalNonNegativeDecimal(input.cardboardJpy, "cardboardJpy");
   const shippingJpy = parseOptionalNonNegativeDecimal(input.shippingJpy, "shippingJpy");
 
-  const etcJpy = applyOverride(
-    "etcJpy",
-    ExactDecimal.from("30").multiply(quantity),
-    input.overrides?.etcJpy,
-  );
   const fee1_5Pct = applyOverride(
     "fee1_5Pct",
     cardboardJpy.add(shippingJpy).multiply(ExactDecimal.from("0.015")),
