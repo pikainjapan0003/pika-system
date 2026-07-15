@@ -16,6 +16,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
+const PREVIOUS_MANUAL_COMMIT_ENABLED = process.env.LOGISTICS_MANUAL_COMMIT_ENABLED;
+process.env.LOGISTICS_MANUAL_COMMIT_ENABLED = "true";
 
 mock.module("@clerk/express", {
   namedExports: {
@@ -193,6 +195,11 @@ after(async () => {
   await pool.query(`DELETE FROM stores WHERE id = ANY($1)`, [[storeId, otherStoreId]]);
   await new Promise((resolve) => server.close(resolve));
   await pool.end();
+  if (PREVIOUS_MANUAL_COMMIT_ENABLED === undefined) {
+    delete process.env.LOGISTICS_MANUAL_COMMIT_ENABLED;
+  } else {
+    process.env.LOGISTICS_MANUAL_COMMIT_ENABLED = PREVIOUS_MANUAL_COMMIT_ENABLED;
+  }
 });
 
 const call = (body, { user = TEST_USER, store = () => storeId } = {}) =>

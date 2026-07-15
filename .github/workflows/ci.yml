@@ -55,9 +55,12 @@ jobs:
       - name: Create disposable test schema
         run: pnpm --filter @workspace/db run push-force
 
-      - name: Test order profit snapshot routes
+      - name: Test database routes
         working-directory: artifacts/api-server
-        run: node --experimental-test-module-mocks --import tsx/esm --test src/routes/orderProfitSnapshot.route.test.mjs
+        run: >-
+          node --experimental-test-module-mocks --test
+          src/routes/orderProfitSnapshot.route.test.mjs
+          src/routes/logisticsSyncCommitKillSwitch.route.test.mjs
 
       - name: Typecheck
         run: pnpm run typecheck
