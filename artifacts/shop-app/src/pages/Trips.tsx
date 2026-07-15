@@ -86,7 +86,7 @@ function RouteForm({
   initial?: Partial<TripRoute>;
   onSubmit: (v: {
     areaTitle: string; startPlace: string; endPlace: string; estQty: string;
-    trainJpy: string; fuelJpy: string; parkingJpy: string; cardboardJpy: string; shippingJpy: string; parcelCount: string;
+    trainJpy: string; fuelJpy: string; parkingJpy: string; etcJpy: string; cardboardJpy: string; shippingJpy: string; parcelCount: string;
   }) => void;
   onCancel: () => void;
   submitting: boolean;
@@ -98,6 +98,7 @@ function RouteForm({
   const [trainJpy, setTrainJpy] = useState(initial?.trainJpy != null ? String(initial.trainJpy) : "");
   const [fuelJpy, setFuelJpy] = useState(initial?.fuelJpy != null ? String(initial.fuelJpy) : "");
   const [parkingJpy, setParkingJpy] = useState(initial?.parkingJpy != null ? String(initial.parkingJpy) : "");
+  const [etcJpy, setEtcJpy] = useState(initial?.etcJpy != null ? String(initial.etcJpy) : "");
   const [cardboardJpy, setCardboardJpy] = useState(initial?.cardboardJpy != null ? String(initial.cardboardJpy) : "");
   const [shippingJpy, setShippingJpy] = useState(initial?.shippingJpy != null ? String(initial.shippingJpy) : "");
   const [parcelCount, setParcelCount] = useState(initial?.parcelCount != null ? String(initial.parcelCount) : "");
@@ -131,8 +132,9 @@ function RouteForm({
         {numField("電車費 (¥)", trainJpy, setTrainJpy)}
         {numField("油資 (¥)", fuelJpy, setFuelJpy)}
         {numField("停車費 (¥)", parkingJpy, setParkingJpy)}
+        {numField("ETC 費用 (¥) *", etcJpy, setEtcJpy)}
         {numField("紙箱費 (¥)", cardboardJpy, setCardboardJpy)}
-        {numField("國際運費 (¥)", shippingJpy, setShippingJpy)}
+        {numField("日本境內運費 (¥)", shippingJpy, setShippingJpy)}
         {numField("包裹數", parcelCount, setParcelCount)}
       </div>
       {error && <p className="text-xs text-destructive">{error}</p>}
@@ -144,7 +146,8 @@ function RouteForm({
             if (!areaTitle.trim() || !startPlace.trim() || !endPlace.trim()) { setError("請填寫路線名稱、起點與終點"); return; }
             const qty = parseInt(estQty, 10);
             if (!Number.isFinite(qty) || qty < 1) { setError("預估件數需為大於 0 的整數"); return; }
-            onSubmit({ areaTitle: areaTitle.trim(), startPlace: startPlace.trim(), endPlace: endPlace.trim(), estQty, trainJpy, fuelJpy, parkingJpy, cardboardJpy, shippingJpy, parcelCount });
+            if (etcJpy.trim() === "" || !/^\d+(?:\.\d+)?$/.test(etcJpy.trim())) { setError("請手動填寫 ETC 費用，可填 0"); return; }
+            onSubmit({ areaTitle: areaTitle.trim(), startPlace: startPlace.trim(), endPlace: endPlace.trim(), estQty, trainJpy, fuelJpy, parkingJpy, etcJpy, cardboardJpy, shippingJpy, parcelCount });
           }}
           className="flex-1 h-10 rounded-xl bg-primary text-white text-sm font-semibold disabled:opacity-50"
         >
@@ -229,6 +232,7 @@ function TripCard({ trip }: { trip: TripWithRoutes }) {
                       trainJpy: v.trainJpy ? parseFloat(v.trainJpy) : 0,
                       fuelJpy: v.fuelJpy ? parseFloat(v.fuelJpy) : 0,
                       parkingJpy: v.parkingJpy ? parseFloat(v.parkingJpy) : 0,
+                      etcJpy: parseFloat(v.etcJpy),
                       cardboardJpy: v.cardboardJpy ? parseFloat(v.cardboardJpy) : 0,
                       shippingJpy: v.shippingJpy ? parseFloat(v.shippingJpy) : 0,
                       parcelCount: v.parcelCount ? parseInt(v.parcelCount, 10) : 0,
@@ -245,7 +249,7 @@ function TripCard({ trip }: { trip: TripWithRoutes }) {
                 <p className="text-sm font-semibold text-foreground">{route.areaTitle}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{route.startPlace} → {route.endPlace} · 預估 {route.estQty} 件</p>
                 <p className="text-[11px] text-muted-foreground/80 mt-0.5">
-                  電車 ¥{route.trainJpy} · 油資 ¥{route.fuelJpy} · 停車 ¥{route.parkingJpy} · 紙箱 ¥{route.cardboardJpy} · 國際運費 ¥{route.shippingJpy} · 包裹 {route.parcelCount}
+                  電車 ¥{route.trainJpy} · 油資 ¥{route.fuelJpy} · 停車 ¥{route.parkingJpy} · ETC {route.etcJpy == null ? "待確認" : `¥${route.etcJpy}`} · 紙箱 ¥{route.cardboardJpy} · 日本境內運費 ¥{route.shippingJpy} · 包裹 {route.parcelCount}
                 </p>
               </div>
               <button type="button" onClick={() => setEditingRouteId(route.id)} className="shrink-0 text-xs font-medium text-primary border border-primary/30 px-2.5 py-1 rounded-lg">
@@ -272,6 +276,7 @@ function TripCard({ trip }: { trip: TripWithRoutes }) {
                   trainJpy: v.trainJpy ? parseFloat(v.trainJpy) : undefined,
                   fuelJpy: v.fuelJpy ? parseFloat(v.fuelJpy) : undefined,
                   parkingJpy: v.parkingJpy ? parseFloat(v.parkingJpy) : undefined,
+                  etcJpy: parseFloat(v.etcJpy),
                   cardboardJpy: v.cardboardJpy ? parseFloat(v.cardboardJpy) : undefined,
                   shippingJpy: v.shippingJpy ? parseFloat(v.shippingJpy) : undefined,
                   parcelCount: v.parcelCount ? parseInt(v.parcelCount, 10) : undefined,

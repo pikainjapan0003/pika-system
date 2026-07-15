@@ -198,6 +198,8 @@ export interface TripRoute {
   trainJpy: number;
   fuelJpy: number;
   parkingJpy: number;
+  /** @nullable */
+  etcJpy?: number | null;
   estQty: number;
   cardboardJpy: number;
   shippingJpy: number;
@@ -245,6 +247,8 @@ export interface TripRouteInput {
   /** @minimum 0 */
   parkingJpy?: number;
   /** @minimum 0 */
+  etcJpy: number;
+  /** @minimum 0 */
   cardboardJpy?: number;
   /** @minimum 0 */
   shippingJpy?: number;
@@ -267,6 +271,11 @@ export interface TripRouteUpdate {
   fuelJpy?: number;
   /** @minimum 0 */
   parkingJpy?: number;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  etcJpy?: number | null;
   /** @minimum 0 */
   cardboardJpy?: number;
   /** @minimum 0 */

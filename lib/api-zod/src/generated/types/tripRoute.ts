@@ -15,6 +15,8 @@ export interface TripRoute {
   trainJpy: number;
   fuelJpy: number;
   parkingJpy: number;
+  /** @nullable */
+  etcJpy?: number | null;
   estQty: number;
   cardboardJpy: number;
   shippingJpy: number;

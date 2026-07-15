@@ -20,10 +20,9 @@ export interface ProductTransportRouteInput {
   trainJpy?: DecimalInput;
   fuelJpy?: DecimalInput;
   parkingJpy?: DecimalInput;
+  etcJpy?: DecimalInput;
   cardboardJpy?: DecimalInput;
   shippingJpy?: DecimalInput;
-  etcJpyOverride?: DecimalInput;
-  etcJpyIsOverridden: boolean;
   fee1_5PctOverride?: DecimalInput;
   fee1_5PctIsOverridden: boolean;
   totalJpyOverride?: DecimalInput;
@@ -94,13 +93,10 @@ export function resolveProductTransportCost(
     trainJpy: route.trainJpy,
     fuelJpy: route.fuelJpy,
     parkingJpy: route.parkingJpy,
+    etcJpy: route.etcJpy,
     cardboardJpy: route.cardboardJpy,
     shippingJpy: route.shippingJpy,
     overrides: {
-      etcJpy: {
-        isOverridden: route.etcJpyIsOverridden,
-        value: route.etcJpyOverride,
-      },
       fee1_5Pct: {
         isOverridden: route.fee1_5PctIsOverridden,
         value: route.fee1_5PctOverride,

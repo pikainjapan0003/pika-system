@@ -22,6 +22,8 @@ export interface TripRouteInput {
   /** @minimum 0 */
   parkingJpy?: number;
   /** @minimum 0 */
+  etcJpy: number;
+  /** @minimum 0 */
   cardboardJpy?: number;
   /** @minimum 0 */
   shippingJpy?: number;

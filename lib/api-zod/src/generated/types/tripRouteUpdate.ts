@@ -21,6 +21,11 @@ export interface TripRouteUpdate {
   fuelJpy?: number;
   /** @minimum 0 */
   parkingJpy?: number;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  etcJpy?: number | null;
   /** @minimum 0 */
   cardboardJpy?: number;
   /** @minimum 0 */

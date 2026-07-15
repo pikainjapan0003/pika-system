@@ -11,7 +11,7 @@
 
 **trip_route（行程內一條路線/地區，對應 Sheet 一列）**
 - 手填欄（全部日圓、decimal、可為 0）：`area_title`（分攤查找鍵，需唯一）、`start_place`、`end_place`、`train_jpy`、`fuel_jpy`（油價手查 gogo.gs 後手填，見 11 檔）、`parking_jpy`、`est_qty`（整數 >0）、`cardboard_jpy`、`shipping_jpy`、`parcel_count`。
-- `etc_jpy`：預設公式 `30 × est_qty`（沿用 Sheet R3C4 `=30*H3`，30 為 Sheet 既有常數），**必須可人工覆寫**（例外常態原則）。
+- `etc_jpy`：**每條路線手動填寫的 ETC 總額**，可為 0；不再使用 `30 × est_qty` 自動產生。既有路線未填時顯示「待確認」，不可默默當 0（老闆 2026-07-16 覆核定案）。
 - 每個計算欄也都要保留人工覆寫欄位＋覆寫標記。
 
 ## 2. 計算公式（單一真相，來源＝Sheet 公式原文＋Q8 定案）
@@ -40,19 +40,20 @@ final_cost_per_item = (domestic_per_item + transport_per_item) × exchange_rate 
 
 - `est_qty` 為 0、空、負 → 擋下並提示，**不可默默算出 0 或 Infinity**（Sheet 同款防呆：`IF((H="")+(H=0),"")`）。
 - `exchange_rate` 空 → 擋下提示，不可當 0（當 0 會算出成本 0＝最危險的靜默錯誤）。
+- `etc_jpy` 空 → 擋下提示「待確認」，不可用件數推算、不可當 0；明確填 `0` 才代表沒有 ETC 費用。
 - 其他日圓欄空 → 視為 0（Sheet 用 IFERROR(x,0) 同義）。
 
 ## 5. Test fixtures（Sheet 真實列，主對話已逐步手算驗證 2026-07-07）
 
 **Fixture A：規劃成本暫存區第 3 列「新千歲空港」**（完整驗算）
-輸入：etc=5400（=30×180）, train=0, fuel=8371, parking=5000, est_qty=180, cardboard=1360, shipping=6136, rate=0.199
+輸入：etc=5400（手填）, train=0, fuel=8371, parking=5000, est_qty=180, cardboard=1360, shipping=6136, rate=0.199
 預期：fee=112.44；total=26379.44；domestic=41.6444444…（7496÷180）；transport=104.908（18883.44÷180）；**final=29.16393644**（146.5524444…×0.199）
 顯示層：final 顯示 29（四捨五入）。
 
 **Fixture B：第 5 列「小樽」**
 預期 final_cost_per_item=22.4166535；且「商品輸入條碼區」第 3 列（小樽商品）交通變異成本(單件)=22.4166535——跨表查找一致性的驗證點（詳見 10 檔 §4 Fixture 2）。
 
-**Fixture C：邊界**——est_qty=0 → 擋下；exchange_rate 空 → 擋下；全部日圓欄=0、est_qty=1、rate=0.2 → final=0。
+**Fixture C：邊界**——est_qty=0 → 擋下；exchange_rate 空 → 擋下；etc_jpy 空 → 待確認；全部日圓欄明確填 0、est_qty=1、rate=0.2 → final=0。
 
 ## 6. 與商品的銜接（第 2 步，本規格先定義不實作）
 
