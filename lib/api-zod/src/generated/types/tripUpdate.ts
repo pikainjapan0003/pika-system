@@ -6,15 +6,14 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface StoreUpdate {
+export interface TripUpdate {
   /** @minLength 1 */
   name?: string;
-  description?: string;
-  logoUrl?: string;
-  brandPrimaryColor?: string;
   /**
      * @minimum 0
      * @nullable
      */
-  purchaseExchangeRate?: number | null;
+  exchangeRate?: number | null;
+  /** @nullable */
+  notes?: string | null;
 }

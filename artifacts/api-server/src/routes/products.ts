@@ -45,29 +45,39 @@ router.post("/stores/:storeId/products", requireAuth, async (req: any, res) => {
 
   const shareToken = randomBytes(12).toString("hex");
 
-  const [product] = await db
-    .insert(productsTable)
-    .values({
-      storeId,
-      name: parsed.data.name,
-      description: parsed.data.description ?? null,
-      price: String(parsed.data.price),
-      specs: parsed.data.specs ?? [],
-      inventory: parsed.data.inventory ?? null,
-      imageUrl: parsed.data.imageUrl ?? null,
-      shareToken,
-      isActive: true,
-      orderDeadlineAt: parsed.data.orderDeadlineAt ?? null,
-      internalNote: parsed.data.internalNote ?? null,
-      skuCode: parsed.data.skuCode ?? null,
-      storageTemp: parsed.data.storageTemp ?? null,
-      shelfLife: parsed.data.shelfLife ?? null,
-      weightKg: parsed.data.weightKg != null ? String(parsed.data.weightKg) : null,
-      categoryId: parsed.data.categoryId ?? null,
-    })
-    .returning();
+  try {
+    const [product] = await db
+      .insert(productsTable)
+      .values({
+        storeId,
+        name: parsed.data.name,
+        description: parsed.data.description ?? null,
+        price: String(parsed.data.price),
+        specs: parsed.data.specs ?? [],
+        inventory: parsed.data.inventory ?? null,
+        imageUrl: parsed.data.imageUrl ?? null,
+        shareToken,
+        isActive: true,
+        orderDeadlineAt: parsed.data.orderDeadlineAt ?? null,
+        internalNote: parsed.data.internalNote ?? null,
+        skuCode: parsed.data.skuCode ?? null,
+        storageTemp: parsed.data.storageTemp ?? null,
+        shelfLife: parsed.data.shelfLife ?? null,
+        weightKg: parsed.data.weightKg != null ? String(parsed.data.weightKg) : null,
+        categoryId: parsed.data.categoryId ?? null,
+        costJpy: parsed.data.costJpy != null ? String(parsed.data.costJpy) : null,
+        isTransportCostExempt: parsed.data.isTransportCostExempt ?? false,
+        tripRouteId: parsed.data.tripRouteId ?? null,
+      })
+      .returning();
 
-  return res.status(201).json(formatProduct(product));
+    return res.status(201).json(formatProduct(product));
+  } catch (err: any) {
+    if (err?.code === "23503") {
+      return res.status(400).json({ error: "Invalid tripRouteId" });
+    }
+    throw err;
+  }
 });
 
 router.get("/stores/:storeId/products/:productId", requireAuth, async (req: any, res) => {
@@ -120,15 +130,25 @@ router.patch("/stores/:storeId/products/:productId", requireAuth, async (req: an
   if (parsed.data.shelfLife !== undefined) updateData.shelfLife = parsed.data.shelfLife;
   if (parsed.data.weightKg !== undefined) updateData.weightKg = parsed.data.weightKg != null ? String(parsed.data.weightKg) : null;
   if (parsed.data.categoryId !== undefined) updateData.categoryId = parsed.data.categoryId;
+  if (parsed.data.costJpy !== undefined) updateData.costJpy = parsed.data.costJpy != null ? String(parsed.data.costJpy) : null;
+  if (parsed.data.isTransportCostExempt !== undefined) updateData.isTransportCostExempt = parsed.data.isTransportCostExempt;
+  if (parsed.data.tripRouteId !== undefined) updateData.tripRouteId = parsed.data.tripRouteId;
 
-  const [updated] = await db
-    .update(productsTable)
-    .set(updateData)
-    .where(and(eq(productsTable.id, productId), eq(productsTable.storeId, storeId)))
-    .returning();
+  try {
+    const [updated] = await db
+      .update(productsTable)
+      .set(updateData)
+      .where(and(eq(productsTable.id, productId), eq(productsTable.storeId, storeId)))
+      .returning();
 
-  if (!updated) return res.status(404).json({ error: "Product not found" });
-  return res.json(formatProduct(updated));
+    if (!updated) return res.status(404).json({ error: "Product not found" });
+    return res.json(formatProduct(updated));
+  } catch (err: any) {
+    if (err?.code === "23503") {
+      return res.status(400).json({ error: "Invalid tripRouteId" });
+    }
+    throw err;
+  }
 });
 
 router.delete("/stores/:storeId/products/:productId", requireAuth, async (req: any, res) => {
@@ -160,6 +180,7 @@ function formatProduct(p: any) {
     ...p,
     price: parseFloat(p.price),
     weightKg: p.weightKg != null ? parseFloat(p.weightKg) : null,
+    costJpy: p.costJpy != null ? parseFloat(p.costJpy) : null,
     specs: p.specs ?? [],
   };
 }

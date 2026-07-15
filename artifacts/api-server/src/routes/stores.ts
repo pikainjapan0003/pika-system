@@ -17,7 +17,7 @@ router.get("/me/store", requireAuth, async (req: any, res) => {
     if (store.length === 0) {
       return res.status(404).json({ error: "No store found" });
     }
-    return res.json(store[0]);
+    return res.json(formatStore(store[0]));
   } catch (err) {
     req.log.error({ err }, "Failed to get store");
     return res.status(500).json({ error: "Internal server error" });
@@ -43,9 +43,13 @@ router.post("/stores", requireAuth, async (req: any, res) => {
   try {
     const [store] = await db
       .insert(storesTable)
-      .values({ ...parsed.data, merchantId: req.userId })
+      .values({
+        ...parsed.data,
+        merchantId: req.userId,
+        purchaseExchangeRate: parsed.data.purchaseExchangeRate != null ? String(parsed.data.purchaseExchangeRate) : undefined,
+      })
       .returning();
-    return res.status(201).json(store);
+    return res.status(201).json(formatStore(store));
   } catch (err: any) {
     if (err?.code === "23505") {
       return res.status(409).json({ error: "Slug already taken" });
@@ -75,10 +79,15 @@ router.patch("/stores/:storeId", requireAuth, async (req: any, res) => {
 
   const [updated] = await db
     .update(storesTable)
-    .set(parsed.data)
+    .set({
+      ...parsed.data,
+      purchaseExchangeRate: parsed.data.purchaseExchangeRate !== undefined
+        ? (parsed.data.purchaseExchangeRate != null ? String(parsed.data.purchaseExchangeRate) : null)
+        : undefined,
+    })
     .where(eq(storesTable.id, storeId))
     .returning();
-  return res.json(updated);
+  return res.json(formatStore(updated));
 });
 
 router.get("/stores/:storeId/stats", requireAuth, async (req: any, res) => {
@@ -105,5 +114,12 @@ router.get("/stores/:storeId/stats", requireAuth, async (req: any, res) => {
 
   return res.json({ totalOrders, pendingOrders, totalRevenue, statusBreakdown });
 });
+
+function formatStore(s: any) {
+  return {
+    ...s,
+    purchaseExchangeRate: s.purchaseExchangeRate != null ? parseFloat(s.purchaseExchangeRate) : null,
+  };
+}
 
 export default router;

@@ -37,4 +37,9 @@ export interface Product {
   weightKg?: number | null;
   /** @nullable */
   categoryId?: number | null;
+  /** @nullable */
+  costJpy?: number | null;
+  isTransportCostExempt?: boolean;
+  /** @nullable */
+  tripRouteId?: number | null;
 }

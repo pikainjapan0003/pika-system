@@ -177,6 +177,8 @@ export default function SettingsPage() {
 
   const [brandColor, setBrandColor] = useState(DEFAULT_BRAND_PRIMARY_COLOR);
   const [colorError, setColorError] = useState("");
+  const [purchaseExchangeRate, setPurchaseExchangeRate] = useState("");
+  const [exchangeRateError, setExchangeRateError] = useState("");
   const storeInitialized = useRef(false);
 
   const [editingField, setEditingField] = useState<"name" | "description" | null>(null);
@@ -206,6 +208,7 @@ export default function SettingsPage() {
       const savedColor = store.brandPrimaryColor ?? DEFAULT_BRAND_PRIMARY_COLOR;
       setBrandColor(savedColor);
       applyBrandColor(savedColor);
+      setPurchaseExchangeRate(store.purchaseExchangeRate != null ? String(store.purchaseExchangeRate) : "");
     }
   }, [store]);
 
@@ -314,6 +317,7 @@ export default function SettingsPage() {
   const handleSave = async () => {
     setError("");
     setColorError("");
+    setExchangeRateError("");
     setSaved(false);
     if (!name.trim()) {
       setError("店鋪名稱不能空白");
@@ -322,6 +326,12 @@ export default function SettingsPage() {
     const normalizedColor = normalizeHex(brandColor);
     if (!isValidHex(normalizedColor)) {
       setColorError("請輸入有效的 6 位 HEX 色碼，例如 #F57572");
+      return;
+    }
+    const trimmedRate = purchaseExchangeRate.trim();
+    const exchangeRateNum = trimmedRate ? parseFloat(trimmedRate) : null;
+    if (trimmedRate && (exchangeRateNum === null || isNaN(exchangeRateNum) || exchangeRateNum < 0)) {
+      setExchangeRateError("請輸入有效的匯率（不可為負數）");
       return;
     }
     if (!store) return;
@@ -333,6 +343,7 @@ export default function SettingsPage() {
           description: description.trim() || undefined,
           logoUrl: logoUrl.trim(),
           brandPrimaryColor: normalizedColor,
+          purchaseExchangeRate: exchangeRateNum,
         },
       });
       applyBrandColor(normalizedColor);
@@ -382,6 +393,7 @@ export default function SettingsPage() {
           )}
 
           <div className="pt-4">
+            <TripsEntry />
             <AgentSettingsEntry />
             {IS_DEV && <DevHandoffEntry />}
           </div>
@@ -600,6 +612,30 @@ export default function SettingsPage() {
 
                 <div className="border-t border-border/40 mx-5" />
 
+                {/* 進貨匯率 */}
+                <div className="flex items-center px-5 py-4">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mr-4">
+                    <RefreshCcw size={17} className="text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs text-muted-foreground font-medium mb-1.5">
+                      店鋪進貨匯率（日圓 → 台幣，可留空）
+                    </div>
+                    <input
+                      type="number"
+                      value={purchaseExchangeRate}
+                      onChange={(e) => setPurchaseExchangeRate(e.target.value)}
+                      placeholder="例：0.22"
+                      min="0"
+                      step="0.0001"
+                      className={inputClass}
+                    />
+                    {exchangeRateError && <p className="text-xs text-destructive mt-1">{exchangeRateError}</p>}
+                  </div>
+                </div>
+
+                <div className="border-t border-border/40 mx-5" />
+
                 {/* 網址代碼 */}
                 <div className="group flex items-center px-5 py-4">
                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mr-4 group-hover:scale-105 transition-transform duration-300">
@@ -716,6 +752,30 @@ export default function SettingsPage() {
         />
       )}
       <BottomNav active="settings" />
+    </div>
+  );
+}
+
+function TripsEntry() {
+  const [, setLocation] = useLocation();
+  return (
+    <div className="px-5 pb-3">
+      <button
+        type="button"
+        onClick={() => setLocation("/trips")}
+        className="w-full bg-white border border-border rounded-2xl px-4 py-4 flex items-center justify-between text-left hover:bg-secondary/50 transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <span className="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center text-lg flex-shrink-0">
+            🧳
+          </span>
+          <div>
+            <p className="text-sm font-semibold text-foreground">行程與路線管理</p>
+            <p className="text-xs text-muted-foreground">用於商品的交通成本分攤設定</p>
+          </div>
+        </div>
+        <span className="text-muted-foreground text-sm">›</span>
+      </button>
     </div>
   );
 }

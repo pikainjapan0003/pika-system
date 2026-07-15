@@ -17,5 +17,7 @@ export interface Store {
   logoUrl?: string | null;
   /** @nullable */
   brandPrimaryColor?: string | null;
+  /** @nullable */
+  purchaseExchangeRate?: number | null;
   createdAt: string;
 }

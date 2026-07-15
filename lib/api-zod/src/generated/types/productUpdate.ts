@@ -32,4 +32,12 @@ export interface ProductUpdate {
   weightKg?: number | null;
   /** @nullable */
   categoryId?: number | null;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  costJpy?: number | null;
+  isTransportCostExempt?: boolean;
+  /** @nullable */
+  tripRouteId?: number | null;
 }

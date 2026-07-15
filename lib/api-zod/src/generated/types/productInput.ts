@@ -24,4 +24,8 @@ export interface ProductInput {
   shelfLife?: string;
   weightKg?: number;
   categoryId?: number;
+  /** @minimum 0 */
+  costJpy?: number;
+  isTransportCostExempt?: boolean;
+  tripRouteId?: number;
 }

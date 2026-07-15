@@ -6,13 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface StoreInput {
+export interface TripInput {
   /** @minLength 1 */
   name: string;
-  description?: string;
-  /** @minLength 1 */
-  slug: string;
-  logoUrl?: string;
   /** @minimum 0 */
-  purchaseExchangeRate?: number;
+  exchangeRate?: number;
+  notes?: string;
 }

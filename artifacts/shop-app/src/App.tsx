@@ -23,6 +23,7 @@ import TrackLookupPage from "@/pages/TrackLookup";
 import TrackOrderPage from "@/pages/TrackOrder";
 import SettingsPage from "@/pages/Settings";
 import AgentSettingsPage from "@/pages/AgentSettings";
+import TripsPage from "@/pages/Trips";
 import GuidePage from "@/pages/Guide";
 import DevHandoffPage from "@/pages/DevHandoff";
 import ProductCategoriesPage from "@/pages/ProductCategories";
@@ -259,6 +260,7 @@ function MerchantPortal() {
       <Route path="/logistics/exceptions" component={LogisticsExceptionsPage} />
       <Route path="/settings/agent" component={AgentSettingsPage} />
       <Route path="/settings" component={SettingsPage} />
+      <Route path="/trips" component={TripsPage} />
       <Route path="/guide" component={GuidePage} />
       <Route component={NotFoundPage} />
     </Switch>
@@ -314,6 +316,7 @@ function AppRouter() {
       <Route path="/logistics/exceptions" component={MerchantPortal} />
       <Route path="/settings/agent" component={MerchantPortal} />
       <Route path="/settings" component={MerchantPortal} />
+      <Route path="/trips" component={MerchantPortal} />
       <Route path="/guide" component={MerchantPortal} />
       <Route component={NotFoundPage} />
     </Switch>
