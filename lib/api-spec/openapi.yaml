@@ -209,6 +209,128 @@ paths:
         "204":
           description: Deleted
 
+  /trips:
+    get:
+      operationId: listTrips
+      tags: [trips]
+      summary: List trips (with their routes)
+      responses:
+        "200":
+          description: Trip list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TripWithRoutes"
+    post:
+      operationId: createTrip
+      tags: [trips]
+      summary: Create a trip
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TripInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Trip"
+
+  /trips/{tripId}:
+    patch:
+      operationId: updateTrip
+      tags: [trips]
+      summary: Update a trip
+      parameters:
+        - name: tripId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TripUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Trip"
+        "404":
+          description: Not found
+
+  /trips/{tripId}/routes:
+    post:
+      operationId: createTripRoute
+      tags: [trips]
+      summary: Create a route under a trip
+      parameters:
+        - name: tripId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TripRouteInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TripRoute"
+        "404":
+          description: Trip not found
+        "409":
+          description: Duplicate area title within this trip
+
+  /trips/{tripId}/routes/{routeId}:
+    patch:
+      operationId: updateTripRoute
+      tags: [trips]
+      summary: Update a route
+      parameters:
+        - name: tripId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: routeId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TripRouteUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TripRoute"
+        "404":
+          description: Not found
+        "409":
+          description: Duplicate area title within this trip
+
   /stores/{storeId}/categories:
     get:
       operationId: listProductCategories
@@ -776,6 +898,8 @@ components:
           type: ["string", "null"]
         brandPrimaryColor:
           type: ["string", "null"]
+        purchaseExchangeRate:
+          type: ["number", "null"]
         createdAt:
           type: string
 
@@ -793,6 +917,9 @@ components:
           minLength: 1
         logoUrl:
           type: string
+        purchaseExchangeRate:
+          type: number
+          minimum: 0
 
     StoreUpdate:
       type: object
@@ -806,6 +933,9 @@ components:
           type: string
         brandPrimaryColor:
           type: string
+        purchaseExchangeRate:
+          type: ["number", "null"]
+          minimum: 0
 
     ProductSpec:
       type: object
@@ -862,6 +992,12 @@ components:
           type: ["number", "null"]
         categoryId:
           type: ["integer", "null"]
+        costJpy:
+          type: ["number", "null"]
+        isTransportCostExempt:
+          type: boolean
+        tripRouteId:
+          type: ["integer", "null"]
 
     ProductInput:
       type: object
@@ -899,6 +1035,13 @@ components:
           type: number
           format: float
         categoryId:
+          type: integer
+        costJpy:
+          type: number
+          minimum: 0
+        isTransportCostExempt:
+          type: boolean
+        tripRouteId:
           type: integer
 
     ProductUpdate:
@@ -938,6 +1081,163 @@ components:
           type: ["number", "null"]
         categoryId:
           type: ["integer", "null"]
+        costJpy:
+          type: ["number", "null"]
+          minimum: 0
+        isTransportCostExempt:
+          type: boolean
+        tripRouteId:
+          type: ["integer", "null"]
+
+    Trip:
+      type: object
+      required: [id, name, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        exchangeRate:
+          type: ["number", "null"]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    TripWithRoutes:
+      allOf:
+        - $ref: "#/components/schemas/Trip"
+        - type: object
+          properties:
+            routes:
+              type: array
+              items:
+                $ref: "#/components/schemas/TripRoute"
+
+    TripInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        exchangeRate:
+          type: number
+          minimum: 0
+        notes:
+          type: string
+
+    TripUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        exchangeRate:
+          type: ["number", "null"]
+          minimum: 0
+        notes:
+          type: ["string", "null"]
+
+    TripRoute:
+      type: object
+      required: [id, tripId, areaTitle, startPlace, endPlace, trainJpy, fuelJpy, parkingJpy, estQty, cardboardJpy, shippingJpy, parcelCount, createdAt]
+      properties:
+        id:
+          type: integer
+        tripId:
+          type: integer
+        areaTitle:
+          type: string
+        startPlace:
+          type: string
+        endPlace:
+          type: string
+        trainJpy:
+          type: number
+        fuelJpy:
+          type: number
+        parkingJpy:
+          type: number
+        estQty:
+          type: integer
+        cardboardJpy:
+          type: number
+        shippingJpy:
+          type: number
+        parcelCount:
+          type: integer
+        createdAt:
+          type: string
+
+    TripRouteInput:
+      type: object
+      required: [areaTitle, startPlace, endPlace, estQty]
+      properties:
+        areaTitle:
+          type: string
+          minLength: 1
+        startPlace:
+          type: string
+          minLength: 1
+        endPlace:
+          type: string
+          minLength: 1
+        estQty:
+          type: integer
+          minimum: 1
+        trainJpy:
+          type: number
+          minimum: 0
+        fuelJpy:
+          type: number
+          minimum: 0
+        parkingJpy:
+          type: number
+          minimum: 0
+        cardboardJpy:
+          type: number
+          minimum: 0
+        shippingJpy:
+          type: number
+          minimum: 0
+        parcelCount:
+          type: integer
+          minimum: 0
+
+    TripRouteUpdate:
+      type: object
+      properties:
+        areaTitle:
+          type: string
+          minLength: 1
+        startPlace:
+          type: string
+          minLength: 1
+        endPlace:
+          type: string
+          minLength: 1
+        estQty:
+          type: integer
+          minimum: 1
+        trainJpy:
+          type: number
+          minimum: 0
+        fuelJpy:
+          type: number
+          minimum: 0
+        parkingJpy:
+          type: number
+          minimum: 0
+        cardboardJpy:
+          type: number
+          minimum: 0
+        shippingJpy:
+          type: number
+          minimum: 0
+        parcelCount:
+          type: integer
+          minimum: 0
 
     PublicProduct:
       type: object

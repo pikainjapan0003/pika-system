@@ -12,4 +12,9 @@ export interface StoreUpdate {
   description?: string;
   logoUrl?: string;
   brandPrimaryColor?: string;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  purchaseExchangeRate?: number | null;
 }

@@ -27,6 +27,7 @@ export const GetMyStoreResponse = zod.object({
   "slug": zod.string(),
   "logoUrl": zod.string().nullish(),
   "brandPrimaryColor": zod.string().nullish(),
+  "purchaseExchangeRate": zod.number().nullish(),
   "createdAt": zod.string()
 })
 
@@ -36,13 +37,16 @@ export const GetMyStoreResponse = zod.object({
  */
 
 
+export const createStoreBodyPurchaseExchangeRateMin = 0;
+
 
 
 export const CreateStoreBody = zod.object({
   "name": zod.string().min(1),
   "description": zod.string().optional(),
   "slug": zod.string().min(1),
-  "logoUrl": zod.string().optional()
+  "logoUrl": zod.string().optional(),
+  "purchaseExchangeRate": zod.number().min(createStoreBodyPurchaseExchangeRateMin).optional()
 })
 
 
@@ -54,13 +58,16 @@ export const UpdateStoreParams = zod.object({
 })
 
 
+export const updateStoreBodyPurchaseExchangeRateMin = 0;
+
 
 
 export const UpdateStoreBody = zod.object({
   "name": zod.string().min(1).optional(),
   "description": zod.string().optional(),
   "logoUrl": zod.string().optional(),
-  "brandPrimaryColor": zod.string().optional()
+  "brandPrimaryColor": zod.string().optional(),
+  "purchaseExchangeRate": zod.number().min(updateStoreBodyPurchaseExchangeRateMin).nullish()
 })
 
 export const UpdateStoreResponse = zod.object({
@@ -71,6 +78,7 @@ export const UpdateStoreResponse = zod.object({
   "slug": zod.string(),
   "logoUrl": zod.string().nullish(),
   "brandPrimaryColor": zod.string().nullish(),
+  "purchaseExchangeRate": zod.number().nullish(),
   "createdAt": zod.string()
 })
 
@@ -103,7 +111,10 @@ export const ListProductsResponseItem = zod.object({
   "storageTemp": zod.union([zod.literal('ambient'),zod.literal('chilled'),zod.literal('frozen'),zod.literal(null)]).nullish(),
   "shelfLife": zod.string().nullish(),
   "weightKg": zod.number().nullish(),
-  "categoryId": zod.number().nullish()
+  "categoryId": zod.number().nullish(),
+  "costJpy": zod.number().nullish(),
+  "isTransportCostExempt": zod.boolean().optional(),
+  "tripRouteId": zod.number().nullish()
 })
 export const ListProductsResponse = zod.array(ListProductsResponseItem)
 
@@ -117,6 +128,8 @@ export const CreateProductParams = zod.object({
 
 
 export const createProductBodyPriceMin = 0;
+
+export const createProductBodyCostJpyMin = 0;
 
 
 
@@ -136,7 +149,10 @@ export const CreateProductBody = zod.object({
   "storageTemp": zod.enum(['ambient', 'chilled', 'frozen']).optional(),
   "shelfLife": zod.string().optional(),
   "weightKg": zod.number().optional(),
-  "categoryId": zod.number().optional()
+  "categoryId": zod.number().optional(),
+  "costJpy": zod.number().min(createProductBodyCostJpyMin).optional(),
+  "isTransportCostExempt": zod.boolean().optional(),
+  "tripRouteId": zod.number().optional()
 })
 
 
@@ -169,7 +185,10 @@ export const GetProductResponse = zod.object({
   "storageTemp": zod.union([zod.literal('ambient'),zod.literal('chilled'),zod.literal('frozen'),zod.literal(null)]).nullish(),
   "shelfLife": zod.string().nullish(),
   "weightKg": zod.number().nullish(),
-  "categoryId": zod.number().nullish()
+  "categoryId": zod.number().nullish(),
+  "costJpy": zod.number().nullish(),
+  "isTransportCostExempt": zod.boolean().optional(),
+  "tripRouteId": zod.number().nullish()
 })
 
 
@@ -183,6 +202,8 @@ export const UpdateProductParams = zod.object({
 
 
 export const updateProductBodyPriceMin = 0;
+
+export const updateProductBodyCostJpyMin = 0;
 
 
 
@@ -203,7 +224,10 @@ export const UpdateProductBody = zod.object({
   "storageTemp": zod.union([zod.literal('ambient'),zod.literal('chilled'),zod.literal('frozen'),zod.literal(null)]).nullish(),
   "shelfLife": zod.string().nullish(),
   "weightKg": zod.number().nullish(),
-  "categoryId": zod.number().nullish()
+  "categoryId": zod.number().nullish(),
+  "costJpy": zod.number().min(updateProductBodyCostJpyMin).nullish(),
+  "isTransportCostExempt": zod.boolean().optional(),
+  "tripRouteId": zod.number().nullish()
 })
 
 export const UpdateProductResponse = zod.object({
@@ -227,7 +251,10 @@ export const UpdateProductResponse = zod.object({
   "storageTemp": zod.union([zod.literal('ambient'),zod.literal('chilled'),zod.literal('frozen'),zod.literal(null)]).nullish(),
   "shelfLife": zod.string().nullish(),
   "weightKg": zod.number().nullish(),
-  "categoryId": zod.number().nullish()
+  "categoryId": zod.number().nullish(),
+  "costJpy": zod.number().nullish(),
+  "isTransportCostExempt": zod.boolean().optional(),
+  "tripRouteId": zod.number().nullish()
 })
 
 
@@ -237,6 +264,172 @@ export const UpdateProductResponse = zod.object({
 export const DeleteProductParams = zod.object({
   "storeId": zod.coerce.number(),
   "productId": zod.coerce.number()
+})
+
+
+/**
+ * @summary List trips (with their routes)
+ */
+export const ListTripsResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "exchangeRate": zod.number().nullish(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.string()
+}).and(zod.object({
+  "routes": zod.array(zod.object({
+  "id": zod.number(),
+  "tripId": zod.number(),
+  "areaTitle": zod.string(),
+  "startPlace": zod.string(),
+  "endPlace": zod.string(),
+  "trainJpy": zod.number(),
+  "fuelJpy": zod.number(),
+  "parkingJpy": zod.number(),
+  "estQty": zod.number(),
+  "cardboardJpy": zod.number(),
+  "shippingJpy": zod.number(),
+  "parcelCount": zod.number(),
+  "createdAt": zod.string()
+})).optional()
+}))
+export const ListTripsResponse = zod.array(ListTripsResponseItem)
+
+
+/**
+ * @summary Create a trip
+ */
+
+export const createTripBodyExchangeRateMin = 0;
+
+
+
+export const CreateTripBody = zod.object({
+  "name": zod.string().min(1),
+  "exchangeRate": zod.number().min(createTripBodyExchangeRateMin).optional(),
+  "notes": zod.string().optional()
+})
+
+
+/**
+ * @summary Update a trip
+ */
+export const UpdateTripParams = zod.object({
+  "tripId": zod.coerce.number()
+})
+
+
+export const updateTripBodyExchangeRateMin = 0;
+
+
+
+export const UpdateTripBody = zod.object({
+  "name": zod.string().min(1).optional(),
+  "exchangeRate": zod.number().min(updateTripBodyExchangeRateMin).nullish(),
+  "notes": zod.string().nullish()
+})
+
+export const UpdateTripResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "exchangeRate": zod.number().nullish(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Create a route under a trip
+ */
+export const CreateTripRouteParams = zod.object({
+  "tripId": zod.coerce.number()
+})
+
+
+
+
+
+export const createTripRouteBodyTrainJpyMin = 0;
+
+export const createTripRouteBodyFuelJpyMin = 0;
+
+export const createTripRouteBodyParkingJpyMin = 0;
+
+export const createTripRouteBodyCardboardJpyMin = 0;
+
+export const createTripRouteBodyShippingJpyMin = 0;
+
+export const createTripRouteBodyParcelCountMin = 0;
+
+
+
+export const CreateTripRouteBody = zod.object({
+  "areaTitle": zod.string().min(1),
+  "startPlace": zod.string().min(1),
+  "endPlace": zod.string().min(1),
+  "estQty": zod.number().min(1),
+  "trainJpy": zod.number().min(createTripRouteBodyTrainJpyMin).optional(),
+  "fuelJpy": zod.number().min(createTripRouteBodyFuelJpyMin).optional(),
+  "parkingJpy": zod.number().min(createTripRouteBodyParkingJpyMin).optional(),
+  "cardboardJpy": zod.number().min(createTripRouteBodyCardboardJpyMin).optional(),
+  "shippingJpy": zod.number().min(createTripRouteBodyShippingJpyMin).optional(),
+  "parcelCount": zod.number().min(createTripRouteBodyParcelCountMin).optional()
+})
+
+
+/**
+ * @summary Update a route
+ */
+export const UpdateTripRouteParams = zod.object({
+  "tripId": zod.coerce.number(),
+  "routeId": zod.coerce.number()
+})
+
+
+
+
+
+export const updateTripRouteBodyTrainJpyMin = 0;
+
+export const updateTripRouteBodyFuelJpyMin = 0;
+
+export const updateTripRouteBodyParkingJpyMin = 0;
+
+export const updateTripRouteBodyCardboardJpyMin = 0;
+
+export const updateTripRouteBodyShippingJpyMin = 0;
+
+export const updateTripRouteBodyParcelCountMin = 0;
+
+
+
+export const UpdateTripRouteBody = zod.object({
+  "areaTitle": zod.string().min(1).optional(),
+  "startPlace": zod.string().min(1).optional(),
+  "endPlace": zod.string().min(1).optional(),
+  "estQty": zod.number().min(1).optional(),
+  "trainJpy": zod.number().min(updateTripRouteBodyTrainJpyMin).optional(),
+  "fuelJpy": zod.number().min(updateTripRouteBodyFuelJpyMin).optional(),
+  "parkingJpy": zod.number().min(updateTripRouteBodyParkingJpyMin).optional(),
+  "cardboardJpy": zod.number().min(updateTripRouteBodyCardboardJpyMin).optional(),
+  "shippingJpy": zod.number().min(updateTripRouteBodyShippingJpyMin).optional(),
+  "parcelCount": zod.number().min(updateTripRouteBodyParcelCountMin).optional()
+})
+
+export const UpdateTripRouteResponse = zod.object({
+  "id": zod.number(),
+  "tripId": zod.number(),
+  "areaTitle": zod.string(),
+  "startPlace": zod.string(),
+  "endPlace": zod.string(),
+  "trainJpy": zod.number(),
+  "fuelJpy": zod.number(),
+  "parkingJpy": zod.number(),
+  "estQty": zod.number(),
+  "cardboardJpy": zod.number(),
+  "shippingJpy": zod.number(),
+  "parcelCount": zod.number(),
+  "createdAt": zod.string()
 })
 
 

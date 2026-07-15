@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@clerk/react";
-import { useGetMyStore, useGetProduct, useCreateProduct, useUpdateProduct, useListProductCategories, getListProductsQueryKey, Product } from "@workspace/api-client-react";
+import { useGetMyStore, useGetProduct, useCreateProduct, useUpdateProduct, useListProductCategories, useListTrips, getListProductsQueryKey, Product } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 
 interface Spec {
@@ -38,6 +38,8 @@ export default function ProductFormPage({ productId }: Props) {
   const updateProduct = useUpdateProduct();
   const { data: categories, isError: categoriesQueryError } = useListProductCategories(storeId ?? 0, { query: { enabled: !!storeId } as any });
   const categoriesLoadError = categoriesQueryError && !!storeId;
+  const { data: trips } = useListTrips();
+  const allRoutes = (trips ?? []).flatMap((t) => (t.routes ?? []).map((r) => ({ ...r, tripName: t.name })));
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -55,6 +57,9 @@ export default function ProductFormPage({ productId }: Props) {
   const [shelfLife, setShelfLife] = useState("");
   const [weightKg, setWeightKg] = useState("");
   const [categoryId, setCategoryId] = useState<number | null>(null);
+  const [costJpy, setCostJpy] = useState("");
+  const [isTransportCostExempt, setIsTransportCostExempt] = useState(false);
+  const [tripRouteId, setTripRouteId] = useState<number | null>(null);
 
   // Order deadline (UI placeholder — not sent to API)
   const [deadlineEnabled, setDeadlineEnabled] = useState(false);
@@ -120,6 +125,9 @@ export default function ProductFormPage({ productId }: Props) {
       setShelfLife(existingProduct.shelfLife ?? "");
       setWeightKg(existingProduct.weightKg != null ? String(existingProduct.weightKg * 1000) : "");
       setCategoryId(existingProduct.categoryId ?? null);
+      setCostJpy(existingProduct.costJpy != null ? String(existingProduct.costJpy) : "");
+      setIsTransportCostExempt(existingProduct.isTransportCostExempt ?? false);
+      setTripRouteId(existingProduct.tripRouteId ?? null);
       if (existingProduct.orderDeadlineAt) {
         const dt = new Date(existingProduct.orderDeadlineAt);
         if (!isNaN(dt.getTime())) {
@@ -290,6 +298,12 @@ export default function ProductFormPage({ productId }: Props) {
       return;
     }
 
+    const costJpyNum = costJpy.trim() ? parseFloat(costJpy) : null;
+    if (costJpy.trim() && (costJpyNum === null || isNaN(costJpyNum) || costJpyNum < 0)) {
+      setError("請輸入有效的商品日圓成本");
+      return;
+    }
+
     const baseFields = {
       name: name.trim(),
       description: description.trim() || undefined,
@@ -310,6 +324,9 @@ export default function ProductFormPage({ productId }: Props) {
           shelfLife: shelfLife.trim() || null,
           weightKg: weightKgNum,
           categoryId: categoryId,
+          costJpy: costJpyNum,
+          isTransportCostExempt,
+          tripRouteId: isTransportCostExempt ? null : tripRouteId,
         };
         await updateProduct.mutateAsync({ storeId: storeId!, productId: productId!, data });
         qc.invalidateQueries({ queryKey: getListProductsQueryKey(storeId!) });
@@ -325,6 +342,9 @@ export default function ProductFormPage({ productId }: Props) {
           ...(shelfLife.trim() ? { shelfLife: shelfLife.trim() } : {}),
           ...(weightKgNum != null ? { weightKg: weightKgNum } : {}),
           ...(categoryId != null ? { categoryId } : {}),
+          ...(costJpyNum != null ? { costJpy: costJpyNum } : {}),
+          isTransportCostExempt,
+          ...(!isTransportCostExempt && tripRouteId != null ? { tripRouteId } : {}),
         };
         const result = await createProduct.mutateAsync({ storeId: storeId!, data });
         qc.invalidateQueries({ queryKey: getListProductsQueryKey(storeId!) });
@@ -751,6 +771,68 @@ export default function ProductFormPage({ productId }: Props) {
                   className={inputClass}
                 />
               </div>
+            </div>
+          </div>
+
+          {/* ── 成本設定（用於訂單成本／毛利快照計算） ────────────────────────── */}
+          <div className="bg-white rounded-2xl border border-border overflow-hidden">
+            <div className="px-5 pt-5 pb-2">
+              <h2 className="text-sm font-bold text-foreground">成本設定</h2>
+              <p className="text-xs text-muted-foreground mt-1">
+                用於計算訂單的成本與單件毛利，不會顯示給買家。
+              </p>
+            </div>
+            <div className="px-5 pb-5 space-y-4">
+              <div>
+                <label className="block text-xs text-muted-foreground mb-1.5">商品日圓成本</label>
+                <div className="flex items-center gap-2">
+                  <span className="text-base font-bold text-muted-foreground/60 select-none">¥</span>
+                  <input
+                    type="number"
+                    value={costJpy}
+                    onChange={(e) => setCostJpy(e.target.value)}
+                    placeholder="例：1500"
+                    min="0"
+                    step="1"
+                    className={inputClass}
+                  />
+                </div>
+              </div>
+
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={isTransportCostExempt}
+                  onChange={(e) => {
+                    setIsTransportCostExempt(e.target.checked);
+                    if (e.target.checked) setTripRouteId(null);
+                  }}
+                  className="w-4 h-4 accent-primary"
+                />
+                <span className="text-sm text-foreground">免攤交通成本</span>
+              </label>
+
+              {!isTransportCostExempt && (
+                <div>
+                  <label className="block text-xs text-muted-foreground mb-1.5">行程路線</label>
+                  <select
+                    value={tripRouteId ?? ""}
+                    onChange={(e) => setTripRouteId(e.target.value ? Number(e.target.value) : null)}
+                    className={inputClass}
+                  >
+                    <option value="">未選擇</option>
+                    {allRoutes.map((r) => (
+                      <option key={r.id} value={r.id}>
+                        {r.tripName} · {r.areaTitle}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-muted-foreground mt-1.5">
+                    尚未有想要的路線？
+                    <a href="/trips" className="text-primary font-medium ml-1">前往行程與路線管理</a>
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 

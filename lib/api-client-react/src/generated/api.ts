@@ -45,6 +45,13 @@ import type {
   StoreUpdate,
   TrackingImportBody,
   TrackingImportResponse,
+  Trip,
+  TripInput,
+  TripRoute,
+  TripRouteInput,
+  TripRouteUpdate,
+  TripUpdate,
+  TripWithRoutes,
   UpdateSellerAgentSettings200,
   UpdateSellerAgentSettingsRequest
 } from './api.schemas';
@@ -733,6 +740,372 @@ export const useDeleteProduct = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getDeleteProductMutationOptions(options));
+    }
+
+export const getListTripsUrl = () => {
+
+
+
+
+  return `/api/trips`
+}
+
+/**
+ * @summary List trips (with their routes)
+ */
+export const listTrips = async ( options?: RequestInit): Promise<TripWithRoutes[]> => {
+
+  return customFetch<TripWithRoutes[]>(getListTripsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListTripsQueryKey = () => {
+    return [
+    `/api/trips`
+    ] as const;
+    }
+
+
+export const getListTripsQueryOptions = <TData = Awaited<ReturnType<typeof listTrips>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listTrips>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListTripsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listTrips>>> = ({ signal }) => listTrips({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listTrips>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListTripsQueryResult = NonNullable<Awaited<ReturnType<typeof listTrips>>>
+export type ListTripsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List trips (with their routes)
+ */
+
+export function useListTrips<TData = Awaited<ReturnType<typeof listTrips>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listTrips>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListTripsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCreateTripUrl = () => {
+
+
+
+
+  return `/api/trips`
+}
+
+/**
+ * @summary Create a trip
+ */
+export const createTrip = async (tripInput: TripInput, options?: RequestInit): Promise<Trip> => {
+
+  return customFetch<Trip>(getCreateTripUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      tripInput,)
+  }
+);}
+
+
+
+
+export const getCreateTripMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createTrip>>, TError,{data: BodyType<TripInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createTrip>>, TError,{data: BodyType<TripInput>}, TContext> => {
+
+const mutationKey = ['createTrip'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createTrip>>, {data: BodyType<TripInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createTrip(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateTripMutationResult = NonNullable<Awaited<ReturnType<typeof createTrip>>>
+    export type CreateTripMutationBody = BodyType<TripInput>
+    export type CreateTripMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Create a trip
+ */
+export const useCreateTrip = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createTrip>>, TError,{data: BodyType<TripInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createTrip>>,
+        TError,
+        {data: BodyType<TripInput>},
+        TContext
+      > => {
+      return useMutation(getCreateTripMutationOptions(options));
+    }
+
+export const getUpdateTripUrl = (tripId: number,) => {
+
+
+
+
+  return `/api/trips/${tripId}`
+}
+
+/**
+ * @summary Update a trip
+ */
+export const updateTrip = async (tripId: number,
+    tripUpdate: TripUpdate, options?: RequestInit): Promise<Trip> => {
+
+  return customFetch<Trip>(getUpdateTripUrl(tripId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      tripUpdate,)
+  }
+);}
+
+
+
+
+export const getUpdateTripMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateTrip>>, TError,{tripId: number;data: BodyType<TripUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateTrip>>, TError,{tripId: number;data: BodyType<TripUpdate>}, TContext> => {
+
+const mutationKey = ['updateTrip'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateTrip>>, {tripId: number;data: BodyType<TripUpdate>}> = (props) => {
+          const {tripId,data} = props ?? {};
+
+          return  updateTrip(tripId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateTripMutationResult = NonNullable<Awaited<ReturnType<typeof updateTrip>>>
+    export type UpdateTripMutationBody = BodyType<TripUpdate>
+    export type UpdateTripMutationError = ErrorType<void>
+
+    /**
+ * @summary Update a trip
+ */
+export const useUpdateTrip = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateTrip>>, TError,{tripId: number;data: BodyType<TripUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateTrip>>,
+        TError,
+        {tripId: number;data: BodyType<TripUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateTripMutationOptions(options));
+    }
+
+export const getCreateTripRouteUrl = (tripId: number,) => {
+
+
+
+
+  return `/api/trips/${tripId}/routes`
+}
+
+/**
+ * @summary Create a route under a trip
+ */
+export const createTripRoute = async (tripId: number,
+    tripRouteInput: TripRouteInput, options?: RequestInit): Promise<TripRoute> => {
+
+  return customFetch<TripRoute>(getCreateTripRouteUrl(tripId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      tripRouteInput,)
+  }
+);}
+
+
+
+
+export const getCreateTripRouteMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createTripRoute>>, TError,{tripId: number;data: BodyType<TripRouteInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createTripRoute>>, TError,{tripId: number;data: BodyType<TripRouteInput>}, TContext> => {
+
+const mutationKey = ['createTripRoute'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createTripRoute>>, {tripId: number;data: BodyType<TripRouteInput>}> = (props) => {
+          const {tripId,data} = props ?? {};
+
+          return  createTripRoute(tripId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateTripRouteMutationResult = NonNullable<Awaited<ReturnType<typeof createTripRoute>>>
+    export type CreateTripRouteMutationBody = BodyType<TripRouteInput>
+    export type CreateTripRouteMutationError = ErrorType<void>
+
+    /**
+ * @summary Create a route under a trip
+ */
+export const useCreateTripRoute = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createTripRoute>>, TError,{tripId: number;data: BodyType<TripRouteInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createTripRoute>>,
+        TError,
+        {tripId: number;data: BodyType<TripRouteInput>},
+        TContext
+      > => {
+      return useMutation(getCreateTripRouteMutationOptions(options));
+    }
+
+export const getUpdateTripRouteUrl = (tripId: number,
+    routeId: number,) => {
+
+
+
+
+  return `/api/trips/${tripId}/routes/${routeId}`
+}
+
+/**
+ * @summary Update a route
+ */
+export const updateTripRoute = async (tripId: number,
+    routeId: number,
+    tripRouteUpdate: TripRouteUpdate, options?: RequestInit): Promise<TripRoute> => {
+
+  return customFetch<TripRoute>(getUpdateTripRouteUrl(tripId,routeId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      tripRouteUpdate,)
+  }
+);}
+
+
+
+
+export const getUpdateTripRouteMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateTripRoute>>, TError,{tripId: number;routeId: number;data: BodyType<TripRouteUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateTripRoute>>, TError,{tripId: number;routeId: number;data: BodyType<TripRouteUpdate>}, TContext> => {
+
+const mutationKey = ['updateTripRoute'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateTripRoute>>, {tripId: number;routeId: number;data: BodyType<TripRouteUpdate>}> = (props) => {
+          const {tripId,routeId,data} = props ?? {};
+
+          return  updateTripRoute(tripId,routeId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateTripRouteMutationResult = NonNullable<Awaited<ReturnType<typeof updateTripRoute>>>
+    export type UpdateTripRouteMutationBody = BodyType<TripRouteUpdate>
+    export type UpdateTripRouteMutationError = ErrorType<void>
+
+    /**
+ * @summary Update a route
+ */
+export const useUpdateTripRoute = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateTripRoute>>, TError,{tripId: number;routeId: number;data: BodyType<TripRouteUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateTripRoute>>,
+        TError,
+        {tripId: number;routeId: number;data: BodyType<TripRouteUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateTripRouteMutationOptions(options));
     }
 
 export const getListProductCategoriesUrl = (storeId: number,) => {

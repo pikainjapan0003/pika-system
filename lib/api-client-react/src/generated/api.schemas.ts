@@ -20,6 +20,8 @@ export interface Store {
   logoUrl?: string | null;
   /** @nullable */
   brandPrimaryColor?: string | null;
+  /** @nullable */
+  purchaseExchangeRate?: number | null;
   createdAt: string;
 }
 
@@ -30,6 +32,8 @@ export interface StoreInput {
   /** @minLength 1 */
   slug: string;
   logoUrl?: string;
+  /** @minimum 0 */
+  purchaseExchangeRate?: number;
 }
 
 export interface StoreUpdate {
@@ -38,6 +42,11 @@ export interface StoreUpdate {
   description?: string;
   logoUrl?: string;
   brandPrimaryColor?: string;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  purchaseExchangeRate?: number | null;
 }
 
 export interface ProductSpec {
@@ -86,6 +95,11 @@ export interface Product {
   weightKg?: number | null;
   /** @nullable */
   categoryId?: number | null;
+  /** @nullable */
+  costJpy?: number | null;
+  isTransportCostExempt?: boolean;
+  /** @nullable */
+  tripRouteId?: number | null;
 }
 
 export type ProductInputStorageTemp = typeof ProductInputStorageTemp[keyof typeof ProductInputStorageTemp];
@@ -113,6 +127,10 @@ export interface ProductInput {
   shelfLife?: string;
   weightKg?: number;
   categoryId?: number;
+  /** @minimum 0 */
+  costJpy?: number;
+  isTransportCostExempt?: boolean;
+  tripRouteId?: number;
 }
 
 /**
@@ -151,6 +169,110 @@ export interface ProductUpdate {
   weightKg?: number | null;
   /** @nullable */
   categoryId?: number | null;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  costJpy?: number | null;
+  isTransportCostExempt?: boolean;
+  /** @nullable */
+  tripRouteId?: number | null;
+}
+
+export interface Trip {
+  id: number;
+  name: string;
+  /** @nullable */
+  exchangeRate?: number | null;
+  /** @nullable */
+  notes?: string | null;
+  createdAt: string;
+}
+
+export interface TripRoute {
+  id: number;
+  tripId: number;
+  areaTitle: string;
+  startPlace: string;
+  endPlace: string;
+  trainJpy: number;
+  fuelJpy: number;
+  parkingJpy: number;
+  estQty: number;
+  cardboardJpy: number;
+  shippingJpy: number;
+  parcelCount: number;
+  createdAt: string;
+}
+
+export type TripWithRoutes = Trip & {
+  routes?: TripRoute[];
+};
+
+export interface TripInput {
+  /** @minLength 1 */
+  name: string;
+  /** @minimum 0 */
+  exchangeRate?: number;
+  notes?: string;
+}
+
+export interface TripUpdate {
+  /** @minLength 1 */
+  name?: string;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  exchangeRate?: number | null;
+  /** @nullable */
+  notes?: string | null;
+}
+
+export interface TripRouteInput {
+  /** @minLength 1 */
+  areaTitle: string;
+  /** @minLength 1 */
+  startPlace: string;
+  /** @minLength 1 */
+  endPlace: string;
+  /** @minimum 1 */
+  estQty: number;
+  /** @minimum 0 */
+  trainJpy?: number;
+  /** @minimum 0 */
+  fuelJpy?: number;
+  /** @minimum 0 */
+  parkingJpy?: number;
+  /** @minimum 0 */
+  cardboardJpy?: number;
+  /** @minimum 0 */
+  shippingJpy?: number;
+  /** @minimum 0 */
+  parcelCount?: number;
+}
+
+export interface TripRouteUpdate {
+  /** @minLength 1 */
+  areaTitle?: string;
+  /** @minLength 1 */
+  startPlace?: string;
+  /** @minLength 1 */
+  endPlace?: string;
+  /** @minimum 1 */
+  estQty?: number;
+  /** @minimum 0 */
+  trainJpy?: number;
+  /** @minimum 0 */
+  fuelJpy?: number;
+  /** @minimum 0 */
+  parkingJpy?: number;
+  /** @minimum 0 */
+  cardboardJpy?: number;
+  /** @minimum 0 */
+  shippingJpy?: number;
+  /** @minimum 0 */
+  parcelCount?: number;
 }
 
 /**

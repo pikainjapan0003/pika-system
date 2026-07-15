@@ -13,4 +13,6 @@ export interface StoreInput {
   /** @minLength 1 */
   slug: string;
   logoUrl?: string;
+  /** @minimum 0 */
+  purchaseExchangeRate?: number;
 }
