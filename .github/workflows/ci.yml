@@ -4,6 +4,9 @@ on:
   push:
   pull_request:
   workflow_dispatch:
+  schedule:
+    # 03:00 Asia/Taipei (UTC+8) = 19:00 UTC on the previous day.
+    - cron: "0 19 * * *"
 
 permissions:
   contents: read
@@ -158,6 +161,17 @@ jobs:
             artifacts/*/dist/
           if-no-files-found: warn
           retention-days: 7
+
+      - name: Mark nightly result in job summary
+        if: always() && github.event_name == 'schedule'
+        env:
+          NIGHTLY_STATUS: ${{ job.status }}
+        run: |
+          if [ "$NIGHTLY_STATUS" = "success" ]; then
+            printf '## ✅ Nightly CI passed\n\nAll scheduled checks completed successfully.\n' >> "$GITHUB_STEP_SUMMARY"
+          else
+            printf '## 🚨 Nightly CI failed\n\nOpen the failed step above; no external notification or automatic write was sent.\n' >> "$GITHUB_STEP_SUMMARY"
+          fi
 
   rate-source-probe:
     if: github.event_name == 'workflow_dispatch'
