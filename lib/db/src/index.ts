@@ -15,3 +15,4 @@ export const db = drizzle(pool, { schema });
 
 export * from "./schema/index.ts";
 export * from "./transport-cost/orderProfitSnapshot.ts";
+export * from "./privacy/masking.ts";
