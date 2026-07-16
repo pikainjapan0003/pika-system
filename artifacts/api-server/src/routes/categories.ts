@@ -2,7 +2,7 @@ import { Router } from "express";
 import { eq, and, asc } from "drizzle-orm";
 import { db, productCategoriesTable } from "@workspace/db";
 import { CreateProductCategoryBody } from "@workspace/api-zod";
-import { requireAuth, verifyStoreOwner } from "../middlewares/auth";
+import { requireAuth, verifyStoreOwner } from "../middlewares/auth.ts";
 
 const router = Router();
 

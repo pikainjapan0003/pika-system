@@ -3,7 +3,7 @@ import { eq, and } from "drizzle-orm";
 import { db, productsTable, productCategoriesTable } from "@workspace/db";
 import { CreateProductBody, UpdateProductBody } from "@workspace/api-zod";
 import { randomBytes } from "crypto";
-import { requireAuth, verifyStoreOwner } from "../middlewares/auth";
+import { requireAuth, verifyStoreOwner } from "../middlewares/auth.ts";
 
 const router = Router();
 

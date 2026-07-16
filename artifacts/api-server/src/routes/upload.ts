@@ -3,8 +3,8 @@ import multer from "multer";
 import { rateLimit } from "express-rate-limit";
 import { randomBytes } from "crypto";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
-import { requireAuth, verifyStoreOwner } from "../middlewares/auth";
-import { getR2Config } from "../lib/r2";
+import { requireAuth, verifyStoreOwner } from "../middlewares/auth.ts";
+import { getR2Config } from "../lib/r2.ts";
 
 const ALLOWED_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const MAX_SIZE_BYTES = 5 * 1024 * 1024;

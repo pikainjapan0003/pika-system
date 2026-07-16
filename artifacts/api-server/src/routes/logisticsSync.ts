@@ -7,7 +7,7 @@ import {
   shipmentTrackingEventsTable,
   shipmentTrackingRunLogsTable,
 } from "@workspace/db";
-import { requireAuth, verifyStoreOwner } from "../middlewares/auth";
+import { requireAuth, verifyStoreOwner } from "../middlewares/auth.ts";
 import { runFamilyMartTrackingWorker } from "../lib/logistics/workers/familyMartTrackingWorker.ts";
 import { runControlledDbWrite } from "../lib/logistics/workers/multiProviderControlledWriteWorker.ts";
 import {

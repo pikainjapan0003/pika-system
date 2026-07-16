@@ -14,7 +14,7 @@ import {
   logisticsImportBatchesTable,
   logisticsImportRowsTable,
 } from "@workspace/db";
-import { requireAuth, verifyStoreOwner } from "../middlewares/auth";
+import { requireAuth, verifyStoreOwner } from "../middlewares/auth.ts";
 import {
   parseSevenElevenSpreadsheet,
   parseFamilyMartSpreadsheet,
