@@ -627,27 +627,27 @@ export default function OrdersPage() {
             <button
               onClick={() => setShowAddOrder(true)}
               disabled={!storeId}
-              className="h-9 px-3 text-xs font-semibold text-white bg-primary rounded-xl disabled:opacity-50"
+              className="min-h-11 px-3 text-xs font-semibold text-white bg-primary rounded-xl disabled:opacity-50"
             >
               ＋ 新增訂單
             </button>
             <button
               onClick={handleExport}
-              className="h-9 px-3 text-xs font-medium text-primary bg-primary/10 rounded-xl"
+              className="min-h-11 px-3 text-xs font-medium text-primary bg-primary/10 rounded-xl"
             >
               匯出 CSV
             </button>
             <button
               onClick={() => setLocation("/logistics/import")}
               disabled={!storeId}
-              className="h-9 px-3 text-xs font-medium text-muted-foreground bg-secondary rounded-xl disabled:opacity-50"
+              className="min-h-11 px-3 text-xs font-medium text-muted-foreground bg-secondary rounded-xl disabled:opacity-50"
             >
               物流匯入
             </button>
             <button
               onClick={() => setLocation("/logistics/exceptions")}
               disabled={!storeId}
-              className="h-9 px-3 text-xs font-medium text-muted-foreground bg-secondary rounded-xl disabled:opacity-50"
+              className="min-h-11 px-3 text-xs font-medium text-muted-foreground bg-secondary rounded-xl disabled:opacity-50"
             >
               物流異常
             </button>
@@ -688,7 +688,7 @@ export default function OrdersPage() {
           <>
             {/* Stats cards */}
             {allOrders.length > 0 && (
-              <div className="grid grid-cols-3 gap-2 mb-4">
+              <div className="grid grid-cols-2 gap-2 mb-4">
                 <StatCard label="訂單筆數" value={String(allOrders.length)} />
                 <StatCard label="訂單總額" value={`NT$${totalRevenue.toLocaleString()}`} />
                 <StatCard label="待確認" value={String(pendingCount)} urgent={pendingCount > 0} />
@@ -966,7 +966,7 @@ export default function OrdersPage() {
                                     type="button"
                                     onClick={() => void handleBackfillProfitSnapshot(o.id)}
                                     disabled={backfillingOrderId === o.id}
-                                    className="w-full h-10 rounded-xl bg-primary text-white text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
+                                    className="w-full min-h-11 rounded-xl bg-primary text-white text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
                                   >
                                     {backfillingOrderId === o.id && (
                                       <span className="w-3.5 h-3.5 border-2 border-white/60 border-t-white rounded-full animate-spin" />
@@ -1478,7 +1478,7 @@ export default function OrdersPage() {
                 value={bulkPaymentStatus}
                 onChange={(e) => { setBulkPaymentStatus(e.target.value); setBulkError(null); }}
                 disabled={isBulkLoading}
-                className="flex-1 min-w-0 h-9 px-2 rounded-xl border border-input bg-secondary/40 text-xs focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
+                className="flex-1 min-w-0 min-h-11 px-2 rounded-xl border border-input bg-secondary/40 text-xs focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
               >
                 <option value="">付款狀態…</option>
                 <option value="unpaid">未付款</option>
@@ -1492,7 +1492,7 @@ export default function OrdersPage() {
                 type="button"
                 onClick={() => handleBulkUpdate("payment")}
                 disabled={!bulkPaymentStatus || isBulkLoading}
-                className="h-9 px-3 rounded-xl bg-primary text-white text-xs font-semibold disabled:opacity-40 shrink-0"
+                className="min-h-11 px-3 rounded-xl bg-primary text-white text-xs font-semibold disabled:opacity-40 shrink-0"
               >
                 {isBulkLoading ? "…" : "套用"}
               </button>
@@ -1502,7 +1502,7 @@ export default function OrdersPage() {
                 value={bulkShippingStatus}
                 onChange={(e) => { setBulkShippingStatus(e.target.value); setBulkError(null); }}
                 disabled={isBulkLoading}
-                className="flex-1 min-w-0 h-9 px-2 rounded-xl border border-input bg-secondary/40 text-xs focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
+                className="flex-1 min-w-0 min-h-11 px-2 rounded-xl border border-input bg-secondary/40 text-xs focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
               >
                 <option value="">出貨狀態…</option>
                 <option value="not_shipped">未出貨</option>
@@ -1517,7 +1517,7 @@ export default function OrdersPage() {
                 type="button"
                 onClick={() => handleBulkUpdate("shipping")}
                 disabled={!bulkShippingStatus || isBulkLoading}
-                className="h-9 px-3 rounded-xl bg-primary text-white text-xs font-semibold disabled:opacity-40 shrink-0"
+                className="min-h-11 px-3 rounded-xl bg-primary text-white text-xs font-semibold disabled:opacity-40 shrink-0"
               >
                 {isBulkLoading ? "…" : "套用"}
               </button>
@@ -1533,7 +1533,7 @@ export default function OrdersPage() {
                 type="button"
                 onClick={handleViewPickingList}
                 disabled={getPickingListMutation.isPending}
-                className="h-8 px-3 text-xs font-medium rounded-xl border border-primary/40 bg-primary/5 text-primary disabled:opacity-50 shrink-0"
+                className="min-h-11 px-3 text-xs font-medium rounded-xl border border-primary/40 bg-primary/5 text-primary disabled:opacity-50 shrink-0"
               >
                 {getPickingListMutation.isPending ? "載入中…" : "查看撿貨單"}
               </button>
@@ -1541,7 +1541,7 @@ export default function OrdersPage() {
                 type="button"
                 onClick={handleViewShippingList}
                 disabled={getShippingListMutation.isPending}
-                className="h-8 px-3 text-xs font-medium rounded-xl border border-primary/40 bg-primary/5 text-primary disabled:opacity-50 shrink-0"
+                className="min-h-11 px-3 text-xs font-medium rounded-xl border border-primary/40 bg-primary/5 text-primary disabled:opacity-50 shrink-0"
               >
                 {getShippingListMutation.isPending ? "載入中…" : "查看出貨單"}
               </button>
@@ -1549,7 +1549,7 @@ export default function OrdersPage() {
                 type="button"
                 onClick={handleDownloadPickingCsv}
                 disabled={csvPickingLoading}
-                className="h-8 px-3 text-xs font-medium rounded-xl border border-border bg-white text-foreground disabled:opacity-50 shrink-0"
+                className="min-h-11 px-3 text-xs font-medium rounded-xl border border-border bg-white text-foreground disabled:opacity-50 shrink-0"
               >
                 {csvPickingLoading ? "下載中…" : "↓ 撿貨 CSV"}
               </button>
@@ -1557,7 +1557,7 @@ export default function OrdersPage() {
                 type="button"
                 onClick={handleDownloadShippingCsv}
                 disabled={csvShippingLoading}
-                className="h-8 px-3 text-xs font-medium rounded-xl border border-border bg-white text-foreground disabled:opacity-50 shrink-0"
+                className="min-h-11 px-3 text-xs font-medium rounded-xl border border-border bg-white text-foreground disabled:opacity-50 shrink-0"
               >
                 {csvShippingLoading ? "下載中…" : "↓ 出貨 CSV"}
               </button>
