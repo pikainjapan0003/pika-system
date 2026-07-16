@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@clerk/react";
 import { useGetMyStore } from "@workspace/api-client-react";
-import { maskAddress, maskName, maskPhone } from "@workspace/db/privacy";
+import { maskAddress, maskName, maskPhone } from "@workspace/privacy";
 import { BottomNav } from "./Dashboard";
 import { useLocation } from "wouter";
 

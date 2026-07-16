@@ -1,4 +1,4 @@
-import { maskName, maskPhone } from "@workspace/db/privacy";
+import { maskName, maskPhone } from "@workspace/privacy";
 
 import type { CustomerExportMode as OrderExportMode } from "./customerExport.ts";
 

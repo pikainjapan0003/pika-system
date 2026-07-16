@@ -11,10 +11,9 @@ import {
   ordersTable,
   shipmentTrackingsTable,
   multiplyMoneyByQuantity,
-  maskNameStrict,
-  maskPhone,
   type CalculateProductUnitProfitInput,
 } from "@workspace/db";
+import { maskNameStrict, maskPhone } from "@workspace/privacy";
 import { ExactDecimal } from "@workspace/db/transport-cost";
 import { SubmitOrderBody } from "@workspace/api-zod";
 import { getShippingFee } from "../lib/shippingFee.ts";
