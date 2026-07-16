@@ -15,6 +15,7 @@ export const db = drizzle(pool, { schema });
 
 export * from "./schema/index.ts";
 export * from "./customers/customerInput.ts";
+export * from "./pricing/tierPrice.ts";
 export * from "./transport-cost/orderProfitSnapshot.ts";
 export * from "./transport-cost/cartOrderProfitSnapshot.ts";
 export { multiplyMoneyByQuantity } from "./transport-cost/orderMoney.ts";
