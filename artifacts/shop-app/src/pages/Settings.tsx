@@ -5,6 +5,7 @@ import { useGetMyStore, useUpdateStore, getGetMyStoreQueryKey } from "@workspace
 import { useQueryClient } from "@tanstack/react-query";
 import { BottomNav } from "./Dashboard";
 import { ExchangeRateReferenceHint } from "@/components/ExchangeRateReferenceHint";
+import { formatActionableError } from "@/lib/actionableError";
 import {
   DEFAULT_BRAND_PRIMARY_COLOR,
   isValidHex,
@@ -329,7 +330,12 @@ export default function SettingsPage() {
     setExchangeRateError("");
     setSaved(false);
     if (!name.trim()) {
-      setError("店鋪名稱不能空白");
+      setError(formatActionableError({
+        happened: "店家設定沒有儲存。",
+        reason: "店鋪名稱是必填欄位。",
+        action: "請填入店鋪名稱後再按儲存。",
+        support: "若名稱已填仍失敗，請截圖交給系統管理者。",
+      }));
       return;
     }
     const normalizedColor = normalizeHex(brandColor);
@@ -340,7 +346,12 @@ export default function SettingsPage() {
     const trimmedRate = purchaseExchangeRate.trim();
     const exchangeRateNum = trimmedRate ? parseFloat(trimmedRate) : null;
     if (trimmedRate && (exchangeRateNum === null || isNaN(exchangeRateNum) || exchangeRateNum < 0)) {
-      setExchangeRateError("請輸入有效的匯率（不可為負數）");
+      setExchangeRateError(formatActionableError({
+        happened: "進貨匯率沒有儲存。",
+        reason: "匯率必須是 0 以上的數字，或留空表示待確認。",
+        action: "請修正匯率，或清空欄位後再儲存。",
+        support: "不確定匯率時可先留空，不要填入猜測值。",
+      }));
       return;
     }
     if (!store) return;
@@ -364,7 +375,12 @@ export default function SettingsPage() {
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch (err: any) {
-      setError(err?.data?.error ?? "儲存失敗，請稍後再試");
+      setError(formatActionableError({
+        happened: "店家設定沒有儲存。",
+        reason: err?.data?.error ?? "網路或系統暫時沒有回應。",
+        action: "請保留本頁內容並稍後再按一次儲存。",
+        support: "若仍失敗，請截圖交給系統管理者。",
+      }));
     }
   };
 

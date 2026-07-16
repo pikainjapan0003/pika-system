@@ -13,6 +13,7 @@ import {
 } from "@workspace/api-client-react";
 import { BottomNav } from "./Dashboard";
 import { ExchangeRateReferenceHint } from "@/components/ExchangeRateReferenceHint";
+import { formatActionableError } from "@/lib/actionableError";
 
 const inputClass =
   "w-full h-11 px-3.5 rounded-xl border border-input bg-white text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm";
@@ -56,15 +57,21 @@ function TripForm({
         <label className="block text-xs text-muted-foreground mb-1">備註（可留空）</label>
         <input value={notes} onChange={(e) => setNotes(e.target.value)} className={inputClass} />
       </div>
-      {error && <p className="text-xs text-destructive">{error}</p>}
+      {error && <p className="text-xs text-destructive whitespace-pre-line">{error}</p>}
       <div className="flex gap-2 pt-1">
         <button
           type="button"
           disabled={submitting}
           onClick={() => {
-            if (!name.trim()) { setError("請輸入行程名稱"); return; }
+            if (!name.trim()) { setError(formatActionableError({
+              happened: "行程沒有儲存。", reason: "行程名稱尚未填寫。",
+              action: "請輸入容易辨識的行程名稱。", support: "若仍無法儲存，請截圖交給系統管理者。",
+            })); return; }
             const rate = exchangeRate.trim();
-            if (rate && (isNaN(parseFloat(rate)) || parseFloat(rate) < 0)) { setError("請輸入有效的匯率"); return; }
+            if (rate && (isNaN(parseFloat(rate)) || parseFloat(rate) < 0)) { setError(formatActionableError({
+              happened: "行程沒有儲存。", reason: "匯率必須是 0 以上的數字，或留空表示待確認。",
+              action: "請修正匯率，或清空欄位後再儲存。", support: "不確定匯率時可先留空。",
+            })); return; }
             onSubmit({ name: name.trim(), exchangeRate: rate, notes: notes.trim() });
           }}
           className="flex-1 h-10 rounded-xl bg-primary text-white text-sm font-semibold disabled:opacity-50"
@@ -139,16 +146,28 @@ function RouteForm({
         {numField("日本境內運費 (¥)", shippingJpy, setShippingJpy)}
         {numField("包裹數", parcelCount, setParcelCount)}
       </div>
-      {error && <p className="text-xs text-destructive">{error}</p>}
+      <p className="rounded-xl bg-white px-3 py-2 text-xs leading-relaxed text-muted-foreground">
+        請填這條路線實際發生的日圓費用；ETC 必須手動填寫，可填 0。儲存後系統才會依已拍板公式分攤，預估件數不正確時不會用 0 冒充成本。
+      </p>
+      {error && <p className="text-xs text-destructive whitespace-pre-line">{error}</p>}
       <div className="flex gap-2 pt-1">
         <button
           type="button"
           disabled={submitting}
           onClick={() => {
-            if (!areaTitle.trim() || !startPlace.trim() || !endPlace.trim()) { setError("請填寫路線名稱、起點與終點"); return; }
+            if (!areaTitle.trim() || !startPlace.trim() || !endPlace.trim()) { setError(formatActionableError({
+              happened: "路線沒有儲存。", reason: "路線名稱、起點或終點仍是空白。",
+              action: "請補齊三個必填欄位。", support: "若仍無法儲存，請截圖交給系統管理者。",
+            })); return; }
             const qty = parseInt(estQty, 10);
-            if (!Number.isFinite(qty) || qty < 1) { setError("預估件數需為大於 0 的整數"); return; }
-            if (etcJpy.trim() === "" || !/^\d+(?:\.\d+)?$/.test(etcJpy.trim())) { setError("請手動填寫 ETC 費用，可填 0"); return; }
+            if (!Number.isFinite(qty) || qty < 1) { setError(formatActionableError({
+              happened: "路線沒有儲存。", reason: "預估件數必須是大於 0 的整數。",
+              action: "請填入預計分攤的商品件數。", support: "件數尚未確認時，請先確認後再儲存。",
+            })); return; }
+            if (etcJpy.trim() === "" || !/^\d+(?:\.\d+)?$/.test(etcJpy.trim())) { setError(formatActionableError({
+              happened: "路線沒有儲存。", reason: "ETC 費用尚未手動填寫，或格式不是非負數字。",
+              action: "請填入實際 ETC 日圓費用；沒有費用時填 0。", support: "請以實際帳單為準，不要使用猜測值。",
+            })); return; }
             onSubmit({ areaTitle: areaTitle.trim(), startPlace: startPlace.trim(), endPlace: endPlace.trim(), estQty, trainJpy, fuelJpy, parkingJpy, etcJpy, cardboardJpy, shippingJpy, parcelCount });
           }}
           className="flex-1 h-10 rounded-xl bg-primary text-white text-sm font-semibold disabled:opacity-50"

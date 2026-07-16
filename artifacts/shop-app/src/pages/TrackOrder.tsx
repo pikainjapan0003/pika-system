@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useGetPublicOrder } from "@workspace/api-client-react";
 import { STATUS_COLORS, STATUS_STEPS, STATUS_LABELS } from "../lib/orderStatus";
+import { formatActionableError } from "@/lib/actionableError";
 
 interface Props {
   publicToken: string;
@@ -149,7 +150,12 @@ export default function TrackOrderPage({ publicToken }: Props) {
       setPaymentLast5(payload.paymentLast5 ?? "");
       setPaymentMessage("已儲存，僅供人工對帳。");
     } catch (saveError) {
-      setPaymentMessage(saveError instanceof Error ? saveError.message : "付款末五碼儲存失敗");
+      setPaymentMessage(formatActionableError({
+        happened: "付款末五碼沒有儲存。",
+        reason: saveError instanceof Error ? saveError.message : "網路或系統暫時沒有回應。",
+        action: "請確認仍在可修改的付款階段，再重新儲存。",
+        support: "若仍失敗，請把訂單查詢碼提供給店家。",
+      }));
     } finally {
       setSavingPaymentLast5(false);
     }
@@ -172,8 +178,18 @@ export default function TrackOrderPage({ publicToken }: Props) {
           <h1 className="text-lg font-bold text-foreground">
             {is404 ? "找不到此訂單" : "查詢失敗"}
           </h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            {is404 ? "請確認訂單查詢碼是否正確" : "請稍後再試"}
+          <p className="text-muted-foreground text-sm mt-2 whitespace-pre-line">
+            {formatActionableError(is404 ? {
+              happened: "目前找不到這張訂單。",
+              reason: "訂單查詢碼可能不完整或不正確。",
+              action: "請回到查詢入口，重新貼上完整查詢碼。",
+              support: "若仍找不到，請把查詢碼提供給店家。",
+            } : {
+              happened: "訂單狀態暫時無法載入。",
+              reason: "網路或系統暫時沒有回應。",
+              action: "請保留查詢碼，稍後再試一次。",
+              support: "若持續失敗，請把畫面截圖傳給店家。",
+            })}
           </p>
           <button
             onClick={() => setLocation("/track")}
