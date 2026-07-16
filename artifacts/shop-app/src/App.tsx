@@ -23,6 +23,7 @@ import PublicOrderPage from "@/pages/PublicOrder";
 import TrackLookupPage from "@/pages/TrackLookup";
 import TrackOrderPage from "@/pages/TrackOrder";
 import SettingsPage from "@/pages/Settings";
+import SkillMapPage from "@/pages/SkillMap";
 import AgentSettingsPage from "@/pages/AgentSettings";
 import TripsPage from "@/pages/Trips";
 import GuidePage from "@/pages/Guide";
@@ -261,6 +262,7 @@ function MerchantPortal() {
       <Route path="/logistics/import" component={LogisticsImportPage} />
       <Route path="/logistics/exceptions" component={LogisticsExceptionsPage} />
       <Route path="/settings/agent" component={AgentSettingsPage} />
+      <Route path="/skill-map" component={SkillMapPage} />
       <Route path="/settings" component={SettingsPage} />
       <Route path="/trips" component={TripsPage} />
       <Route path="/guide" component={GuidePage} />
