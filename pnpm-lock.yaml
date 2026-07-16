@@ -184,6 +184,9 @@ importers:
       '@workspace/privacy':
         specifier: workspace:*
         version: link:../../lib/privacy
+      '@workspace/shipping':
+        specifier: workspace:*
+        version: link:../../lib/shipping
       cookie-parser:
         specifier: ^1.4.7
         version: 1.4.7
@@ -564,6 +567,9 @@ importers:
       '@workspace/privacy':
         specifier: workspace:*
         version: link:../../lib/privacy
+      '@workspace/shipping':
+        specifier: workspace:*
+        version: link:../../lib/shipping
       class-variance-authority:
         specifier: 'catalog:'
         version: 0.7.1
@@ -681,6 +687,8 @@ importers:
         version: 0.31.10
 
   lib/privacy: {}
+
+  lib/shipping: {}
 
   scripts:
     devDependencies:

@@ -15,7 +15,8 @@
     "paths": {
       "@/*": ["./src/*"],
       "@workspace/api-client-react": ["../../lib/api-client-react/src/index.ts"],
-      "@workspace/privacy": ["../../lib/privacy/src/index.ts"]
+      "@workspace/privacy": ["../../lib/privacy/src/index.ts"],
+      "@workspace/shipping": ["../../lib/shipping/src/index.ts"]
     }
   },
   "references": [

@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { filterCustomerOptions } from "@/lib/customerPicker";
+import { formatShippingFeeLabel } from "@workspace/shipping";
 import {
   Sheet,
   SheetContent,
@@ -45,14 +46,14 @@ const SELECT =
 const ERR = "text-xs text-destructive mt-1";
 
 // 與 EditOrderDialog 完全相同的取貨方式卡片選項（文案 / 順序 / 運費標示一致）
-const SHIPPING_CARD_OPTIONS: Array<{ value: string; label: string; sub?: string; fee: string }> = [
-  { value: "自取",                   label: "面交 / 自取",                          fee: "免運"     },
-  { value: "7-11 取貨（先付款）",     label: "7-11",     sub: "取貨（先付款）",      fee: "+ NT$60"  },
-  { value: "7-11 貨到付款",          label: "7-11",     sub: "貨到付款",            fee: "+ NT$60"  },
-  { value: "全家取貨（先付款）",      label: "全家",     sub: "取貨（先付款）",      fee: "+ NT$60"  },
-  { value: "全家貨到付款",           label: "全家",     sub: "貨到付款",            fee: "+ NT$60"  },
-  { value: "黑貓宅急便",             label: "黑貓宅急便",                           fee: "+ NT$100" },
-  { value: "郵局宅配",               label: "郵局宅配",                             fee: "+ NT$80"  },
+const SHIPPING_CARD_OPTIONS: Array<{ value: string; label: string; sub?: string }> = [
+  { value: "自取",                   label: "面交 / 自取" },
+  { value: "7-11 取貨（先付款）",     label: "7-11",     sub: "取貨（先付款）" },
+  { value: "7-11 貨到付款",          label: "7-11",     sub: "貨到付款" },
+  { value: "全家取貨（先付款）",      label: "全家",     sub: "取貨（先付款）" },
+  { value: "全家貨到付款",           label: "全家",     sub: "貨到付款" },
+  { value: "黑貓宅急便",             label: "黑貓宅急便" },
+  { value: "郵局宅配",               label: "郵局宅配" },
 ];
 
 type FulfillmentCategory = "self_pickup" | "cvs_711" | "cvs_family" | "home_black_cat" | "home_post" | "other";
@@ -554,7 +555,7 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
                           )}
                         </span>
                         <span className={`text-sm font-semibold shrink-0 ${isSelected ? "text-primary" : "text-muted-foreground"}`}>
-                          {opt.fee}
+                          {formatShippingFeeLabel(opt.value)}
                         </span>
                       </button>
                       {isSelected && (

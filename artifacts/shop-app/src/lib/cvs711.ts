@@ -12,23 +12,7 @@ export type SevenElevenMethod = typeof SEVEN_ELEVEN_PICKUP_METHODS[number];
 export const FAMILY_MART_PICKUP_METHODS = ["全家取貨（先付款）", "全家貨到付款"] as const;
 export type FamilyMartMethod = typeof FAMILY_MART_PICKUP_METHODS[number];
 
-export const PICKUP_METHOD_SHIPPING_FEE: Record<string, number> = {
-  "面交": 0,
-  "7-11 貨到付款": 60,
-  "7-11 取貨（先付款）": 60,
-  "全家貨到付款": 60,
-  "全家取貨（先付款）": 60,
-  "黑貓宅急便": 100,
-  "郵局": 80,
-  "郵局宅配": 80,
-  // Legacy mappings
-  "自取": 0,
-  "其他": 0,
-  // Deprecated (kept for backward compat with old orders)
-  "宅配": 100,
-  "OK Mart": 60,
-  "萊爾富物流": 60,
-};
+export { PICKUP_METHOD_SHIPPING_FEE };
 
 export function isSevenElevenMethod(method: string): boolean {
   return SEVEN_ELEVEN_PICKUP_METHODS.includes(method as SevenElevenMethod);
@@ -46,9 +30,7 @@ export function getPickupProvider(method: string): "seven" | "family" {
   return isFamilyMartMethod(method) ? "family" : "seven";
 }
 
-export function getShippingFee(pickupMethod: string): number {
-  return PICKUP_METHOD_SHIPPING_FEE[pickupMethod] ?? 0;
-}
+export { getShippingFee };
 
 const CVS_STORAGE_KEY_PREFIX = "cvs711_store_";
 const CVS_STORE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
@@ -174,3 +156,7 @@ export function openSevenElevenMap(options: OpenSevenElevenMapOptions): void {
 export function openOfficialEmap(): void {
   window.open("https://emap.pcsc.com.tw/mobilemap/default.aspx", "_blank");
 }
+import {
+  getShippingFee,
+  PICKUP_METHOD_SHIPPING_FEE,
+} from "@workspace/shipping";
