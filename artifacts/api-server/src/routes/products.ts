@@ -1,9 +1,11 @@
 import { Router } from "express";
 import { eq, and } from "drizzle-orm";
-import { db, productsTable, productCategoriesTable } from "@workspace/db";
+import { calculateProductUnitProfit, db, productsTable, productCategoriesTable } from "@workspace/db";
 import { CreateProductBody, UpdateProductBody } from "@workspace/api-zod";
 import { randomBytes } from "crypto";
 import { requireAuth, verifyStoreOwner } from "../middlewares/auth.ts";
+import { loadOrderProfitSnapshotInput } from "../lib/orderProfitSnapshot.ts";
+import { formatProductEstimatedProfit } from "../lib/productEstimatedProfit.ts";
 
 const router = Router();
 
@@ -23,7 +25,16 @@ router.get("/stores/:storeId/products", requireAuth, async (req: any, res) => {
   if (!(await verifyStoreOwner(req, res, storeId))) return;
 
   const products = await db.select().from(productsTable).where(eq(productsTable.storeId, storeId));
-  return res.json(products.map(formatProduct));
+  const productsWithEstimatedProfit = await Promise.all(
+    products.map(async (product) => {
+      const input = await loadOrderProfitSnapshotInput(db, product, product.price);
+      return {
+        ...formatProduct(product),
+        estimatedProfit: formatProductEstimatedProfit(calculateProductUnitProfit(input)),
+      };
+    }),
+  );
+  return res.json(productsWithEstimatedProfit);
 });
 
 router.post("/stores/:storeId/products", requireAuth, async (req: any, res) => {
