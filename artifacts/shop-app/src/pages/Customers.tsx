@@ -3,6 +3,7 @@ import { useAuth } from "@clerk/react";
 import { useGetMyStore } from "@workspace/api-client-react";
 import { maskAddress, maskName, maskPhone } from "@workspace/db/privacy";
 import { BottomNav } from "./Dashboard";
+import { useLocation } from "wouter";
 
 interface CustomerRecord {
   id: number;
@@ -35,6 +36,7 @@ const blankDraft: CustomerDraft = {
 const inputClass = "w-full h-10 px-3 rounded-xl border border-input bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30";
 
 export default function CustomersPage() {
+  const [, setLocation] = useLocation();
   const { getToken } = useAuth();
   const { data: store } = useGetMyStore();
   const [customers, setCustomers] = useState<CustomerRecord[]>([]);
@@ -225,7 +227,10 @@ export default function CustomersPage() {
                     <p className="text-xs text-primary mt-0.5">等級：{{ general: "一般", vip: "VIP", wholesale: "批發", partner: "夥伴" }[customer.tier]}</p>
                     <p className="text-sm text-muted-foreground">{isRevealed ? customer.phone : maskPhone(customer.phone)}</p>
                   </div>
-                  <button type="button" onClick={() => edit(customer)} className="text-sm text-primary">編輯</button>
+                  <div className="flex flex-col items-end gap-2">
+                    <button type="button" onClick={() => setLocation(`/customers/${customer.id}`)} className="text-sm font-medium text-primary">詳情</button>
+                    <button type="button" onClick={() => edit(customer)} className="text-sm text-primary">編輯</button>
+                  </div>
                 </div>
                 {customer.cvsStoreName && <p className="text-sm">常用門市：{customer.cvsStoreName}</p>}
                 {customer.cvsStoreAddress && <p className="text-xs text-muted-foreground">{isRevealed ? customer.cvsStoreAddress : maskAddress(customer.cvsStoreAddress)}</p>}
