@@ -25,6 +25,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { filterCustomerOptions } from "@/lib/customerPicker";
 import {
   Sheet,
   SheetContent,
@@ -98,6 +99,8 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
   const [productId, setProductId] = useState<number | "">("");
   const [customerId, setCustomerId] = useState<number | "">("");
   const [customers, setCustomers] = useState<CustomerOption[]>([]);
+  const [customerSearch, setCustomerSearch] = useState("");
+  const [cvsSelectionSource, setCvsSelectionSource] = useState<"customer" | "manual" | null>(null);
   const [buyerName, setBuyerName] = useState("");
   const [buyerPhone, setBuyerPhone] = useState("");
   const [quantity, setQuantity] = useState(1);
@@ -130,6 +133,11 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const activeProducts = (products ?? []).filter((p) => p.isActive);
+  const matchingCustomers = filterCustomerOptions(customers, customerSearch);
+  const selectedCustomer = customerId === "" ? null : customers.find((customer) => customer.id === customerId) ?? null;
+  const visibleCustomers = selectedCustomer && !matchingCustomers.some((customer) => customer.id === selectedCustomer.id)
+    ? [selectedCustomer, ...matchingCustomers]
+    : matchingCustomers;
   const selectedProduct = activeProducts.find((p) => p.id === productId);
   const unitPrice = selectedProduct ? Number(selectedProduct.price) : 0;
   const totalPreview = unitPrice * quantity;
@@ -160,11 +168,13 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
     setCvsSearchStatus("idle");
     setCvsSearchResults([]);
     setCvsSearchError("");
+    setCvsSelectionSource(null);
   };
 
   const resetForm = () => {
     setProductId("");
     setCustomerId("");
+    setCustomerSearch("");
     setBuyerName("");
     setBuyerPhone("");
     setQuantity(1);
@@ -232,6 +242,7 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
     setStoreName(store.storeName);
     setCvsStoreAddress(store.storeAddress);
     setCvsStorePhone(store.storePhone ?? "");
+    setCvsSelectionSource("manual");
     clearFieldError("cvsStore");
   };
 
@@ -291,11 +302,13 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
             : (cat === "self_pickup" && addrCity && addrDistrict)
               ? combineRecipientAddress(addrZip, addrCity, addrDistrict, addrLine)
               : null,
-          storeCode: isCvs ? (storeCode || null) : null,
-          storeName: isCvs ? (storeName || null) : null,
-          cvsStoreAddress: isCvs ? (cvsStoreAddress || null) : null,
-          cvsStorePhone: isCvs ? (cvsStorePhone || null) : null,
-          ...(isCvs && storeCode ? { storeSelectedBy: "admin" as const } : {}),
+          ...(isCvs && cvsSelectionSource !== "customer" ? {
+            storeCode: storeCode || null,
+            storeName: storeName || null,
+            cvsStoreAddress: cvsStoreAddress || null,
+            cvsStorePhone: cvsStorePhone || null,
+          } : {}),
+          ...(isCvs && cvsSelectionSource === "manual" && storeCode ? { storeSelectedBy: "admin" as const } : {}),
         } as any,
       });
       toast({ title: "已新增訂單", description: "訂單狀態為待確認" });
@@ -328,6 +341,14 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
           <div className="space-y-1.5">
             <SectionTitle>客戶（選填）</SectionTitle>
             <FormSection>
+              <input
+                type="search"
+                className={INPUT}
+                value={customerSearch}
+                onChange={(event) => setCustomerSearch(event.target.value)}
+                placeholder="搜尋客戶代號或姓名"
+                aria-label="搜尋客戶代號或姓名"
+              />
               <select
                 className={SELECT}
                 value={customerId === "" ? "" : String(customerId)}
@@ -335,20 +356,36 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
                   const nextId = event.target.value ? Number(event.target.value) : "";
                   setCustomerId(nextId);
                   const customer = customers.find((item) => item.id === nextId);
-                  if (!customer) return;
+                  if (!customer) {
+                    if (cvsSelectionSource === "customer") {
+                      setStoreCode("");
+                      setStoreName("");
+                      setCvsStoreAddress("");
+                      setCvsStorePhone("");
+                      setCvsSelectionSource(null);
+                    }
+                    return;
+                  }
                   setBuyerName(customer.name);
                   setBuyerPhone(customer.phone);
-                  setStoreCode(customer.cvsStoreId ?? "");
-                  setStoreName(customer.cvsStoreName ?? "");
-                  setCvsStoreAddress(customer.cvsStoreAddress ?? "");
-                  setCvsStorePhone(customer.cvsStorePhone ?? "");
+                  // A manually selected store is explicit input and must keep priority over customer defaults.
+                  if (cvsSelectionSource !== "manual") {
+                    setStoreCode(customer.cvsStoreId ?? "");
+                    setStoreName(customer.cvsStoreName ?? "");
+                    setCvsStoreAddress(customer.cvsStoreAddress ?? "");
+                    setCvsStorePhone(customer.cvsStorePhone ?? "");
+                    setCvsSelectionSource("customer");
+                  }
                 }}
               >
                 <option value="">不綁定客戶</option>
-                {customers.map((customer) => (
+                {visibleCustomers.map((customer) => (
                   <option key={customer.id} value={customer.id}>{customer.code} · {customer.name}</option>
                 ))}
               </select>
+              {customerSearch.trim() && matchingCustomers.length === 0 && !selectedCustomer && (
+                <p className="text-xs text-muted-foreground">找不到符合的客戶；可清除搜尋後查看全部。</p>
+              )}
               <p className="text-xs text-muted-foreground mt-1">選擇後會帶入姓名、手機與常用門市；仍可手動修改。</p>
             </FormSection>
           </div>
