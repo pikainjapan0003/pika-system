@@ -4,6 +4,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { storesTable } from "./stores.ts";
 import { productsTable } from "./products.ts";
+import { customersTable } from "./customers.ts";
 
 export const orderStatusEnum = ["pending", "awaiting_payment", "preparing", "shipped", "completed", "cancelled"] as const;
 export type OrderStatus = typeof orderStatusEnum[number];
@@ -27,6 +28,7 @@ export const ordersTable = pgTable("orders", {
   id: serial("id").primaryKey(),
   productId: integer("product_id").notNull().references(() => productsTable.id),
   storeId: integer("store_id").notNull().references(() => storesTable.id, { onDelete: "cascade" }),
+  customerId: integer("customer_id").references(() => customersTable.id, { onDelete: "set null" }),
   productName: text("product_name"),
   publicToken: text("public_token").notNull().unique(),
   buyerName: text("buyer_name").notNull(),
@@ -85,6 +87,7 @@ export const ordersTable = pgTable("orders", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 }, (t) => [
   index("orders_store_id_idx").on(t.storeId),
+  index("orders_customer_id_idx").on(t.customerId),
   index("orders_product_id_idx").on(t.productId),
   check("orders_status_valid", sql`${t.status} IN ('pending', 'awaiting_payment', 'preparing', 'shipped', 'completed', 'cancelled')`),
   check("orders_payment_last5_length", sql`${t.paymentLast5} IS NULL OR char_length(${t.paymentLast5}) = 5`),
