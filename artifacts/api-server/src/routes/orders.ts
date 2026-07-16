@@ -19,8 +19,21 @@ import { isValidTransition, getTransitionError } from "../lib/orderStatusMachine
 import { TRACKING_IMPORT_ALLOWED_PROVIDERS, normalizeTrackingProvider } from "../lib/logistics/providers.ts";
 import { ensureManualProviderTrackingRow } from "../lib/logistics/trackingSeed.ts";
 import { loadOrderProfitSnapshotInput } from "../lib/orderProfitSnapshot.ts";
+import { summarizeOrderProfits } from "../lib/orderProfitSummary.ts";
 
 const router = Router();
+
+router.get("/stores/:storeId/orders/profit-summary", requireAuth, async (req: any, res) => {
+  const storeId = parseInt(req.params.storeId);
+  if (isNaN(storeId)) return res.status(400).json({ error: "Invalid storeId" });
+  if (!(await verifyStoreOwner(req, res, storeId))) return;
+
+  const orders = await db
+    .select()
+    .from(ordersTable)
+    .where(eq(ordersTable.storeId, storeId));
+  return res.json(summarizeOrderProfits(orders));
+});
 
 router.get("/stores/:storeId/orders", requireAuth, async (req: any, res) => {
   const storeId = parseInt(req.params.storeId);
