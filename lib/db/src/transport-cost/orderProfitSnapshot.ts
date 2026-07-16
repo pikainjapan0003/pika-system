@@ -119,7 +119,7 @@ export function backfillPendingOrderProfitSnapshot(
   input: CalculateProductUnitProfitInput,
   backfilledAt: Date,
 ): BackfillOrderProfitSnapshotResult {
-  if (currentStatus !== "pending") {
+  if (currentStatus !== "pending" && currentStatus !== null) {
     return { outcome: "rejected", reason: "snapshot_not_pending" };
   }
 

@@ -108,7 +108,7 @@ export function backfillPendingCartOrderProfitSnapshot<T>(
   inputs: Array<CartSnapshotCalculationItem<T>>,
   backfilledAt: Date,
 ): BackfillCartOrderProfitSnapshotResult<T> {
-  if (currentStatus !== "pending") {
+  if (currentStatus !== "pending" && currentStatus !== null) {
     return { outcome: "rejected", reason: "snapshot_not_pending" };
   }
 

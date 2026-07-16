@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, isNull, or } from "drizzle-orm";
 import { randomBytes } from "crypto";
 import {
   backfillPendingCartOrderProfitSnapshot,
@@ -965,7 +965,10 @@ router.post("/orders/:orderId/profit-snapshot/backfill", requireAuth, async (req
       }
 
       if (Array.isArray(lockedOrder.items)) {
-        if (lockedOrder.cartProfitSnapshotStatus !== "pending") {
+        if (
+          lockedOrder.cartProfitSnapshotStatus !== "pending"
+          && lockedOrder.cartProfitSnapshotStatus !== null
+        ) {
           const err = new Error("Cart profit snapshot is not pending") as Error & { status?: number };
           err.status = 409;
           throw err;
@@ -1031,7 +1034,10 @@ router.post("/orders/:orderId/profit-snapshot/backfill", requireAuth, async (req
           })
           .where(and(
             eq(ordersTable.id, orderId),
-            eq(ordersTable.cartProfitSnapshotStatus, "pending"),
+            or(
+              eq(ordersTable.cartProfitSnapshotStatus, "pending"),
+              isNull(ordersTable.cartProfitSnapshotStatus),
+            ),
           ))
           .returning();
         if (!backfilledOrder) throw new Error("Cart profit snapshot backfill updated no row");
@@ -1090,7 +1096,10 @@ router.post("/orders/:orderId/profit-snapshot/backfill", requireAuth, async (req
         })
         .where(and(
           eq(ordersTable.id, orderId),
-          eq(ordersTable.profitSnapshotStatus, "pending"),
+          or(
+            eq(ordersTable.profitSnapshotStatus, "pending"),
+            isNull(ordersTable.profitSnapshotStatus),
+          ),
         ))
         .returning();
       if (!backfilledOrder) throw new Error("Profit snapshot backfill updated no row");
