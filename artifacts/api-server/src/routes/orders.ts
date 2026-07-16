@@ -23,6 +23,8 @@ import { ensureManualProviderTrackingRow } from "../lib/logistics/trackingSeed.t
 import { loadOrderProfitSnapshotInput } from "../lib/orderProfitSnapshot.ts";
 import { summarizeOrderProfits } from "../lib/orderProfitSummary.ts";
 import { parsePaymentLast5 } from "../lib/paymentLast5.ts";
+import { parseCustomerExportMode } from "../lib/customerExport.ts";
+import { formatOrderExportCsv } from "../lib/orderExport.ts";
 import {
   parseOptionalCustomerId,
   resolveCustomerCvsDefaults,
@@ -920,43 +922,26 @@ router.get("/stores/:storeId/orders/export", requireAuth, async (req: any, res) 
     .where(eq(ordersTable.storeId, storeId))
     .orderBy(ordersTable.createdAt);
 
-  const headers = ["訂單編號", "商品名稱", "買家姓名", "買家電話", "取貨方式", "數量", "單價", "總金額", "付款末五碼", "折讓金額", "折讓備註", "狀態", "備註", "規格", "下單時間"];
-
-  const statusLabels: Record<string, string> = {
-    pending: "待確認",
-    awaiting_payment: "待付款",
-    preparing: "備貨中",
-    shipped: "已出貨",
-    completed: "已完成",
-    cancelled: "已取消",
-  };
-
-  const rows = orders.map((o) => [
-    o.id,
-    o.productName ?? "",
-    o.buyerName,
-    o.buyerPhone,
-    o.pickupMethod,
-    o.quantity,
-    parseFloat(o.unitPrice as string).toFixed(2),
-    parseFloat(o.totalPrice as string).toFixed(2),
-    o.paymentLast5 ?? "",
-    o.discountAmount ?? 0,
-    o.discountNote ?? "",
-    statusLabels[o.status] ?? o.status,
-    o.notes ?? "",
-    o.specValues ? JSON.stringify(o.specValues) : "",
-    o.createdAt?.toISOString() ?? "",
-  ]);
-
-  const csvLines = [headers, ...rows]
-    .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
-    .join("\n");
-
-  const bom = "\uFEFF";
+  let mode;
+  try {
+    mode = parseCustomerExportMode(
+      req.query.mode,
+      req.get("x-confirm-cleartext-export") === "true",
+    );
+  } catch (error) {
+    return res.status(400).json({ error: (error as Error).message });
+  }
+  const csv = formatOrderExportCsv(orders, mode);
+  req.log.info(
+    { action: "order_export", storeId, mode, count: orders.length },
+    "Order CSV exported",
+  );
   res.setHeader("Content-Type", "text/csv; charset=utf-8");
-  res.setHeader("Content-Disposition", `attachment; filename="orders_${storeId}.csv"`);
-  return res.send(bom + csvLines);
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename="orders-${mode}.csv"`,
+  );
+  return res.send(csv);
 });
 
 // Step 7H: 刪除誤建立 / 誤下的訂單。第一版僅允許未出貨、未完成且無物流追蹤的訂單。
