@@ -11,6 +11,8 @@ import {
   ordersTable,
   shipmentTrackingsTable,
   multiplyMoneyByQuantity,
+  maskName,
+  maskPhone,
   type CalculateProductUnitProfitInput,
 } from "@workspace/db";
 import { ExactDecimal } from "@workspace/db/transport-cost";
@@ -93,19 +95,6 @@ const TRACKING_EVENT_STATUS_LABELS: Record<string, string> = {
   exception: "物流資料需要店家確認",
   unknown: "物流資料需要店家確認",
 };
-
-function maskName(name: string | null): string | null {
-  if (!name) return null;
-  const chars = [...name];
-  if (chars.length <= 1) return name;
-  return chars[0] + "○".repeat(chars.length - 1);
-}
-
-function maskPhone(phone: string | null): string | null {
-  if (!phone) return null;
-  if (phone.length <= 6) return phone.slice(0, 2) + "***";
-  return phone.slice(0, 4) + "***" + phone.slice(-3);
-}
 
 // 地址摘要：只保留縣市 + 行政區，不暴露郵遞區號、路名、門牌
 function summarizeAddress(address: string | null): string | null {
@@ -568,8 +557,8 @@ router.get("/orders/track/:publicToken", trackOrderLimiter, async (req, res) => 
     latestTrackingTime: tracking?.latestEventAt?.toISOString() ?? null,
     shipmentUpdatedAt: tracking?.updatedAt?.toISOString() ?? null,
     storeName: store?.name ?? null,
-    recipientNameMasked: maskName(order.recipientName ?? order.buyerName ?? null),
-    recipientPhoneMasked: maskPhone(order.recipientPhone ?? null),
+    recipientNameMasked: maskName(order.recipientName ?? order.buyerName ?? null) || null,
+    recipientPhoneMasked: maskPhone(order.recipientPhone ?? null) || null,
     recipientAddressMasked: summarizeAddress(order.recipientAddress ?? null),
     items: (order.items as any[] | null) ?? null,
     createdAt: order.createdAt,

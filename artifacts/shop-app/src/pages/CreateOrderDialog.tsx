@@ -1,4 +1,5 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { useAuth } from "@clerk/react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useListProducts,
@@ -75,14 +76,28 @@ interface CvsStoreResult {
   storePhone?: string | null;
 }
 
+interface CustomerOption {
+  id: number;
+  code: string;
+  name: string;
+  phone: string;
+  cvsStoreId: string | null;
+  cvsStoreName: string | null;
+  cvsStoreAddress: string | null;
+  cvsStorePhone: string | null;
+}
+
 export function CreateOrderDialog({ storeId, open, onClose }: Props) {
   const qc = useQueryClient();
+  const { getToken } = useAuth();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: products } = useListProducts(storeId, { query: { enabled: open && !!storeId } as any });
   const createOrder = useCreateMerchantOrder();
 
   const [productId, setProductId] = useState<number | "">("");
+  const [customerId, setCustomerId] = useState<number | "">("");
+  const [customers, setCustomers] = useState<CustomerOption[]>([]);
   const [buyerName, setBuyerName] = useState("");
   const [buyerPhone, setBuyerPhone] = useState("");
   const [quantity, setQuantity] = useState(1);
@@ -120,6 +135,17 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
   const totalPreview = unitPrice * quantity;
   const isPending = createOrder.isPending;
 
+  useEffect(() => {
+    if (!open || !storeId) return;
+    void (async () => {
+      const token = await getToken();
+      const response = await fetch(`/api/stores/${storeId}/customers`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (response.ok) setCustomers(await response.json() as CustomerOption[]);
+    })();
+  }, [getToken, open, storeId]);
+
   const fulfillmentCat = getFulfillmentCategory(pickupMethod);
 
   const clearFieldError = (key: string) =>
@@ -138,6 +164,7 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
 
   const resetForm = () => {
     setProductId("");
+    setCustomerId("");
     setBuyerName("");
     setBuyerPhone("");
     setQuantity(1);
@@ -249,6 +276,7 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
         storeId,
         data: {
           productId: productId as number,
+          customerId: customerId === "" ? null : customerId,
           buyerName: buyerName.trim(),
           buyerPhone: buyerPhone.trim(),
           quantity,
@@ -268,7 +296,7 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
           cvsStoreAddress: isCvs ? (cvsStoreAddress || null) : null,
           cvsStorePhone: isCvs ? (cvsStorePhone || null) : null,
           ...(isCvs && storeCode ? { storeSelectedBy: "admin" as const } : {}),
-        },
+        } as any,
       });
       toast({ title: "已新增訂單", description: "訂單狀態為待確認" });
       qc.invalidateQueries({ queryKey: getListOrdersQueryKey(storeId) });
@@ -295,6 +323,35 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
 
         {/* Scrollable form body */}
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4 bg-secondary/20">
+
+          {/* 客戶 */}
+          <div className="space-y-1.5">
+            <SectionTitle>客戶（選填）</SectionTitle>
+            <FormSection>
+              <select
+                className={SELECT}
+                value={customerId === "" ? "" : String(customerId)}
+                onChange={(event) => {
+                  const nextId = event.target.value ? Number(event.target.value) : "";
+                  setCustomerId(nextId);
+                  const customer = customers.find((item) => item.id === nextId);
+                  if (!customer) return;
+                  setBuyerName(customer.name);
+                  setBuyerPhone(customer.phone);
+                  setStoreCode(customer.cvsStoreId ?? "");
+                  setStoreName(customer.cvsStoreName ?? "");
+                  setCvsStoreAddress(customer.cvsStoreAddress ?? "");
+                  setCvsStorePhone(customer.cvsStorePhone ?? "");
+                }}
+              >
+                <option value="">不綁定客戶</option>
+                {customers.map((customer) => (
+                  <option key={customer.id} value={customer.id}>{customer.code} · {customer.name}</option>
+                ))}
+              </select>
+              <p className="text-xs text-muted-foreground mt-1">選擇後會帶入姓名、手機與常用門市；仍可手動修改。</p>
+            </FormSection>
+          </div>
 
           {/* 商品 */}
           <div className="space-y-1.5">

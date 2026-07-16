@@ -14,6 +14,7 @@ import DashboardPage from "@/pages/Dashboard";
 import ProductsPage from "@/pages/Products";
 import ProductFormPage from "@/pages/ProductForm";
 import OrdersPage from "@/pages/Orders";
+import CustomersPage from "@/pages/Customers";
 import LogisticsImportPage from "@/pages/LogisticsImport";
 import LogisticsImportHistoryPage from "@/pages/LogisticsImportHistory";
 import LogisticsExceptionsPage from "@/pages/LogisticsExceptions";
@@ -255,6 +256,7 @@ function MerchantPortal() {
       <Route path="/products" component={ProductsPage} />
       <Route path="/categories" component={ProductCategoriesPage} />
       <Route path="/orders" component={OrdersPage} />
+      <Route path="/customers" component={CustomersPage} />
       <Route path="/logistics/import/history" component={LogisticsImportHistoryPage} />
       <Route path="/logistics/import" component={LogisticsImportPage} />
       <Route path="/logistics/exceptions" component={LogisticsExceptionsPage} />
@@ -311,6 +313,7 @@ function AppRouter() {
       <Route path="/products/*?" component={MerchantPortal} />
       <Route path="/categories" component={MerchantPortal} />
       <Route path="/orders" component={MerchantPortal} />
+      <Route path="/customers" component={MerchantPortal} />
       <Route path="/logistics/import/history" component={MerchantPortal} />
       <Route path="/logistics/import" component={MerchantPortal} />
       <Route path="/logistics/exceptions" component={MerchantPortal} />

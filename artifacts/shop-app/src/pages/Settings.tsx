@@ -405,6 +405,7 @@ export default function SettingsPage() {
           )}
 
           <div className="pt-4">
+            <CustomersEntry />
             <TripsEntry />
             <AgentSettingsEntry />
             {IS_DEV && <DevHandoffEntry />}
@@ -790,6 +791,28 @@ export default function SettingsPage() {
         />
       )}
       <BottomNav active="settings" />
+    </div>
+  );
+}
+
+function CustomersEntry() {
+  const [, setLocation] = useLocation();
+  return (
+    <div className="px-5 pb-3">
+      <button
+        type="button"
+        onClick={() => setLocation("/customers")}
+        className="w-full bg-white border border-border rounded-2xl px-4 py-4 flex items-center justify-between text-left hover:bg-secondary/50 transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <span className="w-9 h-9 rounded-xl bg-sky-100 flex items-center justify-center text-lg shrink-0">👥</span>
+          <div>
+            <p className="text-sm font-semibold text-foreground">客戶管理</p>
+            <p className="text-xs text-muted-foreground">客戶代號、常用門市與隱私遮罩</p>
+          </div>
+        </div>
+        <span className="text-muted-foreground text-sm">›</span>
+      </button>
     </div>
   );
 }
