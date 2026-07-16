@@ -56,11 +56,51 @@ jobs:
         run: pnpm --filter @workspace/db run push-force
 
       - name: Test database routes
+        id: database-route-tests
         working-directory: artifacts/api-server
-        run: >-
-          node --experimental-test-module-mocks --import tsx/esm --test
-          src/routes/orderProfitSnapshot.route.test.mjs
-          src/routes/logisticsSyncCommitKillSwitch.route.test.mjs
+        run: |
+          mkdir -p ../../test-results
+          node \
+            --experimental-test-module-mocks \
+            --import tsx/esm \
+            --test-reporter=spec \
+            --test-reporter-destination=stdout \
+            --test-reporter=junit \
+            --test-reporter-destination=../../test-results/database-routes.junit.xml \
+            --test \
+            src/routes/orderProfitSnapshot.route.test.mjs \
+            src/routes/logisticsSyncCommitKillSwitch.route.test.mjs
+
+      - name: Add test summary
+        if: always()
+        env:
+          TEST_OUTCOME: ${{ steps.database-route-tests.outcome }}
+        run: |
+          node --input-type=module <<'NODE'
+          import { appendFileSync, existsSync, readFileSync } from "node:fs";
+
+          const reportPath = "test-results/database-routes.junit.xml";
+          const rows = [`## Database route tests`, ``, `Outcome: **${process.env.TEST_OUTCOME}**`];
+          if (existsSync(reportPath)) {
+            const xml = readFileSync(reportPath, "utf8");
+            const values = Object.fromEntries(
+              [...xml.matchAll(/<!-- (tests|pass|fail|skipped|duration_ms) ([^ ]+) -->/g)].map(
+                ([, key, value]) => [key, value],
+              ),
+            );
+            rows.push(
+              ``,
+              `| Tests | Passed | Failed | Skipped | Duration |`,
+              `|---:|---:|---:|---:|---:|`,
+              `| ${values.tests ?? "?"} | ${values.pass ?? "?"} | ${values.fail ?? "?"} | ${values.skipped ?? "?"} | ${values.duration_ms ?? "?"} ms |`,
+              ``,
+              `JUnit report: \`${reportPath}\` (included in the CI artifacts).`,
+            );
+          } else {
+            rows.push(``, `JUnit report was not created.`);
+          }
+          appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${rows.join("\n")}\n`);
+          NODE
 
       - name: Typecheck
         run: pnpm run typecheck
@@ -70,3 +110,14 @@ jobs:
         env:
           PORT: 3000
           BASE_PATH: /
+
+      - name: Upload test reports and build artifacts
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: ci-results-${{ github.run_attempt }}
+          path: |
+            test-results/
+            artifacts/*/dist/
+          if-no-files-found: warn
+          retention-days: 7
