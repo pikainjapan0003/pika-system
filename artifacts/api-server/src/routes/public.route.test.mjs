@@ -26,6 +26,7 @@ const { default: rateLimit }   = await import('express-rate-limit');
 const { db, storesTable, productsTable, ordersTable, pool } = await import('@workspace/db');
 const { eq }                   = await import('drizzle-orm');
 const { PUBLIC_ORDER_CREATED_RESPONSE_KEYS } = await import('../lib/publicOrderResponse.ts');
+const { PUBLIC_TRACK_ORDER_RESPONSE_KEYS } = await import('../lib/publicTrackResponse.ts');
 const { default: publicRouter } = await import('./public.ts');
 
 // ─────────────────────────────────────────────────────────────
@@ -324,6 +325,29 @@ describe('GET /orders/track/:publicToken — privacy protection', () => {
     assert.ok(data.status, 'status should be present');
     assert.ok(data.pickupMethod, 'pickupMethod should be present');
     assert.ok('trackingCode' in data, 'trackingCode key should be present');
+    assert.deepStrictEqual(
+      Object.keys(data).sort(),
+      [...PUBLIC_TRACK_ORDER_RESPONSE_KEYS].sort(),
+      'public tracking response must contain exactly the approved key allowlist',
+    );
+    for (const forbidden of [
+      'buyerName',
+      'buyerPhone',
+      'recipientName',
+      'recipientPhone',
+      'recipientAddress',
+      'costJpy',
+      'profitSnapshotCostJpy',
+      'profitSnapshotExchangeRate',
+      'profitSnapshotProductCostTwd',
+      'profitSnapshotTransportCostTwd',
+      'profitSnapshotUnitProfitTwd',
+      'profitSnapshotFullUnitProfitTwd',
+      'cartProfitSnapshotTotalTwd',
+      'internalNote',
+    ]) {
+      assert.equal(Object.hasOwn(data, forbidden), false, `${forbidden} must never be public`);
+    }
   });
 
   test('does NOT return recipientPhone', async () => {
