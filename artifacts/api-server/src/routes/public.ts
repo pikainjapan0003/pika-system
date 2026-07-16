@@ -14,24 +14,7 @@ import { SubmitOrderBody } from "@workspace/api-zod";
 import { getShippingFee } from "../lib/shippingFee.ts";
 import { getProviderMeta } from "../lib/logistics/providers.ts";
 import { loadOrderProfitSnapshotInput } from "../lib/orderProfitSnapshot.ts";
-
-const INTERNAL_PROFIT_SNAPSHOT_FIELDS = [
-  "profitSnapshotCostJpy",
-  "profitSnapshotExchangeRate",
-  "profitSnapshotProductCostTwd",
-  "profitSnapshotTransportCostTwd",
-  "profitSnapshotUnitProfitTwd",
-  "profitSnapshotFullUnitProfitTwd",
-  "profitSnapshotStatus",
-  "profitSnapshotCapturedAt",
-  "profitSnapshotBackfilledAt",
-] as const;
-
-function omitInternalProfitSnapshot(order: Record<string, unknown>): Record<string, unknown> {
-  const publicOrder = { ...order };
-  for (const field of INTERNAL_PROFIT_SNAPSHOT_FIELDS) delete publicOrder[field];
-  return publicOrder;
-}
+import { formatPublicOrderCreatedResponse } from "../lib/publicOrderResponse.ts";
 
 const submitOrderLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
@@ -266,13 +249,7 @@ router.post("/p/:shareToken/orders", submitOrderLimiter, async (req, res) => {
         return newOrder;
       });
 
-      return res.status(201).json({
-        ...omitInternalProfitSnapshot(order),
-        unitPrice: parseFloat(order.unitPrice as string),
-        shippingFee: parseFloat(order.shippingFee as string),
-        totalPrice: parseFloat(order.totalPrice as string),
-        storeSelectedAt: order.storeSelectedAt?.toISOString() ?? null,
-      });
+      return res.status(201).json(formatPublicOrderCreatedResponse(order));
     } catch (err: any) {
       if (err.status === 404) return res.status(404).json({ error: err.message });
       if (err.status === 409) return res.status(409).json({ error: err.message });
