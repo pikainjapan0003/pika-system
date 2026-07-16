@@ -16,6 +16,24 @@ const STORAGE_TEMP_LABEL: Record<string, string> = {
   frozen: "冷凍",
 };
 
+type EstimatedProfit =
+  | {
+      status: "ready";
+      transportStatus: "allocated" | "exempt";
+      unitProfitTwd: string;
+    }
+  | {
+      status: "pending_confirmation";
+      label: "待確認";
+    };
+
+function formatIntegerAmount(value: string): string {
+  const negative = value.startsWith("-");
+  const digits = negative ? value.slice(1) : value;
+  const grouped = digits.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return `${negative ? "-" : ""}${grouped}`;
+}
+
 function formatDeadlineStatus(orderDeadlineAt: string | null | undefined): "open" | "closed" | "none" {
   if (!orderDeadlineAt) return "none";
   return new Date(orderDeadlineAt) > new Date() ? "open" : "closed";
@@ -220,7 +238,11 @@ export default function ProductsPage() {
               </div>
             ) : (
               <div className="space-y-3">
-                {filteredProducts.map((p) => (
+                {filteredProducts.map((rawProduct) => {
+                  const p = rawProduct as typeof rawProduct & {
+                    estimatedProfit?: EstimatedProfit;
+                  };
+                  return (
                   /* Outer relative wrapper for dropdown positioning */
                   <div key={p.id} className="relative">
 
@@ -249,6 +271,13 @@ export default function ProductsPage() {
                           <p className="font-semibold text-foreground text-base line-clamp-2 leading-snug">{p.name}</p>
                           <p className="text-primary font-bold text-base mt-0.5">
                             NT$ {Number(p.price).toLocaleString()}
+                          </p>
+                          <p className="text-xs font-medium text-emerald-700 mt-1">
+                            {p.estimatedProfit?.status === "ready"
+                              ? `預估毛利 NT$ ${formatIntegerAmount(p.estimatedProfit.unitProfitTwd)}${
+                                  p.estimatedProfit.transportStatus === "exempt" ? "・免攤" : ""
+                                }`
+                              : "預估毛利 待確認"}
                           </p>
                           {/* SKU — monospace 與庫存行區隔 */}
                           {p.skuCode && (
@@ -360,7 +389,8 @@ export default function ProductsPage() {
                     )}
 
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </>

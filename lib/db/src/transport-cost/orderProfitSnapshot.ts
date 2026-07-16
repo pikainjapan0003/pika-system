@@ -9,7 +9,11 @@ import type {
   ProductUnitProfitResult,
 } from "./productUnitProfit.ts";
 
-export type { CalculateProductUnitProfitInput } from "./productUnitProfit.ts";
+export { calculateProductUnitProfit } from "./productUnitProfit.ts";
+export type {
+  CalculateProductUnitProfitInput,
+  ProductUnitProfitResult,
+} from "./productUnitProfit.ts";
 
 export const ORDER_PROFIT_SNAPSHOT_SCALE = 12;
 
