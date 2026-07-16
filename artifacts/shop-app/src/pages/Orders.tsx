@@ -9,6 +9,11 @@ import { isSevenElevenMethod, isFamilyMartMethod, openSevenElevenMap, openCvsSto
 import { parseRecipientAddress } from "@/lib/taiwanZipcodes";
 import { getProviderShortName } from "@/lib/logisticsProviders";
 import {
+  ORDER_MESSAGE_TEMPLATE_LABELS,
+  ORDER_MESSAGE_TEMPLATE_TYPES,
+  buildOrderMessage,
+} from "@/lib/orderMessageTemplates";
+import {
   AlertDialog,
   AlertDialogContent,
   AlertDialogHeader,
@@ -1231,6 +1236,49 @@ export default function OrdersPage() {
                               </span>
                             </div>
                           </div>
+                        </div>
+
+                        {/* Copy-only message templates; never sends automatically. */}
+                        <div>
+                          <SectionLabel>客人通知文案</SectionLabel>
+                          <div className="grid grid-cols-3 gap-2">
+                            {ORDER_MESSAGE_TEMPLATE_TYPES.map((templateType) => {
+                              const items = normalizeOrderItems(o as any);
+                              const productSummary = items
+                                .map((item) => `${item.productName} × ${item.quantity}`)
+                                .join("、");
+                              const amount = Number(
+                                o.orderTotal ??
+                                  Number(o.totalPrice) + Number(o.shippingFee ?? 0),
+                              ).toLocaleString();
+                              const copyKey = `${o.id}-message-${templateType}`;
+                              return (
+                                <button
+                                  key={templateType}
+                                  type="button"
+                                  onClick={() =>
+                                    copyToClipboard(
+                                      buildOrderMessage(templateType, {
+                                        orderNumber: `#${o.id}`,
+                                        productSummary,
+                                        amountTwd: amount,
+                                        pickupMethod: o.pickupMethod,
+                                      }),
+                                      copyKey,
+                                    )
+                                  }
+                                  className="min-h-10 rounded-xl border border-border bg-white px-2 py-2 text-xs font-medium text-foreground"
+                                >
+                                  {copiedKey === copyKey
+                                    ? "已複製"
+                                    : ORDER_MESSAGE_TEMPLATE_LABELS[templateType]}
+                                </button>
+                              );
+                            })}
+                          </div>
+                          <p className="mt-1.5 text-[10px] text-muted-foreground">
+                            只會複製到剪貼簿，不會自動發送。
+                          </p>
                         </div>
 
                         {/* 編輯訂單 */}
