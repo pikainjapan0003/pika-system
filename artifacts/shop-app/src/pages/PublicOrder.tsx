@@ -3,6 +3,7 @@ import type { Order } from "@workspace/api-client-react";
 import { useGetPublicProduct, useSubmitOrder } from "@workspace/api-client-react";
 import { addToCart, getCart, cartTotalQty } from "@/lib/cartStorage";
 import { applyBrandColor, DEFAULT_BRAND_PRIMARY_COLOR } from "@/lib/brandColor";
+import { formatActionableError } from "@/lib/actionableError";
 import {
   isSevenElevenMethod,
   isFamilyMartMethod,
@@ -369,7 +370,13 @@ export default function PublicOrderPage({ shareToken }: Props) {
       }
       try { sessionStorage.removeItem(`public_order_draft_${shareToken}`); } catch {}
     } catch (err: any) {
-      setFormError(err?.data?.message || err?.data?.error || "下單失敗，請稍後再試");
+      const reason = err?.data?.message || err?.data?.error || "網路或系統暫時沒有回應。";
+      setFormError(formatActionableError({
+        happened: "訂單沒有送出。",
+        reason,
+        action: "請確認欄位與網路後再按一次送出；目前資料仍留在畫面上。",
+        support: "若仍失敗，請截圖並聯絡店家。",
+      }));
     }
   };
 
@@ -386,8 +393,15 @@ export default function PublicOrderPage({ shareToken }: Props) {
       <div className="flex min-h-[100dvh] items-center justify-center bg-background px-5">
         <div className="text-center">
           <div className="text-4xl mb-3">😔</div>
-          <h1 className="text-lg font-bold text-foreground">商品不存在</h1>
-          <p className="text-muted-foreground text-sm mt-1">此連結已失效或商品已下架</p>
+          <h1 className="text-lg font-bold text-foreground">商品頁無法開啟</h1>
+          <p className="text-muted-foreground text-sm mt-2 whitespace-pre-line">
+            {formatActionableError({
+              happened: "目前看不到這件商品。",
+              reason: "連結可能已失效，或商品已下架。",
+              action: "請回到店家的最新分享連結再試一次。",
+              support: "若仍找不到，請把這個連結傳給店家確認。",
+            })}
+          </p>
         </div>
       </div>
     );

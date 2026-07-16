@@ -21,6 +21,7 @@ import type { CvsStore } from "@/lib/cvs711";
 import { TAIWAN_ZIPCODE_REGIONS, getDistricts } from "@/lib/taiwanZipcodes";
 import { RecipientAddressFields } from "@/components/RecipientAddressFields";
 import { applyBrandColor, DEFAULT_BRAND_PRIMARY_COLOR } from "@/lib/brandColor";
+import { formatActionableError } from "@/lib/actionableError";
 import sevenElevenLogo from "@/assets/logistics/seven-eleven-logo-official.png";
 import familymartLogo from "@/assets/logistics/familymart-logo-official.png";
 import blackcatLogo from "@/assets/logistics/blackcat-logo-official.svg";
@@ -81,6 +82,12 @@ function isHomeDeliveryMethod(m: string) {
 }
 function isMeetupMethod(m: string) {
   return m === "面交";
+}
+
+function pickupMethodGroup(method: PickupMethod): "超商取貨" | "宅配" | "面交" {
+  if (method.startsWith("7-11") || method.startsWith("全家")) return "超商取貨";
+  if (isHomeDeliveryMethod(method)) return "宅配";
+  return "面交";
 }
 function getShippingFeeLabel(m: string): string {
   const fee = getShippingFee(m);
@@ -495,7 +502,12 @@ export default function PublicCartPage() {
       setSubmittedOrder(order);
       setCartItems([]);
     } catch (err: any) {
-      setFormError(err?.message || "下單失敗，請稍後再試");
+      setFormError(formatActionableError({
+        happened: "購物車訂單沒有送出。",
+        reason: err?.message || "網路或系統暫時沒有回應。",
+        action: "請確認欄位與網路後再試；購物車內容仍會保留。",
+        support: "若仍失敗，請截圖並聯絡店家。",
+      }));
       setIsSubmitting(false);
     }
   };
@@ -597,10 +609,15 @@ export default function PublicCartPage() {
         <div>
           <label className="block text-sm font-medium text-foreground mb-2">取貨方式 *</label>
           <div className="space-y-4">
-            {availablePickupMethods.map((m) => {
+            {availablePickupMethods.map((m, index) => {
               const isSelected = pickupMethod === m;
+              const groupLabel = pickupMethodGroup(m);
+              const previousGroup = index > 0 ? pickupMethodGroup(availablePickupMethods[index - 1]) : null;
               return (
                 <div key={m}>
+                  {groupLabel !== previousGroup && (
+                    <p className="mb-2 text-xs font-semibold text-muted-foreground">{groupLabel}</p>
+                  )}
                   <button
                     type="button"
                     onClick={() => setPickupMethod(m)}
@@ -899,7 +916,7 @@ export default function PublicCartPage() {
 
         {formError && (
           <div className="bg-destructive/10 text-destructive text-sm px-4 py-3 rounded-xl">
-            {formError}
+            <span className="whitespace-pre-line">{formError}</span>
           </div>
         )}
 
