@@ -7,6 +7,10 @@ export interface BuyerCartItem {
   unitPrice: number;
   quantity: number;
   specValues: Record<string, string>;
+  shippingCvsEnabled?: boolean;
+  shippingBlackCatEnabled?: boolean;
+  shippingPostOfficeEnabled?: boolean;
+  shippingSelfPickupEnabled?: boolean;
 }
 
 const CART_KEY = "buyer-cart";
@@ -40,6 +44,10 @@ export function addToCart(params: {
   unitPrice: number;
   quantity: number;
   specValues: Record<string, string>;
+  shippingCvsEnabled?: boolean;
+  shippingBlackCatEnabled?: boolean;
+  shippingPostOfficeEnabled?: boolean;
+  shippingSelfPickupEnabled?: boolean;
 }): BuyerCartItem[] {
   const itemKey = makeItemKey(params.shareToken, params.specValues);
   const cart = getCart();

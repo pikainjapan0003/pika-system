@@ -40,6 +40,9 @@ router.post("/stores", requireAuth, async (req: any, res) => {
     return res.status(409).json({ error: "Store already exists" });
   }
 
+  const shippingSettings = getShippingSettings(req.body);
+  if (!shippingSettings.ok) return res.status(400).json({ error: shippingSettings.error });
+
   try {
     const [store] = await db
       .insert(storesTable)
@@ -47,6 +50,7 @@ router.post("/stores", requireAuth, async (req: any, res) => {
         ...parsed.data,
         merchantId: req.userId,
         purchaseExchangeRate: parsed.data.purchaseExchangeRate != null ? String(parsed.data.purchaseExchangeRate) : undefined,
+        ...shippingSettings.value,
       })
       .returning();
     return res.status(201).json(formatStore(store));
@@ -77,6 +81,9 @@ router.patch("/stores/:storeId", requireAuth, async (req: any, res) => {
   if (store.length === 0) return res.status(404).json({ error: "Store not found" });
   if (store[0].merchantId !== req.userId) return res.status(403).json({ error: "Forbidden" });
 
+  const shippingSettings = getShippingSettings(req.body);
+  if (!shippingSettings.ok) return res.status(400).json({ error: shippingSettings.error });
+
   const [updated] = await db
     .update(storesTable)
     .set({
@@ -84,11 +91,37 @@ router.patch("/stores/:storeId", requireAuth, async (req: any, res) => {
       purchaseExchangeRate: parsed.data.purchaseExchangeRate !== undefined
         ? (parsed.data.purchaseExchangeRate != null ? String(parsed.data.purchaseExchangeRate) : null)
         : undefined,
+      ...shippingSettings.value,
     })
     .where(eq(storesTable.id, storeId))
     .returning();
   return res.json(formatStore(updated));
 });
+
+function getShippingSettings(body: unknown):
+  | { ok: true; value: Partial<{
+      shippingCvsEnabled: boolean;
+      shippingBlackCatEnabled: boolean;
+      shippingPostOfficeEnabled: boolean;
+      shippingSelfPickupEnabled: boolean;
+    }> }
+  | { ok: false; error: string } {
+  if (!body || typeof body !== "object") return { ok: true, value: {} };
+  const record = body as Record<string, unknown>;
+  const keys = [
+    "shippingCvsEnabled",
+    "shippingBlackCatEnabled",
+    "shippingPostOfficeEnabled",
+    "shippingSelfPickupEnabled",
+  ] as const;
+  const value: Record<string, boolean> = {};
+  for (const key of keys) {
+    if (record[key] === undefined) continue;
+    if (typeof record[key] !== "boolean") return { ok: false, error: `${key} must be boolean` };
+    value[key] = record[key];
+  }
+  return { ok: true, value };
+}
 
 router.get("/stores/:storeId/stats", requireAuth, async (req: any, res) => {
   const storeId = parseInt(req.params.storeId);

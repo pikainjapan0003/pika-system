@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, numeric, index, check } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, numeric, boolean, index, check } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
@@ -12,6 +12,10 @@ export const storesTable = pgTable("stores", {
   logoUrl: text("logo_url"),
   brandPrimaryColor: text("brand_primary_color").default("#F57572"),
   purchaseExchangeRate: numeric("purchase_exchange_rate"),
+  shippingCvsEnabled: boolean("shipping_cvs_enabled").notNull().default(true),
+  shippingBlackCatEnabled: boolean("shipping_black_cat_enabled").notNull().default(true),
+  shippingPostOfficeEnabled: boolean("shipping_post_office_enabled").notNull().default(true),
+  shippingSelfPickupEnabled: boolean("shipping_self_pickup_enabled").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 }, (t) => [

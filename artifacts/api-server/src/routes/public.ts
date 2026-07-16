@@ -69,6 +69,19 @@ function publicTrackingProviderLabel(raw: string): string {
   return meta.code === "tcat" ? meta.displayName : meta.shortName;
 }
 
+function isShippingMethodEnabled(method: string, store: {
+  shippingCvsEnabled?: boolean | null;
+  shippingBlackCatEnabled?: boolean | null;
+  shippingPostOfficeEnabled?: boolean | null;
+  shippingSelfPickupEnabled?: boolean | null;
+}): boolean {
+  if (method.startsWith("7-11") || method.startsWith("全家")) return store.shippingCvsEnabled !== false;
+  if (method === "黑貓宅急便") return store.shippingBlackCatEnabled !== false;
+  if (method === "郵局") return store.shippingPostOfficeEnabled !== false;
+  if (method === "面交") return store.shippingSelfPickupEnabled !== false;
+  return true;
+}
+
 // 客人端顯示用：標準化貨態（shipment_tracking_events.eventStatus）→ 繁中文案
 const TRACKING_EVENT_STATUS_LABELS: Record<string, string> = {
   pending: "物流單已建立",
@@ -143,6 +156,10 @@ router.get("/p/:shareToken", async (req, res) => {
     shelfLife: product.shelfLife,
     weightKg: product.weightKg != null ? parseFloat(product.weightKg as string) : null,
     brandPrimaryColor: store?.brandPrimaryColor ?? null,
+    shippingCvsEnabled: store?.shippingCvsEnabled ?? true,
+    shippingBlackCatEnabled: store?.shippingBlackCatEnabled ?? true,
+    shippingPostOfficeEnabled: store?.shippingPostOfficeEnabled ?? true,
+    shippingSelfPickupEnabled: store?.shippingSelfPickupEnabled ?? true,
   });
 });
 
@@ -179,6 +196,22 @@ router.post("/p/:shareToken/orders", submitOrderLimiter, async (req, res) => {
         if (!product || !product.isActive) {
           const err = new Error("Product not found") as any;
           err.status = 404;
+          throw err;
+        }
+
+        const [store] = await tx
+          .select({
+            shippingCvsEnabled: storesTable.shippingCvsEnabled,
+            shippingBlackCatEnabled: storesTable.shippingBlackCatEnabled,
+            shippingPostOfficeEnabled: storesTable.shippingPostOfficeEnabled,
+            shippingSelfPickupEnabled: storesTable.shippingSelfPickupEnabled,
+          })
+          .from(storesTable)
+          .where(eq(storesTable.id, product.storeId))
+          .limit(1);
+        if (store && !isShippingMethodEnabled(parsed.data.pickupMethod, store)) {
+          const err = new Error("此店鋪目前未開放所選物流方式") as any;
+          err.status = 422;
           throw err;
         }
 
@@ -341,6 +374,22 @@ router.post("/cart/orders", submitOrderLimiter, async (req, res) => {
           if (!product || !product.isActive) {
             const err = new Error("Product not found") as any;
             err.status = 404;
+            throw err;
+          }
+
+          const [store] = await tx
+            .select({
+              shippingCvsEnabled: storesTable.shippingCvsEnabled,
+              shippingBlackCatEnabled: storesTable.shippingBlackCatEnabled,
+              shippingPostOfficeEnabled: storesTable.shippingPostOfficeEnabled,
+              shippingSelfPickupEnabled: storesTable.shippingSelfPickupEnabled,
+            })
+            .from(storesTable)
+            .where(eq(storesTable.id, product.storeId))
+            .limit(1);
+          if (store && !isShippingMethodEnabled(body.pickupMethod, store)) {
+            const err = new Error("此店鋪目前未開放所選物流方式") as any;
+            err.status = 422;
             throw err;
           }
           if (product.orderDeadlineAt && new Date() >= product.orderDeadlineAt) {

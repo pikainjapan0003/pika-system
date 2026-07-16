@@ -68,6 +68,14 @@ const ALL_PICKUP_METHODS: PickupMethod[] = [
   "面交",
 ];
 
+function isPickupMethodEnabled(method: string, settings: any): boolean {
+  if (method.startsWith("7-11") || method.startsWith("全家")) return settings?.shippingCvsEnabled !== false;
+  if (method === "黑貓宅急便") return settings?.shippingBlackCatEnabled !== false;
+  if (method === "郵局") return settings?.shippingPostOfficeEnabled !== false;
+  if (method === "面交") return settings?.shippingSelfPickupEnabled !== false;
+  return true;
+}
+
 function PickupMethodLogo({ method }: { method: string }) {
   if (method === "7-11 取貨（先付款）" || method === "7-11 貨到付款") {
     return (
@@ -143,6 +151,11 @@ export default function PublicOrderPage({ shareToken }: Props) {
   const subtotal = Number(product?.price ?? 0) * quantity;
   const totalDisplay = subtotal + shippingFee;
   const needsCvsStore = isStorePickupMethod(pickupMethod);
+  const availablePickupMethods = ALL_PICKUP_METHODS.filter((method) => isPickupMethodEnabled(method, product));
+
+  useEffect(() => {
+    if (pickupMethod && !isPickupMethodEnabled(pickupMethod, product)) setPickupMethod("");
+  }, [pickupMethod, product]);
 
   useEffect(() => {
     const stored = loadCvsStore(shareToken);
@@ -226,6 +239,10 @@ export default function PublicOrderPage({ shareToken }: Props) {
       unitPrice: Number(product.price),
       quantity,
       specValues,
+      shippingCvsEnabled: (product as any).shippingCvsEnabled,
+      shippingBlackCatEnabled: (product as any).shippingBlackCatEnabled,
+      shippingPostOfficeEnabled: (product as any).shippingPostOfficeEnabled,
+      shippingSelfPickupEnabled: (product as any).shippingSelfPickupEnabled,
     });
     setCartCount(cartTotalQty(newCart));
     setCartJustAdded(true);
@@ -670,7 +687,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
         <div>
           <label className="block text-sm font-medium text-foreground mb-2">取貨方式 *</label>
           <div className="space-y-3">
-            {ALL_PICKUP_METHODS.map((m) => {
+            {availablePickupMethods.map((m) => {
               const isSelected = pickupMethod === m;
               return (
                 <div key={m}>
