@@ -10,7 +10,7 @@ interface CustomerRecord {
   storeId: number;
   code: string;
   name: string;
-  phone: string;
+  phone: string | null;
   tier: "general" | "vip" | "wholesale" | "partner";
   cvsStoreId: string | null;
   cvsStoreName: string | null;
@@ -192,7 +192,7 @@ export default function CustomersPage() {
             <input className={inputClass} placeholder="客戶代號 *" value={draft.code} onChange={(event) => setDraft({ ...draft, code: event.target.value })} />
             <input className={inputClass} placeholder="姓名 *" value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} />
           </div>
-          <input className={inputClass} placeholder="手機 *" value={draft.phone} onChange={(event) => setDraft({ ...draft, phone: event.target.value })} />
+          <input className={inputClass} placeholder="手機（可留空）" value={draft.phone ?? ""} onChange={(event) => setDraft({ ...draft, phone: event.target.value || null })} />
           <select
             className={inputClass}
             value={draft.tier}
@@ -225,7 +225,7 @@ export default function CustomersPage() {
                   <div>
                     <p className="font-semibold">{customer.code} · {isRevealed ? customer.name : maskName(customer.name)}</p>
                     <p className="text-xs text-primary mt-0.5">等級：{{ general: "一般", vip: "VIP", wholesale: "批發", partner: "夥伴" }[customer.tier]}</p>
-                    <p className="text-sm text-muted-foreground">{isRevealed ? customer.phone : maskPhone(customer.phone)}</p>
+                    <p className="text-sm text-muted-foreground">{customer.phone ? (isRevealed ? customer.phone : maskPhone(customer.phone)) : "未留電話"}</p>
                   </div>
                   <div className="flex flex-col items-end gap-2">
                     <button type="button" onClick={() => setLocation(`/customers/${customer.id}`)} className="text-sm font-medium text-primary">詳情</button>

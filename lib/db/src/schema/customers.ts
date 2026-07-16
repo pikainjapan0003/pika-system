@@ -12,7 +12,7 @@ export const customersTable = pgTable("customers", {
   storeId: integer("store_id").notNull().references(() => storesTable.id, { onDelete: "cascade" }),
   code: text("code").notNull(),
   name: text("name").notNull(),
-  phone: text("phone").notNull(),
+  phone: text("phone"),
   tier: text("tier").notNull().default("general"),
   cvsStoreId: text("cvs_store_id"),
   cvsStoreName: text("cvs_store_name"),

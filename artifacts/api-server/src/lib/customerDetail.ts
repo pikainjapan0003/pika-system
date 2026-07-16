@@ -11,6 +11,12 @@ export type CustomerOrderProfitDisplay =
   | { status: "captured" | "exempt"; label: string; amountTwd: string; scope: "unit" | "order" }
   | { status: "pending" | "missing"; label: "待確認" | "尚無快照"; amountTwd: null; scope: "unit" | "order" };
 
+function displayCapturedSnapshot(value: string): string {
+  const displayed = displayOrderProfitSnapshotAmount(value);
+  if (displayed === null) throw new TypeError("captured snapshot amount is missing");
+  return displayed;
+}
+
 /** Formats existing immutable snapshots only. It never recalculates live product cost or profit. */
 export function formatCustomerOrderProfit(order: CustomerOrderProfitInput): CustomerOrderProfitDisplay {
   if (order.cartProfitSnapshotStatus !== undefined && order.cartProfitSnapshotStatus !== null) {
@@ -18,7 +24,7 @@ export function formatCustomerOrderProfit(order: CustomerOrderProfitInput): Cust
       return {
         status: "captured",
         label: "定格整單毛利",
-        amountTwd: displayOrderProfitSnapshotAmount(order.cartProfitSnapshotTotalTwd),
+        amountTwd: displayCapturedSnapshot(order.cartProfitSnapshotTotalTwd),
         scope: "order",
       };
     }
@@ -32,7 +38,7 @@ export function formatCustomerOrderProfit(order: CustomerOrderProfitInput): Cust
     return {
       status: order.profitSnapshotStatus,
       label: order.profitSnapshotStatus === "exempt" ? "免攤單件毛利" : "定格單件毛利",
-      amountTwd: displayOrderProfitSnapshotAmount(order.profitSnapshotUnitProfitTwd),
+      amountTwd: displayCapturedSnapshot(order.profitSnapshotUnitProfitTwd),
       scope: "unit",
     };
   }
