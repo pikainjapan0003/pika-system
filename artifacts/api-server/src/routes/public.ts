@@ -13,11 +13,13 @@ import {
   multiplyMoneyByQuantity,
   type CalculateProductUnitProfitInput,
 } from "@workspace/db";
+import { ExactDecimal } from "@workspace/db/transport-cost";
 import { SubmitOrderBody } from "@workspace/api-zod";
 import { getShippingFee } from "../lib/shippingFee.ts";
 import { getProviderMeta } from "../lib/logistics/providers.ts";
 import { loadOrderProfitSnapshotInput } from "../lib/orderProfitSnapshot.ts";
 import { formatPublicOrderCreatedResponse } from "../lib/publicOrderResponse.ts";
+import { parsePaymentLast5 } from "../lib/paymentLast5.ts";
 
 const submitOrderLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
@@ -154,6 +156,12 @@ router.post("/p/:shareToken/orders", submitOrderLimiter, async (req, res) => {
 
   // shippingFee override: allow client to pass, but validate it's a number
   const shippingFeeOverride = typeof req.body?.shippingFee === "number" ? req.body.shippingFee : undefined;
+  let paymentLast5: string | null;
+  try {
+    paymentLast5 = parsePaymentLast5(req.body?.paymentLast5);
+  } catch (error) {
+    return res.status(422).json({ error: (error as Error).message });
+  }
 
   let retries = 0;
   while (retries <= 3) {
@@ -232,6 +240,7 @@ router.post("/p/:shareToken/orders", submitOrderLimiter, async (req, res) => {
             unitPrice,
             shippingFee: String(shippingFee),
             totalPrice,
+            paymentLast5,
             ...profitSnapshot,
             status: "pending",
             cvsStoreId: hasCvs ? (parsed.data.cvsStoreId ?? null) : null,
@@ -287,6 +296,12 @@ router.post("/cart/orders", submitOrderLimiter, async (req, res) => {
     if (!Number.isInteger(item.quantity) || item.quantity < 1) {
       return res.status(400).json({ error: "each item quantity must be a positive integer" });
     }
+  }
+  let paymentLast5: string | null;
+  try {
+    paymentLast5 = parsePaymentLast5(body.paymentLast5);
+  } catch (error) {
+    return res.status(422).json({ error: (error as Error).message });
   }
 
   const shippingFeeOverride = typeof body.shippingFee === "number" ? body.shippingFee : undefined;
@@ -395,6 +410,7 @@ router.post("/cart/orders", submitOrderLimiter, async (req, res) => {
             unitPrice: String(first.unitPrice),
             shippingFee: String(shippingFee),
             totalPrice: itemsSubtotal.toDecimalPlaces(2),
+            paymentLast5,
             status: "pending",
             cvsStoreId: hasCvs ? (body.cvsStoreId ?? null) : null,
             cvsStoreName: hasCvs ? (body.cvsStoreName ?? null) : null,
@@ -484,6 +500,7 @@ router.get("/orders/track/:publicToken", trackOrderLimiter, async (req, res) => 
     shippingFee,
     totalPrice,
     orderTotal: Math.max(totalPrice + shippingFee - (order.discountAmount ?? 0), 0),
+    paymentLast5: order.paymentLast5 ?? null,
     pickupMethod: order.pickupMethod,
     specValues: order.specValues ?? {},
     status: order.status,
@@ -513,6 +530,34 @@ router.get("/orders/track/:publicToken", trackOrderLimiter, async (req, res) => 
     // checkError, eventCode, rawData, cvsStoreId, cvsStoreName, cvsStoreAddress, cvsStorePhone,
     // storeSelectedBy, storeSelectedAt
   });
+});
+
+router.patch("/orders/track/:publicToken/payment-last5", trackOrderLimiter, async (req, res) => {
+  const publicToken = req.params.publicToken as string;
+  const [order] = await db
+    .select({ id: ordersTable.id, status: ordersTable.status })
+    .from(ordersTable)
+    .where(eq(ordersTable.publicToken, publicToken))
+    .limit(1);
+
+  if (!order) return res.status(404).json({ error: "Order not found" });
+  if (order.status !== "pending" && order.status !== "awaiting_payment") {
+    return res.status(409).json({ error: "付款末五碼僅能在待確認或待付款期間修改" });
+  }
+
+  let paymentLast5: string | null;
+  try {
+    paymentLast5 = parsePaymentLast5(req.body?.paymentLast5);
+  } catch (error) {
+    return res.status(422).json({ error: (error as Error).message });
+  }
+
+  const [updated] = await db
+    .update(ordersTable)
+    .set({ paymentLast5 })
+    .where(eq(ordersTable.id, order.id))
+    .returning({ paymentLast5: ordersTable.paymentLast5 });
+  return res.json({ paymentLast5: updated?.paymentLast5 ?? null });
 });
 
 export default router;

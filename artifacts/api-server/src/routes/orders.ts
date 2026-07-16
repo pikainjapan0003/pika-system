@@ -21,6 +21,7 @@ import { TRACKING_IMPORT_ALLOWED_PROVIDERS, normalizeTrackingProvider } from "..
 import { ensureManualProviderTrackingRow } from "../lib/logistics/trackingSeed.ts";
 import { loadOrderProfitSnapshotInput } from "../lib/orderProfitSnapshot.ts";
 import { summarizeOrderProfits } from "../lib/orderProfitSummary.ts";
+import { parsePaymentLast5 } from "../lib/paymentLast5.ts";
 
 const router = Router();
 
@@ -82,6 +83,12 @@ router.post("/stores/:storeId/orders", requireAuth, async (req: any, res) => {
     storeCode, storeName, cvsStoreAddress, cvsStorePhone, storeSelectedBy,
   } = parsed.data;
   const hasCvsStore = !!(storeCode || storeName || cvsStoreAddress || cvsStorePhone);
+  let paymentLast5: string | null;
+  try {
+    paymentLast5 = parsePaymentLast5(req.body?.paymentLast5);
+  } catch (error) {
+    return res.status(422).json({ error: (error as Error).message });
+  }
 
   let retries = 0;
   while (retries <= 3) {
@@ -132,6 +139,7 @@ router.post("/stores/:storeId/orders", requireAuth, async (req: any, res) => {
             unitPrice,
             totalPrice,
             shippingFee: String(shippingFee),
+            paymentLast5,
             ...profitSnapshot,
             status: "pending",
             // Step 7H-2: 新增訂單即可帶入物流 / 門市 / 收件資訊（與編輯訂單一致）
@@ -776,6 +784,16 @@ router.patch("/orders/:orderId", requireAuth, async (req: any, res) => {
   if (shippingMethod !== undefined) updates.shippingMethod = shippingMethod;
   if (shippingStatus !== undefined) updates.shippingStatus = shippingStatus;
   if (shippingFee !== undefined) updates.shippingFee = String(shippingFee);
+  if (Object.prototype.hasOwnProperty.call(req.body ?? {}, "paymentLast5")) {
+    if (order.status !== "pending" && order.status !== "awaiting_payment") {
+      return res.status(422).json({ error: "付款末五碼僅能在待確認或待付款期間修改" });
+    }
+    try {
+      updates.paymentLast5 = parsePaymentLast5(req.body.paymentLast5);
+    } catch (error) {
+      return res.status(422).json({ error: (error as Error).message });
+    }
+  }
   if (recipientName !== undefined) updates.recipientName = recipientName;
   if (recipientPhone !== undefined) updates.recipientPhone = recipientPhone;
   if (recipientAddress !== undefined) updates.recipientAddress = recipientAddress;
@@ -864,7 +882,7 @@ router.get("/stores/:storeId/orders/export", requireAuth, async (req: any, res) 
     .where(eq(ordersTable.storeId, storeId))
     .orderBy(ordersTable.createdAt);
 
-  const headers = ["訂單編號", "商品名稱", "買家姓名", "買家電話", "取貨方式", "數量", "單價", "總金額", "折讓金額", "折讓備註", "狀態", "備註", "規格", "下單時間"];
+  const headers = ["訂單編號", "商品名稱", "買家姓名", "買家電話", "取貨方式", "數量", "單價", "總金額", "付款末五碼", "折讓金額", "折讓備註", "狀態", "備註", "規格", "下單時間"];
 
   const statusLabels: Record<string, string> = {
     pending: "待確認",
@@ -884,6 +902,7 @@ router.get("/stores/:storeId/orders/export", requireAuth, async (req: any, res) 
     o.quantity,
     parseFloat(o.unitPrice as string).toFixed(2),
     parseFloat(o.totalPrice as string).toFixed(2),
+    o.paymentLast5 ?? "",
     o.discountAmount ?? 0,
     o.discountNote ?? "",
     statusLabels[o.status] ?? o.status,

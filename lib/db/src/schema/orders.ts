@@ -43,6 +43,7 @@ export const ordersTable = pgTable("orders", {
   paymentMethod: text("payment_method"),
   paymentStatus: text("payment_status").notNull().default("unpaid"),
   paidAmount: numeric("paid_amount", { precision: 10, scale: 2 }),
+  paymentLast5: text("payment_last5"),
   paymentNote: text("payment_note"),
   // Shipping / logistics fields (store-side manual tracking, not real-time logistics API)
   shippingMethod: text("shipping_method"),
@@ -86,6 +87,7 @@ export const ordersTable = pgTable("orders", {
   index("orders_store_id_idx").on(t.storeId),
   index("orders_product_id_idx").on(t.productId),
   check("orders_status_valid", sql`${t.status} IN ('pending', 'awaiting_payment', 'preparing', 'shipped', 'completed', 'cancelled')`),
+  check("orders_payment_last5_length", sql`${t.paymentLast5} IS NULL OR char_length(${t.paymentLast5}) = 5`),
   check(
     "orders_profit_snapshot_status_valid",
     sql`${t.profitSnapshotStatus} IS NULL OR ${t.profitSnapshotStatus} IN ('captured', 'pending', 'exempt')`,
