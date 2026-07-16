@@ -1,4 +1,4 @@
-import { maskAddress, maskName, maskPhone } from "@workspace/db/privacy";
+import { maskAddress, maskName, maskPhone } from "@workspace/privacy";
 
 export type CustomerExportMode = "masked" | "cleartext";
 

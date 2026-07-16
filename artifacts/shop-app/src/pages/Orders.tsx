@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { useAuth } from "@clerk/react";
 import { useGetMyStore, useListOrders, useUpdateOrderStatus, useBulkUpdateOrders, useGetPickingList, useGetShippingList, getListOrdersQueryKey, type Order, type PickingListResponse, type ShippingListResponse } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { maskAddress, maskName, maskPhone } from "@workspace/db/privacy";
+import { maskAddress, maskName, maskPhone } from "@workspace/privacy";
 import { BottomNav } from "./Dashboard";
 import { STATUS_LABELS, STATUS_COLORS, ALL_STATUSES, STATUS_STEPS, VALID_NEXT_STATUSES } from "../lib/orderStatus";
 import { isSevenElevenMethod, isFamilyMartMethod, openSevenElevenMap, openCvsStoreMap } from "@/lib/cvs711";

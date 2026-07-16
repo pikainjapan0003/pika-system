@@ -7,8 +7,7 @@
     ".": "./src/index.ts",
     "./schema": "./src/schema/index.ts",
     "./transport-cost": "./src/transport-cost/index.ts",
-    "./order-profit-snapshot": "./src/transport-cost/orderProfitSnapshot.ts",
-    "./privacy": "./src/privacy/masking.ts"
+    "./order-profit-snapshot": "./src/transport-cost/orderProfitSnapshot.ts"
   },
   "scripts": {
     "push": "drizzle-kit push --config ./drizzle.config.ts",
