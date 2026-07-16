@@ -89,6 +89,15 @@ jobs:
             --test \
             "${pure_tests[@]}"
 
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Seed Playwright smoke fixture
+        run: pnpm --filter @workspace/api-server exec node --import tsx/esm e2e/seedSmoke.mjs
+
+      - name: Run Playwright smoke tests
+        run: pnpm exec playwright test --config e2e/playwright.config.mjs
+
       - name: Add test summary
         if: always()
         env:
