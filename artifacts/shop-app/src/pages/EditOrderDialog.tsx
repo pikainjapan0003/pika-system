@@ -11,6 +11,7 @@ import {
   ShippingStatus,
 } from "@workspace/api-client-react";
 import { isFamilyMartMethod, isSevenElevenMethod, getShippingFee } from "@/lib/cvs711";
+import { formatShippingFeeLabel } from "@workspace/shipping";
 import { combineRecipientAddress, parseRecipientAddress } from "@/lib/taiwanZipcodes";
 import { normalizeTrackingProvider } from "@/lib/logisticsProviders";
 import { RecipientAddressFields } from "@/components/RecipientAddressFields";
@@ -85,14 +86,14 @@ import {
   SheetClose,
 } from "@/components/ui/sheet";
 
-const SHIPPING_CARD_OPTIONS: Array<{ value: string; label: string; sub?: string; fee: string }> = [
-  { value: "自取",                   label: "面交 / 自取",                          fee: "免運"     },
-  { value: "7-11 取貨（先付款）",     label: "7-11",     sub: "取貨（先付款）",      fee: "+ NT$60"  },
-  { value: "7-11 貨到付款",          label: "7-11",     sub: "貨到付款",            fee: "+ NT$60"  },
-  { value: "全家取貨（先付款）",      label: "全家",     sub: "取貨（先付款）",      fee: "+ NT$60"  },
-  { value: "全家貨到付款",           label: "全家",     sub: "貨到付款",            fee: "+ NT$60"  },
-  { value: "黑貓宅急便",             label: "黑貓宅急便",                           fee: "+ NT$100" },
-  { value: "郵局宅配",               label: "郵局宅配",                             fee: "+ NT$80"  },
+const SHIPPING_CARD_OPTIONS: Array<{ value: string; label: string; sub?: string }> = [
+  { value: "自取",                   label: "面交 / 自取" },
+  { value: "7-11 取貨（先付款）",     label: "7-11",     sub: "取貨（先付款）" },
+  { value: "7-11 貨到付款",          label: "7-11",     sub: "貨到付款" },
+  { value: "全家取貨（先付款）",      label: "全家",     sub: "取貨（先付款）" },
+  { value: "全家貨到付款",           label: "全家",     sub: "貨到付款" },
+  { value: "黑貓宅急便",             label: "黑貓宅急便" },
+  { value: "郵局宅配",               label: "郵局宅配" },
 ];
 
 interface CvsStoreResult {
@@ -729,7 +730,7 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
                           )}
                         </span>
                         <span className={`text-sm font-semibold shrink-0 ${isSelected ? "text-primary" : "text-muted-foreground"}`}>
-                          {opt.fee}
+                          {formatShippingFeeLabel(opt.value)}
                         </span>
                       </button>
                       {isSelected && (
