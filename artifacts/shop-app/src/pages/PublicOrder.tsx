@@ -113,6 +113,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
 
   const [buyerName, setBuyerName] = useState("");
   const [buyerPhone, setBuyerPhone] = useState("");
+  const [paymentLast5, setPaymentLast5] = useState("");
   // Step 7H-4: 收件資訊（買家本人不一定是收件人）
   const [sameAsBuyer, setSameAsBuyer] = useState(true);
   const [recipientNameInput, setRecipientNameInput] = useState("");
@@ -325,6 +326,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
         buyerPhone: buyerPhone.trim(),
         pickupMethod,
         notes: notes.trim() || undefined,
+        ...(paymentLast5.trim() ? { paymentLast5: paymentLast5.trim() } : {}),
         recipientName: recipientNamePayload,
         recipientPhone: recipientPhonePayload,
         ...(recipientAddressPayload ? { recipientAddress: recipientAddressPayload } : {}),
@@ -341,7 +343,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
       };
 
       const capturedCvsStore = needsCvsStore ? cvsStore : null;
-      const order = await submitOrder.mutateAsync({ shareToken, data: body });
+      const order = await submitOrder.mutateAsync({ shareToken, data: body as any });
       setSubmittedOrder(order);
       setSubmittedCvsStore(capturedCvsStore);
       if (needsCvsStore) {
@@ -603,6 +605,20 @@ export default function PublicOrderPage({ shareToken }: Props) {
             placeholder="09xx-xxx-xxx"
             className={inputClass}
           />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-foreground mb-1.5">付款末五碼（選填）</label>
+          <input
+            type="text"
+            inputMode="numeric"
+            maxLength={5}
+            pattern="[0-9]{5}"
+            value={paymentLast5}
+            onChange={(e) => setPaymentLast5(e.target.value.replace(/\D/g, "").slice(0, 5))}
+            placeholder="請填 5 位數字"
+            className={inputClass}
+          />
+          <p className="mt-1 text-xs text-muted-foreground">僅供人工對帳，不會自動判定付款。</p>
         </div>
 
         {/* 收件資訊（Step 7H-4：買家不一定是收件人） */}

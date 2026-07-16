@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useGetPublicOrder } from "@workspace/api-client-react";
 import { STATUS_COLORS, STATUS_STEPS, STATUS_LABELS } from "../lib/orderStatus";
@@ -109,7 +109,14 @@ export default function TrackOrderPage({ publicToken }: Props) {
   const [, setLocation] = useLocation();
   const [copiedToken, setCopiedToken] = useState(false);
   const [copiedTracking, setCopiedTracking] = useState(false);
+  const [paymentLast5, setPaymentLast5] = useState("");
+  const [paymentMessage, setPaymentMessage] = useState("");
+  const [savingPaymentLast5, setSavingPaymentLast5] = useState(false);
   const { data: order, isLoading, error } = useGetPublicOrder(publicToken);
+
+  useEffect(() => {
+    setPaymentLast5((order as any)?.paymentLast5 ?? "");
+  }, [order?.publicToken, (order as any)?.paymentLast5]);
 
   const handleCopyToken = (text: string) => {
     if (!navigator.clipboard) return;
@@ -125,6 +132,27 @@ export default function TrackOrderPage({ publicToken }: Props) {
       setCopiedTracking(true);
       setTimeout(() => setCopiedTracking(false), 2000);
     }).catch(() => {});
+  };
+
+  const canEditPaymentLast5 = order?.status === "pending" || order?.status === "awaiting_payment";
+  const handleSavePaymentLast5 = async () => {
+    setSavingPaymentLast5(true);
+    setPaymentMessage("");
+    try {
+      const response = await fetch(`/api/orders/track/${encodeURIComponent(publicToken)}/payment-last5`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paymentLast5: paymentLast5.trim() || null }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.error ?? "付款末五碼儲存失敗");
+      setPaymentLast5(payload.paymentLast5 ?? "");
+      setPaymentMessage("已儲存，僅供人工對帳。");
+    } catch (saveError) {
+      setPaymentMessage(saveError instanceof Error ? saveError.message : "付款末五碼儲存失敗");
+    } finally {
+      setSavingPaymentLast5(false);
+    }
   };
 
   if (isLoading) {
@@ -380,6 +408,36 @@ export default function TrackOrderPage({ publicToken }: Props) {
             )}
           </div>
         </div>
+
+        {canEditPaymentLast5 && (
+          <div className="bg-white rounded-2xl border border-border overflow-hidden mt-3">
+            <div className="px-5 py-3 border-b border-border">
+              <h2 className="text-xs font-semibold text-muted-foreground">付款末五碼（選填）</h2>
+            </div>
+            <div className="px-5 py-4 space-y-2">
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={5}
+                pattern="[0-9]{5}"
+                value={paymentLast5}
+                onChange={(event) => setPaymentLast5(event.target.value.replace(/\D/g, "").slice(0, 5))}
+                placeholder="請填 5 位數字"
+                className="w-full h-11 px-3 rounded-xl border border-input bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+              <button
+                type="button"
+                onClick={handleSavePaymentLast5}
+                disabled={savingPaymentLast5 || (paymentLast5.length > 0 && paymentLast5.length !== 5)}
+                className="w-full h-11 rounded-xl bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50"
+              >
+                {savingPaymentLast5 ? "儲存中…" : "儲存付款末五碼"}
+              </button>
+              <p className="text-xs text-muted-foreground">僅供人工對帳，不會自動判定付款。</p>
+              {paymentMessage && <p className="text-xs text-primary">{paymentMessage}</p>}
+            </div>
+          </div>
+        )}
 
         {/* Copy buttons */}
         <div className="mt-4 space-y-2">

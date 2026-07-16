@@ -256,6 +256,8 @@ export default function OrdersPage() {
   const updateOrderStatus = useUpdateOrderStatus();
   const [filter, setFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [paymentLast5Query, setPaymentLast5Query] = useState("");
+  const [amountQuery, setAmountQuery] = useState("");
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [statusErrors, setStatusErrors] = useState<Record<number, string>>({});
   const [loadingOrderId, setLoadingOrderId] = useState<number | null>(null);
@@ -333,14 +335,19 @@ export default function OrdersPage() {
 
   // Client-side search
   const q = searchQuery.trim().toLowerCase();
-  const searched = q
-    ? statusFiltered.filter((o) =>
-        o.buyerName.toLowerCase().includes(q) ||
-        o.buyerPhone.toLowerCase().includes(q) ||
-        String(o.id).includes(q) ||
-        (o.productName ?? "").toLowerCase().includes(q)
-      )
-    : statusFiltered;
+  const paymentLast5Q = paymentLast5Query.trim();
+  const amountQ = amountQuery.trim().replace(/[^0-9]/g, "");
+  const searched = statusFiltered.filter((o) => {
+    const textMatches = !q ||
+      o.buyerName.toLowerCase().includes(q) ||
+      o.buyerPhone.toLowerCase().includes(q) ||
+      String(o.id).includes(q) ||
+      (o.productName ?? "").toLowerCase().includes(q);
+    const paymentMatches = !paymentLast5Q || ((o as any).paymentLast5 ?? "").includes(paymentLast5Q);
+    const orderTotal = o.orderTotal ?? (Number(o.totalPrice) + Number(o.shippingFee ?? 0));
+    const amountMatches = !amountQ || String(Math.round(Number(orderTotal))).includes(amountQ);
+    return textMatches && paymentMatches && amountMatches;
+  });
 
   const sortedFiltered = [...searched].reverse();
 
@@ -661,6 +668,25 @@ export default function OrdersPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="搜尋姓名、電話、訂單編號"
             className="w-full h-9 px-3 rounded-xl border border-input bg-secondary/40 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-2 mb-2.5">
+          <input
+            type="search"
+            value={paymentLast5Query}
+            onChange={(e) => setPaymentLast5Query(e.target.value.replace(/\D/g, "").slice(0, 5))}
+            placeholder="付款末五碼"
+            inputMode="numeric"
+            maxLength={5}
+            className="w-full min-h-11 px-3 rounded-xl border border-input bg-secondary/40 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+          <input
+            type="search"
+            value={amountQuery}
+            onChange={(e) => setAmountQuery(e.target.value.replace(/[^0-9]/g, ""))}
+            placeholder="金額"
+            inputMode="numeric"
+            className="w-full min-h-11 px-3 rounded-xl border border-input bg-secondary/40 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
         </div>
         {/* Filter tabs */}
@@ -1066,6 +1092,7 @@ export default function OrdersPage() {
                               label="運費"
                               value={`NT$ ${Number(o.shippingFee ?? 0).toLocaleString()}`}
                             />
+                            <DetailRow label="付款末五碼" value={(o as any).paymentLast5 ?? "尚未填寫"} />
                             {o.discountAmount != null && o.discountAmount > 0 && (
                               <DetailRow
                                 label="折讓"

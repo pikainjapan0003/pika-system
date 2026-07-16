@@ -314,6 +314,7 @@ export default function PublicCartPage() {
   const [cartItems, setCartItems] = useState<BuyerCartItem[]>([]);
   const [buyerName, setBuyerName] = useState("");
   const [buyerPhone, setBuyerPhone] = useState("");
+  const [paymentLast5, setPaymentLast5] = useState("");
   const [pickupMethod, setPickupMethod] = useState("");
   const [notes, setNotes] = useState("");
   const [cvsStore, setCvsStore] = useState<CvsStore | null>(null);
@@ -440,6 +441,7 @@ export default function PublicCartPage() {
         buyerPhone: buyerPhone.trim(),
         pickupMethod,
         notes: notes.trim() || undefined,
+        ...(paymentLast5.trim() ? { paymentLast5: paymentLast5.trim() } : {}),
         recipientName: buyerName.trim(),
         recipientPhone: buyerPhone.trim(),
         ...(recipientAddressPayload ? { recipientAddress: recipientAddressPayload } : {}),
@@ -560,6 +562,20 @@ export default function PublicCartPage() {
             placeholder="09xx-xxx-xxx"
             className={inputClass}
           />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-foreground mb-1.5">付款末五碼（選填）</label>
+          <input
+            type="text"
+            inputMode="numeric"
+            maxLength={5}
+            pattern="[0-9]{5}"
+            value={paymentLast5}
+            onChange={(e) => setPaymentLast5(e.target.value.replace(/\D/g, "").slice(0, 5))}
+            placeholder="請填 5 位數字"
+            className={inputClass}
+          />
+          <p className="mt-1 text-xs text-muted-foreground">僅供人工對帳，不會自動判定付款。</p>
         </div>
 
         {/* Pickup method */}
