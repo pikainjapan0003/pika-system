@@ -71,33 +71,59 @@ jobs:
             src/routes/orderProfitSnapshot.route.test.mjs \
             src/routes/logisticsSyncCommitKillSwitch.route.test.mjs
 
+      - name: Test pure function suites
+        id: pure-function-tests
+        working-directory: artifacts/api-server
+        run: |
+          mapfile -t pure_tests < <(
+            find ../../lib -type f -name '*.test.mjs' ! -path '*/generated/*' -print
+            find ../shop-app/src/lib -type f -name '*.test.mjs' -print
+            find src/lib -type f -name '*.test.mjs' -print
+          )
+          node \
+            --import tsx/esm \
+            --test-reporter=spec \
+            --test-reporter-destination=stdout \
+            --test-reporter=junit \
+            --test-reporter-destination=../../test-results/pure-functions.junit.xml \
+            --test \
+            "${pure_tests[@]}"
+
       - name: Add test summary
         if: always()
         env:
-          TEST_OUTCOME: ${{ steps.database-route-tests.outcome }}
+          DATABASE_TEST_OUTCOME: ${{ steps.database-route-tests.outcome }}
+          PURE_TEST_OUTCOME: ${{ steps.pure-function-tests.outcome }}
         run: |
           node --input-type=module <<'NODE'
           import { appendFileSync, existsSync, readFileSync } from "node:fs";
 
-          const reportPath = "test-results/database-routes.junit.xml";
-          const rows = [`## Database route tests`, ``, `Outcome: **${process.env.TEST_OUTCOME}**`];
-          if (existsSync(reportPath)) {
-            const xml = readFileSync(reportPath, "utf8");
-            const values = Object.fromEntries(
-              [...xml.matchAll(/<!-- (tests|pass|fail|skipped|duration_ms) ([^ ]+) -->/g)].map(
-                ([, key, value]) => [key, value],
-              ),
-            );
-            rows.push(
-              ``,
-              `| Tests | Passed | Failed | Skipped | Duration |`,
-              `|---:|---:|---:|---:|---:|`,
-              `| ${values.tests ?? "?"} | ${values.pass ?? "?"} | ${values.fail ?? "?"} | ${values.skipped ?? "?"} | ${values.duration_ms ?? "?"} ms |`,
-              ``,
-              `JUnit report: \`${reportPath}\` (included in the CI artifacts).`,
-            );
-          } else {
-            rows.push(``, `JUnit report was not created.`);
+          const reports = [
+            ["Database route tests", "test-results/database-routes.junit.xml", process.env.DATABASE_TEST_OUTCOME],
+            ["Pure function tests", "test-results/pure-functions.junit.xml", process.env.PURE_TEST_OUTCOME],
+          ];
+          const rows = [];
+          for (const [title, reportPath, outcome] of reports) {
+            rows.push(`## ${title}`, ``, `Outcome: **${outcome}**`);
+            if (existsSync(reportPath)) {
+              const xml = readFileSync(reportPath, "utf8");
+              const values = Object.fromEntries(
+                [...xml.matchAll(/<!-- (tests|pass|fail|skipped|duration_ms) ([^ ]+) -->/g)].map(
+                  ([, key, value]) => [key, value],
+                ),
+              );
+              rows.push(
+                ``,
+                `| Tests | Passed | Failed | Skipped | Duration |`,
+                `|---:|---:|---:|---:|---:|`,
+                `| ${values.tests ?? "?"} | ${values.pass ?? "?"} | ${values.fail ?? "?"} | ${values.skipped ?? "?"} | ${values.duration_ms ?? "?"} ms |`,
+                ``,
+                `JUnit report: \`${reportPath}\` (included in the CI artifacts).`,
+              );
+            } else {
+              rows.push(``, `JUnit report was not created.`);
+            }
+            rows.push(``);
           }
           appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${rows.join("\n")}\n`);
           NODE
