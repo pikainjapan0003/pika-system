@@ -279,6 +279,8 @@ export default function OrdersPage() {
   const [backfillingOrderId, setBackfillingOrderId] = useState<number | null>(null);
   const [backfillErrors, setBackfillErrors] = useState<Record<number, { message: string; missing: string[] }>>({});
   const [profitSummary, setProfitSummary] = useState<OrderProfitSummary | null>(null);
+  const [exportCleartext, setExportCleartext] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   // Bulk selection state
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
@@ -463,20 +465,29 @@ export default function OrdersPage() {
   };
 
   const handleExport = async () => {
-    if (!storeId) return;
+    if (!storeId || allOrders.length === 0) return;
+    const mode = exportCleartext ? "cleartext" : "masked";
+    if (!window.confirm(`即將匯出 ${allOrders.length} 筆訂單（${exportCleartext ? "明文版" : "遮罩版"}），是否繼續？`)) return;
+    if (exportCleartext && !window.confirm("明文版包含完整個資。請再次確認只會交給有權限的人員，並在使用後刪除檔案。")) return;
+    setExporting(true);
     const token = await getToken();
     let res: Response;
     try {
-      res = await fetch(`/api/stores/${storeId}/orders/export`, {
+      res = await fetch(`/api/stores/${storeId}/orders/export?mode=${mode}`, {
         credentials: "include",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(exportCleartext ? { "X-Confirm-Cleartext-Export": "true" } : {}),
+        },
       });
     } catch {
       window.alert("匯出失敗，請確認網路連線後再試");
+      setExporting(false);
       return;
     }
     if (!res.ok) {
       window.alert("匯出失敗，請稍後再試");
+      setExporting(false);
       return;
     }
     const blob = await res.blob();
@@ -489,6 +500,13 @@ export default function OrdersPage() {
     a.download = filename;
     a.click();
     URL.revokeObjectURL(objectUrl);
+    console.info("[privacy-audit] export_orders", {
+      storeId,
+      mode,
+      count: allOrders.length,
+      occurredAt: new Date().toISOString(),
+    });
+    setExporting(false);
   };
 
   const toggleSelect = (id: number) => {
@@ -651,9 +669,10 @@ export default function OrdersPage() {
             </button>
             <button
               onClick={handleExport}
-              className="min-h-11 px-3 text-xs font-medium text-primary bg-primary/10 rounded-xl"
+              disabled={exporting || allOrders.length === 0}
+              className="min-h-11 px-3 text-xs font-medium text-primary bg-primary/10 rounded-xl disabled:opacity-50"
             >
-              匯出 CSV
+              {exporting ? "匯出中…" : "匯出 CSV"}
             </button>
             <button
               onClick={() => setLocation("/logistics/import")}
@@ -671,6 +690,15 @@ export default function OrdersPage() {
             </button>
           </div>
         </div>
+        <label className="mb-2.5 flex items-center gap-2 text-xs text-muted-foreground">
+          <input
+            type="checkbox"
+            checked={exportCleartext}
+            onChange={(event) => setExportCleartext(event.target.checked)}
+            className="h-4 w-4"
+          />
+          匯出明文個資（下載前會再確認一次）
+        </label>
         {/* Search bar */}
         <div className="mb-2.5">
           <input
