@@ -3,18 +3,21 @@ import { and, desc, eq } from "drizzle-orm";
 import { rateLimit } from "express-rate-limit";
 import { randomBytes } from "crypto";
 import {
+  createCartOrderProfitSnapshot,
   createInitialOrderProfitSnapshot,
   db,
   storesTable,
   productsTable,
   ordersTable,
   shipmentTrackingsTable,
+  type CalculateProductUnitProfitInput,
 } from "@workspace/db";
 import { SubmitOrderBody } from "@workspace/api-zod";
 import { getShippingFee } from "../lib/shippingFee.ts";
 import { getProviderMeta } from "../lib/logistics/providers.ts";
 import { loadOrderProfitSnapshotInput } from "../lib/orderProfitSnapshot.ts";
 import { formatPublicOrderCreatedResponse } from "../lib/publicOrderResponse.ts";
+import { ExactDecimal } from "../../../../lib/db/src/transport-cost/index.ts";
 
 const submitOrderLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
@@ -295,7 +298,7 @@ router.post("/cart/orders", submitOrderLimiter, async (req, res) => {
     const publicToken = randomBytes(16).toString("hex");
     try {
       const result = await db.transaction(async (tx) => {
-        const resolvedItems: Array<{
+        type ResolvedCartItem = {
           productId: number;
           shareToken: string;
           productName: string;
@@ -304,7 +307,13 @@ router.post("/cart/orders", submitOrderLimiter, async (req, res) => {
           quantity: number;
           unitPrice: number;
           subtotal: number;
+        };
+        const snapshotItems: Array<{
+          item: ResolvedCartItem;
+          quantity: number;
+          snapshotInput: CalculateProductUnitProfitInput;
         }> = [];
+        const capturedAt = new Date();
 
         for (const item of body.items) {
           const [product] = await tx
@@ -337,21 +346,38 @@ router.post("/cart/orders", submitOrderLimiter, async (req, res) => {
               .set({ inventory: product.inventory - qty })
               .where(eq(productsTable.id, product.id));
           }
-          const unitPrice = parseFloat(product.price as string);
-          resolvedItems.push({
+          const unitPrice = ExactDecimal.from(product.price as string);
+          const subtotal = unitPrice.multiply(ExactDecimal.from(String(qty)));
+          const resolvedItem = {
             productId: product.id,
             shareToken: item.shareToken,
             productName: product.name,
             productImageUrl: product.imageUrl ?? null,
             specValues: (item.specValues ?? {}) as Record<string, string>,
             quantity: qty,
-            unitPrice,
-            subtotal: unitPrice * qty,
+            unitPrice: Number(unitPrice.toDecimalPlaces(2)),
+            subtotal: Number(subtotal.toDecimalPlaces(2)),
+          };
+          snapshotItems.push({
+            item: resolvedItem,
+            quantity: qty,
+            snapshotInput: await loadOrderProfitSnapshotInput(tx, product, product.price),
           });
         }
 
+        const cartSnapshot = createCartOrderProfitSnapshot(snapshotItems, capturedAt);
+        const resolvedItems = cartSnapshot.items.map(({ item, profitSnapshot }) => ({
+          ...item,
+          profitSnapshot,
+        }));
         const first = resolvedItems[0];
-        const itemsSubtotal = resolvedItems.reduce((sum, i) => sum + i.subtotal, 0);
+        const itemsSubtotal = snapshotItems.reduce(
+          (sum, { snapshotInput, quantity }) => sum.add(
+            ExactDecimal.from(snapshotInput.unitPriceTwd as string)
+              .multiply(ExactDecimal.from(String(quantity))),
+          ),
+          ExactDecimal.zero(),
+        );
 
         const [newOrder] = await tx
           .insert(ordersTable)
@@ -368,7 +394,7 @@ router.post("/cart/orders", submitOrderLimiter, async (req, res) => {
             quantity: first.quantity,
             unitPrice: String(first.unitPrice),
             shippingFee: String(shippingFee),
-            totalPrice: String(itemsSubtotal),
+            totalPrice: itemsSubtotal.toDecimalPlaces(2),
             status: "pending",
             cvsStoreId: hasCvs ? (body.cvsStoreId ?? null) : null,
             cvsStoreName: hasCvs ? (body.cvsStoreName ?? null) : null,
@@ -380,6 +406,8 @@ router.post("/cart/orders", submitOrderLimiter, async (req, res) => {
             recipientName: body.recipientName ?? null,
             recipientPhone: body.recipientPhone ?? null,
             items: resolvedItems as any,
+            cartProfitSnapshotTotalTwd: cartSnapshot.cartProfitSnapshotTotalTwd,
+            cartProfitSnapshotStatus: cartSnapshot.cartProfitSnapshotStatus,
           })
           .returning();
 

@@ -77,6 +77,9 @@ export const ordersTable = pgTable("orders", {
   storeSelectedAt: timestamp("store_selected_at", { withTimezone: true }),
   // Multi-item cart orders: all items stored here as JSONB. Null for single-product orders (legacy compat).
   items: jsonb("items"),
+  // Q75 cart-only aggregate. Per-unit legacy snapshot columns remain null for cart orders.
+  cartProfitSnapshotTotalTwd: numeric("cart_profit_snapshot_total_twd", { precision: 30, scale: 12 }),
+  cartProfitSnapshotStatus: text("cart_profit_snapshot_status"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 }, (t) => [
@@ -128,6 +131,16 @@ export const ordersTable = pgTable("orders", {
   check(
     "orders_profit_snapshot_exempt_transport_zero",
     sql`${t.profitSnapshotStatus} <> 'exempt' OR ${t.profitSnapshotTransportCostTwd} = 0`,
+  ),
+  check(
+    "orders_cart_profit_snapshot_status_valid",
+    sql`${t.cartProfitSnapshotStatus} IS NULL OR ${t.cartProfitSnapshotStatus} IN ('captured', 'pending')`,
+  ),
+  check(
+    "orders_cart_profit_snapshot_shape_valid",
+    sql`(${t.cartProfitSnapshotStatus} IS NULL AND ${t.cartProfitSnapshotTotalTwd} IS NULL)
+      OR (${t.cartProfitSnapshotStatus} = 'pending' AND ${t.cartProfitSnapshotTotalTwd} IS NULL)
+      OR (${t.cartProfitSnapshotStatus} = 'captured' AND ${t.cartProfitSnapshotTotalTwd} IS NOT NULL)`,
   ),
 ]);
 

@@ -2,6 +2,7 @@ import { Router } from "express";
 import { and, eq, inArray } from "drizzle-orm";
 import { randomBytes } from "crypto";
 import {
+  backfillPendingCartOrderProfitSnapshot,
   backfillPendingOrderProfitSnapshot,
   createInitialOrderProfitSnapshot,
   db,
@@ -948,6 +949,80 @@ router.post("/orders/:orderId/profit-snapshot/backfill", requireAuth, async (req
         const err = new Error("Order not found") as Error & { status?: number };
         err.status = 404;
         throw err;
+      }
+
+      if (Array.isArray(lockedOrder.items)) {
+        if (lockedOrder.cartProfitSnapshotStatus !== "pending") {
+          const err = new Error("Cart profit snapshot is not pending") as Error & { status?: number };
+          err.status = 409;
+          throw err;
+        }
+
+        const backfilledAt = new Date();
+        const snapshotItems = [];
+        for (const rawItem of lockedOrder.items as Array<Record<string, unknown>>) {
+          const productId = Number(rawItem.productId);
+          const quantity = Number(rawItem.quantity);
+          const unitPrice = String(rawItem.unitPrice ?? "");
+          if (!Number.isInteger(productId) || !Number.isInteger(quantity) || quantity < 1 || !unitPrice) {
+            const err = new Error("Cart item snapshot data is invalid") as Error & { status?: number };
+            err.status = 409;
+            throw err;
+          }
+
+          const [product] = await tx
+            .select()
+            .from(productsTable)
+            .where(eq(productsTable.id, productId))
+            .limit(1);
+          if (!product) {
+            const err = new Error("Product not found") as Error & { status?: number };
+            err.status = 409;
+            throw err;
+          }
+
+          const { profitSnapshot: _oldSnapshot, ...item } = rawItem;
+          snapshotItems.push({
+            item,
+            quantity,
+            snapshotInput: await loadOrderProfitSnapshotInput(tx, product, unitPrice),
+          });
+        }
+
+        const cartBackfill = backfillPendingCartOrderProfitSnapshot(
+          lockedOrder.cartProfitSnapshotStatus,
+          snapshotItems,
+          backfilledAt,
+        );
+        if (cartBackfill.outcome === "still_pending") {
+          const err = new Error("Cart profit snapshot data is still pending") as Error & { status?: number };
+          err.status = 409;
+          throw err;
+        }
+        if (cartBackfill.outcome === "rejected") {
+          const err = new Error("Cart profit snapshot is not pending") as Error & { status?: number };
+          err.status = 409;
+          throw err;
+        }
+
+        const items = cartBackfill.snapshot.items.map(({ item, profitSnapshot }) => ({
+          ...item,
+          profitSnapshot,
+        }));
+        const [backfilledOrder] = await tx
+          .update(ordersTable)
+          .set({
+            items,
+            cartProfitSnapshotTotalTwd: cartBackfill.snapshot.cartProfitSnapshotTotalTwd,
+            cartProfitSnapshotStatus: cartBackfill.snapshot.cartProfitSnapshotStatus,
+          })
+          .where(and(
+            eq(ordersTable.id, orderId),
+            eq(ordersTable.cartProfitSnapshotStatus, "pending"),
+          ))
+          .returning();
+        if (!backfilledOrder) throw new Error("Cart profit snapshot backfill updated no row");
+        return backfilledOrder;
       }
 
       const [product] = await tx
