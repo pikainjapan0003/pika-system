@@ -740,7 +740,7 @@ export default function ProductFormPage({ productId }: Props) {
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="text-xs text-muted-foreground">主分類</label>
-                  <a href="/categories" className="text-xs text-primary/70">管理分類</a>
+                  <a href="/categories" className="min-h-11 px-2 flex items-center text-xs text-primary/70">管理分類</a>
                 </div>
                 <button
                   type="button"
@@ -766,7 +766,7 @@ export default function ProductFormPage({ productId }: Props) {
                         key={temp}
                         type="button"
                         onClick={() => setStorageTemp(storageTemp === temp ? null : temp)}
-                        className={`flex-1 h-10 rounded-xl text-sm font-medium border transition-colors ${
+                        className={`flex-1 min-h-11 rounded-xl text-sm font-medium border transition-colors ${
                           storageTemp === temp
                             ? "bg-primary text-white border-primary"
                             : "bg-secondary/60 text-foreground border-border"
@@ -937,7 +937,7 @@ export default function ProductFormPage({ productId }: Props) {
                   <button
                     type="button"
                     onClick={addSpec}
-                    className="h-9 px-5 bg-primary text-white text-sm font-semibold rounded-xl"
+                    className="min-h-11 px-5 bg-primary text-white text-sm font-semibold rounded-xl"
                   >
                     + 新增規格
                   </button>
@@ -952,12 +952,12 @@ export default function ProductFormPage({ productId }: Props) {
                           value={spec.name}
                           onChange={(e) => updateSpecName(i, e.target.value)}
                           placeholder="規格名稱（例：顏色）"
-                          className="flex-1 h-9 px-3 rounded-lg border border-input bg-white text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                          className="flex-1 min-h-11 px-3 rounded-lg border border-input bg-white text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                         />
                         <button
                           type="button"
                           onClick={() => removeSpec(i)}
-                          className="ml-2 w-9 h-9 flex items-center justify-center text-destructive text-lg"
+                          className="ml-2 w-11 h-11 flex items-center justify-center text-destructive text-lg"
                         >
                           ×
                         </button>
@@ -967,14 +967,14 @@ export default function ProductFormPage({ productId }: Props) {
                         value={spec.values.join("，")}
                         onChange={(e) => updateSpecValues(i, e.target.value)}
                         placeholder="選項，用逗號分隔（例：紅色，藍色，白色）"
-                        className="w-full h-9 px-3 rounded-lg border border-input bg-white text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        className="w-full min-h-11 px-3 rounded-lg border border-input bg-white text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                       />
                     </div>
                   ))}
                   <button
                     type="button"
                     onClick={addSpec}
-                    className="text-sm text-primary font-medium"
+                    className="min-h-11 px-2 text-sm text-primary font-medium"
                   >
                     + 新增規格
                   </button>
