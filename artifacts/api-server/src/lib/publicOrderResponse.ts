@@ -1,4 +1,4 @@
-import { ExactDecimal } from "../../../../lib/db/src/transport-cost/index.ts";
+import { ExactDecimal } from "@workspace/db/transport-cost";
 
 export const PUBLIC_ORDER_CREATED_RESPONSE_KEYS = [
   "publicToken",
