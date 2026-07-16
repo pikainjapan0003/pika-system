@@ -44,6 +44,9 @@ export default function ProductFormPage({ productId }: Props) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
+  const [vipPrice, setVipPrice] = useState("");
+  const [wholesalePrice, setWholesalePrice] = useState("");
+  const [partnerPrice, setPartnerPrice] = useState("");
   const [inventory, setInventory] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [specs, setSpecs] = useState<Spec[]>([]);
@@ -113,9 +116,17 @@ export default function ProductFormPage({ productId }: Props) {
 
   useEffect(() => {
     if (existingProduct) {
+      const tierProduct = existingProduct as typeof existingProduct & {
+        vipPrice?: number | string | null;
+        wholesalePrice?: number | string | null;
+        partnerPrice?: number | string | null;
+      };
       setName(existingProduct.name);
       setDescription(existingProduct.description ?? "");
       setPrice(String(existingProduct.price));
+      setVipPrice(tierProduct.vipPrice != null ? String(tierProduct.vipPrice) : "");
+      setWholesalePrice(tierProduct.wholesalePrice != null ? String(tierProduct.wholesalePrice) : "");
+      setPartnerPrice(tierProduct.partnerPrice != null ? String(tierProduct.partnerPrice) : "");
       setInventory(existingProduct.inventory != null ? String(existingProduct.inventory) : "");
       setImageUrl(existingProduct.imageUrl ?? "");
       setSpecs((existingProduct.specs as Spec[]) ?? []);
@@ -267,6 +278,24 @@ export default function ProductFormPage({ productId }: Props) {
       return;
     }
 
+    const normalizeTierPrice = (value: string): string | null => {
+      const trimmed = value.trim();
+      if (!trimmed) return null;
+      if (!/^\d+(?:\.\d+)?$/.test(trimmed)) throw new TypeError("請輸入有效的分級售價");
+      return trimmed;
+    };
+    let tierPrices: { vipPrice: string | null; wholesalePrice: string | null; partnerPrice: string | null };
+    try {
+      tierPrices = {
+        vipPrice: normalizeTierPrice(vipPrice),
+        wholesalePrice: normalizeTierPrice(wholesalePrice),
+        partnerPrice: normalizeTierPrice(partnerPrice),
+      };
+    } catch (caught) {
+      setError((caught as Error).message);
+      return;
+    }
+
     const trimmedImageUrl = imageUrl.trim();
 
     const computeOrderDeadlineAt = (): string | null => {
@@ -317,6 +346,7 @@ export default function ProductFormPage({ productId }: Props) {
       if (isEdit) {
         const data = {
           ...baseFields,
+          ...tierPrices,
           orderDeadlineAt: computeOrderDeadlineAt(),
           internalNote: internalNote.trim() || null,
           skuCode: skuCode.trim() || null,
@@ -328,13 +358,14 @@ export default function ProductFormPage({ productId }: Props) {
           isTransportCostExempt,
           tripRouteId: isTransportCostExempt ? null : tripRouteId,
         };
-        await updateProduct.mutateAsync({ storeId: storeId!, productId: productId!, data });
+        await updateProduct.mutateAsync({ storeId: storeId!, productId: productId!, data: data as any });
         qc.invalidateQueries({ queryKey: getListProductsQueryKey(storeId!) });
         setLocation("/products");
       } else {
         const deadlineAt = computeOrderDeadlineAt();
         const data = {
           ...baseFields,
+          ...tierPrices,
           ...(deadlineAt ? { orderDeadlineAt: deadlineAt } : {}),
           ...(internalNote.trim() ? { internalNote: internalNote.trim() } : {}),
           ...(skuCode.trim() ? { skuCode: skuCode.trim() } : {}),
@@ -346,7 +377,7 @@ export default function ProductFormPage({ productId }: Props) {
           isTransportCostExempt,
           ...(!isTransportCostExempt && tripRouteId != null ? { tripRouteId } : {}),
         };
-        const result = await createProduct.mutateAsync({ storeId: storeId!, data });
+        const result = await createProduct.mutateAsync({ storeId: storeId!, data: data as any });
         qc.invalidateQueries({ queryKey: getListProductsQueryKey(storeId!) });
         setCreatedProduct(result);
       }
@@ -843,7 +874,7 @@ export default function ProductFormPage({ productId }: Props) {
             </div>
             <div className="px-5 pb-5 space-y-0">
               <div className="pb-4">
-                <label className="block text-xs text-muted-foreground mb-2">售價 *</label>
+                <label className="block text-xs text-muted-foreground mb-2">一般售價 *</label>
                 <div className="flex items-center gap-2">
                   <span className="text-xl font-bold text-muted-foreground/60 select-none">NT$</span>
                   <input
@@ -856,6 +887,26 @@ export default function ProductFormPage({ productId }: Props) {
                     className="flex-1 h-16 px-4 rounded-xl border border-input bg-white text-foreground text-2xl font-bold placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/30"
                   />
                 </div>
+              </div>
+              <div className="border-t border-border/50 py-4 space-y-3">
+                {([
+                  ["VIP 售價", vipPrice, setVipPrice],
+                  ["批發售價", wholesalePrice, setWholesalePrice],
+                  ["夥伴售價", partnerPrice, setPartnerPrice],
+                ] as const).map(([label, value, setter]) => (
+                  <div key={label}>
+                    <label className="block text-xs text-muted-foreground mb-1.5">{label}</label>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={value}
+                      onChange={(event) => setter(event.target.value)}
+                      placeholder="未設定（回落一般價）"
+                      className={inputClass}
+                    />
+                    {!value.trim() && <p className="text-xs text-muted-foreground mt-1">未設定（回落一般價）</p>}
+                  </div>
+                ))}
               </div>
               <div className="border-t border-border/50 pt-4">
                 <label className="block text-xs text-muted-foreground mb-1.5">庫存數量</label>

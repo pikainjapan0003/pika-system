@@ -10,6 +10,7 @@ interface CustomerRecord {
   code: string;
   name: string;
   phone: string;
+  tier: "general" | "vip" | "wholesale" | "partner";
   cvsStoreId: string | null;
   cvsStoreName: string | null;
   cvsStoreAddress: string | null;
@@ -23,6 +24,7 @@ const blankDraft: CustomerDraft = {
   code: "",
   name: "",
   phone: "",
+  tier: "general",
   cvsStoreId: null,
   cvsStoreName: null,
   cvsStoreAddress: null,
@@ -104,6 +106,7 @@ export default function CustomersPage() {
       code: customer.code,
       name: customer.name,
       phone: customer.phone,
+      tier: customer.tier,
       cvsStoreId: customer.cvsStoreId,
       cvsStoreName: customer.cvsStoreName,
       cvsStoreAddress: customer.cvsStoreAddress,
@@ -127,6 +130,16 @@ export default function CustomersPage() {
             <input className={inputClass} placeholder="姓名 *" value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} />
           </div>
           <input className={inputClass} placeholder="手機 *" value={draft.phone} onChange={(event) => setDraft({ ...draft, phone: event.target.value })} />
+          <select
+            className={inputClass}
+            value={draft.tier}
+            onChange={(event) => setDraft({ ...draft, tier: event.target.value as CustomerDraft["tier"] })}
+          >
+            <option value="general">一般</option>
+            <option value="vip">VIP</option>
+            <option value="wholesale">批發</option>
+            <option value="partner">夥伴</option>
+          </select>
           <div className="grid grid-cols-2 gap-2">
             <input className={inputClass} placeholder="常用門市代碼" value={draft.cvsStoreId ?? ""} onChange={(event) => setDraft({ ...draft, cvsStoreId: event.target.value || null })} />
             <input className={inputClass} placeholder="常用門市名稱" value={draft.cvsStoreName ?? ""} onChange={(event) => setDraft({ ...draft, cvsStoreName: event.target.value || null })} />
@@ -148,6 +161,7 @@ export default function CustomersPage() {
                 <div className="flex justify-between gap-3">
                   <div>
                     <p className="font-semibold">{customer.code} · {isRevealed ? customer.name : maskName(customer.name)}</p>
+                    <p className="text-xs text-primary mt-0.5">等級：{{ general: "一般", vip: "VIP", wholesale: "批發", partner: "夥伴" }[customer.tier]}</p>
                     <p className="text-sm text-muted-foreground">{isRevealed ? customer.phone : maskPhone(customer.phone)}</p>
                   </div>
                   <button type="button" onClick={() => edit(customer)} className="text-sm text-primary">編輯</button>
