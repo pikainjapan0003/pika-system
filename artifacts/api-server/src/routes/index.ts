@@ -16,6 +16,7 @@ import logisticsImportsRouter from "./logisticsImports.ts";
 import logisticsExceptionsRouter from "./logisticsExceptions.ts";
 import logisticsSyncRouter from "./logisticsSync.ts";
 import internalLogisticsSyncRouter from "./internalLogisticsSync.ts";
+import exchangeRateReferenceRouter from "./exchangeRateReference.ts";
 
 const router: IRouter = Router();
 
@@ -35,6 +36,7 @@ router.use(logisticsImportsRouter);
 router.use(logisticsExceptionsRouter);
 router.use(logisticsSyncRouter);
 router.use(internalLogisticsSyncRouter);
+router.use(exchangeRateReferenceRouter);
 if (process.env.NODE_ENV !== "production") {
   router.use(devHandoffRouter);
 }

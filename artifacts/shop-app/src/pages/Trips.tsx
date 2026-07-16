@@ -12,6 +12,7 @@ import {
   type TripRoute,
 } from "@workspace/api-client-react";
 import { BottomNav } from "./Dashboard";
+import { ExchangeRateReferenceHint } from "@/components/ExchangeRateReferenceHint";
 
 const inputClass =
   "w-full h-11 px-3.5 rounded-xl border border-input bg-white text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm";
@@ -49,6 +50,7 @@ function TripForm({
           step="0.0001"
           className={inputClass}
         />
+        <ExchangeRateReferenceHint context="trip" onApply={setExchangeRate} />
       </div>
       <div>
         <label className="block text-xs text-muted-foreground mb-1">備註（可留空）</label>
