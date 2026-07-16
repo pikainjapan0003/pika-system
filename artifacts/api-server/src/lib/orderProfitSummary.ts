@@ -1,4 +1,4 @@
-import { ExactDecimal } from "../../../../lib/db/src/transport-cost/index.ts";
+import { ExactDecimal } from "@workspace/db/transport-cost";
 
 export interface ProfitSummaryOrder {
   quantity: number;
