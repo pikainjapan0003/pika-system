@@ -4,6 +4,7 @@ import { useAuth } from "@clerk/react";
 import { useGetMyStore, useUpdateStore, getGetMyStoreQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { BottomNav } from "./Dashboard";
+import { ExchangeRateReferenceHint } from "@/components/ExchangeRateReferenceHint";
 import {
   DEFAULT_BRAND_PRIMARY_COLOR,
   isValidHex,
@@ -642,6 +643,10 @@ export default function SettingsPage() {
                       min="0"
                       step="0.0001"
                       className={inputClass}
+                    />
+                    <ExchangeRateReferenceHint
+                      context="store"
+                      onApply={setPurchaseExchangeRate}
                     />
                     {exchangeRateError && <p className="text-xs text-destructive mt-1">{exchangeRateError}</p>}
                   </div>
