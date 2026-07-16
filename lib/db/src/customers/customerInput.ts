@@ -1,7 +1,11 @@
+import { customerTierEnum } from "../schema/customers.ts";
+import type { CustomerTier } from "../schema/customers.ts";
+
 export interface CustomerInput {
   code: unknown;
   name: unknown;
   phone: unknown;
+  tier?: unknown;
   cvsStoreId?: unknown;
   cvsStoreName?: unknown;
   cvsStoreAddress?: unknown;
@@ -13,11 +17,22 @@ export interface ValidCustomerInput {
   code: string;
   name: string;
   phone: string;
+  tier: CustomerTier;
   cvsStoreId: string | null;
   cvsStoreName: string | null;
   cvsStoreAddress: string | null;
   cvsStorePhone: string | null;
   notes: string | null;
+}
+
+export const CUSTOMER_TIERS = customerTierEnum;
+
+export function parseCustomerTier(value: unknown): CustomerTier {
+  const tier = value === undefined || value === null || value === "" ? "general" : value;
+  if (typeof tier !== "string" || !CUSTOMER_TIERS.includes(tier as CustomerTier)) {
+    throw new TypeError("tier must be general, vip, wholesale, or partner");
+  }
+  return tier as CustomerTier;
 }
 
 function requiredText(value: unknown, field: string): string {
@@ -36,6 +51,7 @@ export function validateCustomerInput(input: CustomerInput): ValidCustomerInput 
     code: requiredText(input.code, "code"),
     name: requiredText(input.name, "name"),
     phone: requiredText(input.phone, "phone"),
+    tier: parseCustomerTier(input.tier),
     cvsStoreId: optionalText(input.cvsStoreId),
     cvsStoreName: optionalText(input.cvsStoreName),
     cvsStoreAddress: optionalText(input.cvsStoreAddress),
