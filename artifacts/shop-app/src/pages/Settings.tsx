@@ -425,6 +425,7 @@ export default function SettingsPage() {
             <CustomersEntry />
             <TripsEntry />
             <SkillMapEntry />
+            <AuditLogsEntry />
             <AgentSettingsEntry />
             {IS_DEV && <DevHandoffEntry />}
           </div>
@@ -901,6 +902,28 @@ function SkillMapEntry() {
           <div>
             <p className="text-sm font-semibold text-foreground">技能地圖</p>
             <p className="text-xs text-muted-foreground">查看六種套餐、前置條件與目前解鎖狀態</p>
+          </div>
+        </div>
+        <span className="text-muted-foreground text-sm">›</span>
+      </button>
+    </div>
+  );
+}
+
+function AuditLogsEntry() {
+  const [, setLocation] = useLocation();
+  return (
+    <div className="px-5 pb-3">
+      <button
+        type="button"
+        onClick={() => setLocation("/audit-logs")}
+        className="w-full bg-white border border-border rounded-2xl px-4 py-4 flex items-center justify-between text-left hover:bg-secondary/50 transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <span className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-lg flex-shrink-0">🧾</span>
+          <div>
+            <p className="text-sm font-semibold text-foreground">操作紀錄</p>
+            <p className="text-xs text-muted-foreground">查看個資揭露、匯出與參考匯率套用紀錄</p>
           </div>
         </div>
         <span className="text-muted-foreground text-sm">›</span>

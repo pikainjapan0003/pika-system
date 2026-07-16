@@ -4,6 +4,7 @@ import { useGetMyStore } from "@workspace/api-client-react";
 import { maskAddress, maskName, maskPhone } from "@workspace/privacy";
 import { BottomNav } from "./Dashboard";
 import { useLocation } from "wouter";
+import { recordServerAuditEvent } from "@/lib/serverAudit";
 
 interface CustomerRecord {
   id: number;
@@ -95,13 +96,18 @@ export default function CustomersPage() {
     }
   };
 
-  const reveal = (customer: CustomerRecord) => {
-    console.info("[privacy-audit] reveal_customer_pii", {
-      customerId: customer.id,
-      storeId: customer.storeId,
-      occurredAt: new Date().toISOString(),
-    });
-    setRevealed((current) => new Set(current).add(customer.id));
+  const reveal = async (customer: CustomerRecord) => {
+    try {
+      await recordServerAuditEvent({
+        storeId: customer.storeId,
+        action: "reveal_customer_pii",
+        target: `customer:${customer.id}`,
+        getToken,
+      });
+      setRevealed((current) => new Set(current).add(customer.id));
+    } catch (caught) {
+      setError((caught as Error).message);
+    }
   };
 
   const edit = (customer: CustomerRecord) => {
@@ -234,7 +240,7 @@ export default function CustomersPage() {
                 </div>
                 {customer.cvsStoreName && <p className="text-sm">常用門市：{customer.cvsStoreName}</p>}
                 {customer.cvsStoreAddress && <p className="text-xs text-muted-foreground">{isRevealed ? customer.cvsStoreAddress : maskAddress(customer.cvsStoreAddress)}</p>}
-                {!isRevealed && <button type="button" onClick={() => reveal(customer)} className="h-11 px-4 rounded-xl border border-border text-sm">顯示完整</button>}
+                {!isRevealed && <button type="button" onClick={() => void reveal(customer)} className="h-11 px-4 rounded-xl border border-border text-sm">顯示完整</button>}
               </article>
             );
           })}

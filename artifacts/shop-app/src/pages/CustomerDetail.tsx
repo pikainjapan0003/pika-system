@@ -4,6 +4,7 @@ import { useGetMyStore } from "@workspace/api-client-react";
 import { maskAddress, maskName, maskPhone } from "@workspace/privacy";
 import { useLocation } from "wouter";
 import { BottomNav } from "./Dashboard";
+import { recordServerAuditEvent } from "@/lib/serverAudit";
 
 interface CustomerRecord {
   id: number;
@@ -68,15 +69,19 @@ export default function CustomerDetailPage({ customerId }: { customerId: number 
     void load().catch((caught) => setError((caught as Error).message));
   }, [store?.id, customerId]);
 
-  const reveal = () => {
+  const reveal = async () => {
     if (!customer || !store?.id) return;
-    console.info("[privacy-audit] reveal_customer_pii", {
-      customerId: customer.id,
-      storeId: store.id,
-      occurredAt: new Date().toISOString(),
-      surface: "customer_detail",
-    });
-    setRevealed(true);
+    try {
+      await recordServerAuditEvent({
+        storeId: store.id,
+        action: "reveal_customer_pii",
+        target: `customer:${customer.id}`,
+        getToken,
+      });
+      setRevealed(true);
+    } catch (caught) {
+      setError((caught as Error).message);
+    }
   };
 
   const saveCvs = async () => {
@@ -127,7 +132,7 @@ export default function CustomerDetailPage({ customerId }: { customerId: number 
               <p className="text-sm text-muted-foreground">{customer.phone ? (revealed ? customer.phone : maskPhone(customer.phone)) : "未留電話"}</p>
               <p className="text-sm">等級：{{ general: "一般", vip: "VIP", wholesale: "批發", partner: "夥伴" }[customer.tier]}</p>
               {customer.notes && <p className="text-sm text-muted-foreground">備註：{customer.notes}</p>}
-              {!revealed && <button type="button" onClick={reveal} className="min-h-11 rounded-xl border border-border px-4 text-sm">顯示完整</button>}
+              {!revealed && <button type="button" onClick={() => void reveal()} className="min-h-11 rounded-xl border border-border px-4 text-sm">顯示完整</button>}
             </section>
 
             <section className="space-y-3 rounded-2xl border border-border bg-white p-4">

@@ -7,6 +7,7 @@ import {
   parseCustomerExportMode,
 } from "../lib/customerExport.ts";
 import { formatCustomerOrderProfit } from "../lib/customerDetail.ts";
+import { recordAuditLog } from "../lib/auditLog.ts";
 
 const router = Router();
 
@@ -96,6 +97,12 @@ router.get("/stores/:storeId/customers/export", requireAuth, async (req: any, re
     .where(eq(customersTable.storeId, storeId))
     .orderBy(customersTable.code);
   const csv = formatCustomerExportCsv(customers, mode);
+  await recordAuditLog({
+    storeId,
+    actor: req.userId,
+    action: mode === "cleartext" ? "export_customers_cleartext" : "export_customers_masked",
+    target: `customers:${customers.length}`,
+  });
   req.log.info(
     { action: "customer_export", storeId, mode, count: customers.length },
     "Customer CSV exported",

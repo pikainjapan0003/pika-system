@@ -1,11 +1,14 @@
+import { useState } from "react";
+import { useAuth } from "@clerk/react";
 import { useQuery } from "@tanstack/react-query";
-import { customFetch } from "@workspace/api-client-react";
+import { customFetch, useGetMyStore } from "@workspace/api-client-react";
 
 import {
   createRateReferenceAuditEntry,
   formatExchangeRateReferenceTime,
   type ExchangeRateReferenceQuote,
 } from "@/lib/exchangeRateReference";
+import { recordServerAuditEvent } from "@/lib/serverAudit";
 
 export function ExchangeRateReferenceHint({
   context,
@@ -14,6 +17,10 @@ export function ExchangeRateReferenceHint({
   context: "trip" | "store";
   onApply: (rate: string) => void;
 }) {
+  const { getToken } = useAuth();
+  const { data: store } = useGetMyStore();
+  const [auditError, setAuditError] = useState("");
+  const [applying, setApplying] = useState(false);
   const { data, isLoading, isError } = useQuery({
     queryKey: ["exchange-rate-reference", "JPY", "spot-sell"],
     queryFn: () =>
@@ -47,20 +54,34 @@ export function ExchangeRateReferenceHint({
       </span>
       <button
         type="button"
+        disabled={applying || !store?.id}
         className="rounded-md border border-primary/30 bg-white px-2.5 py-1 font-semibold text-primary"
         onClick={() => {
-          onApply(data.rate);
-          console.info(
-            "[exchange-rate-audit]",
-            createRateReferenceAuditEntry(context, data),
-          );
+          if (!store?.id) return;
+          setApplying(true);
+          setAuditError("");
+          void recordServerAuditEvent({
+            storeId: store.id,
+            action: "apply_exchange_rate_reference",
+            target: context,
+            getToken,
+          }).then(() => {
+            onApply(data.rate);
+            console.info(
+              "[exchange-rate-audit]",
+              createRateReferenceAuditEntry(context, data),
+            );
+          }).catch((caught) => {
+            setAuditError((caught as Error).message);
+          }).finally(() => setApplying(false));
         }}
       >
-        套用
+        {applying ? "記錄中…" : "套用"}
       </button>
       <span className="basis-full text-[11px] text-muted-foreground">
         僅填入欄位，仍需按「儲存」才會生效。
       </span>
+      {auditError && <span className="basis-full text-[11px] text-red-700">{auditError}</span>}
     </div>
   );
 }

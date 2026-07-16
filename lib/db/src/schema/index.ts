@@ -15,3 +15,4 @@ export * from "./shipmentTrackingExceptions.ts";
 export * from "./shipmentTrackingRunLogs.ts";
 export * from "./trips.ts";
 export * from "./tripRoutes.ts";
+export * from "./auditLogs.ts";
