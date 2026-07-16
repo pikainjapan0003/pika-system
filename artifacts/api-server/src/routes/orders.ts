@@ -25,6 +25,7 @@ import { summarizeOrderProfits } from "../lib/orderProfitSummary.ts";
 import { parsePaymentLast5 } from "../lib/paymentLast5.ts";
 import { parseCustomerExportMode } from "../lib/customerExport.ts";
 import { formatOrderExportCsv } from "../lib/orderExport.ts";
+import { recordAuditLog } from "../lib/auditLog.ts";
 import {
   parseOptionalCustomerId,
   resolveCustomerCvsDefaults,
@@ -932,6 +933,12 @@ router.get("/stores/:storeId/orders/export", requireAuth, async (req: any, res) 
     return res.status(400).json({ error: (error as Error).message });
   }
   const csv = formatOrderExportCsv(orders, mode);
+  await recordAuditLog({
+    storeId,
+    actor: req.userId,
+    action: mode === "cleartext" ? "export_orders_cleartext" : "export_orders_masked",
+    target: `orders:${orders.length}`,
+  });
   req.log.info(
     { action: "order_export", storeId, mode, count: orders.length },
     "Order CSV exported",

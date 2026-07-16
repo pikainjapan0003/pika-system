@@ -246,6 +246,7 @@ import { PickingListDialog } from "./PickingListDialog";
 import { ShippingListDialog } from "./ShippingListDialog";
 import { toast } from "@/hooks/use-toast";
 import { printOrderReceipt } from "../lib/printHelpers";
+import { recordServerAuditEvent } from "@/lib/serverAudit";
 
 export default function OrdersPage() {
   const qc = useQueryClient();
@@ -292,13 +293,19 @@ export default function OrdersPage() {
 
   const [, setLocation] = useLocation();
 
-  const revealOrderPii = (order: Order) => {
-    console.info("[privacy-audit] reveal_order_pii", {
-      orderId: order.id,
-      storeId,
-      occurredAt: new Date().toISOString(),
-    });
-    setRevealedOrderIds((current) => new Set(current).add(order.id));
+  const revealOrderPii = async (order: Order) => {
+    if (!storeId) return;
+    try {
+      await recordServerAuditEvent({
+        storeId,
+        action: "reveal_order_pii",
+        target: `order:${order.id}`,
+        getToken,
+      });
+      setRevealedOrderIds((current) => new Set(current).add(order.id));
+    } catch (caught) {
+      toast({ title: "無法顯示完整資料", description: (caught as Error).message, variant: "destructive" });
+    }
   };
 
   // Picking / shipping list state
@@ -1354,7 +1361,7 @@ export default function OrdersPage() {
                           {!revealedOrderIds.has(o.id) && (
                             <button
                               type="button"
-                              onClick={() => revealOrderPii(o)}
+                              onClick={() => void revealOrderPii(o)}
                               className="mt-2 min-h-11 px-4 rounded-xl border border-border text-sm font-medium"
                             >
                               顯示完整資料

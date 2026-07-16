@@ -25,6 +25,7 @@ import TrackLookupPage from "@/pages/TrackLookup";
 import TrackOrderPage from "@/pages/TrackOrder";
 import SettingsPage from "@/pages/Settings";
 import SkillMapPage from "@/pages/SkillMap";
+import AuditLogsPage from "@/pages/AuditLogs";
 import AgentSettingsPage from "@/pages/AgentSettings";
 import TripsPage from "@/pages/Trips";
 import GuidePage from "@/pages/Guide";
@@ -267,6 +268,7 @@ function MerchantPortal() {
       <Route path="/logistics/exceptions" component={LogisticsExceptionsPage} />
       <Route path="/settings/agent" component={AgentSettingsPage} />
       <Route path="/skill-map" component={SkillMapPage} />
+      <Route path="/audit-logs" component={AuditLogsPage} />
       <Route path="/settings" component={SettingsPage} />
       <Route path="/trips" component={TripsPage} />
       <Route path="/guide" component={GuidePage} />
@@ -324,6 +326,7 @@ function AppRouter() {
       <Route path="/logistics/import" component={MerchantPortal} />
       <Route path="/logistics/exceptions" component={MerchantPortal} />
       <Route path="/settings/agent" component={MerchantPortal} />
+      <Route path="/audit-logs" component={MerchantPortal} />
       <Route path="/settings" component={MerchantPortal} />
       <Route path="/trips" component={MerchantPortal} />
       <Route path="/guide" component={MerchantPortal} />
