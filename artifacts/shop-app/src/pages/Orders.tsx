@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@clerk/react";
 import { useGetMyStore, useListOrders, useUpdateOrderStatus, useBulkUpdateOrders, useGetPickingList, useGetShippingList, getListOrdersQueryKey, type Order, type PickingListResponse, type ShippingListResponse } from "@workspace/api-client-react";
@@ -131,6 +131,11 @@ interface ProfitSnapshotDisplay {
   transportCostTwd: string | null;
   unitProfitTwd: string | null;
   fullUnitProfitTwd: string | null;
+}
+interface OrderProfitSummary {
+  capturedProfitSubtotalDisplayTwd: string;
+  pendingOrderCount: number;
+  missingSnapshotOrderCount: number;
 }
 type OrderWithTracking = Order & {
   shipmentTracking?: OrderShipmentTrackingSummary | null;
@@ -269,6 +274,7 @@ export default function OrdersPage() {
   const [deletingOrderId, setDeletingOrderId] = useState<number | null>(null);
   const [backfillingOrderId, setBackfillingOrderId] = useState<number | null>(null);
   const [backfillErrors, setBackfillErrors] = useState<Record<number, { message: string; missing: string[] }>>({});
+  const [profitSummary, setProfitSummary] = useState<OrderProfitSummary | null>(null);
 
   // Bulk selection state
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
@@ -295,6 +301,30 @@ export default function OrdersPage() {
   const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
   const allOrders = (orders ?? []) as OrderWithTracking[];
+
+  useEffect(() => {
+    if (!storeId) {
+      setProfitSummary(null);
+      return;
+    }
+    let cancelled = false;
+    setProfitSummary(null);
+    void (async () => {
+      try {
+        const token = await getToken();
+        const response = await fetch(`/api/stores/${storeId}/orders/profit-summary`, {
+          credentials: "include",
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (!response.ok || cancelled) return;
+        const summary = await response.json() as OrderProfitSummary;
+        if (!cancelled) setProfitSummary(summary);
+      } catch {
+        if (!cancelled) setProfitSummary(null);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [getToken, storeId, orders]);
 
   // Status filter
   const statusFiltered = filter === "all"
@@ -662,6 +692,20 @@ export default function OrdersPage() {
                 <StatCard label="訂單筆數" value={String(allOrders.length)} />
                 <StatCard label="訂單總額" value={`NT$${totalRevenue.toLocaleString()}`} />
                 <StatCard label="待確認" value={String(pendingCount)} urgent={pendingCount > 0} />
+                <StatCard
+                  label="已定格毛利小計"
+                  value={profitSummary ? `NT$${Number(profitSummary.capturedProfitSubtotalDisplayTwd).toLocaleString()}` : "—"}
+                />
+                <StatCard
+                  label="毛利待確認"
+                  value={profitSummary ? String(profitSummary.pendingOrderCount) : "—"}
+                  urgent={(profitSummary?.pendingOrderCount ?? 0) > 0}
+                />
+                <StatCard
+                  label="尚無快照"
+                  value={profitSummary ? String(profitSummary.missingSnapshotOrderCount) : "—"}
+                  urgent={(profitSummary?.missingSnapshotOrderCount ?? 0) > 0}
+                />
               </div>
             )}
 
