@@ -10,6 +10,7 @@ import {
   productsTable,
   ordersTable,
   shipmentTrackingsTable,
+  multiplyMoneyByQuantity,
   type CalculateProductUnitProfitInput,
 } from "@workspace/db";
 import { SubmitOrderBody } from "@workspace/api-zod";
@@ -17,7 +18,6 @@ import { getShippingFee } from "../lib/shippingFee.ts";
 import { getProviderMeta } from "../lib/logistics/providers.ts";
 import { loadOrderProfitSnapshotInput } from "../lib/orderProfitSnapshot.ts";
 import { formatPublicOrderCreatedResponse } from "../lib/publicOrderResponse.ts";
-import { ExactDecimal } from "../../../../lib/db/src/transport-cost/index.ts";
 
 const submitOrderLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
@@ -187,11 +187,11 @@ router.post("/p/:shareToken/orders", submitOrderLimiter, async (req, res) => {
           throw err;
         }
 
-        const unitPrice = parseFloat(product.price as string);
+        const unitPrice = product.price as string;
         const shippingFee = getShippingFee(parsed.data.pickupMethod, shippingFeeOverride);
         // totalPrice = 商品小計（不含運費）。訂單總額由 shippingFee + totalPrice 計算
         // （與 merchant orders 的 formatOrder 語意一致，避免運費被重複計算）。
-        const totalPrice = unitPrice * parsed.data.quantity;
+        const totalPrice = multiplyMoneyByQuantity(unitPrice, parsed.data.quantity);
         // Snapshot sale price is product.price, the order-time unit price.
         // If discounts later change the actual unit price, pass that order unitPrice here instead.
         const profitSnapshotInput = await loadOrderProfitSnapshotInput(
@@ -229,9 +229,9 @@ router.post("/p/:shareToken/orders", submitOrderLimiter, async (req, res) => {
             notes: parsed.data.notes ?? null,
             specValues: parsed.data.specValues ?? {},
             quantity: parsed.data.quantity,
-            unitPrice: String(unitPrice),
+            unitPrice,
             shippingFee: String(shippingFee),
-            totalPrice: String(totalPrice),
+            totalPrice,
             ...profitSnapshot,
             status: "pending",
             cvsStoreId: hasCvs ? (parsed.data.cvsStoreId ?? null) : null,

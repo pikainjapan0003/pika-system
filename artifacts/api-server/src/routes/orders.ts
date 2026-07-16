@@ -7,6 +7,7 @@ import {
   createInitialOrderProfitSnapshot,
   db,
   displayOrderProfitSnapshotAmount,
+  multiplyMoneyByQuantity,
   ordersTable,
   productsTable,
   shipmentTrackingsTable,
@@ -99,8 +100,8 @@ router.post("/stores/:storeId/orders", requireAuth, async (req: any, res) => {
           throw err;
         }
 
-        const unitPrice = parseFloat(product.price as string);
-        const totalPrice = unitPrice * quantity;
+        const unitPrice = product.price as string;
+        const totalPrice = multiplyMoneyByQuantity(unitPrice, quantity);
         // Step 7H-3: 與買家端同一套運費規則（黑貓 100 / 郵局 80 / 超商 60 / 自取 0）
         const shippingFee = getShippingFee(pickupMethod);
         // Snapshot sale price is product.price, the order-time unit price.
@@ -128,8 +129,8 @@ router.post("/stores/:storeId/orders", requireAuth, async (req: any, res) => {
             notes: notes ?? null,
             specValues: specValues ?? {},
             quantity,
-            unitPrice: String(unitPrice),
-            totalPrice: String(totalPrice),
+            unitPrice,
+            totalPrice,
             shippingFee: String(shippingFee),
             ...profitSnapshot,
             status: "pending",
@@ -763,8 +764,8 @@ router.patch("/orders/:orderId", requireAuth, async (req: any, res) => {
   if (specValues !== undefined) updates.specValues = specValues;
   if (quantity !== undefined) {
     updates.quantity = quantity;
-    const existingUnitPrice = parseFloat(order.unitPrice as string);
-    updates.totalPrice = String(existingUnitPrice * quantity);
+    const existingUnitPrice = order.unitPrice as string;
+    updates.totalPrice = multiplyMoneyByQuantity(existingUnitPrice, quantity);
   }
   // Payment fields
   if (paymentMethod !== undefined) updates.paymentMethod = paymentMethod;
