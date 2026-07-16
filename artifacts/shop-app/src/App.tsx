@@ -15,6 +15,7 @@ import ProductsPage from "@/pages/Products";
 import ProductFormPage from "@/pages/ProductForm";
 import OrdersPage from "@/pages/Orders";
 import CustomersPage from "@/pages/Customers";
+import CustomerDetailPage from "@/pages/CustomerDetail";
 import LogisticsImportPage from "@/pages/LogisticsImport";
 import LogisticsImportHistoryPage from "@/pages/LogisticsImportHistory";
 import LogisticsExceptionsPage from "@/pages/LogisticsExceptions";
@@ -258,6 +259,9 @@ function MerchantPortal() {
       <Route path="/categories" component={ProductCategoriesPage} />
       <Route path="/orders" component={OrdersPage} />
       <Route path="/customers" component={CustomersPage} />
+      <Route path="/customers/:customerId">
+        {(params) => <CustomerDetailPage customerId={Number(params.customerId)} />}
+      </Route>
       <Route path="/logistics/import/history" component={LogisticsImportHistoryPage} />
       <Route path="/logistics/import" component={LogisticsImportPage} />
       <Route path="/logistics/exceptions" component={LogisticsExceptionsPage} />

@@ -1,11 +1,12 @@
 import { Router } from "express";
 import { and, eq } from "drizzle-orm";
-import { customersTable, db, validateCustomerInput } from "@workspace/db";
+import { customersTable, db, ordersTable, validateCustomerInput } from "@workspace/db";
 import { requireAuth, verifyStoreOwner } from "../middlewares/auth.ts";
 import {
   formatCustomerExportCsv,
   parseCustomerExportMode,
 } from "../lib/customerExport.ts";
+import { formatCustomerOrderProfit } from "../lib/customerDetail.ts";
 
 const router = Router();
 
@@ -31,6 +32,43 @@ router.get("/stores/:storeId/customers", requireAuth, async (req: any, res) => {
     .where(eq(customersTable.storeId, storeId))
     .orderBy(customersTable.code);
   return res.json(customers);
+});
+
+router.get("/stores/:storeId/customers/:customerId", requireAuth, async (req: any, res) => {
+  let storeId: number;
+  let customerId: number;
+  try {
+    storeId = parseId(req.params.storeId, "storeId");
+    customerId = parseId(req.params.customerId, "customerId");
+  } catch (error) {
+    return res.status(400).json({ error: (error as Error).message });
+  }
+  if (!(await verifyStoreOwner(req, res, storeId))) return;
+
+  const [customer] = await db
+    .select()
+    .from(customersTable)
+    .where(and(eq(customersTable.id, customerId), eq(customersTable.storeId, storeId)))
+    .limit(1);
+  if (!customer) return res.status(404).json({ error: "Customer not found" });
+
+  const orders = await db
+    .select()
+    .from(ordersTable)
+    .where(and(eq(ordersTable.customerId, customerId), eq(ordersTable.storeId, storeId)))
+    .orderBy(ordersTable.createdAt);
+
+  return res.json({
+    customer,
+    orders: orders.map((order) => ({
+      id: order.id,
+      productName: order.productName,
+      quantity: order.quantity,
+      status: order.status,
+      createdAt: order.createdAt.toISOString(),
+      profit: formatCustomerOrderProfit(order),
+    })),
+  });
 });
 
 router.get("/stores/:storeId/customers/export", requireAuth, async (req: any, res) => {
