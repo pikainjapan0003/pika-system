@@ -89,6 +89,8 @@ router.post("/stores/:storeId/orders", requireAuth, async (req: any, res) => {
         const totalPrice = unitPrice * quantity;
         // Step 7H-3: 與買家端同一套運費規則（黑貓 100 / 郵局 80 / 超商 60 / 自取 0）
         const shippingFee = getShippingFee(pickupMethod);
+        // Snapshot sale price is product.price, the order-time unit price.
+        // If discounts later change the actual unit price, pass that order unitPrice here instead.
         const profitSnapshotInput = await loadOrderProfitSnapshotInput(
           tx,
           product,
