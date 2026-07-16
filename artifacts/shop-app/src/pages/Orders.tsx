@@ -950,7 +950,7 @@ export default function OrdersPage() {
                               value={profitSnapshotStatusLabel(o.profitSnapshotStatus)}
                               bold
                             />
-                            {o.profitSnapshotStatus === "pending" ? (
+                            {o.profitSnapshotStatus === "pending" || o.profitSnapshotStatus == null ? (
                               <>
                                 <DetailRow label="商品日圓成本" value="待確認" />
                                 <DetailRow label="店鋪進貨匯率" value="待確認" />
@@ -958,7 +958,9 @@ export default function OrdersPage() {
                                 <DetailRow label="單件毛利" value="待確認" bold />
                                 <div className="px-3 py-3 space-y-2">
                                   <p className="text-xs text-amber-700">
-                                    成本資料補齊後可補拍一次；成功後即永久定格。
+                                    {o.profitSnapshotStatus == null
+                                      ? "舊單可用現在的成本補拍一次；補拍時間不是成交當時，成功後即永久定格。"
+                                      : "成本資料補齊後可補拍一次；成功後即永久定格。"}
                                   </p>
                                   <button
                                     type="button"
@@ -1034,7 +1036,7 @@ export default function OrdersPage() {
                                 />
                                 {o.profitSnapshotBackfilledAt && (
                                   <DetailRow
-                                    label="補拍時間"
+                                    label={o.profitSnapshotCapturedAt ? "補拍時間" : "補拍快照（非成交當時）"}
                                     value={formatDate(o.profitSnapshotBackfilledAt)}
                                   />
                                 )}
