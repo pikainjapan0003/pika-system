@@ -68,6 +68,14 @@ const ALL_PICKUP_METHODS: PickupMethod[] = [
   "面交",
 ];
 
+function isPickupMethodEnabled(method: string, item: BuyerCartItem): boolean {
+  if (method.startsWith("7-11") || method.startsWith("全家")) return item.shippingCvsEnabled !== false;
+  if (method === "黑貓宅急便") return item.shippingBlackCatEnabled !== false;
+  if (method === "郵局") return item.shippingPostOfficeEnabled !== false;
+  if (method === "面交") return item.shippingSelfPickupEnabled !== false;
+  return true;
+}
+
 function isHomeDeliveryMethod(m: string) {
   return m === "黑貓宅急便" || m === "郵局";
 }
@@ -325,6 +333,9 @@ export default function PublicCartPage() {
   const [formError, setFormError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedOrder, setSubmittedOrder] = useState<CartOrderResult | null>(null);
+  const availablePickupMethods = ALL_PICKUP_METHODS.filter((method) =>
+    cartItems.every((item) => isPickupMethodEnabled(method, item)),
+  );
 
   useEffect(() => {
     applyBrandColor(DEFAULT_BRAND_PRIMARY_COLOR);
@@ -336,6 +347,10 @@ export default function PublicCartPage() {
       if (savedMethod && isStorePickupMethod(savedMethod)) setPickupMethod(savedMethod);
     } catch {}
   }, []);
+
+  useEffect(() => {
+    if (pickupMethod && !availablePickupMethods.includes(pickupMethod as PickupMethod)) setPickupMethod("");
+  }, [availablePickupMethods, pickupMethod]);
 
   useEffect(() => {
     if (!isStorePickupMethod(pickupMethod)) {
@@ -582,7 +597,7 @@ export default function PublicCartPage() {
         <div>
           <label className="block text-sm font-medium text-foreground mb-2">取貨方式 *</label>
           <div className="space-y-4">
-            {ALL_PICKUP_METHODS.map((m) => {
+            {availablePickupMethods.map((m) => {
               const isSelected = pickupMethod === m;
               return (
                 <div key={m}>

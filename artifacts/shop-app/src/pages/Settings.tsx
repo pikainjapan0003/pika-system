@@ -179,6 +179,10 @@ export default function SettingsPage() {
   const [colorError, setColorError] = useState("");
   const [purchaseExchangeRate, setPurchaseExchangeRate] = useState("");
   const [exchangeRateError, setExchangeRateError] = useState("");
+  const [shippingCvsEnabled, setShippingCvsEnabled] = useState(true);
+  const [shippingBlackCatEnabled, setShippingBlackCatEnabled] = useState(true);
+  const [shippingPostOfficeEnabled, setShippingPostOfficeEnabled] = useState(true);
+  const [shippingSelfPickupEnabled, setShippingSelfPickupEnabled] = useState(true);
   const storeInitialized = useRef(false);
 
   const [editingField, setEditingField] = useState<"name" | "description" | null>(null);
@@ -209,6 +213,10 @@ export default function SettingsPage() {
       setBrandColor(savedColor);
       applyBrandColor(savedColor);
       setPurchaseExchangeRate(store.purchaseExchangeRate != null ? String(store.purchaseExchangeRate) : "");
+      setShippingCvsEnabled((store as any).shippingCvsEnabled !== false);
+      setShippingBlackCatEnabled((store as any).shippingBlackCatEnabled !== false);
+      setShippingPostOfficeEnabled((store as any).shippingPostOfficeEnabled !== false);
+      setShippingSelfPickupEnabled((store as any).shippingSelfPickupEnabled !== false);
     }
   }, [store]);
 
@@ -344,7 +352,11 @@ export default function SettingsPage() {
           logoUrl: logoUrl.trim(),
           brandPrimaryColor: normalizedColor,
           purchaseExchangeRate: exchangeRateNum,
-        },
+          shippingCvsEnabled,
+          shippingBlackCatEnabled,
+          shippingPostOfficeEnabled,
+          shippingSelfPickupEnabled,
+        } as any,
       });
       applyBrandColor(normalizedColor);
       qc.invalidateQueries({ queryKey: getGetMyStoreQueryKey() });
@@ -632,6 +644,32 @@ export default function SettingsPage() {
                     />
                     {exchangeRateError && <p className="text-xs text-destructive mt-1">{exchangeRateError}</p>}
                   </div>
+                </div>
+
+                <div className="border-t border-border/40 mx-5" />
+
+                {/* 物流方式 */}
+                <div className="px-5 py-4">
+                  <div className="text-xs text-muted-foreground font-medium mb-3">客人可選物流方式</div>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    {[
+                      ["超商（7-11／全家）", shippingCvsEnabled, setShippingCvsEnabled],
+                      ["黑貓宅急便", shippingBlackCatEnabled, setShippingBlackCatEnabled],
+                      ["郵局", shippingPostOfficeEnabled, setShippingPostOfficeEnabled],
+                      ["面交／自取", shippingSelfPickupEnabled, setShippingSelfPickupEnabled],
+                    ].map(([label, enabled, setter]) => (
+                      <label key={label as string} className="flex items-center gap-2 rounded-xl border border-border/60 px-3 py-2.5 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={enabled as boolean}
+                          onChange={(event) => (setter as (value: boolean) => void)(event.target.checked)}
+                          className="w-4 h-4 accent-primary"
+                        />
+                        <span>{label as string}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <p className="mt-2 text-xs text-muted-foreground">關閉後只影響新客人下單頁；既有訂單不變。</p>
                 </div>
 
                 <div className="border-t border-border/40 mx-5" />
