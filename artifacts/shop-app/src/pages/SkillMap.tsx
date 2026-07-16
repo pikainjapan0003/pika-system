@@ -14,8 +14,8 @@ export default function SkillMapPage() {
   // Generated API types intentionally lag additive fields; skill detection is read-only and fail-closed.
   const { data: productData } = useListProducts(storeId!, { query: { enabled: !!storeId } as never });
   const { data: orderData } = useListOrders(storeId!, { query: { enabled: !!storeId } as never });
-  const products = (productData ?? []) as Array<Record<string, unknown>>;
-  const orders = (orderData ?? []) as Array<Record<string, unknown>>;
+  const products = (productData ?? []) as unknown as Array<Record<string, unknown>>;
+  const orders = (orderData ?? []) as unknown as Array<Record<string, unknown>>;
   const storeRecord = (store ?? {}) as Record<string, unknown>;
 
   const facts: SkillMapFacts = {
