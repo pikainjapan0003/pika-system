@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useSearch, useLocation } from "wouter";
 import { useAuth } from "@clerk/react";
 import { saveCvsStore } from "@/lib/cvs711";
+import { getCvsStoreFreshness } from "@/lib/cvsStoreFreshness";
 
 interface CvsStoreResult {
   provider: string;
@@ -265,6 +266,8 @@ function StoreCard({
   onSelect: () => void;
   formatUpdatedAt: (iso: string | null) => string;
 }) {
+  const freshness = getCvsStoreFreshness(store.sourceUpdatedAt);
+
   return (
     <div className="bg-white rounded-2xl border border-border px-4 py-3 space-y-2">
       <div className="flex items-start justify-between gap-2">
@@ -283,6 +286,17 @@ function StoreCard({
           <div className="text-[10px] text-muted-foreground/50 mt-0.5">
             資料更新：{formatUpdatedAt(store.sourceUpdatedAt)}
           </div>
+          {freshness.label && (
+            <div
+              className={
+                freshness.level === "verify_first"
+                  ? "text-xs font-semibold text-destructive mt-1"
+                  : "text-xs font-medium text-amber-700 mt-1"
+              }
+            >
+              {freshness.label}
+            </div>
+          )}
         </div>
       </div>
       <button
