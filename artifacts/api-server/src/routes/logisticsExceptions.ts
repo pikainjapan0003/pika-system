@@ -6,7 +6,7 @@ import {
   shipmentTrackingExceptionsTable,
   shipmentTrackingsTable,
 } from "@workspace/db";
-import { requireAuth, verifyStoreOwner } from "../middlewares/auth";
+import { requireAuth, verifyStoreOwner } from "../middlewares/auth.ts";
 import { runFamilyMartTrackingWorker } from "../lib/logistics/workers/familyMartTrackingWorker.ts";
 
 const fail = (res: any, status: number, errorCode: string, message: string) =>

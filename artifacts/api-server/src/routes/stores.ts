@@ -2,7 +2,7 @@ import { Router } from "express";
 import { eq } from "drizzle-orm";
 import { db, storesTable, ordersTable } from "@workspace/db";
 import { CreateStoreBody, UpdateStoreBody } from "@workspace/api-zod";
-import { requireAuth } from "../middlewares/auth";
+import { requireAuth } from "../middlewares/auth.ts";
 
 const router = Router();
 

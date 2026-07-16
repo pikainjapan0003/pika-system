@@ -2,7 +2,7 @@ import { Router } from "express";
 import { eq } from "drizzle-orm";
 import { db, tripsTable, tripRoutesTable } from "@workspace/db";
 import { CreateTripBody, UpdateTripBody, CreateTripRouteBody, UpdateTripRouteBody } from "@workspace/api-zod";
-import { requireAuth } from "../middlewares/auth";
+import { requireAuth } from "../middlewares/auth.ts";
 
 const router = Router();
 

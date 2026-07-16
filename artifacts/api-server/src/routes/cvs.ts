@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { eq, and, or, ilike, sql } from "drizzle-orm";
 import { db, ordersTable, cvsStoresTable } from "@workspace/db";
-import { requireAuth, verifyStoreOwner } from "../middlewares/auth";
+import { requireAuth, verifyStoreOwner } from "../middlewares/auth.ts";
 
 const CITY_ORDER = [
   "台北市", "新北市", "基隆市", "桃園市", "新竹市", "新竹縣",
