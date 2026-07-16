@@ -43,6 +43,8 @@ export default function CustomersPage() {
   const [revealed, setRevealed] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [exportCleartext, setExportCleartext] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const loadCustomers = async () => {
     if (!store?.id) return;
@@ -115,6 +117,41 @@ export default function CustomersPage() {
     });
   };
 
+  const exportCustomers = async () => {
+    if (!store?.id || customers.length === 0) return;
+    const mode = exportCleartext ? "cleartext" : "masked";
+    if (!window.confirm(`即將匯出 ${customers.length} 筆客戶資料（${exportCleartext ? "明文版" : "遮罩版"}），是否繼續？`)) return;
+    if (exportCleartext && !window.confirm("明文版包含完整個資。請再次確認只會交給有權限的人員，並在使用後刪除檔案。")) return;
+
+    setExporting(true);
+    try {
+      const token = await getToken();
+      const response = await fetch(`/api/stores/${store.id}/customers/export?mode=${mode}`, {
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(exportCleartext ? { "X-Confirm-Cleartext-Export": "true" } : {}),
+        },
+      });
+      if (!response.ok) throw new Error("匯出失敗，請稍後再試");
+      const url = URL.createObjectURL(await response.blob());
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `customers-${mode}.csv`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+      console.info("[privacy-audit] export_customers", {
+        storeId: store.id,
+        mode,
+        count: customers.length,
+        occurredAt: new Date().toISOString(),
+      });
+    } catch (caught) {
+      setError((caught as Error).message);
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-24">
       <header className="bg-white border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
@@ -123,6 +160,30 @@ export default function CustomersPage() {
       </header>
 
       <main className="p-5 space-y-4">
+        <section className="bg-white border border-border rounded-2xl p-4 space-y-3">
+          <div>
+            <h2 className="font-semibold">匯出客戶 CSV</h2>
+            <p className="mt-1 text-xs text-muted-foreground">預設匯出遮罩版；匯出前會再次顯示筆數。</p>
+          </div>
+          <label className="flex items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={exportCleartext}
+              onChange={(event) => setExportCleartext(event.target.checked)}
+              className="mt-0.5 h-4 w-4"
+            />
+            <span>改匯出明文版（含完整個資，下載前會再確認一次）</span>
+          </label>
+          <button
+            type="button"
+            disabled={exporting || customers.length === 0}
+            onClick={() => void exportCustomers()}
+            className="h-11 w-full rounded-xl border border-primary/30 text-sm font-semibold text-primary disabled:opacity-50"
+          >
+            {exporting ? "匯出中…" : `確認匯出（${customers.length} 筆）`}
+          </button>
+        </section>
+
         <section className="bg-white border border-border rounded-2xl p-4 space-y-3">
           <h2 className="font-semibold">{editingId ? "編輯客戶" : "新增客戶"}</h2>
           <div className="grid grid-cols-2 gap-2">
