@@ -331,6 +331,19 @@ describe('GET /orders/track/:publicToken — privacy protection', () => {
     assert.strictEqual(data.buyerPhone, undefined, 'buyerPhone must not be returned');
   });
 
+  test('strictly masks a two-character name without revealing the final character', async () => {
+    const { data: created } = await req('POST', `/p/${testShareToken}/orders`, {
+      buyerName: '陳明',
+      buyerPhone: '0955555555',
+      pickupMethod: '面交',
+      quantity: 1,
+    });
+    const { status, data } = await req('GET', `/orders/track/${created.publicToken}`);
+    assert.strictEqual(status, 200);
+    assert.strictEqual(data.recipientNameMasked, '陳○');
+    assert.notStrictEqual(data.recipientNameMasked, '陳明');
+  });
+
   test('does NOT return CVS store fields (current policy — no change)', async () => {
     // Create CVS order for tracking test
     const { data: order } = await req('POST', `/p/${testShareToken}/orders`, {
