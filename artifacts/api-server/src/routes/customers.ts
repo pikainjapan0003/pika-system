@@ -2,6 +2,10 @@ import { Router } from "express";
 import { and, eq } from "drizzle-orm";
 import { customersTable, db, validateCustomerInput } from "@workspace/db";
 import { requireAuth, verifyStoreOwner } from "../middlewares/auth.ts";
+import {
+  formatCustomerExportCsv,
+  parseCustomerExportMode,
+} from "../lib/customerExport.ts";
 
 const router = Router();
 
@@ -27,6 +31,43 @@ router.get("/stores/:storeId/customers", requireAuth, async (req: any, res) => {
     .where(eq(customersTable.storeId, storeId))
     .orderBy(customersTable.code);
   return res.json(customers);
+});
+
+router.get("/stores/:storeId/customers/export", requireAuth, async (req: any, res) => {
+  let storeId: number;
+  try {
+    storeId = parseId(req.params.storeId, "storeId");
+  } catch (error) {
+    return res.status(400).json({ error: (error as Error).message });
+  }
+  if (!(await verifyStoreOwner(req, res, storeId))) return;
+
+  let mode;
+  try {
+    mode = parseCustomerExportMode(
+      req.query.mode,
+      req.get("x-confirm-cleartext-export") === "true",
+    );
+  } catch (error) {
+    return res.status(400).json({ error: (error as Error).message });
+  }
+
+  const customers = await db
+    .select()
+    .from(customersTable)
+    .where(eq(customersTable.storeId, storeId))
+    .orderBy(customersTable.code);
+  const csv = formatCustomerExportCsv(customers, mode);
+  req.log.info(
+    { action: "customer_export", storeId, mode, count: customers.length },
+    "Customer CSV exported",
+  );
+  res.setHeader("Content-Type", "text/csv; charset=utf-8");
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename="customers-${mode}.csv"`,
+  );
+  return res.send(csv);
 });
 
 router.post("/stores/:storeId/customers", requireAuth, async (req: any, res) => {
