@@ -5,6 +5,7 @@ import {
   backfillPendingCartOrderProfitSnapshot,
   backfillPendingOrderProfitSnapshot,
   createInitialOrderProfitSnapshot,
+  customersTable,
   db,
   displayOrderProfitSnapshotAmount,
   multiplyMoneyByQuantity,
@@ -22,6 +23,10 @@ import { ensureManualProviderTrackingRow } from "../lib/logistics/trackingSeed.t
 import { loadOrderProfitSnapshotInput } from "../lib/orderProfitSnapshot.ts";
 import { summarizeOrderProfits } from "../lib/orderProfitSummary.ts";
 import { parsePaymentLast5 } from "../lib/paymentLast5.ts";
+import {
+  parseOptionalCustomerId,
+  resolveCustomerCvsDefaults,
+} from "../lib/customerOrderDefaults.ts";
 
 const router = Router();
 
@@ -82,7 +87,12 @@ router.post("/stores/:storeId/orders", requireAuth, async (req: any, res) => {
     shippingMethod, recipientName, recipientPhone, recipientAddress,
     storeCode, storeName, cvsStoreAddress, cvsStorePhone, storeSelectedBy,
   } = parsed.data;
-  const hasCvsStore = !!(storeCode || storeName || cvsStoreAddress || cvsStorePhone);
+  let customerId: number | null;
+  try {
+    customerId = parseOptionalCustomerId(req.body?.customerId);
+  } catch (error) {
+    return res.status(422).json({ error: (error as Error).message });
+  }
   let paymentLast5: string | null;
   try {
     paymentLast5 = parsePaymentLast5(req.body?.paymentLast5);
@@ -107,6 +117,31 @@ router.post("/stores/:storeId/orders", requireAuth, async (req: any, res) => {
           throw err;
         }
 
+        const customer = customerId === null
+          ? null
+          : (await tx
+              .select()
+              .from(customersTable)
+              .where(and(eq(customersTable.id, customerId), eq(customersTable.storeId, storeId)))
+              .limit(1))[0] ?? null;
+        if (customerId !== null && !customer) {
+          const err = new Error("Customer not found") as any;
+          err.status = 404;
+          throw err;
+        }
+        const cvsSelection = resolveCustomerCvsDefaults({
+          storeCode,
+          storeName,
+          cvsStoreAddress,
+          cvsStorePhone,
+        }, customer);
+        const hasCvsStore = Boolean(
+          cvsSelection.storeCode
+          || cvsSelection.storeName
+          || cvsSelection.cvsStoreAddress
+          || cvsSelection.cvsStorePhone,
+        );
+
         const unitPrice = product.price as string;
         const totalPrice = multiplyMoneyByQuantity(unitPrice, quantity);
         // Step 7H-3: 與買家端同一套運費規則（黑貓 100 / 郵局 80 / 超商 60 / 自取 0）
@@ -128,6 +163,7 @@ router.post("/stores/:storeId/orders", requireAuth, async (req: any, res) => {
           .values({
             productId: product.id,
             storeId,
+            customerId,
             productName: product.name,
             publicToken,
             buyerName,
@@ -147,11 +183,13 @@ router.post("/stores/:storeId/orders", requireAuth, async (req: any, res) => {
             recipientName: recipientName ?? null,
             recipientPhone: recipientPhone ?? null,
             recipientAddress: recipientAddress ?? null,
-            cvsStoreId: storeCode ?? null,
-            cvsStoreName: storeName ?? null,
-            cvsStoreAddress: cvsStoreAddress ?? null,
-            cvsStorePhone: cvsStorePhone ?? null,
-            storeSelectedBy: hasCvsStore ? (storeSelectedBy ?? "admin") : null,
+            cvsStoreId: cvsSelection.storeCode,
+            cvsStoreName: cvsSelection.storeName,
+            cvsStoreAddress: cvsSelection.cvsStoreAddress,
+            cvsStorePhone: cvsSelection.cvsStorePhone,
+            storeSelectedBy: hasCvsStore
+              ? (cvsSelection.usedCustomerDefault ? "customer_default" : (storeSelectedBy ?? "admin"))
+              : null,
             storeSelectedAt: hasCvsStore ? new Date() : null,
           })
           .returning();
