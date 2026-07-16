@@ -81,7 +81,7 @@ interface CustomerOption {
   id: number;
   code: string;
   name: string;
-  phone: string;
+  phone: string | null;
   cvsStoreId: string | null;
   cvsStoreName: string | null;
   cvsStoreAddress: string | null;
@@ -367,7 +367,7 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
                     return;
                   }
                   setBuyerName(customer.name);
-                  setBuyerPhone(customer.phone);
+                  setBuyerPhone(customer.phone ?? "");
                   // A manually selected store is explicit input and must keep priority over customer defaults.
                   if (cvsSelectionSource !== "manual") {
                     setStoreCode(customer.cvsStoreId ?? "");

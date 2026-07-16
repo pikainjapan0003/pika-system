@@ -4,7 +4,7 @@ import type { CustomerTier } from "../schema/customers.ts";
 export interface CustomerInput {
   code: unknown;
   name: unknown;
-  phone: unknown;
+  phone?: unknown;
   tier?: unknown;
   cvsStoreId?: unknown;
   cvsStoreName?: unknown;
@@ -16,7 +16,7 @@ export interface CustomerInput {
 export interface ValidCustomerInput {
   code: string;
   name: string;
-  phone: string;
+  phone: string | null;
   tier: CustomerTier;
   cvsStoreId: string | null;
   cvsStoreName: string | null;
@@ -50,7 +50,7 @@ export function validateCustomerInput(input: CustomerInput): ValidCustomerInput 
   return {
     code: requiredText(input.code, "code"),
     name: requiredText(input.name, "name"),
-    phone: requiredText(input.phone, "phone"),
+    phone: optionalText(input.phone),
     tier: parseCustomerTier(input.tier),
     cvsStoreId: optionalText(input.cvsStoreId),
     cvsStoreName: optionalText(input.cvsStoreName),

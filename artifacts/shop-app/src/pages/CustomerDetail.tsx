@@ -10,7 +10,7 @@ interface CustomerRecord {
   storeId: number;
   code: string;
   name: string;
-  phone: string;
+  phone: string | null;
   tier: "general" | "vip" | "wholesale" | "partner";
   cvsStoreId: string | null;
   cvsStoreName: string | null;
@@ -124,7 +124,7 @@ export default function CustomerDetailPage({ customerId }: { customerId: number 
             <section className="space-y-2 rounded-2xl border border-border bg-white p-4">
               <p className="text-xs text-muted-foreground">{customer.code}</p>
               <h2 className="font-semibold">{revealed ? customer.name : maskName(customer.name)}</h2>
-              <p className="text-sm text-muted-foreground">{revealed ? customer.phone : maskPhone(customer.phone)}</p>
+              <p className="text-sm text-muted-foreground">{customer.phone ? (revealed ? customer.phone : maskPhone(customer.phone)) : "未留電話"}</p>
               <p className="text-sm">等級：{{ general: "一般", vip: "VIP", wholesale: "批發", partner: "夥伴" }[customer.tier]}</p>
               {customer.notes && <p className="text-sm text-muted-foreground">備註：{customer.notes}</p>}
               {!revealed && <button type="button" onClick={reveal} className="min-h-11 rounded-xl border border-border px-4 text-sm">顯示完整</button>}
