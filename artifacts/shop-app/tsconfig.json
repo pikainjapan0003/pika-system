@@ -14,7 +14,8 @@
     "types": ["node", "vite/client"],
     "paths": {
       "@/*": ["./src/*"],
-      "@workspace/api-client-react": ["../../lib/api-client-react/src/index.ts"]
+      "@workspace/api-client-react": ["../../lib/api-client-react/src/index.ts"],
+      "@workspace/db/privacy": ["../../lib/db/src/privacy/masking.ts"]
     }
   },
   "references": [

@@ -9,6 +9,15 @@ import { formatProductEstimatedProfit } from "../lib/productEstimatedProfit.ts";
 
 const router = Router();
 
+function parseOptionalTierPrice(value: unknown): string | null | undefined {
+  if (value === undefined) return undefined;
+  if (value === null || value === "") return null;
+  if (typeof value !== "string" || !/^\d+(?:\.\d+)?$/.test(value.trim())) {
+    throw new TypeError("Tier price must be a non-negative decimal or empty");
+  }
+  return value.trim();
+}
+
 async function assertCategoryBelongsToStore(storeId: number, categoryId: number): Promise<boolean> {
   const [cat] = await db
     .select({ id: productCategoriesTable.id })
@@ -56,6 +65,17 @@ router.post("/stores/:storeId/products", requireAuth, async (req: any, res) => {
 
   const shareToken = randomBytes(12).toString("hex");
 
+  let tierPrices: { vipPrice: string | null; wholesalePrice: string | null; partnerPrice: string | null };
+  try {
+    tierPrices = {
+      vipPrice: parseOptionalTierPrice(req.body?.vipPrice) ?? null,
+      wholesalePrice: parseOptionalTierPrice(req.body?.wholesalePrice) ?? null,
+      partnerPrice: parseOptionalTierPrice(req.body?.partnerPrice) ?? null,
+    };
+  } catch (error) {
+    return res.status(422).json({ error: (error as Error).message });
+  }
+
   try {
     const [product] = await db
       .insert(productsTable)
@@ -64,6 +84,7 @@ router.post("/stores/:storeId/products", requireAuth, async (req: any, res) => {
         name: parsed.data.name,
         description: parsed.data.description ?? null,
         price: String(parsed.data.price),
+        ...tierPrices,
         specs: parsed.data.specs ?? [],
         inventory: parsed.data.inventory ?? null,
         imageUrl: parsed.data.imageUrl ?? null,
@@ -130,6 +151,14 @@ router.patch("/stores/:storeId/products/:productId", requireAuth, async (req: an
   if (parsed.data.name !== undefined) updateData.name = parsed.data.name;
   if (parsed.data.description !== undefined) updateData.description = parsed.data.description;
   if (parsed.data.price !== undefined) updateData.price = String(parsed.data.price);
+  try {
+    for (const field of ["vipPrice", "wholesalePrice", "partnerPrice"] as const) {
+      const parsedTierPrice = parseOptionalTierPrice(req.body?.[field]);
+      if (parsedTierPrice !== undefined) updateData[field] = parsedTierPrice;
+    }
+  } catch (error) {
+    return res.status(422).json({ error: (error as Error).message });
+  }
   if (parsed.data.specs !== undefined) updateData.specs = parsed.data.specs;
   if (parsed.data.inventory !== undefined) updateData.inventory = parsed.data.inventory;
   if (parsed.data.imageUrl !== undefined) updateData.imageUrl = parsed.data.imageUrl;
@@ -190,6 +219,9 @@ function formatProduct(p: any) {
   return {
     ...p,
     price: parseFloat(p.price),
+    vipPrice: p.vipPrice != null ? parseFloat(p.vipPrice) : null,
+    wholesalePrice: p.wholesalePrice != null ? parseFloat(p.wholesalePrice) : null,
+    partnerPrice: p.partnerPrice != null ? parseFloat(p.partnerPrice) : null,
     weightKg: p.weightKg != null ? parseFloat(p.weightKg) : null,
     costJpy: p.costJpy != null ? parseFloat(p.costJpy) : null,
     specs: p.specs ?? [],
