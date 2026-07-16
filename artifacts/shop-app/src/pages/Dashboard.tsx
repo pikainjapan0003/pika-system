@@ -3,6 +3,13 @@ import { useLocation } from "wouter";
 import { useGetMyStore, useGetStoreStats, useListOrders } from "@workspace/api-client-react";
 import { useAuth, useClerk } from "@clerk/react";
 import { STATUS_LABELS, STATUS_COLORS } from "../lib/orderStatus";
+import { countDashboardOrders } from "@/lib/dashboardMetrics";
+
+interface ProfitSummary {
+  capturedProfitSubtotalDisplayTwd: string;
+  pendingOrderCount: number;
+  missingSnapshotOrderCount: number;
+}
 
 // 物流異常待處理數（open + reviewing）。現有 API 的 total 受 limit 影響，
 // 因此各抓 limit=100 計數；達上限以 "100+" 顯示。失敗不影響 Dashboard 主功能。
@@ -59,8 +66,30 @@ export default function DashboardPage() {
   const { data: stats } = useGetStoreStats(storeId!, { query: { enabled: !!storeId } as any });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: orders } = useListOrders(storeId!, { query: { enabled: !!storeId } as any });
+  const { getToken } = useAuth();
+  const [profitSummary, setProfitSummary] = useState<ProfitSummary | null>(null);
+
+  useEffect(() => {
+    if (!storeId) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const token = await getToken();
+        const response = await fetch(`/api/stores/${storeId}/orders/profit-summary`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (!response.ok) throw new Error("profit summary unavailable");
+        const summary = await response.json() as ProfitSummary;
+        if (!cancelled) setProfitSummary(summary);
+      } catch {
+        if (!cancelled) setProfitSummary(null);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [getToken, storeId]);
 
   const recentOrders = orders ? [...orders].reverse().slice(0, 5) : [];
+  const orderCounts = countDashboardOrders(orders ?? []);
 
   return (
     <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto">
@@ -103,6 +132,21 @@ export default function DashboardPage() {
           <StatCard label="待確認" value={stats?.pendingOrders ?? 0} accent onClick={() => setLocation("/orders")} />
           <StatCard label="總金額" value={`$${(stats?.totalRevenue ?? 0).toLocaleString()}`} />
         </div>
+
+        <section>
+          <div className="mb-3 flex items-center justify-between">
+            <div><h2 className="text-sm font-semibold text-foreground">老闆今日重點</h2><p className="text-xs text-muted-foreground">毛利沿用訂單定格快照，不重算即時成本。</p></div>
+            <button type="button" onClick={() => setLocation("/orders")} className="text-xs font-medium text-primary">處理訂單 ›</button>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <OwnerMetricCard label="今日訂單" value={String(orderCounts.today)} />
+            <OwnerMetricCard label="本週訂單" value={String(orderCounts.thisWeek)} />
+            <OwnerMetricCard label="已定格毛利小計" value={profitSummary ? `NT$${Number(profitSummary.capturedProfitSubtotalDisplayTwd).toLocaleString()}` : "讀取中"} />
+            <OwnerMetricCard label="待確認訂單" value={String(stats?.pendingOrders ?? 0)} accent={(stats?.pendingOrders ?? 0) > 0} />
+            <OwnerMetricCard label="毛利待補拍" value={profitSummary ? String(profitSummary.pendingOrderCount) : "讀取中"} accent={(profitSummary?.pendingOrderCount ?? 0) > 0} />
+            <OwnerMetricCard label="尚無快照" value={profitSummary ? String(profitSummary.missingSnapshotOrderCount) : "讀取中"} accent={(profitSummary?.missingSnapshotOrderCount ?? 0) > 0} />
+          </div>
+        </section>
 
         {/* Status breakdown */}
         {stats?.statusBreakdown && stats.statusBreakdown.length > 0 && (
@@ -221,6 +265,15 @@ export default function DashboardPage() {
 
       {/* Bottom nav */}
       <BottomNav active="dashboard" />
+    </div>
+  );
+}
+
+function OwnerMetricCard({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) {
+  return (
+    <div className={`rounded-2xl border p-3 ${accent ? "border-amber-200 bg-amber-50" : "border-border bg-white"}`}>
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className={`mt-1 text-lg font-bold ${accent ? "text-amber-800" : "text-foreground"}`}>{value}</p>
     </div>
   );
 }
