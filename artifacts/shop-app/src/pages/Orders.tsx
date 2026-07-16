@@ -657,34 +657,34 @@ export default function OrdersPage() {
   return (
     <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-28">
       <header className="bg-white border-b border-border px-5 pt-10 pb-3 sticky top-0 z-10">
-        <div className="flex items-center justify-between mb-3">
+        <div className="mb-3">
           <h1 className="text-lg font-bold text-foreground">訂單管理</h1>
-          <div className="flex items-center gap-2 flex-wrap justify-end">
+          <div className="mt-3 grid grid-cols-2 gap-2" aria-label="訂單主要操作">
             <button
               onClick={() => setShowAddOrder(true)}
               disabled={!storeId}
-              className="min-h-11 px-3 text-xs font-semibold text-white bg-primary rounded-xl disabled:opacity-50"
+              className="min-h-11 w-full px-3 text-xs font-semibold text-white bg-primary rounded-xl disabled:opacity-50"
             >
               ＋ 新增訂單
             </button>
             <button
               onClick={handleExport}
               disabled={exporting || allOrders.length === 0}
-              className="min-h-11 px-3 text-xs font-medium text-primary bg-primary/10 rounded-xl disabled:opacity-50"
+              className="min-h-11 w-full px-3 text-xs font-medium text-primary bg-primary/10 rounded-xl disabled:opacity-50"
             >
               {exporting ? "匯出中…" : "匯出 CSV"}
             </button>
             <button
               onClick={() => setLocation("/logistics/import")}
               disabled={!storeId}
-              className="min-h-11 px-3 text-xs font-medium text-muted-foreground bg-secondary rounded-xl disabled:opacity-50"
+              className="min-h-11 w-full px-3 text-xs font-medium text-muted-foreground bg-secondary rounded-xl disabled:opacity-50"
             >
               物流匯入
             </button>
             <button
               onClick={() => setLocation("/logistics/exceptions")}
               disabled={!storeId}
-              className="min-h-11 px-3 text-xs font-medium text-muted-foreground bg-secondary rounded-xl disabled:opacity-50"
+              className="min-h-11 w-full px-3 text-xs font-medium text-muted-foreground bg-secondary rounded-xl disabled:opacity-50"
             >
               物流異常
             </button>
@@ -706,7 +706,7 @@ export default function OrdersPage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="搜尋姓名、電話、訂單編號"
-            className="w-full h-9 px-3 rounded-xl border border-input bg-secondary/40 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="w-full min-h-11 px-3 rounded-xl border border-input bg-secondary/40 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
         </div>
         <div className="grid grid-cols-2 gap-2 mb-2.5">
