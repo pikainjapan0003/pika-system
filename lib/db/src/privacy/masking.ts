@@ -11,6 +11,14 @@ export function maskName(value: MaskableValue): string {
   return `${text[0]}*${text.at(-1)}`;
 }
 
+/** Public-page mask: never reveal the final character of a person's name. */
+export function maskNameStrict(value: MaskableValue): string {
+  const characters = [...clean(value)];
+  if (characters.length === 0) return "";
+  if (characters.length === 1) return "○";
+  return `${characters[0]}${"○".repeat(characters.length - 1)}`;
+}
+
 export function maskPhone(value: MaskableValue): string {
   const text = clean(value);
   if (!text) return "";

@@ -11,7 +11,7 @@ import {
   ordersTable,
   shipmentTrackingsTable,
   multiplyMoneyByQuantity,
-  maskName,
+  maskNameStrict,
   maskPhone,
   type CalculateProductUnitProfitInput,
 } from "@workspace/db";
@@ -557,7 +557,7 @@ router.get("/orders/track/:publicToken", trackOrderLimiter, async (req, res) => 
     latestTrackingTime: tracking?.latestEventAt?.toISOString() ?? null,
     shipmentUpdatedAt: tracking?.updatedAt?.toISOString() ?? null,
     storeName: store?.name ?? null,
-    recipientNameMasked: maskName(order.recipientName ?? order.buyerName ?? null) || null,
+    recipientNameMasked: maskNameStrict(order.recipientName ?? order.buyerName ?? null) || null,
     recipientPhoneMasked: maskPhone(order.recipientPhone ?? null) || null,
     recipientAddressMasked: summarizeAddress(order.recipientAddress ?? null),
     items: (order.items as any[] | null) ?? null,
