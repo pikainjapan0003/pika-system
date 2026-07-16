@@ -408,6 +408,7 @@ export default function SettingsPage() {
           <div className="pt-4">
             <CustomersEntry />
             <TripsEntry />
+            <SkillMapEntry />
             <AgentSettingsEntry />
             {IS_DEV && <DevHandoffEntry />}
           </div>
@@ -862,6 +863,28 @@ function AgentSettingsEntry() {
           <div>
             <p className="text-sm font-semibold text-foreground">AI 代查設定</p>
             <p className="text-xs text-muted-foreground">Seller Agent / 物流自動查詢設定</p>
+          </div>
+        </div>
+        <span className="text-muted-foreground text-sm">›</span>
+      </button>
+    </div>
+  );
+}
+
+function SkillMapEntry() {
+  const [, setLocation] = useLocation();
+  return (
+    <div className="px-5 pb-3">
+      <button
+        type="button"
+        onClick={() => setLocation("/skill-map")}
+        className="w-full bg-white border border-border rounded-2xl px-4 py-4 flex items-center justify-between text-left hover:bg-secondary/50 transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <span className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center text-lg flex-shrink-0">🗺️</span>
+          <div>
+            <p className="text-sm font-semibold text-foreground">技能地圖</p>
+            <p className="text-xs text-muted-foreground">查看六種套餐、前置條件與目前解鎖狀態</p>
           </div>
         </div>
         <span className="text-muted-foreground text-sm">›</span>
