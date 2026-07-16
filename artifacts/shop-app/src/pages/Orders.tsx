@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { useAuth } from "@clerk/react";
 import { useGetMyStore, useListOrders, useUpdateOrderStatus, useBulkUpdateOrders, useGetPickingList, useGetShippingList, getListOrdersQueryKey, type Order, type PickingListResponse, type ShippingListResponse } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { maskAddress, maskName, maskPhone } from "@workspace/db/privacy";
 import { BottomNav } from "./Dashboard";
 import { STATUS_LABELS, STATUS_COLORS, ALL_STATUSES, STATUS_STEPS, VALID_NEXT_STATUSES } from "../lib/orderStatus";
 import { isSevenElevenMethod, isFamilyMartMethod, openSevenElevenMap, openCvsStoreMap } from "@/lib/cvs711";
@@ -262,6 +263,7 @@ export default function OrdersPage() {
   const [statusErrors, setStatusErrors] = useState<Record<number, string>>({});
   const [loadingOrderId, setLoadingOrderId] = useState<number | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [revealedOrderIds, setRevealedOrderIds] = useState<Set<number>>(new Set());
   // Step 8E: App 內狀態操作確認彈窗（取代 window.confirm）
   const [statusConfirm, setStatusConfirm] = useState<{
     orderId: number;
@@ -287,6 +289,15 @@ export default function OrdersPage() {
   const bulkUpdateOrders = useBulkUpdateOrders();
 
   const [, setLocation] = useLocation();
+
+  const revealOrderPii = (order: Order) => {
+    console.info("[privacy-audit] reveal_order_pii", {
+      orderId: order.id,
+      storeId,
+      occurredAt: new Date().toISOString(),
+    });
+    setRevealedOrderIds((current) => new Set(current).add(order.id));
+  };
 
   // Picking / shipping list state
   const [pickingListOpen, setPickingListOpen] = useState(false);
@@ -775,7 +786,7 @@ export default function OrdersPage() {
                       </div>
                       {/* Row 2: Buyer name (left) + date (right) */}
                       <div className="flex items-center justify-between gap-2 mb-2">
-                        <span className="text-[15px] font-semibold text-foreground leading-tight">{o.buyerName}</span>
+                        <span className="text-[15px] font-semibold text-foreground leading-tight">{revealedOrderIds.has(o.id) ? o.buyerName : maskName(o.buyerName)}</span>
                         <span className="text-[11px] text-muted-foreground shrink-0">{formatDate(o.createdAt)}</span>
                       </div>
                       {/* Row 3: Pickup method badge + order status badge */}
@@ -871,18 +882,20 @@ export default function OrdersPage() {
                         <div>
                           <SectionLabel>買家資訊</SectionLabel>
                           <div className="bg-white rounded-xl border border-border/50 divide-y divide-border/40">
-                            <DetailRow label="姓名" value={o.buyerName} />
+                            <DetailRow label="姓名" value={revealedOrderIds.has(o.id) ? o.buyerName : maskName(o.buyerName)} />
                             <div className="flex items-center justify-between px-3 py-2.5 gap-2">
                               <span className="text-xs text-muted-foreground shrink-0">電話</span>
                               <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium text-foreground">{o.buyerPhone}</span>
-                                <button
-                                  type="button"
-                                  onClick={() => copyToClipboard(o.buyerPhone, `${o.id}-phone`)}
-                                  className="text-xs text-primary font-medium shrink-0"
-                                >
-                                  {copiedKey === `${o.id}-phone` ? "已複製" : "複製"}
-                                </button>
+                                <span className="text-sm font-medium text-foreground">{revealedOrderIds.has(o.id) ? o.buyerPhone : maskPhone(o.buyerPhone)}</span>
+                                {revealedOrderIds.has(o.id) && (
+                                  <button
+                                    type="button"
+                                    onClick={() => copyToClipboard(o.buyerPhone, `${o.id}-phone`)}
+                                    className="text-xs text-primary font-medium shrink-0"
+                                  >
+                                    {copiedKey === `${o.id}-phone` ? "已複製" : "複製"}
+                                  </button>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -901,8 +914,8 @@ export default function OrdersPage() {
                               if (isSame) {
                                 return (
                                   <>
-                                    <DetailRow label="收件人" value={rName || o.buyerName} />
-                                    <DetailRow label="收件電話" value={rPhone || o.buyerPhone} />
+                                    <DetailRow label="收件人" value={revealedOrderIds.has(o.id) ? (rName || o.buyerName) : maskName(rName || o.buyerName)} />
+                                    <DetailRow label="收件電話" value={revealedOrderIds.has(o.id) ? (rPhone || o.buyerPhone) : maskPhone(rPhone || o.buyerPhone)} />
                                     <div className="px-3 py-2">
                                       <span className="text-[11px] text-muted-foreground/60">同買家資訊</span>
                                     </div>
@@ -911,8 +924,8 @@ export default function OrdersPage() {
                               }
                               return (
                                 <>
-                                  <DetailRow label="收件人" value={rName || "—"} />
-                                  <DetailRow label="收件電話" value={rPhone || "—"} />
+                                  <DetailRow label="收件人" value={revealedOrderIds.has(o.id) ? (rName || "—") : maskName(rName)} />
+                                  <DetailRow label="收件電話" value={revealedOrderIds.has(o.id) ? (rPhone || "—") : maskPhone(rPhone)} />
                                 </>
                               );
                             })()}
@@ -1144,9 +1157,10 @@ export default function OrdersPage() {
                               <>
                                 {o.trackingCode && <DetailRow label="物流追蹤碼" value={o.trackingCode} />}
                                 {o.trackingProvider && <DetailRow label="物流商" value={o.trackingProvider} />}
-                                {o.recipientName && <DetailRow label="收件人" value={o.recipientName} />}
-                                {o.recipientPhone && <DetailRow label="收件電話" value={o.recipientPhone} />}
-                                {o.recipientAddress && (() => {
+                                {o.recipientName && <DetailRow label="收件人" value={revealedOrderIds.has(o.id) ? o.recipientName : maskName(o.recipientName)} />}
+                                {o.recipientPhone && <DetailRow label="收件電話" value={revealedOrderIds.has(o.id) ? o.recipientPhone : maskPhone(o.recipientPhone)} />}
+                                {o.recipientAddress && !revealedOrderIds.has(o.id) && <DetailRow label="收件地址" value={maskAddress(o.recipientAddress)} />}
+                                {o.recipientAddress && revealedOrderIds.has(o.id) && (() => {
                                   const parsed = parseRecipientAddress(o.recipientAddress);
                                   if (!parsed) return <DetailRow label="收件地址" value={o.recipientAddress!} />;
                                   return (
@@ -1167,7 +1181,7 @@ export default function OrdersPage() {
                               const value = parsed
                                 ? `${parsed.city}${parsed.district}${parsed.line}`.trim()
                                 : o.recipientAddress;
-                              return <DetailRow label={label} value={value} />;
+                              return <DetailRow label={label} value={revealedOrderIds.has(o.id) ? value : maskAddress(value)} />;
                             })()}
                             {o.shippingNote && <DetailRow label="物流備註" value={o.shippingNote} />}
                             {o.internalNote && <DetailRow label="內部備註（後台）" value={o.internalNote} />}
@@ -1309,6 +1323,15 @@ export default function OrdersPage() {
                               </span>
                             </div>
                           </div>
+                          {!revealedOrderIds.has(o.id) && (
+                            <button
+                              type="button"
+                              onClick={() => revealOrderPii(o)}
+                              className="mt-2 min-h-11 px-4 rounded-xl border border-border text-sm font-medium"
+                            >
+                              顯示完整資料
+                            </button>
+                          )}
                         </div>
 
                         {/* Copy-only message templates; never sends automatically. */}
