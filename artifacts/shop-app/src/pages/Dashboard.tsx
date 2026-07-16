@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import { useGetMyStore, useGetStoreStats, useListOrders } from "@workspace/api-client-react";
+import { useGetMyStore, useGetStoreStats, useListOrders, useListProducts } from "@workspace/api-client-react";
 import { useAuth, useClerk } from "@clerk/react";
 import { STATUS_LABELS, STATUS_COLORS } from "../lib/orderStatus";
-import { countDashboardOrders } from "@/lib/dashboardMetrics";
+import { countDashboardOrders, findLowStockProducts, LOW_STOCK_THRESHOLD } from "@/lib/dashboardMetrics";
 
 interface ProfitSummary {
   capturedProfitSubtotalDisplayTwd: string;
@@ -66,6 +66,8 @@ export default function DashboardPage() {
   const { data: stats } = useGetStoreStats(storeId!, { query: { enabled: !!storeId } as any });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: orders } = useListOrders(storeId!, { query: { enabled: !!storeId } as any });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: products } = useListProducts(storeId!, { query: { enabled: !!storeId } as any });
   const { getToken } = useAuth();
   const [profitSummary, setProfitSummary] = useState<ProfitSummary | null>(null);
 
@@ -88,8 +90,9 @@ export default function DashboardPage() {
     return () => { cancelled = true; };
   }, [getToken, storeId]);
 
-  const recentOrders = orders ? [...orders].reverse().slice(0, 5) : [];
+  const recentOrders = orders ? [...orders].reverse().slice(0, 10) : [];
   const orderCounts = countDashboardOrders(orders ?? []);
+  const lowStockProducts = findLowStockProducts(products ?? []);
 
   return (
     <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto">
@@ -219,9 +222,38 @@ export default function DashboardPage() {
         </div>
 
         {/* Recent orders */}
+        <section className="rounded-2xl border border-border bg-white p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-semibold text-foreground">低庫存提醒</h2>
+              <p className="mt-1 text-xs text-muted-foreground">
+                庫存 ≤ {LOW_STOCK_THRESHOLD}（建議值，可調）；未設定庫存不追蹤。
+              </p>
+            </div>
+            <button type="button" onClick={() => setLocation("/products")} className="text-xs font-medium text-primary">
+              管理商品 ›
+            </button>
+          </div>
+          {lowStockProducts.length === 0 ? (
+            <p className="mt-3 text-sm text-muted-foreground">目前沒有低庫存商品</p>
+          ) : (
+            <div className="mt-3 space-y-2">
+              {lowStockProducts.slice(0, 5).map((product) => (
+                <div key={product.id} className="flex items-center justify-between rounded-xl bg-amber-50 px-3 py-2">
+                  <span className="min-w-0 truncate text-sm font-medium text-amber-950">{product.name}</span>
+                  <span className="shrink-0 text-sm font-bold text-amber-800">剩 {product.inventory}</span>
+                </div>
+              ))}
+              {lowStockProducts.length > 5 && (
+                <p className="text-xs text-muted-foreground">另有 {lowStockProducts.length - 5} 件，請到商品頁查看。</p>
+              )}
+            </div>
+          )}
+        </section>
+
         <div>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold text-foreground">最新訂單</h2>
+            <h2 className="text-sm font-semibold text-foreground">最近 10 筆訂單</h2>
             <button
               onClick={() => setLocation("/orders")}
               className="text-xs text-primary font-medium"
