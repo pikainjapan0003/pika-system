@@ -22,6 +22,8 @@ import {
   type SkillMapFacts,
 } from "@workspace/db/skill-map";
 
+import { deriveAutomationFoundationFact } from "../lib/automationFoundation.ts";
+import { runTrackingWorkerPhase1 } from "../lib/logistics/workers/trackingWorkerPhase1.ts";
 import { requireAuth, verifyStoreOwner } from "../middlewares/auth.ts";
 
 const router: IRouter = Router();
@@ -83,8 +85,12 @@ async function loadSkillFacts(storeId: number): Promise<SkillMapFacts> {
       ),
     ),
     hasShipmentOrder: shipmentRows.length > 0,
-    // BATCH-7A package 2 added the reviewed report-only Phase 1 foundation.
-    hasAutomationFoundation: true,
+    // Deployment capability: the reviewed report-only worker and its audit
+    // sink must both be present. Store enablement remains a separate fact.
+    hasAutomationFoundation: deriveAutomationFoundationFact({
+      auditLogTable: auditLogsTable,
+      trackingWorkerRunner: runTrackingWorkerPhase1,
+    }),
   };
 }
 
