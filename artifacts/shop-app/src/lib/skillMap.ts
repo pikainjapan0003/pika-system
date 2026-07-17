@@ -1,16 +1,13 @@
-export type SkillRisk = "低風險" | "💰 金額" | "🔒 個資" | "🌐 外部服務" | "📣 對客發訊";
+export type SkillRisk =
+  | "低風險"
+  | "💰 金額"
+  | "🔒 個資"
+  | "🌐 外部服務"
+  | "📣 對客發訊";
 
-export interface SkillMapFacts {
-  hasStore: boolean;
-  hasProduct: boolean;
-  hasOrder: boolean;
-  hasStoreExchangeRate: boolean;
-  hasProductCost: boolean;
-  hasLinkedTripRoute: boolean;
-  hasTierPrice: boolean;
-  hasShipmentOrder: boolean;
-  hasAutomationFoundation: boolean;
-}
+import type { SkillMapFacts } from "@workspace/db/skill-map";
+
+export type { SkillMapFacts } from "@workspace/db/skill-map";
 
 export interface SkillCardDefinition {
   id: string;
@@ -23,14 +20,20 @@ export interface SkillCardDefinition {
 }
 
 export interface SkillGroupDefinition {
-  id: "beginner" | "cost" | "group-buy" | "wholesale" | "shipping" | "automation";
+  id:
+    | "beginner"
+    | "cost"
+    | "group-buy"
+    | "wholesale"
+    | "shipping"
+    | "automation";
   title: string;
   description: string;
   skills: readonly SkillCardDefinition[];
 }
 
 // Source: Dream-system/11_SKILL_TREE_ROADMAP.md, second-layer seller skill map (Q29–Q48).
-// This file describes the read-only map only. It does not enable, disable, or persist features.
+// Card copy remains centralized here; persistence and prerequisite enforcement are server-side.
 export const SKILL_GROUPS: readonly SkillGroupDefinition[] = [
   {
     id: "beginner",
@@ -78,7 +81,8 @@ export const SKILL_GROUPS: readonly SkillGroupDefinition[] = [
         prerequisite: "商品日圓成本與店鋪匯率都已填。",
         risk: "💰 金額",
         effect: "商品與訂單會顯示預估或定格毛利。",
-        unlockWhen: (facts) => facts.hasProductCost && facts.hasStoreExchangeRate,
+        unlockWhen: (facts) =>
+          facts.hasProductCost && facts.hasStoreExchangeRate,
       },
       {
         id: "S-09",
@@ -193,8 +197,12 @@ export const SKILL_GROUPS: readonly SkillGroupDefinition[] = [
   },
 ];
 
-export function resolveSkillUnlocks(facts: SkillMapFacts): Record<string, boolean> {
+export function resolveSkillUnlocks(
+  facts: SkillMapFacts,
+): Record<string, boolean> {
   return Object.fromEntries(
-    SKILL_GROUPS.flatMap((group) => group.skills.map((skill) => [skill.id, skill.unlockWhen(facts)])),
+    SKILL_GROUPS.flatMap((group) =>
+      group.skills.map((skill) => [skill.id, skill.unlockWhen(facts)]),
+    ),
   );
 }
