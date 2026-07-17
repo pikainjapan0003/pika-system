@@ -40,7 +40,6 @@ export type {
 } from "./familyMartTrackingWorker.ts";
 export {
   TRACKING_DRY_RUN_AUDIT_ACTION,
-  TRACKING_WORKER_LEASE_MS,
   TrackingWorkerWriteNotEnabledError,
   assertPhase1WriteDisabled,
   isTrackingWorkerWriteRequested,
