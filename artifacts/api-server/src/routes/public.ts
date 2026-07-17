@@ -21,6 +21,7 @@ import { getProviderMeta } from "../lib/logistics/providers.ts";
 import { loadOrderProfitSnapshotInput } from "../lib/orderProfitSnapshot.ts";
 import { formatPublicOrderCreatedResponse } from "../lib/publicOrderResponse.ts";
 import { parsePaymentLast5 } from "../lib/paymentLast5.ts";
+import { sanitizePublicCartItems } from "../lib/publicCartItems.ts";
 
 const submitOrderLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
@@ -474,7 +475,7 @@ router.post("/cart/orders", submitOrderLimiter, async (req, res) => {
         createdAt: result.order.createdAt,
         shippingFee: parseFloat(result.order.shippingFee as string),
         totalPrice: parseFloat(result.order.totalPrice as string),
-        items: result.items,
+        items: sanitizePublicCartItems(result.items) ?? [],
       });
     } catch (err: any) {
       if (err.status === 404) return res.status(404).json({ error: err.message });
@@ -559,7 +560,7 @@ router.get("/orders/track/:publicToken", trackOrderLimiter, async (req, res) => 
     recipientNameMasked: maskNameStrict(order.recipientName ?? order.buyerName ?? null) || null,
     recipientPhoneMasked: maskPhone(order.recipientPhone ?? null) || null,
     recipientAddressMasked: summarizeAddress(order.recipientAddress ?? null),
-    items: (order.items as any[] | null) ?? null,
+    items: sanitizePublicCartItems(order.items),
     createdAt: order.createdAt,
     // STRICTLY EXCLUDED (private / personal info):
     // internalNote, paymentNote, paidAmount, recipientPhone (full), recipientAddress (full),
