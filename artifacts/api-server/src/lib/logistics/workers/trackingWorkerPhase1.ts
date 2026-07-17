@@ -1,7 +1,6 @@
 import type { SevenElevenTrackingResult } from "../adapters/sevenElevenAdapter.ts";
 
 export const TRACKING_DRY_RUN_AUDIT_ACTION = "tracking_dryrun_report";
-export const TRACKING_WORKER_LEASE_MS = 10 * 60 * 1000;
 
 const RETRY_BASE_MS = 30 * 60 * 1000;
 const RETRY_CAP_MS = 6 * 60 * 60 * 1000;
