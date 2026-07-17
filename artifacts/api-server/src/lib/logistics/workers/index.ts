@@ -38,3 +38,19 @@ export type {
   FamilyMartWorkerJobResult,
   FamilyMartWorkerDeps,
 } from "./familyMartTrackingWorker.ts";
+export {
+  TRACKING_DRY_RUN_AUDIT_ACTION,
+  TRACKING_WORKER_LEASE_MS,
+  TrackingWorkerWriteNotEnabledError,
+  assertPhase1WriteDisabled,
+  isTrackingWorkerWriteRequested,
+  runTrackingWorkerPhase1,
+  trackingRetryDelayMs,
+} from "./trackingWorkerPhase1.ts";
+export type {
+  TrackingWorkerLease,
+  TrackingWorkerPhase1Deps,
+  TrackingWorkerPhase1Job,
+  TrackingWorkerPhase1Report,
+  TrackingWorkerPhase1Result,
+} from "./trackingWorkerPhase1.ts";
