@@ -4,7 +4,7 @@ import { calculateProductUnitProfit, db, productsTable, productCategoriesTable }
 import { CreateProductBody, UpdateProductBody } from "@workspace/api-zod";
 import { randomBytes } from "crypto";
 import { requireAuth, verifyStoreOwner } from "../middlewares/auth.ts";
-import { loadOrderProfitSnapshotInput } from "../lib/orderProfitSnapshot.ts";
+import { loadOrderProfitSnapshotInputs } from "../lib/orderProfitSnapshot.ts";
 import { formatProductEstimatedProfit } from "../lib/productEstimatedProfit.ts";
 
 const router = Router();
@@ -34,15 +34,17 @@ router.get("/stores/:storeId/products", requireAuth, async (req: any, res) => {
   if (!(await verifyStoreOwner(req, res, storeId))) return;
 
   const products = await db.select().from(productsTable).where(eq(productsTable.storeId, storeId));
-  const productsWithEstimatedProfit = await Promise.all(
-    products.map(async (product) => {
-      const input = await loadOrderProfitSnapshotInput(db, product, product.price);
-      return {
-        ...formatProduct(product),
-        estimatedProfit: formatProductEstimatedProfit(calculateProductUnitProfit(input)),
-      };
-    }),
+  const profitInputs = await loadOrderProfitSnapshotInputs(
+    db,
+    products.map((product) => ({ ...product, unitPriceTwd: product.price })),
   );
+  const productsWithEstimatedProfit = products.map((product) => {
+    const input = profitInputs.get(product.id)!;
+    return {
+      ...formatProduct(product),
+      estimatedProfit: formatProductEstimatedProfit(calculateProductUnitProfit(input)),
+    };
+  });
   return res.json(productsWithEstimatedProfit);
 });
 
