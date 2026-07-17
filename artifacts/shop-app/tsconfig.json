@@ -14,9 +14,12 @@
     "types": ["node", "vite/client"],
     "paths": {
       "@/*": ["./src/*"],
-      "@workspace/api-client-react": ["../../lib/api-client-react/src/index.ts"],
+      "@workspace/api-client-react": [
+        "../../lib/api-client-react/src/index.ts"
+      ],
       "@workspace/privacy": ["../../lib/privacy/src/index.ts"],
-      "@workspace/shipping": ["../../lib/shipping/src/index.ts"]
+      "@workspace/shipping": ["../../lib/shipping/src/index.ts"],
+      "@workspace/db/skill-map": ["../../lib/db/src/skills/skillState.ts"]
     }
   },
   "references": [
