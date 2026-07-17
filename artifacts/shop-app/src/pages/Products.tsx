@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { useGetMyStore, useListProducts, useUpdateProduct, useDeleteProduct, getListProductsQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { BottomNav } from "./Dashboard";
+import { useDailySkillVisibility } from "@/lib/dailySkillVisibilityContext";
 
 const ONBOARDING_STEPS = [
   { n: "1", text: "建立商品，設定名稱、售價與庫存" },
@@ -67,6 +68,7 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
 export default function ProductsPage() {
   const [, setLocation] = useLocation();
   const qc = useQueryClient();
+  const skillVisibility = useDailySkillVisibility();
   const { data: store } = useGetMyStore();
   const storeId = store?.id;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -137,13 +139,15 @@ export default function ProductsPage() {
             <h1 className="text-xl font-bold text-foreground">商品</h1>
             <p className="text-xs text-muted-foreground mt-0.5">管理商品、定價與規格</p>
           </div>
-          <button
-            type="button"
-            onClick={() => setLocation("/categories")}
-            className="flex-shrink-0 h-8 px-3 rounded-xl border border-border bg-white text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors mt-1"
-          >
-            分類管理
-          </button>
+          {skillVisibility.isVisible("categories") && (
+            <button
+              type="button"
+              onClick={() => setLocation("/categories")}
+              className="flex-shrink-0 h-8 px-3 rounded-xl border border-border bg-white text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors mt-1"
+            >
+              分類管理
+            </button>
+          )}
         </div>
       </header>
 

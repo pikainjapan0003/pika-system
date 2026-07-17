@@ -6,6 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { BottomNav } from "./Dashboard";
 import { ExchangeRateReferenceHint } from "@/components/ExchangeRateReferenceHint";
 import { formatActionableError } from "@/lib/actionableError";
+import { useDailySkillVisibility } from "@/lib/dailySkillVisibilityContext";
 import {
   DEFAULT_BRAND_PRIMARY_COLOR,
   isValidHex,
@@ -169,6 +170,7 @@ export default function SettingsPage() {
   const qc = useQueryClient();
   const { getToken } = useAuth();
   const { data: store, isLoading } = useGetMyStore();
+  const skillVisibility = useDailySkillVisibility();
   const updateStore = useUpdateStore();
 
   const [name, setName] = useState("");
@@ -422,11 +424,11 @@ export default function SettingsPage() {
           )}
 
           <div className="pt-4">
-            <CustomersEntry />
-            <TripsEntry />
+            {skillVisibility.isVisible("customers") && <CustomersEntry />}
+            {skillVisibility.isVisible("trips") && <TripsEntry />}
             <SkillMapEntry />
-            <AuditLogsEntry />
-            <AgentSettingsEntry />
+            {skillVisibility.isVisible("audit-logs") && <AuditLogsEntry />}
+            {skillVisibility.isVisible("agent-settings") && <AgentSettingsEntry />}
             {IS_DEV && <DevHandoffEntry />}
           </div>
         </>

@@ -107,6 +107,25 @@ async function loadEnabledSkills(storeId: number): Promise<Set<SkillKey>> {
   return new Set(rows.map((row) => row.skillKey).filter(isSkillKey));
 }
 
+async function loadConfiguredSkillStates(
+  storeId: number,
+): Promise<Map<SkillKey, boolean>> {
+  const rows = await db
+    .select({
+      skillKey: storeSkillStatesTable.skillKey,
+      enabled: storeSkillStatesTable.enabled,
+    })
+    .from(storeSkillStatesTable)
+    .where(eq(storeSkillStatesTable.storeId, storeId));
+  return new Map(
+    rows
+      .filter((row): row is { skillKey: SkillKey; enabled: boolean } =>
+        isSkillKey(row.skillKey),
+      )
+      .map((row) => [row.skillKey, row.enabled]),
+  );
+}
+
 router.get("/stores/:storeId/skills", requireAuth, async (req: any, res) => {
   let storeId: number;
   try {
@@ -116,15 +135,16 @@ router.get("/stores/:storeId/skills", requireAuth, async (req: any, res) => {
   }
   if (!(await verifyStoreOwner(req, res, storeId))) return;
 
-  const [facts, enabledSkills] = await Promise.all([
+  const [facts, configuredSkills] = await Promise.all([
     loadSkillFacts(storeId),
-    loadEnabledSkills(storeId),
+    loadConfiguredSkillStates(storeId),
   ]);
   return res.json({
     catalogVersion: SKILL_CATALOG_VERSION,
     skills: SKILL_KEYS.map((skillKey) => ({
       skillKey,
-      enabled: enabledSkills.has(skillKey),
+      enabled: configuredSkills.get(skillKey) ?? false,
+      configured: configuredSkills.has(skillKey),
       highRisk: isHighRiskSkill(skillKey),
       prerequisite: evaluateSkillPrerequisites(skillKey, facts),
     })),
