@@ -1,4 +1,4 @@
-const CLERK_JS_ROUTE = "**/npm/@clerk/clerk-js*";
+const CLERK_JS_ROUTE = "**/npm/@clerk/clerk-js@*/dist/clerk.browser.js";
 
 const CLERK_STUB_SCRIPT = String.raw`
 class ClerkStub {
