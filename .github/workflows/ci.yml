@@ -103,7 +103,17 @@ jobs:
         run: pnpm --filter @workspace/api-server exec node --import tsx/esm e2e/seedSmoke.mjs
 
       - name: Run Playwright smoke tests
+        id: playwright-smoke
         run: pnpm exec playwright test --config e2e/playwright.config.mjs
+
+      - name: Upload Playwright failure traces and screenshots
+        if: failure() && steps.playwright-smoke.outcome == 'failure'
+        uses: actions/upload-artifact@v6
+        with:
+          name: playwright-failure-${{ github.run_attempt }}
+          path: e2e/test-results/
+          if-no-files-found: warn
+          retention-days: 7
 
       - name: Add test summary
         if: always()
