@@ -10,6 +10,34 @@ export interface ExchangeRateReferenceQuote {
   fetchedAt: string;
 }
 
+export type ExchangeRateReferenceResult =
+  | { status: "available"; quote: ExchangeRateReferenceQuote }
+  | {
+      status: "unavailable";
+      sourceId: string;
+      sourceName: string;
+      sourceUrl: string;
+      reason: string;
+    };
+
+export interface ExchangeRateReferenceComparisonResponse {
+  currency: "JPY";
+  quoteCurrency: "TWD";
+  side: "spot_sell";
+  sources: ExchangeRateReferenceResult[];
+}
+
+export function getExchangeRateReferenceSource(
+  result: ExchangeRateReferenceResult,
+): Pick<ExchangeRateReferenceQuote, "sourceId" | "sourceName" | "sourceUrl"> {
+  const source = result.status === "available" ? result.quote : result;
+  return {
+    sourceId: source.sourceId,
+    sourceName: source.sourceName,
+    sourceUrl: source.sourceUrl,
+  };
+}
+
 export function formatExchangeRateReferenceTime(value: string): string {
   const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):\d{2}\+08:00$/.exec(
     value,
