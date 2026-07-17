@@ -53,3 +53,17 @@ export type {
   TrackingWorkerPhase1Report,
   TrackingWorkerPhase1Result,
 } from "./trackingWorkerPhase1.ts";
+export {
+  TRACKING_WORKER_MAX_EVENT_CHANGES_PER_RUN,
+  TRACKING_WRITE_ABORTED_AUDIT_ACTION,
+  TRACKING_WRITE_COMPLETED_AUDIT_ACTION,
+  TrackingWorkerPhase2NotEnabledError,
+  runTrackingWorkerPhase2,
+} from "./trackingWorkerPhase2.ts";
+export type {
+  TrackingWorkerPhase2Deps,
+  TrackingWorkerPhase2Job,
+  TrackingWorkerPhase2Preview,
+  TrackingWorkerPhase2Result,
+} from "./trackingWorkerPhase2.ts";
+export { runTrackingWorkerPhase2WithExistingChain } from "./trackingWorkerPhase2Runtime.ts";
