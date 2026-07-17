@@ -1,5 +1,6 @@
 export const TRACKING_WRITE_COMPLETED_AUDIT_ACTION = "tracking_write_completed";
 export const TRACKING_WRITE_ABORTED_AUDIT_ACTION = "tracking_write_aborted";
+export const TRACKING_WRITE_PARTIAL_AUDIT_ACTION = "tracking_write_partial";
 
 // S-16 anomaly gate: adjustable constant. The reviewed controlled writer still
 // imposes its stricter five-job batch limit independently.
@@ -44,7 +45,8 @@ export interface TrackingWorkerPhase2Deps {
     actor: "tracking-worker";
     action:
       | typeof TRACKING_WRITE_COMPLETED_AUDIT_ACTION
-      | typeof TRACKING_WRITE_ABORTED_AUDIT_ACTION;
+      | typeof TRACKING_WRITE_ABORTED_AUDIT_ACTION
+      | typeof TRACKING_WRITE_PARTIAL_AUDIT_ACTION;
     target: string;
   }) => Promise<void>;
   runId: () => string;
@@ -95,6 +97,27 @@ async function recordAbortedAudits(
   }
 }
 
+async function recordPartialAudits(
+  jobs: TrackingWorkerPhase2Job[],
+  deps: TrackingWorkerPhase2Deps,
+  runId: string,
+  completedJobCount: number,
+  insertedEventCount: number,
+): Promise<void> {
+  const storeIds = [...new Set(jobs.map((job) => job.storeId))].sort(
+    (a, b) => a - b,
+  );
+  for (const storeId of storeIds) {
+    await deps.recordAudit({
+      storeId,
+      actor: "tracking-worker",
+      action: TRACKING_WRITE_PARTIAL_AUDIT_ACTION,
+      // Run-level aggregate only: no tracking code, preview hash, or PII.
+      target: `tracking-run:${runId}:status-partial:completed-${completedJobCount}:jobs-${jobs.length}:inserted-${insertedEventCount}`,
+    });
+  }
+}
+
 /**
  * Phase 2 safety orchestrator. It previews every job, validates the aggregate
  * anomaly gate, verifies every signed preview, and re-previews the full batch
@@ -140,19 +163,20 @@ export async function runTrackingWorkerPhase2(
 
   let insertedEventCount = 0;
   for (let index = 0; index < jobs.length; index += 1) {
-    const committed = await deps.commit(jobs[index]!, verifiedPreviews[index]!);
+    const job = jobs[index]!;
+    let committed: { insertedEventCount: number };
+    try {
+      committed = await deps.commit(job, verifiedPreviews[index]!);
+    } catch (error) {
+      await recordPartialAudits(jobs, deps, runId, index, insertedEventCount);
+      throw error;
+    }
     insertedEventCount += committed.insertedEventCount;
-  }
-
-  const storeIds = [...new Set(jobs.map((job) => job.storeId))].sort(
-    (a, b) => a - b,
-  );
-  for (const storeId of storeIds) {
     await deps.recordAudit({
-      storeId,
+      storeId: job.storeId,
       actor: "tracking-worker",
       action: TRACKING_WRITE_COMPLETED_AUDIT_ACTION,
-      target: `tracking-run:${runId}:jobs-${jobs.length}:inserted-${insertedEventCount}`,
+      target: `tracking-run:${runId}:job-${index + 1}-of-${jobs.length}:inserted-${committed.insertedEventCount}`,
     });
   }
   return {
