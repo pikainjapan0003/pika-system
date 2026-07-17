@@ -10,8 +10,10 @@ import {
 } from "./middlewares/clerkProxyMiddleware.ts";
 import router from "./routes/index.ts";
 import { logger } from "./lib/logger.ts";
+import { configureTrustProxy } from "./lib/trustProxy.ts";
 
 const app: Express = express();
+configureTrustProxy(app);
 
 app.use(
   pinoHttp({
