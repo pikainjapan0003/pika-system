@@ -63,3 +63,12 @@ test("購物車可送單且公開品項只有七個安全欄位", async ({ page 
     ].sort(),
   );
 });
+
+test("公開追蹤頁顯示狀態且不出現內部成本文字", async ({ page }) => {
+  await installClerkStub(page);
+  await page.goto("/track/ci-smoke-track-order");
+
+  await expect(page.getByRole("heading", { name: "物流查詢" })).toBeVisible();
+  await expect(page.getByText("備貨中", { exact: true }).first()).toBeVisible();
+  await expect(page.locator("body")).not.toContainText(/成本|毛利|匯率/);
+});
