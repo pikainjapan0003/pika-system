@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 
+import { PUBLIC_CART_ITEM_RESPONSE_KEYS } from "../artifacts/api-server/src/lib/publicCartItems.ts";
 import { installClerkStub } from "./clerkStub.mjs";
 
 test.skip(
@@ -52,16 +53,18 @@ test("購物車可送單且公開品項只有七個安全欄位", async ({ page 
   expect(Array.isArray(body.items)).toBe(true);
   expect(body.items).toHaveLength(1);
   expect(Object.keys(body.items[0]).sort()).toEqual(
-    [
-      "imageUrl",
-      "name",
-      "productId",
-      "quantity",
-      "specValues",
-      "subtotal",
-      "unitPrice",
-    ].sort(),
+    [...PUBLIC_CART_ITEM_RESPONSE_KEYS].sort(),
   );
+  for (const forbiddenKey of [
+    "profitSnapshot",
+    "costJpy",
+    "exchangeRate",
+    "transport",
+    "profit",
+    "shareToken",
+  ]) {
+    expect(body.items[0]).not.toHaveProperty(forbiddenKey);
+  }
 });
 
 test("公開追蹤頁顯示狀態且不出現內部成本文字", async ({ page }) => {
