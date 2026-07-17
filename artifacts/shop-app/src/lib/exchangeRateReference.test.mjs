@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   createRateReferenceAuditEntry,
   formatExchangeRateReferenceTime,
+  getExchangeRateReferenceSource,
 } from "./exchangeRateReference.ts";
 
 const quote = {
@@ -32,4 +33,32 @@ test("audit entry records an apply action but never implies persistence", () => 
   assert.equal(audit.context, "trip");
   assert.equal(audit.rate, "0.2015");
   assert.ok(!("saved" in audit));
+});
+
+test("comparison rows retain official source metadata when unavailable", () => {
+  assert.deepEqual(
+    getExchangeRateReferenceSource({
+      status: "unavailable",
+      sourceId: "first-bank",
+      sourceName: "第一銀行",
+      sourceUrl: "https://www.firstbank.com.tw/sites/fcb/Personalhome",
+      reason: "official page unavailable",
+    }),
+    {
+      sourceId: "first-bank",
+      sourceName: "第一銀行",
+      sourceUrl: "https://www.firstbank.com.tw/sites/fcb/Personalhome",
+    },
+  );
+});
+
+test("comparison rows use the same source metadata as an available quote", () => {
+  assert.deepEqual(
+    getExchangeRateReferenceSource({ status: "available", quote }),
+    {
+      sourceId: quote.sourceId,
+      sourceName: quote.sourceName,
+      sourceUrl: quote.sourceUrl,
+    },
+  );
 });

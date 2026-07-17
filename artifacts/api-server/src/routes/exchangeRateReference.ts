@@ -3,6 +3,7 @@ import { Router } from "express";
 import { requireAuth } from "../middlewares/auth.ts";
 import {
   defaultExchangeRateReferenceAdapters,
+  fetchAllExchangeRateReferences,
   fetchFirstAvailableExchangeRateReference,
 } from "../lib/exchangeRateReference.ts";
 
@@ -22,5 +23,21 @@ router.get("/exchange-rate-reference/jpy", requireAuth, async (req, res) => {
     });
   }
 });
+
+router.get(
+  "/exchange-rate-reference/jpy/compare",
+  requireAuth,
+  async (_req, res) => {
+    const sources = await fetchAllExchangeRateReferences(
+      defaultExchangeRateReferenceAdapters,
+    );
+    return res.json({
+      currency: "JPY",
+      quoteCurrency: "TWD",
+      side: "spot_sell",
+      sources,
+    });
+  },
+);
 
 export default router;
