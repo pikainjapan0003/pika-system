@@ -26,6 +26,7 @@ if (!process.env.DATABASE_URL) {
   const { default: express } = await import("express");
   const {
     db,
+    customersTable,
     ordersTable,
     pool,
     productsTable,
@@ -63,6 +64,9 @@ if (!process.env.DATABASE_URL) {
       storeId,
       name: "MVP3 包2 假商品",
       price: "1900.00",
+      vipPrice: "1800.00",
+      wholesalePrice: null,
+      partnerPrice: "1500.00",
       shareToken,
       isActive: true,
       costJpy: null,
@@ -100,9 +104,10 @@ if (!process.env.DATABASE_URL) {
     });
   }
 
-  async function placeMerchantOrder(buyerName) {
+  async function placeMerchantOrder(buyerName, customerId = null) {
     return request("POST", `/stores/${storeId}/orders`, {
       productId,
+      customerId,
       buyerName,
       buyerPhone: "0900000000",
       pickupMethod: "假資料面交",
@@ -240,5 +245,45 @@ if (!process.env.DATABASE_URL) {
       .from(ordersTable)
       .where(eq(ordersTable.id, capturedAt021.data.id));
     assert.equal(oldOrderAfterRateChange.profitSnapshotUnitProfitTwd, "220.000000000000");
+  });
+
+  test("merchant creation resolves customer tier price before freezing the snapshot", async () => {
+    await setCostState("0.21", "8000", true);
+    await db.update(productsTable)
+      .set({ vipPrice: "1800.00", wholesalePrice: null })
+      .where(eq(productsTable.id, productId));
+
+    const [generalCustomer, vipCustomer, wholesaleCustomer] = await db
+      .insert(customersTable)
+      .values([
+        { storeId, code: `general-${Date.now()}`, name: "假資料一般客", tier: "general" },
+        { storeId, code: `vip-${Date.now()}`, name: "假資料 VIP 客", tier: "vip" },
+        { storeId, code: `wholesale-${Date.now()}`, name: "假資料批發客", tier: "wholesale" },
+      ])
+      .returning();
+
+    // Hand-fixed fixtures: 8000 * 0.21 = 1680.
+    // General 1900 -> 220; VIP 1800 -> 120; missing wholesale -> general 1900 -> 220.
+    const general = await placeMerchantOrder("假資料一般訂單", generalCustomer.id);
+    const vip = await placeMerchantOrder("假資料 VIP 訂單", vipCustomer.id);
+    const wholesale = await placeMerchantOrder("假資料批發訂單", wholesaleCustomer.id);
+
+    assert.equal(general.status, 201);
+    assert.equal(general.data.unitPrice, 1900);
+    assert.equal(general.data.profitSnapshotUnitProfitTwd, "220.000000000000");
+    assert.equal(vip.status, 201);
+    assert.equal(vip.data.unitPrice, 1800);
+    assert.equal(vip.data.profitSnapshotUnitProfitTwd, "120.000000000000");
+    assert.equal(wholesale.status, 201);
+    assert.equal(wholesale.data.unitPrice, 1900);
+    assert.equal(wholesale.data.profitSnapshotUnitProfitTwd, "220.000000000000");
+
+    await db.update(productsTable)
+      .set({ vipPrice: "0.00" })
+      .where(eq(productsTable.id, productId));
+    const zeroVip = await placeMerchantOrder("假資料零元 VIP 訂單", vipCustomer.id);
+    assert.equal(zeroVip.status, 201);
+    assert.equal(zeroVip.data.unitPrice, 0);
+    assert.equal(zeroVip.data.profitSnapshotUnitProfitTwd, "-1680.000000000000");
   });
 }

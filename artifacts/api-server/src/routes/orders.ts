@@ -5,15 +5,17 @@ import {
   backfillPendingCartOrderProfitSnapshot,
   backfillPendingOrderProfitSnapshot,
   createInitialOrderProfitSnapshot,
+  customerTierEnum,
   customersTable,
   db,
   displayOrderProfitSnapshotAmount,
   multiplyMoneyByQuantity,
   ordersTable,
   productsTable,
+  resolveTierPrice,
   shipmentTrackingsTable,
 } from "@workspace/db";
-import type { OrderStatus } from "@workspace/db";
+import type { CustomerTier, OrderStatus } from "@workspace/db";
 import { CreateMerchantOrderBody, UpdateOrderBody, UpdateOrderStatusBody, BulkUpdateOrdersBody, GetPickingListBody, GetShippingListBody } from "@workspace/api-zod";
 import { requireAuth, verifyStoreOwner } from "../middlewares/auth.ts";
 import { getShippingFee } from "../lib/shippingFee.ts";
@@ -145,16 +147,26 @@ router.post("/stores/:storeId/orders", requireAuth, async (req: any, res) => {
           || cvsSelection.cvsStorePhone,
         );
 
-        const unitPrice = product.price as string;
+        const storedCustomerTier = customer?.tier;
+        const customerTier = customerTierEnum.includes(storedCustomerTier as CustomerTier)
+          ? (storedCustomerTier as CustomerTier)
+          : null;
+        const unitPrice = resolveTierPrice({
+          generalPrice: product.price,
+          vipPrice: product.vipPrice,
+          wholesalePrice: product.wholesalePrice,
+          partnerPrice: product.partnerPrice,
+          customerTier,
+        }).priceTwd;
         const totalPrice = multiplyMoneyByQuantity(unitPrice, quantity);
         // Step 7H-3: 與買家端同一套運費規則（黑貓 100 / 郵局 80 / 超商 60 / 自取 0）
         const shippingFee = getShippingFee(pickupMethod);
-        // Snapshot sale price is product.price, the order-time unit price.
-        // If discounts later change the actual unit price, pass that order unitPrice here instead.
+        // Snapshot sale price is the resolved order-time tier price.
+        // If discounts later change the actual unit price, pass that final order unitPrice here instead.
         const profitSnapshotInput = await loadOrderProfitSnapshotInput(
           tx,
           product,
-          product.price,
+          unitPrice,
         );
         const profitSnapshot = createInitialOrderProfitSnapshot(
           profitSnapshotInput,
