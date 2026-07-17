@@ -146,3 +146,43 @@ test("all hashes and re-previews are validated before single-job commits", async
     [7, 8],
   );
 });
+
+test("a later commit failure preserves completed job audit and marks the run partial", async () => {
+  const jobs = [job(), job({ trackingId: 12 })];
+  const audits = [];
+  let commitCount = 0;
+
+  await assert.rejects(
+    runTrackingWorkerPhase2(
+      jobs,
+      baseDeps({
+        commit: async () => {
+          commitCount += 1;
+          if (commitCount === 2) throw new Error("synthetic commit failure");
+          return { insertedEventCount: 2 };
+        },
+        recordAudit: async (row) => audits.push(row),
+      }),
+      "true",
+    ),
+    /synthetic commit failure/,
+  );
+
+  assert.deepEqual(audits, [
+    {
+      storeId: 7,
+      actor: "tracking-worker",
+      action: "tracking_write_completed",
+      target: "tracking-run:opaque-run-id:job-1-of-2:inserted-2",
+    },
+    {
+      storeId: 7,
+      actor: "tracking-worker",
+      action: "tracking_write_partial",
+      target:
+        "tracking-run:opaque-run-id:status-partial:completed-1:jobs-2:inserted-2",
+    },
+  ]);
+  assert.equal(JSON.stringify(audits).includes("FAKE-CODE-DO-NOT-LOG"), false);
+  assert.equal(JSON.stringify(audits).includes("opaque-preview-token"), false);
+});
