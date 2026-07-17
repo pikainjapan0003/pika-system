@@ -80,6 +80,7 @@ jobs:
         id: pure-function-tests
         working-directory: artifacts/api-server
         run: |
+          mkdir -p ../../test-results
           mapfile -t pure_tests < <(
             find ../../lib -type f -name '*.test.mjs' ! -path '*/generated/*' -print
             find ../shop-app/src/lib -type f -name '*.test.mjs' -print
@@ -87,12 +88,13 @@ jobs:
           )
           node \
             --import tsx/esm \
+            --experimental-test-coverage \
             --test-reporter=spec \
             --test-reporter-destination=stdout \
             --test-reporter=junit \
             --test-reporter-destination=../../test-results/pure-functions.junit.xml \
             --test \
-            "${pure_tests[@]}"
+            "${pure_tests[@]}" | tee ../../test-results/pure-functions.log
 
       - name: Install Playwright Chromium
         run: pnpm exec playwright install --with-deps chromium
@@ -138,6 +140,26 @@ jobs:
               rows.push(``, `JUnit report was not created.`);
             }
             rows.push(``);
+          }
+          const coveragePath = "test-results/pure-functions.log";
+          rows.push(
+            `## Native coverage summary`,
+            ``,
+            `Informational only; no coverage threshold is enforced.`,
+            ``,
+          );
+          if (existsSync(coveragePath)) {
+            const output = readFileSync(coveragePath, "utf8").replace(/\u001b\[[0-9;]*m/g, "");
+            const coverage = output.match(
+              /ℹ start of coverage report\r?\n([\s\S]*?)ℹ end of coverage report/,
+            )?.[1]?.trim();
+            if (coverage) {
+              rows.push(`\`\`\`text`, coverage, `\`\`\``, ``);
+            } else {
+              rows.push(`Native coverage output was not found in the test log.`, ``);
+            }
+          } else {
+            rows.push(`Pure-function test log was not created.`, ``);
           }
           appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${rows.join("\n")}\n`);
           NODE
