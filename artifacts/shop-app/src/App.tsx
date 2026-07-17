@@ -18,6 +18,7 @@ import DashboardPage from "@/pages/Dashboard";
 import ProductsPage from "@/pages/Products";
 import ProductFormPage from "@/pages/ProductForm";
 import OrdersPage from "@/pages/Orders";
+import MonthlyProfitPage from "@/pages/MonthlyProfit";
 import CustomersPage from "@/pages/Customers";
 import CustomerDetailPage from "@/pages/CustomerDetail";
 import LogisticsImportPage from "@/pages/LogisticsImport";
@@ -270,6 +271,9 @@ function MerchantPortal() {
         <Route path="/orders">
           {() => <DailySkillPageGate surface="orders"><OrdersPage /></DailySkillPageGate>}
         </Route>
+        <Route path="/reports/monthly-profit">
+          {() => <DailySkillPageGate surface="orders"><MonthlyProfitPage /></DailySkillPageGate>}
+        </Route>
         <Route path="/customers">
           {() => <DailySkillPageGate surface="customers"><CustomersPage /></DailySkillPageGate>}
         </Route>
@@ -349,6 +353,7 @@ function AppRouter() {
       <Route path="/products/*?" component={MerchantPortal} />
       <Route path="/categories" component={MerchantPortal} />
       <Route path="/orders" component={MerchantPortal} />
+      <Route path="/reports/monthly-profit" component={MerchantPortal} />
       <Route path="/customers" component={MerchantPortal} />
       <Route path="/logistics/import/history" component={MerchantPortal} />
       <Route path="/logistics/import" component={MerchantPortal} />

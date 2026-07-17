@@ -154,6 +154,13 @@ export default function DashboardPage() {
             <OwnerMetricCard label="毛利待補拍" value={profitSummary ? String(profitSummary.pendingOrderCount) : "讀取中"} accent={(profitSummary?.pendingOrderCount ?? 0) > 0} />
             <OwnerMetricCard label="尚無快照" value={profitSummary ? String(profitSummary.missingSnapshotOrderCount) : "讀取中"} accent={(profitSummary?.missingSnapshotOrderCount ?? 0) > 0} />
           </div>
+          <button
+            type="button"
+            onClick={() => setLocation("/reports/monthly-profit")}
+            className="mt-3 min-h-11 w-full rounded-xl border border-primary/20 bg-primary/5 text-sm font-semibold text-primary"
+          >
+            查看每月毛利報表 ›
+          </button>
         </section>
 
         {/* Status breakdown */}

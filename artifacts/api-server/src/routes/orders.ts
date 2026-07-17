@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { and, eq, inArray, isNull, or } from "drizzle-orm";
+import { and, eq, gte, inArray, isNull, lt, or } from "drizzle-orm";
 import { randomBytes } from "crypto";
 import {
   backfillPendingCartOrderProfitSnapshot,
@@ -24,6 +24,10 @@ import { TRACKING_IMPORT_ALLOWED_PROVIDERS, normalizeTrackingProvider } from "..
 import { ensureManualProviderTrackingRow } from "../lib/logistics/trackingSeed.ts";
 import { loadOrderProfitSnapshotInput } from "../lib/orderProfitSnapshot.ts";
 import { summarizeOrderProfits } from "../lib/orderProfitSummary.ts";
+import {
+  parseTaipeiMonthRange,
+  summarizeMonthlyOrderProfits,
+} from "../lib/monthlyProfitReport.ts";
 import { parsePaymentLast5 } from "../lib/paymentLast5.ts";
 import { parseCustomerExportMode } from "../lib/customerExport.ts";
 import { formatOrderExportCsv } from "../lib/orderExport.ts";
@@ -45,6 +49,32 @@ router.get("/stores/:storeId/orders/profit-summary", requireAuth, async (req: an
     .from(ordersTable)
     .where(eq(ordersTable.storeId, storeId));
   return res.json(summarizeOrderProfits(orders));
+});
+
+router.get("/stores/:storeId/orders/monthly-profit", requireAuth, async (req: any, res) => {
+  const storeId = parseInt(req.params.storeId);
+  if (isNaN(storeId)) return res.status(400).json({ error: "Invalid storeId" });
+  if (!(await verifyStoreOwner(req, res, storeId))) return;
+
+  const month = typeof req.query.month === "string" ? req.query.month : "";
+  let range: ReturnType<typeof parseTaipeiMonthRange>;
+  try {
+    range = parseTaipeiMonthRange(month);
+  } catch (error) {
+    return res.status(400).json({ error: (error as Error).message });
+  }
+
+  const orders = await db
+    .select()
+    .from(ordersTable)
+    .where(
+      and(
+        eq(ordersTable.storeId, storeId),
+        gte(ordersTable.createdAt, range.start),
+        lt(ordersTable.createdAt, range.end),
+      ),
+    );
+  return res.json(summarizeMonthlyOrderProfits(month, orders));
 });
 
 router.get("/stores/:storeId/orders", requireAuth, async (req: any, res) => {
