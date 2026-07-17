@@ -247,10 +247,12 @@ import { ShippingListDialog } from "./ShippingListDialog";
 import { toast } from "@/hooks/use-toast";
 import { printOrderReceipt } from "../lib/printHelpers";
 import { recordServerAuditEvent } from "@/lib/serverAudit";
+import { useDailySkillVisibility } from "@/lib/dailySkillVisibilityContext";
 
 export default function OrdersPage() {
   const qc = useQueryClient();
   const { getToken } = useAuth();
+  const skillVisibility = useDailySkillVisibility();
   const { data: store } = useGetMyStore();
   const storeId = store?.id;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -681,20 +683,24 @@ export default function OrdersPage() {
             >
               {exporting ? "匯出中…" : "匯出 CSV"}
             </button>
-            <button
-              onClick={() => setLocation("/logistics/import")}
-              disabled={!storeId}
-              className="min-h-11 w-full px-3 text-xs font-medium text-muted-foreground bg-secondary rounded-xl disabled:opacity-50"
-            >
-              物流匯入
-            </button>
-            <button
-              onClick={() => setLocation("/logistics/exceptions")}
-              disabled={!storeId}
-              className="min-h-11 w-full px-3 text-xs font-medium text-muted-foreground bg-secondary rounded-xl disabled:opacity-50"
-            >
-              物流異常
-            </button>
+            {skillVisibility.isVisible("logistics") && (
+              <>
+                <button
+                  onClick={() => setLocation("/logistics/import")}
+                  disabled={!storeId}
+                  className="min-h-11 w-full px-3 text-xs font-medium text-muted-foreground bg-secondary rounded-xl disabled:opacity-50"
+                >
+                  物流匯入
+                </button>
+                <button
+                  onClick={() => setLocation("/logistics/exceptions")}
+                  disabled={!storeId}
+                  className="min-h-11 w-full px-3 text-xs font-medium text-muted-foreground bg-secondary rounded-xl disabled:opacity-50"
+                >
+                  物流異常
+                </button>
+              </>
+            )}
           </div>
         </div>
         <label className="mb-2.5 flex items-center gap-2 text-xs text-muted-foreground">

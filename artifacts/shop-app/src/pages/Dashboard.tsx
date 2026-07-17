@@ -4,6 +4,7 @@ import { useGetMyStore, useGetStoreStats, useListOrders, useListProducts } from 
 import { useAuth, useClerk } from "@clerk/react";
 import { STATUS_LABELS, STATUS_COLORS } from "../lib/orderStatus";
 import { countDashboardOrders, findLowStockProducts, LOW_STOCK_THRESHOLD } from "@/lib/dashboardMetrics";
+import { useDailySkillVisibility } from "@/lib/dailySkillVisibilityContext";
 
 interface ProfitSummary {
   capturedProfitSubtotalDisplayTwd: string;
@@ -13,7 +14,7 @@ interface ProfitSummary {
 
 // 物流異常待處理數（open + reviewing）。現有 API 的 total 受 limit 影響，
 // 因此各抓 limit=100 計數；達上限以 "100+" 顯示。失敗不影響 Dashboard 主功能。
-function useLogisticsPendingCount(storeId: number | undefined) {
+function useLogisticsPendingCount(storeId: number | undefined, enabled: boolean) {
   const { getToken } = useAuth();
   const [state, setState] = useState<{ loading: boolean; failed: boolean; count: number; capped: boolean }>({
     loading: true,
@@ -23,7 +24,10 @@ function useLogisticsPendingCount(storeId: number | undefined) {
   });
 
   useEffect(() => {
-    if (!storeId) return;
+    if (!storeId || !enabled) {
+      setState({ loading: false, failed: false, count: 0, capped: false });
+      return;
+    }
     let cancelled = false;
     (async () => {
       try {
@@ -48,7 +52,7 @@ function useLogisticsPendingCount(storeId: number | undefined) {
     return () => {
       cancelled = true;
     };
-  }, [storeId, getToken]);
+  }, [storeId, getToken, enabled]);
 
   return state;
 }
@@ -56,11 +60,12 @@ function useLogisticsPendingCount(storeId: number | undefined) {
 export default function DashboardPage() {
   const [, setLocation] = useLocation();
   const { signOut } = useClerk();
+  const skillVisibility = useDailySkillVisibility();
   const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
   const { data: store } = useGetMyStore();
   const storeId = store?.id;
-  const pending = useLogisticsPendingCount(storeId);
+  const pending = useLogisticsPendingCount(storeId, skillVisibility.isVisible("logistics"));
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: stats } = useGetStoreStats(storeId!, { query: { enabled: !!storeId } as any });
@@ -170,55 +175,65 @@ export default function DashboardPage() {
 
         {/* Quick actions */}
         <div className="grid grid-cols-2 gap-3">
-          <ActionCard
-            label="管理商品"
-            desc="新增、編輯商品"
-            icon="📦"
-            onClick={() => setLocation("/products")}
-          />
-          <ActionCard
-            label="查看訂單"
-            desc="管理所有訂單"
-            icon="📋"
-            onClick={() => setLocation("/orders")}
-          />
+          {skillVisibility.isVisible("products") && (
+            <ActionCard
+              label="管理商品"
+              desc="新增、編輯商品"
+              icon="📦"
+              onClick={() => setLocation("/products")}
+            />
+          )}
+          {skillVisibility.isVisible("orders") && (
+            <ActionCard
+              label="查看訂單"
+              desc="管理所有訂單"
+              icon="📋"
+              onClick={() => setLocation("/orders")}
+            />
+          )}
           <ActionCard
             label="店鋪設定"
             desc="名稱、簡介"
             icon="⚙"
             onClick={() => setLocation("/settings")}
           />
-          <ActionCard
-            label="物流匯入"
-            desc="上傳 7-11 / 全家 Excel"
-            icon="🚚"
-            onClick={() => setLocation("/logistics/import")}
-          />
-          <ActionCard
-            label="物流異常"
-            desc={
-              pending.loading
-                ? "檢查中..."
-                : pending.failed
-                  ? "數量載入失敗"
-                  : pending.count > 0
-                    ? `${pending.capped ? "100+" : pending.count} 筆待處理`
-                    : "目前無待處理"
-            }
-            icon="⚠️"
-            badge={
-              !pending.loading && !pending.failed && pending.count > 0
-                ? `待處理 ${pending.capped ? "100+" : pending.count}`
-                : undefined
-            }
-            onClick={() => setLocation("/logistics/exceptions")}
-          />
-          <ActionCard
-            label="使用說明"
-            desc="如何開始接單"
-            icon="📖"
-            onClick={() => setLocation("/guide")}
-          />
+          {skillVisibility.isVisible("logistics") && (
+            <ActionCard
+              label="物流匯入"
+              desc="上傳 7-11 / 全家 Excel"
+              icon="🚚"
+              onClick={() => setLocation("/logistics/import")}
+            />
+          )}
+          {skillVisibility.isVisible("logistics") && (
+            <ActionCard
+              label="物流異常"
+              desc={
+                pending.loading
+                  ? "檢查中..."
+                  : pending.failed
+                    ? "數量載入失敗"
+                    : pending.count > 0
+                      ? `${pending.capped ? "100+" : pending.count} 筆待處理`
+                      : "目前無待處理"
+              }
+              icon="⚠️"
+              badge={
+                !pending.loading && !pending.failed && pending.count > 0
+                  ? `待處理 ${pending.capped ? "100+" : pending.count}`
+                  : undefined
+              }
+              onClick={() => setLocation("/logistics/exceptions")}
+            />
+          )}
+          {skillVisibility.isVisible("guide") && (
+            <ActionCard
+              label="使用說明"
+              desc="如何開始接單"
+              icon="📖"
+              onClick={() => setLocation("/guide")}
+            />
+          )}
         </div>
 
         {/* Recent orders */}
@@ -342,12 +357,13 @@ function ActionCard({ label, desc, icon, badge, onClick }: { label: string; desc
 
 export function BottomNav({ active }: { active: "dashboard" | "products" | "orders" | "settings" }) {
   const [, setLocation] = useLocation();
+  const skillVisibility = useDailySkillVisibility();
   const items = [
-    { key: "dashboard", label: "首頁", path: "/dashboard", icon: "○" },
-    { key: "products", label: "商品", path: "/products", icon: "◻" },
-    { key: "orders", label: "訂單", path: "/orders", icon: "≡" },
-    { key: "settings", label: "設定", path: "/settings", icon: "⊙" },
-  ];
+    { key: "dashboard", label: "首頁", path: "/dashboard", icon: "○", surface: "dashboard" as const },
+    { key: "products", label: "商品", path: "/products", icon: "◻", surface: "products" as const },
+    { key: "orders", label: "訂單", path: "/orders", icon: "≡", surface: "orders" as const },
+    { key: "settings", label: "設定", path: "/settings", icon: "⊙", surface: "settings" as const },
+  ].filter((item) => skillVisibility.isVisible(item.surface));
   return (
     <nav className="fixed bottom-0 left-0 right-0 max-w-[480px] mx-auto bg-white border-t border-border px-2 pb-safe">
       <div className="flex">
