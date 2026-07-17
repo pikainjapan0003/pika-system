@@ -29,16 +29,22 @@ test("monthly report delegates exact snapshot aggregation and counts orders", ()
       cartProfitSnapshotStatus: "captured",
       cartProfitSnapshotTotalTwd: "999.660039500000",
     },
+    {
+      quantity: 1,
+      items: null,
+      profitSnapshotStatus: "captured",
+      profitSnapshotUnitProfitTwd: "-1680.000000000000",
+    },
     { quantity: 1, items: null, profitSnapshotStatus: "pending" },
   ]);
 
-  // Existing snapshot aggregator: 186.5533465 x 3 + 999.6600395 = 1559.320079.
+  // 186.5533465 x 3 + 999.6600395 - 1680 = -120.679921.
   assert.deepEqual(report, {
     month: "2026-07",
     timeZone: "Asia/Taipei",
-    orderCount: 3,
-    capturedProfitSubtotalTwd: "1559.320079000000",
-    capturedProfitSubtotalDisplayTwd: "1559",
+    orderCount: 4,
+    capturedProfitSubtotalTwd: "-120.679921000000",
+    capturedProfitSubtotalDisplayTwd: "-121",
     pendingOrderCount: 1,
     missingSnapshotOrderCount: 0,
   });
