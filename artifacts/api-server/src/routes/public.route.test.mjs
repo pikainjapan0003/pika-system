@@ -27,6 +27,7 @@ const { db, storesTable, productsTable, ordersTable, pool } = await import('@wor
 const { eq }                   = await import('drizzle-orm');
 const { PUBLIC_ORDER_CREATED_RESPONSE_KEYS } = await import('../lib/publicOrderResponse.ts');
 const { PUBLIC_TRACK_ORDER_RESPONSE_KEYS } = await import('../lib/publicTrackResponse.ts');
+const { PUBLIC_CART_ITEM_RESPONSE_KEYS } = await import('../lib/publicCartItems.ts');
 const { default: publicRouter } = await import('./public.ts');
 
 // ─────────────────────────────────────────────────────────────
@@ -119,6 +120,20 @@ async function readCreatedOrder(publicToken) {
     .limit(1);
   assert.ok(order, `order ${publicToken} should exist in the test database`);
   return order;
+}
+
+function assertPublicCartItemKeys(items, responseName) {
+  assert.ok(Array.isArray(items), `${responseName} items must be an array`);
+  assert.ok(items.length > 0, `${responseName} items must not be empty`);
+  for (const item of items) {
+    assert.deepStrictEqual(
+      Object.keys(item).sort(),
+      [...PUBLIC_CART_ITEM_RESPONSE_KEYS].sort(),
+      `${responseName} cart item must contain exactly the approved element key allowlist`,
+    );
+    assert.equal(Object.hasOwn(item, 'profitSnapshot'), false,
+      `${responseName} cart item must never expose profitSnapshot`);
+  }
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -304,6 +319,36 @@ describe('POST /p/:shareToken/orders — storeSelectedAt', () => {
 // ─────────────────────────────────────────────────────────────
 // 11. GET /orders/track/:publicToken — privacy protection
 // ─────────────────────────────────────────────────────────────
+describe('public cart responses — nested item privacy', () => {
+  test('cart creation and tracking expose only the cart-item element allowlist', async () => {
+    const { status, data: created } = await req('POST', '/cart/orders', {
+      buyerName: '假資料買家',
+      buyerPhone: '0900000000',
+      pickupMethod: 'self_pickup',
+      items: [{
+        shareToken: testShareToken,
+        quantity: 2,
+        specValues: { size: 'M' },
+      }],
+    });
+
+    assert.strictEqual(status, 201, `expected 201, got ${status}: ${JSON.stringify(created)}`);
+    assertPublicCartItemKeys(created.items, 'cart creation response');
+
+    const stored = await readCreatedOrder(created.publicToken);
+    assert.ok(Array.isArray(stored.items), 'test fixture must store cart items');
+    assert.equal(Object.hasOwn(stored.items[0], 'profitSnapshot'), true,
+      'test fixture must contain the private snapshot that public sanitization removes');
+
+    const { status: trackStatus, data: tracked } = await req(
+      'GET',
+      `/orders/track/${created.publicToken}`,
+    );
+    assert.strictEqual(trackStatus, 200);
+    assertPublicCartItemKeys(tracked.items, 'public tracking response');
+  });
+});
+
 describe('GET /orders/track/:publicToken — privacy protection', () => {
   let trackToken;
 

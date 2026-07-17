@@ -24,6 +24,7 @@ export const PUBLIC_TRACK_ORDER_RESPONSE_KEYS = [
   "recipientNameMasked",
   "recipientPhoneMasked",
   "recipientAddressMasked",
+  // Every element is separately reduced to PUBLIC_CART_ITEM_RESPONSE_KEYS before exposure.
   "items",
   "createdAt",
 ] as const;
