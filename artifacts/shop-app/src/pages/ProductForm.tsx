@@ -555,7 +555,7 @@ export default function ProductFormPage({ productId }: Props) {
               setDeadlineDate("");
               setDeadlineTime("23:59");
             }}
-            className="w-full h-10 text-sm text-primary font-medium"
+            className="w-full min-h-11 text-sm text-primary font-medium"
           >
             再新增一個商品
           </button>
@@ -1099,7 +1099,7 @@ export default function ProductFormPage({ productId }: Props) {
             <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-border">
               <span className="min-w-[3rem]" />
               <h2 className="text-base font-bold text-foreground">選擇日期</h2>
-              <button type="button" onClick={confirmDateSheet} className="text-sm font-semibold text-primary min-w-[3rem] text-right">完成</button>
+              <button type="button" onClick={confirmDateSheet} className="text-sm font-semibold text-primary min-w-[3rem] min-h-11 text-right">完成</button>
             </div>
             <div className="px-4 pt-4 pb-2">
               {/* Month navigation */}
@@ -1107,12 +1107,12 @@ export default function ProductFormPage({ productId }: Props) {
                 <button type="button" onClick={() => {
                   if (calViewMonth === 0) { setCalViewMonth(11); setCalViewYear((y) => y - 1); }
                   else setCalViewMonth((m) => m - 1);
-                }} className="w-10 h-10 flex items-center justify-center text-xl text-foreground rounded-xl hover:bg-secondary">‹</button>
+                }} className="w-11 h-11 flex items-center justify-center text-xl text-foreground rounded-xl hover:bg-secondary">‹</button>
                 <span className="text-sm font-semibold text-foreground">{calViewYear} 年 {calViewMonth + 1} 月</span>
                 <button type="button" onClick={() => {
                   if (calViewMonth === 11) { setCalViewMonth(0); setCalViewYear((y) => y + 1); }
                   else setCalViewMonth((m) => m + 1);
-                }} className="w-10 h-10 flex items-center justify-center text-xl text-foreground rounded-xl hover:bg-secondary">›</button>
+                }} className="w-11 h-11 flex items-center justify-center text-xl text-foreground rounded-xl hover:bg-secondary">›</button>
               </div>
               {/* Weekday headers */}
               <div className="grid grid-cols-7 mb-1">
@@ -1130,12 +1130,12 @@ export default function ProductFormPage({ productId }: Props) {
                 return (
                   <div className="grid grid-cols-7 gap-y-1">
                     {cells.map((day, i) => (
-                      <div key={i} className="flex items-center justify-center h-10">
+                      <div key={i} className="flex items-center justify-center h-11">
                         {day !== null && (
                           <button
                             type="button"
                             onClick={() => setPendingDate({ y: calViewYear, m: calViewMonth, d: day })}
-                            className={`w-9 h-9 rounded-full flex items-center justify-center text-sm transition-colors ${
+                            className={`w-11 h-11 rounded-full flex items-center justify-center text-sm transition-colors ${
                               pendingDate?.y === calViewYear && pendingDate?.m === calViewMonth && pendingDate?.d === day
                                 ? "bg-primary text-white font-bold"
                                 : "text-foreground hover:bg-secondary"
@@ -1162,7 +1162,7 @@ export default function ProductFormPage({ productId }: Props) {
             <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-border">
               <span className="min-w-[3rem]" />
               <h2 className="text-base font-bold text-foreground">選擇時間</h2>
-              <button type="button" onClick={confirmTimeSheet} className="text-sm font-semibold text-primary min-w-[3rem] text-right">完成</button>
+              <button type="button" onClick={confirmTimeSheet} className="text-sm font-semibold text-primary min-w-[3rem] min-h-11 text-right">完成</button>
             </div>
             <div className="flex px-6 py-2 gap-1 items-center">
               {/* AM/PM column */}
