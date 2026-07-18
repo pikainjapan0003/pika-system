@@ -1,4 +1,7 @@
 import type { Order, PickingListResponse, ShippingListResponse, ShippingListOrder } from "@workspace/api-client-react";
+import type { OrderStatus } from "@workspace/db";
+
+import { STATUS_LABELS } from "./orderStatus";
 
 // Local augmentation: generated Order may lag behind DB schema on these fields.
 interface PrintOrderItem {
@@ -329,15 +332,9 @@ ${ordersHtml}`;
   openPrint(htmlDoc("出貨單", body));
 }
 
-const ORDER_STATUS_RECEIPT_LABELS: Record<string, string> = {
-  pending: "待確認",
-  confirmed: "已確認",
-  preparing: "備貨中",
-  shipped: "已出貨",
-  arrived: "已到貨",
-  completed: "已完成",
-  cancelled: "已取消",
-};
+export function getOrderReceiptStatusLabel(status: OrderStatus): string {
+  return STATUS_LABELS[status];
+}
 
 function formatCurrency(value: number): string {
   return `NT$ ${Number(value).toLocaleString()}`;
@@ -579,7 +576,7 @@ export function printOrderReceipt(
     </div>
     <div class="info-row">
       <span class="info-label">訂單狀態</span>
-      <span class="info-value"><span class="status-badge">${esc(ORDER_STATUS_RECEIPT_LABELS[order.status] ?? order.status)}</span></span>
+      <span class="info-value"><span class="status-badge">${esc(getOrderReceiptStatusLabel(order.status as OrderStatus))}</span></span>
     </div>
     ${paymentStatusText ? `<div class="info-row"><span class="info-label">付款狀態</span><span class="info-value"><span class="status-badge">${esc(paymentStatusText)}</span></span></div>` : ""}
     ${fulfillmentLabel ? `<div class="info-row"><span class="info-label">取貨方式</span><span class="info-value">${esc(fulfillmentLabel)}</span></div>` : ""}
