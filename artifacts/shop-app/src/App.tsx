@@ -1,12 +1,31 @@
 import { useEffect, useRef, useState } from "react";
-import { ClerkProvider, SignIn, SignUp, Show, useAuth, useClerk, useUser } from "@clerk/react";
+import {
+  ClerkProvider,
+  SignIn,
+  SignUp,
+  Show,
+  useAuth,
+  useClerk,
+  useUser,
+} from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadcn } from "@clerk/themes";
-import { Switch, Route, Redirect, useLocation, Router as WouterRouter } from "wouter";
+import {
+  Switch,
+  Route,
+  Redirect,
+  useLocation,
+  Router as WouterRouter,
+} from "wouter";
 import { QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { queryClient } from "@/lib/queryClient";
-import { useGetMyStore, useCreateStore, getGetMyStoreQueryKey, setAuthTokenGetter } from "@workspace/api-client-react";
+import {
+  useGetMyStore,
+  useCreateStore,
+  getGetMyStoreQueryKey,
+  setAuthTokenGetter,
+} from "@workspace/api-client-react";
 import { applyBrandColor, DEFAULT_BRAND_PRIMARY_COLOR } from "@/lib/brandColor";
 import {
   DailySkillPageGate,
@@ -85,7 +104,8 @@ const clerkAppearance = {
   },
   elements: {
     rootBox: "w-full flex justify-center",
-    cardBox: "bg-white rounded-2xl w-[440px] max-w-full overflow-hidden shadow-lg",
+    cardBox:
+      "bg-white rounded-2xl w-[440px] max-w-full overflow-hidden shadow-lg",
     card: "!shadow-none !border-0 !bg-transparent !rounded-none",
     footer: "!shadow-none !border-0 !bg-transparent !rounded-none",
     headerTitle: "text-foreground font-bold",
@@ -100,7 +120,8 @@ const clerkAppearance = {
     alertText: "text-foreground",
     logoBox: "mb-2",
     logoImage: "h-10",
-    socialButtonsBlockButton: "border border-border bg-white hover:bg-secondary",
+    socialButtonsBlockButton:
+      "border border-border bg-white hover:bg-secondary",
     formButtonPrimary: "bg-primary hover:opacity-90 text-white",
     formFieldInput: "border-input bg-white text-foreground",
     footerAction: "border-t border-border",
@@ -115,7 +136,11 @@ const clerkAppearance = {
 function SignInPage() {
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4">
-      <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} />
+      <SignIn
+        routing="path"
+        path={`${basePath}/sign-in`}
+        signUpUrl={`${basePath}/sign-up`}
+      />
     </div>
   );
 }
@@ -123,7 +148,11 @@ function SignInPage() {
 function SignUpPage() {
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4">
-      <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} />
+      <SignUp
+        routing="path"
+        path={`${basePath}/sign-up`}
+        signInUrl={`${basePath}/sign-in`}
+      />
     </div>
   );
 }
@@ -136,7 +165,10 @@ function ClerkQueryClientCacheInvalidator() {
   useEffect(() => {
     const unsubscribe = addListener(({ user }) => {
       const userId = user?.id ?? null;
-      if (prevUserIdRef.current !== undefined && prevUserIdRef.current !== userId) {
+      if (
+        prevUserIdRef.current !== undefined &&
+        prevUserIdRef.current !== userId
+      ) {
         qc.clear();
       }
       prevUserIdRef.current = userId;
@@ -151,12 +183,18 @@ function MerchantPortal() {
   const { isLoaded, isSignedIn } = useUser();
   const qc = useQueryClient();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: store, isLoading, error } = useGetMyStore({ query: { enabled: !!isSignedIn } as any });
+  const {
+    data: store,
+    isLoading,
+    error,
+  } = useGetMyStore({ query: { enabled: !!isSignedIn } as any });
   const { mutateAsync: createStoreMutate } = useCreateStore();
 
   const { signOut } = useClerk();
 
-  const [storeInitState, setStoreInitState] = useState<"idle" | "creating" | "failed">("idle");
+  const [storeInitState, setStoreInitState] = useState<
+    "idle" | "creating" | "failed"
+  >("idle");
   const [storeInitError, setStoreInitError] = useState("");
 
   useEffect(() => {
@@ -170,7 +208,13 @@ function MerchantPortal() {
   const isAuthError = !!error && (errorStatus === 401 || errorStatus === 403);
 
   useEffect(() => {
-    if (!isSignedIn || !is404 || storeInitState !== "idle" || createAttemptedRef.current) return;
+    if (
+      !isSignedIn ||
+      !is404 ||
+      storeInitState !== "idle" ||
+      createAttemptedRef.current
+    )
+      return;
     createAttemptedRef.current = true;
     setStoreInitState("creating");
 
@@ -178,7 +222,9 @@ function MerchantPortal() {
     (async () => {
       for (let attempt = 0; attempt < 3; attempt++) {
         try {
-          await createStoreMutate({ data: { name: "我的代購店", slug: genSlug() } });
+          await createStoreMutate({
+            data: { name: "我的代購店", slug: genSlug() },
+          });
           await qc.invalidateQueries({ queryKey: getGetMyStoreQueryKey() });
           setStoreInitState("idle");
           return;
@@ -194,7 +240,12 @@ function MerchantPortal() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSignedIn, is404, storeInitState]);
 
-  if (!isLoaded || isLoading || storeInitState === "creating" || (is404 && !!isSignedIn && storeInitState === "idle")) {
+  if (
+    !isLoaded ||
+    isLoading ||
+    storeInitState === "creating" ||
+    (is404 && !!isSignedIn && storeInitState === "idle")
+  ) {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center flex-col gap-3">
         <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -229,7 +280,9 @@ function MerchantPortal() {
       <div className="flex min-h-[100dvh] items-center justify-center px-5">
         <div className="w-full max-w-sm bg-white rounded-2xl p-6 border border-border space-y-4 text-center">
           <p className="font-medium text-foreground">登入狀態已失效</p>
-          <p className="text-sm text-muted-foreground">請重新登入後繼續使用畫夢代購。</p>
+          <p className="text-sm text-muted-foreground">
+            請重新登入後繼續使用畫夢代購。
+          </p>
           <button
             onClick={() => void signOut({ redirectUrl: basePath || "/" })}
             className="w-full h-11 bg-primary text-white font-semibold rounded-xl text-sm"
@@ -246,7 +299,9 @@ function MerchantPortal() {
       <div className="flex min-h-[100dvh] items-center justify-center px-5">
         <div className="w-full max-w-sm bg-white rounded-2xl p-6 border border-border text-center">
           <p className="font-medium text-foreground">無法載入店鋪資料</p>
-          <p className="text-sm text-muted-foreground mt-2">請確認網路連線後重新整理頁面</p>
+          <p className="text-sm text-muted-foreground mt-2">
+            請確認網路連線後重新整理頁面
+          </p>
         </div>
       </div>
     );
@@ -259,50 +314,109 @@ function MerchantPortal() {
       <Switch>
         <Route path="/dashboard" component={DashboardPage} />
         <Route path="/products/new">
-          {() => <DailySkillPageGate surface="products"><ProductFormPage /></DailySkillPageGate>}
+          {() => (
+            <DailySkillPageGate surface="products">
+              <ProductFormPage />
+            </DailySkillPageGate>
+          )}
         </Route>
         <Route path="/products/:productId/edit">
-          {(params) => <DailySkillPageGate surface="products"><ProductFormPage productId={Number(params.productId)} /></DailySkillPageGate>}
+          {(params) => (
+            <DailySkillPageGate surface="products">
+              <ProductFormPage productId={Number(params.productId)} />
+            </DailySkillPageGate>
+          )}
         </Route>
         <Route path="/products">
-          {() => <DailySkillPageGate surface="products"><ProductsPage /></DailySkillPageGate>}
+          {() => (
+            <DailySkillPageGate surface="products">
+              <ProductsPage />
+            </DailySkillPageGate>
+          )}
         </Route>
         <Route path="/categories">
-          {() => <DailySkillPageGate surface="categories"><ProductCategoriesPage /></DailySkillPageGate>}
+          {() => (
+            <DailySkillPageGate surface="categories">
+              <ProductCategoriesPage />
+            </DailySkillPageGate>
+          )}
         </Route>
         <Route path="/orders">
-          {() => <DailySkillPageGate surface="orders"><OrdersPage /></DailySkillPageGate>}
+          {() => (
+            <DailySkillPageGate surface="orders">
+              <OrdersPage />
+            </DailySkillPageGate>
+          )}
         </Route>
         <Route path="/reports/monthly-profit">
-          {() => <DailySkillPageGate surface="orders"><MonthlyProfitPage /></DailySkillPageGate>}
+          {() => (
+            <DailySkillPageGate surface="orders">
+              <MonthlyProfitPage />
+            </DailySkillPageGate>
+          )}
         </Route>
         <Route path="/customers">
-          {() => <DailySkillPageGate surface="customers"><CustomersPage /></DailySkillPageGate>}
+          {() => (
+            <DailySkillPageGate surface="customers">
+              <CustomersPage />
+            </DailySkillPageGate>
+          )}
         </Route>
         <Route path="/customers/:customerId">
-          {(params) => <DailySkillPageGate surface="customers"><CustomerDetailPage customerId={Number(params.customerId)} /></DailySkillPageGate>}
+          {(params) => (
+            <DailySkillPageGate surface="customers">
+              <CustomerDetailPage customerId={Number(params.customerId)} />
+            </DailySkillPageGate>
+          )}
         </Route>
         <Route path="/logistics/import/history">
-          {() => <DailySkillPageGate surface="logistics"><LogisticsImportHistoryPage /></DailySkillPageGate>}
+          {() => (
+            <DailySkillPageGate surface="logistics">
+              <LogisticsImportHistoryPage />
+            </DailySkillPageGate>
+          )}
         </Route>
         <Route path="/logistics/import">
-          {() => <DailySkillPageGate surface="logistics"><LogisticsImportPage /></DailySkillPageGate>}
+          {() => (
+            <DailySkillPageGate surface="logistics">
+              <LogisticsImportPage />
+            </DailySkillPageGate>
+          )}
         </Route>
         <Route path="/logistics/exceptions">
-          {() => <DailySkillPageGate surface="logistics"><LogisticsExceptionsPage /></DailySkillPageGate>}
+          {() => (
+            <DailySkillPageGate surface="logistics">
+              <LogisticsExceptionsPage />
+            </DailySkillPageGate>
+          )}
         </Route>
         <Route path="/settings/agent">
-          {() => <DailySkillPageGate surface="agent-settings"><AgentSettingsPage /></DailySkillPageGate>}
+          {() => (
+            <DailySkillPageGate surface="agent-settings">
+              <AgentSettingsPage />
+            </DailySkillPageGate>
+          )}
         </Route>
-        <Route path="/settings/exchange-rate-reference" component={ExchangeRateReferencePage} />
+        <Route
+          path="/settings/exchange-rate-reference"
+          component={ExchangeRateReferencePage}
+        />
         <Route path="/skill-map" component={SkillMapPage} />
         <Route path="/audit-logs">
-          {() => <DailySkillPageGate surface="audit-logs"><AuditLogsPage /></DailySkillPageGate>}
+          {() => (
+            <DailySkillPageGate surface="audit-logs">
+              <AuditLogsPage />
+            </DailySkillPageGate>
+          )}
         </Route>
         <Route path="/settings" component={SettingsPage} />
         <Route path="/trips" component={TripsPage} />
         <Route path="/guide">
-          {() => <DailySkillPageGate surface="guide"><GuidePage /></DailySkillPageGate>}
+          {() => (
+            <DailySkillPageGate surface="guide">
+              <GuidePage />
+            </DailySkillPageGate>
+          )}
         </Route>
         <Route component={NotFoundPage} />
       </Switch>
@@ -338,9 +452,7 @@ function AppRouter() {
       <Route path="/p/:shareToken">
         {(params) => <PublicOrderPage shareToken={params.shareToken} />}
       </Route>
-      <Route path="/track">
-        {() => <TrackLookupPage />}
-      </Route>
+      <Route path="/track">{() => <TrackLookupPage />}</Route>
       <Route path="/track/:publicToken">
         {(params) => <TrackOrderPage publicToken={params.publicToken} />}
       </Route>
@@ -361,7 +473,10 @@ function AppRouter() {
       <Route path="/logistics/import" component={MerchantPortal} />
       <Route path="/logistics/exceptions" component={MerchantPortal} />
       <Route path="/settings/agent" component={MerchantPortal} />
-      <Route path="/settings/exchange-rate-reference" component={MerchantPortal} />
+      <Route
+        path="/settings/exchange-rate-reference"
+        component={MerchantPortal}
+      />
       <Route path="/skill-map" component={MerchantPortal} />
       <Route path="/audit-logs" component={MerchantPortal} />
       <Route path="/settings" component={MerchantPortal} />
@@ -379,7 +494,9 @@ function ClerkTokenBridge() {
 
   useEffect(() => {
     setAuthTokenGetter(() => getTokenRef.current());
-    return () => { setAuthTokenGetter(null); };
+    return () => {
+      setAuthTokenGetter(null);
+    };
   }, []);
 
   return null;

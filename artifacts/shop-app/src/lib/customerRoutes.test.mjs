@@ -15,7 +15,11 @@ function renderRoute(path) {
       createElement(
         Switch,
         null,
-        createElement(Route, { path: CUSTOMER_PORTAL_ROUTE_PATTERN }, "customer-portal"),
+        createElement(
+          Route,
+          { path: CUSTOMER_PORTAL_ROUTE_PATTERN },
+          "customer-portal",
+        ),
         createElement(Route, null, "not-found"),
       ),
     ),
