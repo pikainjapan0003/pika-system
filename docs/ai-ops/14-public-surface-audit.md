@@ -185,3 +185,9 @@
 ## 最終裁決
 
 **本次未發現 P0 成本、毛利、完整客戶個資或他人資料洩漏。**公開 DTO 已從早期 denylist 改為 allowlist，購物車巢狀快照也已在 HTTP 邊界剝除；96/128-bit token 熵與現有限流足以抵抗枚舉。殘餘風險主要是 bearer URL 被轉傳／記錄後的能力外流，以及精確庫存等必要營運資訊的最小揭露問題。
+
+## BATCH-12 後續處理（2026-07-19）
+
+- commit `34c74e8` 已在所有 middleware 與公開路由前設定 `Referrer-Policy: no-referrer`，降低 bearer URL 經瀏覽器 Referer 外流的風險。
+- 同一 commit 設定 `X-Content-Type-Options: nosniff`，避免瀏覽器自行猜測回應內容型別。
+- 真實 Express HTTP 測試已覆蓋成功與 404 回應，兩種回應都必須帶上述標頭；未加入會改變現有頁面載入語意的 CSP/HSTS。
