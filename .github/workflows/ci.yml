@@ -74,7 +74,8 @@ jobs:
             --test \
             src/routes/orderProfitSnapshot.route.test.mjs \
             src/routes/logisticsSyncCommitKillSwitch.route.test.mjs \
-            src/routes/public.route.test.mjs
+            src/routes/public.route.test.mjs \
+            src/routes/skills.route.test.mjs
 
       - name: Test pure function suites
         id: pure-function-tests
