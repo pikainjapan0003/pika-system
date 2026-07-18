@@ -29,6 +29,7 @@ import PublicOrderPage from "@/pages/PublicOrder";
 import TrackLookupPage from "@/pages/TrackLookup";
 import TrackOrderPage from "@/pages/TrackOrder";
 import SettingsPage from "@/pages/Settings";
+import ExchangeRateReferencePage from "@/pages/ExchangeRateReference";
 import SkillMapPage from "@/pages/SkillMap";
 import AuditLogsPage from "@/pages/AuditLogs";
 import AgentSettingsPage from "@/pages/AgentSettings";
@@ -292,14 +293,13 @@ function MerchantPortal() {
         <Route path="/settings/agent">
           {() => <DailySkillPageGate surface="agent-settings"><AgentSettingsPage /></DailySkillPageGate>}
         </Route>
+        <Route path="/settings/exchange-rate-reference" component={ExchangeRateReferencePage} />
         <Route path="/skill-map" component={SkillMapPage} />
         <Route path="/audit-logs">
           {() => <DailySkillPageGate surface="audit-logs"><AuditLogsPage /></DailySkillPageGate>}
         </Route>
         <Route path="/settings" component={SettingsPage} />
-        <Route path="/trips">
-          {() => <DailySkillPageGate surface="trips"><TripsPage /></DailySkillPageGate>}
-        </Route>
+        <Route path="/trips" component={TripsPage} />
         <Route path="/guide">
           {() => <DailySkillPageGate surface="guide"><GuidePage /></DailySkillPageGate>}
         </Route>
@@ -359,6 +359,7 @@ function AppRouter() {
       <Route path="/logistics/import" component={MerchantPortal} />
       <Route path="/logistics/exceptions" component={MerchantPortal} />
       <Route path="/settings/agent" component={MerchantPortal} />
+      <Route path="/settings/exchange-rate-reference" component={MerchantPortal} />
       <Route path="/skill-map" component={MerchantPortal} />
       <Route path="/audit-logs" component={MerchantPortal} />
       <Route path="/settings" component={MerchantPortal} />
