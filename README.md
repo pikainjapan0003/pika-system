@@ -40,3 +40,13 @@ node --test lib/privacy/src/index.test.mjs lib/shipping/src/index.test.mjs
 ```
 
 完整 CI 會在 Ubuntu runner 執行 typecheck、build 與 PostgreSQL route tests。含資料庫的測試只能使用 workflow 提供的拋棄式服務或另建測試庫；不要把 production `DATABASE_URL` 帶進本機測試。
+
+## 拋棄式示範資料
+
+示範資料腳本的唯一支援入口如下；它只接受命令列明確提供的拋棄式 PostgreSQL URL，並會拒絕含 `replit` 或 `prod` 字樣的目標：
+
+```bash
+corepack pnpm --filter ./scripts run demo-seed -- --database-url postgresql://demo:demo@127.0.0.1:55432/pika_demo
+```
+
+不要從 repo root 直接執行 `node --import tsx/esm scripts/demo-seed.mjs`，因為 `tsx` 安裝在 `scripts` workspace 套件，root 直呼不保證能解析。若目標庫已有 `demo-` 示範資料，腳本預設拒絕再次寫入；確定要刻意追加時才在命令末尾加上 `--append`。

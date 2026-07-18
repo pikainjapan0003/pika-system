@@ -1,3 +1,7 @@
+// Supported entrypoint (from the repository root):
+// corepack pnpm --filter ./scripts run demo-seed -- --database-url <disposable-url>
+// Do not invoke this file with root-level `node --import tsx/esm`: tsx belongs
+// to the scripts workspace package and is resolved through the command above.
 import { randomUUID } from "node:crypto";
 import { pathToFileURL } from "node:url";
 
