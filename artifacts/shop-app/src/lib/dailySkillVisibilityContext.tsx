@@ -11,6 +11,7 @@ import {
 import { useLocation } from "wouter";
 
 import {
+  countEnabledStoreSkills,
   type DailySkillSurface,
   type StoreSkillVisibilityState,
   resolveDailySkillSurfaceVisibility,
@@ -18,11 +19,13 @@ import {
 
 interface DailySkillVisibilityContextValue {
   loaded: boolean;
+  enabledSkillCount: number;
   isVisible: (surface: DailySkillSurface) => boolean;
 }
 
 const defaultValue: DailySkillVisibilityContextValue = {
   loaded: true,
+  enabledSkillCount: 0,
   isVisible: (surface) => resolveDailySkillSurfaceVisibility(surface, []),
 };
 
@@ -71,7 +74,14 @@ export function StoreSkillVisibilityProvider({
       resolveDailySkillSurfaceVisibility(surface, states),
     [states],
   );
-  const value = useMemo(() => ({ loaded, isVisible }), [isVisible, loaded]);
+  const enabledSkillCount = useMemo(
+    () => countEnabledStoreSkills(states),
+    [states],
+  );
+  const value = useMemo(
+    () => ({ loaded, enabledSkillCount, isVisible }),
+    [enabledSkillCount, isVisible, loaded],
+  );
 
   return (
     <DailySkillVisibilityContext.Provider value={value}>
