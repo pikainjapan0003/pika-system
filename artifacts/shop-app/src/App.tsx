@@ -12,6 +12,7 @@ import {
   DailySkillPageGate,
   StoreSkillVisibilityProvider,
 } from "@/lib/dailySkillVisibilityContext";
+import { CUSTOMER_PORTAL_ROUTE_PATTERN } from "@/lib/customerRoutes";
 
 import HomePage from "@/pages/Home";
 import DashboardPage from "@/pages/Dashboard";
@@ -354,7 +355,8 @@ function AppRouter() {
       <Route path="/categories" component={MerchantPortal} />
       <Route path="/orders" component={MerchantPortal} />
       <Route path="/reports/monthly-profit" component={MerchantPortal} />
-      <Route path="/customers" component={MerchantPortal} />
+      {/* Keep customer detail routes inside MerchantPortal instead of falling through to 404. */}
+      <Route path={CUSTOMER_PORTAL_ROUTE_PATTERN} component={MerchantPortal} />
       <Route path="/logistics/import/history" component={MerchantPortal} />
       <Route path="/logistics/import" component={MerchantPortal} />
       <Route path="/logistics/exceptions" component={MerchantPortal} />
