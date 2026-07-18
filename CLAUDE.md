@@ -19,10 +19,10 @@ dev-handoff/
 
 #### 檔案指派
 
-| Claude Code | 只能寫入 |
-|-------------|---------|
-| Claude A | `dev-handoff/latest-A.json`、`dev-handoff/latest-A.md` |
-| Claude B | `dev-handoff/latest-B.json`、`dev-handoff/latest-B.md` |
+| Claude Code | 只能寫入                                               |
+| ----------- | ------------------------------------------------------ |
+| Claude A    | `dev-handoff/latest-A.json`、`dev-handoff/latest-A.md` |
+| Claude B    | `dev-handoff/latest-B.json`、`dev-handoff/latest-B.md` |
 
 #### 嚴格禁止（無例外）
 
@@ -92,27 +92,17 @@ dev-handoff/
   "taskTitle": "<task title>",
   "branch": "<current git branch>",
   "status": "completed | blocked | needs-review",
-  "summary": [
-    "<change summary item>"
-  ],
-  "modifiedFiles": [
-    "<file path>"
-  ],
-  "testsRun": [
-    "<test command or manual check>"
-  ],
+  "summary": ["<change summary item>"],
+  "modifiedFiles": ["<file path>"],
+  "testsRun": ["<test command or manual check>"],
   "testsNotRun": [
     {
       "name": "<test name>",
       "reason": "<reason>"
     }
   ],
-  "risks": [
-    "<risk>"
-  ],
-  "pendingQuestions": [
-    "<question>"
-  ],
+  "risks": ["<risk>"],
+  "pendingQuestions": ["<question>"],
   "rawReply": "<exact final reply from this Claude Code>",
   "updatedAt": "<ISO timestamp>"
 }
@@ -132,27 +122,34 @@ dev-handoff/
 # Claude Handoff：claude-a
 
 ## 任務
+
 <task title>
 
 ## 分支
+
 <branch>
 
 ## 變更摘要
+
 - ...
 
 ## 修改檔案
+
 - ...
 
 ## 測試結果
+
 - 已執行：
   - ...
 - 未執行：
   - 原因：...
 
 ## 風險與待確認
+
 - ...
 
 ## 最終回覆
+
 <rawReply exact copy>
 ```
 
@@ -166,6 +163,7 @@ dev-handoff/
 ### 原因
 
 使用者的工作流是：
+
 ```
 ChatGPT 給指令
 → 使用者貼給 Claude Code（A 或 B）

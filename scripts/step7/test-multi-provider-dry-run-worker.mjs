@@ -59,10 +59,22 @@ const po = summary.results.find((r) => r.provider === "postoffice");
 console.log("");
 console.log("--- postoffice dry-run result ---");
 console.log(JSON.stringify(po, null, 2));
-check("postoffice ok=true", po?.ok === true, po?.errorCode ?? po?.skippedReason ?? "");
-check("postoffice wouldWriteEvents=5", po?.wouldWriteEvents === 5, `got ${po?.wouldWriteEvents}`);
+check(
+  "postoffice ok=true",
+  po?.ok === true,
+  po?.errorCode ?? po?.skippedReason ?? "",
+);
+check(
+  "postoffice wouldWriteEvents=5",
+  po?.wouldWriteEvents === 5,
+  `got ${po?.wouldWriteEvents}`,
+);
 check("postoffice wouldUpdateSnapshot=true", po?.wouldUpdateSnapshot === true);
-check("postoffice latestStatusText=投遞成功", po?.latestStatusText === "投遞成功", `got ${po?.latestStatusText}`);
+check(
+  "postoffice latestStatusText=投遞成功",
+  po?.latestStatusText === "投遞成功",
+  `got ${po?.latestStatusText}`,
+);
 check(
   "postoffice latestEventAt=2026/06/08 11:21:53",
   po?.latestEventAt === "2026/06/08 11:21:53",
@@ -75,7 +87,9 @@ check(
 );
 check(
   "postoffice keys prefixed with provider:code",
-  (po?.idempotencyKeysPreview ?? []).every((k) => k.startsWith("postoffice:97300922002170830005:")),
+  (po?.idempotencyKeysPreview ?? []).every((k) =>
+    k.startsWith("postoffice:97300922002170830005:"),
+  ),
 );
 
 // --- tcat ---
@@ -83,10 +97,22 @@ const tc = summary.results.find((r) => r.provider === "tcat");
 console.log("");
 console.log("--- tcat dry-run result ---");
 console.log(JSON.stringify(tc, null, 2));
-check("tcat ok=true", tc?.ok === true, tc?.errorCode ?? tc?.skippedReason ?? "");
-check("tcat wouldWriteEvents=5", tc?.wouldWriteEvents === 5, `got ${tc?.wouldWriteEvents}`);
+check(
+  "tcat ok=true",
+  tc?.ok === true,
+  tc?.errorCode ?? tc?.skippedReason ?? "",
+);
+check(
+  "tcat wouldWriteEvents=5",
+  tc?.wouldWriteEvents === 5,
+  `got ${tc?.wouldWriteEvents}`,
+);
 check("tcat wouldUpdateSnapshot=true", tc?.wouldUpdateSnapshot === true);
-check("tcat latestStatusText=順利送達", tc?.latestStatusText === "順利送達", `got ${tc?.latestStatusText}`);
+check(
+  "tcat latestStatusText=順利送達",
+  tc?.latestStatusText === "順利送達",
+  `got ${tc?.latestStatusText}`,
+);
 check(
   "tcat latestEventAt=2026/05/29 08:31",
   tc?.latestEventAt === "2026/05/29 08:31",
@@ -99,11 +125,14 @@ check(
 );
 check(
   "tcat keys prefixed with provider:code",
-  (tc?.idempotencyKeysPreview ?? []).every((k) => k.startsWith("tcat:135063214096:")),
+  (tc?.idempotencyKeysPreview ?? []).every((k) =>
+    k.startsWith("tcat:135063214096:"),
+  ),
 );
 check(
   "tcat keys unique (location in key, 7N-C)",
-  new Set(tc?.idempotencyKeysPreview ?? []).size === (tc?.idempotencyKeysPreview ?? []).length,
+  new Set(tc?.idempotencyKeysPreview ?? []).size ===
+    (tc?.idempotencyKeysPreview ?? []).length,
 );
 
 // --- 711 gate-only ---
@@ -111,19 +140,44 @@ const se = summary.results.find((r) => r.provider === "711");
 console.log("");
 console.log("--- 7-11 gate-only result ---");
 console.log(JSON.stringify(se, null, 2));
-check("711 skipped (gate-only)", typeof se?.skippedReason === "string" && se.skippedReason.startsWith("GATE_ONLY"));
-check("711 no external call (adapterOk=false, no events)", se?.adapterOk === false && se?.wouldWriteEvents === 0);
-check("711 gate.controlledWorkerEnabled=false", se?.gate?.controlledWorkerEnabled === false);
-check("711 gate.scheduledSyncEnabled=false", se?.gate?.scheduledSyncEnabled === false);
-check("711 gate.requiresManualFallback=true", se?.gate?.requiresManualFallback === true);
+check(
+  "711 skipped (gate-only)",
+  typeof se?.skippedReason === "string" &&
+    se.skippedReason.startsWith("GATE_ONLY"),
+);
+check(
+  "711 no external call (adapterOk=false, no events)",
+  se?.adapterOk === false && se?.wouldWriteEvents === 0,
+);
+check(
+  "711 gate.controlledWorkerEnabled=false",
+  se?.gate?.controlledWorkerEnabled === false,
+);
+check(
+  "711 gate.scheduledSyncEnabled=false",
+  se?.gate?.scheduledSyncEnabled === false,
+);
+check(
+  "711 gate.requiresManualFallback=true",
+  se?.gate?.requiresManualFallback === true,
+);
 
 // --- gate config sanity ---
 console.log("");
 console.log("--- gate config ---");
 console.log(JSON.stringify(DRY_RUN_PROVIDER_GATE, null, 2));
-check("postoffice scheduledSyncEnabled=false", DRY_RUN_PROVIDER_GATE.postoffice.scheduledSyncEnabled === false);
-check("tcat scheduledSyncEnabled=false", DRY_RUN_PROVIDER_GATE.tcat.scheduledSyncEnabled === false);
-check("familymart scheduledSyncEnabled=true", DRY_RUN_PROVIDER_GATE.familymart.scheduledSyncEnabled === true);
+check(
+  "postoffice scheduledSyncEnabled=false",
+  DRY_RUN_PROVIDER_GATE.postoffice.scheduledSyncEnabled === false,
+);
+check(
+  "tcat scheduledSyncEnabled=false",
+  DRY_RUN_PROVIDER_GATE.tcat.scheduledSyncEnabled === false,
+);
+check(
+  "familymart scheduledSyncEnabled=true",
+  DRY_RUN_PROVIDER_GATE.familymart.scheduledSyncEnabled === true,
+);
 
 // --- gate negative cases（不打外部）---
 const negative = await runMultiProviderDryRun([
@@ -135,7 +189,8 @@ console.log("--- negative gate cases ---");
 console.log(JSON.stringify(negative.results, null, 2));
 check(
   "unknown provider skipped",
-  negative.results[0]?.skippedReason?.startsWith("UNSUPPORTED_PROVIDER") === true,
+  negative.results[0]?.skippedReason?.startsWith("UNSUPPORTED_PROVIDER") ===
+    true,
 );
 check(
   "empty trackingCode skipped",

@@ -23,7 +23,9 @@ const TESSERACT =
 const tmpDir = mkdtempSync(path.join(os.tmpdir(), "s7-711-captcha-"));
 
 console.log("=== Step 7O-711-OCR-OR-SOURCE-VALIDATION ===");
-console.log("Mode: captcha-only (GET + image download + OCR, NO tracking submission)");
+console.log(
+  "Mode: captcha-only (GET + image download + OCR, NO tracking submission)",
+);
 console.log("tesseract:", TESSERACT);
 console.log("");
 
@@ -33,11 +35,15 @@ console.log("");
 console.log("--- [1] tesseract binary check ---");
 const versionResult = spawnSync(TESSERACT, ["--version"], { encoding: "utf8" });
 if (versionResult.status !== 0 || versionResult.error) {
-  console.log("  RESULT: BLOCKED — tesseract binary not found or not executable");
+  console.log(
+    "  RESULT: BLOCKED — tesseract binary not found or not executable",
+  );
   console.log("  error:", versionResult.error?.message ?? versionResult.stderr);
   process.exit(1);
 }
-const version = (versionResult.stdout || versionResult.stderr || "").split("\n")[0];
+const version = (versionResult.stdout || versionResult.stderr || "").split(
+  "\n",
+)[0];
 console.log("  version:", version);
 console.log("  RESULT: OK");
 console.log("");
@@ -70,7 +76,9 @@ try {
       captchaUrl = BASE_URL + m[1];
       console.log("  captcha URL found: ValidateImage.aspx?ts=XXXXX (masked)");
     } else {
-      console.log("  WARNING: captcha URL not found in HTML — page structure may have changed");
+      console.log(
+        "  WARNING: captcha URL not found in HTML — page structure may have changed",
+      );
     }
   }
 } catch (err) {
@@ -79,17 +87,26 @@ try {
 
 if (!getReachable) {
   console.log("  RESULT: BLOCKED — cannot reach 7-11 server");
-  console.log("  Conclusion: Network access to eservice.7-11.com.tw is blocked in this environment.");
+  console.log(
+    "  Conclusion: Network access to eservice.7-11.com.tw is blocked in this environment.",
+  );
   rmSync(tmpDir, { recursive: true, force: true });
   process.exit(0);
 }
-console.log("  RESULT:", captchaUrl ? "OK (captcha URL extracted)" : "PARTIAL (page reached, no captcha URL)");
+console.log(
+  "  RESULT:",
+  captchaUrl
+    ? "OK (captcha URL extracted)"
+    : "PARTIAL (page reached, no captcha URL)",
+);
 console.log("");
 
 if (!captchaUrl) {
   console.log("=== CONCLUSION: PARTIAL ===");
   console.log("  server reachable, but captcha URL extraction failed");
-  console.log("  Possible cause: page structure changed since adapter was written");
+  console.log(
+    "  Possible cause: page structure changed since adapter was written",
+  );
   rmSync(tmpDir, { recursive: true, force: true });
   process.exit(0);
 }
@@ -136,11 +153,31 @@ console.log("");
 console.log("--- [4] OCR with preprocessing variants ---");
 
 const VARIANTS = [
-  { label: "raw (no preprocess)",   args: null },
-  { label: "Gray+400%+threshold45", args: ["-colorspace", "Gray", "-resize", "400%", "-threshold", "45%"] },
-  { label: "Gray+400%+threshold55", args: ["-colorspace", "Gray", "-resize", "400%", "-threshold", "55%"] },
-  { label: "Gray+400%+threshold65", args: ["-colorspace", "Gray", "-resize", "400%", "-threshold", "65%"] },
-  { label: "Gray+400%+normalize",   args: ["-colorspace", "Gray", "-resize", "400%", "-normalize", "-threshold", "50%"] },
+  { label: "raw (no preprocess)", args: null },
+  {
+    label: "Gray+400%+threshold45",
+    args: ["-colorspace", "Gray", "-resize", "400%", "-threshold", "45%"],
+  },
+  {
+    label: "Gray+400%+threshold55",
+    args: ["-colorspace", "Gray", "-resize", "400%", "-threshold", "55%"],
+  },
+  {
+    label: "Gray+400%+threshold65",
+    args: ["-colorspace", "Gray", "-resize", "400%", "-threshold", "65%"],
+  },
+  {
+    label: "Gray+400%+normalize",
+    args: [
+      "-colorspace",
+      "Gray",
+      "-resize",
+      "400%",
+      "-normalize",
+      "-threshold",
+      "50%",
+    ],
+  },
 ];
 
 const results = [];
@@ -150,7 +187,9 @@ for (let i = 0; i < VARIANTS.length; i++) {
 
   if (args) {
     const preOut = path.join(tmpDir, `pre${i}.png`);
-    const magickResult = spawnSync("magick", [srcImg, ...args, preOut], { encoding: "utf8" });
+    const magickResult = spawnSync("magick", [srcImg, ...args, preOut], {
+      encoding: "utf8",
+    });
     if (magickResult.status !== 0) {
       results.push({ label, digit: null, error: "magick preprocess failed" });
       continue;
@@ -160,21 +199,32 @@ for (let i = 0; i < VARIANTS.length; i++) {
 
   const tessResult = spawnSync(
     TESSERACT,
-    [inputImg, "stdout", "--psm", "8", "-c", "tessedit_char_whitelist=0123456789"],
+    [
+      inputImg,
+      "stdout",
+      "--psm",
+      "8",
+      "-c",
+      "tessedit_char_whitelist=0123456789",
+    ],
     { encoding: "utf8" },
   );
   const raw = (tessResult.stdout || "").replace(/\D/g, "");
   const is4digit = raw.length === 4;
   results.push({ label, digit: raw, is4digit });
   console.log(`  [${i}] ${label}`);
-  console.log(`      OCR: "${raw}" — ${is4digit ? "4-digit PASS" : "not 4-digit"}`);
+  console.log(
+    `      OCR: "${raw}" — ${is4digit ? "4-digit PASS" : "not 4-digit"}`,
+  );
 }
 
 const anyPass = results.some((r) => r.is4digit);
 const passCount = results.filter((r) => r.is4digit).length;
 console.log("");
 console.log(`  Variants with 4-digit output: ${passCount}/${VARIANTS.length}`);
-console.log(`  RESULT: ${anyPass ? "PARTIAL PASS (at least one variant produced 4 digits)" : "FAIL (no variant produced 4 digits)"}`);
+console.log(
+  `  RESULT: ${anyPass ? "PARTIAL PASS (at least one variant produced 4 digits)" : "FAIL (no variant produced 4 digits)"}`,
+);
 console.log("");
 
 // ---------------------------------------------------------------------------
@@ -184,19 +234,38 @@ console.log("=== SUMMARY ===");
 console.log("tesseract binary:         OK (" + version + ")");
 console.log("server reachable:         " + (getReachable ? "YES" : "NO"));
 console.log("captcha URL extracted:    " + (captchaUrl ? "YES" : "NO"));
-console.log("captcha image download:   " + (imageBytes ? "YES (" + imageBytes.length + " bytes)" : "NO"));
-console.log("OCR 4-digit success rate: " + passCount + "/" + VARIANTS.length + " variants");
+console.log(
+  "captcha image download:   " +
+    (imageBytes ? "YES (" + imageBytes.length + " bytes)" : "NO"),
+);
+console.log(
+  "OCR 4-digit success rate: " +
+    passCount +
+    "/" +
+    VARIANTS.length +
+    " variants",
+);
 console.log("external tracking query:  NONE (captcha-only, no code submitted)");
 console.log("DB write:                 NONE");
 console.log("");
 
 if (anyPass) {
-  console.log("CONCLUSION: PARTIAL — OCR pipeline CAN produce 4-digit output from real 7-11 captcha.");
-  console.log("Next step: run full test (test-seven-eleven-adapter.mjs) with a safe tracking code");
-  console.log("  to verify end-to-end captcha solve + tracking query success rate.");
+  console.log(
+    "CONCLUSION: PARTIAL — OCR pipeline CAN produce 4-digit output from real 7-11 captcha.",
+  );
+  console.log(
+    "Next step: run full test (test-seven-eleven-adapter.mjs) with a safe tracking code",
+  );
+  console.log(
+    "  to verify end-to-end captcha solve + tracking query success rate.",
+  );
 } else {
-  console.log("CONCLUSION: BLOCKED — OCR cannot reliably produce 4-digit code from real 7-11 captcha.");
-  console.log("Next step: investigate captcha-free alternative API or improve preprocessing.");
+  console.log(
+    "CONCLUSION: BLOCKED — OCR cannot reliably produce 4-digit code from real 7-11 captcha.",
+  );
+  console.log(
+    "Next step: investigate captcha-free alternative API or improve preprocessing.",
+  );
 }
 
 rmSync(tmpDir, { recursive: true, force: true });

@@ -19,20 +19,37 @@ const pg = req("pg");
 
 // ── CLI ───────────────────────────────────────────────────────────────────────
 const args = process.argv.slice(2);
-function getArg(f) { const i = args.indexOf(f); return i !== -1 ? (args[i + 1] ?? null) : null; }
-function hasFlag(f) { return args.includes(f); }
+function getArg(f) {
+  const i = args.indexOf(f);
+  return i !== -1 ? (args[i + 1] ?? null) : null;
+}
+function hasFlag(f) {
+  return args.includes(f);
+}
 
-const allCities  = hasFlag("--all-cities");
-const cityArg    = getArg("--city");
-const delayMs    = parseInt(getArg("--delay") ?? "1000", 10);
-const reportArg  = getArg("--report");
-const progressArg = getArg("--progress") ?? path.join(WORKSPACE_ROOT, "data/cvs/family-official-map-progress-stepf52.json");
+const allCities = hasFlag("--all-cities");
+const cityArg = getArg("--city");
+const delayMs = parseInt(getArg("--delay") ?? "1000", 10);
+const reportArg = getArg("--report");
+const progressArg =
+  getArg("--progress") ??
+  path.join(
+    WORKSPACE_ROOT,
+    "data/cvs/family-official-map-progress-stepf52.json",
+  );
 
-const DEFAULT_REPORT = path.join(WORKSPACE_ROOT, "data/cvs/family-official-allcities-dryrun-stepf52.json");
+const DEFAULT_REPORT = path.join(
+  WORKSPACE_ROOT,
+  "data/cvs/family-official-allcities-dryrun-stepf52.json",
+);
 const REPORT_PATH = reportArg
-  ? (path.isAbsolute(reportArg) ? reportArg : path.resolve(WORKSPACE_ROOT, reportArg))
+  ? path.isAbsolute(reportArg)
+    ? reportArg
+    : path.resolve(WORKSPACE_ROOT, reportArg)
   : DEFAULT_REPORT;
-const PROGRESS_PATH = path.isAbsolute(progressArg) ? progressArg : path.resolve(WORKSPACE_ROOT, progressArg);
+const PROGRESS_PATH = path.isAbsolute(progressArg)
+  ? progressArg
+  : path.resolve(WORKSPACE_ROOT, progressArg);
 
 if (!allCities && !cityArg) {
   console.error("用法: --all-cities 或 --city <縣市>");
@@ -40,35 +57,59 @@ if (!allCities && !cityArg) {
 }
 
 // ── 全台行政區 fallback ───────────────────────────────────────────────────────
-const CITY_DISTRICTS_PATH = path.join(WORKSPACE_ROOT, "data/cvs/taiwan-city-districts.json");
-const cityDistrictsFallback = JSON.parse(fs.readFileSync(CITY_DISTRICTS_PATH, "utf8"));
+const CITY_DISTRICTS_PATH = path.join(
+  WORKSPACE_ROOT,
+  "data/cvs/taiwan-city-districts.json",
+);
+const cityDistrictsFallback = JSON.parse(
+  fs.readFileSync(CITY_DISTRICTS_PATH, "utf8"),
+);
 // 轉換成 { 台北市: [{city,district}, ...], ... }
 const fallbackMap = {};
 for (const r of cityDistrictsFallback) {
   if (!fallbackMap[r.city]) fallbackMap[r.city] = [];
   fallbackMap[r.city].push(r);
 }
-const ALL_CITIES = [...new Set(cityDistrictsFallback.map(r => r.city))].sort();
+const ALL_CITIES = [
+  ...new Set(cityDistrictsFallback.map((r) => r.city)),
+].sort();
 
 // ── 目前 DB family 統計（只 SELECT）───────────────────────────────────────────
 async function queryDbStats() {
   if (!process.env.DATABASE_URL) {
     console.warn("[DB] DATABASE_URL 未設定，跳過 DB 比對");
-    return { total: 0, byCity: {}, storeIds: new Set(), nameAddrSet: new Set() };
+    return {
+      total: 0,
+      byCity: {},
+      storeIds: new Set(),
+      nameAddrSet: new Set(),
+    };
   }
-  const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL, max: 2 });
+  const pool = new pg.Pool({
+    connectionString: process.env.DATABASE_URL,
+    max: 2,
+  });
   try {
     const [cntRes, storeRes] = await Promise.all([
-      pool.query("SELECT city, COUNT(*) as cnt FROM cvs_stores WHERE provider='family' AND is_active=true GROUP BY city"),
-      pool.query("SELECT store_id, store_name, store_address, city, district FROM cvs_stores WHERE provider='family' AND is_active=true"),
+      pool.query(
+        "SELECT city, COUNT(*) as cnt FROM cvs_stores WHERE provider='family' AND is_active=true GROUP BY city",
+      ),
+      pool.query(
+        "SELECT store_id, store_name, store_address, city, district FROM cvs_stores WHERE provider='family' AND is_active=true",
+      ),
     ]);
     const byCity = {};
     let total = 0;
-    for (const r of cntRes.rows) { byCity[r.city] = parseInt(r.cnt); total += parseInt(r.cnt); }
-    const storeIds = new Set(storeRes.rows.map(r => r.store_id));
-    const nameAddrSet = new Set(storeRes.rows.map(r =>
-      normalizeStr(r.store_name) + "|" + normalizeStr(r.store_address)
-    ));
+    for (const r of cntRes.rows) {
+      byCity[r.city] = parseInt(r.cnt);
+      total += parseInt(r.cnt);
+    }
+    const storeIds = new Set(storeRes.rows.map((r) => r.store_id));
+    const nameAddrSet = new Set(
+      storeRes.rows.map(
+        (r) => normalizeStr(r.store_name) + "|" + normalizeStr(r.store_address),
+      ),
+    );
     return { total, byCity, storeIds, nameAddrSet };
   } finally {
     await pool.end();
@@ -81,19 +122,30 @@ function normalizeStr(s) {
 }
 
 // ── 工具函數 ──────────────────────────────────────────────────────────────────
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+function sleep(ms) {
+  return new Promise((r) => setTimeout(r, ms));
+}
 
 async function fetchWithRetry(url, headers, retries = 2) {
   for (let i = 0; i <= retries; i++) {
     try {
-      const res = await fetch(url, { headers, signal: AbortSignal.timeout(20000) });
+      const res = await fetch(url, {
+        headers,
+        signal: AbortSignal.timeout(20000),
+      });
       if (!res.ok) {
-        if (i < retries) { await sleep(2000); continue; }
+        if (i < retries) {
+          await sleep(2000);
+          continue;
+        }
         return null;
       }
       return await res.text();
     } catch (e) {
-      if (i < retries) { await sleep(2000); continue; }
+      if (i < retries) {
+        await sleep(2000);
+        continue;
+      }
       return null;
     }
   }
@@ -106,7 +158,10 @@ async function getOfficialKey() {
   if (_cachedKey) return _cachedKey;
   const html = await fetchWithRetry(
     "https://www.family.com.tw/Marketing/StoreMap/?v=1",
-    { "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36" }
+    {
+      "User-Agent":
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+    },
   );
   if (!html) throw new Error("無法取得官方頁面");
   const match = html.match(/key=([A-F0-9]{40})/);
@@ -116,8 +171,9 @@ async function getOfficialKey() {
 }
 
 const BASE_HEADERS = {
-  "Referer": "https://www.family.com.tw/Marketing/StoreMap/?v=1",
-  "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/120",
+  Referer: "https://www.family.com.tw/Marketing/StoreMap/?v=1",
+  "User-Agent":
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/120",
 };
 
 // ShowTownList：取得某縣市的行政區列表
@@ -129,7 +185,11 @@ async function fetchTownList(city, key) {
   if (!match) return null;
   try {
     const data = JSON.parse(match[1]);
-    return data.map(r => ({ city: r.city || city, district: r.town, post: r.post }));
+    return data.map((r) => ({
+      city: r.city || city,
+      district: r.town,
+      post: r.post,
+    }));
   } catch {
     return null;
   }
@@ -141,7 +201,10 @@ async function fetchShopList(city, district, key) {
   const raw = await fetchWithRetry(url, BASE_HEADERS);
   if (!raw || raw.includes("DOCTYPE") || raw.includes("ERROR")) return null;
   // JSONP: showStoreList([...])
-  const jsonStr = raw.replace(/^showStoreList\(/, "").replace(/\)\s*$/, "").trim();
+  const jsonStr = raw
+    .replace(/^showStoreList\(/, "")
+    .replace(/\)\s*$/, "")
+    .trim();
   try {
     return JSON.parse(jsonStr);
   } catch {
@@ -180,7 +243,12 @@ function normalizeStore(raw, city, district) {
     source: "family_official_map",
     serviceId: raw.SERID != null ? String(raw.SERID) : null,
     oldPkey: raw.oldpkey ?? null,
-    services: raw.all ? raw.all.split(",").map(s => s.trim()).filter(Boolean) : [],
+    services: raw.all
+      ? raw.all
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : [],
     roadName: raw.road ?? null,
   };
 }
@@ -195,8 +263,12 @@ async function main() {
   if (fs.existsSync(PROGRESS_PATH)) {
     try {
       progress = JSON.parse(fs.readFileSync(PROGRESS_PATH, "utf8"));
-      console.log(`[F5-2] 恢復進度：已完成 ${progress.completedDistricts.length} 區`);
-    } catch { progress = { completedDistricts: [] }; }
+      console.log(
+        `[F5-2] 恢復進度：已完成 ${progress.completedDistricts.length} 區`,
+      );
+    } catch {
+      progress = { completedDistricts: [] };
+    }
   }
   const completedSet = new Set(progress.completedDistricts);
 
@@ -234,7 +306,9 @@ async function main() {
     } else {
       // fallback
       districts = fallbackMap[city] || [];
-      console.log(`[F5-2]   ShowTownList 失敗，fallback: ${districts.length} 區`);
+      console.log(
+        `[F5-2]   ShowTownList 失敗，fallback: ${districts.length} 區`,
+      );
       anomalies.push({ type: "ShowTownList_failed", city });
     }
 
@@ -260,10 +334,13 @@ async function main() {
         continue;
       }
 
-      const stores = raw.map(s => normalizeStore(s, city, district));
+      const stores = raw.map((s) => normalizeStore(s, city, district));
 
       // 欄位缺失與座標異常統計
-      let missingPhone = 0, missingAddr = 0, missingCoord = 0, missingPostal = 0;
+      let missingPhone = 0,
+        missingAddr = 0,
+        missingCoord = 0,
+        missingPostal = 0;
       for (const s of stores) {
         if (!s.phone) missingPhone++;
         if (!s.storeAddress) missingAddr++;
@@ -272,7 +349,8 @@ async function main() {
           missingCoord++;
           anomalies.push({
             type: "bad_coord",
-            city, district,
+            city,
+            district,
             pkey: s.officialStoreId,
             name: s.storeName,
             px: s.longitude,
@@ -293,7 +371,7 @@ async function main() {
         missingAddress: missingAddr,
         missingPostalCode: missingPostal,
         missingCoordinates: missingCoord,
-        sample: stores.slice(0, 2).map(s => ({
+        sample: stores.slice(0, 2).map((s) => ({
           pkey: s.officialStoreId,
           name: s.storeName,
           addr: s.storeAddress,
@@ -318,7 +396,7 @@ async function main() {
     const seenPkeys = new Set();
     const dedupedCityStores = [];
     for (const s of cityStores) {
-      const key_ = s.officialStoreId ?? (s.storeName + s.storeAddress);
+      const key_ = s.officialStoreId ?? s.storeName + s.storeAddress;
       if (!seenPkeys.has(key_)) {
         seenPkeys.add(key_);
         dedupedCityStores.push(s);
@@ -337,7 +415,9 @@ async function main() {
     });
 
     allStores.push(...dedupedCityStores);
-    console.log(`[F5-2] ${city} 小計: raw=${cityStores.length}, deduped=${dedupedCityStores.length}, DB=${dbCityCount}`);
+    console.log(
+      `[F5-2] ${city} 小計: raw=${cityStores.length}, deduped=${dedupedCityStores.length}, DB=${dbCityCount}`,
+    );
   }
 
   // 全台去重
@@ -345,18 +425,29 @@ async function main() {
   const dedupedAll = [];
   const duplicates = [];
   for (const s of allStores) {
-    const k = s.officialStoreId ?? (s.storeName + s.storeAddress);
+    const k = s.officialStoreId ?? s.storeName + s.storeAddress;
     if (!globalSeen.has(k)) {
       globalSeen.add(k);
       dedupedAll.push(s);
     } else {
-      duplicates.push({ pkey: s.officialStoreId, name: s.storeName, city: s.city, district: s.district });
+      duplicates.push({
+        pkey: s.officialStoreId,
+        name: s.storeName,
+        city: s.city,
+        district: s.district,
+      });
     }
   }
 
   // missingStats
-  let missingOfficialStoreId = 0, missingName = 0, missingAddress = 0;
-  let missingPhone = 0, missingPostalCode = 0, missingCity = 0, missingDistrict = 0, missingCoordinates = 0;
+  let missingOfficialStoreId = 0,
+    missingName = 0,
+    missingAddress = 0;
+  let missingPhone = 0,
+    missingPostalCode = 0,
+    missingCity = 0,
+    missingDistrict = 0,
+    missingCoordinates = 0;
   for (const s of dedupedAll) {
     if (!s.officialStoreId) missingOfficialStoreId++;
     if (!s.storeName) missingName++;
@@ -420,7 +511,7 @@ async function main() {
       estimatedUpdatable,
       estimatedFinalFamilyCount: dbStats.total + estimatedInsertable,
     },
-    samples: dedupedAll.slice(0, 5).map(s => ({
+    samples: dedupedAll.slice(0, 5).map((s) => ({
       pkey: s.officialStoreId,
       storeId: s.storeId,
       name: s.storeName,
@@ -435,9 +526,11 @@ async function main() {
     })),
     officialEndpointNote: {
       shopListEndpoint: "https://api.map.com.tw/net/familyShop.aspx",
-      params: "searchType=ShopList&type=&city=<縣市>&area=<行政區>&road=&fun=showStoreList&key=***REDACTED***",
+      params:
+        "searchType=ShopList&type=&city=<縣市>&area=<行政區>&road=&fun=showStoreList&key=***REDACTED***",
       townListEndpoint: "https://api.map.com.tw/net/familyShop.aspx",
-      townListParams: "searchType=ShowTownList&type=&city=<縣市>&fun=storeTownList&key=***REDACTED***",
+      townListParams:
+        "searchType=ShowTownList&type=&city=<縣市>&fun=storeTownList&key=***REDACTED***",
       note: "key 已遮蔽，不記錄於 report",
     },
   };
@@ -451,12 +544,16 @@ async function main() {
   console.log(`[F5-2] duplicates     : ${report.duplicateCount}`);
   console.log(`[F5-2] anomalies      : ${report.anomalyCount}`);
   console.log(`[F5-2] DB before      : ${dbStats.total}`);
-  console.log(`[F5-2] estimatedNew   : ${report.comparisonWithCurrentDb.estimatedInsertable}`);
-  console.log(`[F5-2] estimatedFinal : ${report.comparisonWithCurrentDb.estimatedFinalFamilyCount}`);
+  console.log(
+    `[F5-2] estimatedNew   : ${report.comparisonWithCurrentDb.estimatedInsertable}`,
+  );
+  console.log(
+    `[F5-2] estimatedFinal : ${report.comparisonWithCurrentDb.estimatedFinalFamilyCount}`,
+  );
   console.log(`[F5-2] report         : ${REPORT_PATH}`);
 }
 
-main().catch(e => {
+main().catch((e) => {
   console.error("[F5-2] 致命錯誤:", e.message);
   process.exit(1);
 });

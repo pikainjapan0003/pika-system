@@ -15,7 +15,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "../..");
 
 // Build the adapter so we can import resolveTesseractBinary
-const esbuildPath = path.resolve(ROOT, "artifacts/api-server/node_modules/esbuild/lib/main.js");
+const esbuildPath = path.resolve(
+  ROOT,
+  "artifacts/api-server/node_modules/esbuild/lib/main.js",
+);
 const { build } = await import(pathToFileURL(esbuildPath).href);
 
 import os from "node:os";
@@ -24,7 +27,10 @@ import fs from "node:fs/promises";
 const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "s7-711-res-"));
 const outfile = path.join(tmpDir, "adapter.mjs");
 
-const ADAPTER = path.resolve(ROOT, "artifacts/api-server/src/lib/logistics/adapters/sevenElevenAdapter.ts");
+const ADAPTER = path.resolve(
+  ROOT,
+  "artifacts/api-server/src/lib/logistics/adapters/sevenElevenAdapter.ts",
+);
 await build({
   entryPoints: [ADAPTER],
   bundle: true,
@@ -58,7 +64,10 @@ console.log("\n=== Step 7O: tesseract binary resolution test ===\n");
 delete process.env.TESSERACT_BIN;
 const resolved = resolveTesseractBinary();
 console.log(`[1] resolveTesseractBinary() (no TESSERACT_BIN) = ${resolved}`);
-ok("returns a non-empty string", typeof resolved === "string" && resolved.length > 0);
+ok(
+  "returns a non-empty string",
+  typeof resolved === "string" && resolved.length > 0,
+);
 ok("not bare 'tesseract' (found nix path)", resolved !== "tesseract");
 
 // Test 2: resolved binary is executable
@@ -69,7 +78,10 @@ try {
   versionOut = r.stdout || "";
   versionErr = r.stderr || "";
   ok("binary is executable (spawnSync exit 0)", r.status === 0);
-  ok("output contains 'tesseract'", (versionOut + versionErr).toLowerCase().includes("tesseract"));
+  ok(
+    "output contains 'tesseract'",
+    (versionOut + versionErr).toLowerCase().includes("tesseract"),
+  );
   console.log(`   version: ${(versionOut + versionErr).split("\n")[0].trim()}`);
 } catch (e) {
   console.error(`   spawn error: ${e.message}`);
@@ -87,8 +99,12 @@ delete process.env.TESSERACT_BIN;
 let enoentFree = true;
 try {
   const r2 = spawnSync(resolved, ["--version"], { encoding: "utf8" });
-  if (r2.error) { enoentFree = false; }
-} catch { enoentFree = false; }
+  if (r2.error) {
+    enoentFree = false;
+  }
+} catch {
+  enoentFree = false;
+}
 ok("spawn resolved binary does not throw ENOENT", enoentFree);
 
 // ─── Summary ─────────────────────────────────────────────────────────────────

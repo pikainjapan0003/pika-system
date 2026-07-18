@@ -34,7 +34,9 @@ console.log("events:", result.events.length);
 console.log("");
 
 result.events.forEach((e, i) => {
-  console.log(`  [${i}] ${e.occurredAt ?? "?"} | ${e.eventStatus} | ${e.eventLocation ?? ""}`);
+  console.log(
+    `  [${i}] ${e.occurredAt ?? "?"} | ${e.eventStatus} | ${e.eventLocation ?? ""}`,
+  );
 });
 
 // Minimal assertions
@@ -46,8 +48,14 @@ const checks = [
     result.latestStatusText === EXPECTED_LATEST_STATUS,
     `latestStatus === ${EXPECTED_LATEST_STATUS} (got ${result.latestStatusText})`,
   ],
-  [result.latestEventAt?.startsWith("2026/05/29"), `latestEventAt starts with 2026/05/29 (got ${result.latestEventAt})`],
-  [result.normalizedStatus === "delivered", `normalizedStatus === delivered (got ${result.normalizedStatus})`],
+  [
+    result.latestEventAt?.startsWith("2026/05/29"),
+    `latestEventAt starts with 2026/05/29 (got ${result.latestEventAt})`,
+  ],
+  [
+    result.normalizedStatus === "delivered",
+    `normalizedStatus === delivered (got ${result.normalizedStatus})`,
+  ],
 ];
 
 let allPassed = true;

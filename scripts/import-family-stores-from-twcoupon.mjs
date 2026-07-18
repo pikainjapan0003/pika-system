@@ -16,12 +16,15 @@ import { spawn } from "child_process";
 import path from "path";
 import { fileURLToPath } from "url";
 
-const dir    = path.dirname(fileURLToPath(import.meta.url));
-const script = path.resolve(dir, "../lib/db/import-family-stores-from-twcoupon.mjs");
+const dir = path.dirname(fileURLToPath(import.meta.url));
+const script = path.resolve(
+  dir,
+  "../lib/db/import-family-stores-from-twcoupon.mjs",
+);
 
 const child = spawn(process.execPath, [script, ...process.argv.slice(2)], {
   stdio: "inherit",
-  cwd:   path.resolve(dir, "../lib/db"),
-  env:   { ...process.env },
+  cwd: path.resolve(dir, "../lib/db"),
+  env: { ...process.env },
 });
 child.on("close", (code) => process.exit(code ?? 0));

@@ -39,8 +39,7 @@ test("append mode must be explicit and duplicate append flags are rejected", () 
       "--append",
     ]),
     {
-      databaseUrl:
-        "postgresql://demo:demo@127.0.0.1:55432/pika_demo",
+      databaseUrl: "postgresql://demo:demo@127.0.0.1:55432/pika_demo",
       append: true,
     },
   );
