@@ -20,6 +20,7 @@ import sevenElevenLogo from "@/assets/logistics/seven-eleven-logo-official.png";
 import familymartLogo from "@/assets/logistics/familymart-logo-official.png";
 import blackcatLogo from "@/assets/logistics/blackcat-logo-official.svg";
 import postofficeLogo from "@/assets/logistics/postoffice-logo.svg";
+import { calculateMoneyPreview } from "@/lib/moneyPreview";
 
 const PICKUP_METHOD_OPTIONS = [
   { value: "自取", label: "自取" },
@@ -292,29 +293,16 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
     }
   }, [order]);
 
-  const unitPrice = order ? Number(order.unitPrice ?? 0) : 0;
-  const totalPreview = unitPrice * quantity;
   const isPending = updateOrder.isPending;
 
   // 金額預覽 / 驗證共用的當前輸入值（與後端公式保持一致）
-  const itemSubtotal = totalPreview;
-  const shippingFeePreview = (() => {
-    if (shippingFeeStr.trim() === "") return Number(order?.shippingFee ?? 0);
-    const v = parseFloat(shippingFeeStr);
-    return isNaN(v) || v < 0 ? 0 : v;
-  })();
-  const discountAmountPreview = (() => {
-    if (discountAmountStr.trim() === "") return 0;
-    const v = parseFloat(discountAmountStr);
-    return isNaN(v) || v < 0 ? 0 : v;
-  })();
-  const paidAmountPreview = (() => {
-    if (paidAmountStr.trim() === "") return Number(order?.paidAmount ?? 0);
-    const v = parseFloat(paidAmountStr);
-    return isNaN(v) || v < 0 ? 0 : v;
-  })();
-  const orderTotalPreview = Math.max(itemSubtotal + shippingFeePreview - discountAmountPreview, 0);
-  const remainingAmountPreview = Math.max(orderTotalPreview - paidAmountPreview, 0);
+  const moneyPreview = calculateMoneyPreview({
+    lines: [{ unitPrice: order?.unitPrice ?? 0, quantity }],
+    shippingFee:
+      shippingFeeStr.trim() === "" ? order?.shippingFee ?? 0 : shippingFeeStr,
+    discountAmount: discountAmountStr,
+    paidAmount: paidAmountStr.trim() === "" ? order?.paidAmount ?? 0 : paidAmountStr,
+  });
 
   const clearFieldError = (key: string) =>
     setFieldErrors((prev) => { const n = { ...prev }; delete n[key]; return n; });
@@ -440,7 +428,7 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
         errs.discountAmount = "折讓金額不可為負數";
       } else if (!Number.isInteger(da)) {
         errs.discountAmount = "折讓金額必須為整數";
-      } else if (da > itemSubtotal + shippingFeePreview) {
+      } else if (moneyPreview.discountExceedsGross) {
         errs.discountAmount = "折讓金額不可超過商品小計加運費";
       }
     }
@@ -1084,36 +1072,36 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
             <div className="bg-primary/5 rounded-xl px-3 py-2 flex items-center justify-between">
               <span className="text-xs text-muted-foreground">預估總額</span>
               <span className="text-sm font-semibold text-primary">
-                NT${unitPrice.toLocaleString()} × {quantity}{" "}
-                = <strong>NT${totalPreview.toLocaleString()}</strong>
+                NT${moneyPreview.unitPrice} × {quantity}{" "}
+                = <strong>NT${moneyPreview.itemSubtotal}</strong>
               </span>
             </div>
             <div className="bg-white rounded-xl border border-border/50 divide-y divide-border/40">
               <div className="flex items-center justify-between px-3 py-2 gap-2">
                 <span className="text-xs text-muted-foreground">商品小計</span>
-                <span className="text-sm text-foreground font-medium">NT$ {itemSubtotal.toLocaleString()}</span>
+                <span className="text-sm text-foreground font-medium">NT$ {moneyPreview.itemSubtotal}</span>
               </div>
               <div className="flex items-center justify-between px-3 py-2 gap-2">
                 <span className="text-xs text-muted-foreground">運費</span>
-                <span className="text-sm text-foreground font-medium">NT$ {shippingFeePreview.toLocaleString()}</span>
+                <span className="text-sm text-foreground font-medium">NT$ {moneyPreview.shippingFee}</span>
               </div>
               <div className="flex items-center justify-between px-3 py-2 gap-2">
                 <span className="text-xs text-muted-foreground">折讓</span>
-                <span className={`text-sm font-medium ${discountAmountPreview > 0 ? "text-destructive/80" : "text-foreground"}`}>
-                  {discountAmountPreview > 0 ? `-NT$ ${discountAmountPreview.toLocaleString()}` : `NT$ 0`}
+                <span className={`text-sm font-medium ${moneyPreview.hasDiscount ? "text-destructive/80" : "text-foreground"}`}>
+                  {moneyPreview.hasDiscount ? `-NT$ ${moneyPreview.discountAmount}` : `NT$ 0`}
                 </span>
               </div>
               <div className="flex items-center justify-between px-3 py-2 gap-2">
                 <span className="text-xs text-muted-foreground">訂單總額</span>
-                <span className="text-sm font-semibold text-primary">NT$ {orderTotalPreview.toLocaleString()}</span>
+                <span className="text-sm font-semibold text-primary">NT$ {moneyPreview.orderTotal}</span>
               </div>
               <div className="flex items-center justify-between px-3 py-2 gap-2">
                 <span className="text-xs text-muted-foreground">已收金額</span>
-                <span className="text-sm text-foreground font-medium">NT$ {paidAmountPreview.toLocaleString()}</span>
+                <span className="text-sm text-foreground font-medium">NT$ {moneyPreview.paidAmount}</span>
               </div>
               <div className="flex items-center justify-between px-3 py-2.5 gap-2">
                 <span className="text-xs font-semibold text-foreground/80">待收金額</span>
-                <span className="text-sm font-bold text-primary">NT$ {remainingAmountPreview.toLocaleString()}</span>
+                <span className="text-sm font-bold text-primary">NT$ {moneyPreview.remainingAmount}</span>
               </div>
             </div>
             <p className="text-[11px] text-muted-foreground/60">

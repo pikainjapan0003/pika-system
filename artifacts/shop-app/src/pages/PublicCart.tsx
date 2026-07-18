@@ -26,6 +26,7 @@ import sevenElevenLogo from "@/assets/logistics/seven-eleven-logo-official.png";
 import familymartLogo from "@/assets/logistics/familymart-logo-official.png";
 import blackcatLogo from "@/assets/logistics/blackcat-logo-official.svg";
 import postofficeLogo from "@/assets/logistics/postoffice-logo.svg";
+import { calculateMoneyPreview } from "@/lib/moneyPreview";
 
 interface CartOrderItem {
   productId: number;
@@ -378,9 +379,14 @@ export default function PublicCartPage() {
   }, [pickupMethod]);
 
   const needsCvsStore = isStorePickupMethod(pickupMethod);
-  const subtotal = cartItems.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
   const shippingFee = getShippingFee(pickupMethod);
-  const totalDisplay = subtotal + shippingFee;
+  const moneyPreview = calculateMoneyPreview({
+    lines: cartItems.map((item) => ({
+      unitPrice: item.unitPrice,
+      quantity: item.quantity,
+    })),
+    shippingFee,
+  });
   const availableDistricts = getDistricts(shippingCity);
 
   const handleUpdateQty = (itemKey: string, qty: number) => {
@@ -901,7 +907,7 @@ export default function PublicCartPage() {
           <div className="bg-secondary/40 rounded-2xl px-4 py-3 space-y-1.5">
             <div className="flex justify-between text-sm text-muted-foreground">
               <span>商品小計</span>
-              <span>NT$ {subtotal.toLocaleString()}</span>
+              <span>NT$ {moneyPreview.itemSubtotal}</span>
             </div>
             <div className="flex justify-between text-sm text-muted-foreground">
               <span>運費</span>
@@ -909,7 +915,7 @@ export default function PublicCartPage() {
             </div>
             <div className="flex justify-between text-base font-bold text-foreground pt-1 border-t border-border/50">
               <span>訂單總額</span>
-              <span className="text-primary">NT$ {totalDisplay.toLocaleString()}</span>
+              <span className="text-primary">NT$ {moneyPreview.orderTotal}</span>
             </div>
           </div>
         )}
@@ -928,7 +934,7 @@ export default function PublicCartPage() {
           {isSubmitting
             ? "送出中..."
             : pickupMethod
-              ? `確認下單 · NT$ ${totalDisplay.toLocaleString()}`
+              ? `確認下單 · NT$ ${moneyPreview.orderTotal}`
               : "確認下單"}
         </button>
       </form>
