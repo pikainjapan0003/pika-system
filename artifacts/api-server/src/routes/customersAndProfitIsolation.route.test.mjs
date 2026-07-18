@@ -27,13 +27,8 @@ if (!process.env.DATABASE_URL) {
   });
 
   const { default: express } = await import("express");
-  const {
-    db,
-    ordersTable,
-    pool,
-    productsTable,
-    storesTable,
-  } = await import("@workspace/db");
+  const { db, ordersTable, pool, productsTable, storesTable } =
+    await import("@workspace/db");
   const { eq } = await import("drizzle-orm");
   const { default: customersRouter } = await import("./customers.ts");
   const { default: ordersRouter } = await import("./orders.ts");
@@ -127,7 +122,11 @@ if (!process.env.DATABASE_URL) {
     await pool.end();
   });
 
-  async function request(method, path, { body, userId = MERCHANT_A, headers = {} } = {}) {
+  async function request(
+    method,
+    path,
+    { body, userId = MERCHANT_A, headers = {} } = {},
+  ) {
     const response = await fetch(`${baseUrl}${path}`, {
       method,
       headers: {
@@ -160,7 +159,10 @@ if (!process.env.DATABASE_URL) {
 
     const listed = await request("GET", `/stores/${storeAId}/customers`);
     assert.equal(listed.status, 200);
-    assert.equal(listed.data.some((customer) => customer.id === created.data.id), true);
+    assert.equal(
+      listed.data.some((customer) => customer.id === created.data.id),
+      true,
+    );
 
     const patched = await request(
       "PATCH",
@@ -177,10 +179,7 @@ if (!process.env.DATABASE_URL) {
     assert.equal(patched.status, 200);
     assert.equal(patched.data.name, "假客戶甲更新");
 
-    const wrongMerchant = await request(
-      "GET",
-      `/stores/${storeBId}/customers`,
-    );
+    const wrongMerchant = await request("GET", `/stores/${storeBId}/customers`);
     assert.equal(wrongMerchant.status, 403);
 
     const crossStoreCustomer = await request(
@@ -207,10 +206,7 @@ if (!process.env.DATABASE_URL) {
     );
     assert.equal(denied.status, 400);
 
-    const masked = await request(
-      "GET",
-      `/stores/${storeAId}/customers/export`,
-    );
+    const masked = await request("GET", `/stores/${storeAId}/customers/export`);
     assert.equal(masked.status, 200);
     assert.equal(masked.data.includes("'=BATCH10"), true);
     assert.equal(masked.data.includes("假客戶乙"), false);
@@ -222,6 +218,20 @@ if (!process.env.DATABASE_URL) {
     );
     assert.equal(cleartext.status, 200);
     assert.equal(cleartext.data.includes("假客戶乙"), true);
+  });
+
+  test("the literal customers/export route is not captured by :customerId", async () => {
+    const exported = await request(
+      "GET",
+      `/stores/${storeAId}/customers/export`,
+    );
+
+    assert.equal(exported.status, 200);
+    assert.equal(typeof exported.data, "string");
+    assert.equal(
+      exported.data.includes("customerId must be a positive integer"),
+      false,
+    );
   });
 
   test("profit summary includes only the authenticated store", async () => {
@@ -240,7 +250,13 @@ if (!process.env.DATABASE_URL) {
     assert.equal(crossStore.status, 403);
   });
 
-  function capturedOrder({ storeId, productId, publicToken, unitProfit, quantity }) {
+  function capturedOrder({
+    storeId,
+    productId,
+    publicToken,
+    unitProfit,
+    quantity,
+  }) {
     return {
       storeId,
       productId,
