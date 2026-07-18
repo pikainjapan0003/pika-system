@@ -193,7 +193,7 @@ export default function TrackOrderPage({ publicToken }: Props) {
           </p>
           <button
             onClick={() => setLocation("/track")}
-            className="mt-5 text-sm text-primary font-medium"
+            className="mt-5 inline-flex min-h-11 items-center text-sm text-primary font-medium"
           >
             ← 返回查詢入口
           </button>
@@ -213,7 +213,7 @@ export default function TrackOrderPage({ publicToken }: Props) {
         <div className="flex items-center mb-5 gap-3">
           <button
             onClick={() => setLocation("/track")}
-            className="text-sm text-muted-foreground"
+            className="inline-flex min-h-11 items-center text-sm text-muted-foreground"
           >
             ←
           </button>
