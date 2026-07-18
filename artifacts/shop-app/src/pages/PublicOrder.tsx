@@ -553,7 +553,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
                   key={val}
                   type="button"
                   onClick={() => setSpecValues({ ...specValues, [spec.name]: val })}
-                  className={`px-4 py-2 rounded-xl text-sm font-medium border transition-colors ${
+                  className={`min-h-11 px-4 py-2 rounded-xl text-sm font-medium border transition-colors ${
                     specValues[spec.name] === val
                       ? "bg-primary text-white border-primary"
                       : "bg-white text-foreground border-border"
@@ -573,7 +573,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
             <button
               type="button"
               onClick={() => setQuantity(Math.max(1, quantity - 1))}
-              className="w-10 h-10 rounded-xl border border-input bg-white text-foreground text-xl font-bold flex items-center justify-center"
+              className="w-11 min-h-11 rounded-xl border border-input bg-white text-foreground text-xl font-bold flex items-center justify-center"
             >
               −
             </button>
@@ -581,7 +581,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
             <button
               type="button"
               onClick={() => setQuantity(quantity + 1)}
-              className="w-10 h-10 rounded-xl border border-input bg-white text-foreground text-xl font-bold flex items-center justify-center"
+              className="w-11 min-h-11 rounded-xl border border-input bg-white text-foreground text-xl font-bold flex items-center justify-center"
             >
               +
             </button>
@@ -785,7 +785,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
                               <button
                                 type="button"
                                 onClick={handleSelectStore}
-                                className="w-full h-10 rounded-xl border-2 border-primary bg-primary/5 text-primary text-sm font-semibold"
+                                className="w-full min-h-11 rounded-xl border-2 border-primary bg-primary/5 text-primary text-sm font-semibold"
                               >
                                 選擇 7-11 門市
                               </button>
@@ -835,7 +835,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
                               <button
                                 type="button"
                                 onClick={handleSelectStore}
-                                className="w-full h-10 rounded-xl border-2 border-primary bg-primary/5 text-primary text-sm font-semibold"
+                                className="w-full min-h-11 rounded-xl border-2 border-primary bg-primary/5 text-primary text-sm font-semibold"
                               >
                                 選擇全家門市
                               </button>
