@@ -8,6 +8,8 @@ import type {
 import { useLocation } from "wouter";
 
 import { SKILL_GROUPS, summarizeSkillMapStatus } from "@/lib/skillMap";
+import { useDailySkillVisibility } from "@/lib/dailySkillVisibilityContext";
+import { refreshSkillStateViews } from "@/lib/skillStateSync";
 import { BottomNav } from "./Dashboard";
 
 interface SkillStatus {
@@ -31,6 +33,7 @@ export default function SkillMapPage() {
   const [, setLocation] = useLocation();
   const { getToken } = useAuth();
   const { data: store } = useGetMyStore();
+  const { refresh: refreshDailySkillVisibility } = useDailySkillVisibility();
   const [state, setState] = useState<SkillStateResponse | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState("");
@@ -96,7 +99,7 @@ export default function SkillMapPage() {
           ...confirmations,
         }),
       });
-      await loadState();
+      await refreshSkillStateViews(loadState, refreshDailySkillVisibility);
     } catch (caught) {
       setError((caught as Error).message);
     } finally {
@@ -176,7 +179,7 @@ export default function SkillMapPage() {
         },
       );
       setPackagePreview(null);
-      await loadState();
+      await refreshSkillStateViews(loadState, refreshDailySkillVisibility);
     } catch (caught) {
       setError((caught as Error).message);
     } finally {

@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { useLocation } from "wouter";
@@ -21,12 +22,14 @@ interface DailySkillVisibilityContextValue {
   loaded: boolean;
   enabledSkillCount: number;
   isVisible: (surface: DailySkillSurface) => boolean;
+  refresh: () => Promise<void>;
 }
 
 const defaultValue: DailySkillVisibilityContextValue = {
   loaded: true,
   enabledSkillCount: 0,
   isVisible: (surface) => resolveDailySkillSurfaceVisibility(surface, []),
+  refresh: async () => undefined,
 };
 
 const DailySkillVisibilityContext =
@@ -42,32 +45,37 @@ export function StoreSkillVisibilityProvider({
   const { getToken } = useAuth();
   const [states, setStates] = useState<StoreSkillVisibilityState[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const requestId = useRef(0);
+
+  const refresh = useCallback(async () => {
+    const currentRequestId = ++requestId.current;
+    setLoaded(false);
+    try {
+      const token = await getToken();
+      const response = await fetch(`/api/stores/${storeId}/skills`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!response.ok) throw new Error("skill visibility unavailable");
+      const payload = (await response.json()) as {
+        skills?: StoreSkillVisibilityState[];
+      };
+      if (requestId.current === currentRequestId) {
+        setStates(payload.skills ?? []);
+      }
+    } catch {
+      // UI-only gate: advanced surfaces fail closed; auth remains server-side.
+      if (requestId.current === currentRequestId) setStates([]);
+    } finally {
+      if (requestId.current === currentRequestId) setLoaded(true);
+    }
+  }, [getToken, storeId]);
 
   useEffect(() => {
-    let cancelled = false;
-    setLoaded(false);
-    void (async () => {
-      try {
-        const token = await getToken();
-        const response = await fetch(`/api/stores/${storeId}/skills`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
-        if (!response.ok) throw new Error("skill visibility unavailable");
-        const payload = (await response.json()) as {
-          skills?: StoreSkillVisibilityState[];
-        };
-        if (!cancelled) setStates(payload.skills ?? []);
-      } catch {
-        // UI-only gate: advanced surfaces fail closed; auth remains server-side.
-        if (!cancelled) setStates([]);
-      } finally {
-        if (!cancelled) setLoaded(true);
-      }
-    })();
+    void refresh();
     return () => {
-      cancelled = true;
+      requestId.current += 1;
     };
-  }, [getToken, storeId]);
+  }, [refresh]);
 
   const isVisible = useCallback(
     (surface: DailySkillSurface) =>
@@ -79,8 +87,8 @@ export function StoreSkillVisibilityProvider({
     [states],
   );
   const value = useMemo(
-    () => ({ loaded, enabledSkillCount, isVisible }),
-    [enabledSkillCount, isVisible, loaded],
+    () => ({ loaded, enabledSkillCount, isVisible, refresh }),
+    [enabledSkillCount, isVisible, loaded, refresh],
   );
 
   return (
