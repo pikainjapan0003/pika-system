@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { resolveSkillUnlocks, SKILL_GROUPS } from "./skillMap.ts";
+import {
+  resolveSkillUnlocks,
+  SKILL_GROUPS,
+  summarizeSkillMapStatus,
+} from "./skillMap.ts";
 
 const emptyFacts = {
   hasStore: true,
@@ -56,4 +60,15 @@ test("external automation stays locked without its reviewed foundation", () => {
   assert.equal(resolveSkillUnlocks(emptyFacts)["S-23"], false);
   assert.equal(resolveSkillUnlocks({ ...emptyFacts, hasAutomationFoundation: true })["S-23"], true);
   assert.equal(resolveSkillUnlocks({ ...emptyFacts, hasAutomationFoundation: true })["S-21"], false);
+});
+
+test("skill map summary counts enabled skills and keeps the reviewed package hint", () => {
+  assert.deepEqual(
+    summarizeSkillMapStatus([
+      { enabled: true },
+      { enabled: false },
+      { enabled: true },
+    ]),
+    { enabledCount: 2, recommendedPackageTitle: "成本套餐" },
+  );
 });
