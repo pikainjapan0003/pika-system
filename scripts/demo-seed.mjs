@@ -1,7 +1,10 @@
 import { randomUUID } from "node:crypto";
 import { pathToFileURL } from "node:url";
 
-import { parseExplicitDemoDatabaseUrl } from "./src/demoSeedSafety.ts";
+import {
+  assertDemoAppendAllowed,
+  parseExplicitDemoSeedOptions,
+} from "./src/demoSeedSafety.ts";
 
 function snapshotInput({ product, route, trip, store, unitPriceTwd }) {
   return {
@@ -17,7 +20,7 @@ function snapshotInput({ product, route, trip, store, unitPriceTwd }) {
   };
 }
 
-export async function seedDemoData(databaseUrl) {
+export async function seedDemoData(databaseUrl, { append = false } = {}) {
   process.env.DATABASE_URL = databaseUrl;
 
   const dbModule = await import("../lib/db/src/index.ts");
@@ -40,6 +43,24 @@ export async function seedDemoData(databaseUrl) {
   const capturedAt = new Date();
 
   try {
+    const [existingProducts, existingOrders] = await Promise.all([
+      db
+        .select({ shareToken: productsTable.shareToken })
+        .from(productsTable),
+      db
+        .select({ publicToken: ordersTable.publicToken })
+        .from(ordersTable),
+    ]);
+    const existingDemoRowCount =
+      existingProducts.filter((row) => row.shareToken.startsWith("demo-"))
+        .length +
+      existingOrders.filter((row) => row.publicToken.startsWith("demo-order-"))
+        .length;
+    assertDemoAppendAllowed(
+      existingDemoRowCount,
+      append,
+    );
+
     return await db.transaction(async (tx) => {
       const [store] = await tx
         .insert(storesTable)
@@ -302,8 +323,10 @@ export async function seedDemoData(databaseUrl) {
 }
 
 async function main() {
-  const databaseUrl = parseExplicitDemoDatabaseUrl(process.argv.slice(2));
-  const result = await seedDemoData(databaseUrl);
+  const { databaseUrl, append } = parseExplicitDemoSeedOptions(
+    process.argv.slice(2),
+  );
+  const result = await seedDemoData(databaseUrl, { append });
   console.log("DEMO_SEED_OK");
   console.table(result);
 }
