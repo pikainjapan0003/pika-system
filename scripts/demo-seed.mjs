@@ -33,12 +33,14 @@ export async function seedDemoData(databaseUrl, { append = false } = {}) {
   const {
     createCartOrderProfitSnapshot,
     createInitialOrderProfitSnapshot,
+    customersTable,
     db,
     multiplyMoneyByQuantity,
     ordersTable,
     pool,
     productsTable,
     storesTable,
+    storeSkillStatesTable,
     tripRoutesTable,
     tripsTable,
   } = dbModule;
@@ -48,22 +50,15 @@ export async function seedDemoData(databaseUrl, { append = false } = {}) {
 
   try {
     const [existingProducts, existingOrders] = await Promise.all([
-      db
-        .select({ shareToken: productsTable.shareToken })
-        .from(productsTable),
-      db
-        .select({ publicToken: ordersTable.publicToken })
-        .from(ordersTable),
+      db.select({ shareToken: productsTable.shareToken }).from(productsTable),
+      db.select({ publicToken: ordersTable.publicToken }).from(ordersTable),
     ]);
     const existingDemoRowCount =
       existingProducts.filter((row) => row.shareToken.startsWith("demo-"))
         .length +
       existingOrders.filter((row) => row.publicToken.startsWith("demo-order-"))
         .length;
-    assertDemoAppendAllowed(
-      existingDemoRowCount,
-      append,
-    );
+    assertDemoAppendAllowed(existingDemoRowCount, append);
 
     return await db.transaction(async (tx) => {
       const [store] = await tx
@@ -76,6 +71,35 @@ export async function seedDemoData(databaseUrl, { append = false } = {}) {
           purchaseExchangeRate: "0.199",
         })
         .returning();
+
+      const [customer] = await tx
+        .insert(customersTable)
+        .values({
+          storeId: store.id,
+          code: `demo-customer-${runId}`,
+          name: "示範客戶（假資料）",
+          phone: "0900000000",
+          tier: "vip",
+          cvsStoreId: "000000",
+          cvsStoreName: "示範門市",
+          cvsStoreAddress: "示範市示範區示範路 1 號",
+          cvsStorePhone: "0200000000",
+          notes: "僅供拋棄式示範庫使用",
+        })
+        .returning();
+
+      const enabledSkillKeys = ["S-07", "S-08", "S-19"];
+      await tx.insert(storeSkillStatesTable).values(
+        enabledSkillKeys.map((skillKey) => ({
+          storeId: store.id,
+          skillKey,
+          enabled: true,
+          enabledAt: capturedAt,
+          enabledBy: "demo-seed",
+          catalogVersion: 1,
+          source: "package",
+        })),
+      );
 
       const [trip] = await tx
         .insert(tripsTable)
@@ -207,6 +231,7 @@ export async function seedDemoData(databaseUrl, { append = false } = {}) {
 
       const sharedOrderValues = {
         storeId: store.id,
+        customerId: customer.id,
         buyerName: "示範顧客（假資料）",
         buyerPhone: "0900000000",
         pickupMethod: "self_pickup",
@@ -314,6 +339,8 @@ export async function seedDemoData(databaseUrl, { append = false } = {}) {
       return {
         runId,
         storeId: store.id,
+        customerId: customer.id,
+        enabledSkillKeys,
         tripId: trip.id,
         tripRouteId: route.id,
         productIds: [allocatedProduct.id, pendingProduct.id, exemptProduct.id],
