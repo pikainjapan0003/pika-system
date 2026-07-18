@@ -1267,7 +1267,7 @@ export default function OrdersPage() {
                                     orderId: o.id,
                                   });
                                 }}
-                                className="mt-2 w-full h-9 rounded-xl border border-primary/40 bg-primary/5 text-xs font-medium text-primary"
+                                className="mt-2 w-full min-h-11 rounded-xl border border-primary/40 bg-primary/5 text-xs font-medium text-primary"
                               >
                                 選擇 / 修改 7-11 門市
                               </button>
@@ -1312,7 +1312,7 @@ export default function OrdersPage() {
                                     orderId: o.id,
                                   });
                                 }}
-                                className="mt-2 w-full h-9 rounded-xl border border-primary/40 bg-primary/5 text-xs font-medium text-primary"
+                                className="mt-2 w-full min-h-11 rounded-xl border border-primary/40 bg-primary/5 text-xs font-medium text-primary"
                               >
                                 選擇 / 修改全家門市
                               </button>
@@ -1402,7 +1402,7 @@ export default function OrdersPage() {
                                       copyKey,
                                     )
                                   }
-                                  className="min-h-10 rounded-xl border border-border bg-white px-2 py-2 text-xs font-medium text-foreground"
+                                  className="min-h-11 rounded-xl border border-border bg-white px-2 py-2 text-xs font-medium text-foreground"
                                 >
                                   {copiedKey === copyKey
                                     ? "已複製"
@@ -1421,7 +1421,7 @@ export default function OrdersPage() {
                           <button
                             type="button"
                             onClick={() => setEditingOrder(o)}
-                            className="w-full h-9 rounded-xl border border-primary/40 bg-primary/5 text-xs font-medium text-primary"
+                            className="w-full min-h-11 rounded-xl border border-primary/40 bg-primary/5 text-xs font-medium text-primary"
                           >
                             編輯訂單
                           </button>
@@ -1434,7 +1434,7 @@ export default function OrdersPage() {
                             `${window.location.origin}${basePath}/track/${o.publicToken}`,
                             `${o.id}-link`
                           )}
-                          className="w-full h-9 rounded-xl border border-border bg-white text-xs font-medium text-foreground"
+                          className="w-full min-h-11 rounded-xl border border-border bg-white text-xs font-medium text-foreground"
                         >
                           {copiedKey === `${o.id}-link` ? "已複製追蹤連結" : "複製追蹤連結"}
                         </button>
@@ -1443,7 +1443,7 @@ export default function OrdersPage() {
                         <button
                           type="button"
                           onClick={() => printOrderReceipt(o, store)}
-                          className="w-full h-9 rounded-xl border border-border bg-white text-xs font-medium text-foreground"
+                          className="w-full min-h-11 rounded-xl border border-border bg-white text-xs font-medium text-foreground"
                         >
                           列印銷貨單
                         </button>
@@ -1482,7 +1482,7 @@ export default function OrdersPage() {
                                         disabled={isCurrent || loadingOrderId === o.id}
                                         aria-current={isCurrent ? "true" : undefined}
                                         onClick={() => handleNormalStatusClick(s)}
-                                        className={`h-9 px-4 rounded-xl text-sm font-medium border transition-colors ${
+                                        className={`min-h-11 px-4 rounded-xl text-sm font-medium border transition-colors ${
                                           isCurrent
                                             ? "border-primary bg-primary/10 text-primary cursor-default disabled:opacity-100"
                                             : `${STATUS_COLORS[s] ? `border-transparent ${STATUS_COLORS[s]}` : "border-input bg-white text-foreground"} disabled:opacity-60`
@@ -1510,7 +1510,7 @@ export default function OrdersPage() {
                                           type="button"
                                           disabled={loadingOrderId === o.id}
                                           onClick={() => setStatusConfirm({ orderId: o.id, fromStatus: o.status, toStatus: "cancelled", kind: "cancel" })}
-                                          className="h-9 px-4 rounded-xl text-sm font-medium border border-red-300 bg-white text-red-600 hover:bg-red-50 transition-colors disabled:opacity-60"
+                                          className="min-h-11 px-4 rounded-xl text-sm font-medium border border-red-300 bg-white text-red-600 hover:bg-red-50 transition-colors disabled:opacity-60"
                                         >
                                           {loadingOrderId === o.id ? "更新中..." : "取消訂單"}
                                         </button>
@@ -1519,7 +1519,7 @@ export default function OrdersPage() {
                                         type="button"
                                         disabled={deleteBlocked || deletingOrderId === o.id}
                                         onClick={() => setDeleteConfirm({ orderId: o.id, buyerName: o.buyerName })}
-                                        className="h-9 px-4 rounded-xl text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50"
+                                        className="min-h-11 px-4 rounded-xl text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50"
                                       >
                                         {deletingOrderId === o.id ? "刪除中..." : "刪除訂單"}
                                       </button>
