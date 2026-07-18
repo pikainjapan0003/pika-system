@@ -424,8 +424,9 @@ export default function SettingsPage() {
           )}
 
           <div className="pt-4">
+            <ExchangeRateReferenceEntry />
             {skillVisibility.isVisible("customers") && <CustomersEntry />}
-            {skillVisibility.isVisible("trips") && <TripsEntry />}
+            <TripsEntry />
             <SkillMapEntry />
             {skillVisibility.isVisible("audit-logs") && <AuditLogsEntry />}
             {skillVisibility.isVisible("agent-settings") && <AgentSettingsEntry />}
@@ -858,6 +859,28 @@ function TripsEntry() {
           <div>
             <p className="text-sm font-semibold text-foreground">行程與路線管理</p>
             <p className="text-xs text-muted-foreground">用於商品的交通成本分攤設定</p>
+          </div>
+        </div>
+        <span className="text-muted-foreground text-sm">›</span>
+      </button>
+    </div>
+  );
+}
+
+function ExchangeRateReferenceEntry() {
+  const [, setLocation] = useLocation();
+  return (
+    <div className="px-5 pb-3">
+      <button
+        type="button"
+        onClick={() => setLocation("/settings/exchange-rate-reference")}
+        className="w-full bg-white border border-border rounded-2xl px-4 py-4 flex items-center justify-between text-left hover:bg-secondary/50 transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <span className="w-9 h-9 rounded-xl bg-sky-100 flex items-center justify-center text-lg flex-shrink-0">💱</span>
+          <div>
+            <p className="text-sm font-semibold text-foreground">銀行匯率參考</p>
+            <p className="text-xs text-muted-foreground">比較銀行日圓即期賣出並手動套用</p>
           </div>
         </div>
         <span className="text-muted-foreground text-sm">›</span>
