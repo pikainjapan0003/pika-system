@@ -1,4 +1,5 @@
 const DATABASE_URL_FLAG = "--database-url";
+const APPEND_FLAG = "--append";
 const FORBIDDEN_TARGET_PATTERN = /(replit|prod)/i;
 
 function fail(message: string): never {
@@ -10,12 +11,28 @@ function fail(message: string): never {
  * environment, so a shell that happens to contain a production URL cannot be
  * modified by omitting the CLI flag.
  */
-export function parseExplicitDemoDatabaseUrl(args: readonly string[]): string {
+export interface DemoSeedCliOptions {
+  databaseUrl: string;
+  append: boolean;
+}
+
+export function parseExplicitDemoSeedOptions(
+  args: readonly string[],
+): DemoSeedCliOptions {
   let databaseUrl: string | null = null;
+  let append = false;
+  let appendSeen = false;
 
   for (let index = 0; index < args.length; index += 1) {
     const argument = args[index];
     if (index === 0 && argument === "--") continue;
+
+    if (argument === APPEND_FLAG) {
+      if (appendSeen) fail(`${APPEND_FLAG} may only be provided once`);
+      append = true;
+      appendSeen = true;
+      continue;
+    }
 
     if (argument === DATABASE_URL_FLAG) {
       if (databaseUrl !== null)
@@ -71,5 +88,20 @@ export function parseExplicitDemoDatabaseUrl(args: readonly string[]): string {
     );
   }
 
-  return databaseUrl;
+  return { databaseUrl, append };
+}
+
+export function parseExplicitDemoDatabaseUrl(args: readonly string[]): string {
+  return parseExplicitDemoSeedOptions(args).databaseUrl;
+}
+
+export function assertDemoAppendAllowed(
+  existingDemoRowCount: number,
+  append: boolean,
+): void {
+  if (existingDemoRowCount > 0 && !append) {
+    fail(
+      `Demo data already exists (${existingDemoRowCount} matching rows); rerun with --append only if duplication is intentional`,
+    );
+  }
 }

@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { parseExplicitDemoDatabaseUrl } from "./demoSeedSafety.ts";
+import {
+  assertDemoAppendAllowed,
+  parseExplicitDemoDatabaseUrl,
+  parseExplicitDemoSeedOptions,
+} from "./demoSeedSafety.ts";
 
 test("requires an explicit CLI database URL and never falls back to the environment", () => {
   const previous = process.env.DATABASE_URL;
@@ -26,6 +30,38 @@ test("accepts an explicit disposable PostgreSQL URL", () => {
     ]),
     "postgresql://demo:demo@127.0.0.1:55432/pika_demo",
   );
+});
+
+test("append mode must be explicit and duplicate append flags are rejected", () => {
+  assert.deepEqual(
+    parseExplicitDemoSeedOptions([
+      "--database-url=postgresql://demo:demo@127.0.0.1:55432/pika_demo",
+      "--append",
+    ]),
+    {
+      databaseUrl:
+        "postgresql://demo:demo@127.0.0.1:55432/pika_demo",
+      append: true,
+    },
+  );
+  assert.throws(
+    () =>
+      parseExplicitDemoSeedOptions([
+        "--database-url=postgresql://demo:demo@127.0.0.1:55432/pika_demo",
+        "--append",
+        "--append",
+      ]),
+    /may only be provided once/,
+  );
+});
+
+test("existing demo rows are rejected unless append is explicit", () => {
+  assert.doesNotThrow(() => assertDemoAppendAllowed(0, false));
+  assert.throws(
+    () => assertDemoAppendAllowed(1, false),
+    /Demo data already exists.*--append/,
+  );
+  assert.doesNotThrow(() => assertDemoAppendAllowed(1, true));
 });
 
 test("rejects Replit and production markers before any connection is made", () => {
