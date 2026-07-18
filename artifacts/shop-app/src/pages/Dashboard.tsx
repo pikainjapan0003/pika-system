@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { useGetMyStore, useGetStoreStats, useListOrders, useListProducts } from "@workspace/api-client-react";
 import { useAuth, useClerk } from "@clerk/react";
 import { STATUS_LABELS, STATUS_COLORS } from "../lib/orderStatus";
+import { resolveOrderDisplayTotal } from "../lib/orderDisplayTotal";
 import { countDashboardOrders, findLowStockProducts, LOW_STOCK_THRESHOLD } from "@/lib/dashboardMetrics";
 import { useDailySkillVisibility } from "@/lib/dailySkillVisibilityContext";
 
@@ -326,7 +327,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="flex items-center justify-between mt-2">
                     <span className="text-xs text-muted-foreground">x{o.quantity}</span>
-                    <span className="text-sm font-semibold text-foreground">${Number(o.totalPrice).toLocaleString()}</span>
+                    <span className="text-sm font-semibold text-foreground">NT${resolveOrderDisplayTotal(o).toLocaleString()}</span>
                   </div>
                 </div>
               ))}

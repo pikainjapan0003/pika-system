@@ -6,6 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { maskAddress, maskName, maskPhone } from "@workspace/privacy";
 import { BottomNav } from "./Dashboard";
 import { STATUS_LABELS, STATUS_COLORS, ALL_STATUSES, STATUS_STEPS, VALID_NEXT_STATUSES } from "../lib/orderStatus";
+import { resolveOrderDisplayTotal } from "../lib/orderDisplayTotal";
 import { isSevenElevenMethod, isFamilyMartMethod, openSevenElevenMap, openCvsStoreMap } from "@/lib/cvs711";
 import { parseRecipientAddress } from "@/lib/taiwanZipcodes";
 import { getProviderShortName } from "@/lib/logisticsProviders";
@@ -366,7 +367,7 @@ export default function OrdersPage() {
       String(o.id).includes(q) ||
       (o.productName ?? "").toLowerCase().includes(q);
     const paymentMatches = !paymentLast5Q || ((o as any).paymentLast5 ?? "").includes(paymentLast5Q);
-    const orderTotal = o.orderTotal ?? (Number(o.totalPrice) + Number(o.shippingFee ?? 0));
+    const orderTotal = resolveOrderDisplayTotal(o);
     const amountMatches = !amountQ || String(Math.round(Number(orderTotal))).includes(amountQ);
     return textMatches && paymentMatches && amountMatches;
   });
@@ -374,7 +375,7 @@ export default function OrdersPage() {
   const sortedFiltered = [...searched].reverse();
 
   // Stats (computed from all orders, ignoring current filter)
-  const totalRevenue = allOrders.reduce((sum, o) => sum + Number(o.orderTotal ?? (Number(o.totalPrice) + Number(o.shippingFee ?? 0))), 0);
+  const totalRevenue = allOrders.reduce((sum, o) => sum + resolveOrderDisplayTotal(o), 0);
   const pendingCount = allOrders.filter((o) => o.status === "pending").length;
 
   const handleStatusChange = async (orderId: number, status: string) => {
@@ -823,7 +824,7 @@ export default function OrdersPage() {
                           </div>
                           <span className="text-sm font-bold text-primary tracking-wide">#{o.id}</span>
                         </div>
-                        <span className="text-xl font-bold text-primary">NT${Number(o.orderTotal ?? (Number(o.totalPrice) + Number(o.shippingFee ?? 0))).toLocaleString()}</span>
+                        <span className="text-xl font-bold text-primary">NT${resolveOrderDisplayTotal(o).toLocaleString()}</span>
                       </div>
                       {/* Row 2: Buyer name (left) + date (right) */}
                       <div className="flex items-center justify-between gap-2 mb-2">
@@ -1158,7 +1159,7 @@ export default function OrdersPage() {
                             )}
                             <DetailRow
                               label="訂單總額"
-                              value={`NT$ ${Number(o.orderTotal ?? (Number(o.totalPrice) + Number(o.shippingFee ?? 0))).toLocaleString()}`}
+                              value={`NT$ ${resolveOrderDisplayTotal(o).toLocaleString()}`}
                               bold
                             />
                             <DetailRow
@@ -1384,10 +1385,7 @@ export default function OrdersPage() {
                               const productSummary = items
                                 .map((item) => `${item.productName} × ${item.quantity}`)
                                 .join("、");
-                              const amount = Number(
-                                o.orderTotal ??
-                                  Number(o.totalPrice) + Number(o.shippingFee ?? 0),
-                              ).toLocaleString();
+                              const amount = resolveOrderDisplayTotal(o).toLocaleString();
                               const copyKey = `${o.id}-message-${templateType}`;
                               return (
                                 <button
