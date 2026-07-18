@@ -58,7 +58,15 @@ function solveCaptcha(imageBytes) {
     ["-colorspace", "Gray", "-resize", "400%", "-threshold", "45%"],
     ["-colorspace", "Gray", "-resize", "400%", "-threshold", "55%"],
     ["-colorspace", "Gray", "-resize", "400%", "-threshold", "65%"],
-    ["-colorspace", "Gray", "-resize", "400%", "-normalize", "-threshold", "50%"],
+    [
+      "-colorspace",
+      "Gray",
+      "-resize",
+      "400%",
+      "-normalize",
+      "-threshold",
+      "50%",
+    ],
     ["-colorspace", "Gray", "-resize", "400%"],
   ];
   for (let i = 0; i < variants.length; i++) {
@@ -102,7 +110,9 @@ for (let i = 1; i <= MAX; i++) {
     { solveCaptcha },
   );
   if (r.ok) {
-    log.push(`#${i} -> SUCCESS latest="${r.latestStatus}" events=${r.events.length}`);
+    log.push(
+      `#${i} -> SUCCESS latest="${r.latestStatus}" events=${r.events.length}`,
+    );
     finalSuccess = r;
     break;
   } else {
@@ -129,7 +139,9 @@ if (finalSuccess) {
   }
   console.log("RESULT: PASS");
 } else {
-  console.log("\nRESULT: PARTIAL (adapter ok, all OCR attempts failed this run)");
+  console.log(
+    "\nRESULT: PARTIAL (adapter ok, all OCR attempts failed this run)",
+  );
 }
 
 await fs.rm(tmpDir, { recursive: true, force: true });

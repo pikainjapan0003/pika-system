@@ -33,7 +33,9 @@ console.log("events:", result.events.length);
 console.log("");
 
 result.events.forEach((e, i) => {
-  console.log(`  [${i}] ${e.occurredAt ?? "?"} | ${e.eventStatus} | ${e.eventLocation ?? ""}`);
+  console.log(
+    `  [${i}] ${e.occurredAt ?? "?"} | ${e.eventStatus} | ${e.eventLocation ?? ""}`,
+  );
 });
 
 console.log("");

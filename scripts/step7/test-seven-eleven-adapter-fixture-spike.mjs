@@ -86,12 +86,24 @@ const FIXTURE_POST_HTML = `
 
 const mockFetch = async (url, opts = {}) => {
   if (opts && opts.method === "POST") {
-    return { ok: true, text: () => Promise.resolve(FIXTURE_POST_HTML), headers: new Headers() };
+    return {
+      ok: true,
+      text: () => Promise.resolve(FIXTURE_POST_HTML),
+      headers: new Headers(),
+    };
   }
   if (String(url).includes("ValidateImage")) {
-    return { ok: true, arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)), headers: new Headers() };
+    return {
+      ok: true,
+      arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)),
+      headers: new Headers(),
+    };
   }
-  return { ok: true, text: () => Promise.resolve(FIXTURE_GET_HTML), headers: new Headers() };
+  return {
+    ok: true,
+    text: () => Promise.resolve(FIXTURE_GET_HTML),
+    headers: new Headers(),
+  };
 };
 
 const mockSolveCaptcha = async (_imageBytes) => "1234";
@@ -100,7 +112,9 @@ const mockSolveCaptcha = async (_imageBytes) => "1234";
 // Main
 // ---------------------------------------------------------------------------
 
-console.log("=== Step 7O 7-11 Minimal Preview Adapter Spike (Fixture Only) ===");
+console.log(
+  "=== Step 7O 7-11 Minimal Preview Adapter Spike (Fixture Only) ===",
+);
 console.log("TRACKING_CODE: FIXTURE (not a real code)");
 console.log("Mode: FIXTURE ONLY — no external HTTP, no OCR, no DB write");
 console.log("");
@@ -133,7 +147,9 @@ for (const [input, expected] of normCases) {
   const actual = normalizeSevenElevenStatus(input);
   const ok = actual === expected;
   if (ok) normPass++;
-  console.log(`  ${ok ? "OK" : "FAIL"} "${input}" -> ${actual} (expected ${expected})`);
+  console.log(
+    `  ${ok ? "OK" : "FAIL"} "${input}" -> ${actual} (expected ${expected})`,
+  );
 }
 console.log(`  RESULT: ${normPass}/${normCases.length} PASS`);
 console.log("");
@@ -152,8 +168,16 @@ const mockSuccessResult = {
   pickupDeadline: "2026/07/01",
   paymentInfo: "交貨便",
   events: [
-    { occurredAt: "2026/06/14 10:30:00", statusText: "已到店", rawText: "已到店 2026/06/14 10:30:00" },
-    { occurredAt: "2026/06/14 08:00:00", statusText: "配送中", rawText: "配送中 2026/06/14 08:00:00" },
+    {
+      occurredAt: "2026/06/14 10:30:00",
+      statusText: "已到店",
+      rawText: "已到店 2026/06/14 10:30:00",
+    },
+    {
+      occurredAt: "2026/06/14 08:00:00",
+      statusText: "配送中",
+      rawText: "配送中 2026/06/14 08:00:00",
+    },
   ],
   rawSummary: {},
 };
@@ -235,7 +259,9 @@ if (result.ok) {
   console.log(`    latestStatusText: "${finalBridged.latestStatusText}"`);
   console.log(`    latestEventAt: "${finalBridged.latestEventAt}"`);
   for (const e of finalBridged.events) {
-    console.log(`    - occurredAt: "${e.occurredAt}" | status: "${e.eventStatus}"`);
+    console.log(
+      `    - occurredAt: "${e.occurredAt}" | status: "${e.eventStatus}"`,
+    );
   }
   console.log(`  RESULT: ${t4Pass ? "PASS" : "FAIL"}`);
 } else {
@@ -265,17 +291,24 @@ console.log("");
 // Summary
 // ---------------------------------------------------------------------------
 
-const allFixturePassed = normPass === normCases.length && b2Pass && b3Pass && t4Pass && t5Pass;
+const allFixturePassed =
+  normPass === normCases.length && b2Pass && b3Pass && t4Pass && t5Pass;
 
 console.log("=== SPIKE SUMMARY ===");
 console.log(`adapter POC exists:         YES (sevenElevenAdapter.ts)`);
-console.log(`endpoint known:             YES (https://eservice.7-11.com.tw/e-tracking/search.aspx)`);
+console.log(
+  `endpoint known:             YES (https://eservice.7-11.com.tw/e-tracking/search.aspx)`,
+);
 console.log(`fixture parser:             ${t4Pass ? "PASS" : "FAIL"}`);
 console.log(`normalizeSevenElevenStatus: ${normPass}/${normCases.length} PASS`);
-console.log(`bridgeSevenElevenResult:    ${b2Pass && b3Pass ? "PASS" : "FAIL"}`);
+console.log(
+  `bridgeSevenElevenResult:    ${b2Pass && b3Pass ? "PASS" : "FAIL"}`,
+);
 console.log(`full fixture pipeline:      ${t4Pass ? "PASS" : "FAIL"}`);
 console.log(`external HTTP calls:        NONE (mocked)`);
-console.log(`OCR / tesseract:            NOT_TESTED (mocked captcha; tesseract NOT_FOUND in env)`);
+console.log(
+  `OCR / tesseract:            NOT_TESTED (mocked captcha; tesseract NOT_FOUND in env)`,
+);
 console.log(`DB write:                   NONE`);
 console.log(`supportsAutoSync changed:   NO`);
 console.log(`provider whitelist changed: NO`);

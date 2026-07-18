@@ -26,7 +26,9 @@ try {
 } catch (err) {
   if (err.code === "ENOENT") {
     console.error(`[write-dev-handoff] File not found: ${HANDOFF_PATH}`);
-    console.error("  → Write dev-handoff/latest.json first, then run this script.");
+    console.error(
+      "  → Write dev-handoff/latest.json first, then run this script.",
+    );
     process.exit(1);
   }
   throw err;

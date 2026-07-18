@@ -14,13 +14,21 @@
 import path from "node:path";
 import { pathToFileURL, fileURLToPath } from "node:url";
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
+const ROOT = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../..",
+);
 
 if (!process.env.__TSX_BOOTSTRAPPED) {
   const { spawnSync } = await import("node:child_process");
   const r = spawnSync(
     process.execPath,
-    ["--import", path.join(ROOT, "scripts/node_modules/tsx/dist/esm/index.mjs"), fileURLToPath(import.meta.url), ...process.argv.slice(2)],
+    [
+      "--import",
+      path.join(ROOT, "scripts/node_modules/tsx/dist/esm/index.mjs"),
+      fileURLToPath(import.meta.url),
+      ...process.argv.slice(2),
+    ],
     { stdio: "inherit", env: { ...process.env, __TSX_BOOTSTRAPPED: "1" } },
   );
   process.exit(r.status ?? 1);
@@ -28,9 +36,13 @@ if (!process.env.__TSX_BOOTSTRAPPED) {
 
 const apply = process.argv.includes("--apply");
 
-const { pool } = await import(pathToFileURL(path.join(ROOT, "lib/db/src/index.ts")));
+const { pool } = await import(
+  pathToFileURL(path.join(ROOT, "lib/db/src/index.ts"))
+);
 const { ensureManualProviderTrackingRow, MANUAL_SEED_PROVIDERS } = await import(
-  pathToFileURL(path.join(ROOT, "artifacts/api-server/src/lib/logistics/trackingSeed.ts"))
+  pathToFileURL(
+    path.join(ROOT, "artifacts/api-server/src/lib/logistics/trackingSeed.ts"),
+  )
 );
 
 const { rows: candidates } = await pool.query(
@@ -51,7 +63,9 @@ console.log(`mode: ${apply ? "APPLY" : "DRY-RUN"}`);
 console.log(`providers: ${MANUAL_SEED_PROVIDERS.join(", ")}`);
 console.log(`candidates: ${candidates.length}`);
 for (const c of candidates) {
-  console.log(`  order #${c.order_id} (store ${c.store_id}) ${c.tracking_provider} ${c.tracking_code}`);
+  console.log(
+    `  order #${c.order_id} (store ${c.store_id}) ${c.tracking_provider} ${c.tracking_code}`,
+  );
 }
 
 let inserted = 0;
@@ -68,7 +82,9 @@ if (apply) {
       console.log(`  SKIP order #${c.order_id}: ${result.reason}`);
     } else {
       inserted++;
-      console.log(`  ${result.action.toUpperCase()} order #${c.order_id} → tracking id ${result.trackingId}`);
+      console.log(
+        `  ${result.action.toUpperCase()} order #${c.order_id} → tracking id ${result.trackingId}`,
+      );
     }
   }
 }

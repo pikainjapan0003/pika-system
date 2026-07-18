@@ -13,13 +13,25 @@ import { createRequire } from "module";
 import path from "path";
 import { fileURLToPath } from "url";
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
+const ROOT = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../..",
+);
 const FIXTURES = path.join(ROOT, "data/step7-fixtures");
-const IMPORTERS = path.join(ROOT, "artifacts/api-server/src/lib/logistics/importers");
+const IMPORTERS = path.join(
+  ROOT,
+  "artifacts/api-server/src/lib/logistics/importers",
+);
 
-const { parseSevenElevenSpreadsheet } = await import(path.join(IMPORTERS, "parseSevenElevenSpreadsheet.ts"));
-const { parseFamilyMartSpreadsheet } = await import(path.join(IMPORTERS, "parseFamilyMartSpreadsheet.ts"));
-const { matchLogisticsImportRows, normalizePhone } = await import(path.join(IMPORTERS, "matchLogisticsImportRows.ts"));
+const { parseSevenElevenSpreadsheet } = await import(
+  path.join(IMPORTERS, "parseSevenElevenSpreadsheet.ts")
+);
+const { parseFamilyMartSpreadsheet } = await import(
+  path.join(IMPORTERS, "parseFamilyMartSpreadsheet.ts")
+);
+const { matchLogisticsImportRows, normalizePhone } = await import(
+  path.join(IMPORTERS, "matchLogisticsImportRows.ts")
+);
 
 const require = createRequire(path.join(ROOT, "lib/db/index.js"));
 
@@ -29,18 +41,38 @@ const require = createRequire(path.join(ROOT, "lib/db/index.js"));
 const unmaskName = (m) => String(m || "").replace(/\*/g, "模");
 const unmaskMobile = (m) => {
   const filled = normalizePhone(m).replace(/\*/g, "0");
-  return /^09\d{8}$/.test(filled) ? filled : "09" + filled.slice(2, 10).padEnd(8, "0");
+  return /^09\d{8}$/.test(filled)
+    ? filled
+    : "09" + filled.slice(2, 10).padEnd(8, "0");
 };
 
 function buildMockOrders(sevenRows, famiRows) {
   const orders = [];
   let id = 9000;
-  const base = { status: "preparing", shippingMethod: "convenience_store", trackingCode: null, recipientName: null, recipientPhone: null };
+  const base = {
+    status: "preparing",
+    shippingMethod: "convenience_store",
+    trackingCode: null,
+    recipientName: null,
+    recipientPhone: null,
+  };
   for (const r of sevenRows.filter((x) => x.recipientName).slice(0, 3)) {
-    orders.push({ ...base, id: ++id, buyerName: unmaskName(r.recipientName), buyerPhone: "0900000000", cvsStoreName: r.storeName });
+    orders.push({
+      ...base,
+      id: ++id,
+      buyerName: unmaskName(r.recipientName),
+      buyerPhone: "0900000000",
+      cvsStoreName: r.storeName,
+    });
   }
   for (const r of famiRows.slice(0, 3)) {
-    orders.push({ ...base, id: ++id, buyerName: unmaskName(r.recipientName), buyerPhone: unmaskMobile(r.recipientPhone), cvsStoreName: r.storeName });
+    orders.push({
+      ...base,
+      id: ++id,
+      buyerName: unmaskName(r.recipientName),
+      buyerPhone: unmaskMobile(r.recipientPhone),
+      cvsStoreName: r.storeName,
+    });
   }
   if (orders[0]) orders.push({ ...orders[0], id: ++id }); // forces an ambiguous outcome
   return orders;
@@ -53,7 +85,7 @@ async function loadOrders() {
   const { rows } = await client.query(
     `SELECT id, status, shipping_method, tracking_code,
             buyer_name, buyer_phone, recipient_name, recipient_phone, cvs_store_name
-     FROM orders`
+     FROM orders`,
   );
   await client.end();
   return rows.map((r) => ({
@@ -70,16 +102,30 @@ async function loadOrders() {
 }
 
 const fixtures = readdirSync(FIXTURES);
-const sevenFile = fixtures.find((f) => f.includes("賣貨便") && f.endsWith(".xlsx"));
+const sevenFile = fixtures.find(
+  (f) => f.includes("賣貨便") && f.endsWith(".xlsx"),
+);
 const famiFile = fixtures.find((f) => /^[0-9a-f]{24}\.xlsx$/.test(f));
 
 const sheets = [];
-if (sevenFile) sheets.push(await parseSevenElevenSpreadsheet(path.join(FIXTURES, sevenFile), sevenFile));
-if (famiFile) sheets.push(await parseFamilyMartSpreadsheet(path.join(FIXTURES, famiFile), famiFile));
+if (sevenFile)
+  sheets.push(
+    await parseSevenElevenSpreadsheet(
+      path.join(FIXTURES, sevenFile),
+      sevenFile,
+    ),
+  );
+if (famiFile)
+  sheets.push(
+    await parseFamilyMartSpreadsheet(path.join(FIXTURES, famiFile), famiFile),
+  );
 
 const orders =
   process.env.DRY_RUN_MOCK === "1"
-    ? buildMockOrders(sheets.find((s) => s.provider === "711")?.rows ?? [], sheets.find((s) => s.provider === "familymart")?.rows ?? [])
+    ? buildMockOrders(
+        sheets.find((s) => s.provider === "711")?.rows ?? [],
+        sheets.find((s) => s.provider === "familymart")?.rows ?? [],
+      )
     : await loadOrders();
 
 const report = sheets.map((sheet) => ({

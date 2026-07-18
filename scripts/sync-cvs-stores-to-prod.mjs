@@ -44,16 +44,20 @@ function getArg(flag) {
   const i = args.indexOf(flag);
   return i !== -1 ? (args[i + 1] ?? null) : null;
 }
-function hasFlag(flag) { return args.includes(flag); }
+function hasFlag(flag) {
+  return args.includes(flag);
+}
 
-const isDryRun   = !hasFlag("--apply");
-const applyMode  = hasFlag("--apply");
+const isDryRun = !hasFlag("--apply");
+const applyMode = hasFlag("--apply");
 const providerFilter = getArg("--provider") ?? null;
-const limitArg   = getArg("--limit");
-const rowLimit   = limitArg ? parseInt(limitArg, 10) : null;
-const reportArg  = getArg("--report");
+const limitArg = getArg("--limit");
+const rowLimit = limitArg ? parseInt(limitArg, 10) : null;
+const reportArg = getArg("--report");
 const REPORT_PATH = reportArg
-  ? (path.isAbsolute(reportArg) ? reportArg : path.resolve(WORKSPACE_ROOT, reportArg))
+  ? path.isAbsolute(reportArg)
+    ? reportArg
+    : path.resolve(WORKSPACE_ROOT, reportArg)
   : null;
 
 // ── 安全確認 ───────────────────────────────────────────────────────────────────
@@ -61,15 +65,17 @@ const ALLOWED_TABLES = ["cvs_stores"];
 
 console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 console.log("[sync-cvs-stores-to-prod] 啟動");
-console.log(`  mode       : ${isDryRun ? "dry-run（不寫任何資料）" : "apply（寫入 production DB）"}`);
+console.log(
+  `  mode       : ${isDryRun ? "dry-run（不寫任何資料）" : "apply（寫入 production DB）"}`,
+);
 console.log(`  provider   : ${providerFilter ?? "全部"}`);
 console.log(`  limit      : ${rowLimit ?? "不限制"}`);
 console.log(`  report     : ${REPORT_PATH ?? "不輸出 report 檔案"}`);
 console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
 // ── env 確認 ──────────────────────────────────────────────────────────────────
-const hasSrcUrl  = Boolean(process.env.DATABASE_URL);
-const hasTgtUrl  = Boolean(process.env.PROD_DATABASE_URL);
+const hasSrcUrl = Boolean(process.env.DATABASE_URL);
+const hasTgtUrl = Boolean(process.env.PROD_DATABASE_URL);
 
 if (!hasSrcUrl) {
   console.error("[ERROR] DATABASE_URL 未設定，無法連接 development DB");
@@ -77,18 +83,26 @@ if (!hasSrcUrl) {
 }
 
 if (applyMode && !hasTgtUrl) {
-  console.error("[ERROR] --apply 模式需要 PROD_DATABASE_URL，請先在 Replit Secrets 設定");
+  console.error(
+    "[ERROR] --apply 模式需要 PROD_DATABASE_URL，請先在 Replit Secrets 設定",
+  );
   process.exit(1);
 }
 
 if (!hasTgtUrl) {
-  console.warn("[WARN] PROD_DATABASE_URL 未設定，dry-run 將只讀取 source DB 統計");
-  console.warn("[WARN] 請在 Replit Secrets 加入 PROD_DATABASE_URL 後，再執行完整 dry-run");
+  console.warn(
+    "[WARN] PROD_DATABASE_URL 未設定，dry-run 將只讀取 source DB 統計",
+  );
+  console.warn(
+    "[WARN] 請在 Replit Secrets 加入 PROD_DATABASE_URL 後，再執行完整 dry-run",
+  );
 }
 
 // ── DB 連線 ───────────────────────────────────────────────────────────────────
 const srcPool = new Pool({ connectionString: process.env.DATABASE_URL });
-const tgtPool = hasTgtUrl ? new Pool({ connectionString: process.env.PROD_DATABASE_URL }) : null;
+const tgtPool = hasTgtUrl
+  ? new Pool({ connectionString: process.env.PROD_DATABASE_URL })
+  : null;
 
 async function query(pool, sql, params = []) {
   const r = await pool.query(sql, params);
@@ -97,23 +111,29 @@ async function query(pool, sql, params = []) {
 
 // ── 統計查詢 ──────────────────────────────────────────────────────────────────
 async function getStats(pool, label) {
-  const providerRows = await query(pool, `
+  const providerRows = await query(
+    pool,
+    `
     SELECT provider, is_active, COUNT(*) AS cnt
     FROM cvs_stores
     GROUP BY provider, is_active
     ORDER BY provider, is_active
-  `);
+  `,
+  );
 
-  const sourceRows = await query(pool, `
+  const sourceRows = await query(
+    pool,
+    `
     SELECT provider, source, COUNT(*) AS cnt
     FROM cvs_stores
     WHERE is_active = true
     GROUP BY provider, source
     ORDER BY provider, source
-  `);
+  `,
+  );
 
   const totalActive = providerRows
-    .filter(r => r.is_active)
+    .filter((r) => r.is_active)
     .reduce((s, r) => s + parseInt(r.cnt, 10), 0);
 
   const providerCounts = {};
@@ -133,7 +153,12 @@ async function getStats(pool, label) {
   }
   console.log(`  active 總計 : ${totalActive} 筆`);
 
-  return { available: true, activeTotal: totalActive, providerCounts, sourceCounts };
+  return {
+    available: true,
+    activeTotal: totalActive,
+    providerCounts,
+    sourceCounts,
+  };
 }
 
 // ── 差異計算 ──────────────────────────────────────────────────────────────────
@@ -159,7 +184,7 @@ async function calcDiff(srcPool, tgtPool) {
   }
   const tgtIds = await query(tgtPool, tgtQuery, tgtParams);
 
-  const tgtSet = new Set(tgtIds.map(r => `${r.provider}::${r.store_id}`));
+  const tgtSet = new Set(tgtIds.map((r) => `${r.provider}::${r.store_id}`));
 
   let wouldInsert = 0;
   let wouldUpdate = 0;
@@ -212,7 +237,8 @@ async function applySync(srcPool, tgtPool) {
   for (let i = 0; i < rows.length; i += BATCH) {
     const batch = rows.slice(i, i + BATCH);
     for (const r of batch) {
-      await tgtPool.query(`
+      await tgtPool.query(
+        `
         INSERT INTO cvs_stores (
           provider, store_id, store_name, store_address, store_phone,
           city, district, latitude, longitude, business_hours, delivery_status,
@@ -232,11 +258,24 @@ async function applySync(srcPool, tgtPool) {
           source           = EXCLUDED.source,
           source_updated_at = EXCLUDED.source_updated_at,
           updated_at       = now()
-      `, [
-        r.provider, r.store_id, r.store_name, r.store_address, r.store_phone,
-        r.city, r.district, r.latitude, r.longitude, r.business_hours, r.delivery_status,
-        r.is_active, r.source, r.source_updated_at,
-      ]);
+      `,
+        [
+          r.provider,
+          r.store_id,
+          r.store_name,
+          r.store_address,
+          r.store_phone,
+          r.city,
+          r.district,
+          r.latitude,
+          r.longitude,
+          r.business_hours,
+          r.delivery_status,
+          r.is_active,
+          r.source,
+          r.source_updated_at,
+        ],
+      );
 
       // 簡化判斷（實際上 ON CONFLICT 會自動決定）
       inserted++; // 保守統計，apply 後可再查 target stats 確認
@@ -273,7 +312,9 @@ async function main() {
         sourceCounts: {},
       };
       notes.push("PROD_DATABASE_URL 未設定，target DB 統計及 diff 無法計算");
-      notes.push("請在 Replit Secrets 加入 PROD_DATABASE_URL 後，再執行完整 dry-run");
+      notes.push(
+        "請在 Replit Secrets 加入 PROD_DATABASE_URL 後，再執行完整 dry-run",
+      );
     }
 
     // 3. apply（只在 --apply 模式）
@@ -283,7 +324,6 @@ async function main() {
       // apply 後重新讀 target 統計
       tgtStats = await getStats(tgtPool, "target (prod DB) after apply");
     }
-
   } catch (err) {
     console.error("[ERROR]", err.message);
     notes.push(`執行錯誤：${err.message}`);
@@ -300,12 +340,14 @@ async function main() {
     rowLimit: rowLimit ?? null,
     source: srcStats ?? { available: false },
     target: tgtStats ?? { available: false },
-    diff: isDryRun ? diff : {
-      wouldInsert: 0,
-      wouldUpdate: 0,
-      wouldSkip: 0,
-      note: "apply 模式，請查看 target 同步後統計",
-    },
+    diff: isDryRun
+      ? diff
+      : {
+          wouldInsert: 0,
+          wouldUpdate: 0,
+          wouldSkip: 0,
+          note: "apply 模式，請查看 target 同步後統計",
+        },
     applyResult: applyResult ?? null,
     safety: {
       writesEnabled: applyMode,
@@ -326,7 +368,7 @@ async function main() {
   }
   if (notes.length) {
     console.log("  注意事項：");
-    notes.forEach(n => console.log(`    - ${n}`));
+    notes.forEach((n) => console.log(`    - ${n}`));
   }
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
@@ -337,7 +379,7 @@ async function main() {
   }
 }
 
-main().catch(err => {
+main().catch((err) => {
   console.error("[FATAL]", err);
   process.exit(1);
 });

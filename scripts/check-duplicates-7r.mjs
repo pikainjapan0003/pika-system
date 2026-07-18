@@ -39,7 +39,7 @@ async function main() {
       FROM cvs_stores
       WHERE provider='seven' AND store_name=$1
       ORDER BY store_id`,
-      [name]
+      [name],
     );
 
     console.log(`筆數：${rows.length}`);
@@ -54,4 +54,7 @@ async function main() {
   await pool.end();
 }
 
-main().catch(e => { console.error(e); process.exit(1); });
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

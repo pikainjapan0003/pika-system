@@ -12,7 +12,10 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 const dir = path.dirname(fileURLToPath(import.meta.url));
-const script = path.resolve(dir, "../lib/db/import-seven-stores-from-twcoupon-emap.mjs");
+const script = path.resolve(
+  dir,
+  "../lib/db/import-seven-stores-from-twcoupon-emap.mjs",
+);
 
 const child = spawn(process.execPath, [script, ...process.argv.slice(2)], {
   stdio: "inherit",

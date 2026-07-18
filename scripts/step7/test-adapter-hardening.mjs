@@ -33,7 +33,10 @@ function assert(cond, msg) {
 
 function assertEqual(actual, expected, msg) {
   if (actual !== expected)
-    throw new Error(msg ?? `expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
+    throw new Error(
+      msg ??
+        `expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`,
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -105,7 +108,10 @@ function makePostOfficeSuccessBody(overrides = {}) {
   ];
 }
 
-function makePostOfficeMessageOnlyBody(msgCode = "Z999", msgData = "Z899|資料欄位未完成。") {
+function makePostOfficeMessageOnlyBody(
+  msgCode = "Z999",
+  msgData = "Z899|資料欄位未完成。",
+) {
   return [
     {
       header: { OutputType: "Message" },
@@ -213,9 +219,20 @@ await test("postoffice success mock — ok=true, 2 events, latestStatus=投遞�
   if (!result.ok) return;
   assertEqual(result.provider, "postoffice");
   assertEqual(result.trackingCode, PO_TRACKING);
-  assertEqual(result.latestStatusText, "投遞成功", "latestStatus should be 投遞成功 (newest first)");
-  assertEqual(result.latestEventAt, "2026/06/08 11:21:53", "latestEventAt DATIME 14-digit parsed");
-  assert(result.events.length === 2, `expected 2 events, got ${result.events.length}`);
+  assertEqual(
+    result.latestStatusText,
+    "投遞成功",
+    "latestStatus should be 投遞成功 (newest first)",
+  );
+  assertEqual(
+    result.latestEventAt,
+    "2026/06/08 11:21:53",
+    "latestEventAt DATIME 14-digit parsed",
+  );
+  assert(
+    result.events.length === 2,
+    `expected 2 events, got ${result.events.length}`,
+  );
   // Verify rawData does not contain sensitive fields
   const raw = result.events[0].rawData;
   assert(!("name" in raw), "rawData must not contain name");
@@ -244,7 +261,10 @@ await test("postoffice REMOTE_CHANGED — no Screen element (Message-only)", asy
   assert(!result.ok);
   if (result.ok) return;
   assertEqual(result.errorCode, "REMOTE_CHANGED");
-  assert(result.message.includes("Z899"), "message should include server msgData");
+  assert(
+    result.message.includes("Z899"),
+    "message should include server msgData",
+  );
 });
 
 await test("postoffice REMOTE_CHANGED — ITEM is not an array", async () => {
@@ -266,7 +286,12 @@ await test("postoffice REMOTE_CHANGED — MAILNO mismatch", async () => {
         cptCheck: false,
         host_rs: {
           ITEM: [
-            { MAILNO: "99999999999999999999", DATIME: "20260608112153", STATUS: "投遞成功", BRHNC: "某郵局" },
+            {
+              MAILNO: "99999999999999999999",
+              DATIME: "20260608112153",
+              STATUS: "投遞成功",
+              BRHNC: "某郵局",
+            },
           ],
         },
         incorrectList: [],
@@ -345,7 +370,9 @@ await test("postoffice REMOTE_CHANGED — response not array", async () => {
 });
 
 await test("postoffice REMOTE_CHANGED — missing host_rs", async () => {
-  const body = [{ header: { OutputType: "Screen" }, body: { cptCheck: false } }];
+  const body = [
+    { header: { OutputType: "Screen" }, body: { cptCheck: false } },
+  ];
   const result = await queryPostOfficeTracking(
     { trackingCode: PO_TRACKING },
     { fetchImpl: makeMockFetch(body) },
@@ -368,7 +395,7 @@ await test("postoffice INVALID_TRACKING_CODE — empty string", async () => {
 await test("postoffice DATIME non-14 digit handled gracefully", async () => {
   const body = makePostOfficeSuccessBody();
   // Override one item to have invalid DATIME
-  (body[0].body.host_rs.ITEM[0]).DATIME = "INVALID";
+  body[0].body.host_rs.ITEM[0].DATIME = "INVALID";
   const result = await queryPostOfficeTracking(
     { trackingCode: PO_TRACKING },
     { fetchImpl: makeMockFetch(body) },
@@ -377,15 +404,30 @@ await test("postoffice DATIME non-14 digit handled gracefully", async () => {
   assert(result.ok === true, `ok should be true, got ${result.ok}`);
   if (!result.ok) return;
   const withNull = result.events.find((e) => e.occurredAt === null);
-  assert(withNull !== undefined, "event with invalid DATIME should have null occurredAt");
+  assert(
+    withNull !== undefined,
+    "event with invalid DATIME should have null occurredAt",
+  );
 });
 
 await test("postoffice latest sorting — newest first", async () => {
   const body = makePostOfficeSuccessBody();
   // First item in array has older date to test sort
   body[0].body.host_rs.ITEM = [
-    { MAILNO: PO_TRACKING, DATIME: "20260605162332", STATUS: "交寄郵件", BRHNC: "板橋江翠郵局", EVCODE: "A1" },
-    { MAILNO: PO_TRACKING, DATIME: "20260608112153", STATUS: "投遞成功", BRHNC: "鳳山郵局快捷股", EVCODE: "I4" },
+    {
+      MAILNO: PO_TRACKING,
+      DATIME: "20260605162332",
+      STATUS: "交寄郵件",
+      BRHNC: "板橋江翠郵局",
+      EVCODE: "A1",
+    },
+    {
+      MAILNO: PO_TRACKING,
+      DATIME: "20260608112153",
+      STATUS: "投遞成功",
+      BRHNC: "鳳山郵局快捷股",
+      EVCODE: "I4",
+    },
   ];
   const result = await queryPostOfficeTracking(
     { trackingCode: PO_TRACKING },
@@ -393,7 +435,11 @@ await test("postoffice latest sorting — newest first", async () => {
   );
   assert(result.ok === true);
   if (!result.ok) return;
-  assertEqual(result.latestStatusText, "投遞成功", "newest event should be first regardless of ITEM order");
+  assertEqual(
+    result.latestStatusText,
+    "投遞成功",
+    "newest event should be first regardless of ITEM order",
+  );
 });
 
 console.log("\n=== tcat hardening ===\n");
@@ -410,7 +456,10 @@ await test("tcat success mock — ok=true, 3 events, latestStatus=順利送達",
   assertEqual(result.latestStatusText, "順利送達");
   assertEqual(result.latestEventAt, "2026/05/29 08:31");
   assertEqual(result.normalizedStatus, "delivered");
-  assert(result.events.length >= 2, `expected >= 2 events, got ${result.events.length}`);
+  assert(
+    result.events.length >= 2,
+    `expected >= 2 events, got ${result.events.length}`,
+  );
 });
 
 await test("tcat EMPTY_LIST — response does not contain trackingCode", async () => {
@@ -431,7 +480,10 @@ await test("tcat REMOTE_CHANGED — no resultTable, no 查無 hint", async () =>
   assert(!result.ok);
   if (result.ok) return;
   assertEqual(result.errorCode, "REMOTE_CHANGED");
-  assert(result.message.toLowerCase().includes("resulttable"), "message should mention resultTable");
+  assert(
+    result.message.toLowerCase().includes("resulttable"),
+    "message should mention resultTable",
+  );
 });
 
 await test("tcat EMPTY_LIST — resultTable exists but no parseable datetime rows", async () => {
@@ -451,7 +503,10 @@ await test("tcat noise row filter — 2021 rows outside resultTable are NOT pars
   );
   assert(result.ok === true, `ok should be true, got ${result.ok}`);
   if (!result.ok) return;
-  assert(result.events.length === 2, `expected exactly 2 events from resultTable, got ${result.events.length}`);
+  assert(
+    result.events.length === 2,
+    `expected exactly 2 events from resultTable, got ${result.events.length}`,
+  );
   const has2021 = result.events.some((e) => e.occurredAt?.startsWith("2021"));
   assert(!has2021, "2021 noise row should NOT appear in events");
   assertEqual(result.latestStatusText, "順利送達");
@@ -482,7 +537,10 @@ await test("tcat non-target rows — only rows with datetime are extracted", asy
   assert(result.ok === true);
   if (!result.ok) return;
   // Header row should be skipped (no datetime)
-  assert(result.events.length === 2, `expected 2 data rows, got ${result.events.length}`);
+  assert(
+    result.events.length === 2,
+    `expected 2 data rows, got ${result.events.length}`,
+  );
 });
 
 await test("tcat REMOTE_ERROR — HTTP 503", async () => {
@@ -548,7 +606,11 @@ await test("tcat latest sorting — newest first", async () => {
   );
   assert(result.ok === true);
   if (!result.ok) return;
-  assertEqual(result.latestStatusText, "順利送達", "newest (2026/05/29) should be latestStatus");
+  assertEqual(
+    result.latestStatusText,
+    "順利送達",
+    "newest (2026/05/29) should be latestStatus",
+  );
 });
 
 // ---------------------------------------------------------------------------
