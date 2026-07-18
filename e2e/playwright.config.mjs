@@ -25,13 +25,13 @@ const ciOnlyWebServers = process.env.CI
 
 export default defineConfig({
   testDir: ".",
-  testMatch: "smoke.spec.mjs",
+  testMatch: ["smoke.spec.mjs", "customer-navigation.spec.mjs"],
   timeout: 30_000,
   fullyParallel: false,
   retries: 0,
   reporter: "line",
   use: {
-    baseURL: "http://127.0.0.1:4173",
+    baseURL: process.env.E2E_BASE_URL ?? "http://127.0.0.1:4173",
     screenshot: "only-on-failure",
     trace: "retain-on-failure",
   },
