@@ -35,7 +35,7 @@ export function PickingListDialog({ open, onClose, data }: Props) {
             <button
               type="button"
               onClick={() => printPickingList(data)}
-              className="h-7 px-2.5 text-xs font-medium rounded-lg border border-border bg-white text-foreground hover:bg-secondary/50"
+              className="min-h-11 px-3 text-xs font-medium rounded-lg border border-border bg-white text-foreground hover:bg-secondary/50"
             >
               列印
             </button>
@@ -43,7 +43,7 @@ export function PickingListDialog({ open, onClose, data }: Props) {
               <button
                 type="button"
                 aria-label="關閉"
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700 active:bg-neutral-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-300"
+                className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700 active:bg-neutral-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-300"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
