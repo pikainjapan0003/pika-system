@@ -11,9 +11,11 @@ import {
 import router from "./routes/index.ts";
 import { logger } from "./lib/logger.ts";
 import { configureTrustProxy } from "./lib/trustProxy.ts";
+import { configureSecurityHeaders } from "./lib/securityHeaders.ts";
 
 const app: Express = express();
 configureTrustProxy(app);
+configureSecurityHeaders(app);
 
 app.use(
   pinoHttp({
