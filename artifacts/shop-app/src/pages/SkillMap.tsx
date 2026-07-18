@@ -7,7 +7,7 @@ import type {
 } from "@workspace/db/skill-map";
 import { useLocation } from "wouter";
 
-import { SKILL_GROUPS } from "@/lib/skillMap";
+import { SKILL_GROUPS, summarizeSkillMapStatus } from "@/lib/skillMap";
 import { BottomNav } from "./Dashboard";
 
 interface SkillStatus {
@@ -43,6 +43,10 @@ export default function SkillMapPage() {
   const statusByKey = useMemo(
     () =>
       new Map((state?.skills ?? []).map((skill) => [skill.skillKey, skill])),
+    [state],
+  );
+  const statusSummary = useMemo(
+    () => summarizeSkillMapStatus(state?.skills ?? []),
     [state],
   );
 
@@ -206,6 +210,22 @@ export default function SkillMapPage() {
           <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">
             {error}
           </p>
+        )}
+        {state && (
+          <section className="grid grid-cols-2 gap-3 rounded-2xl border border-border bg-white p-4">
+            <div>
+              <p className="text-xs text-muted-foreground">目前狀態</p>
+              <p className="mt-1 text-lg font-bold text-foreground">
+                已開 {statusSummary.enabledCount} 格
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">建議套餐</p>
+              <p className="mt-1 text-sm font-semibold text-primary">
+                {statusSummary.recommendedPackageTitle}
+              </p>
+            </div>
+          </section>
         )}
         {SKILL_GROUPS.map((group) => (
           <section key={group.id} aria-labelledby={`skill-group-${group.id}`}>

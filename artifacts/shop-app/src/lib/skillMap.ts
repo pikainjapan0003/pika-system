@@ -32,6 +32,17 @@ export interface SkillGroupDefinition {
   skills: readonly SkillCardDefinition[];
 }
 
+export const DEFAULT_RECOMMENDED_SKILL_PACKAGE = "成本套餐";
+
+export function summarizeSkillMapStatus(
+  skills: readonly { enabled: boolean }[],
+): { enabledCount: number; recommendedPackageTitle: string } {
+  return {
+    enabledCount: skills.filter((skill) => skill.enabled).length,
+    recommendedPackageTitle: DEFAULT_RECOMMENDED_SKILL_PACKAGE,
+  };
+}
+
 // Source: Dream-system/11_SKILL_TREE_ROADMAP.md, second-layer seller skill map (Q29–Q48).
 // Card copy remains centralized here; persistence and prerequisite enforcement are server-side.
 export const SKILL_GROUPS: readonly SkillGroupDefinition[] = [
