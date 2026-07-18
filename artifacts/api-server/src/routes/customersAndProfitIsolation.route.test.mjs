@@ -190,6 +190,14 @@ if (!process.env.DATABASE_URL) {
     assert.equal(crossStoreCustomer.status, 404);
   });
 
+  test("customer routes reject unauthenticated requests", async () => {
+    const response = await request("GET", `/stores/${storeAId}/customers`, {
+      userId: null,
+    });
+
+    assert.equal(response.status, 401);
+  });
+
   test("customer cleartext export needs its header and CSV formulas stay neutralized", async () => {
     const formulaCustomer = await request(
       "POST",

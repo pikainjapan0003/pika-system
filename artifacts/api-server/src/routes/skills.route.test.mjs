@@ -13,6 +13,7 @@ if (!process.env.DATABASE_URL) {
   );
 } else {
   const TEST_MERCHANT_ID = "batch10_skill_surface_fake_merchant";
+  const OTHER_MERCHANT_ID = "batch11_skill_surface_other_merchant";
 
   mock.module("@clerk/express", {
     namedExports: {
@@ -25,18 +26,11 @@ if (!process.env.DATABASE_URL) {
   });
 
   const { default: express } = await import("express");
-  const {
-    db,
-    pool,
-    productsTable,
-    storesTable,
-    tripRoutesTable,
-    tripsTable,
-  } = await import("@workspace/db");
+  const { db, pool, productsTable, storesTable, tripRoutesTable, tripsTable } =
+    await import("@workspace/db");
   const { eq } = await import("drizzle-orm");
-  const { resolveDailySkillSurfaceVisibility } = await import(
-    "../../../shop-app/src/lib/dailySkillVisibility.ts"
-  );
+  const { resolveDailySkillSurfaceVisibility } =
+    await import("../../../shop-app/src/lib/dailySkillVisibility.ts");
   const { default: skillsRouter } = await import("./skills.ts");
 
   const app = express();
@@ -129,5 +123,15 @@ if (!process.env.DATABASE_URL) {
       ]),
       true,
     );
+  });
+
+  test("skill routes reject unauthenticated and cross-store requests", async () => {
+    const unauthenticated = await fetch(`${baseUrl}/stores/${storeId}/skills`);
+    assert.equal(unauthenticated.status, 401);
+
+    const crossStore = await fetch(`${baseUrl}/stores/${storeId}/skills`, {
+      headers: { "x-test-user-id": OTHER_MERCHANT_ID },
+    });
+    assert.equal(crossStore.status, 403);
   });
 }
