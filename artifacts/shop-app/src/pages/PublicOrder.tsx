@@ -21,6 +21,7 @@ import blackcatLogo from "@/assets/logistics/blackcat-logo-official.svg";
 import postofficeLogo from "@/assets/logistics/postoffice-logo.svg";
 import { TAIWAN_ZIPCODE_REGIONS, getDistricts } from "@/lib/taiwanZipcodes";
 import { RecipientAddressFields } from "@/components/RecipientAddressFields";
+import { calculateMoneyPreview } from "@/lib/moneyPreview";
 
 interface Props {
   shareToken: string;
@@ -149,8 +150,10 @@ export default function PublicOrderPage({ shareToken }: Props) {
   const [now, setNow] = useState(() => new Date());
 
   const shippingFee = getShippingFee(pickupMethod);
-  const subtotal = Number(product?.price ?? 0) * quantity;
-  const totalDisplay = subtotal + shippingFee;
+  const moneyPreview = calculateMoneyPreview({
+    lines: [{ unitPrice: product?.price ?? 0, quantity }],
+    shippingFee,
+  });
   const needsCvsStore = isStorePickupMethod(pickupMethod);
   const availablePickupMethods = ALL_PICKUP_METHODS.filter((method) => isPickupMethodEnabled(method, product));
 
@@ -966,7 +969,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
           <div className="bg-secondary/40 rounded-2xl px-4 py-3 space-y-1.5">
             <div className="flex justify-between text-sm text-muted-foreground">
               <span>商品小計</span>
-              <span>NT$ {subtotal.toLocaleString()}</span>
+              <span>NT$ {moneyPreview.itemSubtotal}</span>
             </div>
             <div className="flex justify-between text-sm text-muted-foreground">
               <span>運費</span>
@@ -974,7 +977,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
             </div>
             <div className="flex justify-between text-base font-bold text-foreground pt-1 border-t border-border/50">
               <span>訂單總額</span>
-              <span className="text-primary">NT$ {totalDisplay.toLocaleString()}</span>
+              <span className="text-primary">NT$ {moneyPreview.orderTotal}</span>
             </div>
           </div>
         )}
@@ -994,7 +997,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
             ? "已截止收單"
             : submitOrder.isPending
             ? "送出中..."
-            : `確認下單 · NT$ ${totalDisplay.toLocaleString()}`}
+            : `確認下單 · NT$ ${moneyPreview.orderTotal}`}
         </button>
       </form>
     </div>
