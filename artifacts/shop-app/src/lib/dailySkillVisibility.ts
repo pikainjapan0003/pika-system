@@ -42,6 +42,10 @@ export function countEnabledStoreSkills(
   return states.filter((state) => state.configured && state.enabled).length;
 }
 
+export function shouldResetVisibilityLoading(hasLoadedOnce: boolean): boolean {
+  return !hasLoadedOnce;
+}
+
 interface DailySkillSurfaceRule {
   skillKey: SkillKey | null;
   defaultEnabledWithoutState: boolean;

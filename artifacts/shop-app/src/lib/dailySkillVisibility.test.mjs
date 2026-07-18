@@ -6,6 +6,7 @@ import {
   Q37_BEGINNER_DEFAULT_DAILY_PAGES,
   countEnabledStoreSkills,
   resolveDailySkillSurfaceVisibility,
+  shouldResetVisibilityLoading,
 } from "./dailySkillVisibility.ts";
 import { SKILL_KEYS } from "@workspace/db/skill-map";
 
@@ -19,6 +20,11 @@ test("zero-skill onboarding count only includes explicitly enabled skills", () =
     ]),
     1,
   );
+});
+
+test("only the initial skill visibility load resets the loading gate", () => {
+  assert.equal(shouldResetVisibilityLoading(false), true);
+  assert.equal(shouldResetVisibilityLoading(true), false);
 });
 
 test("Q37 keeps the eight beginner surfaces explicit and default-open", () => {
