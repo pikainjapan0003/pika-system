@@ -13,6 +13,7 @@ import { useLocation } from "wouter";
 
 import {
   countEnabledStoreSkills,
+  shouldResetVisibilityLoading,
   type DailySkillSurface,
   type StoreSkillVisibilityState,
   resolveDailySkillSurfaceVisibility,
@@ -46,10 +47,13 @@ export function StoreSkillVisibilityProvider({
   const [states, setStates] = useState<StoreSkillVisibilityState[]>([]);
   const [loaded, setLoaded] = useState(false);
   const requestId = useRef(0);
+  const hasLoadedOnce = useRef(false);
 
   const refresh = useCallback(async () => {
     const currentRequestId = ++requestId.current;
-    setLoaded(false);
+    if (shouldResetVisibilityLoading(hasLoadedOnce.current)) {
+      setLoaded(false);
+    }
     try {
       const token = await getToken();
       const response = await fetch(`/api/stores/${storeId}/skills`, {
@@ -66,7 +70,10 @@ export function StoreSkillVisibilityProvider({
       // UI-only gate: advanced surfaces fail closed; auth remains server-side.
       if (requestId.current === currentRequestId) setStates([]);
     } finally {
-      if (requestId.current === currentRequestId) setLoaded(true);
+      if (requestId.current === currentRequestId) {
+        hasLoadedOnce.current = true;
+        setLoaded(true);
+      }
     }
   }, [getToken, storeId]);
 
