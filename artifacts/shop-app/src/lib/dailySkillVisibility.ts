@@ -36,6 +36,12 @@ export interface StoreSkillVisibilityState {
   configured: boolean;
 }
 
+export function countEnabledStoreSkills(
+  states: readonly StoreSkillVisibilityState[],
+): number {
+  return states.filter((state) => state.configured && state.enabled).length;
+}
+
 interface DailySkillSurfaceRule {
   skillKey: SkillKey | null;
   defaultEnabledWithoutState: boolean;

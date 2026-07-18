@@ -3,8 +3,21 @@ import test from "node:test";
 
 import {
   Q37_BEGINNER_DEFAULT_DAILY_PAGES,
+  countEnabledStoreSkills,
   resolveDailySkillSurfaceVisibility,
 } from "./dailySkillVisibility.ts";
+
+test("zero-skill onboarding count only includes explicitly enabled skills", () => {
+  assert.equal(countEnabledStoreSkills([]), 0);
+  assert.equal(
+    countEnabledStoreSkills([
+      { skillKey: "S-01", enabled: false, configured: true },
+      { skillKey: "S-07", enabled: true, configured: true },
+      { skillKey: "S-08", enabled: true, configured: false },
+    ]),
+    1,
+  );
+});
 
 test("Q37 keeps the eight beginner surfaces explicit and default-open", () => {
   assert.deepEqual(

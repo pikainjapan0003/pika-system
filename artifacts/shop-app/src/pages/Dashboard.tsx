@@ -134,6 +134,24 @@ export default function DashboardPage() {
           </div>
         )}
 
+        {skillVisibility.loaded && skillVisibility.enabledSkillCount === 0 && (
+          <section className="rounded-2xl border border-sky-200 bg-sky-50 p-4">
+            <h2 className="text-sm font-semibold text-sky-950">
+              先從成本套餐開始
+            </h2>
+            <p className="mt-1 text-xs leading-relaxed text-sky-800">
+              進階功能（行程成本／毛利／客戶等）需先到技能地圖開啟，建議從「成本套餐」開始。
+            </p>
+            <button
+              type="button"
+              onClick={() => setLocation("/skill-map")}
+              className="mt-3 min-h-11 w-full rounded-xl bg-sky-700 px-4 text-sm font-semibold text-white"
+            >
+              前往技能地圖
+            </button>
+          </section>
+        )}
+
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3">
           <StatCard label="總訂單" value={stats?.totalOrders ?? 0} />
