@@ -74,6 +74,7 @@ jobs:
             --test \
             src/routes/orderProfitSnapshot.route.test.mjs \
             src/routes/logisticsSyncCommitKillSwitch.route.test.mjs \
+            src/routes/customersAndProfitIsolation.route.test.mjs \
             src/routes/public.route.test.mjs \
             src/routes/skills.route.test.mjs
 
