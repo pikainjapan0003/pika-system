@@ -1,7 +1,16 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@clerk/react";
-import { useGetMyStore, useGetProduct, useCreateProduct, useUpdateProduct, useListProductCategories, useListTrips, getListProductsQueryKey, Product } from "@workspace/api-client-react";
+import {
+  useGetMyStore,
+  useGetProduct,
+  useCreateProduct,
+  useUpdateProduct,
+  useListProductCategories,
+  useListTrips,
+  getListProductsQueryKey,
+  Product,
+} from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 
 interface Spec {
@@ -32,14 +41,21 @@ export default function ProductFormPage({ productId }: Props) {
   const storeId = store?.id;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: existingProduct } = useGetProduct(storeId!, productId!, { query: { enabled: isEdit && !!storeId && !!productId } as any });
+  const { data: existingProduct } = useGetProduct(storeId!, productId!, {
+    query: { enabled: isEdit && !!storeId && !!productId } as any,
+  });
 
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
-  const { data: categories, isError: categoriesQueryError } = useListProductCategories(storeId ?? 0, { query: { enabled: !!storeId } as any });
+  const { data: categories, isError: categoriesQueryError } =
+    useListProductCategories(storeId ?? 0, {
+      query: { enabled: !!storeId } as any,
+    });
   const categoriesLoadError = categoriesQueryError && !!storeId;
   const { data: trips } = useListTrips();
-  const allRoutes = (trips ?? []).flatMap((t) => (t.routes ?? []).map((r) => ({ ...r, tripName: t.name })));
+  const allRoutes = (trips ?? []).flatMap((t) =>
+    (t.routes ?? []).map((r) => ({ ...r, tripName: t.name })),
+  );
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -66,15 +82,23 @@ export default function ProductFormPage({ productId }: Props) {
 
   // Order deadline (UI placeholder — not sent to API)
   const [deadlineEnabled, setDeadlineEnabled] = useState(false);
-  const [deadlinePreset, setDeadlinePreset] = useState<DeadlinePreset | null>(null);
+  const [deadlinePreset, setDeadlinePreset] = useState<DeadlinePreset | null>(
+    null,
+  );
   const [deadlineDate, setDeadlineDate] = useState("");
   const [deadlineTime, setDeadlineTime] = useState("23:59");
   const [showDateSheet, setShowDateSheet] = useState(false);
   const [showTimeSheet, setShowTimeSheet] = useState(false);
   const [showCategorySheet, setShowCategorySheet] = useState(false);
-  const [calViewYear, setCalViewYear] = useState(() => new Date().getFullYear());
+  const [calViewYear, setCalViewYear] = useState(() =>
+    new Date().getFullYear(),
+  );
   const [calViewMonth, setCalViewMonth] = useState(() => new Date().getMonth());
-  const [pendingDate, setPendingDate] = useState<{ y: number; m: number; d: number } | null>(null);
+  const [pendingDate, setPendingDate] = useState<{
+    y: number;
+    m: number;
+    d: number;
+  } | null>(null);
   const [pendingAmPm, setPendingAmPm] = useState<"am" | "pm">("pm");
   const [pendingHour, setPendingHour] = useState(11);
   const [pendingMinute, setPendingMinute] = useState(59);
@@ -96,7 +120,8 @@ export default function ProductFormPage({ productId }: Props) {
   // Revoke object URL on unmount to prevent memory leak
   useEffect(() => {
     return () => {
-      if (previewObjectUrlRef.current) URL.revokeObjectURL(previewObjectUrlRef.current);
+      if (previewObjectUrlRef.current)
+        URL.revokeObjectURL(previewObjectUrlRef.current);
       if (ampmScrollTimer.current) clearTimeout(ampmScrollTimer.current);
       if (hourScrollTimer.current) clearTimeout(hourScrollTimer.current);
       if (minuteScrollTimer.current) clearTimeout(minuteScrollTimer.current);
@@ -106,10 +131,14 @@ export default function ProductFormPage({ productId }: Props) {
   useEffect(() => {
     if (!showTimeSheet) return;
     requestAnimationFrame(() => {
-      ampmColRef.current?.scrollTo({ top: (pendingAmPm === "pm" ? 1 : 0) * PICKER_ITEM_H });
+      ampmColRef.current?.scrollTo({
+        top: (pendingAmPm === "pm" ? 1 : 0) * PICKER_ITEM_H,
+      });
       hourColRef.current?.scrollTo({ top: (pendingHour - 1) * PICKER_ITEM_H });
       const idx = MINUTE_STEPS.indexOf(pendingMinute);
-      minuteColRef.current?.scrollTo({ top: (idx >= 0 ? idx : 0) * PICKER_ITEM_H });
+      minuteColRef.current?.scrollTo({
+        top: (idx >= 0 ? idx : 0) * PICKER_ITEM_H,
+      });
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showTimeSheet]);
@@ -124,19 +153,39 @@ export default function ProductFormPage({ productId }: Props) {
       setName(existingProduct.name);
       setDescription(existingProduct.description ?? "");
       setPrice(String(existingProduct.price));
-      setVipPrice(tierProduct.vipPrice != null ? String(tierProduct.vipPrice) : "");
-      setWholesalePrice(tierProduct.wholesalePrice != null ? String(tierProduct.wholesalePrice) : "");
-      setPartnerPrice(tierProduct.partnerPrice != null ? String(tierProduct.partnerPrice) : "");
-      setInventory(existingProduct.inventory != null ? String(existingProduct.inventory) : "");
+      setVipPrice(
+        tierProduct.vipPrice != null ? String(tierProduct.vipPrice) : "",
+      );
+      setWholesalePrice(
+        tierProduct.wholesalePrice != null
+          ? String(tierProduct.wholesalePrice)
+          : "",
+      );
+      setPartnerPrice(
+        tierProduct.partnerPrice != null
+          ? String(tierProduct.partnerPrice)
+          : "",
+      );
+      setInventory(
+        existingProduct.inventory != null
+          ? String(existingProduct.inventory)
+          : "",
+      );
       setImageUrl(existingProduct.imageUrl ?? "");
       setSpecs((existingProduct.specs as Spec[]) ?? []);
       setInternalNote(existingProduct.internalNote ?? "");
       setSkuCode(existingProduct.skuCode ?? "");
       setStorageTemp((existingProduct.storageTemp as StorageTemp) ?? null);
       setShelfLife(existingProduct.shelfLife ?? "");
-      setWeightKg(existingProduct.weightKg != null ? String(existingProduct.weightKg * 1000) : "");
+      setWeightKg(
+        existingProduct.weightKg != null
+          ? String(existingProduct.weightKg * 1000)
+          : "",
+      );
       setCategoryId(existingProduct.categoryId ?? null);
-      setCostJpy(existingProduct.costJpy != null ? String(existingProduct.costJpy) : "");
+      setCostJpy(
+        existingProduct.costJpy != null ? String(existingProduct.costJpy) : "",
+      );
       setIsTransportCostExempt(existingProduct.isTransportCostExempt ?? false);
       setTripRouteId(existingProduct.tripRouteId ?? null);
       if (existingProduct.orderDeadlineAt) {
@@ -144,15 +193,20 @@ export default function ProductFormPage({ productId }: Props) {
         if (!isNaN(dt.getTime())) {
           setDeadlineEnabled(true);
           setDeadlinePreset("custom");
-          setDeadlineDate(`${dt.getFullYear()}/${dt.getMonth() + 1}/${dt.getDate()}`);
-          setDeadlineTime(`${String(dt.getHours()).padStart(2, "0")}:${String(dt.getMinutes()).padStart(2, "0")}`);
+          setDeadlineDate(
+            `${dt.getFullYear()}/${dt.getMonth() + 1}/${dt.getDate()}`,
+          );
+          setDeadlineTime(
+            `${String(dt.getHours()).padStart(2, "0")}:${String(dt.getMinutes()).padStart(2, "0")}`,
+          );
         }
       }
     }
   }, [existingProduct]);
 
   const addSpec = () => setSpecs([...specs, { name: "", values: [""] }]);
-  const removeSpec = (i: number) => setSpecs(specs.filter((_, idx) => idx !== i));
+  const removeSpec = (i: number) =>
+    setSpecs(specs.filter((_, idx) => idx !== i));
 
   const updateSpecName = (i: number, val: string) => {
     const s = [...specs];
@@ -162,7 +216,13 @@ export default function ProductFormPage({ productId }: Props) {
 
   const updateSpecValues = (i: number, val: string) => {
     const s = [...specs];
-    s[i] = { ...s[i], values: val.split(/[，,]/).map((v) => v.trim()).filter(Boolean) };
+    s[i] = {
+      ...s[i],
+      values: val
+        .split(/[，,]/)
+        .map((v) => v.trim())
+        .filter(Boolean),
+    };
     setSpecs(s);
   };
 
@@ -194,7 +254,8 @@ export default function ProductFormPage({ productId }: Props) {
     }
 
     // Show local preview immediately
-    if (previewObjectUrlRef.current) URL.revokeObjectURL(previewObjectUrlRef.current);
+    if (previewObjectUrlRef.current)
+      URL.revokeObjectURL(previewObjectUrlRef.current);
     const preview = URL.createObjectURL(file);
     previewObjectUrlRef.current = preview;
     setLocalPreviewUrl(preview);
@@ -231,14 +292,14 @@ export default function ProductFormPage({ productId }: Props) {
         return;
       }
       if (!res.ok) {
-        const body = await res.json().catch(() => ({})) as { error?: string };
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
         clearLocalPreview();
         setUploadStatus("error");
         setUploadError(body.error ?? "圖片上傳失敗，請稍後再試");
         return;
       }
 
-      const data = await res.json() as { imageUrl?: string };
+      const data = (await res.json()) as { imageUrl?: string };
       if (!data.imageUrl) {
         clearLocalPreview();
         setUploadStatus("error");
@@ -281,10 +342,15 @@ export default function ProductFormPage({ productId }: Props) {
     const normalizeTierPrice = (value: string): string | null => {
       const trimmed = value.trim();
       if (!trimmed) return null;
-      if (!/^\d+(?:\.\d+)?$/.test(trimmed)) throw new TypeError("請輸入有效的分級售價");
+      if (!/^\d+(?:\.\d+)?$/.test(trimmed))
+        throw new TypeError("請輸入有效的分級售價");
       return trimmed;
     };
-    let tierPrices: { vipPrice: string | null; wholesalePrice: string | null; partnerPrice: string | null };
+    let tierPrices: {
+      vipPrice: string | null;
+      wholesalePrice: string | null;
+      partnerPrice: string | null;
+    };
     try {
       tierPrices = {
         vipPrice: normalizeTierPrice(vipPrice),
@@ -305,10 +371,12 @@ export default function ProductFormPage({ productId }: Props) {
         const d = new Date();
         dateStr = `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
       } else if (deadlinePreset === "tomorrow") {
-        const d = new Date(); d.setDate(d.getDate() + 1);
+        const d = new Date();
+        d.setDate(d.getDate() + 1);
         dateStr = `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
       } else if (deadlinePreset === "dayafter") {
-        const d = new Date(); d.setDate(d.getDate() + 2);
+        const d = new Date();
+        d.setDate(d.getDate() + 2);
         dateStr = `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
       } else if (deadlinePreset === "custom") {
         dateStr = deadlineDate;
@@ -328,7 +396,10 @@ export default function ProductFormPage({ productId }: Props) {
     }
 
     const costJpyNum = costJpy.trim() ? parseFloat(costJpy) : null;
-    if (costJpy.trim() && (costJpyNum === null || isNaN(costJpyNum) || costJpyNum < 0)) {
+    if (
+      costJpy.trim() &&
+      (costJpyNum === null || isNaN(costJpyNum) || costJpyNum < 0)
+    ) {
       setError("請輸入有效的商品日圓成本");
       return;
     }
@@ -358,7 +429,11 @@ export default function ProductFormPage({ productId }: Props) {
           isTransportCostExempt,
           tripRouteId: isTransportCostExempt ? null : tripRouteId,
         };
-        await updateProduct.mutateAsync({ storeId: storeId!, productId: productId!, data: data as any });
+        await updateProduct.mutateAsync({
+          storeId: storeId!,
+          productId: productId!,
+          data: data as any,
+        });
         qc.invalidateQueries({ queryKey: getListProductsQueryKey(storeId!) });
         setLocation("/products");
       } else {
@@ -375,9 +450,14 @@ export default function ProductFormPage({ productId }: Props) {
           ...(categoryId != null ? { categoryId } : {}),
           ...(costJpyNum != null ? { costJpy: costJpyNum } : {}),
           isTransportCostExempt,
-          ...(!isTransportCostExempt && tripRouteId != null ? { tripRouteId } : {}),
+          ...(!isTransportCostExempt && tripRouteId != null
+            ? { tripRouteId }
+            : {}),
         };
-        const result = await createProduct.mutateAsync({ storeId: storeId!, data: data as any });
+        const result = await createProduct.mutateAsync({
+          storeId: storeId!,
+          data: data as any,
+        });
         qc.invalidateQueries({ queryKey: getListProductsQueryKey(storeId!) });
         setCreatedProduct(result);
       }
@@ -389,14 +469,19 @@ export default function ProductFormPage({ productId }: Props) {
 
   const origin = window.location.origin;
   const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
-  const shareUrl = createdProduct ? `${origin}${basePath}/p/${createdProduct.shareToken}` : "";
+  const shareUrl = createdProduct
+    ? `${origin}${basePath}/p/${createdProduct.shareToken}`
+    : "";
 
   const copyShareLink = () => {
     if (!shareUrl || !navigator.clipboard) return;
-    navigator.clipboard.writeText(shareUrl).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }).catch(() => {});
+    navigator.clipboard
+      .writeText(shareUrl)
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      })
+      .catch(() => {});
   };
 
   const getDeadlineDate = (offsetDays: number) => {
@@ -441,7 +526,9 @@ export default function ProductFormPage({ productId }: Props) {
     let h = pendingHour;
     if (pendingAmPm === "am" && h === 12) h = 0;
     else if (pendingAmPm === "pm" && h !== 12) h += 12;
-    setDeadlineTime(`${String(h).padStart(2, "0")}:${String(pendingMinute).padStart(2, "0")}`);
+    setDeadlineTime(
+      `${String(h).padStart(2, "0")}:${String(pendingMinute).padStart(2, "0")}`,
+    );
     setShowTimeSheet(false);
   };
 
@@ -461,7 +548,6 @@ export default function ProductFormPage({ productId }: Props) {
   if (createdProduct) {
     return (
       <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-8">
-
         {/* Three-column header */}
         <header className="bg-white border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
           <div className="flex items-center justify-between">
@@ -478,7 +564,6 @@ export default function ProductFormPage({ productId }: Props) {
         </header>
 
         <div className="px-5 py-5 space-y-4">
-
           {/* ── 分享卡片 ─────────────────────────── */}
           <div className="bg-white rounded-2xl border border-border overflow-hidden">
             {/* 商品主圖 */}
@@ -495,12 +580,16 @@ export default function ProductFormPage({ productId }: Props) {
             )}
             {/* 商品資訊 */}
             <div className="px-5 py-4 space-y-1">
-              <p className="text-lg font-bold text-foreground leading-snug">{createdProduct.name}</p>
+              <p className="text-lg font-bold text-foreground leading-snug">
+                {createdProduct.name}
+              </p>
               <p className="text-primary font-bold text-xl">
                 NT$ {Number(createdProduct.price).toLocaleString()}
               </p>
               {store?.name && (
-                <p className="text-xs text-muted-foreground mt-1">{store.name}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {store.name}
+                </p>
               )}
             </div>
           </div>
@@ -508,7 +597,9 @@ export default function ProductFormPage({ productId }: Props) {
           {/* ── 商品下單連結 ──────────────────────── */}
           <div className="bg-white rounded-2xl border border-border px-5 py-3">
             <p className="text-xs text-muted-foreground mb-1.5">商品下單連結</p>
-            <p className="text-xs text-foreground break-all font-mono leading-relaxed">{shareUrl}</p>
+            <p className="text-xs text-foreground break-all font-mono leading-relaxed">
+              {shareUrl}
+            </p>
           </div>
 
           {/* ── 主要按鈕 ──────────────────────────── */}
@@ -523,7 +614,9 @@ export default function ProductFormPage({ productId }: Props) {
           {/* ── 次要按鈕 ──────────────────────────── */}
           <button
             type="button"
-            onClick={() => window.open(shareUrl, "_blank", "noopener,noreferrer")}
+            onClick={() =>
+              window.open(shareUrl, "_blank", "noopener,noreferrer")
+            }
             className="w-full h-12 bg-secondary text-foreground font-semibold rounded-xl text-base"
           >
             預覽公開頁
@@ -559,7 +652,6 @@ export default function ProductFormPage({ productId }: Props) {
           >
             再新增一個商品
           </button>
-
         </div>
       </div>
     );
@@ -569,7 +661,6 @@ export default function ProductFormPage({ productId }: Props) {
   return (
     <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-8">
       <form onSubmit={handleSubmit}>
-
         {/* Three-column header */}
         <header className="bg-white border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
           <div className="flex items-center justify-between">
@@ -594,7 +685,6 @@ export default function ProductFormPage({ productId }: Props) {
         </header>
 
         <div className="px-4 py-5 space-y-4">
-
           {/* Error */}
           {error && (
             <div className="bg-destructive/10 text-destructive text-sm px-4 py-3 rounded-2xl">
@@ -606,7 +696,9 @@ export default function ProductFormPage({ productId }: Props) {
           <div className="bg-white rounded-2xl border border-border overflow-hidden">
             <div className="flex items-center justify-between px-5 pt-5 pb-3">
               <h2 className="text-sm font-bold text-foreground">商品圖</h2>
-              <span className="text-[10px] text-muted-foreground/60">目前最多 1 張，第一張作為主圖</span>
+              <span className="text-[10px] text-muted-foreground/60">
+                目前最多 1 張，第一張作為主圖
+              </span>
             </div>
             <div className="px-5 pb-5 space-y-4">
               <input
@@ -657,7 +749,9 @@ export default function ProductFormPage({ productId }: Props) {
                   className="w-24 h-24 border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center gap-1 text-muted-foreground hover:border-primary/50 hover:text-primary transition-colors disabled:opacity-50 flex-shrink-0"
                 >
                   <span className="text-xl leading-none">+</span>
-                  <span className="text-xs">{displayPreview ? "更換" : "加入照片"}</span>
+                  <span className="text-xs">
+                    {displayPreview ? "更換" : "加入照片"}
+                  </span>
                 </button>
               </div>
 
@@ -667,10 +761,14 @@ export default function ProductFormPage({ productId }: Props) {
                   已上傳 {displayPreview ? "1" : "0"} / 1
                 </span>
                 {uploadStatus === "done" && (
-                  <span className="text-xs text-green-600 font-medium">✓ 圖片已上傳</span>
+                  <span className="text-xs text-green-600 font-medium">
+                    ✓ 圖片已上傳
+                  </span>
                 )}
                 {uploadStatus === "error" && uploadError && (
-                  <span className="text-xs text-destructive">{uploadError}</span>
+                  <span className="text-xs text-destructive">
+                    {uploadError}
+                  </span>
                 )}
               </div>
 
@@ -716,7 +814,9 @@ export default function ProductFormPage({ productId }: Props) {
             <div className="px-5 pb-5 space-y-4">
               {/* 商品名稱 */}
               <div>
-                <label className="block text-xs text-muted-foreground mb-1.5">商品名稱 *</label>
+                <label className="block text-xs text-muted-foreground mb-1.5">
+                  商品名稱 *
+                </label>
                 <input
                   type="text"
                   value={name}
@@ -727,7 +827,9 @@ export default function ProductFormPage({ productId }: Props) {
               </div>
               {/* 貨品編號 */}
               <div>
-                <label className="block text-xs text-muted-foreground mb-1.5">貨品編號</label>
+                <label className="block text-xs text-muted-foreground mb-1.5">
+                  貨品編號
+                </label>
                 <input
                   type="text"
                   value={skuCode}
@@ -739,17 +841,31 @@ export default function ProductFormPage({ productId }: Props) {
               {/* 主分類 */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs text-muted-foreground">主分類</label>
-                  <a href="/categories" className="min-h-11 px-2 flex items-center text-xs text-primary/70">管理分類</a>
+                  <label className="text-xs text-muted-foreground">
+                    主分類
+                  </label>
+                  <a
+                    href="/categories"
+                    className="min-h-11 px-2 flex items-center text-xs text-primary/70"
+                  >
+                    管理分類
+                  </a>
                 </div>
                 <button
                   type="button"
                   onClick={() => setShowCategorySheet(true)}
                   className="w-full h-12 px-4 rounded-xl border border-input bg-white text-foreground text-base flex items-center justify-between"
                 >
-                  <span className={categoryId == null ? "text-muted-foreground" : "text-foreground"}>
+                  <span
+                    className={
+                      categoryId == null
+                        ? "text-muted-foreground"
+                        : "text-foreground"
+                    }
+                  >
                     {categoryId != null && categories
-                      ? (categories.find((c) => c.id === categoryId)?.name ?? "未分類")
+                      ? (categories.find((c) => c.id === categoryId)?.name ??
+                        "未分類")
                       : "未分類"}
                   </span>
                   <span className="text-muted-foreground">›</span>
@@ -757,15 +873,23 @@ export default function ProductFormPage({ productId }: Props) {
               </div>
               {/* 溫層 */}
               <div>
-                <label className="block text-xs text-muted-foreground mb-1.5">溫層</label>
+                <label className="block text-xs text-muted-foreground mb-1.5">
+                  溫層
+                </label>
                 <div className="flex gap-2">
                   {(["ambient", "chilled", "frozen"] as const).map((temp) => {
-                    const labels: Record<StorageTemp, string> = { ambient: "常溫", chilled: "冷藏", frozen: "冷凍" };
+                    const labels: Record<StorageTemp, string> = {
+                      ambient: "常溫",
+                      chilled: "冷藏",
+                      frozen: "冷凍",
+                    };
                     return (
                       <button
                         key={temp}
                         type="button"
-                        onClick={() => setStorageTemp(storageTemp === temp ? null : temp)}
+                        onClick={() =>
+                          setStorageTemp(storageTemp === temp ? null : temp)
+                        }
                         className={`flex-1 min-h-11 rounded-xl text-sm font-medium border transition-colors ${
                           storageTemp === temp
                             ? "bg-primary text-white border-primary"
@@ -780,7 +904,9 @@ export default function ProductFormPage({ productId }: Props) {
               </div>
               {/* 保存期限 */}
               <div>
-                <label className="block text-xs text-muted-foreground mb-1.5">保存期限</label>
+                <label className="block text-xs text-muted-foreground mb-1.5">
+                  保存期限
+                </label>
                 <input
                   type="text"
                   value={shelfLife}
@@ -791,7 +917,9 @@ export default function ProductFormPage({ productId }: Props) {
               </div>
               {/* 重量 g (UI input in grams; converted to kg before sending to API) */}
               <div>
-                <label className="block text-xs text-muted-foreground mb-1.5">重量 g</label>
+                <label className="block text-xs text-muted-foreground mb-1.5">
+                  重量 g
+                </label>
                 <input
                   type="number"
                   value={weightKg}
@@ -815,9 +943,13 @@ export default function ProductFormPage({ productId }: Props) {
             </div>
             <div className="px-5 pb-5 space-y-4">
               <div>
-                <label className="block text-xs text-muted-foreground mb-1.5">商品日圓成本</label>
+                <label className="block text-xs text-muted-foreground mb-1.5">
+                  商品日圓成本
+                </label>
                 <div className="flex items-center gap-2">
-                  <span className="text-base font-bold text-muted-foreground/60 select-none">¥</span>
+                  <span className="text-base font-bold text-muted-foreground/60 select-none">
+                    ¥
+                  </span>
                   <input
                     type="number"
                     value={costJpy}
@@ -845,10 +977,16 @@ export default function ProductFormPage({ productId }: Props) {
 
               {!isTransportCostExempt && (
                 <div>
-                  <label className="block text-xs text-muted-foreground mb-1.5">行程路線</label>
+                  <label className="block text-xs text-muted-foreground mb-1.5">
+                    行程路線
+                  </label>
                   <select
                     value={tripRouteId ?? ""}
-                    onChange={(e) => setTripRouteId(e.target.value ? Number(e.target.value) : null)}
+                    onChange={(e) =>
+                      setTripRouteId(
+                        e.target.value ? Number(e.target.value) : null,
+                      )
+                    }
                     className={inputClass}
                   >
                     <option value="">未選擇</option>
@@ -860,7 +998,9 @@ export default function ProductFormPage({ productId }: Props) {
                   </select>
                   <p className="text-xs text-muted-foreground mt-1.5">
                     尚未有想要的路線？
-                    <a href="/trips" className="text-primary font-medium ml-1">前往行程與路線管理</a>
+                    <a href="/trips" className="text-primary font-medium ml-1">
+                      前往行程與路線管理
+                    </a>
                   </p>
                 </div>
               )}
@@ -874,9 +1014,13 @@ export default function ProductFormPage({ productId }: Props) {
             </div>
             <div className="px-5 pb-5 space-y-0">
               <div className="pb-4">
-                <label className="block text-xs text-muted-foreground mb-2">一般售價 *</label>
+                <label className="block text-xs text-muted-foreground mb-2">
+                  一般售價 *
+                </label>
                 <div className="flex items-center gap-2">
-                  <span className="text-xl font-bold text-muted-foreground/60 select-none">NT$</span>
+                  <span className="text-xl font-bold text-muted-foreground/60 select-none">
+                    NT$
+                  </span>
                   <input
                     type="number"
                     value={price}
@@ -889,13 +1033,17 @@ export default function ProductFormPage({ productId }: Props) {
                 </div>
               </div>
               <div className="border-t border-border/50 py-4 space-y-3">
-                {([
-                  ["VIP 售價", vipPrice, setVipPrice],
-                  ["批發售價", wholesalePrice, setWholesalePrice],
-                  ["夥伴售價", partnerPrice, setPartnerPrice],
-                ] as const).map(([label, value, setter]) => (
+                {(
+                  [
+                    ["VIP 售價", vipPrice, setVipPrice],
+                    ["批發售價", wholesalePrice, setWholesalePrice],
+                    ["夥伴售價", partnerPrice, setPartnerPrice],
+                  ] as const
+                ).map(([label, value, setter]) => (
                   <div key={label}>
-                    <label className="block text-xs text-muted-foreground mb-1.5">{label}</label>
+                    <label className="block text-xs text-muted-foreground mb-1.5">
+                      {label}
+                    </label>
                     <input
                       type="text"
                       inputMode="decimal"
@@ -904,12 +1052,18 @@ export default function ProductFormPage({ productId }: Props) {
                       placeholder="未設定（回落一般價）"
                       className={inputClass}
                     />
-                    {!value.trim() && <p className="text-xs text-muted-foreground mt-1">未設定（回落一般價）</p>}
+                    {!value.trim() && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        未設定（回落一般價）
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>
               <div className="border-t border-border/50 pt-4">
-                <label className="block text-xs text-muted-foreground mb-1.5">庫存數量</label>
+                <label className="block text-xs text-muted-foreground mb-1.5">
+                  庫存數量
+                </label>
                 <input
                   type="number"
                   value={inventory}
@@ -919,7 +1073,9 @@ export default function ProductFormPage({ productId }: Props) {
                   step="1"
                   className={inputClass}
                 />
-                <p className="text-xs text-muted-foreground mt-1">留空代表不限庫存</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  留空代表不限庫存
+                </p>
               </div>
             </div>
           </div>
@@ -928,7 +1084,9 @@ export default function ProductFormPage({ productId }: Props) {
           <div className="bg-white rounded-2xl border border-border overflow-hidden">
             <div className="px-5 pt-5 pb-2">
               <h2 className="text-sm font-bold text-foreground">規格設定</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">選填 — 例如顏色 × 尺寸</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                選填 — 例如顏色 × 尺寸
+              </p>
             </div>
             <div className="px-5 pb-5">
               {specs.length === 0 ? (
@@ -987,45 +1145,68 @@ export default function ProductFormPage({ productId }: Props) {
           <div className="bg-white rounded-2xl border border-border overflow-hidden">
             <div className="flex items-center justify-between px-5 pt-5 pb-4">
               <div>
-                <h2 className="text-sm font-bold text-foreground">收單截止時間</h2>
-                <p className="text-xs text-muted-foreground mt-0.5">設定商品停止收單的時間</p>
+                <h2 className="text-sm font-bold text-foreground">
+                  收單截止時間
+                </h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  設定商品停止收單的時間
+                </p>
               </div>
               <button
                 type="button"
                 onClick={() => setDeadlineEnabled((v) => !v)}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${deadlineEnabled ? "bg-primary" : "bg-input"}`}
               >
-                <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${deadlineEnabled ? "translate-x-6" : "translate-x-1"}`} />
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${deadlineEnabled ? "translate-x-6" : "translate-x-1"}`}
+                />
               </button>
             </div>
             {deadlineEnabled && (
               <div className="px-5 pb-5 space-y-3 border-t border-border/50 pt-4">
                 <div className="grid grid-cols-4 gap-2">
-                  {(["tonight", "tomorrow", "dayafter", "custom"] as const).map((preset) => (
-                    <button
-                      key={preset}
-                      type="button"
-                      onClick={() => setDeadlinePreset(preset)}
-                      className={`h-[4.5rem] rounded-xl flex flex-col items-center justify-center gap-0.5 border transition-colors ${
-                        deadlinePreset === preset
-                          ? "border-primary bg-primary/5 text-primary"
-                          : "border-border bg-secondary/60 text-foreground"
-                      }`}
-                    >
-                      {preset === "tonight" && (
-                        <><span className="text-sm font-semibold">今晚</span><span className="text-[10px] text-muted-foreground">{getDeadlineDate(0)} 23:59</span></>
-                      )}
-                      {preset === "tomorrow" && (
-                        <><span className="text-sm font-semibold">明晚</span><span className="text-[10px] text-muted-foreground">{getDeadlineDate(1)} 23:59</span></>
-                      )}
-                      {preset === "dayafter" && (
-                        <><span className="text-sm font-semibold">後晚</span><span className="text-[10px] text-muted-foreground">{getDeadlineDate(2)} 23:59</span></>
-                      )}
-                      {preset === "custom" && (
-                        <span className="text-sm font-semibold">自訂</span>
-                      )}
-                    </button>
-                  ))}
+                  {(["tonight", "tomorrow", "dayafter", "custom"] as const).map(
+                    (preset) => (
+                      <button
+                        key={preset}
+                        type="button"
+                        onClick={() => setDeadlinePreset(preset)}
+                        className={`h-[4.5rem] rounded-xl flex flex-col items-center justify-center gap-0.5 border transition-colors ${
+                          deadlinePreset === preset
+                            ? "border-primary bg-primary/5 text-primary"
+                            : "border-border bg-secondary/60 text-foreground"
+                        }`}
+                      >
+                        {preset === "tonight" && (
+                          <>
+                            <span className="text-sm font-semibold">今晚</span>
+                            <span className="text-[10px] text-muted-foreground">
+                              {getDeadlineDate(0)} 23:59
+                            </span>
+                          </>
+                        )}
+                        {preset === "tomorrow" && (
+                          <>
+                            <span className="text-sm font-semibold">明晚</span>
+                            <span className="text-[10px] text-muted-foreground">
+                              {getDeadlineDate(1)} 23:59
+                            </span>
+                          </>
+                        )}
+                        {preset === "dayafter" && (
+                          <>
+                            <span className="text-sm font-semibold">後晚</span>
+                            <span className="text-[10px] text-muted-foreground">
+                              {getDeadlineDate(2)} 23:59
+                            </span>
+                          </>
+                        )}
+                        {preset === "custom" && (
+                          <span className="text-sm font-semibold">自訂</span>
+                        )}
+                      </button>
+                    ),
+                  )}
                 </div>
                 {deadlinePreset === "custom" && (
                   <div className="flex gap-2">
@@ -1034,7 +1215,15 @@ export default function ProductFormPage({ productId }: Props) {
                       onClick={openDateSheet}
                       className="flex-1 h-12 rounded-xl border border-input bg-white text-sm flex items-center justify-between px-4"
                     >
-                      <span className={deadlineDate ? "text-foreground" : "text-muted-foreground"}>{deadlineDate || "選擇日期"}</span>
+                      <span
+                        className={
+                          deadlineDate
+                            ? "text-foreground"
+                            : "text-muted-foreground"
+                        }
+                      >
+                        {deadlineDate || "選擇日期"}
+                      </span>
                       <span className="text-muted-foreground">›</span>
                     </button>
                     <button
@@ -1042,7 +1231,9 @@ export default function ProductFormPage({ productId }: Props) {
                       onClick={openTimeSheet}
                       className="w-36 h-12 rounded-xl border border-input bg-white text-sm flex items-center justify-between px-4"
                     >
-                      <span className="text-foreground">{formatDeadlineTimeDisplay()}</span>
+                      <span className="text-foreground">
+                        {formatDeadlineTimeDisplay()}
+                      </span>
                       <span className="text-muted-foreground">›</span>
                     </button>
                   </div>
@@ -1058,7 +1249,9 @@ export default function ProductFormPage({ productId }: Props) {
           <div className="bg-white rounded-2xl border border-border overflow-hidden">
             <div className="px-5 pt-5 pb-2">
               <h2 className="text-sm font-bold text-foreground">商品描述</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">會顯示在賣場商品詳情頁</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                會顯示在賣場商品詳情頁
+              </p>
             </div>
             <div className="px-5 pb-5">
               <textarea
@@ -1075,7 +1268,9 @@ export default function ProductFormPage({ productId }: Props) {
           <div className="bg-white rounded-2xl border border-border overflow-hidden">
             <div className="px-5 pt-5 pb-2">
               <h2 className="text-sm font-bold text-foreground">內部備註</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">僅供賣家查看，不會顯示給買家</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                僅供賣家查看，不會顯示給買家
+              </p>
             </div>
             <div className="px-5 pb-4">
               <textarea
@@ -1087,56 +1282,106 @@ export default function ProductFormPage({ productId }: Props) {
               />
             </div>
           </div>
-
         </div>
       </form>
 
       {/* ── 日期選擇 bottom sheet ── */}
       {showDateSheet && (
         <>
-          <div className="fixed inset-0 bg-black/40 z-40" onClick={() => setShowDateSheet(false)} />
+          <div
+            className="fixed inset-0 bg-black/40 z-40"
+            onClick={() => setShowDateSheet(false)}
+          />
           <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white rounded-t-3xl z-50 pb-8">
             <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-border">
               <span className="min-w-[3rem]" />
               <h2 className="text-base font-bold text-foreground">選擇日期</h2>
-              <button type="button" onClick={confirmDateSheet} className="text-sm font-semibold text-primary min-w-[3rem] min-h-11 text-right">完成</button>
+              <button
+                type="button"
+                onClick={confirmDateSheet}
+                className="text-sm font-semibold text-primary min-w-[3rem] min-h-11 text-right"
+              >
+                完成
+              </button>
             </div>
             <div className="px-4 pt-4 pb-2">
               {/* Month navigation */}
               <div className="flex items-center justify-between mb-3">
-                <button type="button" onClick={() => {
-                  if (calViewMonth === 0) { setCalViewMonth(11); setCalViewYear((y) => y - 1); }
-                  else setCalViewMonth((m) => m - 1);
-                }} className="w-11 h-11 flex items-center justify-center text-xl text-foreground rounded-xl hover:bg-secondary">‹</button>
-                <span className="text-sm font-semibold text-foreground">{calViewYear} 年 {calViewMonth + 1} 月</span>
-                <button type="button" onClick={() => {
-                  if (calViewMonth === 11) { setCalViewMonth(0); setCalViewYear((y) => y + 1); }
-                  else setCalViewMonth((m) => m + 1);
-                }} className="w-11 h-11 flex items-center justify-center text-xl text-foreground rounded-xl hover:bg-secondary">›</button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (calViewMonth === 0) {
+                      setCalViewMonth(11);
+                      setCalViewYear((y) => y - 1);
+                    } else setCalViewMonth((m) => m - 1);
+                  }}
+                  className="w-11 h-11 flex items-center justify-center text-xl text-foreground rounded-xl hover:bg-secondary"
+                >
+                  ‹
+                </button>
+                <span className="text-sm font-semibold text-foreground">
+                  {calViewYear} 年 {calViewMonth + 1} 月
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (calViewMonth === 11) {
+                      setCalViewMonth(0);
+                      setCalViewYear((y) => y + 1);
+                    } else setCalViewMonth((m) => m + 1);
+                  }}
+                  className="w-11 h-11 flex items-center justify-center text-xl text-foreground rounded-xl hover:bg-secondary"
+                >
+                  ›
+                </button>
               </div>
               {/* Weekday headers */}
               <div className="grid grid-cols-7 mb-1">
-                {["日","一","二","三","四","五","六"].map((d) => (
-                  <div key={d} className="h-9 flex items-center justify-center text-xs text-muted-foreground font-medium">{d}</div>
+                {["日", "一", "二", "三", "四", "五", "六"].map((d) => (
+                  <div
+                    key={d}
+                    className="h-9 flex items-center justify-center text-xs text-muted-foreground font-medium"
+                  >
+                    {d}
+                  </div>
                 ))}
               </div>
               {/* Day cells */}
               {(() => {
-                const firstDay = new Date(calViewYear, calViewMonth, 1).getDay();
-                const daysInMonth = new Date(calViewYear, calViewMonth + 1, 0).getDate();
+                const firstDay = new Date(
+                  calViewYear,
+                  calViewMonth,
+                  1,
+                ).getDay();
+                const daysInMonth = new Date(
+                  calViewYear,
+                  calViewMonth + 1,
+                  0,
+                ).getDate();
                 const cells: (number | null)[] = [];
                 for (let i = 0; i < firstDay; i++) cells.push(null);
                 for (let d = 1; d <= daysInMonth; d++) cells.push(d);
                 return (
                   <div className="grid grid-cols-7 gap-y-1">
                     {cells.map((day, i) => (
-                      <div key={i} className="flex items-center justify-center h-11">
+                      <div
+                        key={i}
+                        className="flex items-center justify-center h-11"
+                      >
                         {day !== null && (
                           <button
                             type="button"
-                            onClick={() => setPendingDate({ y: calViewYear, m: calViewMonth, d: day })}
+                            onClick={() =>
+                              setPendingDate({
+                                y: calViewYear,
+                                m: calViewMonth,
+                                d: day,
+                              })
+                            }
                             className={`w-11 h-11 rounded-full flex items-center justify-center text-sm transition-colors ${
-                              pendingDate?.y === calViewYear && pendingDate?.m === calViewMonth && pendingDate?.d === day
+                              pendingDate?.y === calViewYear &&
+                              pendingDate?.m === calViewMonth &&
+                              pendingDate?.d === day
                                 ? "bg-primary text-white font-bold"
                                 : "text-foreground hover:bg-secondary"
                             }`}
@@ -1157,16 +1402,28 @@ export default function ProductFormPage({ productId }: Props) {
       {/* ── 時間選擇 bottom sheet ── */}
       {showTimeSheet && (
         <>
-          <div className="fixed inset-0 bg-black/40 z-40" onClick={() => setShowTimeSheet(false)} />
+          <div
+            className="fixed inset-0 bg-black/40 z-40"
+            onClick={() => setShowTimeSheet(false)}
+          />
           <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white rounded-t-3xl z-50 pb-8">
             <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-border">
               <span className="min-w-[3rem]" />
               <h2 className="text-base font-bold text-foreground">選擇時間</h2>
-              <button type="button" onClick={confirmTimeSheet} className="text-sm font-semibold text-primary min-w-[3rem] min-h-11 text-right">完成</button>
+              <button
+                type="button"
+                onClick={confirmTimeSheet}
+                className="text-sm font-semibold text-primary min-w-[3rem] min-h-11 text-right"
+              >
+                完成
+              </button>
             </div>
             <div className="flex px-6 py-2 gap-1 items-center">
               {/* AM/PM column */}
-              <div className="relative flex-shrink-0 w-20 overflow-hidden" style={{ height: 240 }}>
+              <div
+                className="relative flex-shrink-0 w-20 overflow-hidden"
+                style={{ height: 240 }}
+              >
                 <div className="pointer-events-none absolute inset-x-0 top-[96px] h-12 bg-secondary/80 rounded-xl z-10" />
                 <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-white to-transparent z-20" />
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-white to-transparent z-20" />
@@ -1176,9 +1433,13 @@ export default function ProductFormPage({ productId }: Props) {
                   style={{ scrollSnapType: "y mandatory" }}
                   onScroll={(e) => {
                     const st = e.currentTarget.scrollTop;
-                    if (ampmScrollTimer.current) clearTimeout(ampmScrollTimer.current);
+                    if (ampmScrollTimer.current)
+                      clearTimeout(ampmScrollTimer.current);
                     ampmScrollTimer.current = setTimeout(() => {
-                      const idx = Math.max(0, Math.min(1, Math.round(st / PICKER_ITEM_H)));
+                      const idx = Math.max(
+                        0,
+                        Math.min(1, Math.round(st / PICKER_ITEM_H)),
+                      );
                       setPendingAmPm(idx === 0 ? "am" : "pm");
                     }, 200);
                   }}
@@ -1187,8 +1448,17 @@ export default function ProductFormPage({ productId }: Props) {
                   {(["am", "pm"] as const).map((v, i) => (
                     <div
                       key={v}
-                      onClick={() => { setPendingAmPm(v); ampmColRef.current?.scrollTo({ top: i * PICKER_ITEM_H, behavior: "smooth" }); }}
-                      style={{ scrollSnapAlign: "center", height: PICKER_ITEM_H }}
+                      onClick={() => {
+                        setPendingAmPm(v);
+                        ampmColRef.current?.scrollTo({
+                          top: i * PICKER_ITEM_H,
+                          behavior: "smooth",
+                        });
+                      }}
+                      style={{
+                        scrollSnapAlign: "center",
+                        height: PICKER_ITEM_H,
+                      }}
                       className={`flex items-center justify-center cursor-pointer select-none transition-all ${pendingAmPm === v ? "text-foreground text-lg font-bold" : "text-muted-foreground/60 text-base"}`}
                     >
                       {v === "am" ? "上午" : "下午"}
@@ -1198,7 +1468,10 @@ export default function ProductFormPage({ productId }: Props) {
                 </div>
               </div>
               {/* Hour column */}
-              <div className="relative flex-1 overflow-hidden" style={{ height: 240 }}>
+              <div
+                className="relative flex-1 overflow-hidden"
+                style={{ height: 240 }}
+              >
                 <div className="pointer-events-none absolute inset-x-0 top-[96px] h-12 bg-secondary/80 rounded-xl z-10" />
                 <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-white to-transparent z-20" />
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-white to-transparent z-20" />
@@ -1208,19 +1481,32 @@ export default function ProductFormPage({ productId }: Props) {
                   style={{ scrollSnapType: "y mandatory" }}
                   onScroll={(e) => {
                     const st = e.currentTarget.scrollTop;
-                    if (hourScrollTimer.current) clearTimeout(hourScrollTimer.current);
+                    if (hourScrollTimer.current)
+                      clearTimeout(hourScrollTimer.current);
                     hourScrollTimer.current = setTimeout(() => {
-                      const idx = Math.max(0, Math.min(11, Math.round(st / PICKER_ITEM_H)));
+                      const idx = Math.max(
+                        0,
+                        Math.min(11, Math.round(st / PICKER_ITEM_H)),
+                      );
                       setPendingHour(idx + 1);
                     }, 200);
                   }}
                 >
                   <div style={{ height: 96 }} />
-                  {[1,2,3,4,5,6,7,8,9,10,11,12].map((h, i) => (
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((h, i) => (
                     <div
                       key={h}
-                      onClick={() => { setPendingHour(h); hourColRef.current?.scrollTo({ top: i * PICKER_ITEM_H, behavior: "smooth" }); }}
-                      style={{ scrollSnapAlign: "center", height: PICKER_ITEM_H }}
+                      onClick={() => {
+                        setPendingHour(h);
+                        hourColRef.current?.scrollTo({
+                          top: i * PICKER_ITEM_H,
+                          behavior: "smooth",
+                        });
+                      }}
+                      style={{
+                        scrollSnapAlign: "center",
+                        height: PICKER_ITEM_H,
+                      }}
                       className={`flex items-center justify-center cursor-pointer select-none transition-all ${pendingHour === h ? "text-foreground text-2xl font-bold" : "text-muted-foreground/60 text-base"}`}
                     >
                       {h}
@@ -1230,9 +1516,14 @@ export default function ProductFormPage({ productId }: Props) {
                 </div>
               </div>
               {/* Colon separator */}
-              <div className="flex-shrink-0 text-2xl font-bold text-foreground self-center">:</div>
+              <div className="flex-shrink-0 text-2xl font-bold text-foreground self-center">
+                :
+              </div>
               {/* Minute column */}
-              <div className="relative flex-1 overflow-hidden" style={{ height: 240 }}>
+              <div
+                className="relative flex-1 overflow-hidden"
+                style={{ height: 240 }}
+              >
                 <div className="pointer-events-none absolute inset-x-0 top-[96px] h-12 bg-secondary/80 rounded-xl z-10" />
                 <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-white to-transparent z-20" />
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-white to-transparent z-20" />
@@ -1242,9 +1533,16 @@ export default function ProductFormPage({ productId }: Props) {
                   style={{ scrollSnapType: "y mandatory" }}
                   onScroll={(e) => {
                     const st = e.currentTarget.scrollTop;
-                    if (minuteScrollTimer.current) clearTimeout(minuteScrollTimer.current);
+                    if (minuteScrollTimer.current)
+                      clearTimeout(minuteScrollTimer.current);
                     minuteScrollTimer.current = setTimeout(() => {
-                      const idx = Math.max(0, Math.min(MINUTE_STEPS.length - 1, Math.round(st / PICKER_ITEM_H)));
+                      const idx = Math.max(
+                        0,
+                        Math.min(
+                          MINUTE_STEPS.length - 1,
+                          Math.round(st / PICKER_ITEM_H),
+                        ),
+                      );
                       setPendingMinute(MINUTE_STEPS[idx] ?? 0);
                     }, 200);
                   }}
@@ -1253,8 +1551,17 @@ export default function ProductFormPage({ productId }: Props) {
                   {MINUTE_STEPS.map((m, i) => (
                     <div
                       key={m}
-                      onClick={() => { setPendingMinute(m); minuteColRef.current?.scrollTo({ top: i * PICKER_ITEM_H, behavior: "smooth" }); }}
-                      style={{ scrollSnapAlign: "center", height: PICKER_ITEM_H }}
+                      onClick={() => {
+                        setPendingMinute(m);
+                        minuteColRef.current?.scrollTo({
+                          top: i * PICKER_ITEM_H,
+                          behavior: "smooth",
+                        });
+                      }}
+                      style={{
+                        scrollSnapAlign: "center",
+                        height: PICKER_ITEM_H,
+                      }}
                       className={`flex items-center justify-center cursor-pointer select-none transition-all ${pendingMinute === m ? "text-foreground text-2xl font-bold" : "text-muted-foreground/60 text-base"}`}
                     >
                       {String(m).padStart(2, "0")}
@@ -1271,36 +1578,62 @@ export default function ProductFormPage({ productId }: Props) {
       {/* ── 分類選擇 bottom sheet ── */}
       {showCategorySheet && (
         <>
-          <div className="fixed inset-0 bg-black/40 z-40" onClick={() => setShowCategorySheet(false)} />
+          <div
+            className="fixed inset-0 bg-black/40 z-40"
+            onClick={() => setShowCategorySheet(false)}
+          />
           <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white rounded-t-3xl z-50 pb-8">
             <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-border">
-              <button type="button" onClick={() => setShowCategorySheet(false)} className="text-sm font-medium text-muted-foreground min-w-[3rem]">取消</button>
-              <h2 className="text-base font-bold text-foreground">選擇主分類</h2>
+              <button
+                type="button"
+                onClick={() => setShowCategorySheet(false)}
+                className="text-sm font-medium text-muted-foreground min-w-[3rem]"
+              >
+                取消
+              </button>
+              <h2 className="text-base font-bold text-foreground">
+                選擇主分類
+              </h2>
               <span className="min-w-[3rem]" />
             </div>
-            <div className="px-4 py-3 overflow-y-auto" style={{ maxHeight: "60vh" }}>
+            <div
+              className="px-4 py-3 overflow-y-auto"
+              style={{ maxHeight: "60vh" }}
+            >
               {!!storeId && !categories && !categoriesLoadError && (
-                <p className="text-sm text-muted-foreground text-center py-6">載入分類中...</p>
+                <p className="text-sm text-muted-foreground text-center py-6">
+                  載入分類中...
+                </p>
               )}
               {categoriesLoadError && (
-                <p className="text-sm text-destructive text-center py-6">分類載入失敗，請稍後再試</p>
+                <p className="text-sm text-destructive text-center py-6">
+                  分類載入失敗，請稍後再試
+                </p>
               )}
               {categories != null && (
                 <>
                   <CategoryOption
                     label="未分類"
                     selected={categoryId == null}
-                    onSelect={() => { setCategoryId(null); setShowCategorySheet(false); }}
+                    onSelect={() => {
+                      setCategoryId(null);
+                      setShowCategorySheet(false);
+                    }}
                   />
                   {categories.length === 0 && (
-                    <p className="text-xs text-muted-foreground text-center pt-1 pb-3">尚未建立分類，仍可選擇「未分類」</p>
+                    <p className="text-xs text-muted-foreground text-center pt-1 pb-3">
+                      尚未建立分類，仍可選擇「未分類」
+                    </p>
                   )}
                   {categories.map((cat) => (
                     <CategoryOption
                       key={cat.id}
                       label={cat.name}
                       selected={categoryId === cat.id}
-                      onSelect={() => { setCategoryId(cat.id); setShowCategorySheet(false); }}
+                      onSelect={() => {
+                        setCategoryId(cat.id);
+                        setShowCategorySheet(false);
+                      }}
                     />
                   ))}
                 </>
@@ -1313,7 +1646,15 @@ export default function ProductFormPage({ productId }: Props) {
   );
 }
 
-function CategoryOption({ label, selected, onSelect }: { label: string; selected: boolean; onSelect: () => void }) {
+function CategoryOption({
+  label,
+  selected,
+  onSelect,
+}: {
+  label: string;
+  selected: boolean;
+  onSelect: () => void;
+}) {
   return (
     <button
       type="button"
@@ -1328,4 +1669,5 @@ function CategoryOption({ label, selected, onSelect }: { label: string; selected
   );
 }
 
-const inputClass = "w-full h-12 px-4 rounded-xl border border-input bg-white text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 text-base";
+const inputClass =
+  "w-full h-12 px-4 rounded-xl border border-input bg-white text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 text-base";

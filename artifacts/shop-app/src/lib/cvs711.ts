@@ -6,11 +6,17 @@ export interface CvsStore {
   storePhone?: string | null;
 }
 
-export const SEVEN_ELEVEN_PICKUP_METHODS = ["7-11 貨到付款", "7-11 取貨（先付款）"] as const;
-export type SevenElevenMethod = typeof SEVEN_ELEVEN_PICKUP_METHODS[number];
+export const SEVEN_ELEVEN_PICKUP_METHODS = [
+  "7-11 貨到付款",
+  "7-11 取貨（先付款）",
+] as const;
+export type SevenElevenMethod = (typeof SEVEN_ELEVEN_PICKUP_METHODS)[number];
 
-export const FAMILY_MART_PICKUP_METHODS = ["全家取貨（先付款）", "全家貨到付款"] as const;
-export type FamilyMartMethod = typeof FAMILY_MART_PICKUP_METHODS[number];
+export const FAMILY_MART_PICKUP_METHODS = [
+  "全家取貨（先付款）",
+  "全家貨到付款",
+] as const;
+export type FamilyMartMethod = (typeof FAMILY_MART_PICKUP_METHODS)[number];
 
 export { PICKUP_METHOD_SHIPPING_FEE };
 
@@ -84,7 +90,9 @@ export function clearCvsStore(key: string): void {
 }
 
 /** Parse multiple possible 7-11 emap callback param name variations */
-export function parseCvsParamsFromUrl(params: URLSearchParams): CvsStore | null {
+export function parseCvsParamsFromUrl(
+  params: URLSearchParams,
+): CvsStore | null {
   const storeId =
     params.get("CVSStoreID") ??
     params.get("StoreID") ??

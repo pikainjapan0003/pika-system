@@ -37,11 +37,20 @@ function TripForm({
   return (
     <div className="bg-secondary/40 rounded-xl p-3 space-y-2.5">
       <div>
-        <label className="block text-xs text-muted-foreground mb-1">行程名稱 *</label>
-        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="例：2026/07 東京補貨" className={inputClass} />
+        <label className="block text-xs text-muted-foreground mb-1">
+          行程名稱 *
+        </label>
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="例：2026/07 東京補貨"
+          className={inputClass}
+        />
       </div>
       <div>
-        <label className="block text-xs text-muted-foreground mb-1">匯率（日圓 → 台幣，可留空）</label>
+        <label className="block text-xs text-muted-foreground mb-1">
+          匯率（日圓 → 台幣，可留空）
+        </label>
         <input
           type="number"
           value={exchangeRate}
@@ -54,31 +63,61 @@ function TripForm({
         <ExchangeRateReferenceHint context="trip" onApply={setExchangeRate} />
       </div>
       <div>
-        <label className="block text-xs text-muted-foreground mb-1">備註（可留空）</label>
-        <input value={notes} onChange={(e) => setNotes(e.target.value)} className={inputClass} />
+        <label className="block text-xs text-muted-foreground mb-1">
+          備註（可留空）
+        </label>
+        <input
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          className={inputClass}
+        />
       </div>
-      {error && <p className="text-xs text-destructive whitespace-pre-line">{error}</p>}
+      {error && (
+        <p className="text-xs text-destructive whitespace-pre-line">{error}</p>
+      )}
       <div className="flex gap-2 pt-1">
         <button
           type="button"
           disabled={submitting}
           onClick={() => {
-            if (!name.trim()) { setError(formatActionableError({
-              happened: "行程沒有儲存。", reason: "行程名稱尚未填寫。",
-              action: "請輸入容易辨識的行程名稱。", support: "若仍無法儲存，請截圖交給系統管理者。",
-            })); return; }
+            if (!name.trim()) {
+              setError(
+                formatActionableError({
+                  happened: "行程沒有儲存。",
+                  reason: "行程名稱尚未填寫。",
+                  action: "請輸入容易辨識的行程名稱。",
+                  support: "若仍無法儲存，請截圖交給系統管理者。",
+                }),
+              );
+              return;
+            }
             const rate = exchangeRate.trim();
-            if (rate && (isNaN(parseFloat(rate)) || parseFloat(rate) < 0)) { setError(formatActionableError({
-              happened: "行程沒有儲存。", reason: "匯率必須是 0 以上的數字，或留空表示待確認。",
-              action: "請修正匯率，或清空欄位後再儲存。", support: "不確定匯率時可先留空。",
-            })); return; }
-            onSubmit({ name: name.trim(), exchangeRate: rate, notes: notes.trim() });
+            if (rate && (isNaN(parseFloat(rate)) || parseFloat(rate) < 0)) {
+              setError(
+                formatActionableError({
+                  happened: "行程沒有儲存。",
+                  reason: "匯率必須是 0 以上的數字，或留空表示待確認。",
+                  action: "請修正匯率，或清空欄位後再儲存。",
+                  support: "不確定匯率時可先留空。",
+                }),
+              );
+              return;
+            }
+            onSubmit({
+              name: name.trim(),
+              exchangeRate: rate,
+              notes: notes.trim(),
+            });
           }}
           className="flex-1 h-10 rounded-xl bg-primary text-white text-sm font-semibold disabled:opacity-50"
         >
           {submitting ? "儲存中…" : "儲存"}
         </button>
-        <button type="button" onClick={onCancel} className="h-10 px-4 rounded-xl border border-border bg-white text-sm">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="h-10 px-4 rounded-xl border border-border bg-white text-sm"
+        >
           取消
         </button>
       </div>
@@ -94,8 +133,17 @@ function RouteForm({
 }: {
   initial?: Partial<TripRoute>;
   onSubmit: (v: {
-    areaTitle: string; startPlace: string; endPlace: string; estQty: string;
-    trainJpy: string; fuelJpy: string; parkingJpy: string; etcJpy: string; cardboardJpy: string; shippingJpy: string; parcelCount: string;
+    areaTitle: string;
+    startPlace: string;
+    endPlace: string;
+    estQty: string;
+    trainJpy: string;
+    fuelJpy: string;
+    parkingJpy: string;
+    etcJpy: string;
+    cardboardJpy: string;
+    shippingJpy: string;
+    parcelCount: string;
   }) => void;
   onCancel: () => void;
   submitting: boolean;
@@ -103,37 +151,86 @@ function RouteForm({
   const [areaTitle, setAreaTitle] = useState(initial?.areaTitle ?? "");
   const [startPlace, setStartPlace] = useState(initial?.startPlace ?? "");
   const [endPlace, setEndPlace] = useState(initial?.endPlace ?? "");
-  const [estQty, setEstQty] = useState(initial?.estQty != null ? String(initial.estQty) : "");
-  const [trainJpy, setTrainJpy] = useState(initial?.trainJpy != null ? String(initial.trainJpy) : "");
-  const [fuelJpy, setFuelJpy] = useState(initial?.fuelJpy != null ? String(initial.fuelJpy) : "");
-  const [parkingJpy, setParkingJpy] = useState(initial?.parkingJpy != null ? String(initial.parkingJpy) : "");
-  const [etcJpy, setEtcJpy] = useState(initial?.etcJpy != null ? String(initial.etcJpy) : "");
-  const [cardboardJpy, setCardboardJpy] = useState(initial?.cardboardJpy != null ? String(initial.cardboardJpy) : "");
-  const [shippingJpy, setShippingJpy] = useState(initial?.shippingJpy != null ? String(initial.shippingJpy) : "");
-  const [parcelCount, setParcelCount] = useState(initial?.parcelCount != null ? String(initial.parcelCount) : "");
+  const [estQty, setEstQty] = useState(
+    initial?.estQty != null ? String(initial.estQty) : "",
+  );
+  const [trainJpy, setTrainJpy] = useState(
+    initial?.trainJpy != null ? String(initial.trainJpy) : "",
+  );
+  const [fuelJpy, setFuelJpy] = useState(
+    initial?.fuelJpy != null ? String(initial.fuelJpy) : "",
+  );
+  const [parkingJpy, setParkingJpy] = useState(
+    initial?.parkingJpy != null ? String(initial.parkingJpy) : "",
+  );
+  const [etcJpy, setEtcJpy] = useState(
+    initial?.etcJpy != null ? String(initial.etcJpy) : "",
+  );
+  const [cardboardJpy, setCardboardJpy] = useState(
+    initial?.cardboardJpy != null ? String(initial.cardboardJpy) : "",
+  );
+  const [shippingJpy, setShippingJpy] = useState(
+    initial?.shippingJpy != null ? String(initial.shippingJpy) : "",
+  );
+  const [parcelCount, setParcelCount] = useState(
+    initial?.parcelCount != null ? String(initial.parcelCount) : "",
+  );
   const [error, setError] = useState("");
 
-  const numField = (label: string, value: string, setValue: (v: string) => void) => (
+  const numField = (
+    label: string,
+    value: string,
+    setValue: (v: string) => void,
+  ) => (
     <div>
-      <label className="block text-xs text-muted-foreground mb-1">{label}</label>
-      <input type="number" value={value} onChange={(e) => setValue(e.target.value)} placeholder="0" min="0" step="1" className={inputClass} />
+      <label className="block text-xs text-muted-foreground mb-1">
+        {label}
+      </label>
+      <input
+        type="number"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder="0"
+        min="0"
+        step="1"
+        className={inputClass}
+      />
     </div>
   );
 
   return (
     <div className="bg-secondary/40 rounded-xl p-3 space-y-2.5">
       <div>
-        <label className="block text-xs text-muted-foreground mb-1">路線名稱 *</label>
-        <input value={areaTitle} onChange={(e) => setAreaTitle(e.target.value)} placeholder="例：東京市區" className={inputClass} />
+        <label className="block text-xs text-muted-foreground mb-1">
+          路線名稱 *
+        </label>
+        <input
+          value={areaTitle}
+          onChange={(e) => setAreaTitle(e.target.value)}
+          placeholder="例：東京市區"
+          className={inputClass}
+        />
       </div>
       <div className="grid grid-cols-2 gap-2">
         <div>
-          <label className="block text-xs text-muted-foreground mb-1">起點 *</label>
-          <input value={startPlace} onChange={(e) => setStartPlace(e.target.value)} className={inputClass} />
+          <label className="block text-xs text-muted-foreground mb-1">
+            起點 *
+          </label>
+          <input
+            value={startPlace}
+            onChange={(e) => setStartPlace(e.target.value)}
+            className={inputClass}
+          />
         </div>
         <div>
-          <label className="block text-xs text-muted-foreground mb-1">終點 *</label>
-          <input value={endPlace} onChange={(e) => setEndPlace(e.target.value)} className={inputClass} />
+          <label className="block text-xs text-muted-foreground mb-1">
+            終點 *
+          </label>
+          <input
+            value={endPlace}
+            onChange={(e) => setEndPlace(e.target.value)}
+            className={inputClass}
+          />
         </div>
       </div>
       {numField("預估件數 *", estQty, setEstQty)}
@@ -147,34 +244,77 @@ function RouteForm({
         {numField("包裹數", parcelCount, setParcelCount)}
       </div>
       <p className="rounded-xl bg-white px-3 py-2 text-xs leading-relaxed text-muted-foreground">
-        請填這條路線實際發生的日圓費用；ETC 必須手動填寫，可填 0。儲存後系統才會依已拍板公式分攤，預估件數不正確時不會用 0 冒充成本。
+        請填這條路線實際發生的日圓費用；ETC 必須手動填寫，可填
+        0。儲存後系統才會依已拍板公式分攤，預估件數不正確時不會用 0 冒充成本。
       </p>
-      {error && <p className="text-xs text-destructive whitespace-pre-line">{error}</p>}
+      {error && (
+        <p className="text-xs text-destructive whitespace-pre-line">{error}</p>
+      )}
       <div className="flex gap-2 pt-1">
         <button
           type="button"
           disabled={submitting}
           onClick={() => {
-            if (!areaTitle.trim() || !startPlace.trim() || !endPlace.trim()) { setError(formatActionableError({
-              happened: "路線沒有儲存。", reason: "路線名稱、起點或終點仍是空白。",
-              action: "請補齊三個必填欄位。", support: "若仍無法儲存，請截圖交給系統管理者。",
-            })); return; }
+            if (!areaTitle.trim() || !startPlace.trim() || !endPlace.trim()) {
+              setError(
+                formatActionableError({
+                  happened: "路線沒有儲存。",
+                  reason: "路線名稱、起點或終點仍是空白。",
+                  action: "請補齊三個必填欄位。",
+                  support: "若仍無法儲存，請截圖交給系統管理者。",
+                }),
+              );
+              return;
+            }
             const qty = parseInt(estQty, 10);
-            if (!Number.isFinite(qty) || qty < 1) { setError(formatActionableError({
-              happened: "路線沒有儲存。", reason: "預估件數必須是大於 0 的整數。",
-              action: "請填入預計分攤的商品件數。", support: "件數尚未確認時，請先確認後再儲存。",
-            })); return; }
-            if (etcJpy.trim() === "" || !/^\d+(?:\.\d+)?$/.test(etcJpy.trim())) { setError(formatActionableError({
-              happened: "路線沒有儲存。", reason: "ETC 費用尚未手動填寫，或格式不是非負數字。",
-              action: "請填入實際 ETC 日圓費用；沒有費用時填 0。", support: "請以實際帳單為準，不要使用猜測值。",
-            })); return; }
-            onSubmit({ areaTitle: areaTitle.trim(), startPlace: startPlace.trim(), endPlace: endPlace.trim(), estQty, trainJpy, fuelJpy, parkingJpy, etcJpy, cardboardJpy, shippingJpy, parcelCount });
+            if (!Number.isFinite(qty) || qty < 1) {
+              setError(
+                formatActionableError({
+                  happened: "路線沒有儲存。",
+                  reason: "預估件數必須是大於 0 的整數。",
+                  action: "請填入預計分攤的商品件數。",
+                  support: "件數尚未確認時，請先確認後再儲存。",
+                }),
+              );
+              return;
+            }
+            if (
+              etcJpy.trim() === "" ||
+              !/^\d+(?:\.\d+)?$/.test(etcJpy.trim())
+            ) {
+              setError(
+                formatActionableError({
+                  happened: "路線沒有儲存。",
+                  reason: "ETC 費用尚未手動填寫，或格式不是非負數字。",
+                  action: "請填入實際 ETC 日圓費用；沒有費用時填 0。",
+                  support: "請以實際帳單為準，不要使用猜測值。",
+                }),
+              );
+              return;
+            }
+            onSubmit({
+              areaTitle: areaTitle.trim(),
+              startPlace: startPlace.trim(),
+              endPlace: endPlace.trim(),
+              estQty,
+              trainJpy,
+              fuelJpy,
+              parkingJpy,
+              etcJpy,
+              cardboardJpy,
+              shippingJpy,
+              parcelCount,
+            });
           }}
           className="flex-1 h-10 rounded-xl bg-primary text-white text-sm font-semibold disabled:opacity-50"
         >
           {submitting ? "儲存中…" : "儲存"}
         </button>
-        <button type="button" onClick={onCancel} className="h-10 px-4 rounded-xl border border-border bg-white text-sm">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="h-10 px-4 rounded-xl border border-border bg-white text-sm"
+        >
           取消
         </button>
       </div>
@@ -192,7 +332,8 @@ function TripCard({ trip }: { trip: TripWithRoutes }) {
   const [addingRoute, setAddingRoute] = useState(false);
   const [editingRouteId, setEditingRouteId] = useState<number | null>(null);
 
-  const invalidate = () => qc.invalidateQueries({ queryKey: getListTripsQueryKey() });
+  const invalidate = () =>
+    qc.invalidateQueries({ queryKey: getListTripsQueryKey() });
 
   return (
     <div className="bg-white rounded-2xl border border-border overflow-hidden">
@@ -200,7 +341,12 @@ function TripCard({ trip }: { trip: TripWithRoutes }) {
         {editingTrip ? (
           <div className="flex-1">
             <TripForm
-              initial={{ name: trip.name, exchangeRate: trip.exchangeRate != null ? String(trip.exchangeRate) : "", notes: trip.notes ?? "" }}
+              initial={{
+                name: trip.name,
+                exchangeRate:
+                  trip.exchangeRate != null ? String(trip.exchangeRate) : "",
+                notes: trip.notes ?? "",
+              }}
               submitting={updateTrip.isPending}
               onCancel={() => setEditingTrip(false)}
               onSubmit={async (v) => {
@@ -208,7 +354,9 @@ function TripCard({ trip }: { trip: TripWithRoutes }) {
                   tripId: trip.id,
                   data: {
                     name: v.name,
-                    exchangeRate: v.exchangeRate ? parseFloat(v.exchangeRate) : null,
+                    exchangeRate: v.exchangeRate
+                      ? parseFloat(v.exchangeRate)
+                      : null,
                     notes: v.notes || null,
                   },
                 });
@@ -222,11 +370,17 @@ function TripCard({ trip }: { trip: TripWithRoutes }) {
             <div className="min-w-0">
               <p className="text-sm font-bold text-foreground">{trip.name}</p>
               <p className="text-xs text-muted-foreground mt-0.5">
-                {trip.exchangeRate != null ? `匯率 ${trip.exchangeRate}` : "匯率未設定"}
+                {trip.exchangeRate != null
+                  ? `匯率 ${trip.exchangeRate}`
+                  : "匯率未設定"}
                 {trip.notes ? ` · ${trip.notes}` : ""}
               </p>
             </div>
-            <button type="button" onClick={() => setEditingTrip(true)} className="shrink-0 text-xs font-medium text-primary border border-primary/30 px-2.5 py-1 rounded-lg">
+            <button
+              type="button"
+              onClick={() => setEditingTrip(true)}
+              className="shrink-0 text-xs font-medium text-primary border border-primary/30 px-2.5 py-1 rounded-lg"
+            >
               編輯
             </button>
           </>
@@ -254,9 +408,15 @@ function TripCard({ trip }: { trip: TripWithRoutes }) {
                       fuelJpy: v.fuelJpy ? parseFloat(v.fuelJpy) : 0,
                       parkingJpy: v.parkingJpy ? parseFloat(v.parkingJpy) : 0,
                       etcJpy: parseFloat(v.etcJpy),
-                      cardboardJpy: v.cardboardJpy ? parseFloat(v.cardboardJpy) : 0,
-                      shippingJpy: v.shippingJpy ? parseFloat(v.shippingJpy) : 0,
-                      parcelCount: v.parcelCount ? parseInt(v.parcelCount, 10) : 0,
+                      cardboardJpy: v.cardboardJpy
+                        ? parseFloat(v.cardboardJpy)
+                        : 0,
+                      shippingJpy: v.shippingJpy
+                        ? parseFloat(v.shippingJpy)
+                        : 0,
+                      parcelCount: v.parcelCount
+                        ? parseInt(v.parcelCount, 10)
+                        : 0,
                     },
                   });
                   invalidate();
@@ -265,15 +425,30 @@ function TripCard({ trip }: { trip: TripWithRoutes }) {
               />
             </div>
           ) : (
-            <div key={route.id} className="px-4 py-3 flex items-start justify-between gap-2">
+            <div
+              key={route.id}
+              className="px-4 py-3 flex items-start justify-between gap-2"
+            >
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-foreground">{route.areaTitle}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{route.startPlace} → {route.endPlace} · 預估 {route.estQty} 件</p>
+                <p className="text-sm font-semibold text-foreground">
+                  {route.areaTitle}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {route.startPlace} → {route.endPlace} · 預估 {route.estQty} 件
+                </p>
                 <p className="text-[11px] text-muted-foreground/80 mt-0.5">
-                  電車 ¥{route.trainJpy} · 油資 ¥{route.fuelJpy} · 停車 ¥{route.parkingJpy} · ETC {route.etcJpy == null ? "待確認" : `¥${route.etcJpy}`} · 紙箱 ¥{route.cardboardJpy} · 日本境內運費 ¥{route.shippingJpy} · 包裹 {route.parcelCount}
+                  電車 ¥{route.trainJpy} · 油資 ¥{route.fuelJpy} · 停車 ¥
+                  {route.parkingJpy} · ETC{" "}
+                  {route.etcJpy == null ? "待確認" : `¥${route.etcJpy}`} · 紙箱
+                  ¥{route.cardboardJpy} · 日本境內運費 ¥{route.shippingJpy} ·
+                  包裹 {route.parcelCount}
                 </p>
               </div>
-              <button type="button" onClick={() => setEditingRouteId(route.id)} className="shrink-0 text-xs font-medium text-primary border border-primary/30 px-2.5 py-1 rounded-lg">
+              <button
+                type="button"
+                onClick={() => setEditingRouteId(route.id)}
+                className="shrink-0 text-xs font-medium text-primary border border-primary/30 px-2.5 py-1 rounded-lg"
+              >
                 編輯
               </button>
             </div>
@@ -296,11 +471,19 @@ function TripCard({ trip }: { trip: TripWithRoutes }) {
                   estQty: parseInt(v.estQty, 10),
                   trainJpy: v.trainJpy ? parseFloat(v.trainJpy) : undefined,
                   fuelJpy: v.fuelJpy ? parseFloat(v.fuelJpy) : undefined,
-                  parkingJpy: v.parkingJpy ? parseFloat(v.parkingJpy) : undefined,
+                  parkingJpy: v.parkingJpy
+                    ? parseFloat(v.parkingJpy)
+                    : undefined,
                   etcJpy: parseFloat(v.etcJpy),
-                  cardboardJpy: v.cardboardJpy ? parseFloat(v.cardboardJpy) : undefined,
-                  shippingJpy: v.shippingJpy ? parseFloat(v.shippingJpy) : undefined,
-                  parcelCount: v.parcelCount ? parseInt(v.parcelCount, 10) : undefined,
+                  cardboardJpy: v.cardboardJpy
+                    ? parseFloat(v.cardboardJpy)
+                    : undefined,
+                  shippingJpy: v.shippingJpy
+                    ? parseFloat(v.shippingJpy)
+                    : undefined,
+                  parcelCount: v.parcelCount
+                    ? parseInt(v.parcelCount, 10)
+                    : undefined,
                 },
               });
               invalidate();
@@ -341,7 +524,9 @@ export default function TripsPage() {
             ‹
           </button>
           <div>
-            <h1 className="text-lg font-bold text-foreground">行程與路線管理</h1>
+            <h1 className="text-lg font-bold text-foreground">
+              行程與路線管理
+            </h1>
             <p className="text-xs text-muted-foreground">
               用於商品的交通成本分攤與成本快照計算。
             </p>
@@ -375,7 +560,9 @@ export default function TripsPage() {
                 await createTrip.mutateAsync({
                   data: {
                     name: v.name,
-                    exchangeRate: v.exchangeRate ? parseFloat(v.exchangeRate) : undefined,
+                    exchangeRate: v.exchangeRate
+                      ? parseFloat(v.exchangeRate)
+                      : undefined,
                     notes: v.notes || undefined,
                   },
                 });

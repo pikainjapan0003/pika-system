@@ -17,7 +17,9 @@ export default function HomePage() {
       <main className="flex-1 px-6 flex flex-col justify-center max-w-sm mx-auto w-full">
         <div className="mb-10">
           <h1 className="text-3xl font-bold text-foreground leading-snug mb-3">
-            團購代購<br />輕鬆管理
+            團購代購
+            <br />
+            輕鬆管理
           </h1>
           <p className="text-muted-foreground text-base leading-relaxed">
             建立商品頁面、分享連結給買家，訂單自動彙整。
@@ -42,17 +44,33 @@ export default function HomePage() {
 
         <div className="mt-12 space-y-5">
           {[
-            { icon: "🔗", label: "商品分享連結", desc: "每個商品都有專屬連結，買家不需註冊即可下單" },
-            { icon: "📋", label: "訂單自動彙整", desc: "訂單狀態一目瞭然，支援 CSV 匯出" },
-            { icon: "📱", label: "手機優化介面", desc: "隨時隨地管理訂單，行動優先設計" },
+            {
+              icon: "🔗",
+              label: "商品分享連結",
+              desc: "每個商品都有專屬連結，買家不需註冊即可下單",
+            },
+            {
+              icon: "📋",
+              label: "訂單自動彙整",
+              desc: "訂單狀態一目瞭然，支援 CSV 匯出",
+            },
+            {
+              icon: "📱",
+              label: "手機優化介面",
+              desc: "隨時隨地管理訂單，行動優先設計",
+            },
           ].map((f) => (
             <div key={f.label} className="flex gap-4 items-start">
               <div className="w-10 h-10 bg-accent/20 rounded-xl flex items-center justify-center flex-shrink-0 text-lg">
                 {f.icon}
               </div>
               <div>
-                <div className="font-semibold text-foreground text-sm">{f.label}</div>
-                <div className="text-muted-foreground text-sm mt-0.5">{f.desc}</div>
+                <div className="font-semibold text-foreground text-sm">
+                  {f.label}
+                </div>
+                <div className="text-muted-foreground text-sm mt-0.5">
+                  {f.desc}
+                </div>
               </div>
             </div>
           ))}

@@ -72,9 +72,13 @@ export default function GuidePage() {
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <span className="text-base">{s.icon}</span>
-                    <span className="font-semibold text-foreground text-sm">{s.title}</span>
+                    <span className="font-semibold text-foreground text-sm">
+                      {s.title}
+                    </span>
                   </div>
-                  <p className="text-muted-foreground text-sm mt-1 leading-relaxed">{s.desc}</p>
+                  <p className="text-muted-foreground text-sm mt-1 leading-relaxed">
+                    {s.desc}
+                  </p>
                 </div>
               </div>
             ))}
@@ -98,9 +102,15 @@ export default function GuidePage() {
 
         {/* Buyer flow */}
         <div className="bg-primary/5 rounded-2xl border border-primary/20 px-5 py-4">
-          <h2 className="text-sm font-semibold text-foreground mb-2">買家體驗</h2>
+          <h2 className="text-sm font-semibold text-foreground mb-2">
+            買家體驗
+          </h2>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            買家點擊分享連結 → 填寫下單資訊 → 收到追蹤碼 → 可隨時至 <span className="font-mono text-xs bg-white px-1 py-0.5 rounded">/track</span> 查詢訂單狀態。
+            買家點擊分享連結 → 填寫下單資訊 → 收到追蹤碼 → 可隨時至{" "}
+            <span className="font-mono text-xs bg-white px-1 py-0.5 rounded">
+              /track
+            </span>{" "}
+            查詢訂單狀態。
           </p>
         </div>
       </div>

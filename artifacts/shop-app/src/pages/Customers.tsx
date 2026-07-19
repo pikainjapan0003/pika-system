@@ -34,7 +34,8 @@ const blankDraft: CustomerDraft = {
   notes: null,
 };
 
-const inputClass = "w-full h-10 px-3 rounded-xl border border-input bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30";
+const inputClass =
+  "w-full h-10 px-3 rounded-xl border border-input bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30";
 
 export default function CustomersPage() {
   const [, setLocation] = useLocation();
@@ -58,7 +59,7 @@ export default function CustomersPage() {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (!response.ok) throw new Error("無法讀取客戶資料");
-      setCustomers(await response.json() as CustomerRecord[]);
+      setCustomers((await response.json()) as CustomerRecord[]);
       setError(null);
     } catch (caught) {
       setError((caught as Error).message);
@@ -67,7 +68,9 @@ export default function CustomersPage() {
     }
   };
 
-  useEffect(() => { void loadCustomers(); }, [store?.id]);
+  useEffect(() => {
+    void loadCustomers();
+  }, [store?.id]);
 
   const save = async () => {
     if (!store?.id) return;
@@ -85,7 +88,7 @@ export default function CustomersPage() {
         },
         body: JSON.stringify(draft),
       });
-      const result = await response.json() as { error?: string };
+      const result = (await response.json()) as { error?: string };
       if (!response.ok) throw new Error(result.error ?? "儲存失敗");
       setDraft(blankDraft);
       setEditingId(null);
@@ -128,18 +131,34 @@ export default function CustomersPage() {
   const exportCustomers = async () => {
     if (!store?.id || customers.length === 0) return;
     const mode = exportCleartext ? "cleartext" : "masked";
-    if (!window.confirm(`即將匯出 ${customers.length} 筆客戶資料（${exportCleartext ? "明文版" : "遮罩版"}），是否繼續？`)) return;
-    if (exportCleartext && !window.confirm("明文版包含完整個資。請再次確認只會交給有權限的人員，並在使用後刪除檔案。")) return;
+    if (
+      !window.confirm(
+        `即將匯出 ${customers.length} 筆客戶資料（${exportCleartext ? "明文版" : "遮罩版"}），是否繼續？`,
+      )
+    )
+      return;
+    if (
+      exportCleartext &&
+      !window.confirm(
+        "明文版包含完整個資。請再次確認只會交給有權限的人員，並在使用後刪除檔案。",
+      )
+    )
+      return;
 
     setExporting(true);
     try {
       const token = await getToken();
-      const response = await fetch(`/api/stores/${store.id}/customers/export?mode=${mode}`, {
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          ...(exportCleartext ? { "X-Confirm-Cleartext-Export": "true" } : {}),
+      const response = await fetch(
+        `/api/stores/${store.id}/customers/export?mode=${mode}`,
+        {
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            ...(exportCleartext
+              ? { "X-Confirm-Cleartext-Export": "true" }
+              : {}),
+          },
         },
-      });
+      );
       if (!response.ok) throw new Error("匯出失敗，請稍後再試");
       const url = URL.createObjectURL(await response.blob());
       const anchor = document.createElement("a");
@@ -164,14 +183,18 @@ export default function CustomersPage() {
     <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-24">
       <header className="bg-white border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
         <h1 className="text-lg font-bold">客戶管理</h1>
-        <p className="text-xs text-muted-foreground mt-1">預設遮罩；顯示完整資料會留下瀏覽器稽核紀錄。</p>
+        <p className="text-xs text-muted-foreground mt-1">
+          預設遮罩；顯示完整資料會留下瀏覽器稽核紀錄。
+        </p>
       </header>
 
       <main className="p-5 space-y-4">
         <section className="bg-white border border-border rounded-2xl p-4 space-y-3">
           <div>
             <h2 className="font-semibold">匯出客戶 CSV</h2>
-            <p className="mt-1 text-xs text-muted-foreground">預設匯出遮罩版；匯出前會再次顯示筆數。</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              預設匯出遮罩版；匯出前會再次顯示筆數。
+            </p>
           </div>
           <label className="flex items-start gap-2 text-sm">
             <input
@@ -193,16 +216,44 @@ export default function CustomersPage() {
         </section>
 
         <section className="bg-white border border-border rounded-2xl p-4 space-y-3">
-          <h2 className="font-semibold">{editingId ? "編輯客戶" : "新增客戶"}</h2>
+          <h2 className="font-semibold">
+            {editingId ? "編輯客戶" : "新增客戶"}
+          </h2>
           <div className="grid grid-cols-2 gap-2">
-            <input className={inputClass} placeholder="客戶代號 *" value={draft.code} onChange={(event) => setDraft({ ...draft, code: event.target.value })} />
-            <input className={inputClass} placeholder="姓名 *" value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} />
+            <input
+              className={inputClass}
+              placeholder="客戶代號 *"
+              value={draft.code}
+              onChange={(event) =>
+                setDraft({ ...draft, code: event.target.value })
+              }
+            />
+            <input
+              className={inputClass}
+              placeholder="姓名 *"
+              value={draft.name}
+              onChange={(event) =>
+                setDraft({ ...draft, name: event.target.value })
+              }
+            />
           </div>
-          <input className={inputClass} placeholder="手機（可留空）" value={draft.phone ?? ""} onChange={(event) => setDraft({ ...draft, phone: event.target.value || null })} />
+          <input
+            className={inputClass}
+            placeholder="手機（可留空）"
+            value={draft.phone ?? ""}
+            onChange={(event) =>
+              setDraft({ ...draft, phone: event.target.value || null })
+            }
+          />
           <select
             className={inputClass}
             value={draft.tier}
-            onChange={(event) => setDraft({ ...draft, tier: event.target.value as CustomerDraft["tier"] })}
+            onChange={(event) =>
+              setDraft({
+                ...draft,
+                tier: event.target.value as CustomerDraft["tier"],
+              })
+            }
           >
             <option value="general">一般</option>
             <option value="vip">VIP</option>
@@ -210,14 +261,63 @@ export default function CustomersPage() {
             <option value="partner">夥伴</option>
           </select>
           <div className="grid grid-cols-2 gap-2">
-            <input className={inputClass} placeholder="常用門市代碼" value={draft.cvsStoreId ?? ""} onChange={(event) => setDraft({ ...draft, cvsStoreId: event.target.value || null })} />
-            <input className={inputClass} placeholder="常用門市名稱" value={draft.cvsStoreName ?? ""} onChange={(event) => setDraft({ ...draft, cvsStoreName: event.target.value || null })} />
+            <input
+              className={inputClass}
+              placeholder="常用門市代碼"
+              value={draft.cvsStoreId ?? ""}
+              onChange={(event) =>
+                setDraft({ ...draft, cvsStoreId: event.target.value || null })
+              }
+            />
+            <input
+              className={inputClass}
+              placeholder="常用門市名稱"
+              value={draft.cvsStoreName ?? ""}
+              onChange={(event) =>
+                setDraft({ ...draft, cvsStoreName: event.target.value || null })
+              }
+            />
           </div>
-          <input className={inputClass} placeholder="常用門市地址" value={draft.cvsStoreAddress ?? ""} onChange={(event) => setDraft({ ...draft, cvsStoreAddress: event.target.value || null })} />
-          <input className={inputClass} placeholder="備註" value={draft.notes ?? ""} onChange={(event) => setDraft({ ...draft, notes: event.target.value || null })} />
+          <input
+            className={inputClass}
+            placeholder="常用門市地址"
+            value={draft.cvsStoreAddress ?? ""}
+            onChange={(event) =>
+              setDraft({
+                ...draft,
+                cvsStoreAddress: event.target.value || null,
+              })
+            }
+          />
+          <input
+            className={inputClass}
+            placeholder="備註"
+            value={draft.notes ?? ""}
+            onChange={(event) =>
+              setDraft({ ...draft, notes: event.target.value || null })
+            }
+          />
           <div className="flex gap-2">
-            <button type="button" disabled={loading} onClick={() => void save()} className="flex-1 h-11 rounded-xl bg-primary text-primary-foreground font-semibold">儲存</button>
-            {editingId && <button type="button" onClick={() => { setEditingId(null); setDraft(blankDraft); }} className="h-11 px-4 rounded-xl border border-border">取消</button>}
+            <button
+              type="button"
+              disabled={loading}
+              onClick={() => void save()}
+              className="flex-1 h-11 rounded-xl bg-primary text-primary-foreground font-semibold"
+            >
+              儲存
+            </button>
+            {editingId && (
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingId(null);
+                  setDraft(blankDraft);
+                }}
+                className="h-11 px-4 rounded-xl border border-border"
+              >
+                取消
+              </button>
+            )}
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
         </section>
@@ -226,25 +326,79 @@ export default function CustomersPage() {
           {customers.map((customer) => {
             const isRevealed = revealed.has(customer.id);
             return (
-              <article key={customer.id} className="bg-white border border-border rounded-2xl p-4 space-y-2">
+              <article
+                key={customer.id}
+                className="bg-white border border-border rounded-2xl p-4 space-y-2"
+              >
                 <div className="flex justify-between gap-3">
                   <div>
-                    <p className="font-semibold">{customer.code} · {isRevealed ? customer.name : maskName(customer.name)}</p>
-                    <p className="text-xs text-primary mt-0.5">等級：{{ general: "一般", vip: "VIP", wholesale: "批發", partner: "夥伴" }[customer.tier]}</p>
-                    <p className="text-sm text-muted-foreground">{customer.phone ? (isRevealed ? customer.phone : maskPhone(customer.phone)) : "未留電話"}</p>
+                    <p className="font-semibold">
+                      {customer.code} ·{" "}
+                      {isRevealed ? customer.name : maskName(customer.name)}
+                    </p>
+                    <p className="text-xs text-primary mt-0.5">
+                      等級：
+                      {
+                        {
+                          general: "一般",
+                          vip: "VIP",
+                          wholesale: "批發",
+                          partner: "夥伴",
+                        }[customer.tier]
+                      }
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {customer.phone
+                        ? isRevealed
+                          ? customer.phone
+                          : maskPhone(customer.phone)
+                        : "未留電話"}
+                    </p>
                   </div>
                   <div className="flex flex-col items-end gap-2">
-                    <button type="button" onClick={() => setLocation(`/customers/${customer.id}`)} className="text-sm font-medium text-primary">詳情</button>
-                    <button type="button" onClick={() => edit(customer)} className="text-sm text-primary">編輯</button>
+                    <button
+                      type="button"
+                      onClick={() => setLocation(`/customers/${customer.id}`)}
+                      className="text-sm font-medium text-primary"
+                    >
+                      詳情
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => edit(customer)}
+                      className="text-sm text-primary"
+                    >
+                      編輯
+                    </button>
                   </div>
                 </div>
-                {customer.cvsStoreName && <p className="text-sm">常用門市：{customer.cvsStoreName}</p>}
-                {customer.cvsStoreAddress && <p className="text-xs text-muted-foreground">{isRevealed ? customer.cvsStoreAddress : maskAddress(customer.cvsStoreAddress)}</p>}
-                {!isRevealed && <button type="button" onClick={() => void reveal(customer)} className="h-11 px-4 rounded-xl border border-border text-sm">顯示完整</button>}
+                {customer.cvsStoreName && (
+                  <p className="text-sm">常用門市：{customer.cvsStoreName}</p>
+                )}
+                {customer.cvsStoreAddress && (
+                  <p className="text-xs text-muted-foreground">
+                    {isRevealed
+                      ? customer.cvsStoreAddress
+                      : maskAddress(customer.cvsStoreAddress)}
+                  </p>
+                )}
+                {!isRevealed && (
+                  <button
+                    type="button"
+                    onClick={() => void reveal(customer)}
+                    className="h-11 px-4 rounded-xl border border-border text-sm"
+                  >
+                    顯示完整
+                  </button>
+                )}
               </article>
             );
           })}
-          {!loading && customers.length === 0 && <p className="text-center text-sm text-muted-foreground py-8">尚無客戶資料</p>}
+          {!loading && customers.length === 0 && (
+            <p className="text-center text-sm text-muted-foreground py-8">
+              尚無客戶資料
+            </p>
+          )}
         </section>
       </main>
       <BottomNav active="settings" />

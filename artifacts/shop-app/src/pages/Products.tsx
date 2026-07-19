@@ -1,6 +1,12 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { useGetMyStore, useListProducts, useUpdateProduct, useDeleteProduct, getListProductsQueryKey } from "@workspace/api-client-react";
+import {
+  useGetMyStore,
+  useListProducts,
+  useUpdateProduct,
+  useDeleteProduct,
+  getListProductsQueryKey,
+} from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { BottomNav } from "./Dashboard";
 import { useDailySkillVisibility } from "@/lib/dailySkillVisibilityContext";
@@ -35,7 +41,9 @@ function formatIntegerAmount(value: string): string {
   return `${negative ? "-" : ""}${grouped}`;
 }
 
-function formatDeadlineStatus(orderDeadlineAt: string | null | undefined): "open" | "closed" | "none" {
+function formatDeadlineStatus(
+  orderDeadlineAt: string | null | undefined,
+): "open" | "closed" | "none" {
   if (!orderDeadlineAt) return "none";
   return new Date(orderDeadlineAt) > new Date() ? "open" : "closed";
 }
@@ -72,12 +80,16 @@ export default function ProductsPage() {
   const { data: store } = useGetMyStore();
   const storeId = store?.id;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: products, isLoading } = useListProducts(storeId!, { query: { enabled: !!storeId } as any });
+  const { data: products, isLoading } = useListProducts(storeId!, {
+    query: { enabled: !!storeId } as any,
+  });
   const updateProduct = useUpdateProduct();
   const deleteProduct = useDeleteProduct();
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeFilter, setActiveFilter] = useState<"all" | "active" | "inactive">("all");
+  const [activeFilter, setActiveFilter] = useState<
+    "all" | "active" | "inactive"
+  >("all");
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
 
@@ -97,10 +109,16 @@ export default function ProductsPage() {
   const copyLink = (shareToken: string, id: number) => {
     if (!navigator.clipboard) return;
     const url = `${origin}${basePath}/p/${shareToken}`;
-    navigator.clipboard.writeText(url).then(() => {
-      setCopiedId(id);
-      setTimeout(() => { setCopiedId(null); setOpenMenuId(null); }, 1500);
-    }).catch(() => {});
+    navigator.clipboard
+      .writeText(url)
+      .then(() => {
+        setCopiedId(id);
+        setTimeout(() => {
+          setCopiedId(null);
+          setOpenMenuId(null);
+        }, 1500);
+      })
+      .catch(() => {});
   };
 
   const previewProduct = (shareToken: string) => {
@@ -118,11 +136,15 @@ export default function ProductsPage() {
   const activeCount = products?.filter((p) => p.isActive).length ?? 0;
   const avgPrice =
     totalCount > 0
-      ? Math.round(products!.reduce((sum, p) => sum + Number(p.price), 0) / totalCount)
+      ? Math.round(
+          products!.reduce((sum, p) => sum + Number(p.price), 0) / totalCount,
+        )
       : 0;
 
   const filteredProducts = (products ?? [])
-    .filter((p) => p.name.toLowerCase().includes(searchQuery.toLowerCase().trim()))
+    .filter((p) =>
+      p.name.toLowerCase().includes(searchQuery.toLowerCase().trim()),
+    )
     .filter((p) => {
       if (activeFilter === "active") return p.isActive;
       if (activeFilter === "inactive") return !p.isActive;
@@ -131,13 +153,14 @@ export default function ProductsPage() {
 
   return (
     <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-24">
-
       {/* Header */}
       <header className="bg-white border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
         <div className="flex items-start justify-between gap-2">
           <div>
             <h1 className="text-xl font-bold text-foreground">商品</h1>
-            <p className="text-xs text-muted-foreground mt-0.5">管理商品、定價與規格</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              管理商品、定價與規格
+            </p>
           </div>
           {skillVisibility.isVisible("categories") && (
             <button
@@ -165,20 +188,25 @@ export default function ProductsPage() {
             <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           </div>
         ) : !products || products.length === 0 ? (
-
           /* ── Empty / onboarding ──────────────────────────── */
           <div className="bg-white rounded-2xl border border-border overflow-hidden">
             <div className="px-6 py-8 text-center">
               <div className="text-4xl mb-4">📦</div>
-              <p className="text-foreground font-semibold text-base">還沒有商品</p>
-              <p className="text-muted-foreground text-sm mt-1 mb-6">開始接單只需要三步</p>
+              <p className="text-foreground font-semibold text-base">
+                還沒有商品
+              </p>
+              <p className="text-muted-foreground text-sm mt-1 mb-6">
+                開始接單只需要三步
+              </p>
               <div className="text-left space-y-3 mb-7">
                 {ONBOARDING_STEPS.map((s) => (
                   <div key={s.n} className="flex items-start gap-3">
                     <div className="w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
                       {s.n}
                     </div>
-                    <p className="text-sm text-foreground leading-relaxed">{s.text}</p>
+                    <p className="text-sm text-foreground leading-relaxed">
+                      {s.text}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -190,7 +218,6 @@ export default function ProductsPage() {
               </button>
             </div>
           </div>
-
         ) : (
           <>
             {/* ── Search ───────────────────────────────────── */}
@@ -232,13 +259,18 @@ export default function ProductsPage() {
             <div className="grid grid-cols-3 gap-2">
               <StatCard label="總商品" value={totalCount} />
               <StatCard label="開放下單" value={activeCount} />
-              <StatCard label="平均售價" value={`NT$${avgPrice.toLocaleString()}`} />
+              <StatCard
+                label="平均售價"
+                value={`NT$${avgPrice.toLocaleString()}`}
+              />
             </div>
 
             {/* ── Product list ─────────────────────────────── */}
             {filteredProducts.length === 0 ? (
               <div className="text-center py-8">
-                <p className="text-muted-foreground text-sm">找不到符合條件的商品</p>
+                <p className="text-muted-foreground text-sm">
+                  找不到符合條件的商品
+                </p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -247,152 +279,174 @@ export default function ProductsPage() {
                     estimatedProfit?: EstimatedProfit;
                   };
                   return (
-                  /* Outer relative wrapper for dropdown positioning */
-                  <div key={p.id} className="relative">
-
-                    {/* Card — no overflow-hidden so dropdown can float out */}
-                    <div
-                      onClick={() => { setOpenMenuId(null); setLocation(`/products/${p.id}/edit`); }}
-                      className="bg-white rounded-2xl border border-border cursor-pointer active:bg-secondary/40 transition-colors"
-                    >
-                      <div className="flex items-start gap-3 p-4">
-                        {/* Image */}
-                        {p.imageUrl ? (
-                          <img
-                            src={p.imageUrl}
-                            alt={p.name}
-                            className="w-14 h-14 rounded-xl object-cover flex-shrink-0 mt-0.5"
-                          />
-                        ) : (
-                          <div className="w-14 h-14 rounded-xl bg-secondary flex items-center justify-center flex-shrink-0 text-xl mt-0.5">
-                            📦
-                          </div>
-                        )}
-
-                        {/* Content */}
-                        <div className="flex-1 min-w-0">
-                          {/* 主要資訊 */}
-                          <p className="font-semibold text-foreground text-base line-clamp-2 leading-snug">{p.name}</p>
-                          <p className="text-primary font-bold text-base mt-0.5">
-                            NT$ {Number(p.price).toLocaleString()}
-                          </p>
-                          <p className="text-xs font-medium text-emerald-700 mt-1">
-                            {p.estimatedProfit?.status === "ready"
-                              ? `預估毛利 NT$ ${formatIntegerAmount(p.estimatedProfit.unitProfitTwd)}${
-                                  p.estimatedProfit.transportStatus === "exempt" ? "・免攤" : ""
-                                }`
-                              : "預估毛利 待確認"}
-                          </p>
-                          {/* SKU — monospace 與庫存行區隔 */}
-                          {p.skuCode && (
-                            <p className="font-mono text-xs text-foreground/70 mt-1">
-                              {p.skuCode}
-                            </p>
-                          )}
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            庫存：{p.inventory ?? "不限"} · {p.isActive ? "開放下單" : "已關閉"}
-                          </p>
-                          {/* 規格資訊：溫層 + 重量 */}
-                          {(p.storageTemp || p.weightKg) && (
-                            <p className="text-xs text-muted-foreground mt-0.5">
-                              {[
-                                p.storageTemp ? STORAGE_TEMP_LABEL[p.storageTemp] : null,
-                                formatWeight(p.weightKg),
-                              ].filter(Boolean).join(" · ")}
-                            </p>
-                          )}
-                          {/* 收單截止狀態 */}
-                          {p.orderDeadlineAt ? (
-                            <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                              {formatDeadlineStatus(p.orderDeadlineAt) === "open" ? (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-primary text-white">
-                                  收單中
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-gray-200 text-gray-600">
-                                  已截止
-                                </span>
-                              )}
-                              <span className="text-xs text-muted-foreground">
-                                截止：{formatDeadlineDatetime(p.orderDeadlineAt)}
-                              </span>
-                            </div>
-                          ) : (
-                            <p className="text-xs text-muted-foreground/50 mt-1">未設定截止</p>
-                          )}
-                        </div>
-
-                        {/* Right: isActive switch + ⋯ menu button — fixed width prevents content squeeze */}
-                        <div className="flex items-center gap-1.5 flex-shrink-0 w-[80px] justify-end">
-                          {/* isActive switch */}
-                          <div
-                            onClick={(e) => { e.stopPropagation(); void toggleActive(p); }}
-                            className={`relative w-10 h-5 rounded-full cursor-pointer transition-colors ${
-                              p.isActive ? "bg-primary" : "bg-gray-200"
-                            }`}
-                          >
-                            <div
-                              className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${
-                                p.isActive ? "translate-x-5" : "translate-x-0.5"
-                              }`}
+                    /* Outer relative wrapper for dropdown positioning */
+                    <div key={p.id} className="relative">
+                      {/* Card — no overflow-hidden so dropdown can float out */}
+                      <div
+                        onClick={() => {
+                          setOpenMenuId(null);
+                          setLocation(`/products/${p.id}/edit`);
+                        }}
+                        className="bg-white rounded-2xl border border-border cursor-pointer active:bg-secondary/40 transition-colors"
+                      >
+                        <div className="flex items-start gap-3 p-4">
+                          {/* Image */}
+                          {p.imageUrl ? (
+                            <img
+                              src={p.imageUrl}
+                              alt={p.name}
+                              className="w-14 h-14 rounded-xl object-cover flex-shrink-0 mt-0.5"
                             />
+                          ) : (
+                            <div className="w-14 h-14 rounded-xl bg-secondary flex items-center justify-center flex-shrink-0 text-xl mt-0.5">
+                              📦
+                            </div>
+                          )}
+
+                          {/* Content */}
+                          <div className="flex-1 min-w-0">
+                            {/* 主要資訊 */}
+                            <p className="font-semibold text-foreground text-base line-clamp-2 leading-snug">
+                              {p.name}
+                            </p>
+                            <p className="text-primary font-bold text-base mt-0.5">
+                              NT$ {Number(p.price).toLocaleString()}
+                            </p>
+                            <p className="text-xs font-medium text-emerald-700 mt-1">
+                              {p.estimatedProfit?.status === "ready"
+                                ? `預估毛利 NT$ ${formatIntegerAmount(p.estimatedProfit.unitProfitTwd)}${
+                                    p.estimatedProfit.transportStatus ===
+                                    "exempt"
+                                      ? "・免攤"
+                                      : ""
+                                  }`
+                                : "預估毛利 待確認"}
+                            </p>
+                            {/* SKU — monospace 與庫存行區隔 */}
+                            {p.skuCode && (
+                              <p className="font-mono text-xs text-foreground/70 mt-1">
+                                {p.skuCode}
+                              </p>
+                            )}
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              庫存：{p.inventory ?? "不限"} ·{" "}
+                              {p.isActive ? "開放下單" : "已關閉"}
+                            </p>
+                            {/* 規格資訊：溫層 + 重量 */}
+                            {(p.storageTemp || p.weightKg) && (
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                {[
+                                  p.storageTemp
+                                    ? STORAGE_TEMP_LABEL[p.storageTemp]
+                                    : null,
+                                  formatWeight(p.weightKg),
+                                ]
+                                  .filter(Boolean)
+                                  .join(" · ")}
+                              </p>
+                            )}
+                            {/* 收單截止狀態 */}
+                            {p.orderDeadlineAt ? (
+                              <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                                {formatDeadlineStatus(p.orderDeadlineAt) ===
+                                "open" ? (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-primary text-white">
+                                    收單中
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-gray-200 text-gray-600">
+                                    已截止
+                                  </span>
+                                )}
+                                <span className="text-xs text-muted-foreground">
+                                  截止：
+                                  {formatDeadlineDatetime(p.orderDeadlineAt)}
+                                </span>
+                              </div>
+                            ) : (
+                              <p className="text-xs text-muted-foreground/50 mt-1">
+                                未設定截止
+                              </p>
+                            )}
                           </div>
 
-                          {/* ⋯ more button */}
+                          {/* Right: isActive switch + ⋯ menu button — fixed width prevents content squeeze */}
+                          <div className="flex items-center gap-1.5 flex-shrink-0 w-[80px] justify-end">
+                            {/* isActive switch */}
+                            <div
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                void toggleActive(p);
+                              }}
+                              className={`relative w-10 h-5 rounded-full cursor-pointer transition-colors ${
+                                p.isActive ? "bg-primary" : "bg-gray-200"
+                              }`}
+                            >
+                              <div
+                                className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${
+                                  p.isActive
+                                    ? "translate-x-5"
+                                    : "translate-x-0.5"
+                                }`}
+                              />
+                            </div>
+
+                            {/* ⋯ more button */}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenMenuId(
+                                  openMenuId === p.id ? null : p.id,
+                                );
+                              }}
+                              className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-lg transition-colors z-[16] relative"
+                            >
+                              ⋯
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Dropdown menu */}
+                      {openMenuId === p.id && (
+                        <div className="absolute right-0 top-full mt-1 z-[20] bg-white rounded-xl border border-border shadow-lg min-w-[152px] overflow-hidden">
                           <button
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              setOpenMenuId(openMenuId === p.id ? null : p.id);
+                              copyLink(p.shareToken, p.id);
                             }}
-                            className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-lg transition-colors z-[16] relative"
+                            className="w-full px-4 py-3 text-sm text-left text-foreground hover:bg-secondary/50 transition-colors"
                           >
-                            ⋯
+                            {copiedId === p.id ? "✓ 已複製" : "複製下單連結"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              previewProduct(p.shareToken);
+                              setOpenMenuId(null);
+                            }}
+                            className="w-full px-4 py-3 text-sm text-left text-foreground hover:bg-secondary/50 transition-colors"
+                          >
+                            預覽公開頁
+                          </button>
+                          <div className="border-t border-border/50" />
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenMenuId(null);
+                              void handleDelete(p.id);
+                            }}
+                            className="w-full px-4 py-3 text-sm text-left text-destructive hover:bg-destructive/5 transition-colors"
+                          >
+                            刪除商品
                           </button>
                         </div>
-                      </div>
+                      )}
                     </div>
-
-                    {/* Dropdown menu */}
-                    {openMenuId === p.id && (
-                      <div className="absolute right-0 top-full mt-1 z-[20] bg-white rounded-xl border border-border shadow-lg min-w-[152px] overflow-hidden">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            copyLink(p.shareToken, p.id);
-                          }}
-                          className="w-full px-4 py-3 text-sm text-left text-foreground hover:bg-secondary/50 transition-colors"
-                        >
-                          {copiedId === p.id ? "✓ 已複製" : "複製下單連結"}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            previewProduct(p.shareToken);
-                            setOpenMenuId(null);
-                          }}
-                          className="w-full px-4 py-3 text-sm text-left text-foreground hover:bg-secondary/50 transition-colors"
-                        >
-                          預覽公開頁
-                        </button>
-                        <div className="border-t border-border/50" />
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setOpenMenuId(null);
-                            void handleDelete(p.id);
-                          }}
-                          className="w-full px-4 py-3 text-sm text-left text-destructive hover:bg-destructive/5 transition-colors"
-                        >
-                          刪除商品
-                        </button>
-                      </div>
-                    )}
-
-                  </div>
                   );
                 })}
               </div>

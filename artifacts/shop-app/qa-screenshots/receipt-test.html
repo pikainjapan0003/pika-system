@@ -1,130 +1,431 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-TW">
-<head>
-<meta charset="UTF-8">
-<title>銷貨單 QA Test — Step 8L-2-MANUAL-VQA</title>
-<style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: system-ui, -apple-system, sans-serif; background: #f5f5f5; padding: 20px; }
-.test-section { background: white; padding: 20px; margin-bottom: 40px; max-width: 400px; border: 2px solid #666; }
-.test-label { font-size: 14px; font-weight: bold; background: #333; color: white; padding: 6px 10px; margin-bottom: 16px; font-family: monospace; }
-/* Shared receipt CSS (copied from SHARED_CSS in printHelpers.ts) */
-.receipt * { box-sizing: border-box; margin: 0; padding: 0; }
-.receipt { font-family: system-ui, -apple-system, sans-serif; font-size: 12px; color: #111; background: white; padding: 20px; }
-.receipt h1 { font-size: 20px; font-weight: bold; margin-bottom: 4px; }
-.receipt .meta { font-size: 11px; color: #555; margin-bottom: 10px; }
-.receipt .card { border: 1px solid #d1d5db; border-radius: 6px; padding: 10px 12px; margin-bottom: 8px; page-break-inside: avoid; }
-.receipt .row { display: flex; justify-content: space-between; gap: 8px; padding: 4px 0; border-bottom: 1px solid #f3f4f6; font-size: 11px; }
-.receipt .row:last-child { border-bottom: none; }
-.receipt .row-label { color: #555; white-space: nowrap; flex-shrink: 0; }
-.receipt .row-value { font-weight: 500; text-align: right; word-break: break-all; }
-</style>
-</head>
-<body>
-<div class="test-label">TEST CASE 1: 有折讓訂單 (discountAmount=500, discountNote="VIP折扣")</div>
-<div class="test-section">
-<div class="receipt">
-<div style="text-align:center;border-bottom:2px solid #fb7185;padding-bottom:12px;margin-bottom:16px">
-  <div style="font-size:22px;font-weight:bold;color:#fb7185">PickBee 代購蜂</div>
-  <div style="font-size:16px;font-weight:600;margin-top:4px">銷貨單</div>
-  <div style="font-size:11px;color:#777;margin-top:4px">列印時間：2026/6/8 00:00:00</div>
-</div>
+  <head>
+    <meta charset="UTF-8" />
+    <title>銷貨單 QA Test — Step 8L-2-MANUAL-VQA</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        background: #f5f5f5;
+        padding: 20px;
+      }
+      .test-section {
+        background: white;
+        padding: 20px;
+        margin-bottom: 40px;
+        max-width: 400px;
+        border: 2px solid #666;
+      }
+      .test-label {
+        font-size: 14px;
+        font-weight: bold;
+        background: #333;
+        color: white;
+        padding: 6px 10px;
+        margin-bottom: 16px;
+        font-family: monospace;
+      }
+      /* Shared receipt CSS (copied from SHARED_CSS in printHelpers.ts) */
+      .receipt * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      .receipt {
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        font-size: 12px;
+        color: #111;
+        background: white;
+        padding: 20px;
+      }
+      .receipt h1 {
+        font-size: 20px;
+        font-weight: bold;
+        margin-bottom: 4px;
+      }
+      .receipt .meta {
+        font-size: 11px;
+        color: #555;
+        margin-bottom: 10px;
+      }
+      .receipt .card {
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        padding: 10px 12px;
+        margin-bottom: 8px;
+        page-break-inside: avoid;
+      }
+      .receipt .row {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 4px 0;
+        border-bottom: 1px solid #f3f4f6;
+        font-size: 11px;
+      }
+      .receipt .row:last-child {
+        border-bottom: none;
+      }
+      .receipt .row-label {
+        color: #555;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+      .receipt .row-value {
+        font-weight: 500;
+        text-align: right;
+        word-break: break-all;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="test-label">
+      TEST CASE 1: 有折讓訂單 (discountAmount=500, discountNote="VIP折扣")
+    </div>
+    <div class="test-section">
+      <div class="receipt">
+        <div
+          style="
+            text-align: center;
+            border-bottom: 2px solid #fb7185;
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+          "
+        >
+          <div style="font-size: 22px; font-weight: bold; color: #fb7185">
+            PickBee 代購蜂
+          </div>
+          <div style="font-size: 16px; font-weight: 600; margin-top: 4px">
+            銷貨單
+          </div>
+          <div style="font-size: 11px; color: #777; margin-top: 4px">
+            列印時間：2026/6/8 00:00:00
+          </div>
+        </div>
 
-<div class="card">
-  <div style="font-weight:700;font-size:12px;margin-bottom:6px;color:#555">訂單資訊</div>
-  <div class="row"><span class="row-label">訂單編號</span><span class="row-value">#101</span></div>
-  <div class="row"><span class="row-label">客戶名稱</span><span class="row-value">王小明</span></div>
-  <div class="row"><span class="row-label">客戶電話</span><span class="row-value">0912-345-678</span></div>
-  <div class="row"><span class="row-label">訂單狀態</span><span class="row-value">備貨中</span></div>
-  <div class="row"><span class="row-label">付款狀態</span><span class="row-value">部分付款</span></div>
-  <div class="row"><span class="row-label">物流方式</span><span class="row-value">宅配</span></div>
-</div>
+        <div class="card">
+          <div
+            style="
+              font-weight: 700;
+              font-size: 12px;
+              margin-bottom: 6px;
+              color: #555;
+            "
+          >
+            訂單資訊
+          </div>
+          <div class="row">
+            <span class="row-label">訂單編號</span
+            ><span class="row-value">#101</span>
+          </div>
+          <div class="row">
+            <span class="row-label">客戶名稱</span
+            ><span class="row-value">王小明</span>
+          </div>
+          <div class="row">
+            <span class="row-label">客戶電話</span
+            ><span class="row-value">0912-345-678</span>
+          </div>
+          <div class="row">
+            <span class="row-label">訂單狀態</span
+            ><span class="row-value">備貨中</span>
+          </div>
+          <div class="row">
+            <span class="row-label">付款狀態</span
+            ><span class="row-value">部分付款</span>
+          </div>
+          <div class="row">
+            <span class="row-label">物流方式</span
+            ><span class="row-value">宅配</span>
+          </div>
+        </div>
 
-<div class="card">
-  <div style="font-weight:700;font-size:12px;margin-bottom:6px;color:#555">商品明細</div>
-  <div class="row"><span class="row-label">商品名稱</span><span class="row-value">日本A5和牛禮盒</span></div>
-  <div class="row"><span class="row-label">規格</span><span class="row-value">重量: 500g</span></div>
-  <div class="row"><span class="row-label">數量</span><span class="row-value">× 2</span></div>
-  <div class="row"><span class="row-label">單價</span><span class="row-value">NT$ 3,500</span></div>
-  <div class="row"><span class="row-label">商品小計</span><span class="row-value" style="font-weight:700">NT$ 7,000</span></div>
-</div>
+        <div class="card">
+          <div
+            style="
+              font-weight: 700;
+              font-size: 12px;
+              margin-bottom: 6px;
+              color: #555;
+            "
+          >
+            商品明細
+          </div>
+          <div class="row">
+            <span class="row-label">商品名稱</span
+            ><span class="row-value">日本A5和牛禮盒</span>
+          </div>
+          <div class="row">
+            <span class="row-label">規格</span
+            ><span class="row-value">重量: 500g</span>
+          </div>
+          <div class="row">
+            <span class="row-label">數量</span
+            ><span class="row-value">× 2</span>
+          </div>
+          <div class="row">
+            <span class="row-label">單價</span
+            ><span class="row-value">NT$ 3,500</span>
+          </div>
+          <div class="row">
+            <span class="row-label">商品小計</span
+            ><span class="row-value" style="font-weight: 700">NT$ 7,000</span>
+          </div>
+        </div>
 
-<div class="card">
-  <div style="font-weight:700;font-size:12px;margin-bottom:6px;color:#555">金額明細</div>
-  <table style="width:100%;border-collapse:collapse;font-size:12px">
-    <tr><td style="color:#555;padding:4px 0">商品小計</td><td style="text-align:right;padding:4px 0">NT$ 7,000</td></tr>
-    <tr><td style="color:#555;padding:4px 0">運費</td><td style="text-align:right;padding:4px 0">NT$ 150</td></tr>
-    <tr><td style="color:#555;padding:4px 0">折讓</td><td style="text-align:right;padding:4px 0;color:#e11d48">-NT$ 500</td></tr>
-    <tr><td style="color:#555;padding:4px 0">折讓備註</td><td style="text-align:right;padding:4px 0">VIP折扣</td></tr>
-    <tr style="border-top:1px solid #d1d5db">
-      <td style="padding:6px 0;font-weight:700">訂單總額</td>
-      <td style="text-align:right;padding:6px 0;font-weight:700;font-size:14px;color:#fb7185">NT$ 6,650</td>
-    </tr>
-    <tr><td style="color:#555;padding:4px 0">已收金額</td><td style="text-align:right;padding:4px 0">NT$ 3,000</td></tr>
-    <tr>
-      <td style="padding:4px 0;font-weight:600">待收金額</td>
-      <td style="text-align:right;padding:4px 0;font-weight:600;color:#e11d48">NT$ 3,650</td>
-    </tr>
-  </table>
-</div>
+        <div class="card">
+          <div
+            style="
+              font-weight: 700;
+              font-size: 12px;
+              margin-bottom: 6px;
+              color: #555;
+            "
+          >
+            金額明細
+          </div>
+          <table
+            style="width: 100%; border-collapse: collapse; font-size: 12px"
+          >
+            <tr>
+              <td style="color: #555; padding: 4px 0">商品小計</td>
+              <td style="text-align: right; padding: 4px 0">NT$ 7,000</td>
+            </tr>
+            <tr>
+              <td style="color: #555; padding: 4px 0">運費</td>
+              <td style="text-align: right; padding: 4px 0">NT$ 150</td>
+            </tr>
+            <tr>
+              <td style="color: #555; padding: 4px 0">折讓</td>
+              <td style="text-align: right; padding: 4px 0; color: #e11d48">
+                -NT$ 500
+              </td>
+            </tr>
+            <tr>
+              <td style="color: #555; padding: 4px 0">折讓備註</td>
+              <td style="text-align: right; padding: 4px 0">VIP折扣</td>
+            </tr>
+            <tr style="border-top: 1px solid #d1d5db">
+              <td style="padding: 6px 0; font-weight: 700">訂單總額</td>
+              <td
+                style="
+                  text-align: right;
+                  padding: 6px 0;
+                  font-weight: 700;
+                  font-size: 14px;
+                  color: #fb7185;
+                "
+              >
+                NT$ 6,650
+              </td>
+            </tr>
+            <tr>
+              <td style="color: #555; padding: 4px 0">已收金額</td>
+              <td style="text-align: right; padding: 4px 0">NT$ 3,000</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; font-weight: 600">待收金額</td>
+              <td
+                style="
+                  text-align: right;
+                  padding: 4px 0;
+                  font-weight: 600;
+                  color: #e11d48;
+                "
+              >
+                NT$ 3,650
+              </td>
+            </tr>
+          </table>
+        </div>
 
-<div style="text-align:center;font-size:10px;color:#999;margin-top:20px;padding-top:10px;border-top:1px solid #e5e7eb">
-  本銷貨單由 PickBee 代購蜂管理系統產生
-</div>
-</div>
-</div>
+        <div
+          style="
+            text-align: center;
+            font-size: 10px;
+            color: #999;
+            margin-top: 20px;
+            padding-top: 10px;
+            border-top: 1px solid #e5e7eb;
+          "
+        >
+          本銷貨單由 PickBee 代購蜂管理系統產生
+        </div>
+      </div>
+    </div>
 
-<div class="test-label">TEST CASE 2: 無折讓訂單 (discountAmount=0, discountNote="")</div>
-<div class="test-section">
-<div class="receipt">
-<div style="text-align:center;border-bottom:2px solid #fb7185;padding-bottom:12px;margin-bottom:16px">
-  <div style="font-size:22px;font-weight:bold;color:#fb7185">PickBee 代購蜂</div>
-  <div style="font-size:16px;font-weight:600;margin-top:4px">銷貨單</div>
-  <div style="font-size:11px;color:#777;margin-top:4px">列印時間：2026/6/8 00:00:00</div>
-</div>
+    <div class="test-label">
+      TEST CASE 2: 無折讓訂單 (discountAmount=0, discountNote="")
+    </div>
+    <div class="test-section">
+      <div class="receipt">
+        <div
+          style="
+            text-align: center;
+            border-bottom: 2px solid #fb7185;
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+          "
+        >
+          <div style="font-size: 22px; font-weight: bold; color: #fb7185">
+            PickBee 代購蜂
+          </div>
+          <div style="font-size: 16px; font-weight: 600; margin-top: 4px">
+            銷貨單
+          </div>
+          <div style="font-size: 11px; color: #777; margin-top: 4px">
+            列印時間：2026/6/8 00:00:00
+          </div>
+        </div>
 
-<div class="card">
-  <div style="font-weight:700;font-size:12px;margin-bottom:6px;color:#555">訂單資訊</div>
-  <div class="row"><span class="row-label">訂單編號</span><span class="row-value">#202</span></div>
-  <div class="row"><span class="row-label">客戶名稱</span><span class="row-value">李美華</span></div>
-  <div class="row"><span class="row-label">客戶電話</span><span class="row-value">0987-654-321</span></div>
-  <div class="row"><span class="row-label">訂單狀態</span><span class="row-value">已完成</span></div>
-  <div class="row"><span class="row-label">付款狀態</span><span class="row-value">已付款</span></div>
-  <div class="row"><span class="row-label">物流方式</span><span class="row-value">7-11超商取貨</span></div>
-</div>
+        <div class="card">
+          <div
+            style="
+              font-weight: 700;
+              font-size: 12px;
+              margin-bottom: 6px;
+              color: #555;
+            "
+          >
+            訂單資訊
+          </div>
+          <div class="row">
+            <span class="row-label">訂單編號</span
+            ><span class="row-value">#202</span>
+          </div>
+          <div class="row">
+            <span class="row-label">客戶名稱</span
+            ><span class="row-value">李美華</span>
+          </div>
+          <div class="row">
+            <span class="row-label">客戶電話</span
+            ><span class="row-value">0987-654-321</span>
+          </div>
+          <div class="row">
+            <span class="row-label">訂單狀態</span
+            ><span class="row-value">已完成</span>
+          </div>
+          <div class="row">
+            <span class="row-label">付款狀態</span
+            ><span class="row-value">已付款</span>
+          </div>
+          <div class="row">
+            <span class="row-label">物流方式</span
+            ><span class="row-value">7-11超商取貨</span>
+          </div>
+        </div>
 
-<div class="card">
-  <div style="font-weight:700;font-size:12px;margin-bottom:6px;color:#555">商品明細</div>
-  <div class="row"><span class="row-label">商品名稱</span><span class="row-value">台灣高山茶葉禮盒</span></div>
-  <div class="row"><span class="row-label">數量</span><span class="row-value">× 1</span></div>
-  <div class="row"><span class="row-label">單價</span><span class="row-value">NT$ 1,200</span></div>
-  <div class="row"><span class="row-label">商品小計</span><span class="row-value" style="font-weight:700">NT$ 1,200</span></div>
-</div>
+        <div class="card">
+          <div
+            style="
+              font-weight: 700;
+              font-size: 12px;
+              margin-bottom: 6px;
+              color: #555;
+            "
+          >
+            商品明細
+          </div>
+          <div class="row">
+            <span class="row-label">商品名稱</span
+            ><span class="row-value">台灣高山茶葉禮盒</span>
+          </div>
+          <div class="row">
+            <span class="row-label">數量</span
+            ><span class="row-value">× 1</span>
+          </div>
+          <div class="row">
+            <span class="row-label">單價</span
+            ><span class="row-value">NT$ 1,200</span>
+          </div>
+          <div class="row">
+            <span class="row-label">商品小計</span
+            ><span class="row-value" style="font-weight: 700">NT$ 1,200</span>
+          </div>
+        </div>
 
-<div class="card">
-  <div style="font-weight:700;font-size:12px;margin-bottom:6px;color:#555">金額明細</div>
-  <table style="width:100%;border-collapse:collapse;font-size:12px">
-    <tr><td style="color:#555;padding:4px 0">商品小計</td><td style="text-align:right;padding:4px 0">NT$ 1,200</td></tr>
-    <tr><td style="color:#555;padding:4px 0">運費</td><td style="text-align:right;padding:4px 0">NT$ 60</td></tr>
-    <!-- 折讓列不顯示 (discountAmount=0) -->
-    <!-- 折讓備註不顯示 (discountNote="") -->
-    <tr style="border-top:1px solid #d1d5db">
-      <td style="padding:6px 0;font-weight:700">訂單總額</td>
-      <td style="text-align:right;padding:6px 0;font-weight:700;font-size:14px;color:#fb7185">NT$ 1,260</td>
-    </tr>
-    <tr><td style="color:#555;padding:4px 0">已收金額</td><td style="text-align:right;padding:4px 0">NT$ 1,260</td></tr>
-    <tr>
-      <td style="padding:4px 0;font-weight:600">待收金額</td>
-      <td style="text-align:right;padding:4px 0;font-weight:600;color:#e11d48">NT$ 0</td>
-    </tr>
-  </table>
-</div>
+        <div class="card">
+          <div
+            style="
+              font-weight: 700;
+              font-size: 12px;
+              margin-bottom: 6px;
+              color: #555;
+            "
+          >
+            金額明細
+          </div>
+          <table
+            style="width: 100%; border-collapse: collapse; font-size: 12px"
+          >
+            <tr>
+              <td style="color: #555; padding: 4px 0">商品小計</td>
+              <td style="text-align: right; padding: 4px 0">NT$ 1,200</td>
+            </tr>
+            <tr>
+              <td style="color: #555; padding: 4px 0">運費</td>
+              <td style="text-align: right; padding: 4px 0">NT$ 60</td>
+            </tr>
+            <!-- 折讓列不顯示 (discountAmount=0) -->
+            <!-- 折讓備註不顯示 (discountNote="") -->
+            <tr style="border-top: 1px solid #d1d5db">
+              <td style="padding: 6px 0; font-weight: 700">訂單總額</td>
+              <td
+                style="
+                  text-align: right;
+                  padding: 6px 0;
+                  font-weight: 700;
+                  font-size: 14px;
+                  color: #fb7185;
+                "
+              >
+                NT$ 1,260
+              </td>
+            </tr>
+            <tr>
+              <td style="color: #555; padding: 4px 0">已收金額</td>
+              <td style="text-align: right; padding: 4px 0">NT$ 1,260</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; font-weight: 600">待收金額</td>
+              <td
+                style="
+                  text-align: right;
+                  padding: 4px 0;
+                  font-weight: 600;
+                  color: #e11d48;
+                "
+              >
+                NT$ 0
+              </td>
+            </tr>
+          </table>
+        </div>
 
-<div style="text-align:center;font-size:10px;color:#999;margin-top:20px;padding-top:10px;border-top:1px solid #e5e7eb">
-  本銷貨單由 PickBee 代購蜂管理系統產生
-</div>
-</div>
-</div>
-
-</body>
+        <div
+          style="
+            text-align: center;
+            font-size: 10px;
+            color: #999;
+            margin-top: 20px;
+            padding-top: 10px;
+            border-top: 1px solid #e5e7eb;
+          "
+        >
+          本銷貨單由 PickBee 代購蜂管理系統產生
+        </div>
+      </div>
+    </div>
+  </body>
 </html>

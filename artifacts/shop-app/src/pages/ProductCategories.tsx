@@ -17,7 +17,13 @@ export default function ProductCategoriesPage() {
   const storeId = store?.id;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: categories, isLoading, isError } = useListProductCategories(storeId ?? 0, { query: { enabled: !!storeId } as any });
+  const {
+    data: categories,
+    isLoading,
+    isError,
+  } = useListProductCategories(storeId ?? 0, {
+    query: { enabled: !!storeId } as any,
+  });
   const createCategory = useCreateProductCategory();
   const updateCategory = useUpdateProductCategory();
   const deleteCategory = useDeleteProductCategory();
@@ -32,11 +38,16 @@ export default function ProductCategoriesPage() {
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   const invalidate = () =>
-    qc.invalidateQueries({ queryKey: getListProductCategoriesQueryKey(storeId!) });
+    qc.invalidateQueries({
+      queryKey: getListProductCategoriesQueryKey(storeId!),
+    });
 
   const handleCreate = async () => {
     const name = newName.trim();
-    if (!name) { setCreateError("請輸入分類名稱"); return; }
+    if (!name) {
+      setCreateError("請輸入分類名稱");
+      return;
+    }
     setIsCreating(true);
     setCreateError("");
     try {
@@ -44,7 +55,9 @@ export default function ProductCategoriesPage() {
       setNewName("");
       await invalidate();
     } catch (err: any) {
-      setCreateError(err?.response?.data?.error ?? err?.message ?? "新增失敗，請稍後再試");
+      setCreateError(
+        err?.response?.data?.error ?? err?.message ?? "新增失敗，請稍後再試",
+      );
     } finally {
       setIsCreating(false);
     }
@@ -64,33 +77,48 @@ export default function ProductCategoriesPage() {
 
   const handleSaveEdit = async (categoryId: number) => {
     const name = editingName.trim();
-    if (!name) { setEditError("分類名稱不可空白"); return; }
+    if (!name) {
+      setEditError("分類名稱不可空白");
+      return;
+    }
     setIsSavingEdit(true);
     setEditError("");
     try {
-      await updateCategory.mutateAsync({ storeId: storeId!, categoryId, data: { name } });
+      await updateCategory.mutateAsync({
+        storeId: storeId!,
+        categoryId,
+        data: { name },
+      });
       cancelEdit();
       await invalidate();
     } catch (err: any) {
-      setEditError(err?.response?.data?.error ?? err?.message ?? "儲存失敗，請稍後再試");
+      setEditError(
+        err?.response?.data?.error ?? err?.message ?? "儲存失敗，請稍後再試",
+      );
     } finally {
       setIsSavingEdit(false);
     }
   };
 
   const handleDelete = async (categoryId: number, name: string) => {
-    if (!confirm(`確定刪除「${name}」？\n\n刪除分類不會刪除商品，商品會變成未分類。`)) return;
+    if (
+      !confirm(
+        `確定刪除「${name}」？\n\n刪除分類不會刪除商品，商品會變成未分類。`,
+      )
+    )
+      return;
     try {
       await deleteCategory.mutateAsync({ storeId: storeId!, categoryId });
       await invalidate();
     } catch (err: any) {
-      alert(err?.response?.data?.error ?? err?.message ?? "刪除失敗，請稍後再試");
+      alert(
+        err?.response?.data?.error ?? err?.message ?? "刪除失敗，請稍後再試",
+      );
     }
   };
 
   return (
     <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-16">
-
       {/* Header */}
       <header className="bg-white border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10 flex items-center gap-3">
         <button
@@ -103,12 +131,13 @@ export default function ProductCategoriesPage() {
         </button>
         <div>
           <h1 className="text-xl font-bold text-foreground">商品分類</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">新增後可在商品表單的主分類欄位選擇</p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            新增後可在商品表單的主分類欄位選擇
+          </p>
         </div>
       </header>
 
       <div className="px-5 py-5 space-y-4">
-
         {/* 新增分類 */}
         <div className="bg-white rounded-2xl border border-border p-4 space-y-3">
           <p className="text-sm font-semibold text-foreground">新增分類</p>
@@ -116,8 +145,13 @@ export default function ProductCategoriesPage() {
             <input
               type="text"
               value={newName}
-              onChange={(e) => { setNewName(e.target.value); setCreateError(""); }}
-              onKeyDown={(e) => { if (e.key === "Enter") void handleCreate(); }}
+              onChange={(e) => {
+                setNewName(e.target.value);
+                setCreateError("");
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") void handleCreate();
+              }}
               placeholder="分類名稱，如：冷凍食品"
               maxLength={80}
               className="flex-1 h-11 px-4 rounded-xl border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
@@ -155,12 +189,18 @@ export default function ProductCategoriesPage() {
             </div>
           ) : isError ? (
             <div className="px-4 py-6 text-center">
-              <p className="text-sm text-destructive">載入分類失敗，請稍後再試</p>
+              <p className="text-sm text-destructive">
+                載入分類失敗，請稍後再試
+              </p>
             </div>
           ) : !categories || categories.length === 0 ? (
             <div className="px-4 py-8 text-center">
-              <p className="text-sm font-medium text-foreground">尚未建立分類</p>
-              <p className="text-xs text-muted-foreground mt-1">新增第一個分類，讓商品更好管理</p>
+              <p className="text-sm font-medium text-foreground">
+                尚未建立分類
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                新增第一個分類，讓商品更好管理
+              </p>
             </div>
           ) : (
             <ul className="divide-y divide-border">
@@ -172,7 +212,10 @@ export default function ProductCategoriesPage() {
                       <input
                         type="text"
                         value={editingName}
-                        onChange={(e) => { setEditingName(e.target.value); setEditError(""); }}
+                        onChange={(e) => {
+                          setEditingName(e.target.value);
+                          setEditError("");
+                        }}
                         onKeyDown={(e) => {
                           if (e.key === "Enter") void handleSaveEdit(cat.id);
                           if (e.key === "Escape") cancelEdit();
@@ -181,7 +224,9 @@ export default function ProductCategoriesPage() {
                         autoFocus
                         className="w-full h-10 px-3 rounded-xl border border-primary bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                       />
-                      {editError && <p className="text-xs text-destructive">{editError}</p>}
+                      {editError && (
+                        <p className="text-xs text-destructive">{editError}</p>
+                      )}
                       <div className="flex gap-2">
                         <button
                           type="button"

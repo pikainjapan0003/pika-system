@@ -7,7 +7,11 @@ import {
   getListOrdersQueryKey,
   ShippingMethod,
 } from "@workspace/api-client-react";
-import { isFamilyMartMethod, isSevenElevenMethod, getShippingFee } from "@/lib/cvs711";
+import {
+  isFamilyMartMethod,
+  isSevenElevenMethod,
+  getShippingFee,
+} from "@/lib/cvs711";
 import { combineRecipientAddress } from "@/lib/taiwanZipcodes";
 import { RecipientAddressFields } from "@/components/RecipientAddressFields";
 import sevenElevenLogo from "@/assets/logistics/seven-eleven-logo-official.png";
@@ -27,11 +31,7 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { filterCustomerOptions } from "@/lib/customerPicker";
 import { formatShippingFeeLabel } from "@workspace/shipping";
-import {
-  Sheet,
-  SheetContent,
-  SheetClose,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetClose } from "@/components/ui/sheet";
 
 interface Props {
   storeId: number;
@@ -46,23 +46,34 @@ const SELECT =
 const ERR = "text-xs text-destructive mt-1";
 
 // 與 EditOrderDialog 完全相同的取貨方式卡片選項（文案 / 順序 / 運費標示一致）
-const SHIPPING_CARD_OPTIONS: Array<{ value: string; label: string; sub?: string }> = [
-  { value: "自取",                   label: "面交 / 自取" },
-  { value: "7-11 取貨（先付款）",     label: "7-11",     sub: "取貨（先付款）" },
-  { value: "7-11 貨到付款",          label: "7-11",     sub: "貨到付款" },
-  { value: "全家取貨（先付款）",      label: "全家",     sub: "取貨（先付款）" },
-  { value: "全家貨到付款",           label: "全家",     sub: "貨到付款" },
-  { value: "黑貓宅急便",             label: "黑貓宅急便" },
-  { value: "郵局宅配",               label: "郵局宅配" },
+const SHIPPING_CARD_OPTIONS: Array<{
+  value: string;
+  label: string;
+  sub?: string;
+}> = [
+  { value: "自取", label: "面交 / 自取" },
+  { value: "7-11 取貨（先付款）", label: "7-11", sub: "取貨（先付款）" },
+  { value: "7-11 貨到付款", label: "7-11", sub: "貨到付款" },
+  { value: "全家取貨（先付款）", label: "全家", sub: "取貨（先付款）" },
+  { value: "全家貨到付款", label: "全家", sub: "貨到付款" },
+  { value: "黑貓宅急便", label: "黑貓宅急便" },
+  { value: "郵局宅配", label: "郵局宅配" },
 ];
 
-type FulfillmentCategory = "self_pickup" | "cvs_711" | "cvs_family" | "home_black_cat" | "home_post" | "other";
+type FulfillmentCategory =
+  | "self_pickup"
+  | "cvs_711"
+  | "cvs_family"
+  | "home_black_cat"
+  | "home_post"
+  | "other";
 
 function getFulfillmentCategory(method: string): FulfillmentCategory {
   const m = method.trim();
   if (!m) return "other";
   if (m === "自取" || m === "面交") return "self_pickup";
-  if (m.startsWith("7-11") || m.includes("711") || m.includes("統一")) return "cvs_711";
+  if (m.startsWith("7-11") || m.includes("711") || m.includes("統一"))
+    return "cvs_711";
   if (m.startsWith("全家")) return "cvs_family";
   if (m.includes("黑貓") || m.includes("宅急便")) return "home_black_cat";
   if (m.includes("郵局")) return "home_post";
@@ -94,14 +105,18 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
   const { getToken } = useAuth();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: products } = useListProducts(storeId, { query: { enabled: open && !!storeId } as any });
+  const { data: products } = useListProducts(storeId, {
+    query: { enabled: open && !!storeId } as any,
+  });
   const createOrder = useCreateMerchantOrder();
 
   const [productId, setProductId] = useState<number | "">("");
   const [customerId, setCustomerId] = useState<number | "">("");
   const [customers, setCustomers] = useState<CustomerOption[]>([]);
   const [customerSearch, setCustomerSearch] = useState("");
-  const [cvsSelectionSource, setCvsSelectionSource] = useState<"customer" | "manual" | null>(null);
+  const [cvsSelectionSource, setCvsSelectionSource] = useState<
+    "customer" | "manual" | null
+  >(null);
   const [buyerName, setBuyerName] = useState("");
   const [buyerPhone, setBuyerPhone] = useState("");
   const [quantity, setQuantity] = useState(1);
@@ -124,10 +139,16 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
   const [cvsStoreAddress, setCvsStoreAddress] = useState("");
   const [cvsStorePhone, setCvsStorePhone] = useState("");
   // CVS store picker
-  const [cvsPickerProvider, setCvsPickerProvider] = useState<"seven" | "family">("seven");
+  const [cvsPickerProvider, setCvsPickerProvider] = useState<
+    "seven" | "family"
+  >("seven");
   const [cvsSearchQuery, setCvsSearchQuery] = useState("");
-  const [cvsSearchStatus, setCvsSearchStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
-  const [cvsSearchResults, setCvsSearchResults] = useState<CvsStoreResult[]>([]);
+  const [cvsSearchStatus, setCvsSearchStatus] = useState<
+    "idle" | "loading" | "success" | "error"
+  >("idle");
+  const [cvsSearchResults, setCvsSearchResults] = useState<CvsStoreResult[]>(
+    [],
+  );
   const [cvsSearchError, setCvsSearchError] = useState("");
 
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -135,10 +156,15 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
 
   const activeProducts = (products ?? []).filter((p) => p.isActive);
   const matchingCustomers = filterCustomerOptions(customers, customerSearch);
-  const selectedCustomer = customerId === "" ? null : customers.find((customer) => customer.id === customerId) ?? null;
-  const visibleCustomers = selectedCustomer && !matchingCustomers.some((customer) => customer.id === selectedCustomer.id)
-    ? [selectedCustomer, ...matchingCustomers]
-    : matchingCustomers;
+  const selectedCustomer =
+    customerId === ""
+      ? null
+      : (customers.find((customer) => customer.id === customerId) ?? null);
+  const visibleCustomers =
+    selectedCustomer &&
+    !matchingCustomers.some((customer) => customer.id === selectedCustomer.id)
+      ? [selectedCustomer, ...matchingCustomers]
+      : matchingCustomers;
   const selectedProduct = activeProducts.find((p) => p.id === productId);
   const unitPrice = selectedProduct ? Number(selectedProduct.price) : 0;
   const totalPreview = unitPrice * quantity;
@@ -151,14 +177,19 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
       const response = await fetch(`/api/stores/${storeId}/customers`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
-      if (response.ok) setCustomers(await response.json() as CustomerOption[]);
+      if (response.ok)
+        setCustomers((await response.json()) as CustomerOption[]);
     })();
   }, [getToken, open, storeId]);
 
   const fulfillmentCat = getFulfillmentCategory(pickupMethod);
 
   const clearFieldError = (key: string) =>
-    setFieldErrors((prev) => { const n = { ...prev }; delete n[key]; return n; });
+    setFieldErrors((prev) => {
+      const n = { ...prev };
+      delete n[key];
+      return n;
+    });
 
   const handleCvsReset = () => {
     setStoreCode("");
@@ -207,7 +238,11 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
     const cat = getFulfillmentCategory(value);
     if (cat === "cvs_family") setCvsPickerProvider("family");
     else if (cat === "cvs_711") setCvsPickerProvider("seven");
-    if (cat === "self_pickup" || cat === "home_black_cat" || cat === "home_post") {
+    if (
+      cat === "self_pickup" ||
+      cat === "home_black_cat" ||
+      cat === "home_post"
+    ) {
       handleCvsReset();
     }
     if (cat === "self_pickup" || cat === "cvs_711" || cat === "cvs_family") {
@@ -225,10 +260,14 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
     setCvsSearchStatus("loading");
     setCvsSearchError("");
     try {
-      const qs = new URLSearchParams({ provider: cvsPickerProvider, q, limit: "20" });
+      const qs = new URLSearchParams({
+        provider: cvsPickerProvider,
+        q,
+        limit: "20",
+      });
       const resp = await fetch(`/api/cvs/stores?${qs}`);
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      const json = await resp.json() as { stores: CvsStoreResult[] };
+      const json = (await resp.json()) as { stores: CvsStoreResult[] };
       setCvsSearchResults(json.stores ?? []);
       setCvsSearchStatus("success");
     } catch {
@@ -252,7 +291,8 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
     if (!productId) errs.productId = "請選擇商品";
     if (!buyerName.trim()) errs.buyerName = "請輸入買家姓名";
     if (!buyerPhone.trim()) errs.buyerPhone = "請輸入電話";
-    if (!quantity || quantity < 1 || !Number.isInteger(quantity)) errs.quantity = "數量至少為 1";
+    if (!quantity || quantity < 1 || !Number.isInteger(quantity))
+      errs.quantity = "數量至少為 1";
     if (!pickupMethod.trim()) errs.pickupMethod = "請選擇取貨方式";
     const cat = getFulfillmentCategory(pickupMethod);
     if (cat === "cvs_family" && !storeCode) errs.cvsStore = "請先選擇全家門市";
@@ -261,11 +301,18 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
       if (!recipientName.trim()) errs.recipientName = "請輸入收件人";
       if (!recipientPhone.trim()) errs.recipientPhone = "請輸入收件電話";
     }
-    if ((cat === "home_black_cat" || cat === "home_post") && (!addrCity || !addrDistrict || !addrLine.trim())) {
+    if (
+      (cat === "home_black_cat" || cat === "home_post") &&
+      (!addrCity || !addrDistrict || !addrLine.trim())
+    ) {
       errs.recipientAddress = "請完整填寫收件地址";
     }
     // 面交 / 自取：地點選填，但填了詳細地點就要先選縣市與行政區
-    if (cat === "self_pickup" && addrLine.trim() && (!addrCity || !addrDistrict)) {
+    if (
+      cat === "self_pickup" &&
+      addrLine.trim() &&
+      (!addrCity || !addrDistrict)
+    ) {
       errs.recipientAddress = "請先選擇縣市與行政區";
     }
     setFieldErrors(errs);
@@ -279,10 +326,13 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
     const isCvs = cat === "cvs_711" || cat === "cvs_family";
     const isHome = cat === "home_black_cat" || cat === "home_post";
     const shippingMethod =
-      cat === "self_pickup" ? ShippingMethod.self_pickup :
-      isCvs ? ShippingMethod.convenience_store :
-      isHome ? ShippingMethod.home_delivery :
-      ShippingMethod.other;
+      cat === "self_pickup"
+        ? ShippingMethod.self_pickup
+        : isCvs
+          ? ShippingMethod.convenience_store
+          : isHome
+            ? ShippingMethod.home_delivery
+            : ShippingMethod.other;
     try {
       await createOrder.mutateAsync({
         storeId,
@@ -297,19 +347,30 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
           specValues: {},
           shippingMethod,
           recipientName: sameAsBuyer ? buyerName.trim() : recipientName.trim(),
-          recipientPhone: sameAsBuyer ? buyerPhone.trim() : recipientPhone.trim(),
+          recipientPhone: sameAsBuyer
+            ? buyerPhone.trim()
+            : recipientPhone.trim(),
           recipientAddress: isHome
             ? combineRecipientAddress(addrZip, addrCity, addrDistrict, addrLine)
-            : (cat === "self_pickup" && addrCity && addrDistrict)
-              ? combineRecipientAddress(addrZip, addrCity, addrDistrict, addrLine)
+            : cat === "self_pickup" && addrCity && addrDistrict
+              ? combineRecipientAddress(
+                  addrZip,
+                  addrCity,
+                  addrDistrict,
+                  addrLine,
+                )
               : null,
-          ...(isCvs && cvsSelectionSource !== "customer" ? {
-            storeCode: storeCode || null,
-            storeName: storeName || null,
-            cvsStoreAddress: cvsStoreAddress || null,
-            cvsStorePhone: cvsStorePhone || null,
-          } : {}),
-          ...(isCvs && cvsSelectionSource === "manual" && storeCode ? { storeSelectedBy: "admin" as const } : {}),
+          ...(isCvs && cvsSelectionSource !== "customer"
+            ? {
+                storeCode: storeCode || null,
+                storeName: storeName || null,
+                cvsStoreAddress: cvsStoreAddress || null,
+                cvsStorePhone: cvsStorePhone || null,
+              }
+            : {}),
+          ...(isCvs && cvsSelectionSource === "manual" && storeCode
+            ? { storeSelectedBy: "admin" as const }
+            : {}),
         } as any,
       });
       toast({ title: "已新增訂單", description: "訂單狀態為待確認" });
@@ -323,7 +384,12 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
   };
 
   return (
-    <Sheet open={open} onOpenChange={(v) => { if (!v) handleClose(); }}>
+    <Sheet
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) handleClose();
+      }}
+    >
       <SheetContent
         side="bottom"
         className="max-w-[480px] mx-auto rounded-t-2xl p-0 flex flex-col overflow-hidden"
@@ -337,7 +403,6 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
 
         {/* Scrollable form body */}
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4 bg-secondary/20">
-
           {/* 客戶 */}
           <div className="space-y-1.5">
             <SectionTitle>客戶（選填）</SectionTitle>
@@ -354,7 +419,9 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
                 className={SELECT}
                 value={customerId === "" ? "" : String(customerId)}
                 onChange={(event) => {
-                  const nextId = event.target.value ? Number(event.target.value) : "";
+                  const nextId = event.target.value
+                    ? Number(event.target.value)
+                    : "";
                   setCustomerId(nextId);
                   const customer = customers.find((item) => item.id === nextId);
                   if (!customer) {
@@ -381,13 +448,21 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
               >
                 <option value="">不綁定客戶</option>
                 {visibleCustomers.map((customer) => (
-                  <option key={customer.id} value={customer.id}>{customer.code} · {customer.name}</option>
+                  <option key={customer.id} value={customer.id}>
+                    {customer.code} · {customer.name}
+                  </option>
                 ))}
               </select>
-              {customerSearch.trim() && matchingCustomers.length === 0 && !selectedCustomer && (
-                <p className="text-xs text-muted-foreground">找不到符合的客戶；可清除搜尋後查看全部。</p>
-              )}
-              <p className="text-xs text-muted-foreground mt-1">選擇後會帶入姓名、手機與常用門市；仍可手動修改。</p>
+              {customerSearch.trim() &&
+                matchingCustomers.length === 0 &&
+                !selectedCustomer && (
+                  <p className="text-xs text-muted-foreground">
+                    找不到符合的客戶；可清除搜尋後查看全部。
+                  </p>
+                )}
+              <p className="text-xs text-muted-foreground mt-1">
+                選擇後會帶入姓名、手機與常用門市；仍可手動修改。
+              </p>
             </FormSection>
           </div>
 
@@ -413,7 +488,9 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
                     </option>
                   ))}
                 </select>
-                {fieldErrors.productId && <p className={ERR}>{fieldErrors.productId}</p>}
+                {fieldErrors.productId && (
+                  <p className={ERR}>{fieldErrors.productId}</p>
+                )}
               </div>
             </FormSection>
           </div>
@@ -429,9 +506,14 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
                   className={INPUT}
                   placeholder="請輸入買家姓名"
                   value={buyerName}
-                  onChange={(e) => { setBuyerName(e.target.value); clearFieldError("buyerName"); }}
+                  onChange={(e) => {
+                    setBuyerName(e.target.value);
+                    clearFieldError("buyerName");
+                  }}
                 />
-                {fieldErrors.buyerName && <p className={ERR}>{fieldErrors.buyerName}</p>}
+                {fieldErrors.buyerName && (
+                  <p className={ERR}>{fieldErrors.buyerName}</p>
+                )}
               </div>
               <div>
                 <FieldLabel icon={Phone}>買家電話 *</FieldLabel>
@@ -440,9 +522,14 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
                   className={INPUT}
                   placeholder="請輸入電話"
                   value={buyerPhone}
-                  onChange={(e) => { setBuyerPhone(e.target.value); clearFieldError("buyerPhone"); }}
+                  onChange={(e) => {
+                    setBuyerPhone(e.target.value);
+                    clearFieldError("buyerPhone");
+                  }}
                 />
-                {fieldErrors.buyerPhone && <p className={ERR}>{fieldErrors.buyerPhone}</p>}
+                {fieldErrors.buyerPhone && (
+                  <p className={ERR}>{fieldErrors.buyerPhone}</p>
+                )}
               </div>
             </FormSection>
           </div>
@@ -476,9 +563,14 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
                   placeholder="請輸入收件人姓名"
                   value={sameAsBuyer ? buyerName : recipientName}
                   readOnly={sameAsBuyer}
-                  onChange={(e) => { setRecipientName(e.target.value); clearFieldError("recipientName"); }}
+                  onChange={(e) => {
+                    setRecipientName(e.target.value);
+                    clearFieldError("recipientName");
+                  }}
                 />
-                {fieldErrors.recipientName && <p className={ERR}>{fieldErrors.recipientName}</p>}
+                {fieldErrors.recipientName && (
+                  <p className={ERR}>{fieldErrors.recipientName}</p>
+                )}
               </div>
               <div>
                 <FieldLabel icon={Phone}>收件電話 *</FieldLabel>
@@ -488,9 +580,14 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
                   placeholder="請輸入收件電話"
                   value={sameAsBuyer ? buyerPhone : recipientPhone}
                   readOnly={sameAsBuyer}
-                  onChange={(e) => { setRecipientPhone(e.target.value); clearFieldError("recipientPhone"); }}
+                  onChange={(e) => {
+                    setRecipientPhone(e.target.value);
+                    clearFieldError("recipientPhone");
+                  }}
                 />
-                {fieldErrors.recipientPhone && <p className={ERR}>{fieldErrors.recipientPhone}</p>}
+                {fieldErrors.recipientPhone && (
+                  <p className={ERR}>{fieldErrors.recipientPhone}</p>
+                )}
               </div>
             </FormSection>
           </div>
@@ -513,7 +610,9 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
                     clearFieldError("quantity");
                   }}
                 />
-                {fieldErrors.quantity && <p className={ERR}>{fieldErrors.quantity}</p>}
+                {fieldErrors.quantity && (
+                  <p className={ERR}>{fieldErrors.quantity}</p>
+                )}
               </div>
             </FormSection>
           </div>
@@ -538,99 +637,234 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
                             : "bg-white border-border hover:border-primary/40 hover:bg-primary/5"
                         }`}
                       >
-                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
-                          isSelected ? "border-primary" : "border-muted-foreground/40"
-                        }`}>
-                          {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-primary" />}
+                        <div
+                          className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+                            isSelected
+                              ? "border-primary"
+                              : "border-muted-foreground/40"
+                          }`}
+                        >
+                          {isSelected && (
+                            <div className="w-2.5 h-2.5 rounded-full bg-primary" />
+                          )}
                         </div>
                         <PickupMethodLogo method={opt.value} />
                         <span className="flex-1 min-w-0">
-                          <span className={`block text-sm font-semibold leading-snug ${isSelected ? "text-primary" : "text-foreground"}`}>
+                          <span
+                            className={`block text-sm font-semibold leading-snug ${isSelected ? "text-primary" : "text-foreground"}`}
+                          >
                             {opt.label}
                           </span>
                           {opt.sub && (
-                            <span className={`block text-xs leading-snug ${isSelected ? "text-primary/80" : "text-muted-foreground"}`}>
+                            <span
+                              className={`block text-xs leading-snug ${isSelected ? "text-primary/80" : "text-muted-foreground"}`}
+                            >
                               {opt.sub}
                             </span>
                           )}
                         </span>
-                        <span className={`text-sm font-semibold shrink-0 ${isSelected ? "text-primary" : "text-muted-foreground"}`}>
+                        <span
+                          className={`text-sm font-semibold shrink-0 ${isSelected ? "text-primary" : "text-muted-foreground"}`}
+                        >
                           {formatShippingFeeLabel(opt.value)}
                         </span>
                       </button>
                       {isSelected && (
                         <div className="mt-2">
-                          {(isSevenElevenMethod(opt.value) || isFamilyMartMethod(opt.value)) && (
-                            <div className={`rounded-2xl px-4 py-3 space-y-2 border ${cvsStoreAddress ? "bg-green-50/30 border-green-200" : "bg-white border-border"}`}>
+                          {(isSevenElevenMethod(opt.value) ||
+                            isFamilyMartMethod(opt.value)) && (
+                            <div
+                              className={`rounded-2xl px-4 py-3 space-y-2 border ${cvsStoreAddress ? "bg-green-50/30 border-green-200" : "bg-white border-border"}`}
+                            >
                               {cvsStoreAddress ? (
                                 <>
                                   <div className="flex items-center gap-1.5">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5 text-green-600 shrink-0">
-                                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" />
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      viewBox="0 0 20 20"
+                                      fill="currentColor"
+                                      className="w-3.5 h-3.5 text-green-600 shrink-0"
+                                    >
+                                      <path
+                                        fillRule="evenodd"
+                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
+                                        clipRule="evenodd"
+                                      />
                                     </svg>
-                                    <span className="text-xs font-semibold text-green-700">已選取門市</span>
+                                    <span className="text-xs font-semibold text-green-700">
+                                      已選取門市
+                                    </span>
                                   </div>
                                   <div className="flex items-start justify-between gap-2">
-                                    <span className="text-sm font-semibold text-foreground">{storeName || storeCode}</span>
-                                    <button type="button" onClick={handleCvsReset} className="shrink-0 text-xs font-medium text-primary border border-primary/30 px-2.5 py-1 rounded-lg">重選</button>
+                                    <span className="text-sm font-semibold text-foreground">
+                                      {storeName || storeCode}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={handleCvsReset}
+                                      className="shrink-0 text-xs font-medium text-primary border border-primary/30 px-2.5 py-1 rounded-lg"
+                                    >
+                                      重選
+                                    </button>
                                   </div>
-                                  <div className="text-xs text-muted-foreground">{cvsStoreAddress}</div>
-                                  <div className="text-xs text-muted-foreground/70">門市編號：{storeCode}</div>
-                                  {cvsStorePhone && <div className="text-xs text-muted-foreground/70">電話：{cvsStorePhone}</div>}
-                                  <div className="text-xs text-muted-foreground/50">門市資料可能因超商更新而異動，實際資訊以超商公告為準。</div>
+                                  <div className="text-xs text-muted-foreground">
+                                    {cvsStoreAddress}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground/70">
+                                    門市編號：{storeCode}
+                                  </div>
+                                  {cvsStorePhone && (
+                                    <div className="text-xs text-muted-foreground/70">
+                                      電話：{cvsStorePhone}
+                                    </div>
+                                  )}
+                                  <div className="text-xs text-muted-foreground/50">
+                                    門市資料可能因超商更新而異動，實際資訊以超商公告為準。
+                                  </div>
                                 </>
                               ) : (
                                 <>
-                                  <p className="text-xs font-semibold text-foreground">{isFamilyMartMethod(opt.value) ? "全家門市" : "7-11 門市"}</p>
-                                  <p className="text-xs text-muted-foreground">請選擇取貨門市</p>
+                                  <p className="text-xs font-semibold text-foreground">
+                                    {isFamilyMartMethod(opt.value)
+                                      ? "全家門市"
+                                      : "7-11 門市"}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    請選擇取貨門市
+                                  </p>
                                   <div className="flex gap-1.5">
-                                    <input type="text" className={`${INPUT} flex-1`} placeholder="輸入門市名稱或地址關鍵字" value={cvsSearchQuery} onChange={(e) => setCvsSearchQuery(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && cvsSearchStatus !== "loading") { e.preventDefault(); void handleCvsSearch(); } }} />
-                                    <button type="button" onClick={() => void handleCvsSearch()} disabled={!cvsSearchQuery.trim() || cvsSearchStatus === "loading"} className="h-9 px-3 rounded-xl bg-primary text-white text-xs font-medium disabled:opacity-50 shrink-0">{cvsSearchStatus === "loading" ? "搜尋中…" : "搜尋"}</button>
+                                    <input
+                                      type="text"
+                                      className={`${INPUT} flex-1`}
+                                      placeholder="輸入門市名稱或地址關鍵字"
+                                      value={cvsSearchQuery}
+                                      onChange={(e) =>
+                                        setCvsSearchQuery(e.target.value)
+                                      }
+                                      onKeyDown={(e) => {
+                                        if (
+                                          e.key === "Enter" &&
+                                          cvsSearchStatus !== "loading"
+                                        ) {
+                                          e.preventDefault();
+                                          void handleCvsSearch();
+                                        }
+                                      }}
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => void handleCvsSearch()}
+                                      disabled={
+                                        !cvsSearchQuery.trim() ||
+                                        cvsSearchStatus === "loading"
+                                      }
+                                      className="h-9 px-3 rounded-xl bg-primary text-white text-xs font-medium disabled:opacity-50 shrink-0"
+                                    >
+                                      {cvsSearchStatus === "loading"
+                                        ? "搜尋中…"
+                                        : "搜尋"}
+                                    </button>
                                   </div>
-                                  {cvsSearchStatus === "idle" && <p className="text-[11px] text-muted-foreground/60 text-center py-1">尚未搜尋</p>}
-                                  {cvsSearchStatus === "error" && <p className="text-xs text-destructive py-1">{cvsSearchError}</p>}
-                                  {cvsSearchStatus === "success" && cvsSearchResults.length === 0 && <p className="text-[11px] text-muted-foreground/60 text-center py-1">查無符合門市，請換關鍵字再試</p>}
-                                  {cvsSearchStatus === "success" && cvsSearchResults.length > 0 && (
-                                    <div className="border border-border rounded-xl overflow-hidden max-h-44 overflow-y-auto">
-                                      {cvsSearchResults.map((s) => (
-                                        <div key={`${s.provider}-${s.storeId}`} className="flex items-start justify-between gap-2 px-3 py-2 border-b border-border last:border-b-0">
-                                          <div className="flex-1 min-w-0">
-                                            <div className="text-xs font-medium text-foreground">{s.storeName}</div>
-                                            <div className="text-[11px] text-muted-foreground">{s.storeAddress}</div>
-                                            {s.storePhone && <div className="text-[11px] text-muted-foreground">{s.storePhone}</div>}
-                                          </div>
-                                          <button type="button" onClick={() => handleCvsStoreSelect(s)} className="shrink-0 h-7 px-2.5 rounded-lg bg-primary text-white text-[11px] font-medium">選擇</button>
-                                        </div>
-                                      ))}
-                                    </div>
+                                  {cvsSearchStatus === "idle" && (
+                                    <p className="text-[11px] text-muted-foreground/60 text-center py-1">
+                                      尚未搜尋
+                                    </p>
                                   )}
+                                  {cvsSearchStatus === "error" && (
+                                    <p className="text-xs text-destructive py-1">
+                                      {cvsSearchError}
+                                    </p>
+                                  )}
+                                  {cvsSearchStatus === "success" &&
+                                    cvsSearchResults.length === 0 && (
+                                      <p className="text-[11px] text-muted-foreground/60 text-center py-1">
+                                        查無符合門市，請換關鍵字再試
+                                      </p>
+                                    )}
+                                  {cvsSearchStatus === "success" &&
+                                    cvsSearchResults.length > 0 && (
+                                      <div className="border border-border rounded-xl overflow-hidden max-h-44 overflow-y-auto">
+                                        {cvsSearchResults.map((s) => (
+                                          <div
+                                            key={`${s.provider}-${s.storeId}`}
+                                            className="flex items-start justify-between gap-2 px-3 py-2 border-b border-border last:border-b-0"
+                                          >
+                                            <div className="flex-1 min-w-0">
+                                              <div className="text-xs font-medium text-foreground">
+                                                {s.storeName}
+                                              </div>
+                                              <div className="text-[11px] text-muted-foreground">
+                                                {s.storeAddress}
+                                              </div>
+                                              {s.storePhone && (
+                                                <div className="text-[11px] text-muted-foreground">
+                                                  {s.storePhone}
+                                                </div>
+                                              )}
+                                            </div>
+                                            <button
+                                              type="button"
+                                              onClick={() =>
+                                                handleCvsStoreSelect(s)
+                                              }
+                                              className="shrink-0 h-7 px-2.5 rounded-lg bg-primary text-white text-[11px] font-medium"
+                                            >
+                                              選擇
+                                            </button>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
                                 </>
                               )}
                             </div>
                           )}
-                          {(cat === "home_black_cat" || cat === "home_post") && (
+                          {(cat === "home_black_cat" ||
+                            cat === "home_post") && (
                             <div className="bg-white border border-border rounded-2xl px-4 py-3 space-y-3">
                               <p className="text-sm font-semibold text-foreground">
-                                {cat === "home_black_cat" ? "黑貓宅急便收件資訊" : "郵局收件資訊"}
+                                {cat === "home_black_cat"
+                                  ? "黑貓宅急便收件資訊"
+                                  : "郵局收件資訊"}
                               </p>
-                              <p className="text-[11px] text-muted-foreground">收件人與收件電話請在上方「收件資訊」填寫。</p>
+                              <p className="text-[11px] text-muted-foreground">
+                                收件人與收件電話請在上方「收件資訊」填寫。
+                              </p>
                               <RecipientAddressFields
                                 city={addrCity}
                                 district={addrDistrict}
                                 zip={addrZip}
                                 addressLine={addrLine}
                                 required
-                                onCityChange={(c) => { setAddrCity(c); setAddrDistrict(""); setAddrZip(""); clearFieldError("recipientAddress"); }}
-                                onDistrictChange={(d, z) => { setAddrDistrict(d); setAddrZip(z); clearFieldError("recipientAddress"); }}
-                                onAddressLineChange={(l) => { setAddrLine(l); clearFieldError("recipientAddress"); }}
+                                onCityChange={(c) => {
+                                  setAddrCity(c);
+                                  setAddrDistrict("");
+                                  setAddrZip("");
+                                  clearFieldError("recipientAddress");
+                                }}
+                                onDistrictChange={(d, z) => {
+                                  setAddrDistrict(d);
+                                  setAddrZip(z);
+                                  clearFieldError("recipientAddress");
+                                }}
+                                onAddressLineChange={(l) => {
+                                  setAddrLine(l);
+                                  clearFieldError("recipientAddress");
+                                }}
                               />
-                              {fieldErrors.recipientAddress && <p className={ERR}>{fieldErrors.recipientAddress}</p>}
+                              {fieldErrors.recipientAddress && (
+                                <p className={ERR}>
+                                  {fieldErrors.recipientAddress}
+                                </p>
+                              )}
                             </div>
                           )}
                           {cat === "self_pickup" && (
                             <div className="bg-white border border-border rounded-2xl px-4 py-3 space-y-3">
                               <p className="text-sm font-semibold text-foreground">
-                                {pickupMethod === "面交" ? "面交地點資訊（選填）" : "自取地點資訊（選填）"}
+                                {pickupMethod === "面交"
+                                  ? "面交地點資訊（選填）"
+                                  : "自取地點資訊（選填）"}
                               </p>
                               <RecipientAddressFields
                                 city={addrCity}
@@ -639,13 +873,31 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
                                 addressLine={addrLine}
                                 addressLineLabel="詳細地點"
                                 addressLinePlaceholder="例如：台北車站東三門、店面地址、約定地點"
-                                onCityChange={(c) => { setAddrCity(c); setAddrDistrict(""); setAddrZip(""); clearFieldError("recipientAddress"); }}
-                                onDistrictChange={(d, z) => { setAddrDistrict(d); setAddrZip(z); clearFieldError("recipientAddress"); }}
-                                onAddressLineChange={(l) => { setAddrLine(l); clearFieldError("recipientAddress"); }}
+                                onCityChange={(c) => {
+                                  setAddrCity(c);
+                                  setAddrDistrict("");
+                                  setAddrZip("");
+                                  clearFieldError("recipientAddress");
+                                }}
+                                onDistrictChange={(d, z) => {
+                                  setAddrDistrict(d);
+                                  setAddrZip(z);
+                                  clearFieldError("recipientAddress");
+                                }}
+                                onAddressLineChange={(l) => {
+                                  setAddrLine(l);
+                                  clearFieldError("recipientAddress");
+                                }}
                               />
-                              {fieldErrors.recipientAddress && <p className={ERR}>{fieldErrors.recipientAddress}</p>}
+                              {fieldErrors.recipientAddress && (
+                                <p className={ERR}>
+                                  {fieldErrors.recipientAddress}
+                                </p>
+                              )}
                               <div>
-                                <p className="text-xs font-semibold text-muted-foreground mb-1">面交 / 自取備註（選填）</p>
+                                <p className="text-xs font-semibold text-muted-foreground mb-1">
+                                  面交 / 自取備註（選填）
+                                </p>
                                 <textarea
                                   value={notes}
                                   onChange={(e) => setNotes(e.target.value)}
@@ -662,8 +914,12 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
                   );
                 })}
               </div>
-              {fieldErrors.pickupMethod && <p className={ERR}>{fieldErrors.pickupMethod}</p>}
-              {fieldErrors.cvsStore && <p className={ERR}>{fieldErrors.cvsStore}</p>}
+              {fieldErrors.pickupMethod && (
+                <p className={ERR}>{fieldErrors.pickupMethod}</p>
+              )}
+              {fieldErrors.cvsStore && (
+                <p className={ERR}>{fieldErrors.cvsStore}</p>
+              )}
             </div>
           </div>
 
@@ -674,9 +930,12 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
               <FormSection>
                 <div className="bg-white rounded-xl border border-border/50 divide-y divide-border/40">
                   <div className="flex items-center justify-between px-3 py-2 gap-2">
-                    <span className="text-xs text-muted-foreground">商品小計</span>
+                    <span className="text-xs text-muted-foreground">
+                      商品小計
+                    </span>
                     <span className="text-sm text-foreground font-medium">
-                      NT$ {totalPreview.toLocaleString()}（NT${unitPrice.toLocaleString()} × {quantity}）
+                      NT$ {totalPreview.toLocaleString()}（NT$
+                      {unitPrice.toLocaleString()} × {quantity}）
                     </span>
                   </div>
                   <div className="flex items-center justify-between px-3 py-2 gap-2">
@@ -686,9 +945,14 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
                     </span>
                   </div>
                   <div className="flex items-center justify-between px-3 py-2.5 gap-2">
-                    <span className="text-xs font-semibold text-foreground/80">訂單總額</span>
+                    <span className="text-xs font-semibold text-foreground/80">
+                      訂單總額
+                    </span>
                     <span className="text-sm font-bold text-primary">
-                      NT$ {(totalPreview + getShippingFee(pickupMethod)).toLocaleString()}
+                      NT${" "}
+                      {(
+                        totalPreview + getShippingFee(pickupMethod)
+                      ).toLocaleString()}
                     </span>
                   </div>
                 </div>
@@ -762,12 +1026,16 @@ function FormSection({ children }: { children: React.ReactNode }) {
 }
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
-  return (
-    <h3 className="text-xl font-bold text-foreground">{children}</h3>
-  );
+  return <h3 className="text-xl font-bold text-foreground">{children}</h3>;
 }
 
-function FieldLabel({ children, icon: Icon }: { children: React.ReactNode; icon?: LucideIcon }) {
+function FieldLabel({
+  children,
+  icon: Icon,
+}: {
+  children: React.ReactNode;
+  icon?: LucideIcon;
+}) {
   return (
     <div className="flex items-center gap-1.5 mb-1">
       {Icon && (
@@ -784,13 +1052,37 @@ function PickupMethodLogo({ method }: { method: string }) {
   const cat = getFulfillmentCategory(method);
   let inner: ReactNode;
   if (isSevenElevenMethod(method)) {
-    inner = <img src={sevenElevenLogo} alt="7-11" className="max-h-8 max-w-[72px] w-auto h-auto object-contain" />;
+    inner = (
+      <img
+        src={sevenElevenLogo}
+        alt="7-11"
+        className="max-h-8 max-w-[72px] w-auto h-auto object-contain"
+      />
+    );
   } else if (isFamilyMartMethod(method)) {
-    inner = <img src={familymartLogo} alt="全家" className="max-h-8 max-w-[72px] w-auto h-auto object-contain" />;
+    inner = (
+      <img
+        src={familymartLogo}
+        alt="全家"
+        className="max-h-8 max-w-[72px] w-auto h-auto object-contain"
+      />
+    );
   } else if (cat === "home_black_cat") {
-    inner = <img src={blackcatLogo} alt="黑貓" className="max-h-8 max-w-[72px] w-auto h-auto object-contain" />;
+    inner = (
+      <img
+        src={blackcatLogo}
+        alt="黑貓"
+        className="max-h-8 max-w-[72px] w-auto h-auto object-contain"
+      />
+    );
   } else if (cat === "home_post") {
-    inner = <img src={postofficeLogo} alt="郵局" className="max-h-8 max-w-[72px] w-auto h-auto object-contain" />;
+    inner = (
+      <img
+        src={postofficeLogo}
+        alt="郵局"
+        className="max-h-8 max-w-[72px] w-auto h-auto object-contain"
+      />
+    );
   } else {
     inner = (
       <span className="w-9 h-9 rounded-full bg-secondary/60 inline-flex items-center justify-center">
@@ -798,5 +1090,9 @@ function PickupMethodLogo({ method }: { method: string }) {
       </span>
     );
   }
-  return <span className="w-[76px] h-9 shrink-0 inline-flex items-center justify-center">{inner}</span>;
+  return (
+    <span className="w-[76px] h-9 shrink-0 inline-flex items-center justify-center">
+      {inner}
+    </span>
+  );
 }

@@ -1,13 +1,35 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@clerk/react";
-import { useGetMyStore, useListOrders, useUpdateOrderStatus, useBulkUpdateOrders, useGetPickingList, useGetShippingList, getListOrdersQueryKey, type Order, type PickingListResponse, type ShippingListResponse } from "@workspace/api-client-react";
+import {
+  useGetMyStore,
+  useListOrders,
+  useUpdateOrderStatus,
+  useBulkUpdateOrders,
+  useGetPickingList,
+  useGetShippingList,
+  getListOrdersQueryKey,
+  type Order,
+  type PickingListResponse,
+  type ShippingListResponse,
+} from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { maskAddress, maskName, maskPhone } from "@workspace/privacy";
 import { BottomNav } from "./Dashboard";
-import { STATUS_LABELS, STATUS_COLORS, ALL_STATUSES, STATUS_STEPS, VALID_NEXT_STATUSES } from "../lib/orderStatus";
+import {
+  STATUS_LABELS,
+  STATUS_COLORS,
+  ALL_STATUSES,
+  STATUS_STEPS,
+  VALID_NEXT_STATUSES,
+} from "../lib/orderStatus";
 import { resolveOrderDisplayTotal } from "../lib/orderDisplayTotal";
-import { isSevenElevenMethod, isFamilyMartMethod, openSevenElevenMap, openCvsStoreMap } from "@/lib/cvs711";
+import {
+  isSevenElevenMethod,
+  isFamilyMartMethod,
+  openSevenElevenMap,
+  openCvsStoreMap,
+} from "@/lib/cvs711";
 import { parseRecipientAddress } from "@/lib/taiwanZipcodes";
 import { getProviderShortName } from "@/lib/logisticsProviders";
 import {
@@ -29,24 +51,30 @@ import { buttonVariants } from "@/components/ui/button";
 
 const DEPRECATED_METHODS: Record<string, string> = {
   "OK Mart": "OK Mart",
-  "萊爾富物流": "萊爾富",
+  萊爾富物流: "萊爾富",
 };
 const HOME_DELIVERY_LABELS: Record<string, string> = {
-  "黑貓宅急便": "黑貓宅急便",
-  "郵局": "郵局",
-  "郵局宅配": "郵局宅配",
-  "宅配": "宅配（已停用）",
+  黑貓宅急便: "黑貓宅急便",
+  郵局: "郵局",
+  郵局宅配: "郵局宅配",
+  宅配: "宅配（已停用）",
 };
 
 function isHomeDeliveryMethod(pickupMethod: string): boolean {
-  return Object.prototype.hasOwnProperty.call(HOME_DELIVERY_LABELS, pickupMethod);
+  return Object.prototype.hasOwnProperty.call(
+    HOME_DELIVERY_LABELS,
+    pickupMethod,
+  );
 }
 
 function isCvsMethod(pickupMethod: string): boolean {
   return isSevenElevenMethod(pickupMethod) || isFamilyMartMethod(pickupMethod);
 }
 
-function orderIsHome(pickupMethod: string, shippingMethod?: string | null): boolean {
+function orderIsHome(
+  pickupMethod: string,
+  shippingMethod?: string | null,
+): boolean {
   if (isHomeDeliveryMethod(pickupMethod)) return true;
   if (isCvsMethod(pickupMethod)) return false;
   return shippingMethod === "home_delivery";
@@ -74,7 +102,10 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
   line_pay: "LINE Pay",
   other: "其他",
 };
-const BACKFILL_MISSING_FIELD_INFO: Record<string, { label: string; href: string }> = {
+const BACKFILL_MISSING_FIELD_INFO: Record<
+  string,
+  { label: string; href: string }
+> = {
   productCostJpy: { label: "商品日圓成本", href: "/products" },
   storeExchangeRate: { label: "店鋪進貨匯率", href: "/settings" },
   tripRoute: { label: "行程路線／交通成本", href: "/trips" },
@@ -154,7 +185,8 @@ type OrderWithTracking = Order & {
 };
 
 const TRACKING_TONE_PINK = "bg-pink-50/70 border-pink-200/70 text-pink-900";
-const TRACKING_TONE_YELLOW = "bg-yellow-50/80 border-yellow-200/80 text-yellow-900";
+const TRACKING_TONE_YELLOW =
+  "bg-yellow-50/80 border-yellow-200/80 text-yellow-900";
 const TRACKING_TONE_GREEN = "bg-green-50/75 border-green-200/75 text-green-900";
 const TRACKING_TONE_GRAY = "bg-gray-50/80 border-gray-200/80 text-gray-700";
 const TRACKING_TONE_RED = "bg-red-50/75 border-red-200/75 text-red-900";
@@ -174,23 +206,49 @@ function getTrackingSummaryToneClass(
     checkError ||
     trackingStatus === "failed" ||
     includesAny(statusText, ["失敗", "異常", "錯誤", "遺失", "取消", "逾期"])
-  ) return TRACKING_TONE_RED;
+  )
+    return TRACKING_TONE_RED;
   // 「已完成寄件」是出貨事件，需先於綠色的「已完成」判斷
   if (includesAny(statusText, ["已完成寄件"])) return TRACKING_TONE_YELLOW;
   if (
     trackingStatus === "delivered" ||
-    (latestEventStatus !== null && ["arrived_store", "picked_up", "delivered"].includes(latestEventStatus)) ||
-    includesAny(statusText, ["已寄達", "已送達", "已到店", "配達取件店舖", "已取貨", "已取件", "取件完成", "已完成", "投遞成功", "順利送達", "成功取件"])
-  ) return TRACKING_TONE_GREEN;
+    (latestEventStatus !== null &&
+      ["arrived_store", "picked_up", "delivered"].includes(
+        latestEventStatus,
+      )) ||
+    includesAny(statusText, [
+      "已寄達",
+      "已送達",
+      "已到店",
+      "配達取件店舖",
+      "已取貨",
+      "已取件",
+      "取件完成",
+      "已完成",
+      "投遞成功",
+      "順利送達",
+      "成功取件",
+    ])
+  )
+    return TRACKING_TONE_GREEN;
   if (
     trackingStatus === "pending" ||
     includesAny(statusText, ["尚未出貨", "待查詢", "訂單成立未寄件", "未寄件"])
-  ) return TRACKING_TONE_PINK;
+  )
+    return TRACKING_TONE_PINK;
   if (
     trackingStatus === "active" ||
     trackingStatus === "checking" ||
-    includesAny(statusText, ["已出貨", "貨件前往", "物流中心", "運送", "配送", "轉運"])
-  ) return TRACKING_TONE_YELLOW;
+    includesAny(statusText, [
+      "已出貨",
+      "貨件前往",
+      "物流中心",
+      "運送",
+      "配送",
+      "轉運",
+    ])
+  )
+    return TRACKING_TONE_YELLOW;
   // 未查到 / 查無資料 / 無 shipmentTracking / 無法判斷 → 灰
   return TRACKING_TONE_GRAY;
 }
@@ -225,14 +283,18 @@ function normalizeOrderItems(order: {
   const raw = order.items as OrderItem[] | null | undefined;
   if (Array.isArray(raw) && raw.length > 0) return raw;
   const qty = order.quantity ?? 1;
-  const unitPrice = order.unitPrice ?? (order.totalPrice != null && qty > 0 ? order.totalPrice / qty : 0);
-  return [{
-    productName: order.productName ?? "（商品）",
-    specValues: (order.specValues as Record<string, string>) ?? {},
-    quantity: qty,
-    unitPrice,
-    subtotal: unitPrice * qty,
-  }];
+  const unitPrice =
+    order.unitPrice ??
+    (order.totalPrice != null && qty > 0 ? order.totalPrice / qty : 0);
+  return [
+    {
+      productName: order.productName ?? "（商品）",
+      specValues: (order.specValues as Record<string, string>) ?? {},
+      quantity: qty,
+      unitPrice,
+      subtotal: unitPrice * qty,
+    },
+  ];
 }
 
 function formatSpecSummary(specValues: Record<string, string>): string {
@@ -257,7 +319,9 @@ export default function OrdersPage() {
   const { data: store } = useGetMyStore();
   const storeId = store?.id;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: orders, isLoading } = useListOrders(storeId!, { query: { enabled: !!storeId } as any });
+  const { data: orders, isLoading } = useListOrders(storeId!, {
+    query: { enabled: !!storeId } as any,
+  });
   const updateOrderStatus = useUpdateOrderStatus();
   const [filter, setFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -267,7 +331,9 @@ export default function OrdersPage() {
   const [statusErrors, setStatusErrors] = useState<Record<number, string>>({});
   const [loadingOrderId, setLoadingOrderId] = useState<number | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
-  const [revealedOrderIds, setRevealedOrderIds] = useState<Set<number>>(new Set());
+  const [revealedOrderIds, setRevealedOrderIds] = useState<Set<number>>(
+    new Set(),
+  );
   // Step 8E: App 內狀態操作確認彈窗（取代 window.confirm）
   const [statusConfirm, setStatusConfirm] = useState<{
     orderId: number;
@@ -278,11 +344,20 @@ export default function OrdersPage() {
   const [showAddOrder, setShowAddOrder] = useState(false);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   // Step 7H: 刪除訂單（與取消訂單分開的危險操作）
-  const [deleteConfirm, setDeleteConfirm] = useState<{ orderId: number; buyerName: string } | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    orderId: number;
+    buyerName: string;
+  } | null>(null);
   const [deletingOrderId, setDeletingOrderId] = useState<number | null>(null);
-  const [backfillingOrderId, setBackfillingOrderId] = useState<number | null>(null);
-  const [backfillErrors, setBackfillErrors] = useState<Record<number, { message: string; missing: string[] }>>({});
-  const [profitSummary, setProfitSummary] = useState<OrderProfitSummary | null>(null);
+  const [backfillingOrderId, setBackfillingOrderId] = useState<number | null>(
+    null,
+  );
+  const [backfillErrors, setBackfillErrors] = useState<
+    Record<number, { message: string; missing: string[] }>
+  >({});
+  const [profitSummary, setProfitSummary] = useState<OrderProfitSummary | null>(
+    null,
+  );
   const [exportCleartext, setExportCleartext] = useState(false);
   const [exporting, setExporting] = useState(false);
 
@@ -307,17 +382,25 @@ export default function OrdersPage() {
       });
       setRevealedOrderIds((current) => new Set(current).add(order.id));
     } catch (caught) {
-      toast({ title: "無法顯示完整資料", description: (caught as Error).message, variant: "destructive" });
+      toast({
+        title: "無法顯示完整資料",
+        description: (caught as Error).message,
+        variant: "destructive",
+      });
     }
   };
 
   // Picking / shipping list state
   const [pickingListOpen, setPickingListOpen] = useState(false);
   const [shippingListOpen, setShippingListOpen] = useState(false);
-  const [pickingListData, setPickingListData] = useState<PickingListResponse | null>(null);
-  const [shippingListData, setShippingListData] = useState<ShippingListResponse | null>(null);
+  const [pickingListData, setPickingListData] =
+    useState<PickingListResponse | null>(null);
+  const [shippingListData, setShippingListData] =
+    useState<ShippingListResponse | null>(null);
   const [pickingListError, setPickingListError] = useState<string | null>(null);
-  const [shippingListError, setShippingListError] = useState<string | null>(null);
+  const [shippingListError, setShippingListError] = useState<string | null>(
+    null,
+  );
   const [csvPickingLoading, setCsvPickingLoading] = useState(false);
   const [csvShippingLoading, setCsvShippingLoading] = useState(false);
   const getPickingListMutation = useGetPickingList();
@@ -337,45 +420,55 @@ export default function OrdersPage() {
     void (async () => {
       try {
         const token = await getToken();
-        const response = await fetch(`/api/stores/${storeId}/orders/profit-summary`, {
-          credentials: "include",
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
+        const response = await fetch(
+          `/api/stores/${storeId}/orders/profit-summary`,
+          {
+            credentials: "include",
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          },
+        );
         if (!response.ok || cancelled) return;
-        const summary = await response.json() as OrderProfitSummary;
+        const summary = (await response.json()) as OrderProfitSummary;
         if (!cancelled) setProfitSummary(summary);
       } catch {
         if (!cancelled) setProfitSummary(null);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [getToken, storeId, orders]);
 
   // Status filter
-  const statusFiltered = filter === "all"
-    ? allOrders
-    : allOrders.filter((o) => o.status === filter);
+  const statusFiltered =
+    filter === "all" ? allOrders : allOrders.filter((o) => o.status === filter);
 
   // Client-side search
   const q = searchQuery.trim().toLowerCase();
   const paymentLast5Q = paymentLast5Query.trim();
   const amountQ = amountQuery.trim().replace(/[^0-9]/g, "");
   const searched = statusFiltered.filter((o) => {
-    const textMatches = !q ||
+    const textMatches =
+      !q ||
       o.buyerName.toLowerCase().includes(q) ||
       o.buyerPhone.toLowerCase().includes(q) ||
       String(o.id).includes(q) ||
       (o.productName ?? "").toLowerCase().includes(q);
-    const paymentMatches = !paymentLast5Q || ((o as any).paymentLast5 ?? "").includes(paymentLast5Q);
+    const paymentMatches =
+      !paymentLast5Q || ((o as any).paymentLast5 ?? "").includes(paymentLast5Q);
     const orderTotal = resolveOrderDisplayTotal(o);
-    const amountMatches = !amountQ || String(Math.round(Number(orderTotal))).includes(amountQ);
+    const amountMatches =
+      !amountQ || String(Math.round(Number(orderTotal))).includes(amountQ);
     return textMatches && paymentMatches && amountMatches;
   });
 
   const sortedFiltered = [...searched].reverse();
 
   // Stats (computed from all orders, ignoring current filter)
-  const totalRevenue = allOrders.reduce((sum, o) => sum + resolveOrderDisplayTotal(o), 0);
+  const totalRevenue = allOrders.reduce(
+    (sum, o) => sum + resolveOrderDisplayTotal(o),
+    0,
+  );
   const pendingCount = allOrders.filter((o) => o.status === "pending").length;
 
   const handleStatusChange = async (orderId: number, status: string) => {
@@ -385,7 +478,11 @@ export default function OrdersPage() {
         orderId,
         data: { status: status as any },
       });
-      setStatusErrors((prev) => { const next = { ...prev }; delete next[orderId]; return next; });
+      setStatusErrors((prev) => {
+        const next = { ...prev };
+        delete next[orderId];
+        return next;
+      });
       qc.invalidateQueries({ queryKey: getListOrdersQueryKey(storeId!) });
     } catch (err: any) {
       const msg = err?.data?.error ?? "狀態更新失敗，請確認狀態流程是否正確";
@@ -416,18 +513,26 @@ export default function OrdersPage() {
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok || !body.ok) {
-        const msg = typeof body?.error === "string" && body.error
-          ? body.error
-          : "刪除訂單失敗，請稍後再試。";
+        const msg =
+          typeof body?.error === "string" && body.error
+            ? body.error
+            : "刪除訂單失敗，請稍後再試。";
         setStatusErrors((prev) => ({ ...prev, [orderId]: msg }));
         return;
       }
       toast({ title: "訂單已刪除" });
-      setStatusErrors((prev) => { const next = { ...prev }; delete next[orderId]; return next; });
+      setStatusErrors((prev) => {
+        const next = { ...prev };
+        delete next[orderId];
+        return next;
+      });
       setExpandedId(null);
       qc.invalidateQueries({ queryKey: getListOrdersQueryKey(storeId) });
     } catch {
-      setStatusErrors((prev) => ({ ...prev, [orderId]: "刪除訂單失敗，請稍後再試。" }));
+      setStatusErrors((prev) => ({
+        ...prev,
+        [orderId]: "刪除訂單失敗，請稍後再試。",
+      }));
     } finally {
       setDeletingOrderId(null);
       setDeleteConfirm(null);
@@ -437,21 +542,34 @@ export default function OrdersPage() {
   const handleBackfillProfitSnapshot = async (orderId: number) => {
     if (!storeId) return;
     setBackfillingOrderId(orderId);
-    setBackfillErrors((prev) => { const next = { ...prev }; delete next[orderId]; return next; });
+    setBackfillErrors((prev) => {
+      const next = { ...prev };
+      delete next[orderId];
+      return next;
+    });
     try {
       const token = await getToken();
-      const res = await fetch(`/api/orders/${orderId}/profit-snapshot/backfill`, {
-        method: "POST",
-        credentials: "include",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
+      const res = await fetch(
+        `/api/orders/${orderId}/profit-snapshot/backfill`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        },
+      );
       const body = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const message = typeof body?.error === "string" && body.error
-          ? body.error
-          : "成本快照補拍失敗，請稍後再試。";
-        const missing = Array.isArray(body?.missing) ? body.missing as string[] : [];
-        setBackfillErrors((prev) => ({ ...prev, [orderId]: { message, missing } }));
+        const message =
+          typeof body?.error === "string" && body.error
+            ? body.error
+            : "成本快照補拍失敗，請稍後再試。";
+        const missing = Array.isArray(body?.missing)
+          ? (body.missing as string[])
+          : [];
+        setBackfillErrors((prev) => ({
+          ...prev,
+          [orderId]: { message, missing },
+        }));
         return;
       }
       toast({ title: "成本快照已補拍並定格" });
@@ -459,7 +577,10 @@ export default function OrdersPage() {
     } catch {
       setBackfillErrors((prev) => ({
         ...prev,
-        [orderId]: { message: "成本快照補拍失敗，請確認網路後再試。", missing: [] },
+        [orderId]: {
+          message: "成本快照補拍失敗，請確認網路後再試。",
+          missing: [],
+        },
       }));
     } finally {
       setBackfillingOrderId(null);
@@ -468,17 +589,31 @@ export default function OrdersPage() {
 
   const copyToClipboard = (text: string, key: string) => {
     if (!navigator.clipboard) return;
-    navigator.clipboard.writeText(text).then(() => {
-      setCopiedKey(key);
-      setTimeout(() => setCopiedKey(null), 2000);
-    }).catch(() => {});
+    navigator.clipboard
+      .writeText(text)
+      .then(() => {
+        setCopiedKey(key);
+        setTimeout(() => setCopiedKey(null), 2000);
+      })
+      .catch(() => {});
   };
 
   const handleExport = async () => {
     if (!storeId || allOrders.length === 0) return;
     const mode = exportCleartext ? "cleartext" : "masked";
-    if (!window.confirm(`即將匯出 ${allOrders.length} 筆訂單（${exportCleartext ? "明文版" : "遮罩版"}），是否繼續？`)) return;
-    if (exportCleartext && !window.confirm("明文版包含完整個資。請再次確認只會交給有權限的人員，並在使用後刪除檔案。")) return;
+    if (
+      !window.confirm(
+        `即將匯出 ${allOrders.length} 筆訂單（${exportCleartext ? "明文版" : "遮罩版"}），是否繼續？`,
+      )
+    )
+      return;
+    if (
+      exportCleartext &&
+      !window.confirm(
+        "明文版包含完整個資。請再次確認只會交給有權限的人員，並在使用後刪除檔案。",
+      )
+    )
+      return;
     setExporting(true);
     const token = await getToken();
     let res: Response;
@@ -538,17 +673,23 @@ export default function OrdersPage() {
 
   const handleBulkUpdate = async (type: "payment" | "shipping") => {
     if (selectedIds.size === 0 || !storeId) return;
-    const statusVal = type === "payment" ? bulkPaymentStatus : bulkShippingStatus;
+    const statusVal =
+      type === "payment" ? bulkPaymentStatus : bulkShippingStatus;
     if (!statusVal) return;
     setIsBulkLoading(true);
     setBulkError(null);
     try {
       const body: Parameters<typeof bulkUpdateOrders.mutateAsync>[0]["data"] = {
         orderIds: [...selectedIds],
-        ...(type === "payment" ? { paymentStatus: statusVal as any } : { shippingStatus: statusVal as any }),
+        ...(type === "payment"
+          ? { paymentStatus: statusVal as any }
+          : { shippingStatus: statusVal as any }),
       };
       const result = await bulkUpdateOrders.mutateAsync({ data: body });
-      const skippedMsg = result.skippedCount > 0 ? `（跳過 ${result.skippedCount} 筆已結束訂單）` : "";
+      const skippedMsg =
+        result.skippedCount > 0
+          ? `（跳過 ${result.skippedCount} 筆已結束訂單）`
+          : "";
       toast({ title: `已更新 ${result.updatedCount} 筆訂單${skippedMsg}` });
       qc.invalidateQueries({ queryKey: getListOrdersQueryKey(storeId) });
       clearSelection();
@@ -564,12 +705,16 @@ export default function OrdersPage() {
     if (selectedIds.size === 0) return;
     setPickingListError(null);
     try {
-      const data = await getPickingListMutation.mutateAsync({ data: { orderIds: [...selectedIds] } });
+      const data = await getPickingListMutation.mutateAsync({
+        data: { orderIds: [...selectedIds] },
+      });
       setPickingListData(data);
       setPickingListOpen(true);
     } catch (err: unknown) {
       const e = err as { data?: { error?: string }; message?: string };
-      setPickingListError(e?.data?.error ?? e?.message ?? "無法取得撿貨單，請稍後再試");
+      setPickingListError(
+        e?.data?.error ?? e?.message ?? "無法取得撿貨單，請稍後再試",
+      );
     }
   };
 
@@ -577,12 +722,16 @@ export default function OrdersPage() {
     if (selectedIds.size === 0) return;
     setShippingListError(null);
     try {
-      const data = await getShippingListMutation.mutateAsync({ data: { orderIds: [...selectedIds] } });
+      const data = await getShippingListMutation.mutateAsync({
+        data: { orderIds: [...selectedIds] },
+      });
       setShippingListData(data);
       setShippingListOpen(true);
     } catch (err: unknown) {
       const e = err as { data?: { error?: string }; message?: string };
-      setShippingListError(e?.data?.error ?? e?.message ?? "無法取得出貨單，請稍後再試");
+      setShippingListError(
+        e?.data?.error ?? e?.message ?? "無法取得出貨單，請稍後再試",
+      );
     }
   };
 
@@ -602,7 +751,9 @@ export default function OrdersPage() {
       });
       if (!res.ok) {
         const err = await res.json().catch(() => null);
-        throw new Error((err as { error?: string })?.error ?? "下載失敗，請稍後再試");
+        throw new Error(
+          (err as { error?: string })?.error ?? "下載失敗，請稍後再試",
+        );
       }
       const blob = await res.blob();
       const disposition = res.headers.get("Content-Disposition") ?? "";
@@ -638,7 +789,9 @@ export default function OrdersPage() {
       });
       if (!res.ok) {
         const err = await res.json().catch(() => null);
-        throw new Error((err as { error?: string })?.error ?? "下載失敗，請稍後再試");
+        throw new Error(
+          (err as { error?: string })?.error ?? "下載失敗，請稍後再試",
+        );
       }
       const blob = await res.blob();
       const disposition = res.headers.get("Content-Disposition") ?? "";
@@ -669,7 +822,10 @@ export default function OrdersPage() {
       <header className="bg-white border-b border-border px-5 pt-10 pb-3 sticky top-0 z-10">
         <div className="mb-3">
           <h1 className="text-lg font-bold text-foreground">訂單管理</h1>
-          <div className="mt-3 grid grid-cols-2 gap-2" aria-label="訂單主要操作">
+          <div
+            className="mt-3 grid grid-cols-2 gap-2"
+            aria-label="訂單主要操作"
+          >
             <button
               onClick={() => setShowAddOrder(true)}
               disabled={!storeId}
@@ -727,7 +883,11 @@ export default function OrdersPage() {
           <input
             type="search"
             value={paymentLast5Query}
-            onChange={(e) => setPaymentLast5Query(e.target.value.replace(/\D/g, "").slice(0, 5))}
+            onChange={(e) =>
+              setPaymentLast5Query(
+                e.target.value.replace(/\D/g, "").slice(0, 5),
+              )
+            }
             placeholder="付款末五碼"
             inputMode="numeric"
             maxLength={5}
@@ -736,7 +896,9 @@ export default function OrdersPage() {
           <input
             type="search"
             value={amountQuery}
-            onChange={(e) => setAmountQuery(e.target.value.replace(/[^0-9]/g, ""))}
+            onChange={(e) =>
+              setAmountQuery(e.target.value.replace(/[^0-9]/g, ""))
+            }
             placeholder="金額"
             inputMode="numeric"
             className="w-full min-h-11 px-3 rounded-xl border border-input bg-secondary/40 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
@@ -744,7 +906,13 @@ export default function OrdersPage() {
         </div>
         {/* Filter tabs */}
         <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-          <FilterTab label="全部" value="all" active={filter === "all"} count={allOrders.length} onClick={() => setFilter("all")} />
+          <FilterTab
+            label="全部"
+            value="all"
+            active={filter === "all"}
+            count={allOrders.length}
+            onClick={() => setFilter("all")}
+          />
           {ALL_STATUSES.map((s) => (
             <FilterTab
               key={s}
@@ -769,20 +937,39 @@ export default function OrdersPage() {
             {allOrders.length > 0 && (
               <div className="grid grid-cols-2 gap-2 mb-4">
                 <StatCard label="訂單筆數" value={String(allOrders.length)} />
-                <StatCard label="訂單總額" value={`NT$${totalRevenue.toLocaleString()}`} />
-                <StatCard label="待確認" value={String(pendingCount)} urgent={pendingCount > 0} />
+                <StatCard
+                  label="訂單總額"
+                  value={`NT$${totalRevenue.toLocaleString()}`}
+                />
+                <StatCard
+                  label="待確認"
+                  value={String(pendingCount)}
+                  urgent={pendingCount > 0}
+                />
                 <StatCard
                   label="已定格毛利小計"
-                  value={profitSummary ? `NT$${Number(profitSummary.capturedProfitSubtotalDisplayTwd).toLocaleString()}` : "—"}
+                  value={
+                    profitSummary
+                      ? `NT$${Number(profitSummary.capturedProfitSubtotalDisplayTwd).toLocaleString()}`
+                      : "—"
+                  }
                 />
                 <StatCard
                   label="毛利待確認"
-                  value={profitSummary ? String(profitSummary.pendingOrderCount) : "—"}
+                  value={
+                    profitSummary
+                      ? String(profitSummary.pendingOrderCount)
+                      : "—"
+                  }
                   urgent={(profitSummary?.pendingOrderCount ?? 0) > 0}
                 />
                 <StatCard
                   label="尚無快照"
-                  value={profitSummary ? String(profitSummary.missingSnapshotOrderCount) : "—"}
+                  value={
+                    profitSummary
+                      ? String(profitSummary.missingSnapshotOrderCount)
+                      : "—"
+                  }
                   urgent={(profitSummary?.missingSnapshotOrderCount ?? 0) > 0}
                 />
               </div>
@@ -791,17 +978,24 @@ export default function OrdersPage() {
             {sortedFiltered.length === 0 ? (
               <div className="bg-white rounded-2xl p-10 border border-border text-center">
                 <p className="text-muted-foreground text-sm">
-                  {allOrders.length > 0 ? "找不到符合條件的訂單" : "目前沒有訂單"}
+                  {allOrders.length > 0
+                    ? "找不到符合條件的訂單"
+                    : "目前沒有訂單"}
                 </p>
               </div>
             ) : (
               <div className="space-y-3">
                 {sortedFiltered.map((o) => (
-                  <div key={o.id} className="bg-white rounded-2xl border border-border overflow-hidden">
+                  <div
+                    key={o.id}
+                    className="bg-white rounded-2xl border border-border overflow-hidden"
+                  >
                     {/* Card header */}
                     <div
                       className="px-4 pt-3.5 pb-3.5 cursor-pointer"
-                      onClick={() => setExpandedId(expandedId === o.id ? null : o.id)}
+                      onClick={() =>
+                        setExpandedId(expandedId === o.id ? null : o.id)
+                      }
                     >
                       {/* Row 1: Checkbox + Order # (left) + Amount (right) */}
                       <div className="flex items-center justify-between mb-1.5">
@@ -810,33 +1004,65 @@ export default function OrdersPage() {
                             role="checkbox"
                             aria-checked={selectedIds.has(o.id)}
                             tabIndex={0}
-                            onClick={(e) => { e.stopPropagation(); toggleSelect(o.id); }}
-                            onKeyDown={(e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); toggleSelect(o.id); } }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleSelect(o.id);
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === " " || e.key === "Enter") {
+                                e.preventDefault();
+                                toggleSelect(o.id);
+                              }
+                            }}
                             className={`w-4 h-4 rounded border-2 flex-shrink-0 cursor-pointer flex items-center justify-center transition-colors ${
-                              selectedIds.has(o.id) ? "bg-primary border-primary" : "border-border hover:border-primary/60"
+                              selectedIds.has(o.id)
+                                ? "bg-primary border-primary"
+                                : "border-border hover:border-primary/60"
                             }`}
                           >
                             {selectedIds.has(o.id) && (
-                              <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 10 8">
-                                <path d="M1 4l3 3 5-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                              <svg
+                                className="w-2.5 h-2.5 text-white"
+                                fill="none"
+                                viewBox="0 0 10 8"
+                              >
+                                <path
+                                  d="M1 4l3 3 5-6"
+                                  stroke="currentColor"
+                                  strokeWidth="1.5"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
                               </svg>
                             )}
                           </div>
-                          <span className="text-sm font-bold text-primary tracking-wide">#{o.id}</span>
+                          <span className="text-sm font-bold text-primary tracking-wide">
+                            #{o.id}
+                          </span>
                         </div>
-                        <span className="text-xl font-bold text-primary">NT${resolveOrderDisplayTotal(o).toLocaleString()}</span>
+                        <span className="text-xl font-bold text-primary">
+                          NT${resolveOrderDisplayTotal(o).toLocaleString()}
+                        </span>
                       </div>
                       {/* Row 2: Buyer name (left) + date (right) */}
                       <div className="flex items-center justify-between gap-2 mb-2">
-                        <span className="text-[15px] font-semibold text-foreground leading-tight">{revealedOrderIds.has(o.id) ? o.buyerName : maskName(o.buyerName)}</span>
-                        <span className="text-[11px] text-muted-foreground shrink-0">{formatDate(o.createdAt)}</span>
+                        <span className="text-[15px] font-semibold text-foreground leading-tight">
+                          {revealedOrderIds.has(o.id)
+                            ? o.buyerName
+                            : maskName(o.buyerName)}
+                        </span>
+                        <span className="text-[11px] text-muted-foreground shrink-0">
+                          {formatDate(o.createdAt)}
+                        </span>
                       </div>
                       {/* Row 3: Pickup method badge + order status badge */}
                       <div className="flex items-center gap-1.5 flex-wrap mb-2">
                         <span className="text-[11px] px-2 py-0.5 rounded-full bg-secondary text-muted-foreground shrink-0">
                           {o.pickupMethod}
                         </span>
-                        <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium shrink-0 ${STATUS_COLORS[o.status] ?? "bg-gray-100 text-gray-600"}`}>
+                        <span
+                          className={`text-[11px] px-2 py-0.5 rounded-full font-medium shrink-0 ${STATUS_COLORS[o.status] ?? "bg-gray-100 text-gray-600"}`}
+                        >
                           {STATUS_LABELS[o.status] ?? o.status}
                         </span>
                         <ProfitSnapshotBadge order={o} />
@@ -846,27 +1072,41 @@ export default function OrdersPage() {
                         {(() => {
                           const items = normalizeOrderItems(o as any);
                           if (items.length > 1) {
-                            const totalQty = items.reduce((s, i) => s + i.quantity, 0);
+                            const totalQty = items.reduce(
+                              (s, i) => s + i.quantity,
+                              0,
+                            );
                             return (
                               <span className="text-[11px] text-muted-foreground truncate flex-1 min-w-0">
-                                {items[0].productName} 等・共 {items.length} 項・{totalQty} 件
+                                {items[0].productName} 等・共 {items.length}{" "}
+                                項・{totalQty} 件
                               </span>
                             );
                           }
                           return (
                             <>
-                              <span className="text-[11px] text-muted-foreground shrink-0">商品 {o.quantity} 件</span>
+                              <span className="text-[11px] text-muted-foreground shrink-0">
+                                商品 {o.quantity} 件
+                              </span>
                               {o.productName && (
-                                <span className="text-[11px] text-muted-foreground truncate flex-1 min-w-0">· {o.productName}</span>
+                                <span className="text-[11px] text-muted-foreground truncate flex-1 min-w-0">
+                                  · {o.productName}
+                                </span>
                               )}
                             </>
                           );
                         })()}
                         {o.status !== "cancelled" && (
-                          <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium shrink-0 ${
-                            SHIPPING_STATUS_COLORS[o.shippingStatus ?? "not_shipped"] ?? "bg-secondary/80 text-muted-foreground"
-                          }`}>
-                            {SHIPPING_STATUS_LABELS[o.shippingStatus ?? "not_shipped"] ?? "未出貨"}
+                          <span
+                            className={`text-[11px] px-2 py-0.5 rounded-full font-medium shrink-0 ${
+                              SHIPPING_STATUS_COLORS[
+                                o.shippingStatus ?? "not_shipped"
+                              ] ?? "bg-secondary/80 text-muted-foreground"
+                            }`}
+                          >
+                            {SHIPPING_STATUS_LABELS[
+                              o.shippingStatus ?? "not_shipped"
+                            ] ?? "未出貨"}
                           </span>
                         )}
                         <span className="text-muted-foreground shrink-0 ml-auto text-sm leading-none">
@@ -875,18 +1115,30 @@ export default function OrdersPage() {
                       </div>
                       {/* Row 5: 物流摘要（Step 7G） */}
                       {(() => {
-                        const t = (o as OrderWithTracking).shipmentTracking ?? null;
-                        const code = (t?.trackingCode ?? o.trackingCode ?? "").trim();
+                        const t =
+                          (o as OrderWithTracking).shipmentTracking ?? null;
+                        const code = (
+                          t?.trackingCode ??
+                          o.trackingCode ??
+                          ""
+                        ).trim();
                         if (!code) return null;
-                        const providerKey = t?.trackingProvider ?? o.trackingProvider ?? "";
-                        const provider = getProviderShortName(providerKey) ?? "物流";
+                        const providerKey =
+                          t?.trackingProvider ?? o.trackingProvider ?? "";
+                        const provider =
+                          getProviderShortName(providerKey) ?? "物流";
                         const statusText = t
-                          ? (t.latestEventDescription?.trim() || (TRACKING_STATUS_LABELS[t.trackingStatus] ?? "待查詢"))
+                          ? t.latestEventDescription?.trim() ||
+                            (TRACKING_STATUS_LABELS[t.trackingStatus] ??
+                              "待查詢")
                           : "已建立物流追蹤";
                         // 貨態時間 = 物流商最新事件時間；上次查詢 = 系統最後查詢時間（語意拆開避免誤判排程失效）
-                        const eventTime = t ? formatTrackingTime(t.latestEventAt) : null;
+                        const eventTime = t
+                          ? formatTrackingTime(t.latestEventAt)
+                          : null;
                         const lastChecked = t
-                          ? formatTrackingTime(t.lastCheckedAt) ?? formatTrackingTime(t.updatedAt)
+                          ? (formatTrackingTime(t.lastCheckedAt) ??
+                            formatTrackingTime(t.updatedAt))
                           : null;
                         const toneClass = getTrackingSummaryToneClass(
                           statusText,
@@ -895,22 +1147,43 @@ export default function OrdersPage() {
                           t?.latestEventStatus ?? null,
                         );
                         return (
-                          <div className={`mt-2 rounded-2xl border px-3 py-2.5 space-y-1 min-w-0 shadow-sm ${toneClass}`}>
-                            <p className="text-[11px] font-semibold">{provider}</p>
-                            <p className="text-[11px] font-medium">貨態：{statusText}</p>
+                          <div
+                            className={`mt-2 rounded-2xl border px-3 py-2.5 space-y-1 min-w-0 shadow-sm ${toneClass}`}
+                          >
+                            <p className="text-[11px] font-semibold">
+                              {provider}
+                            </p>
+                            <p className="text-[11px] font-medium">
+                              貨態：{statusText}
+                            </p>
                             <div className="flex items-center gap-2 min-w-0">
-                              <span className="text-[11px] break-all min-w-0">貨號：{code}</span>
+                              <span className="text-[11px] break-all min-w-0">
+                                貨號：{code}
+                              </span>
                               <button
                                 type="button"
-                                onClick={(e) => { e.stopPropagation(); copyToClipboard(code, `${o.id}-tracking`); }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  copyToClipboard(code, `${o.id}-tracking`);
+                                }}
                                 className="text-[11px] text-primary font-medium shrink-0"
                               >
-                                {copiedKey === `${o.id}-tracking` ? "已複製" : "複製"}
+                                {copiedKey === `${o.id}-tracking`
+                                  ? "已複製"
+                                  : "複製"}
                               </button>
                             </div>
-                            <p className="text-[11px] opacity-80">貨態時間：{eventTime ?? "尚無貨態時間"}</p>
-                            <p className="text-[11px] opacity-80">上次查詢：{lastChecked ?? "尚未查詢"}</p>
-                            {t?.checkError && <p className="text-[11px] font-medium">物流查詢異常</p>}
+                            <p className="text-[11px] opacity-80">
+                              貨態時間：{eventTime ?? "尚無貨態時間"}
+                            </p>
+                            <p className="text-[11px] opacity-80">
+                              上次查詢：{lastChecked ?? "尚未查詢"}
+                            </p>
+                            {t?.checkError && (
+                              <p className="text-[11px] font-medium">
+                                物流查詢異常
+                              </p>
+                            )}
                           </div>
                         );
                       })()}
@@ -919,23 +1192,42 @@ export default function OrdersPage() {
                     {/* Expanded detail panel */}
                     {expandedId === o.id && (
                       <div className="border-t border-border bg-secondary/20 px-4 pt-4 pb-5 space-y-3">
-
                         {/* 買家資訊 */}
                         <div>
                           <SectionLabel>買家資訊</SectionLabel>
                           <div className="bg-white rounded-xl border border-border/50 divide-y divide-border/40">
-                            <DetailRow label="姓名" value={revealedOrderIds.has(o.id) ? o.buyerName : maskName(o.buyerName)} />
+                            <DetailRow
+                              label="姓名"
+                              value={
+                                revealedOrderIds.has(o.id)
+                                  ? o.buyerName
+                                  : maskName(o.buyerName)
+                              }
+                            />
                             <div className="flex items-center justify-between px-3 py-2.5 gap-2">
-                              <span className="text-xs text-muted-foreground shrink-0">電話</span>
+                              <span className="text-xs text-muted-foreground shrink-0">
+                                電話
+                              </span>
                               <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium text-foreground">{revealedOrderIds.has(o.id) ? o.buyerPhone : maskPhone(o.buyerPhone)}</span>
+                                <span className="text-sm font-medium text-foreground">
+                                  {revealedOrderIds.has(o.id)
+                                    ? o.buyerPhone
+                                    : maskPhone(o.buyerPhone)}
+                                </span>
                                 {revealedOrderIds.has(o.id) && (
                                   <button
                                     type="button"
-                                    onClick={() => copyToClipboard(o.buyerPhone, `${o.id}-phone`)}
+                                    onClick={() =>
+                                      copyToClipboard(
+                                        o.buyerPhone,
+                                        `${o.id}-phone`,
+                                      )
+                                    }
                                     className="text-xs text-primary font-medium shrink-0"
                                   >
-                                    {copiedKey === `${o.id}-phone` ? "已複製" : "複製"}
+                                    {copiedKey === `${o.id}-phone`
+                                      ? "已複製"
+                                      : "複製"}
                                   </button>
                                 )}
                               </div>
@@ -952,22 +1244,53 @@ export default function OrdersPage() {
                               const rPhone = (o.recipientPhone ?? "").trim();
                               const isSame =
                                 (!rName && !rPhone) ||
-                                (rName === o.buyerName && rPhone === o.buyerPhone);
+                                (rName === o.buyerName &&
+                                  rPhone === o.buyerPhone);
                               if (isSame) {
                                 return (
                                   <>
-                                    <DetailRow label="收件人" value={revealedOrderIds.has(o.id) ? (rName || o.buyerName) : maskName(rName || o.buyerName)} />
-                                    <DetailRow label="收件電話" value={revealedOrderIds.has(o.id) ? (rPhone || o.buyerPhone) : maskPhone(rPhone || o.buyerPhone)} />
+                                    <DetailRow
+                                      label="收件人"
+                                      value={
+                                        revealedOrderIds.has(o.id)
+                                          ? rName || o.buyerName
+                                          : maskName(rName || o.buyerName)
+                                      }
+                                    />
+                                    <DetailRow
+                                      label="收件電話"
+                                      value={
+                                        revealedOrderIds.has(o.id)
+                                          ? rPhone || o.buyerPhone
+                                          : maskPhone(rPhone || o.buyerPhone)
+                                      }
+                                    />
                                     <div className="px-3 py-2">
-                                      <span className="text-[11px] text-muted-foreground/60">同買家資訊</span>
+                                      <span className="text-[11px] text-muted-foreground/60">
+                                        同買家資訊
+                                      </span>
                                     </div>
                                   </>
                                 );
                               }
                               return (
                                 <>
-                                  <DetailRow label="收件人" value={revealedOrderIds.has(o.id) ? (rName || "—") : maskName(rName)} />
-                                  <DetailRow label="收件電話" value={revealedOrderIds.has(o.id) ? (rPhone || "—") : maskPhone(rPhone)} />
+                                  <DetailRow
+                                    label="收件人"
+                                    value={
+                                      revealedOrderIds.has(o.id)
+                                        ? rName || "—"
+                                        : maskName(rName)
+                                    }
+                                  />
+                                  <DetailRow
+                                    label="收件電話"
+                                    value={
+                                      revealedOrderIds.has(o.id)
+                                        ? rPhone || "—"
+                                        : maskPhone(rPhone)
+                                    }
+                                  />
                                 </>
                               );
                             })()}
@@ -983,9 +1306,14 @@ export default function OrdersPage() {
                               return (
                                 <div className="bg-white rounded-xl border border-border/50 divide-y divide-border/40">
                                   {items.map((item, idx) => {
-                                    const specSummary = formatSpecSummary(item.specValues);
+                                    const specSummary = formatSpecSummary(
+                                      item.specValues,
+                                    );
                                     return (
-                                      <div key={idx} className="px-3 py-2.5 flex items-start gap-2.5">
+                                      <div
+                                        key={idx}
+                                        className="px-3 py-2.5 flex items-start gap-2.5"
+                                      >
                                         {item.productImageUrl && (
                                           <img
                                             src={item.productImageUrl}
@@ -994,13 +1322,24 @@ export default function OrdersPage() {
                                           />
                                         )}
                                         <div className="flex-1 min-w-0 space-y-0.5">
-                                          <div className="text-xs font-semibold text-foreground">{item.productName}</div>
+                                          <div className="text-xs font-semibold text-foreground">
+                                            {item.productName}
+                                          </div>
                                           {specSummary && (
-                                            <div className="text-[11px] text-muted-foreground">{specSummary}</div>
+                                            <div className="text-[11px] text-muted-foreground">
+                                              {specSummary}
+                                            </div>
                                           )}
                                           <div className="flex items-center justify-between mt-0.5">
-                                            <span className="text-[11px] text-muted-foreground">× {item.quantity} 件 · NT$ {item.unitPrice.toLocaleString()} / 件</span>
-                                            <span className="text-xs font-semibold text-foreground">NT$ {item.subtotal.toLocaleString()}</span>
+                                            <span className="text-[11px] text-muted-foreground">
+                                              × {item.quantity} 件 · NT${" "}
+                                              {item.unitPrice.toLocaleString()}{" "}
+                                              / 件
+                                            </span>
+                                            <span className="text-xs font-semibold text-foreground">
+                                              NT${" "}
+                                              {item.subtotal.toLocaleString()}
+                                            </span>
                                           </div>
                                         </div>
                                       </div>
@@ -1011,12 +1350,25 @@ export default function OrdersPage() {
                             }
                             return (
                               <div className="bg-white rounded-xl border border-border/50 divide-y divide-border/40">
-                                <DetailRow label="商品名稱" value={o.productName ?? "—"} />
-                                <DetailRow label="數量" value={`× ${o.quantity}`} />
+                                <DetailRow
+                                  label="商品名稱"
+                                  value={o.productName ?? "—"}
+                                />
+                                <DetailRow
+                                  label="數量"
+                                  value={`× ${o.quantity}`}
+                                />
                                 {o.unitPrice != null && (
-                                  <DetailRow label="單價" value={`NT$ ${Number(o.unitPrice).toLocaleString()}`} />
+                                  <DetailRow
+                                    label="單價"
+                                    value={`NT$ ${Number(o.unitPrice).toLocaleString()}`}
+                                  />
                                 )}
-                                <DetailRow label="商品小計" value={`NT$ ${Number(o.totalPrice).toLocaleString()}`} bold />
+                                <DetailRow
+                                  label="商品小計"
+                                  value={`NT$ ${Number(o.totalPrice).toLocaleString()}`}
+                                  bold
+                                />
                               </div>
                             );
                           })()}
@@ -1028,15 +1380,31 @@ export default function OrdersPage() {
                           <div className="bg-white rounded-xl border border-border/50 divide-y divide-border/40">
                             <DetailRow
                               label="快照狀態"
-                              value={profitSnapshotStatusLabel(o.profitSnapshotStatus)}
+                              value={profitSnapshotStatusLabel(
+                                o.profitSnapshotStatus,
+                              )}
                               bold
                             />
-                            {o.profitSnapshotStatus === "pending" || o.profitSnapshotStatus == null ? (
+                            {o.profitSnapshotStatus === "pending" ||
+                            o.profitSnapshotStatus == null ? (
                               <>
-                                <DetailRow label="商品日圓成本" value="待確認" />
-                                <DetailRow label="店鋪進貨匯率" value="待確認" />
-                                <DetailRow label="單件交通成本" value="待確認" />
-                                <DetailRow label="單件毛利" value="待確認" bold />
+                                <DetailRow
+                                  label="商品日圓成本"
+                                  value="待確認"
+                                />
+                                <DetailRow
+                                  label="店鋪進貨匯率"
+                                  value="待確認"
+                                />
+                                <DetailRow
+                                  label="單件交通成本"
+                                  value="待確認"
+                                />
+                                <DetailRow
+                                  label="單件毛利"
+                                  value="待確認"
+                                  bold
+                                />
                                 <div className="px-3 py-3 space-y-2">
                                   <p className="text-xs text-amber-700">
                                     {o.profitSnapshotStatus == null
@@ -1045,42 +1413,64 @@ export default function OrdersPage() {
                                   </p>
                                   <button
                                     type="button"
-                                    onClick={() => void handleBackfillProfitSnapshot(o.id)}
+                                    onClick={() =>
+                                      void handleBackfillProfitSnapshot(o.id)
+                                    }
                                     disabled={backfillingOrderId === o.id}
                                     className="w-full min-h-11 rounded-xl bg-primary text-white text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
                                   >
                                     {backfillingOrderId === o.id && (
                                       <span className="w-3.5 h-3.5 border-2 border-white/60 border-t-white rounded-full animate-spin" />
                                     )}
-                                    {backfillingOrderId === o.id ? "補拍中…" : "補拍成本快照"}
+                                    {backfillingOrderId === o.id
+                                      ? "補拍中…"
+                                      : "補拍成本快照"}
                                   </button>
                                   {backfillErrors[o.id] && (
                                     <div className="bg-destructive/10 rounded-xl px-3 py-2.5 space-y-1.5">
                                       <p className="text-xs text-destructive font-medium">
                                         {backfillErrors[o.id].message}
                                       </p>
-                                      {backfillErrors[o.id].missing.length > 0 && (
+                                      {backfillErrors[o.id].missing.length >
+                                        0 && (
                                         <ul className="space-y-1">
-                                          {backfillErrors[o.id].missing.map((field) => {
-                                            const info = BACKFILL_MISSING_FIELD_INFO[field];
-                                            if (!info) return null;
-                                            const href = field === "productCostJpy" ? `/products/${o.productId}/edit` : info.href;
-                                            return (
-                                              <li key={field} className="text-xs text-destructive/90 flex items-center justify-between gap-2">
-                                                <span>缺少：{info.label}</span>
-                                                <a href={href} className="shrink-0 text-primary font-medium underline">
-                                                  前往設定
-                                                </a>
-                                              </li>
-                                            );
-                                          })}
+                                          {backfillErrors[o.id].missing.map(
+                                            (field) => {
+                                              const info =
+                                                BACKFILL_MISSING_FIELD_INFO[
+                                                  field
+                                                ];
+                                              if (!info) return null;
+                                              const href =
+                                                field === "productCostJpy"
+                                                  ? `/products/${o.productId}/edit`
+                                                  : info.href;
+                                              return (
+                                                <li
+                                                  key={field}
+                                                  className="text-xs text-destructive/90 flex items-center justify-between gap-2"
+                                                >
+                                                  <span>
+                                                    缺少：{info.label}
+                                                  </span>
+                                                  <a
+                                                    href={href}
+                                                    className="shrink-0 text-primary font-medium underline"
+                                                  >
+                                                    前往設定
+                                                  </a>
+                                                </li>
+                                              );
+                                            },
+                                          )}
                                         </ul>
                                       )}
                                     </div>
                                   )}
                                 </div>
                               </>
-                            ) : o.profitSnapshotStatus === "captured" || o.profitSnapshotStatus === "exempt" ? (
+                            ) : o.profitSnapshotStatus === "captured" ||
+                              o.profitSnapshotStatus === "exempt" ? (
                               <>
                                 <DetailRow
                                   label="商品日圓成本"
@@ -1088,37 +1478,58 @@ export default function OrdersPage() {
                                 />
                                 <DetailRow
                                   label="店鋪進貨匯率"
-                                  value={trimSnapshotDecimal(o.profitSnapshotExchangeRate)}
+                                  value={trimSnapshotDecimal(
+                                    o.profitSnapshotExchangeRate,
+                                  )}
                                 />
                                 <DetailRow
                                   label="商品台幣成本"
-                                  value={formatSnapshotMoney(o.profitSnapshotDisplay?.productCostTwd)}
+                                  value={formatSnapshotMoney(
+                                    o.profitSnapshotDisplay?.productCostTwd,
+                                  )}
                                 />
                                 <DetailRow
                                   label="單件交通成本"
-                                  value={o.profitSnapshotStatus === "exempt"
-                                    ? "免攤"
-                                    : formatSnapshotMoney(o.profitSnapshotDisplay?.transportCostTwd)}
+                                  value={
+                                    o.profitSnapshotStatus === "exempt"
+                                      ? "免攤"
+                                      : formatSnapshotMoney(
+                                          o.profitSnapshotDisplay
+                                            ?.transportCostTwd,
+                                        )
+                                  }
                                 />
                                 <DetailRow
                                   label="單件毛利"
-                                  value={formatSnapshotMoney(o.profitSnapshotDisplay?.unitProfitTwd)}
+                                  value={formatSnapshotMoney(
+                                    o.profitSnapshotDisplay?.unitProfitTwd,
+                                  )}
                                   bold
                                 />
                                 <DetailRow
                                   label="全毛利（未扣交通）"
-                                  value={formatSnapshotMoney(o.profitSnapshotDisplay?.fullUnitProfitTwd)}
+                                  value={formatSnapshotMoney(
+                                    o.profitSnapshotDisplay?.fullUnitProfitTwd,
+                                  )}
                                 />
                                 <DetailRow
                                   label="成交快照時間"
-                                  value={o.profitSnapshotCapturedAt
-                                    ? formatDate(o.profitSnapshotCapturedAt)
-                                    : "待確認"}
+                                  value={
+                                    o.profitSnapshotCapturedAt
+                                      ? formatDate(o.profitSnapshotCapturedAt)
+                                      : "待確認"
+                                  }
                                 />
                                 {o.profitSnapshotBackfilledAt && (
                                   <DetailRow
-                                    label={o.profitSnapshotCapturedAt ? "補拍時間" : "補拍快照（非成交當時）"}
-                                    value={formatDate(o.profitSnapshotBackfilledAt)}
+                                    label={
+                                      o.profitSnapshotCapturedAt
+                                        ? "補拍時間"
+                                        : "補拍快照（非成交當時）"
+                                    }
+                                    value={formatDate(
+                                      o.profitSnapshotBackfilledAt,
+                                    )}
                                   />
                                 )}
                               </>
@@ -1131,31 +1542,51 @@ export default function OrdersPage() {
                         {/* 付款資訊 */}
                         <div>
                           <SectionLabel>付款資訊</SectionLabel>
-                          <p className="text-[10px] text-muted-foreground/50 mb-1.5">店家手動記錄，尚未串接金流</p>
+                          <p className="text-[10px] text-muted-foreground/50 mb-1.5">
+                            店家手動記錄，尚未串接金流
+                          </p>
                           <div className="bg-white rounded-xl border border-border/50 divide-y divide-border/40">
                             <div className="flex items-center justify-between px-3 py-2.5 gap-2">
-                              <span className="text-xs text-muted-foreground shrink-0">付款狀態</span>
-                              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${PAYMENT_STATUS_COLORS[o.paymentStatus ?? "unpaid"] ?? "bg-gray-100 text-gray-500"}`}>
-                                {PAYMENT_STATUS_LABELS[o.paymentStatus ?? "unpaid"] ?? "未付款"}
+                              <span className="text-xs text-muted-foreground shrink-0">
+                                付款狀態
+                              </span>
+                              <span
+                                className={`text-xs px-2 py-0.5 rounded-full font-medium ${PAYMENT_STATUS_COLORS[o.paymentStatus ?? "unpaid"] ?? "bg-gray-100 text-gray-500"}`}
+                              >
+                                {PAYMENT_STATUS_LABELS[
+                                  o.paymentStatus ?? "unpaid"
+                                ] ?? "未付款"}
                               </span>
                             </div>
                             <DetailRow
                               label="付款方式"
-                              value={o.paymentMethod ? (PAYMENT_METHOD_LABELS[o.paymentMethod] ?? o.paymentMethod) : "未設定"}
+                              value={
+                                o.paymentMethod
+                                  ? (PAYMENT_METHOD_LABELS[o.paymentMethod] ??
+                                    o.paymentMethod)
+                                  : "未設定"
+                              }
                             />
                             <DetailRow
                               label="運費"
                               value={`NT$ ${Number(o.shippingFee ?? 0).toLocaleString()}`}
                             />
-                            <DetailRow label="付款末五碼" value={(o as any).paymentLast5 ?? "尚未填寫"} />
-                            {o.discountAmount != null && o.discountAmount > 0 && (
-                              <DetailRow
-                                label="折讓"
-                                value={`-NT$ ${Number(o.discountAmount).toLocaleString()}`}
-                              />
-                            )}
+                            <DetailRow
+                              label="付款末五碼"
+                              value={(o as any).paymentLast5 ?? "尚未填寫"}
+                            />
+                            {o.discountAmount != null &&
+                              o.discountAmount > 0 && (
+                                <DetailRow
+                                  label="折讓"
+                                  value={`-NT$ ${Number(o.discountAmount).toLocaleString()}`}
+                                />
+                              )}
                             {o.discountNote && (
-                              <DetailRow label="折讓備註" value={o.discountNote} />
+                              <DetailRow
+                                label="折讓備註"
+                                value={o.discountNote}
+                              />
                             )}
                             <DetailRow
                               label="訂單總額"
@@ -1164,14 +1595,21 @@ export default function OrdersPage() {
                             />
                             <DetailRow
                               label="已收金額"
-                              value={o.paidAmount != null ? `NT$ ${Number(o.paidAmount).toLocaleString()}` : "尚未記錄"}
+                              value={
+                                o.paidAmount != null
+                                  ? `NT$ ${Number(o.paidAmount).toLocaleString()}`
+                                  : "尚未記錄"
+                              }
                             />
                             <DetailRow
                               label="待收金額"
-                              value={`NT$ ${Number(o.remainingAmount ?? (Number(o.orderTotal ?? o.totalPrice) - (o.paidAmount ?? 0))).toLocaleString()}`}
+                              value={`NT$ ${Number(o.remainingAmount ?? Number(o.orderTotal ?? o.totalPrice) - (o.paidAmount ?? 0)).toLocaleString()}`}
                             />
                             {o.paymentNote && (
-                              <DetailRow label="付款備註（後台）" value={o.paymentNote} />
+                              <DetailRow
+                                label="付款備註（後台）"
+                                value={o.paymentNote}
+                              />
                             )}
                           </div>
                         </div>
@@ -1179,55 +1617,160 @@ export default function OrdersPage() {
                         {/* 物流資訊 */}
                         <div>
                           <SectionLabel>物流資訊</SectionLabel>
-                          <p className="text-[10px] text-muted-foreground/50 mb-1.5">店家手動記錄，尚未串接物流</p>
+                          <p className="text-[10px] text-muted-foreground/50 mb-1.5">
+                            店家手動記錄，尚未串接物流
+                          </p>
                           <div className="bg-white rounded-xl border border-border/50 divide-y divide-border/40">
                             <div className="flex items-center justify-between px-3 py-2.5 gap-2">
-                              <span className="text-xs text-muted-foreground shrink-0">出貨狀態</span>
-                              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${SHIPPING_STATUS_COLORS[o.shippingStatus ?? "not_shipped"] ?? "bg-secondary/80 text-muted-foreground"}`}>
-                                {SHIPPING_STATUS_LABELS[o.shippingStatus ?? "not_shipped"] ?? "未出貨"}
+                              <span className="text-xs text-muted-foreground shrink-0">
+                                出貨狀態
+                              </span>
+                              <span
+                                className={`text-xs px-2 py-0.5 rounded-full font-medium ${SHIPPING_STATUS_COLORS[o.shippingStatus ?? "not_shipped"] ?? "bg-secondary/80 text-muted-foreground"}`}
+                              >
+                                {SHIPPING_STATUS_LABELS[
+                                  o.shippingStatus ?? "not_shipped"
+                                ] ?? "未出貨"}
                               </span>
                             </div>
                             {o.shippingMethod && (
                               <DetailRow
                                 label="物流方式"
-                                value={SHIPPING_METHOD_LABELS[o.shippingMethod] ?? o.shippingMethod}
+                                value={
+                                  SHIPPING_METHOD_LABELS[o.shippingMethod] ??
+                                  o.shippingMethod
+                                }
                               />
                             )}
-                            <DetailRow label="取貨方式" value={o.pickupMethod} />
+                            <DetailRow
+                              label="取貨方式"
+                              value={o.pickupMethod}
+                            />
                             {/* 宅配欄位：只有黑貓/郵局/宅配才顯示 */}
                             {orderIsHome(o.pickupMethod, o.shippingMethod) && (
                               <>
-                                {o.trackingCode && <DetailRow label="物流追蹤碼" value={o.trackingCode} />}
-                                {o.trackingProvider && <DetailRow label="物流商" value={o.trackingProvider} />}
-                                {o.recipientName && <DetailRow label="收件人" value={revealedOrderIds.has(o.id) ? o.recipientName : maskName(o.recipientName)} />}
-                                {o.recipientPhone && <DetailRow label="收件電話" value={revealedOrderIds.has(o.id) ? o.recipientPhone : maskPhone(o.recipientPhone)} />}
-                                {o.recipientAddress && !revealedOrderIds.has(o.id) && <DetailRow label="收件地址" value={maskAddress(o.recipientAddress)} />}
-                                {o.recipientAddress && revealedOrderIds.has(o.id) && (() => {
-                                  const parsed = parseRecipientAddress(o.recipientAddress);
-                                  if (!parsed) return <DetailRow label="收件地址" value={o.recipientAddress!} />;
-                                  return (
-                                    <>
-                                      {parsed.zip && <DetailRow label="郵遞區號" value={parsed.zip} />}
-                                      <DetailRow label="縣市" value={parsed.city} />
-                                      {parsed.district && <DetailRow label="行政區" value={parsed.district} />}
-                                      {parsed.line && <DetailRow label="詳細地址" value={parsed.line} />}
-                                    </>
-                                  );
-                                })()}
+                                {o.trackingCode && (
+                                  <DetailRow
+                                    label="物流追蹤碼"
+                                    value={o.trackingCode}
+                                  />
+                                )}
+                                {o.trackingProvider && (
+                                  <DetailRow
+                                    label="物流商"
+                                    value={o.trackingProvider}
+                                  />
+                                )}
+                                {o.recipientName && (
+                                  <DetailRow
+                                    label="收件人"
+                                    value={
+                                      revealedOrderIds.has(o.id)
+                                        ? o.recipientName
+                                        : maskName(o.recipientName)
+                                    }
+                                  />
+                                )}
+                                {o.recipientPhone && (
+                                  <DetailRow
+                                    label="收件電話"
+                                    value={
+                                      revealedOrderIds.has(o.id)
+                                        ? o.recipientPhone
+                                        : maskPhone(o.recipientPhone)
+                                    }
+                                  />
+                                )}
+                                {o.recipientAddress &&
+                                  !revealedOrderIds.has(o.id) && (
+                                    <DetailRow
+                                      label="收件地址"
+                                      value={maskAddress(o.recipientAddress)}
+                                    />
+                                  )}
+                                {o.recipientAddress &&
+                                  revealedOrderIds.has(o.id) &&
+                                  (() => {
+                                    const parsed = parseRecipientAddress(
+                                      o.recipientAddress,
+                                    );
+                                    if (!parsed)
+                                      return (
+                                        <DetailRow
+                                          label="收件地址"
+                                          value={o.recipientAddress!}
+                                        />
+                                      );
+                                    return (
+                                      <>
+                                        {parsed.zip && (
+                                          <DetailRow
+                                            label="郵遞區號"
+                                            value={parsed.zip}
+                                          />
+                                        )}
+                                        <DetailRow
+                                          label="縣市"
+                                          value={parsed.city}
+                                        />
+                                        {parsed.district && (
+                                          <DetailRow
+                                            label="行政區"
+                                            value={parsed.district}
+                                          />
+                                        )}
+                                        {parsed.line && (
+                                          <DetailRow
+                                            label="詳細地址"
+                                            value={parsed.line}
+                                          />
+                                        )}
+                                      </>
+                                    );
+                                  })()}
                               </>
                             )}
                             {/* 面交 / 自取地點：沿用 recipientAddress 欄位，label 依取貨方式 */}
-                            {(o.pickupMethod === "面交" || o.pickupMethod === "自取") && o.recipientAddress && (() => {
-                              const label = o.pickupMethod === "面交" ? "面交地點" : "自取地點";
-                              const parsed = parseRecipientAddress(o.recipientAddress);
-                              const value = parsed
-                                ? `${parsed.city}${parsed.district}${parsed.line}`.trim()
-                                : o.recipientAddress;
-                              return <DetailRow label={label} value={revealedOrderIds.has(o.id) ? value : maskAddress(value)} />;
-                            })()}
-                            {o.shippingNote && <DetailRow label="物流備註" value={o.shippingNote} />}
-                            {o.internalNote && <DetailRow label="內部備註（後台）" value={o.internalNote} />}
-                            {o.notes && <DetailRow label="買家備註" value={o.notes} />}
+                            {(o.pickupMethod === "面交" ||
+                              o.pickupMethod === "自取") &&
+                              o.recipientAddress &&
+                              (() => {
+                                const label =
+                                  o.pickupMethod === "面交"
+                                    ? "面交地點"
+                                    : "自取地點";
+                                const parsed = parseRecipientAddress(
+                                  o.recipientAddress,
+                                );
+                                const value = parsed
+                                  ? `${parsed.city}${parsed.district}${parsed.line}`.trim()
+                                  : o.recipientAddress;
+                                return (
+                                  <DetailRow
+                                    label={label}
+                                    value={
+                                      revealedOrderIds.has(o.id)
+                                        ? value
+                                        : maskAddress(value)
+                                    }
+                                  />
+                                );
+                              })()}
+                            {o.shippingNote && (
+                              <DetailRow
+                                label="物流備註"
+                                value={o.shippingNote}
+                              />
+                            )}
+                            {o.internalNote && (
+                              <DetailRow
+                                label="內部備註（後台）"
+                                value={o.internalNote}
+                              />
+                            )}
+                            {o.notes && (
+                              <DetailRow label="買家備註" value={o.notes} />
+                            )}
                           </div>
                         </div>
 
@@ -1237,13 +1780,26 @@ export default function OrdersPage() {
                             <SectionLabel>7-11 門市</SectionLabel>
                             {o.storeCode ? (
                               <div className="bg-white rounded-xl border border-primary/20 px-4 py-3 space-y-1">
-                                <div className="text-sm font-semibold text-foreground">7-11 {o.storeName}</div>
-                                <div className="text-xs text-muted-foreground">{o.cvsStoreAddress}</div>
-                                <div className="text-xs text-muted-foreground/70">門市編號：{o.storeCode}</div>
-                                {o.cvsStorePhone && <div className="text-xs text-muted-foreground/70">電話：{o.cvsStorePhone}</div>}
+                                <div className="text-sm font-semibold text-foreground">
+                                  7-11 {o.storeName}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {o.cvsStoreAddress}
+                                </div>
+                                <div className="text-xs text-muted-foreground/70">
+                                  門市編號：{o.storeCode}
+                                </div>
+                                {o.cvsStorePhone && (
+                                  <div className="text-xs text-muted-foreground/70">
+                                    電話：{o.cvsStorePhone}
+                                  </div>
+                                )}
                                 <div className="flex items-center gap-3 mt-1 pt-1 border-t border-border/40">
                                   <span className="text-xs text-muted-foreground/60">
-                                    選擇來源：{o.storeSelectedBy === "admin" ? "老闆代選" : "客人選擇"}
+                                    選擇來源：
+                                    {o.storeSelectedBy === "admin"
+                                      ? "老闆代選"
+                                      : "客人選擇"}
                                   </span>
                                   {o.storeSelectedAt && (
                                     <span className="text-xs text-muted-foreground/60">
@@ -1254,24 +1810,27 @@ export default function OrdersPage() {
                               </div>
                             ) : (
                               <div className="bg-amber-50 rounded-xl border border-amber-200 px-4 py-3">
-                                <p className="text-xs text-amber-700">尚未選擇 7-11 門市</p>
+                                <p className="text-xs text-amber-700">
+                                  尚未選擇 7-11 門市
+                                </p>
                               </div>
                             )}
-                            {o.status !== "completed" && o.status !== "cancelled" && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  openSevenElevenMap({
-                                    returnPath: `${basePath}/orders`,
-                                    source: "admin",
-                                    orderId: o.id,
-                                  });
-                                }}
-                                className="mt-2 w-full min-h-11 rounded-xl border border-primary/40 bg-primary/5 text-xs font-medium text-primary"
-                              >
-                                選擇 / 修改 7-11 門市
-                              </button>
-                            )}
+                            {o.status !== "completed" &&
+                              o.status !== "cancelled" && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    openSevenElevenMap({
+                                      returnPath: `${basePath}/orders`,
+                                      source: "admin",
+                                      orderId: o.id,
+                                    });
+                                  }}
+                                  className="mt-2 w-full min-h-11 rounded-xl border border-primary/40 bg-primary/5 text-xs font-medium text-primary"
+                                >
+                                  選擇 / 修改 7-11 門市
+                                </button>
+                              )}
                           </div>
                         )}
 
@@ -1281,13 +1840,26 @@ export default function OrdersPage() {
                             <SectionLabel>全家門市</SectionLabel>
                             {o.storeCode ? (
                               <div className="bg-white rounded-xl border border-primary/20 px-4 py-3 space-y-1">
-                                <div className="text-sm font-semibold text-foreground">全家 {o.storeName}</div>
-                                <div className="text-xs text-muted-foreground">{o.cvsStoreAddress}</div>
-                                <div className="text-xs text-muted-foreground/70">門市編號：{o.storeCode}</div>
-                                {o.cvsStorePhone && <div className="text-xs text-muted-foreground/70">電話：{o.cvsStorePhone}</div>}
+                                <div className="text-sm font-semibold text-foreground">
+                                  全家 {o.storeName}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {o.cvsStoreAddress}
+                                </div>
+                                <div className="text-xs text-muted-foreground/70">
+                                  門市編號：{o.storeCode}
+                                </div>
+                                {o.cvsStorePhone && (
+                                  <div className="text-xs text-muted-foreground/70">
+                                    電話：{o.cvsStorePhone}
+                                  </div>
+                                )}
                                 <div className="flex items-center gap-3 mt-1 pt-1 border-t border-border/40">
                                   <span className="text-xs text-muted-foreground/60">
-                                    選擇來源：{o.storeSelectedBy === "admin" ? "老闆代選" : "客人選擇"}
+                                    選擇來源：
+                                    {o.storeSelectedBy === "admin"
+                                      ? "老闆代選"
+                                      : "客人選擇"}
                                   </span>
                                   {o.storeSelectedAt && (
                                     <span className="text-xs text-muted-foreground/60">
@@ -1298,25 +1870,28 @@ export default function OrdersPage() {
                               </div>
                             ) : (
                               <div className="bg-amber-50 rounded-xl border border-amber-200 px-4 py-3">
-                                <p className="text-xs text-amber-700">尚未選擇全家門市</p>
+                                <p className="text-xs text-amber-700">
+                                  尚未選擇全家門市
+                                </p>
                               </div>
                             )}
-                            {o.status !== "completed" && o.status !== "cancelled" && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  openCvsStoreMap({
-                                    provider: "family",
-                                    returnPath: `${basePath}/orders`,
-                                    source: "admin",
-                                    orderId: o.id,
-                                  });
-                                }}
-                                className="mt-2 w-full min-h-11 rounded-xl border border-primary/40 bg-primary/5 text-xs font-medium text-primary"
-                              >
-                                選擇 / 修改全家門市
-                              </button>
-                            )}
+                            {o.status !== "completed" &&
+                              o.status !== "cancelled" && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    openCvsStoreMap({
+                                      provider: "family",
+                                      returnPath: `${basePath}/orders`,
+                                      source: "admin",
+                                      orderId: o.id,
+                                    });
+                                  }}
+                                  className="mt-2 w-full min-h-11 rounded-xl border border-primary/40 bg-primary/5 text-xs font-medium text-primary"
+                                >
+                                  選擇 / 修改全家門市
+                                </button>
+                              )}
                           </div>
                         )}
 
@@ -1325,7 +1900,10 @@ export default function OrdersPage() {
                           <div>
                             <SectionLabel>物流方式</SectionLabel>
                             <div className="bg-white rounded-xl border border-border/50 px-4 py-3">
-                              <span className="text-sm font-medium text-foreground">{HOME_DELIVERY_LABELS[o.pickupMethod] ?? o.pickupMethod}</span>
+                              <span className="text-sm font-medium text-foreground">
+                                {HOME_DELIVERY_LABELS[o.pickupMethod] ??
+                                  o.pickupMethod}
+                              </span>
                             </div>
                           </div>
                         )}
@@ -1335,32 +1913,49 @@ export default function OrdersPage() {
                           <div>
                             <SectionLabel>物流方式</SectionLabel>
                             <div className="bg-amber-50 rounded-xl border border-amber-200 px-4 py-3">
-                              <p className="text-xs text-amber-700">已停用的取貨方式：{DEPRECATED_METHODS[o.pickupMethod]}</p>
+                              <p className="text-xs text-amber-700">
+                                已停用的取貨方式：
+                                {DEPRECATED_METHODS[o.pickupMethod]}
+                              </p>
                             </div>
                           </div>
                         )}
 
                         {/* 規格（多品項訂單的規格已顯示在商品明細各項目中，此區只給單品項訂單） */}
-                        {!(Array.isArray((o as any).items) && (o as any).items.length > 1) && o.specValues && Object.keys(o.specValues as object).length > 0 && (
-                          <div>
-                            <SectionLabel>規格</SectionLabel>
-                            <div className="bg-white rounded-xl border border-border/50 px-3 py-2.5">
-                              <span className="text-sm font-medium text-foreground">
-                                {Object.entries(o.specValues as object).map(([k, v]) => `${k}: ${v}`).join("、")}
-                              </span>
+                        {!(
+                          Array.isArray((o as any).items) &&
+                          (o as any).items.length > 1
+                        ) &&
+                          o.specValues &&
+                          Object.keys(o.specValues as object).length > 0 && (
+                            <div>
+                              <SectionLabel>規格</SectionLabel>
+                              <div className="bg-white rounded-xl border border-border/50 px-3 py-2.5">
+                                <span className="text-sm font-medium text-foreground">
+                                  {Object.entries(o.specValues as object)
+                                    .map(([k, v]) => `${k}: ${v}`)
+                                    .join("、")}
+                                </span>
+                              </div>
                             </div>
-                          </div>
-                        )}
+                          )}
 
                         {/* 訂單資訊 */}
                         <div>
                           <SectionLabel>訂單資訊</SectionLabel>
                           <div className="bg-white rounded-xl border border-border/50 divide-y divide-border/40">
                             <DetailRow label="訂單編號" value={`#${o.id}`} />
-                            <DetailRow label="下單時間" value={formatDate(o.createdAt)} />
+                            <DetailRow
+                              label="下單時間"
+                              value={formatDate(o.createdAt)}
+                            />
                             <div className="flex items-center justify-between px-3 py-2.5">
-                              <span className="text-xs text-muted-foreground">目前狀態</span>
-                              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[o.status] ?? "bg-gray-100 text-gray-600"}`}>
+                              <span className="text-xs text-muted-foreground">
+                                目前狀態
+                              </span>
+                              <span
+                                className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[o.status] ?? "bg-gray-100 text-gray-600"}`}
+                              >
                                 {STATUS_LABELS[o.status] ?? o.status}
                               </span>
                             </div>
@@ -1380,36 +1975,44 @@ export default function OrdersPage() {
                         <div>
                           <SectionLabel>客人通知文案</SectionLabel>
                           <div className="grid grid-cols-3 gap-2">
-                            {ORDER_MESSAGE_TEMPLATE_TYPES.map((templateType) => {
-                              const items = normalizeOrderItems(o as any);
-                              const productSummary = items
-                                .map((item) => `${item.productName} × ${item.quantity}`)
-                                .join("、");
-                              const amount = resolveOrderDisplayTotal(o).toLocaleString();
-                              const copyKey = `${o.id}-message-${templateType}`;
-                              return (
-                                <button
-                                  key={templateType}
-                                  type="button"
-                                  onClick={() =>
-                                    copyToClipboard(
-                                      buildOrderMessage(templateType, {
-                                        orderNumber: `#${o.id}`,
-                                        productSummary,
-                                        amountTwd: amount,
-                                        pickupMethod: o.pickupMethod,
-                                      }),
-                                      copyKey,
-                                    )
-                                  }
-                                  className="min-h-11 rounded-xl border border-border bg-white px-2 py-2 text-xs font-medium text-foreground"
-                                >
-                                  {copiedKey === copyKey
-                                    ? "已複製"
-                                    : ORDER_MESSAGE_TEMPLATE_LABELS[templateType]}
-                                </button>
-                              );
-                            })}
+                            {ORDER_MESSAGE_TEMPLATE_TYPES.map(
+                              (templateType) => {
+                                const items = normalizeOrderItems(o as any);
+                                const productSummary = items
+                                  .map(
+                                    (item) =>
+                                      `${item.productName} × ${item.quantity}`,
+                                  )
+                                  .join("、");
+                                const amount =
+                                  resolveOrderDisplayTotal(o).toLocaleString();
+                                const copyKey = `${o.id}-message-${templateType}`;
+                                return (
+                                  <button
+                                    key={templateType}
+                                    type="button"
+                                    onClick={() =>
+                                      copyToClipboard(
+                                        buildOrderMessage(templateType, {
+                                          orderNumber: `#${o.id}`,
+                                          productSummary,
+                                          amountTwd: amount,
+                                          pickupMethod: o.pickupMethod,
+                                        }),
+                                        copyKey,
+                                      )
+                                    }
+                                    className="min-h-11 rounded-xl border border-border bg-white px-2 py-2 text-xs font-medium text-foreground"
+                                  >
+                                    {copiedKey === copyKey
+                                      ? "已複製"
+                                      : ORDER_MESSAGE_TEMPLATE_LABELS[
+                                          templateType
+                                        ]}
+                                  </button>
+                                );
+                              },
+                            )}
                           </div>
                           <p className="mt-1.5 text-[10px] text-muted-foreground">
                             只會複製到剪貼簿，不會自動發送。
@@ -1417,26 +2020,31 @@ export default function OrdersPage() {
                         </div>
 
                         {/* 編輯訂單 */}
-                        {o.status !== "completed" && o.status !== "cancelled" && (
-                          <button
-                            type="button"
-                            onClick={() => setEditingOrder(o)}
-                            className="w-full min-h-11 rounded-xl border border-primary/40 bg-primary/5 text-xs font-medium text-primary"
-                          >
-                            編輯訂單
-                          </button>
-                        )}
+                        {o.status !== "completed" &&
+                          o.status !== "cancelled" && (
+                            <button
+                              type="button"
+                              onClick={() => setEditingOrder(o)}
+                              className="w-full min-h-11 rounded-xl border border-primary/40 bg-primary/5 text-xs font-medium text-primary"
+                            >
+                              編輯訂單
+                            </button>
+                          )}
 
                         {/* 複製追蹤連結 */}
                         <button
                           type="button"
-                          onClick={() => copyToClipboard(
-                            `${window.location.origin}${basePath}/track/${o.publicToken}`,
-                            `${o.id}-link`
-                          )}
+                          onClick={() =>
+                            copyToClipboard(
+                              `${window.location.origin}${basePath}/track/${o.publicToken}`,
+                              `${o.id}-link`,
+                            )
+                          }
                           className="w-full min-h-11 rounded-xl border border-border bg-white text-xs font-medium text-foreground"
                         >
-                          {copiedKey === `${o.id}-link` ? "已複製追蹤連結" : "複製追蹤連結"}
+                          {copiedKey === `${o.id}-link`
+                            ? "已複製追蹤連結"
+                            : "複製追蹤連結"}
                         </button>
 
                         {/* 列印銷貨單 */}
@@ -1450,15 +2058,24 @@ export default function OrdersPage() {
 
                         {/* 更新狀態 / 危險操作 */}
                         {(() => {
-                          const nextStatuses = VALID_NEXT_STATUSES[o.status] ?? [];
-                          const hasCancelOption = nextStatuses.includes("cancelled");
+                          const nextStatuses =
+                            VALID_NEXT_STATUSES[o.status] ?? [];
+                          const hasCancelOption =
+                            nextStatuses.includes("cancelled");
                           // Step 8C: completed / cancelled 不再是死路，老闆可手動復原成其他狀態，
                           // 但因為這類變更會「復原一筆已結束的訂單」，需要額外二次確認。
-                          const isRestoringFromTerminal = o.status === "completed" || o.status === "cancelled";
+                          const isRestoringFromTerminal =
+                            o.status === "completed" ||
+                            o.status === "cancelled";
                           const handleNormalStatusClick = (s: string) => {
                             if (s === o.status) return;
                             if (isRestoringFromTerminal) {
-                              setStatusConfirm({ orderId: o.id, fromStatus: o.status, toStatus: s, kind: "restore" });
+                              setStatusConfirm({
+                                orderId: o.id,
+                                fromStatus: o.status,
+                                toStatus: s,
+                                kind: "restore",
+                              });
                               return;
                             }
                             handleStatusChange(o.id, s);
@@ -1469,7 +2086,9 @@ export default function OrdersPage() {
                                 <SectionLabel>更新狀態</SectionLabel>
                                 {isRestoringFromTerminal && (
                                   <p className="text-xs text-muted-foreground mb-1.5">
-                                    此訂單目前已結束（{STATUS_LABELS[o.status] ?? o.status}），選擇以下狀態將會復原並變更此訂單。
+                                    此訂單目前已結束（
+                                    {STATUS_LABELS[o.status] ?? o.status}
+                                    ），選擇以下狀態將會復原並變更此訂單。
                                   </p>
                                 )}
                                 <div className="flex flex-wrap gap-2">
@@ -1479,16 +2098,24 @@ export default function OrdersPage() {
                                       <button
                                         key={s}
                                         type="button"
-                                        disabled={isCurrent || loadingOrderId === o.id}
-                                        aria-current={isCurrent ? "true" : undefined}
-                                        onClick={() => handleNormalStatusClick(s)}
+                                        disabled={
+                                          isCurrent || loadingOrderId === o.id
+                                        }
+                                        aria-current={
+                                          isCurrent ? "true" : undefined
+                                        }
+                                        onClick={() =>
+                                          handleNormalStatusClick(s)
+                                        }
                                         className={`min-h-11 px-4 rounded-xl text-sm font-medium border transition-colors ${
                                           isCurrent
                                             ? "border-primary bg-primary/10 text-primary cursor-default disabled:opacity-100"
                                             : `${STATUS_COLORS[s] ? `border-transparent ${STATUS_COLORS[s]}` : "border-input bg-white text-foreground"} disabled:opacity-60`
                                         }`}
                                       >
-                                        {!isCurrent && loadingOrderId === o.id ? "更新中..." : STATUS_LABELS[s]}
+                                        {!isCurrent && loadingOrderId === o.id
+                                          ? "更新中..."
+                                          : STATUS_LABELS[s]}
                                       </button>
                                     );
                                   })}
@@ -1496,8 +2123,13 @@ export default function OrdersPage() {
                               </div>
                               {(() => {
                                 // Step 7H: 刪除限制 — 已出貨 / 已完成 / 已有物流追蹤的訂單不可刪除
-                                const hasTracking = !!(o as OrderWithTracking).shipmentTracking || !!(o.trackingCode ?? "").trim();
-                                const deleteBlocked = o.status === "shipped" || o.status === "completed" || hasTracking;
+                                const hasTracking =
+                                  !!(o as OrderWithTracking).shipmentTracking ||
+                                  !!(o.trackingCode ?? "").trim();
+                                const deleteBlocked =
+                                  o.status === "shipped" ||
+                                  o.status === "completed" ||
+                                  hasTracking;
                                 return (
                                   <div className="border border-red-200 rounded-xl px-3 py-3 bg-red-50/40 space-y-2">
                                     <SectionLabel>危險操作</SectionLabel>
@@ -1509,19 +2141,38 @@ export default function OrdersPage() {
                                         <button
                                           type="button"
                                           disabled={loadingOrderId === o.id}
-                                          onClick={() => setStatusConfirm({ orderId: o.id, fromStatus: o.status, toStatus: "cancelled", kind: "cancel" })}
+                                          onClick={() =>
+                                            setStatusConfirm({
+                                              orderId: o.id,
+                                              fromStatus: o.status,
+                                              toStatus: "cancelled",
+                                              kind: "cancel",
+                                            })
+                                          }
                                           className="min-h-11 px-4 rounded-xl text-sm font-medium border border-red-300 bg-white text-red-600 hover:bg-red-50 transition-colors disabled:opacity-60"
                                         >
-                                          {loadingOrderId === o.id ? "更新中..." : "取消訂單"}
+                                          {loadingOrderId === o.id
+                                            ? "更新中..."
+                                            : "取消訂單"}
                                         </button>
                                       )}
                                       <button
                                         type="button"
-                                        disabled={deleteBlocked || deletingOrderId === o.id}
-                                        onClick={() => setDeleteConfirm({ orderId: o.id, buyerName: o.buyerName })}
+                                        disabled={
+                                          deleteBlocked ||
+                                          deletingOrderId === o.id
+                                        }
+                                        onClick={() =>
+                                          setDeleteConfirm({
+                                            orderId: o.id,
+                                            buyerName: o.buyerName,
+                                          })
+                                        }
                                         className="min-h-11 px-4 rounded-xl text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50"
                                       >
-                                        {deletingOrderId === o.id ? "刪除中..." : "刪除訂單"}
+                                        {deletingOrderId === o.id
+                                          ? "刪除中..."
+                                          : "刪除訂單"}
                                       </button>
                                     </div>
                                     {deleteBlocked && (
@@ -1533,7 +2184,9 @@ export default function OrdersPage() {
                                 );
                               })()}
                               {statusErrors[o.id] && (
-                                <p className="text-xs text-destructive mt-0.5">{statusErrors[o.id]}</p>
+                                <p className="text-xs text-destructive mt-0.5">
+                                  {statusErrors[o.id]}
+                                </p>
                               )}
                             </>
                           );
@@ -1552,7 +2205,9 @@ export default function OrdersPage() {
       {selectedIds.size > 0 && (
         <div className="fixed bottom-16 left-0 right-0 max-w-[480px] mx-auto z-20 bg-white border-t border-border shadow-lg px-4 py-3">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-semibold text-foreground">已選 {selectedIds.size} 筆</span>
+            <span className="text-sm font-semibold text-foreground">
+              已選 {selectedIds.size} 筆
+            </span>
             <button
               type="button"
               onClick={clearSelection}
@@ -1565,7 +2220,10 @@ export default function OrdersPage() {
             <div className="flex flex-1 gap-1">
               <select
                 value={bulkPaymentStatus}
-                onChange={(e) => { setBulkPaymentStatus(e.target.value); setBulkError(null); }}
+                onChange={(e) => {
+                  setBulkPaymentStatus(e.target.value);
+                  setBulkError(null);
+                }}
                 disabled={isBulkLoading}
                 className="flex-1 min-w-0 min-h-11 px-2 rounded-xl border border-input bg-secondary/40 text-xs focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
               >
@@ -1589,7 +2247,10 @@ export default function OrdersPage() {
             <div className="flex flex-1 gap-1">
               <select
                 value={bulkShippingStatus}
-                onChange={(e) => { setBulkShippingStatus(e.target.value); setBulkError(null); }}
+                onChange={(e) => {
+                  setBulkShippingStatus(e.target.value);
+                  setBulkError(null);
+                }}
                 disabled={isBulkLoading}
                 className="flex-1 min-w-0 min-h-11 px-2 rounded-xl border border-input bg-secondary/40 text-xs focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
               >
@@ -1612,11 +2273,15 @@ export default function OrdersPage() {
               </button>
             </div>
           </div>
-          {bulkError && <p className="text-xs text-destructive mt-1.5">{bulkError}</p>}
+          {bulkError && (
+            <p className="text-xs text-destructive mt-1.5">{bulkError}</p>
+          )}
 
           {/* Picking / shipping tools row */}
           <div className="mt-2 pt-2 border-t border-border/50">
-            <p className="text-[11px] text-muted-foreground/60 mb-1.5">撿貨 / 出貨工具</p>
+            <p className="text-[11px] text-muted-foreground/60 mb-1.5">
+              撿貨 / 出貨工具
+            </p>
             <div className="flex gap-1.5 flex-wrap">
               <button
                 type="button"
@@ -1651,8 +2316,16 @@ export default function OrdersPage() {
                 {csvShippingLoading ? "下載中…" : "↓ 出貨 CSV"}
               </button>
             </div>
-            {pickingListError && <p className="text-xs text-destructive mt-1">{pickingListError}</p>}
-            {shippingListError && <p className="text-xs text-destructive mt-1">{shippingListError}</p>}
+            {pickingListError && (
+              <p className="text-xs text-destructive mt-1">
+                {pickingListError}
+              </p>
+            )}
+            {shippingListError && (
+              <p className="text-xs text-destructive mt-1">
+                {shippingListError}
+              </p>
+            )}
           </div>
         </div>
       )}
@@ -1691,7 +2364,9 @@ export default function OrdersPage() {
       {/* Step 8E: 狀態操作確認彈窗（取代 window.confirm，App 內樣式，手機可用） */}
       <AlertDialog
         open={!!statusConfirm}
-        onOpenChange={(open) => { if (!open) setStatusConfirm(null); }}
+        onOpenChange={(open) => {
+          if (!open) setStatusConfirm(null);
+        }}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -1702,16 +2377,24 @@ export default function OrdersPage() {
               {statusConfirm?.kind === "cancel"
                 ? "確定要取消這筆訂單嗎？取消後仍可由後台重新改回其他狀態，但此操作可能影響後續處理。"
                 : statusConfirm
-                ? `此訂單目前為「${STATUS_LABELS[statusConfirm.fromStatus] ?? statusConfirm.fromStatus}」，確定要改回「${STATUS_LABELS[statusConfirm.toStatus] ?? statusConfirm.toStatus}」嗎？這會復原一筆已結束的訂單。`
-                : ""}
+                  ? `此訂單目前為「${STATUS_LABELS[statusConfirm.fromStatus] ?? statusConfirm.fromStatus}」，確定要改回「${STATUS_LABELS[statusConfirm.toStatus] ?? statusConfirm.toStatus}」嗎？這會復原一筆已結束的訂單。`
+                  : ""}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setStatusConfirm(null)}>先不要</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setStatusConfirm(null)}>
+              先不要
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmStatusChange}
-              disabled={!!statusConfirm && loadingOrderId === statusConfirm.orderId}
-              className={statusConfirm?.kind === "cancel" ? buttonVariants({ variant: "destructive" }) : undefined}
+              disabled={
+                !!statusConfirm && loadingOrderId === statusConfirm.orderId
+              }
+              className={
+                statusConfirm?.kind === "cancel"
+                  ? buttonVariants({ variant: "destructive" })
+                  : undefined
+              }
             >
               {statusConfirm?.kind === "cancel" ? "確認取消" : "確認變更"}
             </AlertDialogAction>
@@ -1722,7 +2405,9 @@ export default function OrdersPage() {
       {/* Step 7H: 刪除訂單二次確認 */}
       <AlertDialog
         open={!!deleteConfirm}
-        onOpenChange={(open) => { if (!open && deletingOrderId === null) setDeleteConfirm(null); }}
+        onOpenChange={(open) => {
+          if (!open && deletingOrderId === null) setDeleteConfirm(null);
+        }}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -1741,7 +2426,10 @@ export default function OrdersPage() {
               取消
             </AlertDialogCancel>
             <AlertDialogAction
-              onClick={(e) => { e.preventDefault(); void handleDeleteOrder(); }}
+              onClick={(e) => {
+                e.preventDefault();
+                void handleDeleteOrder();
+              }}
               disabled={deletingOrderId !== null}
               className={buttonVariants({ variant: "destructive" })}
             >
@@ -1750,12 +2438,23 @@ export default function OrdersPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
     </div>
   );
 }
 
-function FilterTab({ label, value, active, count, onClick }: { label: string; value: string; active: boolean; count?: number; onClick: () => void }) {
+function FilterTab({
+  label,
+  value,
+  active,
+  count,
+  onClick,
+}: {
+  label: string;
+  value: string;
+  active: boolean;
+  count?: number;
+  onClick: () => void;
+}) {
   return (
     <button
       onClick={onClick}
@@ -1763,16 +2462,31 @@ function FilterTab({ label, value, active, count, onClick }: { label: string; va
         active ? "bg-primary text-white" : "bg-secondary text-muted-foreground"
       }`}
     >
-      {label}{count !== undefined && count > 0 ? ` (${count})` : ""}
+      {label}
+      {count !== undefined && count > 0 ? ` (${count})` : ""}
     </button>
   );
 }
 
-function StatCard({ label, value, urgent }: { label: string; value: string; urgent?: boolean }) {
+function StatCard({
+  label,
+  value,
+  urgent,
+}: {
+  label: string;
+  value: string;
+  urgent?: boolean;
+}) {
   return (
     <div className="bg-white rounded-xl border border-border p-3 text-center">
-      <div className={`text-lg font-bold ${urgent ? "text-amber-600" : "text-primary"}`}>{value}</div>
-      <div className="text-[10px] text-muted-foreground mt-0.5 leading-tight">{label}</div>
+      <div
+        className={`text-lg font-bold ${urgent ? "text-amber-600" : "text-primary"}`}
+      >
+        {value}
+      </div>
+      <div className="text-[10px] text-muted-foreground mt-0.5 leading-tight">
+        {label}
+      </div>
     </div>
   );
 }
@@ -1793,7 +2507,9 @@ function trimSnapshotDecimal(value: string | null | undefined): string {
   return value.replace(/(\.\d*?[1-9])0+$|\.0+$/, "$1");
 }
 
-function profitSnapshotStatusLabel(status: OrderWithTracking["profitSnapshotStatus"]): string {
+function profitSnapshotStatusLabel(
+  status: OrderWithTracking["profitSnapshotStatus"],
+): string {
   if (status === "captured") return "已定格";
   if (status === "exempt") return "免攤・已定格";
   if (status === "pending") return "待確認";
@@ -1808,7 +2524,10 @@ function ProfitSnapshotBadge({ order }: { order: OrderWithTracking }) {
       </span>
     );
   }
-  if (order.profitSnapshotStatus === "captured" || order.profitSnapshotStatus === "exempt") {
+  if (
+    order.profitSnapshotStatus === "captured" ||
+    order.profitSnapshotStatus === "exempt"
+  ) {
     return (
       <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-emerald-50 text-emerald-700 shrink-0">
         毛利 {formatSnapshotMoney(order.profitSnapshotDisplay?.unitProfitTwd)}
@@ -1825,15 +2544,29 @@ function ProfitSnapshotBadge({ order }: { order: OrderWithTracking }) {
 
 function SectionLabel({ children }: { children: string }) {
   return (
-    <div className="text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wide mb-1.5">{children}</div>
+    <div className="text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wide mb-1.5">
+      {children}
+    </div>
   );
 }
 
-function DetailRow({ label, value, bold }: { label: string; value: string; bold?: boolean }) {
+function DetailRow({
+  label,
+  value,
+  bold,
+}: {
+  label: string;
+  value: string;
+  bold?: boolean;
+}) {
   return (
     <div className="flex items-center justify-between px-3 py-2.5 gap-2">
       <span className="text-xs text-muted-foreground shrink-0">{label}</span>
-      <span className={`text-sm text-right break-all ${bold ? "font-bold" : "font-medium"} text-foreground`}>{value}</span>
+      <span
+        className={`text-sm text-right break-all ${bold ? "font-bold" : "font-medium"} text-foreground`}
+      >
+        {value}
+      </span>
     </div>
   );
 }

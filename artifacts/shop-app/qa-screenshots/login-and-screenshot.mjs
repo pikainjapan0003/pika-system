@@ -37,14 +37,21 @@ const browser = await chromium.launch({
   ],
 });
 
-const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+const context = await browser.newContext({
+  viewport: { width: 1280, height: 900 },
+});
 const page = await context.newPage();
 
 console.log("\n=== Opening app at http://localhost:22696 ===");
-console.log("Please complete Clerk login in the browser window (visible via VNC on port 5901).");
+console.log(
+  "Please complete Clerk login in the browser window (visible via VNC on port 5901).",
+);
 console.log("Waiting up to 180 seconds for login to complete...\n");
 
-await page.goto("http://localhost:22696/", { waitUntil: "networkidle", timeout: 15000 });
+await page.goto("http://localhost:22696/", {
+  waitUntil: "networkidle",
+  timeout: 15000,
+});
 await page.screenshot({ path: join(__dirname, "real-app-before-login.png") });
 console.log("Screenshot saved: real-app-before-login.png");
 
@@ -55,20 +62,26 @@ try {
     () => {
       const url = window.location.href;
       // After login, Clerk will redirect to a page that's not the landing page
-      return url.includes("/dashboard") ||
-             url.includes("/orders") ||
-             url.includes("/store") ||
-             url.includes("/products") ||
-             // Clerk sign-in page might show after redirect - wait until we're past it
-             (document.querySelector('[data-testid="main-content"]') !== null) ||
-             (document.querySelector('nav') !== null && !url.includes('/sign-in') && !url.includes('/sign-up'));
+      return (
+        url.includes("/dashboard") ||
+        url.includes("/orders") ||
+        url.includes("/store") ||
+        url.includes("/products") ||
+        // Clerk sign-in page might show after redirect - wait until we're past it
+        document.querySelector('[data-testid="main-content"]') !== null ||
+        (document.querySelector("nav") !== null &&
+          !url.includes("/sign-in") &&
+          !url.includes("/sign-up"))
+      );
     },
-    { timeout: 180_000, polling: 2000 }
+    { timeout: 180_000, polling: 2000 },
   );
   console.log("Login detected! Current URL:", page.url());
 } catch (e) {
   console.log("Login wait timed out. Current URL:", page.url());
-  await page.screenshot({ path: join(__dirname, "real-app-login-timeout.png") });
+  await page.screenshot({
+    path: join(__dirname, "real-app-login-timeout.png"),
+  });
   await browser.close();
   process.exit(1);
 }
@@ -78,9 +91,15 @@ console.log("Screenshot saved: real-app-after-login.png");
 
 // Navigate to orders page
 console.log("\nNavigating to /orders...");
-await page.goto("http://localhost:22696/orders", { waitUntil: "networkidle", timeout: 15000 });
-await new Promise(r => setTimeout(r, 2000)); // extra wait for data load
-await page.screenshot({ path: join(__dirname, "real-orders-page.png"), fullPage: true });
+await page.goto("http://localhost:22696/orders", {
+  waitUntil: "networkidle",
+  timeout: 15000,
+});
+await new Promise((r) => setTimeout(r, 2000)); // extra wait for data load
+await page.screenshot({
+  path: join(__dirname, "real-orders-page.png"),
+  fullPage: true,
+});
 console.log("Screenshot saved: real-orders-page.png");
 
 // Look for order expand buttons
@@ -91,17 +110,25 @@ console.log(`Found ${count} potential expand buttons`);
 if (count > 0) {
   // Click first order to expand
   await expandButtons.first().click();
-  await new Promise(r => setTimeout(r, 1000));
-  await page.screenshot({ path: join(__dirname, "real-order-expanded.png"), fullPage: true });
+  await new Promise((r) => setTimeout(r, 1000));
+  await page.screenshot({
+    path: join(__dirname, "real-order-expanded.png"),
+    fullPage: true,
+  });
   console.log("Screenshot saved: real-order-expanded.png");
 }
 
 // Broader search for the panel - look for 列印銷貨單 button
-const printButton = page.locator("button, [role='button']").filter({ hasText: "列印銷貨單" });
+const printButton = page
+  .locator("button, [role='button']")
+  .filter({ hasText: "列印銷貨單" });
 const printCount = await printButton.count();
 console.log(`Found ${printCount} 列印銷貨單 button(s)`);
 
-await page.screenshot({ path: join(__dirname, "real-orders-looking-for-print.png"), fullPage: true });
+await page.screenshot({
+  path: join(__dirname, "real-orders-looking-for-print.png"),
+  fullPage: true,
+});
 
 await browser.close();
 console.log("\nDone. Check qa-screenshots/ for results.");

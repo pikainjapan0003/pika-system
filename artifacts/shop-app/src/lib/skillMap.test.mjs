@@ -20,14 +20,10 @@ const emptyFacts = {
 };
 
 test("every seller stream has cards with all four required fields", () => {
-  assert.deepEqual(SKILL_GROUPS.map((group) => group.id), [
-    "beginner",
-    "cost",
-    "group-buy",
-    "wholesale",
-    "shipping",
-    "automation",
-  ]);
+  assert.deepEqual(
+    SKILL_GROUPS.map((group) => group.id),
+    ["beginner", "cost", "group-buy", "wholesale", "shipping", "automation"],
+  );
   for (const group of SKILL_GROUPS) {
     assert.ok(group.skills.length > 0);
     for (const skill of group.skills) {
@@ -41,7 +37,11 @@ test("every seller stream has cards with all four required fields", () => {
 
 test("cost skills unlock only from existing cost data", () => {
   assert.deepEqual(
-    Object.fromEntries(Object.entries(resolveSkillUnlocks(emptyFacts)).filter(([id]) => ["S-07", "S-08", "S-09"].includes(id))),
+    Object.fromEntries(
+      Object.entries(resolveSkillUnlocks(emptyFacts)).filter(([id]) =>
+        ["S-07", "S-08", "S-09"].includes(id),
+      ),
+    ),
     { "S-07": false, "S-08": false, "S-09": false },
   );
 
@@ -58,8 +58,18 @@ test("cost skills unlock only from existing cost data", () => {
 
 test("external automation stays locked without its reviewed foundation", () => {
   assert.equal(resolveSkillUnlocks(emptyFacts)["S-23"], false);
-  assert.equal(resolveSkillUnlocks({ ...emptyFacts, hasAutomationFoundation: true })["S-23"], true);
-  assert.equal(resolveSkillUnlocks({ ...emptyFacts, hasAutomationFoundation: true })["S-21"], false);
+  assert.equal(
+    resolveSkillUnlocks({ ...emptyFacts, hasAutomationFoundation: true })[
+      "S-23"
+    ],
+    true,
+  );
+  assert.equal(
+    resolveSkillUnlocks({ ...emptyFacts, hasAutomationFoundation: true })[
+      "S-21"
+    ],
+    false,
+  );
 });
 
 test("skill map summary counts enabled skills and keeps the reviewed package hint", () => {

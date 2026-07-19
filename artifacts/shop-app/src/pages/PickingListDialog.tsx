@@ -1,4 +1,9 @@
-import { Sheet, SheetContent, SheetClose, SheetTitle } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetClose,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import type { PickingListResponse } from "@workspace/api-client-react";
 import { printPickingList } from "../lib/printHelpers";
 
@@ -18,7 +23,12 @@ export function PickingListDialog({ open, onClose, data }: Props) {
   if (!data) return null;
 
   return (
-    <Sheet open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+    <Sheet
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) onClose();
+      }}
+    >
       <SheetContent
         side="bottom"
         className="h-[88dvh] flex flex-col p-0 max-w-[480px] mx-auto rounded-t-2xl overflow-hidden [&>button:first-child]:hidden"
@@ -45,8 +55,18 @@ export function PickingListDialog({ open, onClose, data }: Props) {
                 aria-label="關閉"
                 className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700 active:bg-neutral-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-300"
               >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
             </SheetClose>
@@ -57,8 +77,8 @@ export function PickingListDialog({ open, onClose, data }: Props) {
         {data.excludedOrderIds.length > 0 && (
           <div className="px-4 py-2.5 bg-amber-50 border-b border-amber-200 shrink-0">
             <p className="text-xs text-amber-700">
-              已排除 {data.excludedOrderIds.length} 筆已取消訂單
-              （ID: {data.excludedOrderIds.join("、")}）
+              已排除 {data.excludedOrderIds.length} 筆已取消訂單 （ID:{" "}
+              {data.excludedOrderIds.join("、")}）
             </p>
           </div>
         )}
@@ -77,26 +97,37 @@ export function PickingListDialog({ open, onClose, data }: Props) {
               >
                 <div className="flex items-start justify-between gap-2 mb-1.5">
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-semibold text-foreground leading-tight">{item.productName}</div>
+                    <div className="text-sm font-semibold text-foreground leading-tight">
+                      {item.productName}
+                    </div>
                     {item.specLabel && (
-                      <div className="text-xs text-muted-foreground mt-0.5">{item.specLabel}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">
+                        {item.specLabel}
+                      </div>
                     )}
                     {item.skuCode && (
-                      <div className="text-[11px] text-muted-foreground/60 mt-0.5">SKU: {item.skuCode}</div>
+                      <div className="text-[11px] text-muted-foreground/60 mt-0.5">
+                        SKU: {item.skuCode}
+                      </div>
                     )}
                   </div>
-                  <div className="text-2xl font-bold text-primary shrink-0">×{item.quantityTotal}</div>
+                  <div className="text-2xl font-bold text-primary shrink-0">
+                    ×{item.quantityTotal}
+                  </div>
                 </div>
 
                 {(item.storageTemp || item.shelfLife) && (
                   <div className="flex gap-3 mb-1.5">
                     {item.storageTemp && (
                       <span className="text-[11px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-medium">
-                        {STORAGE_TEMP_LABELS[item.storageTemp] ?? item.storageTemp}
+                        {STORAGE_TEMP_LABELS[item.storageTemp] ??
+                          item.storageTemp}
                       </span>
                     )}
                     {item.shelfLife && (
-                      <span className="text-[11px] text-muted-foreground">效期: {item.shelfLife}</span>
+                      <span className="text-[11px] text-muted-foreground">
+                        效期: {item.shelfLife}
+                      </span>
                     )}
                   </div>
                 )}
@@ -106,7 +137,9 @@ export function PickingListDialog({ open, onClose, data }: Props) {
                 </div>
 
                 {item.notes && (
-                  <div className="text-xs text-muted-foreground mt-1 italic">備註: {item.notes}</div>
+                  <div className="text-xs text-muted-foreground mt-1 italic">
+                    備註: {item.notes}
+                  </div>
                 )}
               </div>
             ))

@@ -1,5 +1,13 @@
-import { Sheet, SheetContent, SheetClose, SheetTitle } from "@/components/ui/sheet";
-import type { ShippingListResponse, ShippingListOrder } from "@workspace/api-client-react";
+import {
+  Sheet,
+  SheetContent,
+  SheetClose,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import type {
+  ShippingListResponse,
+  ShippingListOrder,
+} from "@workspace/api-client-react";
 import { printShippingList } from "../lib/printHelpers";
 
 interface Props {
@@ -36,7 +44,12 @@ export function ShippingListDialog({ open, onClose, data }: Props) {
   if (!data) return null;
 
   return (
-    <Sheet open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+    <Sheet
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) onClose();
+      }}
+    >
       <SheetContent
         side="bottom"
         className="h-[88dvh] flex flex-col p-0 max-w-[480px] mx-auto rounded-t-2xl overflow-hidden [&>button:first-child]:hidden"
@@ -63,8 +76,18 @@ export function ShippingListDialog({ open, onClose, data }: Props) {
                 aria-label="關閉"
                 className="inline-flex h-9 w-9 items-center justify-center rounded-full text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700 active:bg-neutral-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-300"
               >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
             </SheetClose>
@@ -75,8 +98,8 @@ export function ShippingListDialog({ open, onClose, data }: Props) {
         {data.excludedOrderIds.length > 0 && (
           <div className="px-4 py-2.5 bg-amber-50 border-b border-amber-200 shrink-0">
             <p className="text-xs text-amber-700">
-              已排除 {data.excludedOrderIds.length} 筆已取消訂單
-              （ID: {data.excludedOrderIds.join("、")}）
+              已排除 {data.excludedOrderIds.length} 筆已取消訂單 （ID:{" "}
+              {data.excludedOrderIds.join("、")}）
             </p>
           </div>
         )}
@@ -88,7 +111,9 @@ export function ShippingListDialog({ open, onClose, data }: Props) {
               <p className="text-sm text-muted-foreground">無出貨資料</p>
             </div>
           ) : (
-            data.orders.map((order) => <ShippingOrderCard key={order.orderId} order={order} />)
+            data.orders.map((order) => (
+              <ShippingOrderCard key={order.orderId} order={order} />
+            ))
           )}
         </div>
 
@@ -108,7 +133,9 @@ function ShippingOrderCard({ order }: { order: ShippingListOrder }) {
     <div className="bg-white rounded-xl border border-border/60 divide-y divide-border/40 overflow-hidden">
       {/* Order number + status */}
       <div className="flex items-center justify-between px-3 py-2.5">
-        <span className="text-sm font-bold text-primary">#{order.orderNumber}</span>
+        <span className="text-sm font-bold text-primary">
+          #{order.orderNumber}
+        </span>
         <span className="text-[11px] px-2 py-0.5 rounded-full bg-secondary text-muted-foreground font-medium">
           {order.status}
         </span>
@@ -123,37 +150,66 @@ function ShippingOrderCard({ order }: { order: ShippingListOrder }) {
       {order.specValues && Object.keys(order.specValues).length > 0 && (
         <Row
           label="規格"
-          value={Object.entries(order.specValues).map(([k, v]) => `${k}: ${v}`).join("、")}
+          value={Object.entries(order.specValues)
+            .map(([k, v]) => `${k}: ${v}`)
+            .join("、")}
         />
       )}
       <Row label="數量" value={`× ${order.quantity}`} />
 
       {/* Payment */}
-      <Row label="付款狀態" value={PAYMENT_STATUS_LABELS[order.paymentStatus] ?? order.paymentStatus} />
+      <Row
+        label="付款狀態"
+        value={
+          PAYMENT_STATUS_LABELS[order.paymentStatus] ?? order.paymentStatus
+        }
+      />
 
       {/* Shipping */}
-      <Row label="出貨狀態" value={SHIPPING_STATUS_LABELS[order.shippingStatus] ?? order.shippingStatus} />
+      <Row
+        label="出貨狀態"
+        value={
+          SHIPPING_STATUS_LABELS[order.shippingStatus] ?? order.shippingStatus
+        }
+      />
       {order.shippingMethod && (
-        <Row label="物流方式" value={SHIPPING_METHOD_LABELS[order.shippingMethod] ?? order.shippingMethod} />
+        <Row
+          label="物流方式"
+          value={
+            SHIPPING_METHOD_LABELS[order.shippingMethod] ?? order.shippingMethod
+          }
+        />
       )}
       {order.trackingCode && <Row label="追蹤碼" value={order.trackingCode} />}
-      {order.trackingProvider && <Row label="物流商" value={order.trackingProvider} />}
+      {order.trackingProvider && (
+        <Row label="物流商" value={order.trackingProvider} />
+      )}
 
       {/* CVS */}
       {order.storeCode && <Row label="超商店號" value={order.storeCode} />}
       {order.storeName && <Row label="超商店名" value={order.storeName} />}
 
       {/* Recipient */}
-      {order.recipientName && <Row label="收件人" value={order.recipientName} />}
-      {order.recipientPhone && <Row label="收件電話" value={order.recipientPhone} />}
-      {order.recipientAddress && <Row label="收件地址" value={order.recipientAddress} />}
+      {order.recipientName && (
+        <Row label="收件人" value={order.recipientName} />
+      )}
+      {order.recipientPhone && (
+        <Row label="收件電話" value={order.recipientPhone} />
+      )}
+      {order.recipientAddress && (
+        <Row label="收件地址" value={order.recipientAddress} />
+      )}
 
       {/* Notes */}
-      {order.shippingNote && <Row label="物流備註" value={order.shippingNote} />}
+      {order.shippingNote && (
+        <Row label="物流備註" value={order.shippingNote} />
+      )}
 
       {/* Items text */}
       <div className="px-3 py-2.5">
-        <p className="text-[11px] text-muted-foreground/70 break-all leading-relaxed">{order.itemsText}</p>
+        <p className="text-[11px] text-muted-foreground/70 break-all leading-relaxed">
+          {order.itemsText}
+        </p>
       </div>
     </div>
   );
@@ -163,7 +219,9 @@ function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-start justify-between px-3 py-2 gap-2">
       <span className="text-xs text-muted-foreground shrink-0">{label}</span>
-      <span className="text-xs font-medium text-foreground text-right break-all">{value}</span>
+      <span className="text-xs font-medium text-foreground text-right break-all">
+        {value}
+      </span>
     </div>
   );
 }

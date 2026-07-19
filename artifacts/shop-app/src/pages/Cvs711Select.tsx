@@ -19,7 +19,10 @@ interface CvsStoreResult {
 
 type Provider = "seven" | "family";
 
-const PROVIDER_CONFIG: Record<Provider, { title: string; placeholder: string; prefix: string }> = {
+const PROVIDER_CONFIG: Record<
+  Provider,
+  { title: string; placeholder: string; prefix: string }
+> = {
   seven: {
     title: "選擇 7-11 門市",
     placeholder: "輸入門市名稱、店號或地址",
@@ -174,7 +177,9 @@ export default function Cvs711SelectPage() {
           >
             ←
           </button>
-          <h1 className="text-base font-bold text-foreground">{config.title}</h1>
+          <h1 className="text-base font-bold text-foreground">
+            {config.title}
+          </h1>
         </div>
 
         {/* Search form */}
@@ -212,7 +217,9 @@ export default function Cvs711SelectPage() {
           </div>
         ) : apiError ? (
           <div className="bg-white rounded-2xl border border-border p-8 text-center">
-            <p className="text-sm text-muted-foreground">門市查詢暫時無法使用，請稍後再試。</p>
+            <p className="text-sm text-muted-foreground">
+              門市查詢暫時無法使用，請稍後再試。
+            </p>
           </div>
         ) : hasSearched && results.length === 0 ? (
           <div className="bg-white rounded-2xl border border-border p-8 text-center space-y-3">
@@ -272,16 +279,26 @@ function StoreCard({
     <div className="bg-white rounded-2xl border border-border px-4 py-3 space-y-2">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <div className="text-sm font-semibold text-foreground">{providerPrefix} {store.storeName}</div>
-          <div className="text-xs text-muted-foreground mt-0.5">{store.storeAddress}</div>
+          <div className="text-sm font-semibold text-foreground">
+            {providerPrefix} {store.storeName}
+          </div>
+          <div className="text-xs text-muted-foreground mt-0.5">
+            {store.storeAddress}
+          </div>
           <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
-            <span className="text-xs text-muted-foreground/70">門市編號：{store.storeId}</span>
+            <span className="text-xs text-muted-foreground/70">
+              門市編號：{store.storeId}
+            </span>
             {store.businessHours && (
-              <span className="text-xs text-muted-foreground/70">營業時間：{store.businessHours}</span>
+              <span className="text-xs text-muted-foreground/70">
+                營業時間：{store.businessHours}
+              </span>
             )}
           </div>
           {store.deliveryStatus && (
-            <div className="text-xs text-muted-foreground/70">配送狀態：{store.deliveryStatus}</div>
+            <div className="text-xs text-muted-foreground/70">
+              配送狀態：{store.deliveryStatus}
+            </div>
           )}
           <div className="text-[10px] text-muted-foreground/50 mt-0.5">
             資料更新：{formatUpdatedAt(store.sourceUpdatedAt)}

@@ -1,6 +1,7 @@
 import type { OrderStatus } from "@workspace/db";
 
-export const STATUS_LABELS: Record<OrderStatus, string> & Record<string, string> = {
+export const STATUS_LABELS: Record<OrderStatus, string> &
+  Record<string, string> = {
   pending: "待確認",
   awaiting_payment: "待付款",
   preparing: "備貨中",
@@ -9,7 +10,8 @@ export const STATUS_LABELS: Record<OrderStatus, string> & Record<string, string>
   cancelled: "已取消",
 };
 
-export const STATUS_COLORS: Record<OrderStatus, string> & Record<string, string> = {
+export const STATUS_COLORS: Record<OrderStatus, string> &
+  Record<string, string> = {
   pending: "bg-amber-100 text-amber-700",
   awaiting_payment: "bg-blue-100 text-blue-700",
   preparing: "bg-purple-100 text-purple-700",
