@@ -9,6 +9,7 @@ qa/step7e-seller-agent-settings-active-preview
 ```
 
 Preview port：
+
 - shop-app：`22696` (→ Replit external port 3000)
 - API server：`19080`
 
@@ -23,6 +24,7 @@ HEAD:   8790e75 docs-step7e-active-preview-switch
 ```
 
 包含的必要 commits：
+
 - `6a8153a` feat-ui-step7e-seller-agent-settings
 - `b17403b` docs-step7e-seller-agent-settings-ui-review
 - `3e82926` docs-step7e-seller-agent-settings-ui-preview-port-fix
@@ -34,41 +36,41 @@ HEAD:   8790e75 docs-step7e-active-preview-switch
 
 測試日期：2026-06-09
 
-| 測試項目 | 結果 | 說明 |
-|---------|------|------|
-| `/settings/agent` 可進入 | ✅ PASS | 畫面正常顯示「AI 代查設定」 |
-| 啟用 AI 代查 | ✅ PASS | 可切換啟用狀態 |
-| Agent 模式改成外部 Agent | ✅ PASS | 可選取 external_agent |
-| 查詢頻率改成每日 | ✅ PASS | 可設定 daily |
-| 物流來源勾選 7-11 | ✅ PASS | enabled_logistics = ["seven_eleven"] |
-| Webhook 開啟 | ✅ PASS | webhook_enabled = true |
-| Webhook URL 填入 https://example.com/webhook | ✅ PASS | URL 保留 |
-| 按「儲存設定」資料保留 | ✅ PASS | POST/PATCH 成功 |
-| 重新整理後設定仍保留 | ✅ PASS | GET 正確回傳儲存值 |
-| Webhook Secret 可更換 | ✅ PASS | 狀態顯示「已設定」 |
-| Webhook Secret 可清除 | ✅ PASS | 狀態回到「未設定」 |
-| 畫面未顯示 secret 明文 | ✅ PASS | 僅顯示狀態 |
-| 畫面未顯示 webhookSecretHash | ✅ PASS | hash 未外洩 |
+| 測試項目                                     | 結果    | 說明                                 |
+| -------------------------------------------- | ------- | ------------------------------------ |
+| `/settings/agent` 可進入                     | ✅ PASS | 畫面正常顯示「AI 代查設定」          |
+| 啟用 AI 代查                                 | ✅ PASS | 可切換啟用狀態                       |
+| Agent 模式改成外部 Agent                     | ✅ PASS | 可選取 external_agent                |
+| 查詢頻率改成每日                             | ✅ PASS | 可設定 daily                         |
+| 物流來源勾選 7-11                            | ✅ PASS | enabled_logistics = ["seven_eleven"] |
+| Webhook 開啟                                 | ✅ PASS | webhook_enabled = true               |
+| Webhook URL 填入 https://example.com/webhook | ✅ PASS | URL 保留                             |
+| 按「儲存設定」資料保留                       | ✅ PASS | POST/PATCH 成功                      |
+| 重新整理後設定仍保留                         | ✅ PASS | GET 正確回傳儲存值                   |
+| Webhook Secret 可更換                        | ✅ PASS | 狀態顯示「已設定」                   |
+| Webhook Secret 可清除                        | ✅ PASS | 狀態回到「未設定」                   |
+| 畫面未顯示 secret 明文                       | ✅ PASS | 僅顯示狀態                           |
+| 畫面未顯示 webhookSecretHash                 | ✅ PASS | hash 未外洩                          |
 
 ## 4. DB 測試資料狀態（清理前）
 
 清理前 `seller_agent_settings WHERE store_id = 1`：
 
-| 欄位 | 值 |
-|------|-----|
-| id | 9 |
-| store_id | 1 |
-| agent_status | enabled |
-| agent_mode | external_agent |
-| enabled_logistics | ["seven_eleven"] |
-| query_methods | ["manual"] |
-| query_frequency | daily |
-| notify_on_unknown | true |
-| webhook_enabled | true |
-| webhook_url | https://example.com/webhook |
-| has_webhook_secret | false（使用者已清除） |
-| created_at | 2026-06-09 14:18:41 UTC |
-| updated_at | 2026-06-09 14:20:40 UTC |
+| 欄位               | 值                          |
+| ------------------ | --------------------------- |
+| id                 | 9                           |
+| store_id           | 1                           |
+| agent_status       | enabled                     |
+| agent_mode         | external_agent              |
+| enabled_logistics  | ["seven_eleven"]            |
+| query_methods      | ["manual"]                  |
+| query_frequency    | daily                       |
+| notify_on_unknown  | true                        |
+| webhook_enabled    | true                        |
+| webhook_url        | https://example.com/webhook |
+| has_webhook_secret | false（使用者已清除）       |
+| created_at         | 2026-06-09 14:18:41 UTC     |
+| updated_at         | 2026-06-09 14:20:40 UTC     |
 
 ## 5. DB Cleanup 結果
 
@@ -78,11 +80,11 @@ DELETE FROM public.seller_agent_settings WHERE store_id = 1;
 
 結果：
 
-| 項目 | 值 |
-|------|-----|
-| 刪除 rows | 1 |
-| cleanup 後 remaining_rows | 0 |
-| 驗收 | ✅ PASS |
+| 項目                      | 值      |
+| ------------------------- | ------- |
+| 刪除 rows                 | 1       |
+| cleanup 後 remaining_rows | 0       |
+| 驗收                      | ✅ PASS |
 
 ## 6. 結論
 
@@ -100,11 +102,11 @@ Step 7E Seller Agent Settings UI 功能驗收完成：
 
 ## 7. 未執行項目
 
-| 項目 | 原因 |
-|------|------|
-| 自動化 E2E 測試 | 超出本輪範疇，留待 CI 環境建立後執行 |
-| 多 store 併發測試 | 超出本輪範疇 |
-| 錯誤處理邊界測試 | 超出本輪範疇 |
+| 項目              | 原因                                 |
+| ----------------- | ------------------------------------ |
+| 自動化 E2E 測試   | 超出本輪範疇，留待 CI 環境建立後執行 |
+| 多 store 併發測試 | 超出本輪範疇                         |
+| 錯誤處理邊界測試  | 超出本輪範疇                         |
 
 ## 8. 風險與待確認
 

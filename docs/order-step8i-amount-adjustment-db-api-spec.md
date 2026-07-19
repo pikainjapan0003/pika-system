@@ -28,21 +28,21 @@
 
 來源：`lib/db/src/schema/orders.ts`
 
-| 欄位 | DB 欄位名 | 型別 | 狀態 | 備註 |
-|------|-----------|------|------|------|
-| 商品單價 | `unit_price` | numeric(10,2) NOT NULL | ✅ 已存在 | 下單時從 products 表讀取 |
-| 商品數量 | `quantity` | integer NOT NULL DEFAULT 1 | ✅ 已存在 | — |
-| 商品小計 | `total_price` | numeric(10,2) NOT NULL | ✅ 已存在 | = unitPrice × quantity，後端計算後寫入 |
-| 運費 | `shipping_fee` | numeric(10,2) NOT NULL DEFAULT 0 | ✅ 已存在 | 後台手動設定 |
-| 已收金額 | `paid_amount` | numeric(10,2) nullable | ✅ 已存在 | 後台手動記錄，null = 尚未記錄 |
-| 訂單總額 | 無 | — | ⚠️ 後端虛擬欄位 | `formatOrder()` 動態計算，不存入 DB |
-| 待收金額 | 無 | — | ⚠️ 後端虛擬欄位 | `formatOrder()` 動態計算，不存入 DB |
-| 折讓金額 | — | — | ❌ 不存在 | 本次 Step 8J 待新增 |
-| 折讓備註 | — | — | ❌ 不存在 | 本次 Step 8J 待新增 |
-| 折數 | — | — | ❌ 不存在 | **不建議本階段做** |
-| 購物金折抵 | — | — | ❌ 不存在 | **等待會員系統** |
-| 商品成本 | — | — | ❌ 不存在 | **不建議本階段做** |
-| 毛利 | — | — | ❌ 不存在 | **不建議本階段做** |
+| 欄位       | DB 欄位名      | 型別                             | 狀態            | 備註                                   |
+| ---------- | -------------- | -------------------------------- | --------------- | -------------------------------------- |
+| 商品單價   | `unit_price`   | numeric(10,2) NOT NULL           | ✅ 已存在       | 下單時從 products 表讀取               |
+| 商品數量   | `quantity`     | integer NOT NULL DEFAULT 1       | ✅ 已存在       | —                                      |
+| 商品小計   | `total_price`  | numeric(10,2) NOT NULL           | ✅ 已存在       | = unitPrice × quantity，後端計算後寫入 |
+| 運費       | `shipping_fee` | numeric(10,2) NOT NULL DEFAULT 0 | ✅ 已存在       | 後台手動設定                           |
+| 已收金額   | `paid_amount`  | numeric(10,2) nullable           | ✅ 已存在       | 後台手動記錄，null = 尚未記錄          |
+| 訂單總額   | 無             | —                                | ⚠️ 後端虛擬欄位 | `formatOrder()` 動態計算，不存入 DB    |
+| 待收金額   | 無             | —                                | ⚠️ 後端虛擬欄位 | `formatOrder()` 動態計算，不存入 DB    |
+| 折讓金額   | —              | —                                | ❌ 不存在       | 本次 Step 8J 待新增                    |
+| 折讓備註   | —              | —                                | ❌ 不存在       | 本次 Step 8J 待新增                    |
+| 折數       | —              | —                                | ❌ 不存在       | **不建議本階段做**                     |
+| 購物金折抵 | —              | —                                | ❌ 不存在       | **等待會員系統**                       |
+| 商品成本   | —              | —                                | ❌ 不存在       | **不建議本階段做**                     |
+| 毛利       | —              | —                                | ❌ 不存在       | **不建議本階段做**                     |
 
 ### B.2 API formatOrder 目前輸出
 
@@ -52,8 +52,9 @@
 function formatOrder(o: any) {
   const shippingFee = parseFloat(o.shippingFee ?? "0");
   const totalPrice = parseFloat(o.totalPrice);
-  const paidAmount = o.paidAmount != null ? parseFloat(o.paidAmount as string) : null;
-  const orderTotal = totalPrice + shippingFee;                          // 目前不含折讓
+  const paidAmount =
+    o.paidAmount != null ? parseFloat(o.paidAmount as string) : null;
+  const orderTotal = totalPrice + shippingFee; // 目前不含折讓
   const remainingAmount = Math.max(orderTotal - (paidAmount ?? 0), 0); // 目前不含折讓影響
   return {
     ...o,
@@ -76,39 +77,39 @@ function formatOrder(o: any) {
 
 來源：`artifacts/shop-app/src/pages/Orders.tsx`
 
-| 顯示項目 | 狀態 | 程式位置 |
-|---------|------|---------|
-| 商品小計（totalPrice） | ✅ 已顯示 | L528 |
-| 運費（shippingFee） | ✅ 已顯示 | L549 |
-| 訂單總額（orderTotal） | ✅ 已顯示 | L553 |
-| 已收金額（paidAmount） | ✅ 已顯示 | L557-560 |
+| 顯示項目                    | 狀態      | 程式位置 |
+| --------------------------- | --------- | -------- |
+| 商品小計（totalPrice）      | ✅ 已顯示 | L528     |
+| 運費（shippingFee）         | ✅ 已顯示 | L549     |
+| 訂單總額（orderTotal）      | ✅ 已顯示 | L553     |
+| 已收金額（paidAmount）      | ✅ 已顯示 | L557-560 |
 | 待收金額（remainingAmount） | ✅ 已顯示 | L561-564 |
-| 折讓金額 | ❌ 不存在 | — |
+| 折讓金額                    | ❌ 不存在 | —        |
 
 ### B.4 EditOrderDialog 目前可修改金額欄位
 
 來源：`artifacts/shop-app/src/pages/EditOrderDialog.tsx`
 
-| 輸入欄位 | 狀態 | 備註 |
-|---------|------|------|
-| 運費（shippingFeeStr） | ✅ 已存在 | L421-431 |
-| 已收金額（paidAmountStr） | ✅ 已存在 | L362-373 |
-| 金額預覽（唯讀） | ✅ 已存在 | L599-611，只顯示 unitPrice × quantity |
-| 折讓金額輸入框 | ❌ 不存在 | Step 8K 待施工 |
-| 折讓備註輸入框 | ❌ 不存在 | Step 8K 待施工 |
+| 輸入欄位                  | 狀態      | 備註                                  |
+| ------------------------- | --------- | ------------------------------------- |
+| 運費（shippingFeeStr）    | ✅ 已存在 | L421-431                              |
+| 已收金額（paidAmountStr） | ✅ 已存在 | L362-373                              |
+| 金額預覽（唯讀）          | ✅ 已存在 | L599-611，只顯示 unitPrice × quantity |
+| 折讓金額輸入框            | ❌ 不存在 | Step 8K 待施工                        |
+| 折讓備註輸入框            | ❌ 不存在 | Step 8K 待施工                        |
 
 ### B.5 Generated API Schema / Types 現況
 
 來源：`lib/api-zod/src/generated/`
 
-| 型別 / Schema | 有無 discountAmount | 有無 discountNote |
-|--------------|---------------------|-----------------|
-| `Order` interface（order.ts） | ❌ 不存在 | ❌ 不存在 |
-| `OrderUpdate` interface（orderUpdate.ts） | ❌ 不存在 | ❌ 不存在 |
-| `UpdateOrderBody` zod schema（api.ts L424） | ❌ 不存在 | ❌ 不存在 |
-| `UpdateOrderResponse` zod schema（api.ts L454） | ❌ 不存在 | ❌ 不存在 |
-| `orderTotal` 欄位 | ✅ 已存在（optional number） | — |
-| `remainingAmount` 欄位 | ✅ 已存在（optional number） | — |
+| 型別 / Schema                                   | 有無 discountAmount          | 有無 discountNote |
+| ----------------------------------------------- | ---------------------------- | ----------------- |
+| `Order` interface（order.ts）                   | ❌ 不存在                    | ❌ 不存在         |
+| `OrderUpdate` interface（orderUpdate.ts）       | ❌ 不存在                    | ❌ 不存在         |
+| `UpdateOrderBody` zod schema（api.ts L424）     | ❌ 不存在                    | ❌ 不存在         |
+| `UpdateOrderResponse` zod schema（api.ts L454） | ❌ 不存在                    | ❌ 不存在         |
+| `orderTotal` 欄位                               | ✅ 已存在（optional number） | —                 |
+| `remainingAmount` 欄位                          | ✅ 已存在（optional number） | —                 |
 
 **重要**：generated 檔案由 orval 自動產生（`Do not edit manually`），Step 8J 後端施工完成後，需重新跑 orval 重新產生 generated types，不可手動修改 generated 檔案。
 
@@ -120,25 +121,25 @@ function formatOrder(o: any) {
 
 #### `discountAmount`
 
-| 項目 | 規格 |
-|------|------|
-| 用途 | 人工折讓金額，NT$ 整數 |
-| 型別 | integer |
-| 單位 | NT$（台幣整數，不處理小數） |
-| nullable | notNull |
-| 預設值 | 0 |
+| 項目     | 規格                                                         |
+| -------- | ------------------------------------------------------------ |
+| 用途     | 人工折讓金額，NT$ 整數                                       |
+| 型別     | integer                                                      |
+| 單位     | NT$（台幣整數，不處理小數）                                  |
+| nullable | notNull                                                      |
+| 預設值   | 0                                                            |
 | 驗證規則 | >= 0；不可大於 itemSubtotal + shippingFee（見 F 節計算規則） |
-| 意義 | 老闆手動輸入折讓，例如「滿千減百」「老客戶優惠」「瑕疵補償」 |
+| 意義     | 老闆手動輸入折讓，例如「滿千減百」「老客戶優惠」「瑕疵補償」 |
 
 #### `discountNote`
 
-| 項目 | 規格 |
-|------|------|
-| 用途 | 折讓原因備註，後台可見，買家不可見 |
-| 型別 | text（PostgreSQL text 無長度限制） |
-| nullable | nullable（null 代表無備註） |
-| 預設值 | null |
-| 意義 | 例如：「滿千減百活動」「商品輕微瑕疵補償 $50」「老客戶折讓」 |
+| 項目     | 規格                                                         |
+| -------- | ------------------------------------------------------------ |
+| 用途     | 折讓原因備註，後台可見，買家不可見                           |
+| 型別     | text（PostgreSQL text 無長度限制）                           |
+| nullable | nullable（null 代表無備註）                                  |
+| 預設值   | null                                                         |
+| 意義     | 例如：「滿千減百活動」「商品輕微瑕疵補償 $50」「老客戶折讓」 |
 
 ### C.2 建議暫不做（Deferred）
 
@@ -182,17 +183,19 @@ discountAmount: integer("discount_amount").notNull().default(0),
 discountNote: text("discount_note"),
 ```
 
-| 欄位 | 型別 | nullable | 預設 | index | 備註 |
-|------|------|---------|------|-------|------|
-| `discount_amount` | integer | NOT NULL | 0 | 否 | 不需要 index，不做查詢篩選 |
-| `discount_note` | text | NULL | null | 否 | 純文字備註，不需要 index |
+| 欄位              | 型別    | nullable | 預設 | index | 備註                       |
+| ----------------- | ------- | -------- | ---- | ----- | -------------------------- |
+| `discount_amount` | integer | NOT NULL | 0    | 否    | 不需要 index，不做查詢篩選 |
+| `discount_note`   | text    | NULL     | null | 否    | 純文字備註，不需要 index   |
 
 **為什麼用 integer 而非 numeric？**
+
 - 折讓金額以 NT$ 整數為單位，代購系統不需要小數點精度
 - integer 在 PostgreSQL 比 numeric 運算更快，且避免浮點數精度問題
 - 若未來有小數需求，再 migration 改型別
 
 **為什麼不用 numeric(10,2)？**
+
 - 既有的 `unit_price`、`shippingFee`、`totalPrice`、`paidAmount` 使用 numeric(10,2)，原因是可能有小數（例如 $99.9 的商品）
 - 折讓金額通常為整數（活動折讓 $50、$100、$200）
 - 若需要未來一致性，可在 Step 8J 確認後改為 numeric(10,2)，本規格建議 integer
@@ -212,12 +215,12 @@ discountNote: text("discount_note"),
 
 ### D.4 不建議本階段新增的欄位理由
 
-| 欄位 | 不新增原因 |
-|------|----------|
-| `discount_rate` | 計算規則不確定，與 discountAmount 並存會衝突 |
-| `credit_amount` | 需要會員系統與購物金流水，孤立的數字無法對帳 |
-| `cost_price`（訂單成本快照） | products 表無成本欄位，來源未確認 |
-| `gross_profit` | 依賴 cost_price，不應先做計算結果欄位 |
+| 欄位                         | 不新增原因                                   |
+| ---------------------------- | -------------------------------------------- |
+| `discount_rate`              | 計算規則不確定，與 discountAmount 並存會衝突 |
+| `credit_amount`              | 需要會員系統與購物金流水，孤立的數字無法對帳 |
+| `cost_price`（訂單成本快照） | products 表無成本欄位，來源未確認            |
+| `gross_profit`               | 依賴 cost_price，不應先做計算結果欄位        |
 
 ---
 
@@ -225,23 +228,23 @@ discountNote: text("discount_note"),
 
 ### E.1 Create Order（POST /stores/:storeId/orders）
 
-| 項目 | 建議 |
-|------|------|
-| 是否接受 discountAmount | **否** — 建立訂單時折讓通常為 0，老闆在訂單建立後再調整 |
-| 是否接受 discountNote | **否** — 同上 |
-| 建立後 discountAmount 預設 | 0（DB DEFAULT） |
+| 項目                       | 建議                                                    |
+| -------------------------- | ------------------------------------------------------- |
+| 是否接受 discountAmount    | **否** — 建立訂單時折讓通常為 0，老闆在訂單建立後再調整 |
+| 是否接受 discountNote      | **否** — 同上                                           |
+| 建立後 discountAmount 預設 | 0（DB DEFAULT）                                         |
 
 **理由**：折讓是事後調整行為，不應在建立訂單時就強制輸入。
 
 ### E.2 Update Order（PATCH /orders/:orderId）
 
-| 項目 | 建議 |
-|------|------|
-| 是否接受 discountAmount | **是** — 後台調整折讓 |
-| discountAmount 驗證規則 | `zod.number().int().min(0).optional()`（整數、不可為負） |
-| 是否接受 discountNote | **是** — 後台填寫折讓備註 |
-| discountNote 驗證規則 | `zod.string().nullish()` |
-| discountAmount 超過上限時 | **建議拒絕（422）**，不 clamp（見待確認事項） |
+| 項目                      | 建議                                                     |
+| ------------------------- | -------------------------------------------------------- |
+| 是否接受 discountAmount   | **是** — 後台調整折讓                                    |
+| discountAmount 驗證規則   | `zod.number().int().min(0).optional()`（整數、不可為負） |
+| 是否接受 discountNote     | **是** — 後台填寫折讓備註                                |
+| discountNote 驗證規則     | `zod.string().nullish()`                                 |
+| discountAmount 超過上限時 | **建議拒絕（422）**，不 clamp（見待確認事項）            |
 
 **建議新增至 UpdateOrderBody（api.ts 不直接修改，需透過重新生成）：**
 
@@ -254,26 +257,29 @@ discountNote: zod.string().nullish()
 
 Step 8J 修改 `formatOrder()` 後應輸出：
 
-| 欄位 | 類型 | 備註 |
-|------|------|------|
-| `discountAmount` | number（integer） | 從 DB 讀取，預設 0 |
-| `discountNote` | string \| null | 從 DB 讀取 |
-| `orderTotal` | number | **修改後計算邏輯** |
-| `remainingAmount` | number | 依賴修改後的 orderTotal |
+| 欄位              | 類型              | 備註                    |
+| ----------------- | ----------------- | ----------------------- |
+| `discountAmount`  | number（integer） | 從 DB 讀取，預設 0      |
+| `discountNote`    | string \| null    | 從 DB 讀取              |
+| `orderTotal`      | number            | **修改後計算邏輯**      |
+| `remainingAmount` | number            | 依賴修改後的 orderTotal |
 
 ### E.4 OrderTotal 計算規則修改
 
 **目前（Step 8J 前）：**
+
 ```
 orderTotal = totalPrice + shippingFee
 ```
 
 **修改後（Step 8J）：**
+
 ```
 orderTotal = max(totalPrice + shippingFee - discountAmount, 0)
 ```
 
 **說明**：
+
 - `totalPrice` = unitPrice × quantity（商品小計，不含運費）
 - 折讓從「含運費後的金額」扣除
 - 若折讓金額超過應收總額，orderTotal 最低為 0，不可為負
@@ -281,6 +287,7 @@ orderTotal = max(totalPrice + shippingFee - discountAmount, 0)
 ### E.5 RemainingAmount 計算規則
 
 **修改後（Step 8J）：**
+
 ```
 remainingAmount = max(orderTotal - (paidAmount ?? 0), 0)
 ```
@@ -298,11 +305,13 @@ remainingAmount = max(orderTotal - (paidAmount ?? 0), 0)
 **建議：加入**（見 F 節計算規則說明）
 
 CSV 匯出（GET /stores/:storeId/orders/export）目前 headers：
+
 ```
 ["訂單編號", "商品名稱", "買家姓名", "買家電話", "取貨方式", "數量", "單價", "總金額", "狀態", "備註", "規格", "下單時間"]
 ```
 
 建議 Step 8J 同步修改 CSV 匯出，加入：
+
 - `折讓金額`（discountAmount，若為 0 顯示 0）
 - `折讓備註`（discountNote，若為 null 顯示空字串）
 
@@ -333,14 +342,14 @@ remainingAmount = max(orderTotal - (paidAmount ?? 0), 0)
 
 ### F.2 邊界條件
 
-| 情境 | 結果 |
-|------|------|
-| discountAmount = 0 | orderTotal = itemSubtotal + shippingFee（與原本相同） |
-| discountAmount = itemSubtotal + shippingFee | orderTotal = 0，remainingAmount = 0 |
-| discountAmount > itemSubtotal + shippingFee | **拒絕（建議）**，或 clamp 至 itemSubtotal + shippingFee（待確認） |
-| paidAmount > orderTotal（溢收） | remainingAmount = 0，不自動退款 |
-| status = cancelled 後調整折讓 | **不建議**，但目前 API 對 cancelled 狀態的 PATCH 會回 422（不可編輯已結束訂單） |
-| status = completed 後調整折讓 | **不建議**，同上，API 保護 |
+| 情境                                        | 結果                                                                            |
+| ------------------------------------------- | ------------------------------------------------------------------------------- |
+| discountAmount = 0                          | orderTotal = itemSubtotal + shippingFee（與原本相同）                           |
+| discountAmount = itemSubtotal + shippingFee | orderTotal = 0，remainingAmount = 0                                             |
+| discountAmount > itemSubtotal + shippingFee | **拒絕（建議）**，或 clamp 至 itemSubtotal + shippingFee（待確認）              |
+| paidAmount > orderTotal（溢收）             | remainingAmount = 0，不自動退款                                                 |
+| status = cancelled 後調整折讓               | **不建議**，但目前 API 對 cancelled 狀態的 PATCH 會回 422（不可編輯已結束訂單） |
+| status = completed 後調整折讓               | **不建議**，同上，API 保護                                                      |
 
 ### F.3 明確的 MVP 範圍界定
 
@@ -356,10 +365,10 @@ remainingAmount = max(orderTotal - (paidAmount ?? 0), 0)
 
 ### G.1 EditOrderDialog 需要新增的欄位
 
-| 欄位 | 型別 | 位置建議 | 驗證 |
-|------|------|---------|------|
+| 欄位                             | 型別                        | 位置建議                           | 驗證                                          |
+| -------------------------------- | --------------------------- | ---------------------------------- | --------------------------------------------- |
 | 折讓金額輸入框（discountAmount） | number input，min=0，step=1 | 「付款資訊」區段，放在「運費」下方 | 不可為負；不可超過 itemSubtotal + shippingFee |
-| 折讓備註輸入框（discountNote） | textarea，選填 | 折讓金額輸入框正下方 | 可為空，nullable |
+| 折讓備註輸入框（discountNote）   | textarea，選填              | 折讓金額輸入框正下方               | 可為空，nullable                              |
 
 ### G.2 金額預覽區（EditOrderDialog）修改
 
@@ -384,9 +393,9 @@ remainingAmount = max(orderTotal - (paidAmount ?? 0), 0)
 
 ### G.4 錯誤提示規格
 
-| 情境 | 錯誤提示文字 |
-|------|------------|
-| discountAmount < 0 | 「折讓金額不可為負數」 |
+| 情境                                        | 錯誤提示文字                           |
+| ------------------------------------------- | -------------------------------------- |
+| discountAmount < 0                          | 「折讓金額不可為負數」                 |
 | discountAmount > itemSubtotal + shippingFee | 「折讓金額不可超過應收金額（NT$xxx）」 |
 
 ### G.5 儲存後行為
@@ -401,23 +410,23 @@ remainingAmount = max(orderTotal - (paidAmount ?? 0), 0)
 
 Step 8J 後端施工應補的測試（`artifacts/api-server/src/routes/orders.route.test.mjs`）：
 
-| 測試案例 | 預期結果 |
-|---------|---------|
-| 1. 建立訂單後 discountAmount 預設為 0 | formatOrder 回傳 discountAmount: 0 |
-| 2. PATCH /orders/:id 帶 discountAmount: 100 | DB 更新，formatOrder 回傳 discountAmount: 100 |
-| 3. discountAmount = 0（零折讓） | orderTotal = itemSubtotal + shippingFee（與原本相同） |
-| 4. discountAmount = -1（負數） | 回傳 422，拒絕更新 |
-| 5. discountAmount > itemSubtotal + shippingFee | 回傳 422（建議），或 clamp（待確認） |
-| 6. orderTotal 計算正確 | orderTotal = max(totalPrice + shippingFee - discountAmount, 0) |
-| 7. remainingAmount 計算正確 | remainingAmount = max(orderTotal - paidAmount, 0) |
-| 8. paidAmount > orderTotal 時 remainingAmount = 0 | 回傳 remainingAmount: 0 |
-| 9. discountNote = null | 允許，不報錯 |
-| 10. discountNote = ""（空字串） | 允許（或 server 端 normalize 為 null，待確認） |
-| 11. 舊訂單讀取時 discountAmount = 0 | formatOrder 讀取 DB default 值 0 |
-| 12. CSV 匯出包含折讓欄位 | headers 含「折讓金額」「折讓備註」 |
-| 13. public tracking 不洩漏 discountNote | PublicOrder 端點不回傳 discountNote |
-| 14. cancelled 訂單嘗試更新 discountAmount | 回傳 422（既有行為，不能編輯已結束訂單） |
-| 15. completed 訂單嘗試更新 discountAmount | 回傳 422（既有行為） |
+| 測試案例                                          | 預期結果                                                       |
+| ------------------------------------------------- | -------------------------------------------------------------- |
+| 1. 建立訂單後 discountAmount 預設為 0             | formatOrder 回傳 discountAmount: 0                             |
+| 2. PATCH /orders/:id 帶 discountAmount: 100       | DB 更新，formatOrder 回傳 discountAmount: 100                  |
+| 3. discountAmount = 0（零折讓）                   | orderTotal = itemSubtotal + shippingFee（與原本相同）          |
+| 4. discountAmount = -1（負數）                    | 回傳 422，拒絕更新                                             |
+| 5. discountAmount > itemSubtotal + shippingFee    | 回傳 422（建議），或 clamp（待確認）                           |
+| 6. orderTotal 計算正確                            | orderTotal = max(totalPrice + shippingFee - discountAmount, 0) |
+| 7. remainingAmount 計算正確                       | remainingAmount = max(orderTotal - paidAmount, 0)              |
+| 8. paidAmount > orderTotal 時 remainingAmount = 0 | 回傳 remainingAmount: 0                                        |
+| 9. discountNote = null                            | 允許，不報錯                                                   |
+| 10. discountNote = ""（空字串）                   | 允許（或 server 端 normalize 為 null，待確認）                 |
+| 11. 舊訂單讀取時 discountAmount = 0               | formatOrder 讀取 DB default 值 0                               |
+| 12. CSV 匯出包含折讓欄位                          | headers 含「折讓金額」「折讓備註」                             |
+| 13. public tracking 不洩漏 discountNote           | PublicOrder 端點不回傳 discountNote                            |
+| 14. cancelled 訂單嘗試更新 discountAmount         | 回傳 422（既有行為，不能編輯已結束訂單）                       |
+| 15. completed 訂單嘗試更新 discountAmount         | 回傳 422（既有行為）                                           |
 
 ---
 
@@ -488,18 +497,18 @@ Step 8J 後端施工時應按照以下順序執行：
 
 以下問題需要使用者確認後再開始 Step 8J 施工：
 
-| # | 問題 | 建議預設 |
-|---|------|---------|
-| 1 | MVP 是否只做 discountAmount + discountNote，不做 discountRate / 購物金 / 毛利？ | **是，只做兩個欄位** |
-| 2 | discountAmount 超過應收總額時，要拒絕（422）還是自動 clamp 到上限？ | **建議拒絕（422），前端驗證先擋** |
-| 3 | 折讓金額是否要顯示在買家追蹤頁（/track/:publicToken）？ | **建議暫不顯示** |
-| 4 | CSV 匯出是否要加入折讓欄位？ | **建議加入** |
-| 5 | 已付款訂單（paidAmount > 0）調整折讓後導致 paidAmount > orderTotal（溢收），是否要提醒或標記？ | **待確認，建議前端顯示提醒** |
-| 6 | discountNote 空字串是否 normalize 為 null？ | **建議 normalize**（與 paymentNote / shippingNote 一致） |
-| 7 | 折數（discountRate）是否確認延後？ | **建議確認延後** |
-| 8 | 購物金是否確認等會員系統？ | **建議確認等待** |
-| 9 | 毛利是否確認等成本系統建立後再做？ | **建議確認等待** |
-| 10 | discountAmount 型別：integer 還是 numeric(10,2)？ | **建議 integer（NT$ 整數）** |
+| #   | 問題                                                                                           | 建議預設                                                 |
+| --- | ---------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| 1   | MVP 是否只做 discountAmount + discountNote，不做 discountRate / 購物金 / 毛利？                | **是，只做兩個欄位**                                     |
+| 2   | discountAmount 超過應收總額時，要拒絕（422）還是自動 clamp 到上限？                            | **建議拒絕（422），前端驗證先擋**                        |
+| 3   | 折讓金額是否要顯示在買家追蹤頁（/track/:publicToken）？                                        | **建議暫不顯示**                                         |
+| 4   | CSV 匯出是否要加入折讓欄位？                                                                   | **建議加入**                                             |
+| 5   | 已付款訂單（paidAmount > 0）調整折讓後導致 paidAmount > orderTotal（溢收），是否要提醒或標記？ | **待確認，建議前端顯示提醒**                             |
+| 6   | discountNote 空字串是否 normalize 為 null？                                                    | **建議 normalize**（與 paymentNote / shippingNote 一致） |
+| 7   | 折數（discountRate）是否確認延後？                                                             | **建議確認延後**                                         |
+| 8   | 購物金是否確認等會員系統？                                                                     | **建議確認等待**                                         |
+| 9   | 毛利是否確認等成本系統建立後再做？                                                             | **建議確認等待**                                         |
+| 10  | discountAmount 型別：integer 還是 numeric(10,2)？                                              | **建議 integer（NT$ 整數）**                             |
 
 ---
 
@@ -514,13 +523,13 @@ Step 8J 後端施工時應按照以下順序執行：
 
 ### K.2 不建議 Step 8J 同時施工
 
-| 功能 | 原因 |
-|------|------|
+| 功能                 | 原因                                         |
+| -------------------- | -------------------------------------------- |
 | discountRate（折數） | 與 discountAmount 計算規則衝突，先確認再施工 |
-| 購物金折抵 | 需要尚不存在的會員系統 |
-| 毛利計算 | 需要尚不存在的商品成本欄位 |
-| 刪除 / 封存 | 另走 Step 8O，不同 scope |
-| PDF 列印 | 另走 Step 8M，不同 scope |
+| 購物金折抵           | 需要尚不存在的會員系統                       |
+| 毛利計算             | 需要尚不存在的商品成本欄位                   |
+| 刪除 / 封存          | 另走 Step 8O，不同 scope                     |
+| PDF 列印             | 另走 Step 8M，不同 scope                     |
 
 ### K.3 建議施工順序
 

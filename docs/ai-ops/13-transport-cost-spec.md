@@ -7,9 +7,11 @@
 ## 1. 資料模型（建議，實作時可依 repo 慣例調整命名，不可調整語意）
 
 **trip（一趟行程）**
+
 - `name`（例：北海道 2026-06）、`exchange_rate`（**每趟一個**，decimal，老闆手填；Q1 定案）、備註。
 
 **trip_route（行程內一條路線/地區，對應 Sheet 一列）**
+
 - 手填欄（全部日圓、decimal、可為 0）：`area_title`（分攤查找鍵，需唯一）、`start_place`、`end_place`、`train_jpy`、`fuel_jpy`（油價手查 gogo.gs 後手填，見 11 檔）、`parking_jpy`、`est_qty`（整數 >0）、`cardboard_jpy`、`shipping_jpy`、`parcel_count`。
 - `etc_jpy`：**每條路線手動填寫的 ETC 總額**，可為 0；不再使用 `30 × est_qty` 自動產生。既有路線未填時顯示「待確認」，不可默默當 0（老闆 2026-07-16 覆核定案）。
 - 每個計算欄也都要保留人工覆寫欄位＋覆寫標記。

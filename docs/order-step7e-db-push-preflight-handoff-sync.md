@@ -9,15 +9,15 @@
 
 ## 2. API Worktree / Branch
 
-| 項目 | 值 |
-|------|-----|
+| 項目     | 值                                             |
+| -------- | ---------------------------------------------- |
 | worktree | `/home/runner/workspace/.worktrees/step7e-api` |
-| branch | `qa/step7e-seller-agent-settings-api` |
+| branch   | `qa/step7e-seller-agent-settings-api`          |
 
 ## 3. Preflight Commit
 
-| commit | message |
-|--------|---------|
+| commit    | message                                               |
+| --------- | ----------------------------------------------------- |
 | `27bc580` | `docs-step7e-seller-agent-settings-db-push-preflight` |
 
 ## 4. 同步到 dev-handoff 的內容
@@ -30,11 +30,11 @@
 
 ### Scripts
 
-| Script | 指令 |
-|--------|------|
-| `push` | `drizzle-kit push --config ./drizzle.config.ts` |
+| Script       | 指令                                                    |
+| ------------ | ------------------------------------------------------- |
+| `push`       | `drizzle-kit push --config ./drizzle.config.ts`         |
 | `push-force` | `drizzle-kit push --force --config ./drizzle.config.ts` |
-| `seed` | `tsx src/seed.ts` |
+| `seed`       | `tsx src/seed.ts`                                       |
 
 **無 generate / migrate script** — 確認 push-only 工作流
 
@@ -55,11 +55,11 @@ pnpm run push
 
 ### Env Key Existence（不含 secret）
 
-| Key | 狀態 |
-|-----|------|
-| DATABASE_URL | SET |
-| PGHOST / PGDATABASE / PGUSER / PGPASSWORD / PGPORT | SET |
-| POSTGRES_URL / SUPABASE_* | MISSING |
+| Key                                                | 狀態    |
+| -------------------------------------------------- | ------- |
+| DATABASE_URL                                       | SET     |
+| PGHOST / PGDATABASE / PGUSER / PGPASSWORD / PGPORT | SET     |
+| POSTGRES*URL / SUPABASE*\*                         | MISSING |
 
 ### 風險提示
 

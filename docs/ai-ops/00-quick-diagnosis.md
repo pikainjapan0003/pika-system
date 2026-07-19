@@ -102,13 +102,13 @@
 
 ## 附錄：本 session 環境實查結果（2026-07-07）
 
-| 項目 | 結果 |
-|---|---|
-| pika-system 本機位置 | 原本不在本機；本 session clone 到 `C:\Users\Lnovo\Desktop\pika-system`（depth 1） |
-| AI 指示檔 | repo 內原有 `CLAUDE.md`（Dev Handoff Relay A/B 協議，禁止 push、禁止 stage dev-handoff/.claude）；本 session 新增 `AGENTS.md` + `docs/ai-ops/*` |
-| Package manager | pnpm workspace（package.json:6 preinstall 強制 pnpm） |
-| 指令 | `pnpm run typecheck`、`pnpm run build`（package.json:8-9）；root 無 test/lint script（各 workspace 見 01-session-plan.md） |
-| 部署 | 有 `replit.md`/`replit.nix`，推測 Replit 相關（未確認實際部署狀態） |
-| 成本 Sheet | 匿名 401；**SA 可讀已實證（2026-07-07，cc-663@my-openclaw-491003）**，金鑰在使用者 Windows 桌面（勿寫進 repo）。欄位對照見 `10-cost-sheet-mapping.md` |
-| gogo.gs | **已定案**：官方 API 已終止支援（api.gogo.gs 公告），不整合，手動輸入（見 `11-fuel-price-research.md`） |
-| 可用模型 | 本 session 的 Agent 工具可指定 `sonnet` / `opus` / `haiku` / `fable`；未來 session 以當下環境實查為準，不可照抄 |
+| 項目                 | 結果                                                                                                                                                  |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| pika-system 本機位置 | 原本不在本機；本 session clone 到 `C:\Users\Lnovo\Desktop\pika-system`（depth 1）                                                                     |
+| AI 指示檔            | repo 內原有 `CLAUDE.md`（Dev Handoff Relay A/B 協議，禁止 push、禁止 stage dev-handoff/.claude）；本 session 新增 `AGENTS.md` + `docs/ai-ops/*`       |
+| Package manager      | pnpm workspace（package.json:6 preinstall 強制 pnpm）                                                                                                 |
+| 指令                 | `pnpm run typecheck`、`pnpm run build`（package.json:8-9）；root 無 test/lint script（各 workspace 見 01-session-plan.md）                            |
+| 部署                 | 有 `replit.md`/`replit.nix`，推測 Replit 相關（未確認實際部署狀態）                                                                                   |
+| 成本 Sheet           | 匿名 401；**SA 可讀已實證（2026-07-07，cc-663@my-openclaw-491003）**，金鑰在使用者 Windows 桌面（勿寫進 repo）。欄位對照見 `10-cost-sheet-mapping.md` |
+| gogo.gs              | **已定案**：官方 API 已終止支援（api.gogo.gs 公告），不整合，手動輸入（見 `11-fuel-price-research.md`）                                               |
+| 可用模型             | 本 session 的 Agent 工具可指定 `sonnet` / `opus` / `haiku` / `fable`；未來 session 以當下環境實查為準，不可照抄                                       |

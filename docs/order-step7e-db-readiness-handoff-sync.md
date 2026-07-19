@@ -9,15 +9,15 @@
 
 ## 2. API Worktree / Branch
 
-| 項目 | 值 |
-|------|-----|
+| 項目     | 值                                             |
+| -------- | ---------------------------------------------- |
 | worktree | `/home/runner/workspace/.worktrees/step7e-api` |
-| branch | `qa/step7e-seller-agent-settings-api` |
+| branch   | `qa/step7e-seller-agent-settings-api`          |
 
 ## 3. Readiness Commit
 
-| commit | message |
-|--------|---------|
+| commit    | message                                                |
+| --------- | ------------------------------------------------------ |
 | `3158252` | `docs-step7e-seller-agent-settings-db-readiness-check` |
 
 ## 4. Readiness Conclusion
@@ -28,22 +28,22 @@
 
 ### DB Identity（不含 secret）
 
-| 欄位 | 值 |
-|------|-----|
-| host | `helium` |
-| database | `heliumdb` |
-| user | postgres |
-| port | (default 5432) |
-| has_server_addr | f（本機 socket）|
+| 欄位            | 值               |
+| --------------- | ---------------- |
+| host            | `helium`         |
+| database        | `heliumdb`       |
+| user            | postgres         |
+| port            | (default 5432)   |
+| has_server_addr | f（本機 socket） |
 
 判斷：Replit 本機開發 DB，非 production。
 
 ### Table Existence
 
-| 表名 | 存在 |
-|------|------|
-| `stores` | ✓ 存在（2 rows，FK 就緒）|
-| `seller_agent_settings` | ✗ 不存在（push 後建立）|
+| 表名                    | 存在                      |
+| ----------------------- | ------------------------- |
+| `stores`                | ✓ 存在（2 rows，FK 就緒） |
+| `seller_agent_settings` | ✗ 不存在（push 後建立）   |
 
 ### Public Tables（9 tables）
 
@@ -53,14 +53,14 @@ agent_run_logs, cvs_stores, orders, product_categories, products, seller_agent_t
 
 ### Readiness Conditions
 
-| 條件 | 狀態 |
-|------|------|
-| DATABASE_URL 存在 | ✓ |
-| DB 可連線 | ✓ |
-| 確認非 production DB | ✓ |
-| stores 表存在 | ✓ |
-| seller_agent_settings 不存在 | ✓ |
-| public tables 符合預期 | ✓ |
+| 條件                         | 狀態 |
+| ---------------------------- | ---- |
+| DATABASE_URL 存在            | ✓    |
+| DB 可連線                    | ✓    |
+| 確認非 production DB         | ✓    |
+| stores 表存在                | ✓    |
+| seller_agent_settings 不存在 | ✓    |
+| public tables 符合預期       | ✓    |
 
 ## 6. 未執行項目
 

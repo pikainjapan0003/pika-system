@@ -10,37 +10,37 @@
 
 ## 2. 驗證 Worktree
 
-| 項目 | 結果 |
-|------|------|
-| 路徑 | `/home/runner/workspace/.worktrees/step7e-code-restore` ✓ |
-| working tree 乾淨 | ✓（無 untracked / modified 檔案）|
-| staged changes | 無 ✓ |
+| 項目              | 結果                                                      |
+| ----------------- | --------------------------------------------------------- |
+| 路徑              | `/home/runner/workspace/.worktrees/step7e-code-restore` ✓ |
+| working tree 乾淨 | ✓（無 untracked / modified 檔案）                         |
+| staged changes    | 無 ✓                                                      |
 
 ## 3. 驗證 Branch
 
-| 項目 | 結果 |
-|------|------|
-| branch | `qa/step7e-seller-agent-settings-code-restore` ✓ |
-| 包含 d441fd9 | ✓ |
+| 項目         | 結果                                             |
+| ------------ | ------------------------------------------------ |
+| branch       | `qa/step7e-seller-agent-settings-code-restore` ✓ |
+| 包含 d441fd9 | ✓                                                |
 
 ## 4. 驗證 Commit Hash
 
-| 項目 | 結果 |
-|------|------|
-| commit hash | `626b399b245877b0e7ceac55893dc885a7b2ec0c` |
-| git cat-file -t | `commit` ✓ |
-| commit message | `feat-db-step7e-seller-agent-settings-schema` ✓ |
-| HEAD 是 626b399 | ✓ |
-| branch 包含 commit | ✓（`git branch --contains 626b399` 回傳目前 branch）|
+| 項目               | 結果                                                 |
+| ------------------ | ---------------------------------------------------- |
+| commit hash        | `626b399b245877b0e7ceac55893dc885a7b2ec0c`           |
+| git cat-file -t    | `commit` ✓                                           |
+| commit message     | `feat-db-step7e-seller-agent-settings-schema` ✓      |
+| HEAD 是 626b399    | ✓                                                    |
+| branch 包含 commit | ✓（`git branch --contains 626b399` 回傳目前 branch） |
 
 ## 5. 驗證 Committed Files
 
-| 檔案 | commit 內狀態 | 可讀取 |
-|------|-------------|-------|
-| `lib/db/src/schema/sellerAgentSettings.ts` | A（新增）| ✓ |
-| `lib/db/src/schema/index.ts` | M（修改）| ✓ |
-| `lib/db/migrations/0001_seller_agent_settings.sql` | A（新增）| ✓ |
-| `docs/order-step7e-seller-agent-settings-code-restore-audit.md` | A（新增）| ✓ |
+| 檔案                                                            | commit 內狀態 | 可讀取 |
+| --------------------------------------------------------------- | ------------- | ------ |
+| `lib/db/src/schema/sellerAgentSettings.ts`                      | A（新增）     | ✓      |
+| `lib/db/src/schema/index.ts`                                    | M（修改）     | ✓      |
+| `lib/db/migrations/0001_seller_agent_settings.sql`              | A（新增）     | ✓      |
+| `docs/order-step7e-seller-agent-settings-code-restore-audit.md` | A（新增）     | ✓      |
 
 commit 共包含 4 個檔案，307 行新增，符合預期。
 
@@ -48,44 +48,44 @@ commit 共包含 4 個檔案，307 行新增，符合預期。
 
 ### sellerAgentSettings.ts
 
-| 關鍵項目 | 狀態 |
-|---------|------|
-| `sellerAgentSettingsTable` export | ✓ |
-| `seller_agent_settings` table name | ✓ |
-| `webhookSecretHash` 欄位 | ✓ |
-| `sellerAgentStatusEnum` | ✓ |
-| `sellerAgentModeEnum` | ✓ |
-| `sellerAgentQueryFrequencyEnum` | ✓ |
-| `sellerAgentLogisticsEnum` | ✓ |
-| `sellerAgentQueryMethodEnum` | ✓ |
+| 關鍵項目                           | 狀態 |
+| ---------------------------------- | ---- |
+| `sellerAgentSettingsTable` export  | ✓    |
+| `seller_agent_settings` table name | ✓    |
+| `webhookSecretHash` 欄位           | ✓    |
+| `sellerAgentStatusEnum`            | ✓    |
+| `sellerAgentModeEnum`              | ✓    |
+| `sellerAgentQueryFrequencyEnum`    | ✓    |
+| `sellerAgentLogisticsEnum`         | ✓    |
+| `sellerAgentQueryMethodEnum`       | ✓    |
 
 ### index.ts
 
-| 關鍵項目 | 狀態 |
-|---------|------|
-| `export * from "./sellerAgentSettings.ts"` | ✓ |
+| 關鍵項目                                   | 狀態 |
+| ------------------------------------------ | ---- |
+| `export * from "./sellerAgentSettings.ts"` | ✓    |
 
 ### 0001_seller_agent_settings.sql
 
-| 關鍵項目 | 狀態 |
-|---------|------|
-| `CREATE TABLE IF NOT EXISTS "seller_agent_settings"` | ✓ |
-| `UNIQUE ("store_id")` constraint | ✓ |
-| `REFERENCES "stores" ("id") ON DELETE CASCADE` FK | ✓ |
-| `CHECK ("agent_status" IN ...)` | ✓ |
-| `CHECK ("agent_mode" IN ...)` | ✓ |
-| `CHECK ("query_frequency" IN ...)` | ✓ |
-| `CREATE INDEX IF NOT EXISTS` (3 個 index) | ✓ |
+| 關鍵項目                                             | 狀態 |
+| ---------------------------------------------------- | ---- |
+| `CREATE TABLE IF NOT EXISTS "seller_agent_settings"` | ✓    |
+| `UNIQUE ("store_id")` constraint                     | ✓    |
+| `REFERENCES "stores" ("id") ON DELETE CASCADE` FK    | ✓    |
+| `CHECK ("agent_status" IN ...)`                      | ✓    |
+| `CHECK ("agent_mode" IN ...)`                        | ✓    |
+| `CHECK ("query_frequency" IN ...)`                   | ✓    |
+| `CREATE INDEX IF NOT EXISTS` (3 個 index)            | ✓    |
 
 ## 7. 驗證主 Workspace Handoff
 
-| 項目 | 驗證前狀態 |
-|------|----------|
+| 項目                      | 驗證前狀態                                                                      |
+| ------------------------- | ------------------------------------------------------------------------------- |
 | `latest-B.json` taskTitle | `Step 7E-1a-CODE-RESTORE-SAVE：commit seller_agent_settings schema / migration` |
-| `latest-B.json` branch | `qa/step7e-seller-agent-settings-code-restore` |
-| `latest-B.json` status | `completed` |
-| `latest.json` taskTitle | `Step 7E-1a-CODE-RESTORE-SAVE：commit seller_agent_settings schema / migration` |
-| rawReply 一致 | ✓ |
+| `latest-B.json` branch    | `qa/step7e-seller-agent-settings-code-restore`                                  |
+| `latest-B.json` status    | `completed`                                                                     |
+| `latest.json` taskTitle   | `Step 7E-1a-CODE-RESTORE-SAVE：commit seller_agent_settings schema / migration` |
+| rawReply 一致             | ✓                                                                               |
 
 驗證後已更新為 CODE-RESTORE-VERIFY。
 

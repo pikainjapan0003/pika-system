@@ -102,16 +102,16 @@ Claude Code＝ 寫代碼。在 repo 內；開場必讀 AGENTS.md；依 CLAUDE.md
 
 ## 4. repo 文件地圖（Claude Code 開場用；ChatGPT 想深挖時請老闆貼對應檔）
 
-| 檔案 | 是什麼 | 誰讀 |
-|---|---|---|
-| `AGENTS.md` | AI 作業入口＋十條最小規則 | Claude Code 每次開場必讀 |
-| `CLAUDE.md` | Dev Handoff A/B 協議（worker 身份、handoff 格式、禁 push） | Claude Code |
-| `docs/ai-ops/00`～`06`,`99` | 制度細則（診斷/開場/派工/判準/模板/維護/交接/審查紀錄） | Claude Code 按任務類型選讀 |
-| `docs/ai-ops/10-cost-sheet-mapping.md` | 成本 Sheet 21 分頁實讀對照（欄位＋公式原文＋12 條未確認項） | 兩者（審成本題時貼給 ChatGPT） |
-| `docs/ai-ops/12-owner-decisions.md` | 老闆拍板紀錄（已答 3 題＋凍結 5 題） | 兩者 |
-| `docs/ai-ops/13-transport-cost-spec.md` | **現行任務的實作規格** | 兩者 |
-| `docs/order-step*.md`（90 份） | 歷史功能 spec | 需要才查，別全讀 |
-| `docs/plan/PROJECT_PLAN.*` | 老闆看的短版計畫（md/docx/pdf） | 老闆 |
+| 檔案                                    | 是什麼                                                      | 誰讀                           |
+| --------------------------------------- | ----------------------------------------------------------- | ------------------------------ |
+| `AGENTS.md`                             | AI 作業入口＋十條最小規則                                   | Claude Code 每次開場必讀       |
+| `CLAUDE.md`                             | Dev Handoff A/B 協議（worker 身份、handoff 格式、禁 push）  | Claude Code                    |
+| `docs/ai-ops/00`～`06`,`99`             | 制度細則（診斷/開場/派工/判準/模板/維護/交接/審查紀錄）     | Claude Code 按任務類型選讀     |
+| `docs/ai-ops/10-cost-sheet-mapping.md`  | 成本 Sheet 21 分頁實讀對照（欄位＋公式原文＋12 條未確認項） | 兩者（審成本題時貼給 ChatGPT） |
+| `docs/ai-ops/12-owner-decisions.md`     | 老闆拍板紀錄（已答 3 題＋凍結 5 題）                        | 兩者                           |
+| `docs/ai-ops/13-transport-cost-spec.md` | **現行任務的實作規格**                                      | 兩者                           |
+| `docs/order-step*.md`（90 份）          | 歷史功能 spec                                               | 需要才查，別全讀               |
+| `docs/plan/PROJECT_PLAN.*`              | 老闆看的短版計畫（md/docx/pdf）                             | 老闆                           |
 
 ---
 

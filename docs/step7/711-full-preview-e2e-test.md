@@ -22,18 +22,18 @@ tracking code: `****7678`（last4 表示；完全コード非公開）
 
 ## 2. E2E 結果表
 
-| 項目 | 結果 | 証拠 | 備考 |
-|------|------|------|------|
-| tracking code available | YES（confirmed safe） | ユーザー確認済み | last4: `****7678` |
-| GET search page | PASS | HTTP 200 | tesseract 5.3.4 |
-| captcha download | PASS | 2864 bytes JPEG | ValidateImage.aspx |
-| OCR（tesseract 5.3.4） | PASS（attempt #2 成功） | `query_no match: true` | nix store パス使用 |
-| POST query | PASS | 7-11 サーバーが貨態を返却 | 6.2s elapsed |
-| tracking result parse | PASS | 8 events、timestamps 全取得 | latestStatus / pickupStoreName / pickupDeadline 含む |
-| normalized preview | PASS（8/8） | 修正後全 events correct | sevenElevenAdapter.ts に 4 patterns 追加 |
-| DB write | NO | 無 DB 操作 | ✓ |
-| supportsAutoSync unchanged | YES | 未変更 | ✓ |
-| provider whitelist unchanged | YES | 未変更 | ✓ |
+| 項目                         | 結果                    | 証拠                        | 備考                                                 |
+| ---------------------------- | ----------------------- | --------------------------- | ---------------------------------------------------- |
+| tracking code available      | YES（confirmed safe）   | ユーザー確認済み            | last4: `****7678`                                    |
+| GET search page              | PASS                    | HTTP 200                    | tesseract 5.3.4                                      |
+| captcha download             | PASS                    | 2864 bytes JPEG             | ValidateImage.aspx                                   |
+| OCR（tesseract 5.3.4）       | PASS（attempt #2 成功） | `query_no match: true`      | nix store パス使用                                   |
+| POST query                   | PASS                    | 7-11 サーバーが貨態を返却   | 6.2s elapsed                                         |
+| tracking result parse        | PASS                    | 8 events、timestamps 全取得 | latestStatus / pickupStoreName / pickupDeadline 含む |
+| normalized preview           | PASS（8/8）             | 修正後全 events correct     | sevenElevenAdapter.ts に 4 patterns 追加             |
+| DB write                     | NO                      | 無 DB 操作                  | ✓                                                    |
+| supportsAutoSync unchanged   | YES                     | 未変更                      | ✓                                                    |
+| provider whitelist unchanged | YES                     | 未変更                      | ✓                                                    |
 
 ---
 
@@ -41,12 +41,12 @@ tracking code: `****7678`（last4 表示；完全コード非公開）
 
 `sevenElevenAdapter.ts` `normalizeSevenElevenStatus` に 4 patterns 追加：
 
-| 追加 pattern | 対象 | 結果 |
-|------|------|------|
-| `成功取件` | 「已完成包裹成功取件」等 | `picked_up` |
-| `配達` | 「包裹配達取件門市」等 | `arrived_store` |
-| `物流中心` | 「離開物流中心」「已送達物流中心」等 | `in_transit` |
-| `已成立` | 「交貨便訂單已成立」等 | `pending` |
+| 追加 pattern | 対象                                 | 結果            |
+| ------------ | ------------------------------------ | --------------- |
+| `成功取件`   | 「已完成包裹成功取件」等             | `picked_up`     |
+| `配達`       | 「包裹配達取件門市」等               | `arrived_store` |
+| `物流中心`   | 「離開物流中心」「已送達物流中心」等 | `in_transit`    |
+| `已成立`     | 「交貨便訂單已成立」等               | `pending`       |
 
 修正前: 2/8 correct（`包裹已送達【北區】物流中心，進行理貨轉運中`→"轉運" hit / `寄件門市已收件`→"收件" hit）
 修正後: 8/8 correct

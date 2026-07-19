@@ -91,39 +91,39 @@
 
 ## 2. MVP 決策建議彙總（速查表）
 
-| 項目 | MVP 建議 |
-|------|----------|
-| `tokenHash` 演算法 | SHA-256，或 HMAC-SHA-256（若有 app secret）；不得保存明文 |
-| `tokenPrefix` 長度 | 前 8～12 碼，僅供辨識，不可用於驗證 |
-| `scopes` 格式 | `jsonb`，字串陣列，例如 `["tracking:read", "tracking:write", "run_log:write"]` |
-| `expiresAt` 必填性 | nullable；管理介面未來建議預設 90 / 180 天選項 |
-| `status` 白名單 | `active` / `revoked` / `expired` / `disabled` |
-| `runType` 白名單 | `manual` / `scheduled` / `webhook` / `csv_after_import` / `test` |
-| `agent_run_logs.status` 白名單 | `running` / `completed` / `failed` / `partial` |
-| `agent_run_logs.tokenId` FK onDelete | `set null`，`tokenId` 欄位 nullable，避免刪 token 連帶刪 log |
-| Log 保留期限 | MVP 不做自動清理，僅文件記錄未來優化方向 |
-| `idempotencyKey` | 建議 Step 7D-2B 一併補進 `shipment_tracking_events` |
-| DB 備份 | Step 7D-2B 執行 `drizzle-kit push` 前必須備份 |
+| 項目                                 | MVP 建議                                                                       |
+| ------------------------------------ | ------------------------------------------------------------------------------ |
+| `tokenHash` 演算法                   | SHA-256，或 HMAC-SHA-256（若有 app secret）；不得保存明文                      |
+| `tokenPrefix` 長度                   | 前 8～12 碼，僅供辨識，不可用於驗證                                            |
+| `scopes` 格式                        | `jsonb`，字串陣列，例如 `["tracking:read", "tracking:write", "run_log:write"]` |
+| `expiresAt` 必填性                   | nullable；管理介面未來建議預設 90 / 180 天選項                                 |
+| `status` 白名單                      | `active` / `revoked` / `expired` / `disabled`                                  |
+| `runType` 白名單                     | `manual` / `scheduled` / `webhook` / `csv_after_import` / `test`               |
+| `agent_run_logs.status` 白名單       | `running` / `completed` / `failed` / `partial`                                 |
+| `agent_run_logs.tokenId` FK onDelete | `set null`，`tokenId` 欄位 nullable，避免刪 token 連帶刪 log                   |
+| Log 保留期限                         | MVP 不做自動清理，僅文件記錄未來優化方向                                       |
+| `idempotencyKey`                     | 建議 Step 7D-2B 一併補進 `shipment_tracking_events`                            |
+| DB 備份                              | Step 7D-2B 執行 `drizzle-kit push` 前必須備份                                  |
 
 ---
 
 ## 3. `seller_agent_tokens` 最終欄位建議表
 
-| 欄位 | DB 欄名 | 型別 | nullable | 預設值 | FK / Constraint |
-|------|---------|------|----------|--------|------------------|
-| `id` | `id` | `serial` | 否 | — | PK |
-| `merchantId` | `merchant_id` | `text` | 否 | — | 對應 `storesTable.merchantId`，由 token 建立流程查詢 `storesTable` 取得，不直接信任請求方輸入 |
-| `storeId` | `store_id` | `integer` | 否 | — | FK → `stores.id`，`onDelete: "cascade"` |
-| `name` | `name` | `text` | 否 | — | 供使用者辨識用途的顯示名稱 |
-| `tokenHash` | `token_hash` | `text` | 否 | — | SHA-256 / HMAC-SHA-256 雜湊值，不存明文 |
-| `tokenPrefix` | `token_prefix` | `text` | 否 | — | 明文前 8～12 碼，僅供辨識 |
-| `status` | `status` | `text` | 否 | `'active'` | `check`：`status IN ('active','revoked','expired','disabled')` |
-| `scopes` | `scopes` | `jsonb` | 否 | `'[]'` | 字串陣列，例如 `["tracking:read","tracking:write","run_log:write"]` |
-| `lastUsedAt` | `last_used_at` | `timestamp (withTimezone)` | 是 | `null` | 不應每次請求都同步寫入，避免高頻寫入 |
-| `expiresAt` | `expires_at` | `timestamp (withTimezone)` | 是 | `null` | `null` = 不過期；介面層建議預設 90 / 180 天 |
-| `revokedAt` | `revoked_at` | `timestamp (withTimezone)` | 是 | `null` | `status = 'revoked'` 時應有值 |
-| `createdAt` | `created_at` | `timestamp (withTimezone)` | 否 | `defaultNow()` | 比照現有慣例 |
-| `updatedAt` | `updated_at` | `timestamp (withTimezone)` | 否 | `defaultNow()` + `$onUpdate(() => new Date())` | 比照現有慣例 |
+| 欄位          | DB 欄名        | 型別                       | nullable | 預設值                                         | FK / Constraint                                                                               |
+| ------------- | -------------- | -------------------------- | -------- | ---------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `id`          | `id`           | `serial`                   | 否       | —                                              | PK                                                                                            |
+| `merchantId`  | `merchant_id`  | `text`                     | 否       | —                                              | 對應 `storesTable.merchantId`，由 token 建立流程查詢 `storesTable` 取得，不直接信任請求方輸入 |
+| `storeId`     | `store_id`     | `integer`                  | 否       | —                                              | FK → `stores.id`，`onDelete: "cascade"`                                                       |
+| `name`        | `name`         | `text`                     | 否       | —                                              | 供使用者辨識用途的顯示名稱                                                                    |
+| `tokenHash`   | `token_hash`   | `text`                     | 否       | —                                              | SHA-256 / HMAC-SHA-256 雜湊值，不存明文                                                       |
+| `tokenPrefix` | `token_prefix` | `text`                     | 否       | —                                              | 明文前 8～12 碼，僅供辨識                                                                     |
+| `status`      | `status`       | `text`                     | 否       | `'active'`                                     | `check`：`status IN ('active','revoked','expired','disabled')`                                |
+| `scopes`      | `scopes`       | `jsonb`                    | 否       | `'[]'`                                         | 字串陣列，例如 `["tracking:read","tracking:write","run_log:write"]`                           |
+| `lastUsedAt`  | `last_used_at` | `timestamp (withTimezone)` | 是       | `null`                                         | 不應每次請求都同步寫入，避免高頻寫入                                                          |
+| `expiresAt`   | `expires_at`   | `timestamp (withTimezone)` | 是       | `null`                                         | `null` = 不過期；介面層建議預設 90 / 180 天                                                   |
+| `revokedAt`   | `revoked_at`   | `timestamp (withTimezone)` | 是       | `null`                                         | `status = 'revoked'` 時應有值                                                                 |
+| `createdAt`   | `created_at`   | `timestamp (withTimezone)` | 否       | `defaultNow()`                                 | 比照現有慣例                                                                                  |
+| `updatedAt`   | `updated_at`   | `timestamp (withTimezone)` | 否       | `defaultNow()` + `$onUpdate(() => new Date())` | 比照現有慣例                                                                                  |
 
 ---
 
@@ -131,28 +131,28 @@
 
 ### 4.1 `agent_run_logs` 欄位
 
-| 欄位 | DB 欄名 | 型別 | nullable | 預設值 | FK / Constraint |
-|------|---------|------|----------|--------|------------------|
-| `id` | `id` | `serial` | 否 | — | PK |
-| `tokenId` | `token_id` | `integer` | **是** | `null` | FK → `seller_agent_tokens.id`，`onDelete: "set null"` |
-| `merchantId` | `merchant_id` | `text` | 否 | — | 與 token 建立時相同的冗余存放原則 |
-| `storeId` | `store_id` | `integer` | 否 | — | FK → `stores.id`，`onDelete: "cascade"` |
-| `runType` | `run_type` | `text` | 否 | — | `check`：`run_type IN ('manual','scheduled','webhook','csv_after_import','test')` |
-| `status` | `status` | `text` | 否 | `'running'` | `check`：`status IN ('running','completed','failed','partial')` |
-| `startedAt` | `started_at` | `timestamp (withTimezone)` | 否 | `defaultNow()` | 執行開始時間 |
-| `finishedAt` | `finished_at` | `timestamp (withTimezone)` | 是 | `null` | 執行結束時間，`status = 'running'` 時應為 `null` |
-| `checkedCount` | `checked_count` | `integer` | 否 | `0` | `check`：`>= 0`（比照 `productsTable.inventory` 的 non-negative 慣例） |
-| `successCount` | `success_count` | `integer` | 否 | `0` | `check`：`>= 0` |
-| `failedCount` | `failed_count` | `integer` | 否 | `0` | `check`：`>= 0` |
-| `errorCode` | `error_code` | `text` | 是 | `null` | 機器可讀的錯誤代碼 |
-| `errorMessage` | `error_message` | `text` | 是 | `null` | **不可包含 token 明文、敏感憑證或個資**，僅記錄可安全呈現的錯誤摘要 |
-| `createdAt` | `created_at` | `timestamp (withTimezone)` | 否 | `defaultNow()` | 比照現有慣例 |
+| 欄位           | DB 欄名         | 型別                       | nullable | 預設值         | FK / Constraint                                                                   |
+| -------------- | --------------- | -------------------------- | -------- | -------------- | --------------------------------------------------------------------------------- |
+| `id`           | `id`            | `serial`                   | 否       | —              | PK                                                                                |
+| `tokenId`      | `token_id`      | `integer`                  | **是**   | `null`         | FK → `seller_agent_tokens.id`，`onDelete: "set null"`                             |
+| `merchantId`   | `merchant_id`   | `text`                     | 否       | —              | 與 token 建立時相同的冗余存放原則                                                 |
+| `storeId`      | `store_id`      | `integer`                  | 否       | —              | FK → `stores.id`，`onDelete: "cascade"`                                           |
+| `runType`      | `run_type`      | `text`                     | 否       | —              | `check`：`run_type IN ('manual','scheduled','webhook','csv_after_import','test')` |
+| `status`       | `status`        | `text`                     | 否       | `'running'`    | `check`：`status IN ('running','completed','failed','partial')`                   |
+| `startedAt`    | `started_at`    | `timestamp (withTimezone)` | 否       | `defaultNow()` | 執行開始時間                                                                      |
+| `finishedAt`   | `finished_at`   | `timestamp (withTimezone)` | 是       | `null`         | 執行結束時間，`status = 'running'` 時應為 `null`                                  |
+| `checkedCount` | `checked_count` | `integer`                  | 否       | `0`            | `check`：`>= 0`（比照 `productsTable.inventory` 的 non-negative 慣例）            |
+| `successCount` | `success_count` | `integer`                  | 否       | `0`            | `check`：`>= 0`                                                                   |
+| `failedCount`  | `failed_count`  | `integer`                  | 否       | `0`            | `check`：`>= 0`                                                                   |
+| `errorCode`    | `error_code`    | `text`                     | 是       | `null`         | 機器可讀的錯誤代碼                                                                |
+| `errorMessage` | `error_message` | `text`                     | 是       | `null`         | **不可包含 token 明文、敏感憑證或個資**，僅記錄可安全呈現的錯誤摘要               |
+| `createdAt`    | `created_at`    | `timestamp (withTimezone)` | 否       | `defaultNow()` | 比照現有慣例                                                                      |
 
 ### 4.2 `idempotencyKey`（建議補進 `shipment_tracking_events`）
 
-| 欄位 | DB 欄名 | 型別 | nullable | 預設值 | Constraint |
-|------|---------|------|----------|--------|------------|
-| `idempotencyKey` | `idempotency_key` | `text` | 是 | `null` | 建議搭配 `unique` 索引：`unique("shipment_tracking_events_idempotency_key_unique").on(t.idempotencyKey)`（允許多筆 `null`，PostgreSQL `unique` 對 `null` 不做唯一性檢查，符合「非 Agent 寫入路徑可不提供此值」的需求）|
+| 欄位             | DB 欄名           | 型別   | nullable | 預設值 | Constraint                                                                                                                                                                                                             |
+| ---------------- | ----------------- | ------ | -------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `idempotencyKey` | `idempotency_key` | `text` | 是       | `null` | 建議搭配 `unique` 索引：`unique("shipment_tracking_events_idempotency_key_unique").on(t.idempotencyKey)`（允許多筆 `null`，PostgreSQL `unique` 對 `null` 不做唯一性檢查，符合「非 Agent 寫入路徑可不提供此值」的需求） |
 
 - 用途：讓 Step 7D-2 Agent Write API 在寫入事件時可帶入冪等鍵，避免同一筆事件因重試或重複觸發被寫入多次
 - nullable 設計確保既有寫入路徑（非 Agent 來源）不受影響
@@ -164,29 +164,29 @@
 
 ### 5.1 `seller_agent_tokens`
 
-| 類型 | 名稱 | 內容 | 用途 |
-|------|------|------|------|
-| index | `seller_agent_tokens_merchant_id_idx` | `merchantId` | 依賣家查詢其名下所有 token |
-| index | `seller_agent_tokens_store_id_idx` | `storeId` | 依店鋪查詢 token，比照 `productsTable.storeId` 慣例 |
-| index | `seller_agent_tokens_token_prefix_idx` | `tokenPrefix` | 介面列表辨識查詢 |
-| unique | `seller_agent_tokens_token_hash_unique` | `tokenHash` | 確保雜湊值不重複，亦可作為驗證查詢的快速路徑 |
-| check | `seller_agent_tokens_status_valid` | `status IN ('active','revoked','expired','disabled')` | 白名單約束 |
+| 類型   | 名稱                                    | 內容                                                  | 用途                                                |
+| ------ | --------------------------------------- | ----------------------------------------------------- | --------------------------------------------------- |
+| index  | `seller_agent_tokens_merchant_id_idx`   | `merchantId`                                          | 依賣家查詢其名下所有 token                          |
+| index  | `seller_agent_tokens_store_id_idx`      | `storeId`                                             | 依店鋪查詢 token，比照 `productsTable.storeId` 慣例 |
+| index  | `seller_agent_tokens_token_prefix_idx`  | `tokenPrefix`                                         | 介面列表辨識查詢                                    |
+| unique | `seller_agent_tokens_token_hash_unique` | `tokenHash`                                           | 確保雜湊值不重複，亦可作為驗證查詢的快速路徑        |
+| check  | `seller_agent_tokens_status_valid`      | `status IN ('active','revoked','expired','disabled')` | 白名單約束                                          |
 
 ### 5.2 `agent_run_logs`
 
-| 類型 | 名稱 | 內容 | 用途 |
-|------|------|------|------|
-| index | `agent_run_logs_token_id_idx` | `tokenId` | 依 token 查詢其執行歷史 |
-| index | `agent_run_logs_store_id_idx` | `storeId` | 依店鋪查詢執行歷史 |
-| index | `agent_run_logs_status_started_at_idx` | `(status, startedAt)` | 監控「執行中」與依時間排序查詢，比照 `shipmentTrackingsTable.isActive + nextCheckAt` 複合索引慣例 |
-| check | `agent_run_logs_run_type_valid` | `run_type IN ('manual','scheduled','webhook','csv_after_import','test')` | 白名單約束 |
-| check | `agent_run_logs_status_valid` | `status IN ('running','completed','failed','partial')` | 白名單約束 |
-| check | `agent_run_logs_counts_non_negative` | `checked_count >= 0 AND success_count >= 0 AND failed_count >= 0` | 比照 `inventory_non_negative` 慣例 |
+| 類型  | 名稱                                   | 內容                                                                     | 用途                                                                                              |
+| ----- | -------------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------- |
+| index | `agent_run_logs_token_id_idx`          | `tokenId`                                                                | 依 token 查詢其執行歷史                                                                           |
+| index | `agent_run_logs_store_id_idx`          | `storeId`                                                                | 依店鋪查詢執行歷史                                                                                |
+| index | `agent_run_logs_status_started_at_idx` | `(status, startedAt)`                                                    | 監控「執行中」與依時間排序查詢，比照 `shipmentTrackingsTable.isActive + nextCheckAt` 複合索引慣例 |
+| check | `agent_run_logs_run_type_valid`        | `run_type IN ('manual','scheduled','webhook','csv_after_import','test')` | 白名單約束                                                                                        |
+| check | `agent_run_logs_status_valid`          | `status IN ('running','completed','failed','partial')`                   | 白名單約束                                                                                        |
+| check | `agent_run_logs_counts_non_negative`   | `checked_count >= 0 AND success_count >= 0 AND failed_count >= 0`        | 比照 `inventory_non_negative` 慣例                                                                |
 
 ### 5.3 `shipment_tracking_events`（新增 `idempotencyKey` 後）
 
-| 類型 | 名稱 | 內容 | 用途 |
-|------|------|------|------|
+| 類型   | 名稱                                              | 內容             | 用途                                                                 |
+| ------ | ------------------------------------------------- | ---------------- | -------------------------------------------------------------------- |
 | unique | `shipment_tracking_events_idempotency_key_unique` | `idempotencyKey` | 防止同一冪等鍵重複寫入；nullable 欄位上的 unique 索引允許多個 `null` |
 
 ---
@@ -210,17 +210,17 @@
 
 ### 7.1 新增檔案
 
-| 檔案路徑 | 內容 |
-|----------|------|
+| 檔案路徑                                 | 內容                                                  |
+| ---------------------------------------- | ----------------------------------------------------- |
 | `lib/db/src/schema/sellerAgentTokens.ts` | `seller_agent_tokens` 表定義（依本文件第 3 章欄位表） |
-| `lib/db/src/schema/agentRunLogs.ts` | `agent_run_logs` 表定義（依本文件第 4.1 節欄位表） |
+| `lib/db/src/schema/agentRunLogs.ts`      | `agent_run_logs` 表定義（依本文件第 4.1 節欄位表）    |
 
 ### 7.2 修改檔案
 
-| 檔案路徑 | 修改內容 |
-|----------|----------|
-| `lib/db/src/schema/index.ts` | 新增 `sellerAgentTokens`、`agentRunLogs` 兩個匯出，建議接在 `shipmentTrackingEvents` 之後 |
-| `lib/db/src/schema/shipmentTrackingEvents.ts` | 新增 `idempotencyKey` 欄位與對應 `unique` index（依本文件第 4.2 節與第 5.3 節） |
+| 檔案路徑                                      | 修改內容                                                                                  |
+| --------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `lib/db/src/schema/index.ts`                  | 新增 `sellerAgentTokens`、`agentRunLogs` 兩個匯出，建議接在 `shipmentTrackingEvents` 之後 |
+| `lib/db/src/schema/shipmentTrackingEvents.ts` | 新增 `idempotencyKey` 欄位與對應 `unique` index（依本文件第 4.2 節與第 5.3 節）           |
 
 ### 7.3 不需新增/修改
 
@@ -253,20 +253,20 @@
 
 ## 9. 測試計畫
 
-| # | 測試項目 | 類型 | 說明 |
-|---|----------|------|------|
-| 1 | `seller_agent_tokens` schema 型別檢查 | typecheck | 確認欄位型別、FK、nullable 設定符合本文件第 3 章規格 |
-| 2 | `agent_run_logs` schema 型別檢查 | typecheck | 確認欄位型別、FK、nullable 設定符合本文件第 4.1 節規格 |
-| 3 | `shipment_tracking_events.idempotencyKey` 型別檢查 | typecheck | 確認新欄位與 unique index 正確匯出 |
-| 4 | `drizzle-kit push` 異動預覽檢查 | 手動驗證 | 確認異動範圍僅限本次規劃內容，無非預期異動 |
-| 5 | `status` / `runType` / run `status` 白名單 constraint 驗證 | 手動驗證（SQL） | 嘗試寫入白名單外的值，確認被資料庫拒絕 |
-| 6 | `checkedCount` / `successCount` / `failedCount` non-negative constraint 驗證 | 手動驗證（SQL） | 嘗試寫入負值，確認被資料庫拒絕 |
-| 7 | `seller_agent_tokens.tokenHash` unique constraint 驗證 | 手動驗證（SQL） | 嘗試寫入重複雜湊值，確認被資料庫拒絕 |
-| 8 | `agent_run_logs.tokenId` FK `set null` 行為驗證 | 手動驗證（SQL） | 刪除對應 token 後，確認既有 log 的 `tokenId` 變為 `null` 而非整列被刪除 |
-| 9 | `seller_agent_tokens.storeId` FK `cascade` 行為驗證 | 手動驗證（SQL） | 刪除對應 store 後，確認其名下 token 隨之被刪除 |
-| 10 | `idempotencyKey` unique index 對 `null` 的容忍度驗證 | 手動驗證（SQL） | 確認可寫入多筆 `idempotencyKey = null` 的事件記錄，但相同非 null 鍵值會被拒絕 |
-| 11 | `index.ts` 匯出完整性驗證 | typecheck / 手動驗證 | 確認 `sellerAgentTokens`、`agentRunLogs` 可被其他模組正確 import |
-| 12 | Schema 變更對既有功能無回歸 | 手動驗證 | 確認既有 `orders`、`shipmentTrackings`、`shipmentTrackingEvents` 等表的既有查詢與寫入流程不受影響 |
+| #   | 測試項目                                                                     | 類型                 | 說明                                                                                              |
+| --- | ---------------------------------------------------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------- |
+| 1   | `seller_agent_tokens` schema 型別檢查                                        | typecheck            | 確認欄位型別、FK、nullable 設定符合本文件第 3 章規格                                              |
+| 2   | `agent_run_logs` schema 型別檢查                                             | typecheck            | 確認欄位型別、FK、nullable 設定符合本文件第 4.1 節規格                                            |
+| 3   | `shipment_tracking_events.idempotencyKey` 型別檢查                           | typecheck            | 確認新欄位與 unique index 正確匯出                                                                |
+| 4   | `drizzle-kit push` 異動預覽檢查                                              | 手動驗證             | 確認異動範圍僅限本次規劃內容，無非預期異動                                                        |
+| 5   | `status` / `runType` / run `status` 白名單 constraint 驗證                   | 手動驗證（SQL）      | 嘗試寫入白名單外的值，確認被資料庫拒絕                                                            |
+| 6   | `checkedCount` / `successCount` / `failedCount` non-negative constraint 驗證 | 手動驗證（SQL）      | 嘗試寫入負值，確認被資料庫拒絕                                                                    |
+| 7   | `seller_agent_tokens.tokenHash` unique constraint 驗證                       | 手動驗證（SQL）      | 嘗試寫入重複雜湊值，確認被資料庫拒絕                                                              |
+| 8   | `agent_run_logs.tokenId` FK `set null` 行為驗證                              | 手動驗證（SQL）      | 刪除對應 token 後，確認既有 log 的 `tokenId` 變為 `null` 而非整列被刪除                           |
+| 9   | `seller_agent_tokens.storeId` FK `cascade` 行為驗證                          | 手動驗證（SQL）      | 刪除對應 store 後，確認其名下 token 隨之被刪除                                                    |
+| 10  | `idempotencyKey` unique index 對 `null` 的容忍度驗證                         | 手動驗證（SQL）      | 確認可寫入多筆 `idempotencyKey = null` 的事件記錄，但相同非 null 鍵值會被拒絕                     |
+| 11  | `index.ts` 匯出完整性驗證                                                    | typecheck / 手動驗證 | 確認 `sellerAgentTokens`、`agentRunLogs` 可被其他模組正確 import                                  |
+| 12  | Schema 變更對既有功能無回歸                                                  | 手動驗證             | 確認既有 `orders`、`shipmentTrackings`、`shipmentTrackingEvents` 等表的既有查詢與寫入流程不受影響 |
 
 **未執行自動化測試，原因是：本次僅新增 Step 7D-2A Agent schema 實作前檢查文件，未修改功能程式碼。**
 
@@ -274,16 +274,16 @@
 
 ## 10. 風險清單
 
-| # | 風險 | 等級 | 說明 |
-|---|------|------|------|
-| 1 | `drizzle-kit push` 異動範圍超出預期 | 高 | 若 schema 檔案撰寫有誤，`push` 可能產生非預期的 `DROP` / `ALTER` 異動，影響既有資料表；務必先備份並檢視異動預覽 |
-| 2 | 未備份即執行 push | 高 | 一旦發生問題且無備份，可能造成資料不可逆遺失 |
-| 3 | `tokenHash` / `tokenPrefix` 設計不慎導致可逆推出明文 | 高 | 必須確保只存雜湊值與不足以重組的前綴片段，且 `errorMessage` 等欄位不可記錄敏感資訊 |
-| 4 | `merchantId` 冗余存放與 `storesTable.merchantId` 不一致 | 中 | 需仰賴第 6 章所述的建立流程與（可選的）驗證時一致性檢查來避免漂移 |
-| 5 | `idempotencyKey` 與既有 `shipment_tracking_events` 寫入路徑的相容性 | 中 | nullable 設計理論上不影響既有路徑，但仍需在實作時驗證既有寫入邏輯不會因新欄位/新索引而出錯 |
-| 6 | white-list（`status` / `runType` / run `status`）未來擴充需求 | 低 | 目前白名單以 MVP 可預見範圍設計，未來若需新增類型，需同步修改 `check` constraint，屬於可預期的維護成本 |
-| 7 | Log 不清理導致資料量成長 | 低 | MVP 階段刻意不做自動清理，需在文件中持續追蹤，作為未來優化項目排入規劃 |
-| 8 | 主工作區持續存在未處理的 modified/untracked 檔案 | 中 | `.replit`、`orderStatusMachine.ts`、`orders.route.test.mjs`、`orderStatus.ts`、`Orders.tsx` 為 modified，`docs/order-step7c-schema-migration-implementation-audit.md`、`docs/order-step8a-order-actions-audit.md` 為新增 untracked，狀態與前次觀察一致（無變化），疑似有其他並行工作線（如 Claude A）正在進行中的變更；本次任務全程只在 worktree 操作，未觸碰主工作區任何檔案，僅如實記錄、不處理 |
+| #   | 風險                                                                | 等級 | 說明                                                                                                                                                                                                                                                                                                                                                                                              |
+| --- | ------------------------------------------------------------------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | `drizzle-kit push` 異動範圍超出預期                                 | 高   | 若 schema 檔案撰寫有誤，`push` 可能產生非預期的 `DROP` / `ALTER` 異動，影響既有資料表；務必先備份並檢視異動預覽                                                                                                                                                                                                                                                                                   |
+| 2   | 未備份即執行 push                                                   | 高   | 一旦發生問題且無備份，可能造成資料不可逆遺失                                                                                                                                                                                                                                                                                                                                                      |
+| 3   | `tokenHash` / `tokenPrefix` 設計不慎導致可逆推出明文                | 高   | 必須確保只存雜湊值與不足以重組的前綴片段，且 `errorMessage` 等欄位不可記錄敏感資訊                                                                                                                                                                                                                                                                                                                |
+| 4   | `merchantId` 冗余存放與 `storesTable.merchantId` 不一致             | 中   | 需仰賴第 6 章所述的建立流程與（可選的）驗證時一致性檢查來避免漂移                                                                                                                                                                                                                                                                                                                                 |
+| 5   | `idempotencyKey` 與既有 `shipment_tracking_events` 寫入路徑的相容性 | 中   | nullable 設計理論上不影響既有路徑，但仍需在實作時驗證既有寫入邏輯不會因新欄位/新索引而出錯                                                                                                                                                                                                                                                                                                        |
+| 6   | white-list（`status` / `runType` / run `status`）未來擴充需求       | 低   | 目前白名單以 MVP 可預見範圍設計，未來若需新增類型，需同步修改 `check` constraint，屬於可預期的維護成本                                                                                                                                                                                                                                                                                            |
+| 7   | Log 不清理導致資料量成長                                            | 低   | MVP 階段刻意不做自動清理，需在文件中持續追蹤，作為未來優化項目排入規劃                                                                                                                                                                                                                                                                                                                            |
+| 8   | 主工作區持續存在未處理的 modified/untracked 檔案                    | 中   | `.replit`、`orderStatusMachine.ts`、`orders.route.test.mjs`、`orderStatus.ts`、`Orders.tsx` 為 modified，`docs/order-step7c-schema-migration-implementation-audit.md`、`docs/order-step8a-order-actions-audit.md` 為新增 untracked，狀態與前次觀察一致（無變化），疑似有其他並行工作線（如 Claude A）正在進行中的變更；本次任務全程只在 worktree 操作，未觸碰主工作區任何檔案，僅如實記錄、不處理 |
 
 ---
 

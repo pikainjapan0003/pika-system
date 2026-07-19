@@ -19,12 +19,12 @@
 
 ## 2. 與 Step 7D-1B 的關係
 
-| 階段 | 內容 | 產出 |
-|---|---|---|
-| Step 7D-1B（已完成） | 決策 MVP token 方向、idempotency key 放置位置、rawPayload 清洗規則 | [[order-step7d-agent-auth-token-decision]]（決策文件，定出「要做什麼」） |
-| **Step 7D-1C（本文件）** | 把上述決策轉成精準 schema 規格：欄位、型別、nullable、預設值、索引、約束、關聯 | 本文件（規格草案，定出「schema 長什麼樣子」） |
-| Step 7D-2A（下一步） | 依本文件第 12 章檢查清單，逐項確認待確認事項，作為實作前最後把關 | 檢查結果 / 確認紀錄 |
-| Step 7D-2B（再下一步） | 依本文件規格，正式撰寫 `sellerAgentTokens.ts`、`agentRunLogs.ts`、執行 migration | 實際 schema 程式碼 + migration |
+| 階段                     | 內容                                                                             | 產出                                                                     |
+| ------------------------ | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Step 7D-1B（已完成）     | 決策 MVP token 方向、idempotency key 放置位置、rawPayload 清洗規則               | [[order-step7d-agent-auth-token-decision]]（決策文件，定出「要做什麼」） |
+| **Step 7D-1C（本文件）** | 把上述決策轉成精準 schema 規格：欄位、型別、nullable、預設值、索引、約束、關聯   | 本文件（規格草案，定出「schema 長什麼樣子」）                            |
+| Step 7D-2A（下一步）     | 依本文件第 12 章檢查清單，逐項確認待確認事項，作為實作前最後把關                 | 檢查結果 / 確認紀錄                                                      |
+| Step 7D-2B（再下一步）   | 依本文件規格，正式撰寫 `sellerAgentTokens.ts`、`agentRunLogs.ts`、執行 migration | 實際 schema 程式碼 + migration                                           |
 
 本文件**只規劃 schema 草案**，不在 Step 7D-1C 階段下任何「最終 schema 定案」——凡標註「待確認」者，一律留到 Step 7D-2A 由使用者拍板後才視為定案。
 
@@ -51,21 +51,21 @@
 
 ### 4.1 欄位規格
 
-| 欄位 | 建議 DB 欄位名 | 建議型別 | Nullable | 預設值 | 用途 | 安全注意事項 |
-|---|---|---|---|---|---|---|
-| `id` | `id` | `serial` (PK) | 否 | 自動遞增 | 主鍵 | 無 |
-| `merchantId` | `merchant_id` | `text` | 否 | 無 | 對應 `storesTable.merchantId`（Clerk user ID），標識 token 歸屬的賣家 | 不可由請求方提供，只能從 token 驗證結果解析取得；比對時須與 `storesTable.merchantId` 一致（見 4.3） |
-| `storeId` | `store_id` | `integer` (FK → `stores.id`) | 否 | 無 | 標識 token 授權範圍對應的店鋪 | 與 `merchantId` 共同構成 scope，缺一不可；FK 保證不會指向不存在的店鋪 |
-| `name` | `name` | `text` | 否 | 無 | 賣家自訂名稱，方便辨識用途（例：「我的出貨機器人」） | 屬於賣家自填內容，寫入前可考慮長度限制（待 Step 7D-2A 確認），不應包含敏感資訊 |
-| `tokenHash` | `token_hash` | `text` | 否 | 無 | 儲存 token 雜湊後的值，用於驗證請求 | **不存明文**；只存雜湊；雜湊演算法待第 12 章確認；資料庫外洩時不應可逆推出可用憑證 |
-| `tokenPrefix` | `token_prefix` | `text` | 否 | 無 | 儲存 token 明文的前綴片段（例如 `agt_xxxxx` 的 `agt_xxxxx` 前 8 碼），用於使用者在介面上辨識「這是哪一把 token」而不需重新顯示明文 | 只存「足以辨識、不足以重組出完整 token」的片段；長度與格式待第 12 章確認 |
-| `status` | `status` | `text` | 否 | `'active'` | 標示 token 目前狀態 | 白名單：`active` / `revoked` / `expired` / `disabled`（見 4.4），驗證 middleware 必須檢查此欄位 |
-| `scopes` | `scopes` | `jsonb`（MVP 建議，見 4.6） | 否 | `'["shipment:write"]'`（MVP 固定單一範圍） | 標示這把 token 被授權執行的操作範圍 | MVP 階段格式與內容待第 12 章確認；不可僅因「token 存在且未過期」就視為擁有所有權限，仍須檢查 `scopes` |
-| `lastUsedAt` | `last_used_at` | `timestamp (withTimezone)` | 是 | `null` | 記錄這把 token 最後一次成功通過驗證並使用的時間 | 提供「這個 token 是否還在使用」的可觀測性依據；更新時機見 4.7（不應每次請求都同步寫入，避免高頻寫入造成效能負擔） |
-| `expiresAt` | `expires_at` | `timestamp (withTimezone)` | 是 | `null` | 記錄 token 的過期時間 | `null` 代表不過期；MVP 是否強制必填待第 12 章確認；驗證 middleware 必須檢查「若不為 null 且已過期，視為無效」 |
-| `revokedAt` | `revoked_at` | `timestamp (withTimezone)` | 是 | `null` | 記錄 token 被撤銷的時間 | 與 `status` 欄位的關係見 4.8；撤銷後的 token 必須立即且不可逆地無法使用 |
-| `createdAt` | `created_at` | `timestamp (withTimezone)` | 否 | `defaultNow()` | 記錄建立時間 | 比照現有 schema 慣例（如 `storesTable.createdAt`） |
-| `updatedAt` | `updated_at` | `timestamp (withTimezone)` | 否 | `defaultNow()` + `$onUpdate(() => new Date())` | 記錄最後更新時間 | 比照現有 schema 慣例（如 `storesTable.updatedAt`） |
+| 欄位          | 建議 DB 欄位名 | 建議型別                     | Nullable | 預設值                                         | 用途                                                                                                                               | 安全注意事項                                                                                                      |
+| ------------- | -------------- | ---------------------------- | -------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `id`          | `id`           | `serial` (PK)                | 否       | 自動遞增                                       | 主鍵                                                                                                                               | 無                                                                                                                |
+| `merchantId`  | `merchant_id`  | `text`                       | 否       | 無                                             | 對應 `storesTable.merchantId`（Clerk user ID），標識 token 歸屬的賣家                                                              | 不可由請求方提供，只能從 token 驗證結果解析取得；比對時須與 `storesTable.merchantId` 一致（見 4.3）               |
+| `storeId`     | `store_id`     | `integer` (FK → `stores.id`) | 否       | 無                                             | 標識 token 授權範圍對應的店鋪                                                                                                      | 與 `merchantId` 共同構成 scope，缺一不可；FK 保證不會指向不存在的店鋪                                             |
+| `name`        | `name`         | `text`                       | 否       | 無                                             | 賣家自訂名稱，方便辨識用途（例：「我的出貨機器人」）                                                                               | 屬於賣家自填內容，寫入前可考慮長度限制（待 Step 7D-2A 確認），不應包含敏感資訊                                    |
+| `tokenHash`   | `token_hash`   | `text`                       | 否       | 無                                             | 儲存 token 雜湊後的值，用於驗證請求                                                                                                | **不存明文**；只存雜湊；雜湊演算法待第 12 章確認；資料庫外洩時不應可逆推出可用憑證                                |
+| `tokenPrefix` | `token_prefix` | `text`                       | 否       | 無                                             | 儲存 token 明文的前綴片段（例如 `agt_xxxxx` 的 `agt_xxxxx` 前 8 碼），用於使用者在介面上辨識「這是哪一把 token」而不需重新顯示明文 | 只存「足以辨識、不足以重組出完整 token」的片段；長度與格式待第 12 章確認                                          |
+| `status`      | `status`       | `text`                       | 否       | `'active'`                                     | 標示 token 目前狀態                                                                                                                | 白名單：`active` / `revoked` / `expired` / `disabled`（見 4.4），驗證 middleware 必須檢查此欄位                   |
+| `scopes`      | `scopes`       | `jsonb`（MVP 建議，見 4.6）  | 否       | `'["shipment:write"]'`（MVP 固定單一範圍）     | 標示這把 token 被授權執行的操作範圍                                                                                                | MVP 階段格式與內容待第 12 章確認；不可僅因「token 存在且未過期」就視為擁有所有權限，仍須檢查 `scopes`             |
+| `lastUsedAt`  | `last_used_at` | `timestamp (withTimezone)`   | 是       | `null`                                         | 記錄這把 token 最後一次成功通過驗證並使用的時間                                                                                    | 提供「這個 token 是否還在使用」的可觀測性依據；更新時機見 4.7（不應每次請求都同步寫入，避免高頻寫入造成效能負擔） |
+| `expiresAt`   | `expires_at`   | `timestamp (withTimezone)`   | 是       | `null`                                         | 記錄 token 的過期時間                                                                                                              | `null` 代表不過期；MVP 是否強制必填待第 12 章確認；驗證 middleware 必須檢查「若不為 null 且已過期，視為無效」     |
+| `revokedAt`   | `revoked_at`   | `timestamp (withTimezone)`   | 是       | `null`                                         | 記錄 token 被撤銷的時間                                                                                                            | 與 `status` 欄位的關係見 4.8；撤銷後的 token 必須立即且不可逆地無法使用                                           |
+| `createdAt`   | `created_at`   | `timestamp (withTimezone)`   | 否       | `defaultNow()`                                 | 記錄建立時間                                                                                                                       | 比照現有 schema 慣例（如 `storesTable.createdAt`）                                                                |
+| `updatedAt`   | `updated_at`   | `timestamp (withTimezone)`   | 否       | `defaultNow()` + `$onUpdate(() => new Date())` | 記錄最後更新時間                                                                                                                   | 比照現有 schema 慣例（如 `storesTable.updatedAt`）                                                                |
 
 ### 4.2 FK：`storeId` → `stores.id`
 
@@ -139,22 +139,22 @@
 
 ### 5.1 欄位規格
 
-| 欄位 | 建議 DB 欄位名 | 建議型別 | Nullable | 預設值 | 用途 | 安全注意事項 |
-|---|---|---|---|---|---|---|
-| `id` | `id` | `serial` (PK) | 否 | 自動遞增 | 主鍵 | 無 |
-| `tokenId` | `token_id` | `integer` (FK → `seller_agent_tokens.id`) | 否 | 無 | 標識這次執行使用的是哪一把 token | 用於追蹤「哪個 Agent 做了什麼」；FK 策略見 5.2 |
-| `merchantId` | `merchant_id` | `text` | 否 | 無 | 冗余存放，避免每次查詢都需要 join `seller_agent_tokens` | 寫入時必須從 `seller_agent_tokens.merchantId` 取得，不可信任請求方傳入值 |
-| `storeId` | `store_id` | `integer` (FK → `stores.id`) | 否 | 無 | 冗余存放，同上，並提供依店鋪篩選執行紀錄的查詢效率 | 同上，從 `seller_agent_tokens.storeId` 取得 |
-| `runType` | `run_type` | `text` | 否 | 無 | 標示這次執行的觸發來源/類型 | 白名單見 5.4 |
-| `status` | `status` | `text` | 否 | `'running'` | 標示這次執行目前/最終的狀態 | 白名單見 5.5 |
-| `startedAt` | `started_at` | `timestamp (withTimezone)` | 否 | `defaultNow()` | 記錄這次執行開始的時間 | 無 |
-| `finishedAt` | `finished_at` | `timestamp (withTimezone)` | 是 | `null` | 記錄這次執行結束的時間 | `null` 代表尚未結束（執行中）或異常中斷未正常收尾；是否要設計逾時機制待 Step 7D-2A 評估（非 MVP 必須） |
-| `checkedCount` | `checked_count` | `integer` | 否 | `0` | 本輪檢查/處理的任務總數 | 無 |
-| `successCount` | `success_count` | `integer` | 否 | `0` | 本輪成功處理的數量 | 無 |
-| `failedCount` | `failed_count` | `integer` | 否 | `0` | 本輪失敗的數量 | 無 |
-| `errorCode` | `error_code` | `text` | 是 | `null` | 記錄本輪執行若有整體性錯誤的錯誤代碼 | 應為平台定義的標準化代碼，不應直接存放第三方服務的原始錯誤碼（避免洩漏內部依賴細節） |
-| `errorMessage` | `error_message` | `text` | 是 | `null` | 記錄本輪執行若有整體性錯誤的簡要說明 | **必須遵循第 8 章清洗規則**：只存清洗後摘要，不可存放 stack trace 或敏感資訊（見第 9 章） |
-| `createdAt` | `created_at` | `timestamp (withTimezone)` | 否 | `defaultNow()` | 記錄這筆 log 的建立時間 | 無 |
+| 欄位           | 建議 DB 欄位名  | 建議型別                                  | Nullable | 預設值         | 用途                                                    | 安全注意事項                                                                                           |
+| -------------- | --------------- | ----------------------------------------- | -------- | -------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `id`           | `id`            | `serial` (PK)                             | 否       | 自動遞增       | 主鍵                                                    | 無                                                                                                     |
+| `tokenId`      | `token_id`      | `integer` (FK → `seller_agent_tokens.id`) | 否       | 無             | 標識這次執行使用的是哪一把 token                        | 用於追蹤「哪個 Agent 做了什麼」；FK 策略見 5.2                                                         |
+| `merchantId`   | `merchant_id`   | `text`                                    | 否       | 無             | 冗余存放，避免每次查詢都需要 join `seller_agent_tokens` | 寫入時必須從 `seller_agent_tokens.merchantId` 取得，不可信任請求方傳入值                               |
+| `storeId`      | `store_id`      | `integer` (FK → `stores.id`)              | 否       | 無             | 冗余存放，同上，並提供依店鋪篩選執行紀錄的查詢效率      | 同上，從 `seller_agent_tokens.storeId` 取得                                                            |
+| `runType`      | `run_type`      | `text`                                    | 否       | 無             | 標示這次執行的觸發來源/類型                             | 白名單見 5.4                                                                                           |
+| `status`       | `status`        | `text`                                    | 否       | `'running'`    | 標示這次執行目前/最終的狀態                             | 白名單見 5.5                                                                                           |
+| `startedAt`    | `started_at`    | `timestamp (withTimezone)`                | 否       | `defaultNow()` | 記錄這次執行開始的時間                                  | 無                                                                                                     |
+| `finishedAt`   | `finished_at`   | `timestamp (withTimezone)`                | 是       | `null`         | 記錄這次執行結束的時間                                  | `null` 代表尚未結束（執行中）或異常中斷未正常收尾；是否要設計逾時機制待 Step 7D-2A 評估（非 MVP 必須） |
+| `checkedCount` | `checked_count` | `integer`                                 | 否       | `0`            | 本輪檢查/處理的任務總數                                 | 無                                                                                                     |
+| `successCount` | `success_count` | `integer`                                 | 否       | `0`            | 本輪成功處理的數量                                      | 無                                                                                                     |
+| `failedCount`  | `failed_count`  | `integer`                                 | 否       | `0`            | 本輪失敗的數量                                          | 無                                                                                                     |
+| `errorCode`    | `error_code`    | `text`                                    | 是       | `null`         | 記錄本輪執行若有整體性錯誤的錯誤代碼                    | 應為平台定義的標準化代碼，不應直接存放第三方服務的原始錯誤碼（避免洩漏內部依賴細節）                   |
+| `errorMessage` | `error_message` | `text`                                    | 是       | `null`         | 記錄本輪執行若有整體性錯誤的簡要說明                    | **必須遵循第 8 章清洗規則**：只存清洗後摘要，不可存放 stack trace 或敏感資訊（見第 9 章）              |
+| `createdAt`    | `created_at`    | `timestamp (withTimezone)`                | 否       | `defaultNow()` | 記錄這筆 log 的建立時間                                 | 無                                                                                                     |
 
 ### 5.2 FK：`tokenId` → `seller_agent_tokens.id`、`storeId` → `stores.id`
 
@@ -252,25 +252,25 @@
 
 ### 10.1 `seller_agent_tokens`
 
-| Index / Constraint | 內容 | MVP 必須 / 可延後 |
-|---|---|---|
-| `tokenHash` unique | `unique("seller_agent_tokens_token_hash_unique").on(t.tokenHash)` | **MVP 必須**——驗證查詢與唯一性保證的基礎 |
-| `tokenPrefix` index | `index("seller_agent_tokens_token_prefix_idx").on(t.tokenPrefix)`（一般 index，非 unique，理由見 4.5） | **MVP 必須**——介面辨識/搜尋 token 時的查詢效率基礎 |
-| `storeId` index | `index("seller_agent_tokens_store_id_idx").on(t.storeId)` | **MVP 必須**——依店鋪查詢/管理 token 列表的基礎 |
-| `merchantId` + `storeId` 複合 index | `index("seller_agent_tokens_merchant_store_idx").on(t.merchantId, t.storeId)` | **MVP 必須**——驗證 middleware 檢查 scope 歸屬時的核心查詢路徑 |
-| `status` index | `index("seller_agent_tokens_status_idx").on(t.status)` | 可延後——MVP 資料量小，全表掃描成本可接受；資料量成長後再評估是否需要 |
-| `expiresAt` index | `index("seller_agent_tokens_expires_at_idx").on(t.expiresAt)` | 可延後——僅在需要「批次掃描即將過期 token」等排程功能時才有必要，MVP 無此需求 |
+| Index / Constraint                  | 內容                                                                                                   | MVP 必須 / 可延後                                                            |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------- |
+| `tokenHash` unique                  | `unique("seller_agent_tokens_token_hash_unique").on(t.tokenHash)`                                      | **MVP 必須**——驗證查詢與唯一性保證的基礎                                     |
+| `tokenPrefix` index                 | `index("seller_agent_tokens_token_prefix_idx").on(t.tokenPrefix)`（一般 index，非 unique，理由見 4.5） | **MVP 必須**——介面辨識/搜尋 token 時的查詢效率基礎                           |
+| `storeId` index                     | `index("seller_agent_tokens_store_id_idx").on(t.storeId)`                                              | **MVP 必須**——依店鋪查詢/管理 token 列表的基礎                               |
+| `merchantId` + `storeId` 複合 index | `index("seller_agent_tokens_merchant_store_idx").on(t.merchantId, t.storeId)`                          | **MVP 必須**——驗證 middleware 檢查 scope 歸屬時的核心查詢路徑                |
+| `status` index                      | `index("seller_agent_tokens_status_idx").on(t.status)`                                                 | 可延後——MVP 資料量小，全表掃描成本可接受；資料量成長後再評估是否需要         |
+| `expiresAt` index                   | `index("seller_agent_tokens_expires_at_idx").on(t.expiresAt)`                                          | 可延後——僅在需要「批次掃描即將過期 token」等排程功能時才有必要，MVP 無此需求 |
 
 ### 10.2 `agent_run_logs`
 
-| Index / Constraint | 內容 | MVP 必須 / 可延後 |
-|---|---|---|
-| `tokenId` index | `index("agent_run_logs_token_id_idx").on(t.tokenId)` | **MVP 必須**——依 token 查詢其執行歷史的基礎 |
-| `storeId` index | `index("agent_run_logs_store_id_idx").on(t.storeId)` | **MVP 必須**——依店鋪查詢執行紀錄的基礎 |
-| `merchantId` + `storeId` 複合 index | `index("agent_run_logs_merchant_store_idx").on(t.merchantId, t.storeId)` | **MVP 必須**——與 `seller_agent_tokens` 一致的隔離查詢路徑 |
-| `status` index | `index("agent_run_logs_status_idx").on(t.status)` | 可延後——主要用於統計/篩選介面，Step 7F 查詢 UI 階段再評估 |
-| `startedAt` index | `index("agent_run_logs_started_at_idx").on(t.startedAt)` | 可延後——比照 `shipmentTrackingEvents.occurredAt` 的 index 模式，但 MVP 階段「只寫入、不做查詢介面」，暫不需要 |
-| `createdAt` index | `index("agent_run_logs_created_at_idx").on(t.createdAt)` | 可延後——同上，留待 Step 7F 查詢/統計功能設計時依實際查詢模式決定 |
+| Index / Constraint                  | 內容                                                                     | MVP 必須 / 可延後                                                                                             |
+| ----------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| `tokenId` index                     | `index("agent_run_logs_token_id_idx").on(t.tokenId)`                     | **MVP 必須**——依 token 查詢其執行歷史的基礎                                                                   |
+| `storeId` index                     | `index("agent_run_logs_store_id_idx").on(t.storeId)`                     | **MVP 必須**——依店鋪查詢執行紀錄的基礎                                                                        |
+| `merchantId` + `storeId` 複合 index | `index("agent_run_logs_merchant_store_idx").on(t.merchantId, t.storeId)` | **MVP 必須**——與 `seller_agent_tokens` 一致的隔離查詢路徑                                                     |
+| `status` index                      | `index("agent_run_logs_status_idx").on(t.status)`                        | 可延後——主要用於統計/篩選介面，Step 7F 查詢 UI 階段再評估                                                     |
+| `startedAt` index                   | `index("agent_run_logs_started_at_idx").on(t.startedAt)`                 | 可延後——比照 `shipmentTrackingEvents.occurredAt` 的 index 模式，但 MVP 階段「只寫入、不做查詢介面」，暫不需要 |
+| `createdAt` index                   | `index("agent_run_logs_created_at_idx").on(t.createdAt)`                 | 可延後——同上，留待 Step 7F 查詢/統計功能設計時依實際查詢模式決定                                              |
 
 > 整體原則：MVP 必須的 index 集中在「驗證流程」與「資料隔離（merchantId+storeId scope）」兩條核心路徑；統計/篩選/排程類查詢的 index 留到對應功能（Step 7F）實際設計時再依查詢模式決定，避免預先建立用不到的 index 增加寫入負擔。
 
@@ -296,7 +296,7 @@
   - `agent_run_logs.storeId` → `stores.id`：建議 `"cascade"`（與上同理）
   - `agent_run_logs.tokenId` → `seller_agent_tokens.id`：建議方向為 `"set null"`（理由見 5.2），但**最終策略待 Step 7D-2A 確認**
 - **是否需要 check constraint**：
-  - 比照 `ordersTable` 的 `check("orders_status_valid", sql\`...\`)` 與 `productsTable` 的 `check("inventory_non_negative", ...)` 寫法
+  - 比照 `ordersTable` 的 `check("orders_status_valid", sql\`...\`)`與`productsTable`的`check("inventory_non_negative", ...)` 寫法
   - 候選項目：`status` 白名單 check（`seller_agent_tokens.status IN ('active','revoked','expired','disabled')`、`agent_run_logs.status IN ('running','completed','failed','partial')`）、`runType` 白名單 check、`revokedAt`/`status` 一致性 check（見 4.9）
   - 是否在 MVP 階段就導入這些 check constraint，或先以應用層驗證為主、DB check 留待後續補強，**待第 12 章確認**
 - **是否需要 enum helper**：
@@ -344,17 +344,17 @@
 
 ## 14. 風險與待確認
 
-| # | 項目 | 說明 |
-|---|---|---|
-| 1 | **token hash 演算法未定** | SHA-256 / bcrypt / argon2 等演算法的選擇直接影響驗證效能與安全強度，需要在 Step 7D-2A 明確決定 |
-| 2 | **`tokenPrefix` 長度未定** | 前綴片段需要「足以辨識」與「不洩漏完整 token 結構資訊」之間取得平衡，具體長度待確認 |
-| 3 | **`scopes` 格式未定** | `jsonb` 內容的具體結構與命名規則尚未定案，本文件僅提出 MVP 建議方向（固定單一範圍陣列） |
-| 4 | **`expiresAt` 是否必填未定** | 本文件建議 MVP 階段不強制必填，但「是否要在 UI 引導賣家設定」屬於後續可調整的政策層面決定 |
-| 5 | **是否本階段補 `idempotencyKey` 未定** | 本文件已明確結論「不在 Step 7D-1C 新增」，但「由 Step 7D-2 的哪一個子步驟實際新增」仍待 Step 7D-2A 確認分工 |
-| 6 | **`merchantId` + `storeId` 是否支援未來多店** | 目前一把 token 綁定單一 `storeId`；若未來賣家需要「一把 token 同時管理多家店鋪」的情境，現有設計需要擴充（例如 `storeId` 改為陣列或新增關聯表），這屬於設計擴充性的長期考量 |
-| 7 | **`agent_run_logs` 成長量與保留期限** | MVP 階段不設保留期限機制，但長期而言此表會隨 Agent 執行頻率持續累積資料，需要在 Step 7F 依實際成長速度評估是否需要封存/清除機制 |
-| 8 | **是否需要 audit log 提前** | 本文件結論為「MVP 不需要，留待 Step 7F」，但若 Step 7D-2 上線後發現 `agent_run_logs` 最小版本不足以支撐安全稽核需求，可能需要提前評估是否將部分 audit 能力前移 |
-| 9 | **是否需要修正 Step 7D-0 `sellerId` 用語** | [[order-step7d-agent-write-api-implementation-audit|Step 7D-1A]]、[[order-step7d-agent-auth-token-decision|Step 7D-1B]] 皆已記錄此項，本文件再次列為待確認，由使用者決定是否要回頭發一個 commit 修正用語 |
+| #   | 項目                                          | 說明                                                                                                                                                                        |
+| --- | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ | --------------------------------------------------------------------------------------------- |
+| 1   | **token hash 演算法未定**                     | SHA-256 / bcrypt / argon2 等演算法的選擇直接影響驗證效能與安全強度，需要在 Step 7D-2A 明確決定                                                                              |
+| 2   | **`tokenPrefix` 長度未定**                    | 前綴片段需要「足以辨識」與「不洩漏完整 token 結構資訊」之間取得平衡，具體長度待確認                                                                                         |
+| 3   | **`scopes` 格式未定**                         | `jsonb` 內容的具體結構與命名規則尚未定案，本文件僅提出 MVP 建議方向（固定單一範圍陣列）                                                                                     |
+| 4   | **`expiresAt` 是否必填未定**                  | 本文件建議 MVP 階段不強制必填，但「是否要在 UI 引導賣家設定」屬於後續可調整的政策層面決定                                                                                   |
+| 5   | **是否本階段補 `idempotencyKey` 未定**        | 本文件已明確結論「不在 Step 7D-1C 新增」，但「由 Step 7D-2 的哪一個子步驟實際新增」仍待 Step 7D-2A 確認分工                                                                 |
+| 6   | **`merchantId` + `storeId` 是否支援未來多店** | 目前一把 token 綁定單一 `storeId`；若未來賣家需要「一把 token 同時管理多家店鋪」的情境，現有設計需要擴充（例如 `storeId` 改為陣列或新增關聯表），這屬於設計擴充性的長期考量 |
+| 7   | **`agent_run_logs` 成長量與保留期限**         | MVP 階段不設保留期限機制，但長期而言此表會隨 Agent 執行頻率持續累積資料，需要在 Step 7F 依實際成長速度評估是否需要封存/清除機制                                             |
+| 8   | **是否需要 audit log 提前**                   | 本文件結論為「MVP 不需要，留待 Step 7F」，但若 Step 7D-2 上線後發現 `agent_run_logs` 最小版本不足以支撐安全稽核需求，可能需要提前評估是否將部分 audit 能力前移              |
+| 9   | **是否需要修正 Step 7D-0 `sellerId` 用語**    | [[order-step7d-agent-write-api-implementation-audit                                                                                                                         | Step 7D-1A]]、[[order-step7d-agent-auth-token-decision | Step 7D-1B]] 皆已記錄此項，本文件再次列為待確認，由使用者決定是否要回頭發一個 commit 修正用語 |
 
 ---
 
@@ -368,4 +368,4 @@
 
 ---
 
-*本文件為 Step 7D-1C 產出，後續實作請依序參考 [[order-step7d-agent-write-api-implementation-audit|Step 7D-1A 施工前盤點]]、[[order-step7d-agent-auth-token-decision|Step 7D-1B 決策文件]] 與本文件，避免略過前置決策直接進入實作。*
+_本文件為 Step 7D-1C 產出，後續實作請依序參考 [[order-step7d-agent-write-api-implementation-audit|Step 7D-1A 施工前盤點]]、[[order-step7d-agent-auth-token-decision|Step 7D-1B 決策文件]] 與本文件，避免略過前置決策直接進入實作。_

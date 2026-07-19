@@ -33,14 +33,14 @@ Production remains safe-preview-only: YES
 
 本輪以 read-only grep / Read 重新確認 `ManualTrackingSyncPanel.tsx` 仍維持以下安全狀態：
 
-| 項目 | 狀態 | 依據 |
-|------|------|------|
-| postoffice / tcat 可重新查詢與 preview | ✅ 維持 | `MANUAL_SYNC_PROVIDERS = ["postoffice", "tcat"] as const`（line 37）；「查詢最新貨態 / 重新查詢」按鈕在各 phase 皆顯示（line 608-621） |
-| duplicate-only 不顯示寫入按鈕 | ✅ 維持 | `previewReadyDuplicateOnly` phase 僅顯示文字「查到的事件皆已存在，不需要重複寫入。」（line 534-538），不渲染任何 commit 按鈕 |
-| safe-preview-only footer 仍顯示 | ✅ 維持 | line 624：「目前為安全預覽模式：可查詢與預覽，不會寫入正式貨態事件。正式自動同步仍只有全家。」 |
-| familymart 不進 manual UI | ✅ 維持 | `MANUAL_SYNC_PROVIDERS` 僅含 postoffice/tcat；familymart 維持正式自動同步（`supportsAutoSync: true`，僅 familymart） |
-| 7-11 不進 manual UI | ✅ 維持 | 全檔案無 7-11 / 711 相關 provider 字串；`MANUAL_SYNC_PROVIDERS` 未包含 7-11 |
-| 不可出現廣泛正式寫入入口 | ✅ 維持 | `COMMIT_ENABLED: boolean = false`（line 141）；`previewReadyCanCommit` 顯示按鈕文字為「寫入事件（尚未啟用）」，點擊僅開啟確認 modal，實際 commit handler（line 345-360）在 `!COMMIT_ENABLED` 時 early return，不送出 `/manual-provider/commit` |
+| 項目                                   | 狀態    | 依據                                                                                                                                                                                                                                           |
+| -------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| postoffice / tcat 可重新查詢與 preview | ✅ 維持 | `MANUAL_SYNC_PROVIDERS = ["postoffice", "tcat"] as const`（line 37）；「查詢最新貨態 / 重新查詢」按鈕在各 phase 皆顯示（line 608-621）                                                                                                         |
+| duplicate-only 不顯示寫入按鈕          | ✅ 維持 | `previewReadyDuplicateOnly` phase 僅顯示文字「查到的事件皆已存在，不需要重複寫入。」（line 534-538），不渲染任何 commit 按鈕                                                                                                                   |
+| safe-preview-only footer 仍顯示        | ✅ 維持 | line 624：「目前為安全預覽模式：可查詢與預覽，不會寫入正式貨態事件。正式自動同步仍只有全家。」                                                                                                                                                 |
+| familymart 不進 manual UI              | ✅ 維持 | `MANUAL_SYNC_PROVIDERS` 僅含 postoffice/tcat；familymart 維持正式自動同步（`supportsAutoSync: true`，僅 familymart）                                                                                                                           |
+| 7-11 不進 manual UI                    | ✅ 維持 | 全檔案無 7-11 / 711 相關 provider 字串；`MANUAL_SYNC_PROVIDERS` 未包含 7-11                                                                                                                                                                    |
+| 不可出現廣泛正式寫入入口               | ✅ 維持 | `COMMIT_ENABLED: boolean = false`（line 141）；`previewReadyCanCommit` 顯示按鈕文字為「寫入事件（尚未啟用）」，點擊僅開啟確認 modal，實際 commit handler（line 345-360）在 `!COMMIT_ENABLED` 時 early return，不送出 `/manual-provider/commit` |
 
 ---
 
@@ -69,13 +69,13 @@ Do not open postoffice #38 one-shot commit unless separately authorized.
 
 ## Safety Check（本輪重新確認）
 
-| 項目 | 結果 |
-|------|------|
-| `COMMIT_ENABLED` | `false`（`ManualTrackingSyncPanel.tsx:141`） |
-| `/manual-provider/commit` | 僅 `ManualTrackingSyncPanel.tsx:371`，於 guarded fetch 內（`!COMMIT_ENABLED` early return） |
-| `MANUAL_SYNC_PROVIDERS` | `["postoffice", "tcat"] as const`（line 37），未變動 |
-| `supportsAutoSync` | `logisticsProviders.ts` / `providers.ts` 皆未變動，僅 familymart=true |
-| `localStorage` / `sessionStorage` | CLEAN（`ManualTrackingSyncPanel.tsx` 內 0 處） |
+| 項目                              | 結果                                                                                        |
+| --------------------------------- | ------------------------------------------------------------------------------------------- |
+| `COMMIT_ENABLED`                  | `false`（`ManualTrackingSyncPanel.tsx:141`）                                                |
+| `/manual-provider/commit`         | 僅 `ManualTrackingSyncPanel.tsx:371`，於 guarded fetch 內（`!COMMIT_ENABLED` early return） |
+| `MANUAL_SYNC_PROVIDERS`           | `["postoffice", "tcat"] as const`（line 37），未變動                                        |
+| `supportsAutoSync`                | `logisticsProviders.ts` / `providers.ts` 皆未變動，僅 familymart=true                       |
+| `localStorage` / `sessionStorage` | CLEAN（`ManualTrackingSyncPanel.tsx` 內 0 處）                                              |
 
 ---
 

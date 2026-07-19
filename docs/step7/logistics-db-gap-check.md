@@ -4,14 +4,14 @@
 
 ## 一、現況總覽
 
-| 表 | schema 檔 | 實際 DB | 結論 |
-|---|---|---|---|
-| shipment_trackings | ✅ lib/db/src/schema/shipmentTrackings.ts | ✅ 存在 | 幾乎齊全，缺 1 欄 |
-| shipment_tracking_events | ✅ lib/db/src/schema/shipmentTrackingEvents.ts | ✅ 存在 | 齊全（部分欄位名不同但語意等價） |
-| logistics_import_batches | ❌ | ❌ | 缺整張表 |
-| logistics_import_rows | ❌ | ❌ | 缺整張表 |
-| shipment_tracking_exceptions | ❌ | ❌ | 缺整張表 |
-| shipment_tracking_run_logs | ❌ | ❌ | 缺整張表（但 agent_run_logs 模式可參考） |
+| 表                           | schema 檔                                      | 實際 DB | 結論                                     |
+| ---------------------------- | ---------------------------------------------- | ------- | ---------------------------------------- |
+| shipment_trackings           | ✅ lib/db/src/schema/shipmentTrackings.ts      | ✅ 存在 | 幾乎齊全，缺 1 欄                        |
+| shipment_tracking_events     | ✅ lib/db/src/schema/shipmentTrackingEvents.ts | ✅ 存在 | 齊全（部分欄位名不同但語意等價）         |
+| logistics_import_batches     | ❌                                             | ❌      | 缺整張表                                 |
+| logistics_import_rows        | ❌                                             | ❌      | 缺整張表                                 |
+| shipment_tracking_exceptions | ❌                                             | ❌      | 缺整張表                                 |
+| shipment_tracking_run_logs   | ❌                                             | ❌      | 缺整張表（但 agent_run_logs 模式可參考） |
 
 DB 實際 public tables：agent_run_logs, cvs_stores, orders, product_categories, products, seller_agent_settings, seller_agent_tokens, shipment_tracking_events, shipment_trackings, stores。
 
@@ -19,39 +19,39 @@ DB 實際 public tables：agent_run_logs, cvs_stores, orders, product_categories
 
 ### shipment_trackings（存在）
 
-| 需求欄位 | 現況 |
-|---|---|
-| orderId | ✅ order_id（FK orders, cascade） |
-| provider | ✅ tracking_provider（名稱不同，語意等價） |
-| trackingCode | ✅ tracking_code |
-| latestStatusText | ✅ latest_event_status + latest_event_description（拆兩欄，等價） |
-| latestEventAt | ✅ latest_event_at |
-| lastCheckedAt | ✅ last_checked_at |
-| nextCheckAt | ✅ next_check_at |
-| failureCount | ✅ failure_count |
-| checkError | ✅ check_error |
-| isActive | ✅ is_active |
-| **sourceType** | ❌ **缺**（無法區分 file_import / manual / agent 來源） |
-| createdAt / updatedAt | ✅ |
+| 需求欄位              | 現況                                                              |
+| --------------------- | ----------------------------------------------------------------- |
+| orderId               | ✅ order_id（FK orders, cascade）                                 |
+| provider              | ✅ tracking_provider（名稱不同，語意等價）                        |
+| trackingCode          | ✅ tracking_code                                                  |
+| latestStatusText      | ✅ latest_event_status + latest_event_description（拆兩欄，等價） |
+| latestEventAt         | ✅ latest_event_at                                                |
+| lastCheckedAt         | ✅ last_checked_at                                                |
+| nextCheckAt           | ✅ next_check_at                                                  |
+| failureCount          | ✅ failure_count                                                  |
+| checkError            | ✅ check_error                                                    |
+| isActive              | ✅ is_active                                                      |
+| **sourceType**        | ❌ **缺**（無法區分 file_import / manual / agent 來源）           |
+| createdAt / updatedAt | ✅                                                                |
 
 另有 tracking_status（pending/checking/active/delivered/failed/inactive）超出需求，對 worker 有利。
 缺索引建議：`(tracking_provider, tracking_code)` unique 或 index，防跨訂單重複占用單號（matcher 的 TRACKING_CODE_CONFLICT 目前只在記憶體判斷）。
 
 ### shipment_tracking_events（存在）
 
-| 需求欄位 | 現況 |
-|---|---|
-| shipmentTrackingId | ✅ shipment_tracking_id（FK, cascade） |
-| provider | ⚠️ 表上沒有，但可經 shipment_trackings join 取得（denormalize 非必要） |
-| trackingCode | ⚠️ 同上，join 可得 |
-| occurredAt | ✅ occurred_at |
-| statusText | ✅ event_description |
-| location | ✅ event_location |
-| normalizedStatus | ✅ event_status（含 enum：unknown/pending/in_transit/arrived_store/picked_up/delivered/returned/exception） |
-| rawText | ⚠️ 無獨立欄位，可放 raw_data(jsonb) 內 |
-| rawData | ✅ raw_data |
-| idempotencyKey | ✅ idempotency_key（含 (tracking_id, key) unique） |
-| createdAt | ✅ |
+| 需求欄位           | 現況                                                                                                        |
+| ------------------ | ----------------------------------------------------------------------------------------------------------- |
+| shipmentTrackingId | ✅ shipment_tracking_id（FK, cascade）                                                                      |
+| provider           | ⚠️ 表上沒有，但可經 shipment_trackings join 取得（denormalize 非必要）                                      |
+| trackingCode       | ⚠️ 同上，join 可得                                                                                          |
+| occurredAt         | ✅ occurred_at                                                                                              |
+| statusText         | ✅ event_description                                                                                        |
+| location           | ✅ event_location                                                                                           |
+| normalizedStatus   | ✅ event_status（含 enum：unknown/pending/in_transit/arrived_store/picked_up/delivered/returned/exception） |
+| rawText            | ⚠️ 無獨立欄位，可放 raw_data(jsonb) 內                                                                      |
+| rawData            | ✅ raw_data                                                                                                 |
+| idempotencyKey     | ✅ idempotency_key（含 (tracking_id, key) unique）                                                          |
+| createdAt          | ✅                                                                                                          |
 
 結論：等價可用，不需 migration（provider/trackingCode/rawText 屬 nice-to-have denormalization）。
 

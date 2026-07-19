@@ -7,19 +7,20 @@ Step 7E-1b-INTEGRATION-TEST（commit `5a62b9b`）完成後，本次執行 UI Pre
 
 ## UI Worktree / Branch
 
-| 項目 | 值 |
-|------|-----|
-| Worktree | `/home/runner/workspace/.worktrees/step7e-ui` |
-| Branch | `qa/step7e-seller-agent-settings-ui` |
-| 起點 | `qa/step7e-seller-agent-settings-api`（含 commit `5a62b9b`）|
+| 項目     | 值                                                           |
+| -------- | ------------------------------------------------------------ |
+| Worktree | `/home/runner/workspace/.worktrees/step7e-ui`                |
+| Branch   | `qa/step7e-seller-agent-settings-ui`                         |
+| 起點     | `qa/step7e-seller-agent-settings-api`（含 commit `5a62b9b`） |
 
 ## UI Preflight Commit
 
-| commit | message |
-|--------|---------|
+| commit    | message                                          |
+| --------- | ------------------------------------------------ |
 | `5e1125b` | `docs-step7e-seller-agent-settings-ui-preflight` |
 
 **新增檔案**：
+
 - `docs/order-step7e-seller-agent-settings-ui-preflight.md`
 
 ## 同步到 dev-handoff 的內容
@@ -32,17 +33,20 @@ Step 7E-1b-INTEGRATION-TEST（commit `5a62b9b`）完成後，本次執行 UI Pre
 ## UI Preflight 摘要
 
 ### Route 決策
-| 項目 | 決定 |
-|------|------|
-| Route | `/settings/agent` |
-| Component | `AgentSettingsPage` |
-| File | `artifacts/shop-app/src/pages/AgentSettings.tsx` |
+
+| 項目      | 決定                                             |
+| --------- | ------------------------------------------------ |
+| Route     | `/settings/agent`                                |
+| Component | `AgentSettingsPage`                              |
+| File      | `artifacts/shop-app/src/pages/AgentSettings.tsx` |
 
 ### API 串接方案
+
 - 方案 A（建議）：更新 `openapi.yaml` → orval codegen → 生成 React Query hooks
 - 方案 B（備案）：手寫 `customFetch` hook，不修改 generated 檔案
 
 ### Form Fields
+
 - agentStatus: Switch
 - agentMode: Select（排除 platform_managed_reserved）
 - queryFrequency: Select
@@ -55,15 +59,15 @@ Step 7E-1b-INTEGRATION-TEST（commit `5a62b9b`）完成後，本次執行 UI Pre
 
 ## 未執行項目
 
-| 項目 | 狀態 |
-|------|------|
-| 施工 UI | 未執行（本次為 preflight） |
-| 修改 API | 未執行 |
-| DB push | 未執行 |
-| migrate | 未執行 |
-| seed | 未執行 |
-| push GitHub | 未執行 |
-| 修改 openapi.yaml | 未執行（施工時需要） |
+| 項目              | 狀態                       |
+| ----------------- | -------------------------- |
+| 施工 UI           | 未執行（本次為 preflight） |
+| 修改 API          | 未執行                     |
+| DB push           | 未執行                     |
+| migrate           | 未執行                     |
+| seed              | 未執行                     |
+| push GitHub       | 未執行                     |
+| 修改 openapi.yaml | 未執行（施工時需要）       |
 
 ## 風險與待確認
 

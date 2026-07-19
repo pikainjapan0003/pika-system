@@ -30,18 +30,18 @@ const COMMIT_ENABLED: boolean = false;
 
 ## 2. Current Verified State
 
-| Item | Status | Notes |
-|------|--------|-------|
-| postoffice #39 preview | PASS（duplicate-only） | 外部5 / DB5 / 可寫0；J5F-7F/7G 人工確認 |
-| tcat #40 preview | PASS（duplicate-only） | 外部4 / DB4 / 可寫0；J5F-7F/7G 人工確認 |
-| familymart #41 manual UI | PASS（hidden） | MANUAL_SYNC_PROVIDERS 排除，component returns null |
-| COMMIT_DISABLED guard | PASS | line 341，在 fetch（line 362）前 early return |
-| previewHash 不顯示完整值 | PASS | line 480 只顯示 hash-present / hash-null |
-| commit endpoint auth guard | PASS | POST /api/stores/2/.../commit → 401（無 auth） |
-| production write | 尚未授權、尚未執行 | — |
-| COMMIT_ENABLED | false（hardcoded） | ManualTrackingSyncPanel.tsx line 131 |
-| typecheck | PASS | npx tsc -p tsconfig.json --noEmit 無輸出 |
-| localStorage / sessionStorage | CLEAN | safety grep 無輸出 |
+| Item                          | Status                 | Notes                                              |
+| ----------------------------- | ---------------------- | -------------------------------------------------- |
+| postoffice #39 preview        | PASS（duplicate-only） | 外部5 / DB5 / 可寫0；J5F-7F/7G 人工確認            |
+| tcat #40 preview              | PASS（duplicate-only） | 外部4 / DB4 / 可寫0；J5F-7F/7G 人工確認            |
+| familymart #41 manual UI      | PASS（hidden）         | MANUAL_SYNC_PROVIDERS 排除，component returns null |
+| COMMIT_DISABLED guard         | PASS                   | line 341，在 fetch（line 362）前 early return      |
+| previewHash 不顯示完整值      | PASS                   | line 480 只顯示 hash-present / hash-null           |
+| commit endpoint auth guard    | PASS                   | POST /api/stores/2/.../commit → 401（無 auth）     |
+| production write              | 尚未授權、尚未執行     | —                                                  |
+| COMMIT_ENABLED                | false（hardcoded）     | ManualTrackingSyncPanel.tsx line 131               |
+| typecheck                     | PASS                   | npx tsc -p tsconfig.json --noEmit 無輸出           |
+| localStorage / sessionStorage | CLEAN                  | safety grep 無輸出                                 |
 
 ---
 
@@ -93,15 +93,15 @@ const COMMIT_ENABLED: boolean = false;
 
 **只規劃，不施工。**
 
-| Step | Name | 說明 | Production Write |
-|------|------|------|-----------------|
-| J5F-7H-A | FIND-PRODUCTION-CAN-WRITE-CANDIDATE | 在正式站找 wouldWriteEvents > 0 的訂單 | 否（只 preview） |
-| J5F-7H-B | PRODUCTION-PREVIEW-RECORD | 對候選訂單做 preview，記錄 response（不含完整 previewHash） | 否（只 preview） |
-| J5F-7H-C | EXPLICIT-USER-AUTHORIZATION | 使用者以 Section 7 格式明確授權單筆 trackingId | 否 |
-| J5F-7H-D | ENABLE-COMMIT-GATE | 將 `COMMIT_ENABLED: boolean = false` 改為 `true`（或建立 one-shot release branch） | 否（只改 flag） |
-| J5F-7H-E | SINGLE-TRACKINGID-COMMIT | 對單筆 trackingId 做 production commit，觀察 response | **是** |
-| J5F-7H-F | POST-COMMIT-VERIFY | 確認 insertedEventCount / order trackingStatus / 再次 preview 顯示 duplicate-only | 否（唯讀） |
-| J5F-7H-G | GATE-DECISION | 決定是否保留 COMMIT_ENABLED=true 或 rollback | 視情況 |
+| Step     | Name                                | 說明                                                                               | Production Write |
+| -------- | ----------------------------------- | ---------------------------------------------------------------------------------- | ---------------- |
+| J5F-7H-A | FIND-PRODUCTION-CAN-WRITE-CANDIDATE | 在正式站找 wouldWriteEvents > 0 的訂單                                             | 否（只 preview） |
+| J5F-7H-B | PRODUCTION-PREVIEW-RECORD           | 對候選訂單做 preview，記錄 response（不含完整 previewHash）                        | 否（只 preview） |
+| J5F-7H-C | EXPLICIT-USER-AUTHORIZATION         | 使用者以 Section 7 格式明確授權單筆 trackingId                                     | 否               |
+| J5F-7H-D | ENABLE-COMMIT-GATE                  | 將 `COMMIT_ENABLED: boolean = false` 改為 `true`（或建立 one-shot release branch） | 否（只改 flag）  |
+| J5F-7H-E | SINGLE-TRACKINGID-COMMIT            | 對單筆 trackingId 做 production commit，觀察 response                              | **是**           |
+| J5F-7H-F | POST-COMMIT-VERIFY                  | 確認 insertedEventCount / order trackingStatus / 再次 preview 顯示 duplicate-only  | 否（唯讀）       |
+| J5F-7H-G | GATE-DECISION                       | 決定是否保留 COMMIT_ENABLED=true 或 rollback                                       | 視情況           |
 
 ---
 

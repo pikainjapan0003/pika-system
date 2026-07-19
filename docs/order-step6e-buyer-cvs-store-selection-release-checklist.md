@@ -12,6 +12,7 @@
 **Step 6E 目標**：讓買家在下單流程中選擇 7-11 或全家門市，並將門市資料連同訂單一起送出及儲存。
 
 本文件整理：
+
 - Step 6E 各子步驟的完成狀態
 - 已執行的自動化測試與 live curl 安全驗證結果
 - 尚未完整執行的人工瀏覽器 / 手機 QA 項目
@@ -20,6 +21,7 @@
 - 進下一階段前的前置條件建議
 
 **特別聲明**：
+
 - 本文件**不代表 emap 合規性已確認**（emap import endpoint 仍 disabled）
 - 本文件**不代表完整人工瀏覽器 / 手機 QA 已完成**（環境限制，尚待人工驗收）
 - 本文件**不承諾門市資料即時、完整、百分百準確**
@@ -30,18 +32,18 @@
 
 ### 推薦後續 Step 6E 基準
 
-| Commit | 說明 |
-|--------|------|
-| `aac79ba` | Step 6E-B：API / Type / Security 補強 |
-| `f1bfd49` | Step 6E-C：UX 小補強（TTL / 成功頁摘要）|
+| Commit                                       | 說明                                          |
+| -------------------------------------------- | --------------------------------------------- |
+| `aac79ba`                                    | Step 6E-B：API / Type / Security 補強         |
+| `f1bfd49`                                    | Step 6E-C：UX 小補強（TTL / 成功頁摘要）      |
 | `fix/step6e-live-server-security-validation` | Step 6E-D-Fix：live security 驗證後的乾淨分支 |
 
 ### 乾淨基準不含以下 Step 7B commits
 
-| Commit | 說明 |
-|--------|------|
+| Commit    | 說明                            |
+| --------- | ------------------------------- |
 | `ec3b3bd` | Step 7B API（禁止混入 Step 6E） |
-| `47a6f81` | Step 7B UI（禁止混入 Step 6E） |
+| `47a6f81` | Step 7B UI（禁止混入 Step 6E）  |
 
 ### 注意事項
 
@@ -98,25 +100,25 @@
 
 ## 4. 已執行測試與結果
 
-| 測試項目 | 結果 | 執行於 | 備註 |
-|----------|------|--------|------|
-| `public.route.test.mjs` | **20/20 pass** ✅ | Step 6E-B / C / D-Fix | 含 storeSelectedBy 偽造防護 |
-| `orders.route.test.mjs` | **118/118 pass** ✅ | Step 6E-B | 訂單 CRUD 全覆蓋 |
-| `cvs.route.test.mjs` | **4/4 pass** ✅ | Step 6E-B / D-Fix | emap disabled 確認 |
-| shop-app typecheck | **pass** ✅ | Step 6E-B / C / D-Fix | — |
-| api-server typecheck | **只剩 pre-existing `cvs.ts(163)`** ✅ | Step 6E-D-Fix | 非本次引入 |
-| live curl `storeSelectedBy='admin'` | **admin → customer** ✅ | Step 6E-D-Fix | ORDER ID 686 |
-| live curl `storeSelectedBy='staff'` | **staff → customer** ✅ | Step 6E-D-Fix | — |
-| live curl 無 CVS | **`storeSelectedBy=null`** ✅ | Step 6E-D-Fix | — |
-| live curl storeSelectedAt | **有 ISO timestamp** ✅ | Step 6E-D-Fix | — |
-| 7-11 CVS 搜尋（懷民） | **1 筆回傳** ✅ | Step 6E-D | — |
-| 全家 CVS 搜尋（板橋） | **3 筆回傳** ✅ | Step 6E-D | — |
-| public tracking privacy | **未洩漏個資** ✅ | Step 6E-D 靜態 | 靜態確認 |
-| emap import endpoint | **403 disabled** ✅ | Step 6E-D | 靜態 + 測試 |
-| 靜態確認：parseCvsExtension 不在 source | **0 次** ✅ | Step 6E-D-Fix | — |
-| 靜態確認：PublicOrder.tsx 不送 storeSelectedBy | ✅ | Step 6E-D | — |
-| 靜態確認：localStorage expiresAt 寫入 + 過期清除 | ✅ | Step 6E-D | — |
-| 靜態確認：submittedCvsStore 成功頁 + clearCvsStore | ✅ | Step 6E-D | — |
+| 測試項目                                           | 結果                                   | 執行於                | 備註                        |
+| -------------------------------------------------- | -------------------------------------- | --------------------- | --------------------------- |
+| `public.route.test.mjs`                            | **20/20 pass** ✅                      | Step 6E-B / C / D-Fix | 含 storeSelectedBy 偽造防護 |
+| `orders.route.test.mjs`                            | **118/118 pass** ✅                    | Step 6E-B             | 訂單 CRUD 全覆蓋            |
+| `cvs.route.test.mjs`                               | **4/4 pass** ✅                        | Step 6E-B / D-Fix     | emap disabled 確認          |
+| shop-app typecheck                                 | **pass** ✅                            | Step 6E-B / C / D-Fix | —                           |
+| api-server typecheck                               | **只剩 pre-existing `cvs.ts(163)`** ✅ | Step 6E-D-Fix         | 非本次引入                  |
+| live curl `storeSelectedBy='admin'`                | **admin → customer** ✅                | Step 6E-D-Fix         | ORDER ID 686                |
+| live curl `storeSelectedBy='staff'`                | **staff → customer** ✅                | Step 6E-D-Fix         | —                           |
+| live curl 無 CVS                                   | **`storeSelectedBy=null`** ✅          | Step 6E-D-Fix         | —                           |
+| live curl storeSelectedAt                          | **有 ISO timestamp** ✅                | Step 6E-D-Fix         | —                           |
+| 7-11 CVS 搜尋（懷民）                              | **1 筆回傳** ✅                        | Step 6E-D             | —                           |
+| 全家 CVS 搜尋（板橋）                              | **3 筆回傳** ✅                        | Step 6E-D             | —                           |
+| public tracking privacy                            | **未洩漏個資** ✅                      | Step 6E-D 靜態        | 靜態確認                    |
+| emap import endpoint                               | **403 disabled** ✅                    | Step 6E-D             | 靜態 + 測試                 |
+| 靜態確認：parseCvsExtension 不在 source            | **0 次** ✅                            | Step 6E-D-Fix         | —                           |
+| 靜態確認：PublicOrder.tsx 不送 storeSelectedBy     | ✅                                     | Step 6E-D             | —                           |
+| 靜態確認：localStorage expiresAt 寫入 + 過期清除   | ✅                                     | Step 6E-D             | —                           |
+| 靜態確認：submittedCvsStore 成功頁 + clearCvsStore | ✅                                     | Step 6E-D             | —                           |
 
 ---
 
@@ -128,21 +130,21 @@ Step 6E-D QA 發現：live API server 是 Step 6E-B 安全修正**前**啟動的
 
 ### 已處理
 
-| 步驟 | 說明 |
-|------|------|
-| `npx tsc --build lib/api-zod/tsconfig.json` | 重建 `lib/api-zod/dist/*.d.ts`，含 CVS 欄位 |
-| `pnpm --filter api-server build` | 以 Step 6E-B source 重建 `dist/index.mjs` |
-| 清除 stale process（PID 74142） | 16:51 UTC 啟動，早於 dist rebuild 17:21:29 UTC |
-| 驗證 PID 101013 | 17:22 UTC 啟動，在 dist rebuild 之後，載入正確安全版本 |
+| 步驟                                        | 說明                                                   |
+| ------------------------------------------- | ------------------------------------------------------ |
+| `npx tsc --build lib/api-zod/tsconfig.json` | 重建 `lib/api-zod/dist/*.d.ts`，含 CVS 欄位            |
+| `pnpm --filter api-server build`            | 以 Step 6E-B source 重建 `dist/index.mjs`              |
+| 清除 stale process（PID 74142）             | 16:51 UTC 啟動，早於 dist rebuild 17:21:29 UTC         |
+| 驗證 PID 101013                             | 17:22 UTC 啟動，在 dist rebuild 之後，載入正確安全版本 |
 
 ### 驗證結果
 
-| 偽造測試 | Client 送入 | Server 實際儲存 | 結果 |
-|----------|------------|----------------|------|
-| 偽造 admin | `storeSelectedBy: "admin"` | `"customer"` | ✅ PASS |
-| 偽造 staff | `storeSelectedBy: "staff"` | `"customer"` | ✅ PASS |
-| 無 CVS | 無 cvsStoreId | `null` | ✅ PASS |
-| storeSelectedAt | CVS 訂單 | `"2026-06-06T17:27:49.228Z"` | ✅ PASS |
+| 偽造測試        | Client 送入                | Server 實際儲存              | 結果    |
+| --------------- | -------------------------- | ---------------------------- | ------- |
+| 偽造 admin      | `storeSelectedBy: "admin"` | `"customer"`                 | ✅ PASS |
+| 偽造 staff      | `storeSelectedBy: "staff"` | `"customer"`                 | ✅ PASS |
+| 無 CVS          | 無 cvsStoreId              | `null`                       | ✅ PASS |
+| storeSelectedAt | CVS 訂單                   | `"2026-06-06T17:27:49.228Z"` | ✅ PASS |
 
 ### 後續注意
 
@@ -170,11 +172,11 @@ npx tsc --build lib/api-zod/tsconfig.json
 
 ### 目前 Replit live API server 設定
 
-| 項目 | 值 |
-|------|----|
-| PORT | 8080 |
-| 綁定介面 | IPv6 `::1`（即 `http://[::1]:8080`） |
-| curl 測試目標 | `http://[::1]:8080/api/...` |
+| 項目          | 值                                   |
+| ------------- | ------------------------------------ |
+| PORT          | 8080                                 |
+| 綁定介面      | IPv6 `::1`（即 `http://[::1]:8080`） |
+| curl 測試目標 | `http://[::1]:8080/api/...`          |
 
 > **注意**：勿以舊的 `localhost:3001` 為 curl 測試目標，目前 port 3001 無 api-server 監聽。
 
@@ -235,16 +237,16 @@ npx tsc --build lib/api-zod/tsconfig.json
 
 ## 9. 已知風險與待確認
 
-| # | 風險 / 待確認 | 影響 | 建議處理 |
-|---|--------------|------|----------|
-| 1 | 人工瀏覽器 / 手機 QA 尚未完成 | 買家端實際使用體驗未驗收 | 優先在 Replit web 或本機執行 Section 8 checklist |
-| 2 | CI 尚未確認加入 `api-zod dist build` | orval 後 TypeScript 可能讀舊型別 | 在 CI pipeline 的 orval 後加入 `npx tsc --build lib/api-zod/tsconfig.json` |
-| 3 | api-server PORT=8080 / IPv6 `::1` | 舊的 `localhost:3001` curl 測試目標無效 | 更新開發文件 / CI script 使用 `[::1]:8080` |
-| 4 | `shippingFeeOverride` 仍在 zod 外讀取 | 不在 zod schema 內，無型別驗證 | 後續另立 task 補強，或納入 zod schema |
-| 5 | `cvs.ts(163,15)`: `'geoMatch' is possibly 'null'` | 既有 TypeScript 錯誤，非本次引入 | 後續另立 task 修復 |
-| 6 | public tracking 是否顯示 CVS 門市資料 | 目前不顯示，待產品決策 | 不要在未確認前擅自顯示 |
-| 7 | emap 合規性未確認，endpoint 仍 disabled | 任何人仍無法觸發 emap import | 不要恢復 endpoint，直到合規與授權確認 |
-| 8 | localStorage TTL 沒有前端單元測試 | 過期清除邏輯僅靜態確認 | 後續若導入前端測試框架可補 |
+| #   | 風險 / 待確認                                     | 影響                                    | 建議處理                                                                   |
+| --- | ------------------------------------------------- | --------------------------------------- | -------------------------------------------------------------------------- |
+| 1   | 人工瀏覽器 / 手機 QA 尚未完成                     | 買家端實際使用體驗未驗收                | 優先在 Replit web 或本機執行 Section 8 checklist                           |
+| 2   | CI 尚未確認加入 `api-zod dist build`              | orval 後 TypeScript 可能讀舊型別        | 在 CI pipeline 的 orval 後加入 `npx tsc --build lib/api-zod/tsconfig.json` |
+| 3   | api-server PORT=8080 / IPv6 `::1`                 | 舊的 `localhost:3001` curl 測試目標無效 | 更新開發文件 / CI script 使用 `[::1]:8080`                                 |
+| 4   | `shippingFeeOverride` 仍在 zod 外讀取             | 不在 zod schema 內，無型別驗證          | 後續另立 task 補強，或納入 zod schema                                      |
+| 5   | `cvs.ts(163,15)`: `'geoMatch' is possibly 'null'` | 既有 TypeScript 錯誤，非本次引入        | 後續另立 task 修復                                                         |
+| 6   | public tracking 是否顯示 CVS 門市資料             | 目前不顯示，待產品決策                  | 不要在未確認前擅自顯示                                                     |
+| 7   | emap 合規性未確認，endpoint 仍 disabled           | 任何人仍無法觸發 emap import            | 不要恢復 endpoint，直到合規與授權確認                                      |
+| 8   | localStorage TTL 沒有前端單元測試                 | 過期清除邏輯僅靜態確認                  | 後續若導入前端測試框架可補                                                 |
 
 ---
 
@@ -252,20 +254,20 @@ npx tsc --build lib/api-zod/tsconfig.json
 
 ### 可收尾項目
 
-| 面向 | 狀態 |
-|------|------|
-| API / Type / Security | ✅ 可收尾（自動測試 + live curl 均通過） |
-| UX small polish | ✅ 可收尾（程式碼靜態確認） |
+| 面向                     | 狀態                                          |
+| ------------------------ | --------------------------------------------- |
+| API / Type / Security    | ✅ 可收尾（自動測試 + live curl 均通過）      |
+| UX small polish          | ✅ 可收尾（程式碼靜態確認）                   |
 | Live security validation | ✅ 可收尾（stale process 清除，偽造測試通過） |
-| emap import | ✅ 維持 disabled |
+| emap import              | ✅ 維持 disabled                              |
 
 ### 尚待完成
 
-| 面向 | 狀態 |
-|------|------|
-| 瀏覽器 / 手機人工 QA | ⬜ 未完成，需人工補測 |
-| CI pipeline api-zod dist build | ⬜ 尚未確認加入 |
-| public tracking CVS 顯示策略 | ⬜ 待產品決策 |
+| 面向                           | 狀態                  |
+| ------------------------------ | --------------------- |
+| 瀏覽器 / 手機人工 QA           | ⬜ 未完成，需人工補測 |
+| CI pipeline api-zod dist build | ⬜ 尚未確認加入       |
+| public tracking CVS 顯示策略   | ⬜ 待產品決策         |
 
 ### 整體判斷
 
@@ -284,6 +286,7 @@ npx tsc --build lib/api-zod/tsconfig.json
 
 2. **CI 補強：api-zod dist build**
    在 CI pipeline 的 `pnpm orval`（或任何 orval 指令）後加入：
+
    ```bash
    npx tsc --build lib/api-zod/tsconfig.json
    ```

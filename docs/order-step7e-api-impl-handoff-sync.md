@@ -9,28 +9,30 @@
 
 ## 2. API Worktree / Branch
 
-| 項目 | 值 |
-|------|-----|
+| 項目     | 值                                             |
+| -------- | ---------------------------------------------- |
 | worktree | `/home/runner/workspace/.worktrees/step7e-api` |
-| branch | `qa/step7e-seller-agent-settings-api` |
+| branch   | `qa/step7e-seller-agent-settings-api`          |
 
 ## 3. API Commit
 
-| commit | message |
-|--------|---------|
+| commit    | message                                 |
+| --------- | --------------------------------------- |
 | `dc75672` | `feat-api-step7e-seller-agent-settings` |
 
 包含：
+
 - `artifacts/api-server/src/routes/sellerAgent.ts`（新增）
 - `artifacts/api-server/src/routes/index.ts`（修改）
 
 ## 4. Doc Commit
 
-| commit | message |
-|--------|---------|
+| commit    | message                                                |
+| --------- | ------------------------------------------------------ |
 | `251216d` | `docs-step7e-seller-agent-settings-api-implementation` |
 
 包含：
+
 - `docs/order-step7e-seller-agent-settings-api-implementation.md`（新增）
 
 ## 5. 同步到 dev-handoff 的內容
@@ -46,12 +48,12 @@
 
 ## 6. Typecheck / 測試結果
 
-| 項目 | 結果 |
-|------|------|
-| `sellerAgent.ts` typecheck | **0 errors** |
-| full API typecheck | 1 pre-existing error（`cvs.ts:163 TS18047`，不在本次修復範圍）|
-| Integration test | 未執行（無執行中 DB）|
-| E2E HTTP test | 未執行（無執行中 server）|
+| 項目                       | 結果                                                           |
+| -------------------------- | -------------------------------------------------------------- |
+| `sellerAgent.ts` typecheck | **0 errors**                                                   |
+| full API typecheck         | 1 pre-existing error（`cvs.ts:163 TS18047`，不在本次修復範圍） |
+| Integration test           | 未執行（無執行中 DB）                                          |
+| E2E HTTP test              | 未執行（無執行中 server）                                      |
 
 ## 7. 未執行項目
 

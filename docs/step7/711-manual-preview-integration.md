@@ -61,16 +61,16 @@
 
 ## 4. 驗收結果
 
-| 項目 | 結果 |
-|------|------|
-| 7-11 normalization test | ✓ 通過（8/8 patterns, 見 step7O fix commit） |
-| backend preview 新增 7-11 支援 | ✓（handle711Preview 實作） |
-| preview route 仍拒絕 provider=711 + 非711 tracking id | ✓ PROVIDER_MISMATCH 400 |
-| commit route 仍拒絕 provider=711 | ✓（MANUAL_PROVIDER_WHITELIST 不含 711） |
-| UI build / typecheck | ✓（pnpm build 通過） |
-| backend typecheck / build | ✓（tsc 通過） |
-| 7-11 preview 測試（mock adapter） | ✓（200、commitDisabled=true、previewHash=null） |
-| DB 不寫入 | ✓（countEvents=0 斷言） |
+| 項目                                                  | 結果                                            |
+| ----------------------------------------------------- | ----------------------------------------------- |
+| 7-11 normalization test                               | ✓ 通過（8/8 patterns, 見 step7O fix commit）    |
+| backend preview 新增 7-11 支援                        | ✓（handle711Preview 實作）                      |
+| preview route 仍拒絕 provider=711 + 非711 tracking id | ✓ PROVIDER_MISMATCH 400                         |
+| commit route 仍拒絕 provider=711                      | ✓（MANUAL_PROVIDER_WHITELIST 不含 711）         |
+| UI build / typecheck                                  | ✓（pnpm build 通過）                            |
+| backend typecheck / build                             | ✓（tsc 通過）                                   |
+| 7-11 preview 測試（mock adapter）                     | ✓（200、commitDisabled=true、previewHash=null） |
+| DB 不寫入                                             | ✓（countEvents=0 斷言）                         |
 
 ## 5. 下一步
 

@@ -2,11 +2,11 @@
 
 ## 入口
 
-| 用途 | 指令 |
-|------|------|
-| 排程正式跑（建議 Workflow 用） | `pnpm step7:familymart-worker` |
-| 等價 node 指令 | `node scripts/step7/run-familymart-worker-scheduled.mjs` |
-| 手動 dry-run（不寫 DB） | `DRY_RUN=1 LIMIT=5 node scripts/step7/run-familymart-worker-scheduled.mjs` |
+| 用途                                              | 指令                                                                          |
+| ------------------------------------------------- | ----------------------------------------------------------------------------- |
+| 排程正式跑（建議 Workflow 用）                    | `pnpm step7:familymart-worker`                                                |
+| 等價 node 指令                                    | `node scripts/step7/run-familymart-worker-scheduled.mjs`                      |
+| 手動 dry-run（不寫 DB）                           | `DRY_RUN=1 LIMIT=5 node scripts/step7/run-familymart-worker-scheduled.mjs`    |
 | 手動正式跑（manual_worker，沿用既有 once script） | `LIMIT=20 TIMEOUT_MS=15000 node scripts/step7/run-familymart-worker-once.mjs` |
 
 scheduled script 與 once script 差異：
@@ -16,12 +16,12 @@ scheduled script 與 once script 差異：
 
 ## 環境變數（scheduled script）
 
-| 變數 | 預設 | 說明 |
-|------|------|------|
-| `LIMIT` | 20 | 單輪最多處理筆數 |
-| `TIMEOUT_MS` | 15000 | 單筆查詢 timeout |
-| `DRY_RUN` | 0 | `1` = 只查不寫 DB、不寫 run log |
-| `STORE_ID` | （無） | 不填 = 全店家 |
+| 變數         | 預設   | 說明                            |
+| ------------ | ------ | ------------------------------- |
+| `LIMIT`      | 20     | 單輪最多處理筆數                |
+| `TIMEOUT_MS` | 15000  | 單筆查詢 timeout                |
+| `DRY_RUN`    | 0      | `1` = 只查不寫 DB、不寫 run log |
+| `STORE_ID`   | （無） | 不填 = 全店家                   |
 
 輸出僅含遮罩後 trackingCode（`1634****9811`）與狀態摘要，不輸出姓名 / 電話 / 地址 / raw response。
 

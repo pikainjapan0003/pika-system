@@ -41,12 +41,12 @@ feat-db-step7e-seller-agent-settings-schema
 
 僅 commit 下列 4 個 code restore 目標檔案（`git diff --cached --name-status` 確認 commit 前 staged 清單與下列完全一致，無其他檔案混入）：
 
-| 狀態 | 檔案 |
-|---|---|
-| A（新增） | `lib/db/src/schema/sellerAgentSettings.ts` |
-| M（修改，僅新增 1 行 export） | `lib/db/src/schema/index.ts` |
-| A（新增） | `lib/db/migrations/0001_seller_agent_settings.sql` |
-| A（新增） | `docs/order-step7e-seller-agent-settings-code-restore-audit.md` |
+| 狀態                          | 檔案                                                            |
+| ----------------------------- | --------------------------------------------------------------- |
+| A（新增）                     | `lib/db/src/schema/sellerAgentSettings.ts`                      |
+| M（修改，僅新增 1 行 export） | `lib/db/src/schema/index.ts`                                    |
+| A（新增）                     | `lib/db/migrations/0001_seller_agent_settings.sql`              |
+| A（新增）                     | `docs/order-step7e-seller-agent-settings-code-restore-audit.md` |
 
 `git commit` 輸出：`4 files changed, 307 insertions(+)`，commit 後 `git status --short` 在持久 worktree 中為空（working tree 乾淨）。
 

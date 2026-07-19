@@ -9,42 +9,43 @@
 
 ## 2. Preflight Worktree / Branch
 
-| 項目 | 值 |
-|------|---|
-| worktree | `/home/runner/workspace/.worktrees/step7e-code-restore` |
-| branch | `qa/step7e-seller-agent-settings-code-restore` |
-| 起始 commit | `437d7e9`（typecheck doc）|
+| 項目        | 值                                                      |
+| ----------- | ------------------------------------------------------- |
+| worktree    | `/home/runner/workspace/.worktrees/step7e-code-restore` |
+| branch      | `qa/step7e-seller-agent-settings-code-restore`          |
+| 起始 commit | `437d7e9`（typecheck doc）                              |
 
 ## 3. Preflight Commit
 
-| 項目 | 值 |
-|------|---|
-| commit hash | `c71616a` |
-| commit message | `docs-step7e-seller-agent-settings-api-preflight` |
-| staged 檔案 | `docs/order-step7e-seller-agent-settings-api-preflight.md` |
-| 是否 push | 否 |
+| 項目           | 值                                                         |
+| -------------- | ---------------------------------------------------------- |
+| commit hash    | `c71616a`                                                  |
+| commit message | `docs-step7e-seller-agent-settings-api-preflight`          |
+| staged 檔案    | `docs/order-step7e-seller-agent-settings-api-preflight.md` |
+| 是否 push      | 否                                                         |
 
 ## 4. 同步到 dev-handoff 的內容
 
 已更新主 workspace：
+
 - `dev-handoff/latest-B.json`：taskTitle = `Step 7E-1b-API-PREFLIGHT：seller_agent_settings GET/PATCH API 施工前盤點`
 - `dev-handoff/latest-B.md`
 - `dev-handoff/latest.json`（relay copy）
 
 ### 關鍵 preflight 結論
 
-| 問題 | 結論 |
-|------|------|
-| 建議 API URL | `GET/PATCH /stores/:storeId/agent/settings` |
-| Auth middleware | `requireAuth`（Clerk session，不可用 Agent Bearer）|
-| Store ownership 驗證 | `verifyStoreOwner(req, res, storeId)`（現有 helper）|
-| merchantId 來源 | `req.userId`（Clerk userId = merchantId）|
-| GET 無 row 時 | 回傳 in-memory default config，不建立 DB row |
-| PATCH 策略 | upsert（INSERT ... ON CONFLICT DO UPDATE）|
-| webhookSecretHash | 永遠不進 response，改為 `hasWebhookSecret: boolean` |
-| webhookSecret PATCH | 接受明文，server SHA-256 hash 後存 |
-| 白名單驗證位置 | API 層 zod schema（`z.enum()`），非 DB CHECK |
-| DB push 前提 | 需先執行 `drizzle-kit push` 或 migration |
+| 問題                 | 結論                                                 |
+| -------------------- | ---------------------------------------------------- |
+| 建議 API URL         | `GET/PATCH /stores/:storeId/agent/settings`          |
+| Auth middleware      | `requireAuth`（Clerk session，不可用 Agent Bearer）  |
+| Store ownership 驗證 | `verifyStoreOwner(req, res, storeId)`（現有 helper） |
+| merchantId 來源      | `req.userId`（Clerk userId = merchantId）            |
+| GET 無 row 時        | 回傳 in-memory default config，不建立 DB row         |
+| PATCH 策略           | upsert（INSERT ... ON CONFLICT DO UPDATE）           |
+| webhookSecretHash    | 永遠不進 response，改為 `hasWebhookSecret: boolean`  |
+| webhookSecret PATCH  | 接受明文，server SHA-256 hash 後存                   |
+| 白名單驗證位置       | API 層 zod schema（`z.enum()`），非 DB CHECK         |
+| DB push 前提         | 需先執行 `drizzle-kit push` 或 migration             |
 
 ## 5. 未執行項目
 

@@ -23,19 +23,19 @@
 
 ### 正確的 QA 分支
 
-| 項目 | 值 |
-|------|---|
-| QA 分支名稱 | `qa/step6d-cvs-store-picker-clean-browser` |
-| 基準 commit | `2a76ef0 fix-step6d-store-selected-at-dirty-tracking` |
-| 保留 Step 6D 功能 commit | `cf799c6 feat-step6d-edit-order-cvs-store-picker` ✅ |
-| 保留 Enter key 修正 commit | `20ea74e qa-step6d-fix-enter-key-loading-guard` ✅ |
+| 項目                             | 值                                                       |
+| -------------------------------- | -------------------------------------------------------- |
+| QA 分支名稱                      | `qa/step6d-cvs-store-picker-clean-browser`               |
+| 基準 commit                      | `2a76ef0 fix-step6d-store-selected-at-dirty-tracking`    |
+| 保留 Step 6D 功能 commit         | `cf799c6 feat-step6d-edit-order-cvs-store-picker` ✅     |
+| 保留 Enter key 修正 commit       | `20ea74e qa-step6d-fix-enter-key-loading-guard` ✅       |
 | 保留 storeSelectedAt 修正 commit | `2a76ef0 fix-step6d-store-selected-at-dirty-tracking` ✅ |
 
 ### 污染 commit（不在乾淨分支內）
 
-| Commit | 描述 | 狀態 |
-|--------|------|------|
-| `ec3b3bd` | `feat-orders-tracking-import-api`（Step 7B API） | ❌ 不在 QA 分支內 |
+| Commit    | 描述                                                               | 狀態              |
+| --------- | ------------------------------------------------------------------ | ----------------- |
+| `ec3b3bd` | `feat-orders-tracking-import-api`（Step 7B API）                   | ❌ 不在 QA 分支內 |
 | `47a6f81` | `feat-orders-tracking-import-ui`（Step 7B UI，Orders.tsx +256 行） | ❌ 不在 QA 分支內 |
 
 > **警告**：`fix/step6d-store-selected-at-dirty-tracking` 分支 HEAD 已有 `47a6f81`（Step 7B UI 污染）。  
@@ -86,11 +86,16 @@
 // Only update storeSelectedAt when a CVS store field actually changes value.
 // Guards against saves that don't change the store (e.g. payment-only edits).
 const cvsChanged =
-  (storeCode !== undefined && (storeCode ?? null) !== (order.cvsStoreId ?? null)) ||
-  (storeName !== undefined && (storeName ?? null) !== (order.cvsStoreName ?? null)) ||
-  (cvsStoreAddress !== undefined && (cvsStoreAddress ?? null) !== (order.cvsStoreAddress ?? null)) ||
-  (cvsStorePhone !== undefined && (cvsStorePhone ?? null) !== (order.cvsStorePhone ?? null)) ||
-  (storeSelectedBy !== undefined && (storeSelectedBy ?? null) !== (order.storeSelectedBy ?? null));
+  (storeCode !== undefined &&
+    (storeCode ?? null) !== (order.cvsStoreId ?? null)) ||
+  (storeName !== undefined &&
+    (storeName ?? null) !== (order.cvsStoreName ?? null)) ||
+  (cvsStoreAddress !== undefined &&
+    (cvsStoreAddress ?? null) !== (order.cvsStoreAddress ?? null)) ||
+  (cvsStorePhone !== undefined &&
+    (cvsStorePhone ?? null) !== (order.cvsStorePhone ?? null)) ||
+  (storeSelectedBy !== undefined &&
+    (storeSelectedBy ?? null) !== (order.storeSelectedBy ?? null));
 if (cvsChanged) updates.storeSelectedAt = new Date();
 ```
 
@@ -109,46 +114,46 @@ if (cvsChanged) updates.storeSelectedAt = new Date();
 
 ### 5.1 自動化整合測試
 
-| 測試套件 | 執行命令 | 結果 |
-|---------|---------|------|
+| 測試套件                | 執行命令                                             | 結果                |
+| ----------------------- | ---------------------------------------------------- | ------------------- |
 | `orders.route.test.mjs` | `node --test --import tsx/esm orders.route.test.mjs` | ✅ **104/104 pass** |
-| `cvs.route.test.mjs` | `node --test --import tsx/esm cvs.route.test.mjs` | ✅ **4/4 pass** |
-| shop-app typecheck | `pnpm --filter shop-app tsc --noEmit` | ✅ 通過，無錯誤 |
+| `cvs.route.test.mjs`    | `node --test --import tsx/esm cvs.route.test.mjs`    | ✅ **4/4 pass**     |
+| shop-app typecheck      | `pnpm --filter shop-app tsc --noEmit`                | ✅ 通過，無錯誤     |
 
 > 測試分布：原 Step 6C 共 99 tests；Step 6D-Fix 新增 5 tests（dirty tracking）；共 104 tests。
 
 ### 5.2 API curl 實測
 
-| 測試項目 | 指令 | 結果 |
-|---------|------|------|
-| 7-11 搜尋（懷民） | `GET /api/cvs/stores?provider=seven&q=懷民&limit=20` | ✅ 1 筆：storeId=284754, 懷民門市, 新北市板橋區民治街111號, phone=(02)22504664 |
-| 全家搜尋（板橋） | `GET /api/cvs/stores?provider=family&q=板橋&limit=20` | ✅ 3 筆：family-015125, family-024442, family-025213 |
-| 查無結果 | `GET /api/cvs/stores?provider=seven&q=ZZZNORESULTXXX999` | ✅ count: 0 |
-| emap 未認證 | `POST /api/cvs/711/import-from-emap`（無 header） | ✅ HTTP 401（Clerk 無有效 session） |
-| emap 已認證 mock | 整合測試 cvs.route.test.mjs | ✅ HTTP 403（endpoint disabled，cvs.ts:120–122） |
+| 測試項目          | 指令                                                     | 結果                                                                           |
+| ----------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| 7-11 搜尋（懷民） | `GET /api/cvs/stores?provider=seven&q=懷民&limit=20`     | ✅ 1 筆：storeId=284754, 懷民門市, 新北市板橋區民治街111號, phone=(02)22504664 |
+| 全家搜尋（板橋）  | `GET /api/cvs/stores?provider=family&q=板橋&limit=20`    | ✅ 3 筆：family-015125, family-024442, family-025213                           |
+| 查無結果          | `GET /api/cvs/stores?provider=seven&q=ZZZNORESULTXXX999` | ✅ count: 0                                                                    |
+| emap 未認證       | `POST /api/cvs/711/import-from-emap`（無 header）        | ✅ HTTP 401（Clerk 無有效 session）                                            |
+| emap 已認證 mock  | 整合測試 cvs.route.test.mjs                              | ✅ HTTP 403（endpoint disabled，cvs.ts:120–122）                               |
 
 ### 5.3 靜態程式碼確認
 
-| 驗收項目 | 位置 | 結果 |
-|---------|------|------|
-| CVS 選店器 UI 區塊在物流資訊區塊 | `EditOrderDialog.tsx:503` | ✅ |
-| Provider selector（7-11 / 全家） | `:512–513` | ✅ |
-| 依 `pickupMethod` 自動預選 | `:115` | ✅ |
-| Enter key loading guard | `:521` | ✅ |
-| Idle 狀態「尚未搜尋」 | `:533` | ✅ |
-| 搜尋中「搜尋中…」 | `:529` | ✅ |
-| Error 狀態「搜尋失敗，請稍後再試」 | `:151, :535` | ✅ |
-| 查無結果「查無符合門市，請換關鍵字再試」 | `:539` | ✅ |
-| 選門市帶入四個 CVS 欄位 | `:156–163` | ✅ |
-| `storeSelectedBy='admin'` 自動設定 | `:162` | ✅ |
-| `handleSubmit` 送出 `cvsStoreAddress` / `cvsStorePhone` / `storeSelectedBy` | `:213–215` | ✅ |
-| 已選門市 summary card | `:565–575` | ✅ |
-| 保守免責聲明 | `:572` | ✅ |
-| 手填 fallback（超商店號 / 超商店名） | `:483–501` | ✅ |
-| 付款欄位完整 | `:54–56, :200–202` | ✅ |
-| 物流欄位完整 | `:61–62, :68, :206–216` | ✅ |
-| `storeSelectedAt` dirty tracking 邏輯 | `orders.ts:548–556` | ✅ |
-| emap 早回 403 | `cvs.ts:120–122` | ✅ |
+| 驗收項目                                                                    | 位置                      | 結果 |
+| --------------------------------------------------------------------------- | ------------------------- | ---- |
+| CVS 選店器 UI 區塊在物流資訊區塊                                            | `EditOrderDialog.tsx:503` | ✅   |
+| Provider selector（7-11 / 全家）                                            | `:512–513`                | ✅   |
+| 依 `pickupMethod` 自動預選                                                  | `:115`                    | ✅   |
+| Enter key loading guard                                                     | `:521`                    | ✅   |
+| Idle 狀態「尚未搜尋」                                                       | `:533`                    | ✅   |
+| 搜尋中「搜尋中…」                                                           | `:529`                    | ✅   |
+| Error 狀態「搜尋失敗，請稍後再試」                                          | `:151, :535`              | ✅   |
+| 查無結果「查無符合門市，請換關鍵字再試」                                    | `:539`                    | ✅   |
+| 選門市帶入四個 CVS 欄位                                                     | `:156–163`                | ✅   |
+| `storeSelectedBy='admin'` 自動設定                                          | `:162`                    | ✅   |
+| `handleSubmit` 送出 `cvsStoreAddress` / `cvsStorePhone` / `storeSelectedBy` | `:213–215`                | ✅   |
+| 已選門市 summary card                                                       | `:565–575`                | ✅   |
+| 保守免責聲明                                                                | `:572`                    | ✅   |
+| 手填 fallback（超商店號 / 超商店名）                                        | `:483–501`                | ✅   |
+| 付款欄位完整                                                                | `:54–56, :200–202`        | ✅   |
+| 物流欄位完整                                                                | `:61–62, :68, :206–216`   | ✅   |
+| `storeSelectedAt` dirty tracking 邏輯                                       | `orders.ts:548–556`       | ✅   |
+| emap 早回 403                                                               | `cvs.ts:120–122`          | ✅   |
 
 ---
 
@@ -156,12 +161,12 @@ if (cvsChanged) updates.storeSelectedAt = new Date();
 
 下列項目因 Replit headless 環境限制（React SPA 需 JS 執行，WebFetch 只回傳靜態 HTML），**無法由 Claude Code 自動化驗收**，需在有瀏覽器的環境補做：
 
-| 未執行項目 | 原因 |
-|-----------|------|
-| 瀏覽器視覺驗收（選門市 → 儲存 → 重開） | Replit headless，React SPA 需 JS 執行 |
-| `storeSelectedAt` dirty tracking 視覺確認（Orders 列表「選擇時間」） | 同上 |
-| 搜尋失敗 error 狀態視覺確認 | 無 DevTools Network block；error 程式碼已靜態確認 |
-| 手機寬度（375px）視覺確認 | 同上 |
+| 未執行項目                                                           | 原因                                              |
+| -------------------------------------------------------------------- | ------------------------------------------------- |
+| 瀏覽器視覺驗收（選門市 → 儲存 → 重開）                               | Replit headless，React SPA 需 JS 執行             |
+| `storeSelectedAt` dirty tracking 視覺確認（Orders 列表「選擇時間」） | 同上                                              |
+| 搜尋失敗 error 狀態視覺確認                                          | 無 DevTools Network block；error 程式碼已靜態確認 |
+| 手機寬度（375px）視覺確認                                            | 同上                                              |
 
 ---
 
@@ -260,15 +265,15 @@ if (cvsChanged) updates.storeSelectedAt = new Date();
 
 進入 Step 6E（買家端 PublicOrder.tsx CVS 選店器）前，必須確認：
 
-| 前置條件 | 狀態 |
-|---------|------|
-| Section 7 人工瀏覽器驗收 Checklist 全部通過 | ⬜ 待確認 |
-| 乾淨 commit（`2a76ef0`）已確認，無 Step 7B 污染 | ✅ 已確認 |
-| `orders.ts` 接受 `storeSelectedBy` 欄位 | ✅ 已完成（Step 6D） |
-| `storeSelectedAt` dirty tracking 邏輯已修正 | ✅ 已完成（Step 6D-Fix） |
-| 整合測試 104/104 pass | ✅ 已確認 |
-| `GET /api/cvs/stores` 公開端點正常 | ✅ 已實測 |
-| Step 7B merge 策略確認（不混入 Step 6E） | ⬜ 待確認 |
+| 前置條件                                        | 狀態                     |
+| ----------------------------------------------- | ------------------------ |
+| Section 7 人工瀏覽器驗收 Checklist 全部通過     | ⬜ 待確認                |
+| 乾淨 commit（`2a76ef0`）已確認，無 Step 7B 污染 | ✅ 已確認                |
+| `orders.ts` 接受 `storeSelectedBy` 欄位         | ✅ 已完成（Step 6D）     |
+| `storeSelectedAt` dirty tracking 邏輯已修正     | ✅ 已完成（Step 6D-Fix） |
+| 整合測試 104/104 pass                           | ✅ 已確認                |
+| `GET /api/cvs/stores` 公開端點正常              | ✅ 已實測                |
+| Step 7B merge 策略確認（不混入 Step 6E）        | ⬜ 待確認                |
 
 ---
 

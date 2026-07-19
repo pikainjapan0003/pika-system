@@ -46,16 +46,16 @@ Step 7F~7H → 安全強化、業者串接、買家 timeline
 
 本文件撰寫時的 DB 與 Git 狀態：
 
-| 項目 | 狀態 |
-|------|------|
-| local main commit | `d441fd9` feat-db-step7d-agent-token-run-log-schema |
-| gitsafe-backup/main | `d441fd9`（已同步）|
-| seller_agent_tokens | **DB 已存在**，7 個 indexes ✓ |
-| agent_run_logs | **DB 已存在**，7 個 indexes ✓ |
-| shipment_tracking_events.idempotency_key | **DB 已存在** ✓ |
-| typecheck | PASS（exit_code=0）|
-| 備份 | `/home/runner/backups/backup-pre-step7d-2d-push-20260608060545.sql`（3.6M）|
-| Agent API route | **尚未實作**（0 個 route 檔案、0 個 middleware）|
+| 項目                                     | 狀態                                                                        |
+| ---------------------------------------- | --------------------------------------------------------------------------- |
+| local main commit                        | `d441fd9` feat-db-step7d-agent-token-run-log-schema                         |
+| gitsafe-backup/main                      | `d441fd9`（已同步）                                                         |
+| seller_agent_tokens                      | **DB 已存在**，7 個 indexes ✓                                               |
+| agent_run_logs                           | **DB 已存在**，7 個 indexes ✓                                               |
+| shipment_tracking_events.idempotency_key | **DB 已存在** ✓                                                             |
+| typecheck                                | PASS（exit_code=0）                                                         |
+| 備份                                     | `/home/runner/backups/backup-pre-step7d-2d-push-20260608060545.sql`（3.6M） |
+| Agent API route                          | **尚未實作**（0 個 route 檔案、0 個 middleware）                            |
 
 ---
 
@@ -92,17 +92,17 @@ Router()
 
 ### 3.3 現有 Route 檔案清單
 
-| 檔案 | 路徑前綴 | 說明 |
-|------|----------|------|
-| `health.ts` | `/health` | 健康檢查 |
-| `public.ts` | `/p/` `/o/` `/submit-order/` | 買家公開端點，無需 Clerk auth |
-| `stores.ts` | `/stores/` | 賣家商店管理 |
-| `products.ts` | `/stores/:storeId/products/` | 商品管理 |
-| `categories.ts` | `/categories/` | 商品分類 |
-| `orders.ts` | `/stores/:storeId/orders/` | 訂單管理（Clerk auth 必要）|
-| `cvs.ts` | `/cvs/` | 超商門市選擇 |
-| `upload.ts` | `/upload/` | 檔案上傳 |
-| `devHandoff.ts` | `/dev-handoff` | 開發輔助（dev only）|
+| 檔案            | 路徑前綴                     | 說明                          |
+| --------------- | ---------------------------- | ----------------------------- |
+| `health.ts`     | `/health`                    | 健康檢查                      |
+| `public.ts`     | `/p/` `/o/` `/submit-order/` | 買家公開端點，無需 Clerk auth |
+| `stores.ts`     | `/stores/`                   | 賣家商店管理                  |
+| `products.ts`   | `/stores/:storeId/products/` | 商品管理                      |
+| `categories.ts` | `/categories/`               | 商品分類                      |
+| `orders.ts`     | `/stores/:storeId/orders/`   | 訂單管理（Clerk auth 必要）   |
+| `cvs.ts`        | `/cvs/`                      | 超商門市選擇                  |
+| `upload.ts`     | `/upload/`                   | 檔案上傳                      |
+| `devHandoff.ts` | `/dev-handoff`               | 開發輔助（dev only）          |
 
 ### 3.4 現有 Auth 機制
 
@@ -141,11 +141,11 @@ router.get("/stores/:storeId/orders", requireAuth, async (req, res) => {
 
 ### 3.5 現有測試檔案與測試框架
 
-| 測試檔案 | 對應 route | 框架 |
-|----------|-----------|------|
-| `orders.route.test.mjs` | orders.ts | Node.js `node:test` + 真實 DB |
-| `cvs.route.test.mjs` | cvs.ts | Node.js `node:test` + 真實 DB |
-| `public.route.test.mjs` | public.ts | Node.js `node:test` + 真實 DB |
+| 測試檔案                | 對應 route | 框架                          |
+| ----------------------- | ---------- | ----------------------------- |
+| `orders.route.test.mjs` | orders.ts  | Node.js `node:test` + 真實 DB |
+| `cvs.route.test.mjs`    | cvs.ts     | Node.js `node:test` + 真實 DB |
+| `public.route.test.mjs` | public.ts  | Node.js `node:test` + 真實 DB |
 
 **測試慣例**：
 
@@ -162,12 +162,12 @@ router.get("/stores/:storeId/orders", requireAuth, async (req, res) => {
 
 ### 4.1 方案比較
 
-| 方案 | 檔案位置 | 優點 | 缺點 |
-|------|----------|------|------|
-| **A（建議）** | `artifacts/api-server/src/routes/agent.ts` | 命名直接，路徑簡單，易搜尋 | 名字較通用 |
-| B | `artifacts/api-server/src/routes/internalAgent.ts` | 明確標示 internal | 檔名較長 |
-| C | 放進現有 `orders.ts` | 不需新檔案 | 混入買家訂單邏輯，auth 機制完全不同，必定造成混亂 |
-| D | 放進現有 `public.ts` | — | **嚴格禁止**：public 是無 auth 買家端點 |
+| 方案          | 檔案位置                                           | 優點                       | 缺點                                              |
+| ------------- | -------------------------------------------------- | -------------------------- | ------------------------------------------------- |
+| **A（建議）** | `artifacts/api-server/src/routes/agent.ts`         | 命名直接，路徑簡單，易搜尋 | 名字較通用                                        |
+| B             | `artifacts/api-server/src/routes/internalAgent.ts` | 明確標示 internal          | 檔名較長                                          |
+| C             | 放進現有 `orders.ts`                               | 不需新檔案                 | 混入買家訂單邏輯，auth 機制完全不同，必定造成混亂 |
+| D             | 放進現有 `public.ts`                               | —                          | **嚴格禁止**：public 是無 auth 買家端點           |
 
 **MVP 建議：方案 A**
 
@@ -218,13 +218,13 @@ router.get("/stores/:storeId/orders", requireAuth, async (req, res) => {
 
 ### 5.2 重要安全原則
 
-| 原則 | 說明 |
-|------|------|
-| token 原文只在 header | 不接受 body / query 中的 token 參數 |
-| tokenPrefix 不參與驗證 | 只用於管理介面顯示，不可用於比對 |
-| merchantId / storeId 只從 token record 取 | request body 的 merchantId 不可信，不可用於決定權限 |
-| 錯誤訊息不洩漏細節 | "Invalid token" 涵蓋所有找不到的情況，避免 timing/enumeration attack |
-| lastUsedAt 非同步更新 | 避免每次 request 都同步寫 DB 增加延遲 |
+| 原則                                      | 說明                                                                 |
+| ----------------------------------------- | -------------------------------------------------------------------- |
+| token 原文只在 header                     | 不接受 body / query 中的 token 參數                                  |
+| tokenPrefix 不參與驗證                    | 只用於管理介面顯示，不可用於比對                                     |
+| merchantId / storeId 只從 token record 取 | request body 的 merchantId 不可信，不可用於決定權限                  |
+| 錯誤訊息不洩漏細節                        | "Invalid token" 涵蓋所有找不到的情況，避免 timing/enumeration attack |
+| lastUsedAt 非同步更新                     | 避免每次 request 都同步寫 DB 增加延遲                                |
 
 ### 5.3 middleware 建議位置
 
@@ -324,85 +324,85 @@ Phase 4（Step 7D-3E）：
 
 #### API-1：Agent Token Middleware
 
-| 項目 | 內容 |
-|------|------|
-| 用途 | 驗證 Bearer token，注入 req.agentToken |
-| 建議位置 | `middlewares/agentAuth.ts` |
-| 查詢資料表 | `seller_agent_tokens`（by tokenHash）|
-| 必要權限檢查 | status=active、expiresAt、revokedAt |
-| 測試重點 | 見第 14 章測試計畫 |
-| MVP 是否要做 | **是**（所有 Agent API 前置依賴）|
+| 項目         | 內容                                   |
+| ------------ | -------------------------------------- |
+| 用途         | 驗證 Bearer token，注入 req.agentToken |
+| 建議位置     | `middlewares/agentAuth.ts`             |
+| 查詢資料表   | `seller_agent_tokens`（by tokenHash）  |
+| 必要權限檢查 | status=active、expiresAt、revokedAt    |
+| 測試重點     | 見第 14 章測試計畫                     |
+| MVP 是否要做 | **是**（所有 Agent API 前置依賴）      |
 
 ---
 
 #### API-2：GET /internal/agent/orders/tracking-jobs
 
-| 項目 | 內容 |
-|------|------|
-| 用途 | Agent 取得需要查詢的物流任務列表 |
-| 建議 handler 位置 | `routes/agent.ts` |
-| 查詢資料表 | `shipment_trackings` JOIN `orders`（WHERE orders.storeId = token.storeId）|
-| 必要權限檢查 | agentTokenAuth + storeId scope |
-| 回傳欄位（安全）| trackingId, trackingCode, trackingProvider, trackingStatus, nextCheckAt, lastCheckedAt, failureCount |
-| 禁止回傳欄位 | buyerName, buyerPhone, recipientPhone, recipientAddress, internalNote, paymentNote, rawData |
-| 選填篩選 | `status`（如只查 pending/active）、`limit`（預設 50）、`nextCheckBefore`（時間篩選）|
-| 狀態白名單 | 見第 13 章 trackingStatus |
-| 測試重點 | 不洩漏個資、storeId scope 隔離 |
-| MVP 是否要做 | **是** |
+| 項目              | 內容                                                                                                 |
+| ----------------- | ---------------------------------------------------------------------------------------------------- |
+| 用途              | Agent 取得需要查詢的物流任務列表                                                                     |
+| 建議 handler 位置 | `routes/agent.ts`                                                                                    |
+| 查詢資料表        | `shipment_trackings` JOIN `orders`（WHERE orders.storeId = token.storeId）                           |
+| 必要權限檢查      | agentTokenAuth + storeId scope                                                                       |
+| 回傳欄位（安全）  | trackingId, trackingCode, trackingProvider, trackingStatus, nextCheckAt, lastCheckedAt, failureCount |
+| 禁止回傳欄位      | buyerName, buyerPhone, recipientPhone, recipientAddress, internalNote, paymentNote, rawData          |
+| 選填篩選          | `status`（如只查 pending/active）、`limit`（預設 50）、`nextCheckBefore`（時間篩選）                 |
+| 狀態白名單        | 見第 13 章 trackingStatus                                                                            |
+| 測試重點          | 不洩漏個資、storeId scope 隔離                                                                       |
+| MVP 是否要做      | **是**                                                                                               |
 
 ---
 
 #### API-3：POST /internal/agent/shipment-events
 
-| 項目 | 內容 |
-|------|------|
-| 用途 | Agent 寫入貨態事件（timeline 記錄）|
-| 建議 handler 位置 | `routes/agent.ts` |
-| 查詢資料表 | `shipment_tracking_events`（寫入）、`shipment_trackings`（查 ownership + 更新 snapshot）、`orders`（確認 storeId）|
-| 必要權限檢查 | agentTokenAuth + ownership（shipmentTrackingId → orderId → storeId）|
-| 必要狀態白名單 | `eventStatus`（見第 13 章）|
-| idempotencyKey | 提供時透過 unique index 防重（ON CONFLICT DO NOTHING 或 UNIQUE violation catch）|
-| rawPayload 清洗 | 寫入 rawData 前，移除第 12 章列出的敏感欄位 |
-| 寫入後動作 | 在同一 transaction 內更新 `shipment_trackings.latestEventStatus / latestEventDescription / latestEventAt` |
-| 禁止行為 | 不可接受跨店 shipmentTrackingId、不可把外部 error stack 寫入公開欄位 |
-| 測試重點 | idempotencyKey 防重、eventStatus 白名單、rawPayload 清洗、storeId scope |
-| MVP 是否要做 | **是** |
+| 項目              | 內容                                                                                                               |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------ |
+| 用途              | Agent 寫入貨態事件（timeline 記錄）                                                                                |
+| 建議 handler 位置 | `routes/agent.ts`                                                                                                  |
+| 查詢資料表        | `shipment_tracking_events`（寫入）、`shipment_trackings`（查 ownership + 更新 snapshot）、`orders`（確認 storeId） |
+| 必要權限檢查      | agentTokenAuth + ownership（shipmentTrackingId → orderId → storeId）                                               |
+| 必要狀態白名單    | `eventStatus`（見第 13 章）                                                                                        |
+| idempotencyKey    | 提供時透過 unique index 防重（ON CONFLICT DO NOTHING 或 UNIQUE violation catch）                                   |
+| rawPayload 清洗   | 寫入 rawData 前，移除第 12 章列出的敏感欄位                                                                        |
+| 寫入後動作        | 在同一 transaction 內更新 `shipment_trackings.latestEventStatus / latestEventDescription / latestEventAt`          |
+| 禁止行為          | 不可接受跨店 shipmentTrackingId、不可把外部 error stack 寫入公開欄位                                               |
+| 測試重點          | idempotencyKey 防重、eventStatus 白名單、rawPayload 清洗、storeId scope                                            |
+| MVP 是否要做      | **是**                                                                                                             |
 
 ---
 
 #### API-4：PATCH /internal/agent/shipment-status
 
-| 項目 | 內容 |
-|------|------|
-| 用途 | Agent 更新物流任務狀態與查詢控制欄位 |
-| 建議 handler 位置 | `routes/agent.ts` |
-| 查詢資料表 | `shipment_trackings`（更新）、`orders`（確認 storeId）|
-| 必要權限檢查 | agentTokenAuth + storeId ownership |
-| 可更新欄位 | trackingStatus、lastCheckedAt、nextCheckAt、failureCount、checkError |
-| 必要狀態白名單 | `trackingStatus`（見第 13 章）|
-| checkError 清洗 | 移除 stack / trace / credential 相關內容，長度截斷（建議 ≤ 500 字元）|
-| 禁止行為 | 不可直接改 orders 金額 / 商品 / 客戶資料 |
-| 測試重點 | trackingStatus 白名單、storeId scope、checkError 清洗 |
-| MVP 是否要做 | **是** |
+| 項目              | 內容                                                                  |
+| ----------------- | --------------------------------------------------------------------- |
+| 用途              | Agent 更新物流任務狀態與查詢控制欄位                                  |
+| 建議 handler 位置 | `routes/agent.ts`                                                     |
+| 查詢資料表        | `shipment_trackings`（更新）、`orders`（確認 storeId）                |
+| 必要權限檢查      | agentTokenAuth + storeId ownership                                    |
+| 可更新欄位        | trackingStatus、lastCheckedAt、nextCheckAt、failureCount、checkError  |
+| 必要狀態白名單    | `trackingStatus`（見第 13 章）                                        |
+| checkError 清洗   | 移除 stack / trace / credential 相關內容，長度截斷（建議 ≤ 500 字元） |
+| 禁止行為          | 不可直接改 orders 金額 / 商品 / 客戶資料                              |
+| 測試重點          | trackingStatus 白名單、storeId scope、checkError 清洗                 |
+| MVP 是否要做      | **是**                                                                |
 
 ---
 
 #### API-5：POST /internal/agent/run-log
 
-| 項目 | 內容 |
-|------|------|
-| 用途 | Agent 寫入執行記錄（每次 run 的開始 / 完成 / 失敗）|
-| 建議 handler 位置 | `routes/agent.ts` |
-| 查詢資料表 | `agent_run_logs`（寫入）|
-| 必要權限檢查 | agentTokenAuth |
-| tokenId | 強制使用 req.agentToken.id（不可由 body 帶入）|
-| merchantId / storeId | 強制使用 req.agentToken.merchantId / storeId |
-| 必要白名單 | runType、status（見第 13 章）|
-| 數量欄位限制 | checkedCount / successCount / failedCount 不可為負（schema check constraint 已有）|
-| errorMessage 清洗 | 不可含 token 明文、敏感憑證、個資、完整 stack trace（schema 已有 comment）|
-| 禁止行為 | 買家公開頁不可讀 agent_run_logs |
-| 測試重點 | runType/status 白名單、負數防禦、errorMessage 清洗、public route 不可讀 |
-| MVP 是否要做 | **是** |
+| 項目                 | 內容                                                                               |
+| -------------------- | ---------------------------------------------------------------------------------- |
+| 用途                 | Agent 寫入執行記錄（每次 run 的開始 / 完成 / 失敗）                                |
+| 建議 handler 位置    | `routes/agent.ts`                                                                  |
+| 查詢資料表           | `agent_run_logs`（寫入）                                                           |
+| 必要權限檢查         | agentTokenAuth                                                                     |
+| tokenId              | 強制使用 req.agentToken.id（不可由 body 帶入）                                     |
+| merchantId / storeId | 強制使用 req.agentToken.merchantId / storeId                                       |
+| 必要白名單           | runType、status（見第 13 章）                                                      |
+| 數量欄位限制         | checkedCount / successCount / failedCount 不可為負（schema check constraint 已有） |
+| errorMessage 清洗    | 不可含 token 明文、敏感憑證、個資、完整 stack trace（schema 已有 comment）         |
+| 禁止行為             | 買家公開頁不可讀 agent_run_logs                                                    |
+| 測試重點             | runType/status 白名單、負數防禦、errorMessage 清洗、public route 不可讀            |
+| MVP 是否要做         | **是**                                                                             |
 
 ---
 
@@ -451,7 +451,9 @@ LIMIT :limit (default 50, max 200)
   "eventLocation": "台北轉運站",
   "occurredAt": "2026-06-08T10:00:00Z",
   "idempotencyKey": "run-456-event-789",
-  "rawData": { /* 清洗後的原始業者資料 */ }
+  "rawData": {
+    /* 清洗後的原始業者資料 */
+  }
 }
 ```
 
@@ -496,13 +498,13 @@ COMMIT
 
 ### 10.2 可更新欄位說明
 
-| 欄位 | 類型 | 限制 |
-|------|------|------|
-| trackingStatus | string | 白名單（見第 13 章）|
-| lastCheckedAt | ISO timestamp | 必須是合法時間字串 |
-| nextCheckAt | ISO timestamp or null | null 表示清除排程 |
-| failureCount | integer | >= 0 |
-| checkError | string or null | 清洗後，≤ 500 字元 |
+| 欄位           | 類型                  | 限制                 |
+| -------------- | --------------------- | -------------------- |
+| trackingStatus | string                | 白名單（見第 13 章） |
+| lastCheckedAt  | ISO timestamp         | 必須是合法時間字串   |
+| nextCheckAt    | ISO timestamp or null | null 表示清除排程    |
+| failureCount   | integer               | >= 0                 |
+| checkError     | string or null        | 清洗後，≤ 500 字元   |
 
 ### 10.3 禁止更新欄位
 
@@ -633,85 +635,85 @@ partial
 
 ### 14.1 Agent Token Middleware 測試
 
-| 測試案例 | 預期結果 |
-|---------|---------|
-| 無 Authorization header | 401 Missing Authorization header |
-| `Authorization: token abc` （非 Bearer 格式）| 401 Invalid Authorization format |
-| `Authorization: Bearer ` （空 token）| 401 Invalid Authorization format |
-| Bearer token 格式正確但 hash 查不到 | 401 Invalid token |
-| token 存在但 status = 'revoked' | 401 Token is not active |
-| token 存在但 status = 'expired' | 401 Token is not active |
-| token 存在但 status = 'disabled' | 401 Token is not active |
-| token 存在但 expiresAt 已過期 | 401 Token has expired |
-| 有效 token（status = 'active'，未過期）| 200，req.agentToken 注入正確 |
-| token 屬於 store A，但嘗試存取 store B 的資料 | 404（不回 403，避免 enumeration）|
+| 測試案例                                      | 預期結果                          |
+| --------------------------------------------- | --------------------------------- |
+| 無 Authorization header                       | 401 Missing Authorization header  |
+| `Authorization: token abc` （非 Bearer 格式） | 401 Invalid Authorization format  |
+| `Authorization: Bearer ` （空 token）         | 401 Invalid Authorization format  |
+| Bearer token 格式正確但 hash 查不到           | 401 Invalid token                 |
+| token 存在但 status = 'revoked'               | 401 Token is not active           |
+| token 存在但 status = 'expired'               | 401 Token is not active           |
+| token 存在但 status = 'disabled'              | 401 Token is not active           |
+| token 存在但 expiresAt 已過期                 | 401 Token has expired             |
+| 有效 token（status = 'active'，未過期）       | 200，req.agentToken 注入正確      |
+| token 屬於 store A，但嘗試存取 store B 的資料 | 404（不回 403，避免 enumeration） |
 
 ### 14.2 GET tracking-jobs 測試
 
-| 測試案例 | 預期結果 |
-|---------|---------|
-| 正常請求（有效 token）| 200，回傳 tracking list |
-| 回傳不含 buyerPhone | response body 無 buyerPhone 欄位 |
-| 回傳不含 recipientAddress | response body 無 recipientAddress 欄位 |
-| 回傳不含 rawData | response body 無 rawData 欄位 |
-| Store A token 只能看到 Store A 的 tracking | Store B 的 tracking 不出現 |
+| 測試案例                                   | 預期結果                               |
+| ------------------------------------------ | -------------------------------------- |
+| 正常請求（有效 token）                     | 200，回傳 tracking list                |
+| 回傳不含 buyerPhone                        | response body 無 buyerPhone 欄位       |
+| 回傳不含 recipientAddress                  | response body 無 recipientAddress 欄位 |
+| 回傳不含 rawData                           | response body 無 rawData 欄位          |
+| Store A token 只能看到 Store A 的 tracking | Store B 的 tracking 不出現             |
 
 ### 14.3 POST shipment-events 測試
 
-| 測試案例 | 預期結果 |
-|---------|---------|
-| 正常寫入（有效 token + 正確欄位）| 201 |
-| 相同 idempotencyKey 重複送出 | 200（冪等，不重複寫入）|
-| idempotencyKey = null 多次送出 | 每次都新增一筆（null 不觸發 unique）|
-| eventStatus = 'invalid_status' | 400 |
-| eventStatus 在白名單內 | 201 |
-| 嘗試寫入其他 store 的 shipmentTrackingId | 404 |
-| rawData 含 phone 欄位 | DB 中 rawData 不含 phone |
-| rawData 含 stack trace | DB 中 rawData 不含 stack |
+| 測試案例                                 | 預期結果                             |
+| ---------------------------------------- | ------------------------------------ |
+| 正常寫入（有效 token + 正確欄位）        | 201                                  |
+| 相同 idempotencyKey 重複送出             | 200（冪等，不重複寫入）              |
+| idempotencyKey = null 多次送出           | 每次都新增一筆（null 不觸發 unique） |
+| eventStatus = 'invalid_status'           | 400                                  |
+| eventStatus 在白名單內                   | 201                                  |
+| 嘗試寫入其他 store 的 shipmentTrackingId | 404                                  |
+| rawData 含 phone 欄位                    | DB 中 rawData 不含 phone             |
+| rawData 含 stack trace                   | DB 中 rawData 不含 stack             |
 
 ### 14.4 PATCH shipment-status 測試
 
-| 測試案例 | 預期結果 |
-|---------|---------|
-| 正常更新（有效 token）| 200 |
-| trackingStatus 不在白名單 | 400 |
-| 嘗試更新其他 store 的 tracking | 404 |
-| checkError 含完整 stack trace | DB 儲存的 checkError 為清洗後摘要 |
+| 測試案例                       | 預期結果                          |
+| ------------------------------ | --------------------------------- |
+| 正常更新（有效 token）         | 200                               |
+| trackingStatus 不在白名單      | 400                               |
+| 嘗試更新其他 store 的 tracking | 404                               |
+| checkError 含完整 stack trace  | DB 儲存的 checkError 為清洗後摘要 |
 
 ### 14.5 POST run-log 測試
 
-| 測試案例 | 預期結果 |
-|---------|---------|
-| 正常寫入 | 201 |
-| runType 不在白名單 | 400 |
-| status 不在白名單 | 400 |
-| body 帶入 merchantId（嘗試覆蓋）| merchantId 使用 token record 的值 |
-| body 帶入 storeId（嘗試覆蓋）| storeId 使用 token record 的值 |
+| 測試案例                         | 預期結果                          |
+| -------------------------------- | --------------------------------- |
+| 正常寫入                         | 201                               |
+| runType 不在白名單               | 400                               |
+| status 不在白名單                | 400                               |
+| body 帶入 merchantId（嘗試覆蓋） | merchantId 使用 token record 的值 |
+| body 帶入 storeId（嘗試覆蓋）    | storeId 使用 token record 的值    |
 
 ### 14.6 Public API 隔離測試
 
-| 測試案例 | 預期結果 |
-|---------|---------|
-| GET /o/:publicToken 不含 agent_run_logs 資料 | 確認 |
-| GET /o/:publicToken 不含 rawData | 確認 |
-| GET /p/:shareToken 不觸及 agent_run_logs | 確認 |
+| 測試案例                                     | 預期結果 |
+| -------------------------------------------- | -------- |
+| GET /o/:publicToken 不含 agent_run_logs 資料 | 確認     |
+| GET /o/:publicToken 不含 rawData             | 確認     |
+| GET /p/:shareToken 不觸及 agent_run_logs     | 確認     |
 
 ---
 
 ## 15. 實作風險
 
-| 風險 | 說明 | 嚴重度 | 建議處理時機 |
-|------|------|--------|-------------|
-| Token hash 演算法未定案 | SHA-256 是預設方向，但 token 建立時的 hash 函式必須與驗證時一致；Step 7D-3B 開始前需明確定案 | 高 | Step 7D-3B 前 |
-| lastUsedAt 更新是否每次都寫 DB | 背景更新可降低延遲，但若 DB 連線繁忙時 fire-and-forget 可能靜默失敗；MVP 可接受，後續需監控 | 中 | MVP 後 |
-| idempotencyKey unique index 對 null 行為 | PostgreSQL 允許多筆 null（已在 schema comment 記錄）；API handler 需確保 null idempotencyKey 的防重策略明確 | 中 | Step 7D-3D 前確認 |
-| rawPayload 清洗初版可能不足 | 業者 API 回傳格式多樣，初版清洗 key list 可能未涵蓋所有情境；需建立後續補充機制 | 中 | MVP 後持續補強 |
-| rate limit 尚未做 | Agent route 目前無 rate limit；短期內風險低（token 必須有效），但長期需補 | 低 | Step 7F |
-| audit log 尚未做 | 現無完整的 token 使用 audit log；lastUsedAt 是唯一的使用記錄 | 低 | Step 7F |
-| kill switch 尚未做 | 目前若 token 被濫用，只能手動更新 status = revoked；需 Seller Agent Workspace UI 才能自助操作 | 低 | Step 7E |
-| Agent route 不可暴露給買家公開頁 | `/api/internal/agent/` 前綴本身不保證安全；必須在每個 handler 掛 agentTokenAuth | 高 | Step 7D-3B 確認 |
-| publicToken 與 Agent token 不可混用 | 兩個 auth 機制完全不同；不可在同一 middleware 鏈中混淆兩者 | 高 | Step 7D-3B 確認 |
-| step transition 複雜度 | trackingStatus 的合法轉換（如 failed → active 是否允許）目前未定義 white list；MVP 先允許 Agent 設定任意合法狀態值，後續再補 transition 驗證 | 低 | Step 7D-3E 後 |
+| 風險                                     | 說明                                                                                                                                         | 嚴重度 | 建議處理時機      |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ----------------- |
+| Token hash 演算法未定案                  | SHA-256 是預設方向，但 token 建立時的 hash 函式必須與驗證時一致；Step 7D-3B 開始前需明確定案                                                 | 高     | Step 7D-3B 前     |
+| lastUsedAt 更新是否每次都寫 DB           | 背景更新可降低延遲，但若 DB 連線繁忙時 fire-and-forget 可能靜默失敗；MVP 可接受，後續需監控                                                  | 中     | MVP 後            |
+| idempotencyKey unique index 對 null 行為 | PostgreSQL 允許多筆 null（已在 schema comment 記錄）；API handler 需確保 null idempotencyKey 的防重策略明確                                  | 中     | Step 7D-3D 前確認 |
+| rawPayload 清洗初版可能不足              | 業者 API 回傳格式多樣，初版清洗 key list 可能未涵蓋所有情境；需建立後續補充機制                                                              | 中     | MVP 後持續補強    |
+| rate limit 尚未做                        | Agent route 目前無 rate limit；短期內風險低（token 必須有效），但長期需補                                                                    | 低     | Step 7F           |
+| audit log 尚未做                         | 現無完整的 token 使用 audit log；lastUsedAt 是唯一的使用記錄                                                                                 | 低     | Step 7F           |
+| kill switch 尚未做                       | 目前若 token 被濫用，只能手動更新 status = revoked；需 Seller Agent Workspace UI 才能自助操作                                                | 低     | Step 7E           |
+| Agent route 不可暴露給買家公開頁         | `/api/internal/agent/` 前綴本身不保證安全；必須在每個 handler 掛 agentTokenAuth                                                              | 高     | Step 7D-3B 確認   |
+| publicToken 與 Agent token 不可混用      | 兩個 auth 機制完全不同；不可在同一 middleware 鏈中混淆兩者                                                                                   | 高     | Step 7D-3B 確認   |
+| step transition 複雜度                   | trackingStatus 的合法轉換（如 failed → active 是否允許）目前未定義 white list；MVP 先允許 Agent 設定任意合法狀態值，後續再補 transition 驗證 | 低     | Step 7D-3E 後     |
 
 ---
 
@@ -743,13 +745,13 @@ partial
 
 ## 17. 下一步建議
 
-| 步驟 | 內容 | 狀態 |
-|------|------|------|
-| **Step 7D-3B** | Agent token middleware（agentAuth.ts）+ route skeleton（agent.ts）+ auth 測試 | **下一步**（可開始）|
-| Step 7D-3C | GET /internal/agent/orders/tracking-jobs 完整實作 + 測試 | 待 7D-3B 完成後 |
-| Step 7D-3D | POST /internal/agent/shipment-events 完整實作 + 測試 | 待 7D-3C 後 |
-| Step 7D-3E | PATCH /internal/agent/shipment-status + POST /internal/agent/run-log 完整實作 + 測試 | 待 7D-3D 後 |
-| Step 7E | Seller Agent Workspace UI | 待 7D-3E 後 |
+| 步驟           | 內容                                                                                 | 狀態                 |
+| -------------- | ------------------------------------------------------------------------------------ | -------------------- |
+| **Step 7D-3B** | Agent token middleware（agentAuth.ts）+ route skeleton（agent.ts）+ auth 測試        | **下一步**（可開始） |
+| Step 7D-3C     | GET /internal/agent/orders/tracking-jobs 完整實作 + 測試                             | 待 7D-3B 完成後      |
+| Step 7D-3D     | POST /internal/agent/shipment-events 完整實作 + 測試                                 | 待 7D-3C 後          |
+| Step 7D-3E     | PATCH /internal/agent/shipment-status + POST /internal/agent/run-log 完整實作 + 測試 | 待 7D-3D 後          |
+| Step 7E        | Seller Agent Workspace UI                                                            | 待 7D-3E 後          |
 
 **明確不建議**：
 

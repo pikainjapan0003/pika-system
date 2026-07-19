@@ -34,9 +34,9 @@ Step 7E-0 只做 UX / Product planning 文件，**不施工任何 UI / API / DB*
 
 ### 2.1 頁面名稱
 
-| 用途 | 名稱 |
-|---|---|
-| 賣家菜單入口 | 我的貨態 Agent |
+| 用途                      | 名稱                   |
+| ------------------------- | ---------------------- |
+| 賣家菜單入口              | 我的貨態 Agent         |
 | 頁面標題 / workspace 概念 | Seller Agent Workspace |
 
 ### 2.2 定位原則
@@ -72,70 +72,70 @@ Agent API（/api/agent/...）
 
 ### 3.1 Agent 狀態
 
-| 欄位 | 說明 |
-|---|---|
+| 欄位           | 說明                                       |
+| -------------- | ------------------------------------------ |
 | Agent 啟用狀態 | 啟用 / 停用，控制 Agent token 是否允許寫入 |
-| 上次執行時間 | 最後一筆 agent_run_logs 的 `created_at` |
-| 執行成功率 | 近 N 筆 run-log success / total |
+| 上次執行時間   | 最後一筆 agent_run_logs 的 `created_at`    |
+| 執行成功率     | 近 N 筆 run-log success / total            |
 
 ### 3.2 物流來源
 
-| 設定項目 | 說明 |
-|---|---|
-| 物流服務商 | 待確認：是否由賣家選擇或 Agent 自動偵測 |
-| 啟用的物流來源 | 待確認：multiselect 或 checkbox |
-| 預設追蹤方式 | polling / webhook（待確認） |
+| 設定項目       | 說明                                    |
+| -------------- | --------------------------------------- |
+| 物流服務商     | 待確認：是否由賣家選擇或 Agent 自動偵測 |
+| 啟用的物流來源 | 待確認：multiselect 或 checkbox         |
+| 預設追蹤方式   | polling / webhook（待確認）             |
 
 ### 3.3 查詢方式
 
-| 設定項目 | 說明 |
-|---|---|
-| 查詢模式 | polling（定期輪詢）/ webhook（即時推送）|
-| webhook URL | 若 Agent 支援 webhook，填入接收端 |
+| 設定項目     | 說明                                        |
+| ------------ | ------------------------------------------- |
+| 查詢模式     | polling（定期輪詢）/ webhook（即時推送）    |
+| webhook URL  | 若 Agent 支援 webhook，填入接收端           |
 | 查詢觸發條件 | 待確認：訂單建立後 N 小時開始，還是一律輪詢 |
 
 ### 3.4 查詢頻率
 
-| 設定項目 | 說明 |
-|---|---|
+| 設定項目 | 說明                                            |
+| -------- | ----------------------------------------------- |
 | 查詢間隔 | 待確認：每 N 分鐘 / 每 N 小時，是否開放賣家自設 |
-| 每日上限 | 待確認：平台是否設 rate limit |
-| 靜默時段 | 待確認：是否允許設定不執行的時間段 |
+| 每日上限 | 待確認：平台是否設 rate limit                   |
+| 靜默時段 | 待確認：是否允許設定不執行的時間段              |
 
 ### 3.5 安全設定
 
-| 設定項目 | 說明 |
-|---|---|
-| IP 白名單 | 待確認：是否支援 Agent 來源 IP 限制 |
-| Token 有效期 | 待確認：是否支援過期自動停用 |
-| Token 撤銷 | 賣家可一鍵撤銷 token，立即失效 |
+| 設定項目     | 說明                                |
+| ------------ | ----------------------------------- |
+| IP 白名單    | 待確認：是否支援 Agent 來源 IP 限制 |
+| Token 有效期 | 待確認：是否支援過期自動停用        |
+| Token 撤銷   | 賣家可一鍵撤銷 token，立即失效      |
 
 ### 3.6 測試與管理
 
-| 功能 | 說明 |
-|---|---|
-| 執行測試 | 手動觸發一次 Agent 測試執行，檢查結果 |
-| 查看 tracking-jobs 清單 | 顯示目前待追蹤訂單（隱藏買家個資） |
-| Token 管理 | 建立 / 撤銷 / 檢視 token 清單（不顯示 hash / 完整 token）|
+| 功能                    | 說明                                                      |
+| ----------------------- | --------------------------------------------------------- |
+| 執行測試                | 手動觸發一次 Agent 測試執行，檢查結果                     |
+| 查看 tracking-jobs 清單 | 顯示目前待追蹤訂單（隱藏買家個資）                        |
+| Token 管理              | 建立 / 撤銷 / 檢視 token 清單（不顯示 hash / 完整 token） |
 
 ### 3.7 執行紀錄
 
-| 欄位 | 說明 |
-|---|---|
-| 執行時間 | agent_run_logs.created_at |
-| 執行結果 | success / failure |
-| 錯誤類型 | error_code（不顯示完整 rawPayload） |
+| 欄位     | 說明                                           |
+| -------- | ---------------------------------------------- |
+| 執行時間 | agent_run_logs.created_at                      |
+| 執行結果 | success / failure                              |
+| 錯誤類型 | error_code（不顯示完整 rawPayload）            |
 | 訂單參考 | 只顯示訂單 public_token，不顯示買家電話 / 地址 |
 
 ### 3.8 Token / Webhook 區
 
-| 項目 | 說明 |
-|---|---|
-| 建立 Token | 賣家填入名稱，平台產生 token，**原文只顯示一次** |
-| Token 清單 | 顯示名稱、`token_prefix`、建立時間、最後使用時間、狀態 |
-| Revoke | 撤銷後立即失效，不可恢復 |
-| Webhook 資訊 | 平台 Agent API base URL，供賣家貼入 n8n / OpenClaw |
-| 不顯示 | tokenHash、完整 token、rawPayload |
+| 項目         | 說明                                                   |
+| ------------ | ------------------------------------------------------ |
+| 建立 Token   | 賣家填入名稱，平台產生 token，**原文只顯示一次**       |
+| Token 清單   | 顯示名稱、`token_prefix`、建立時間、最後使用時間、狀態 |
+| Revoke       | 撤銷後立即失效，不可恢復                               |
+| Webhook 資訊 | 平台 Agent API base URL，供賣家貼入 n8n / OpenClaw     |
+| 不顯示       | tokenHash、完整 token、rawPayload                      |
 
 ---
 
@@ -220,21 +220,21 @@ GET /api/seller/agent/webhook-info
 
 ### 5.1 已有資料表
 
-| 資料表 | 用途 | 狀態 |
-|---|---|---|
-| `seller_agent_tokens` | Agent token 管理，含 storeId 隔離 | 已完成（Step 7D）|
-| `agent_run_logs` | Agent 執行紀錄 | 已完成（Step 7D）|
+| 資料表                | 用途                              | 狀態              |
+| --------------------- | --------------------------------- | ----------------- |
+| `seller_agent_tokens` | Agent token 管理，含 storeId 隔離 | 已完成（Step 7D） |
+| `agent_run_logs`      | Agent 執行紀錄                    | 已完成（Step 7D） |
 
 ### 5.2 後續可能需要的資料表
 
 **以下為規劃項目，本次不實作。**
 
-| 資料表 | 用途 | 優先級 |
-|---|---|---|
-| `seller_agent_settings` 或 `seller_agents` | 賣家 Agent 設定（啟用狀態、物流來源、查詢頻率等）| 高，Step 7E-1 施工前需確認 |
-| `seller_agent_webhooks` | 賣家設定的 webhook 接收端 URL | 中，視需求決定 |
-| `agent_usage_counters` | 平台代管 Agent 用量統計（rate limit、每日用量）| 中，有平台代管 Agent 時才需要 |
-| `agent_audit_logs` | 高敏感操作稽核紀錄（建立/撤銷 token 等）| 低，可先用 agent_run_logs 替代 |
+| 資料表                                     | 用途                                              | 優先級                         |
+| ------------------------------------------ | ------------------------------------------------- | ------------------------------ |
+| `seller_agent_settings` 或 `seller_agents` | 賣家 Agent 設定（啟用狀態、物流來源、查詢頻率等） | 高，Step 7E-1 施工前需確認     |
+| `seller_agent_webhooks`                    | 賣家設定的 webhook 接收端 URL                     | 中，視需求決定                 |
+| `agent_usage_counters`                     | 平台代管 Agent 用量統計（rate limit、每日用量）   | 中，有平台代管 Agent 時才需要  |
+| `agent_audit_logs`                         | 高敏感操作稽核紀錄（建立/撤銷 token 等）          | 低，可先用 agent_run_logs 替代 |
 
 ### 5.3 Schema 設計前置確認項（待確認）
 
@@ -283,27 +283,27 @@ GET /api/seller/agent/webhook-info
 
 ### 7.1 Agent 不可以
 
-| 禁止行為 | 說明 |
-|---|---|
-| 直接改 DB | Agent 只能透過平台 API 寫入，不得直連資料庫 |
-| 直接改訂單金額 | 非 Agent 職責範圍，需走訂單 API 並有獨立權限 |
-| 直接改商品 | 非 Agent 職責範圍 |
-| 看其他賣家的訂單 | token 綁定 storeId，API 強制隔離 |
-| 讀完整客戶個資 | Agent API 不回傳買家電話 / 地址 / email |
-| 輸出 rawPayload 給買家 | rawPayload 只留在 DB，不可出現在任何前端回應 |
-| 使用管理員 token | Agent token 與管理員 token 為不同 scope |
-| 繞過 storeId 隔離 | API 層強制以 token 對應的 storeId 過濾所有查詢 |
+| 禁止行為               | 說明                                           |
+| ---------------------- | ---------------------------------------------- |
+| 直接改 DB              | Agent 只能透過平台 API 寫入，不得直連資料庫    |
+| 直接改訂單金額         | 非 Agent 職責範圍，需走訂單 API 並有獨立權限   |
+| 直接改商品             | 非 Agent 職責範圍                              |
+| 看其他賣家的訂單       | token 綁定 storeId，API 強制隔離               |
+| 讀完整客戶個資         | Agent API 不回傳買家電話 / 地址 / email        |
+| 輸出 rawPayload 給買家 | rawPayload 只留在 DB，不可出現在任何前端回應   |
+| 使用管理員 token       | Agent token 與管理員 token 為不同 scope        |
+| 繞過 storeId 隔離      | API 層強制以 token 對應的 storeId 過濾所有查詢 |
 
 ### 7.2 Seller UI 不可以
 
-| 禁止行為 | 說明 |
-|---|---|
-| 顯示 tokenHash | tokenHash 為內部比對用，不出現在任何 API 回應 |
-| 顯示完整 token（建立後）| token 原文只在 `POST /api/seller/agent/tokens` 回應中顯示一次，建立後不可再取得 |
-| 顯示 rawPayload | rawPayload 為物流 API 原始回應，含敏感格式，不出現在前端 |
-| 顯示買家電話 / 地址 | Seller UI 不顯示完整買家個資 |
-| 讓賣家輸入自由 prompt 控制 Agent | 只提供簡單設定面板，不開放自由 prompt 欄位 |
-| 顯示內部錯誤訊息 | 錯誤只顯示 error_code，不顯示 stack trace / DB 錯誤 |
+| 禁止行為                         | 說明                                                                            |
+| -------------------------------- | ------------------------------------------------------------------------------- |
+| 顯示 tokenHash                   | tokenHash 為內部比對用，不出現在任何 API 回應                                   |
+| 顯示完整 token（建立後）         | token 原文只在 `POST /api/seller/agent/tokens` 回應中顯示一次，建立後不可再取得 |
+| 顯示 rawPayload                  | rawPayload 為物流 API 原始回應，含敏感格式，不出現在前端                        |
+| 顯示買家電話 / 地址              | Seller UI 不顯示完整買家個資                                                    |
+| 讓賣家輸入自由 prompt 控制 Agent | 只提供簡單設定面板，不開放自由 prompt 欄位                                      |
+| 顯示內部錯誤訊息                 | 錯誤只顯示 error_code，不顯示 stack trace / DB 錯誤                             |
 
 ---
 
@@ -371,16 +371,16 @@ Step 7E-1e：Seller Agent Workspace UI 頁面
 
 ### 待確認事項（進 Step 7E-1 前需確認）
 
-| 項目 | 說明 |
-|---|---|
-| seller_agent_settings vs seller_agents | 單表設定或 Agent 獨立實體 |
-| 多 Agent per store | 一個賣家是否可建立多個 Agent 設定 |
-| 查詢頻率是否開放賣家自設 | 或只能選預設值 |
-| 物流來源設定範圍 | 賣家可自選哪些物流商 |
-| test-run 是否實際呼叫 Agent | 或只做 mock 驗證 |
-| webhook_secret 是否需要 | webhook 簽名驗證機制 |
-| BYOK 是否進 MVP | 進階功能時間線 |
+| 項目                                   | 說明                              |
+| -------------------------------------- | --------------------------------- |
+| seller_agent_settings vs seller_agents | 單表設定或 Agent 獨立實體         |
+| 多 Agent per store                     | 一個賣家是否可建立多個 Agent 設定 |
+| 查詢頻率是否開放賣家自設               | 或只能選預設值                    |
+| 物流來源設定範圍                       | 賣家可自選哪些物流商              |
+| test-run 是否實際呼叫 Agent            | 或只做 mock 驗證                  |
+| webhook_secret 是否需要                | webhook 簽名驗證機制              |
+| BYOK 是否進 MVP                        | 進階功能時間線                    |
 
 ---
 
-*此文件為 Step 7E-0 規劃文件，非最終施工規格。所有標記「待確認」的項目需在 Step 7E-1 施工前確認。*
+_此文件為 Step 7E-0 規劃文件，非最終施工規格。所有標記「待確認」的項目需在 Step 7E-1 施工前確認。_

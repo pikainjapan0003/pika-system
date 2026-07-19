@@ -9,22 +9,22 @@
 
 ## 2. API Worktree / Branch
 
-| 項目 | 值 |
-|------|-----|
+| 項目     | 值                                             |
+| -------- | ---------------------------------------------- |
 | worktree | `/home/runner/workspace/.worktrees/step7e-api` |
-| branch | `qa/step7e-seller-agent-settings-api` |
+| branch   | `qa/step7e-seller-agent-settings-api`          |
 
 ## 3. Implementation Commit
 
-| commit | message |
-|--------|---------|
-| `dc75672` | `feat-api-step7e-seller-agent-settings` |
+| commit    | message                                                |
+| --------- | ------------------------------------------------------ |
+| `dc75672` | `feat-api-step7e-seller-agent-settings`                |
 | `251216d` | `docs-step7e-seller-agent-settings-api-implementation` |
 
 ## 4. Review Commit
 
-| commit | message |
-|--------|---------|
+| commit    | message                                        |
+| --------- | ---------------------------------------------- |
 | `8bdcdb4` | `docs-step7e-seller-agent-settings-api-review` |
 
 ## 5. Review Conclusion
@@ -32,6 +32,7 @@
 **pass-with-notes**
 
 無阻塞問題。3 項非阻塞式 notes：
+
 1. import style：`index.ts` 的 `"./sellerAgent.ts"` 包含 `.ts` 副檔名，其他路由無
 2. `logger` vs `req.log`：與 `agent.ts` 一致，但與 `stores.ts` / `orders.ts` 不同
 3. `as any` upsert cast：與 `agent.ts` 現有模式一致，但喪失部分型別安全

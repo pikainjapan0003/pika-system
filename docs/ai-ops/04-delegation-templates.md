@@ -23,6 +23,7 @@
 ```
 
 **範例（7-11 店鋪選擇現況）**：
+
 > 任務背景：要改選店流程前先確認現況。目標：整理 7-11 選店從公開下單頁到訂單回填的完整資料流。輸入：`artifacts/shop-app/src/lib/cvs711.ts`（已驗證存在）＋glob 起點 `artifacts/api-server/src/routes/cvs*`、`docs/order-step6*`（glob 是起點不是結論，實際檔名由 agent 定位後回填）。驗收：列出每一步的檔案:行號、店號店名回填到哪個欄位、有哪些測試覆蓋。回報 <100 行，只回結論。
 
 ## 模板 2：實作任務（general-purpose agent，中階模型起）
@@ -44,6 +45,7 @@
 ```
 
 **範例（新增商品成本計算函式）**：
+
 > 背景：依 `docs/ai-ops/10-cost-sheet-mapping.md`（欄位對照，須先存在；**若不存在，先用模板 1/4 依 03 檔 §10 建立它，不得跳過直接實作**）。目標：`lib/` 新增純函式 `computeItemCost(input)`，輸入日圓成本/匯率/重量/交通分攤/各手續費，輸出成本與毛利。必查：Sheet 對照檔＋orders schema。驗收：typecheck 通過；用 Sheet 真實列做 3 個 fixture 測試通過；一筆逐步手算附在回報；未填欄位丟錯不默認 0。
 
 ## 模板 3：重構任務（general-purpose agent，中階模型）
@@ -64,6 +66,7 @@
 ```
 
 **範例（把成本公式抽成 domain service）**：
+
 > 背景：成本計算散在 route 內（未來遷移後可能發生）。目標：抽到 `lib/` 純函式模組，route 只呼叫。禁止改任何數值行為。驗收：orders 相關測試前後全綠、grep 舊 inline 公式 0 命中。
 
 ## 模板 4：研究任務（general-purpose agent；結論影響商業決策時用高階模型）
@@ -84,6 +87,7 @@
 ```
 
 **範例（gogo.gs 油價整合可行性）**：
+
 > 背景：油價影響交通成本分攤。目標：決定整合或維持手動輸入。必查：gogo.gs 網站是否有 API/資料下載頁、robots.txt、利用規約。驗收：逐條回答 03 §11 四關＋證據 URL；不可行就直接建議手動輸入方案。落檔 `docs/ai-ops/11-fuel-price-research.md`。
 
 ## 模板 5：審查任務（fresh-context agent，不可用寫程式的同一個 agent）
@@ -104,4 +108,5 @@
 ```
 
 **範例（訂單總額是否漏算物流費）**：
+
 > 背景：public 下單流程改過。目標：確認每種物流方式的總額都含正確運費。必查：`artifacts/api-server/src/lib/shippingFee.ts`、`artifacts/api-server/src/routes/public.ts`、`artifacts/shop-app/src/pages/PublicOrder.tsx`。驗收：五種物流方式各自追一遍「小計＋運費＝總額」的程式路徑並附行號；獨立手算一筆 7-11 訂單比對。

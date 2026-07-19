@@ -10,11 +10,11 @@
 
 ## 2. 使用者實測結果（觸發本輪）
 
-| 項目 | 結果 |
-|------|------|
-| `/settings` AI 代查設定卡片 | ❌ 不存在 |
-| `/settings/agent` | ❌ 404 |
-| Replit Preview 22696→3000 | ❌ 仍是舊版 |
+| 項目                        | 結果        |
+| --------------------------- | ----------- |
+| `/settings` AI 代查設定卡片 | ❌ 不存在   |
+| `/settings/agent`           | ❌ 404      |
+| Replit Preview 22696→3000   | ❌ 仍是舊版 |
 
 ## 3. 改用主 workspace Active Preview Branch
 
@@ -39,24 +39,27 @@ HEAD:     3e82926  docs-step7e-seller-agent-settings-ui-preview-port-fix
 ```
 
 包含的必要 commits：
+
 - `6a8153a` feat-ui-step7e-seller-agent-settings ✅
 - `b17403b` docs-step7e-seller-agent-settings-ui-review ✅
 - `3e82926` docs-step7e-seller-agent-settings-ui-preview-port-fix ✅
 
 ## 5. 服務啟動
 
-| 服務 | Port | 說明 |
-|------|------|------|
-| shop-app (Vite dev server) | 22696 | 主 workspace active preview branch |
-| API server | 19080 | worktree step7e-ui API（含 Step 7E routes） |
+| 服務                       | Port  | 說明                                        |
+| -------------------------- | ----- | ------------------------------------------- |
+| shop-app (Vite dev server) | 22696 | 主 workspace active preview branch          |
+| API server                 | 19080 | worktree step7e-ui API（含 Step 7E routes） |
 
 shop-app 啟動指令：
+
 ```bash
 PORT=22696 BASE_PATH=/ API_SERVER_PORT=19080 NODE_ENV=development \
   vite --config vite.config.ts --host 0.0.0.0 --port 22696
 ```
 
 Vite proxy 設定（`vite.config.ts`）：
+
 ```typescript
 proxy: {
   "/api": {
@@ -70,16 +73,16 @@ proxy: {
 
 ## 6. 驗證結果
 
-| 驗收項目 | 結果 | 說明 |
-|---------|------|------|
-| `/settings/agent` 可回應 | ✅ | HTTP 200 (SPA fallback) |
-| `AgentSettings.tsx` 存在 | ✅ | Vite 正常提供 |
-| `Settings.tsx` 含「AI 代查設定」 | ✅ | `AgentSettingsEntry` + 「AI 代查設定」文字確認 |
-| `/api/stores/1/agent/settings` 非 404 | ✅ | **HTTP 401** (Clerk auth 擋住，route 存在) |
-| 未修改 UI code | ✅ | 只做 branch 切換 |
-| 未修改 backend API | ✅ | |
-| 未 DB push / migrate / seed | ✅ | |
-| 未 push GitHub | ✅ | |
+| 驗收項目                              | 結果 | 說明                                           |
+| ------------------------------------- | ---- | ---------------------------------------------- |
+| `/settings/agent` 可回應              | ✅   | HTTP 200 (SPA fallback)                        |
+| `AgentSettings.tsx` 存在              | ✅   | Vite 正常提供                                  |
+| `Settings.tsx` 含「AI 代查設定」      | ✅   | `AgentSettingsEntry` + 「AI 代查設定」文字確認 |
+| `/api/stores/1/agent/settings` 非 404 | ✅   | **HTTP 401** (Clerk auth 擋住，route 存在)     |
+| 未修改 UI code                        | ✅   | 只做 branch 切換                               |
+| 未修改 backend API                    | ✅   |                                                |
+| 未 DB push / migrate / seed           | ✅   |                                                |
+| 未 push GitHub                        | ✅   |                                                |
 
 ## 7. 使用者操作指示
 
@@ -105,12 +108,12 @@ proxy: {
 
 ## 8. 未執行項目
 
-| 項目 | 原因 |
-|------|------|
-| 瀏覽器 E2E 截圖 | 非本輪任務範疇，需使用者自行確認 |
-| DB push / migrate | 明確禁止 |
-| GitHub push | 明確禁止 |
-| pnpm install | 明確禁止 |
+| 項目              | 原因                             |
+| ----------------- | -------------------------------- |
+| 瀏覽器 E2E 截圖   | 非本輪任務範疇，需使用者自行確認 |
+| DB push / migrate | 明確禁止                         |
+| GitHub push       | 明確禁止                         |
+| pnpm install      | 明確禁止                         |
 
 ## 9. 風險與待確認
 

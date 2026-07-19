@@ -23,22 +23,22 @@
 
 Step 7D（Agent API）依賴以下 DB 物件，main 分支的 schema 程式碼已齊全（`shipmentTrackings.ts`、`shipmentTrackingEvents.ts`、`sellerAgentTokens.ts`、`agentRunLogs.ts`，且 `index.ts` 已 export），但**目前 `DATABASE_URL` 指向的 DB 完全沒有這些物件**：
 
-| 目標物件 | main schema 是否定義 | 目前 DB 是否存在 |
-|---|---|---|
-| `shipment_trackings` | ✅ 已定義 | ❌ 不存在 |
-| `shipment_tracking_events` | ✅ 已定義 | ❌ 不存在 |
-| `seller_agent_tokens` | ✅ 已定義 | ❌ 不存在 |
-| `agent_run_logs` | ✅ 已定義 | ❌ 不存在 |
-| `shipment_tracking_events.idempotency_key` | ✅ 已定義 | ❌ 不存在 |
+| 目標物件                                   | main schema 是否定義 | 目前 DB 是否存在 |
+| ------------------------------------------ | -------------------- | ---------------- |
+| `shipment_trackings`                       | ✅ 已定義            | ❌ 不存在        |
+| `shipment_tracking_events`                 | ✅ 已定義            | ❌ 不存在        |
+| `seller_agent_tokens`                      | ✅ 已定義            | ❌ 不存在        |
+| `agent_run_logs`                           | ✅ 已定義            | ❌ 不存在        |
+| `shipment_tracking_events.idempotency_key` | ✅ 已定義            | ❌ 不存在        |
 
 ### 1.2 目前 DB 又多出 main schema 沒有定義的欄位（schema drift 的另一面）
 
 與此同時，目前 DB 的 `orders` 表**多出兩個 main schema 沒有定義的欄位**：
 
-| 欄位 | DB 現況 | main schema (`git show main:lib/db/src/schema/orders.ts`) | 目前 `qa/step6f` 分支 `lib/db/src/schema/orders.ts` |
-|---|---|---|---|
-| `orders.discount_amount` | 存在，型別 `integer`，`NOT NULL DEFAULT 0` | ❌ 未定義 | ✅ 已存在（L54：`discountAmount: integer("discount_amount").notNull().default(0)`，已隨 commit `ea84cc0 feat-step8j-order-discount-backend` 落盤於本分支）|
-| `orders.discount_note` | 存在，型別 `text`，nullable | ❌ 未定義 | ✅ 已存在（L55：`discountNote: text("discount_note")`，同上）|
+| 欄位                     | DB 現況                                    | main schema (`git show main:lib/db/src/schema/orders.ts`) | 目前 `qa/step6f` 分支 `lib/db/src/schema/orders.ts`                                                                                                        |
+| ------------------------ | ------------------------------------------ | --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `orders.discount_amount` | 存在，型別 `integer`，`NOT NULL DEFAULT 0` | ❌ 未定義                                                 | ✅ 已存在（L54：`discountAmount: integer("discount_amount").notNull().default(0)`，已隨 commit `ea84cc0 feat-step8j-order-discount-backend` 落盤於本分支） |
+| `orders.discount_note`   | 存在，型別 `text`，nullable                | ❌ 未定義                                                 | ✅ 已存在（L55：`discountNote: text("discount_note")`，同上）                                                                                              |
 
 > 補充說明（2026-06-08 盤點期間發生的變化）：在本次盤點過程中，另一位協作者於本分支提交了 `ea84cc0 feat-step8j-order-discount-backend`，把原本處於 dirty 狀態的 `discountAmount` / `discountNote` schema 與對應的後端邏輯正式 commit 到 `qa/step6f-cvs-store-selection-browser-mobile` 分支（**非 main**）。這不影響本文件對 DB 現況與 main schema 落差的分析結論——main 分支仍是 `de1dcc3`，未包含這兩個欄位；DB 現況也未被本次盤點變更。
 
@@ -151,6 +151,7 @@ Do you still want to push changes?
 **推薦採用方案 A**：先把 `discountAmount` / `discountNote` 補進 main 的 `orders` schema，讓 main schema 與目前 DB 對齊，再重新執行 Step 7D 的 DB resync。
 
 理由總結：
+
 - 唯一一個**不需要刪除任何欄位、不會觸發資料遺失警告**的方案
 - 兩個欄位的設計已經有 Step 8I 規格文件背書，補進 main **不是臨時決定，而是把已規劃、已驗證的設計提前同步**
 - 範圍可以做到非常小：只新增兩行 schema 定義到 main 的 `orders.ts`，不動 API、不動 UI、不動其他表

@@ -30,6 +30,7 @@ Step 7E-1a-REBUILD 已在獨立 worktree `/home/runner/workspace-step7e-rebuild`
 ```
 
 來源驗證：
+
 - taskTitle 包含 `Step 7E-1a-REBUILD` ✅
 - status = `completed` ✅
 - rawReply 長度 > 100 chars ✅
@@ -53,7 +54,7 @@ Step 7E-1a-REBUILD 已在獨立 worktree `/home/runner/workspace-step7e-rebuild`
 ```typescript
 const HANDOFF_PATH_B = path.resolve(
   path.dirname(process.argv[1]),
-  "../../../dev-handoff/latest-B.json"
+  "../../../dev-handoff/latest-B.json",
 );
 ```
 
@@ -67,11 +68,11 @@ const HANDOFF_PATH_B = path.resolve(
 
 ## 5. 同步了哪些檔案
 
-| 操作 | 來源 | 目標 |
-|------|------|------|
-| cp | `/home/runner/workspace-step7e-rebuild/dev-handoff/latest-B.json` | `/home/runner/workspace/dev-handoff/latest-B.json` |
-| cp | `/home/runner/workspace-step7e-rebuild/dev-handoff/latest-B.md` | `/home/runner/workspace/dev-handoff/latest-B.md` |
-| node (建立) | 來源：latest-B.json | `/home/runner/workspace/dev-handoff/latest.json` |
+| 操作        | 來源                                                              | 目標                                               |
+| ----------- | ----------------------------------------------------------------- | -------------------------------------------------- |
+| cp          | `/home/runner/workspace-step7e-rebuild/dev-handoff/latest-B.json` | `/home/runner/workspace/dev-handoff/latest-B.json` |
+| cp          | `/home/runner/workspace-step7e-rebuild/dev-handoff/latest-B.md`   | `/home/runner/workspace/dev-handoff/latest-B.md`   |
+| node (建立) | 來源：latest-B.json                                               | `/home/runner/workspace/dev-handoff/latest.json`   |
 
 ---
 
@@ -91,6 +92,7 @@ const HANDOFF_PATH_B = path.resolve(
 ```
 
 填入規則：
+
 - `rawReply` = `latest-B.rawReply` 的 exact copy，不得摘要、不得改寫
 - `taskTitle` / `branch` / `status` 與 `latest-B` 一致
 - `updatedAt` = 本次同步的 ISO timestamp
@@ -106,6 +108,7 @@ latest.json relay copy OK: Step 7E-1a-REBUILD：重建 seller_agent_settings sch
 ```
 
 驗證項目：
+
 - `rawReply` 完全一致 ✅
 - `taskTitle` 一致 ✅
 - `branch` 一致 ✅

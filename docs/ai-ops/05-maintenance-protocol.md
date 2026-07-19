@@ -2,11 +2,11 @@
 
 ## 1. 檔案權限分級
 
-| 級別 | 檔案 | 規則 |
-|---|---|---|
+| 級別        | 檔案                                                                                                          | 規則                                      |
+| ----------- | ------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
 | L0 永不直改 | `CLAUDE.md`（Dev Handoff 協議）、`docs/order-step*.md` 既定 spec、`lib/api-zod` `lib/api-client-react` 生成物 | 要改先問使用者；生成物只能由 codegen 更新 |
-| L1 改前先問 | `AGENTS.md` 的最小規則清單、`shippingFee.ts` 費率表、任何商業參數、`data/` 既有資料檔 | 提案＋理由＋後果，等使用者批准 |
-| L2 可自行改 | `docs/ai-ops/*`（含本檔 Lessons Log）、`.agents/memory/*`、程式碼（依 03 檔判準與驗證）、新增文件 | 改完 read-back＋回報路徑 |
+| L1 改前先問 | `AGENTS.md` 的最小規則清單、`shippingFee.ts` 費率表、任何商業參數、`data/` 既有資料檔                         | 提案＋理由＋後果，等使用者批准            |
+| L2 可自行改 | `docs/ai-ops/*`（含本檔 Lessons Log）、`.agents/memory/*`、程式碼（依 03 檔判準與驗證）、新增文件             | 改完 read-back＋回報路徑                  |
 
 ## 2. 踩坑寫回哪裡（兩個 log 的分工）
 
@@ -18,6 +18,7 @@
 
 ```markdown
 ### YYYY-MM-DD - 事件標題
+
 - 觸發情境：
 - 發生錯誤：
 - 根因：
@@ -69,6 +70,7 @@
 ## Lessons Log
 
 ### 2026-07-07 - 同一本機 clone 被兩個 AI session 同時操作，分支被互相覆蓋
+
 - 觸發情境：Fable 5 主 session 在 `Desktop\pika-system` commit+push 期間，制度庫另一個 session 在同一目錄 `git reset` 回舊 commit，導致本機分支倒退、已 push 的檔案從磁碟消失（remote 未受損，靠 `git merge --ff-only origin/main` 恢復）。
 - 發生錯誤：兩條工作線在同一個 working copy 上互踩；若當時尚未 push，工作會直接遺失。
 - 根因：CLAUDE.md 的 A/B 協議只隔離了 dev-handoff 檔案，沒有隔離 git 分支與 working tree。
@@ -77,6 +79,7 @@
 - 可刪除或合併的舊規則：無。
 
 ### 2026-07-07 - 初始化
+
 - 觸發情境：Fable 5 制度建立 session。
 - 發生錯誤：（非錯誤）記錄基準事實：pika-system 原不在本機，clone 至 `C:\Users\Lnovo\Desktop\pika-system`；成本/毛利模組與 Sheet 整合當時不存在；成本 Sheet 匿名 401 需 SA。
 - 根因：—
