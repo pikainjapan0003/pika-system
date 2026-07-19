@@ -11,8 +11,7 @@ export function multiplyMoneyByQuantity(
   unitPrice: string,
   quantity: MoneyQuantityInput,
 ): string {
-  return ExactDecimal
-    .from(unitPrice)
+  return ExactDecimal.from(unitPrice)
     .multiply(ExactDecimal.from(String(quantity)))
     .toDecimalPlaces(2);
 }

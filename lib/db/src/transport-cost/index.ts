@@ -66,18 +66,27 @@ export class ExactDecimal {
   }
 
   multiply(other: ExactDecimal): ExactDecimal {
-    return new ExactDecimal(this.numerator * other.numerator, this.denominator * other.denominator);
+    return new ExactDecimal(
+      this.numerator * other.numerator,
+      this.denominator * other.denominator,
+    );
   }
 
   divide(other: ExactDecimal): ExactDecimal {
     if (other.numerator === 0n) {
       throw new RangeError("Cannot divide a decimal by zero");
     }
-    return new ExactDecimal(this.numerator * other.denominator, this.denominator * other.numerator);
+    return new ExactDecimal(
+      this.numerator * other.denominator,
+      this.denominator * other.numerator,
+    );
   }
 
   equals(other: ExactDecimal): boolean {
-    return this.numerator === other.numerator && this.denominator === other.denominator;
+    return (
+      this.numerator === other.numerator &&
+      this.denominator === other.denominator
+    );
   }
 
   isNegative(): boolean {
@@ -102,9 +111,10 @@ export class ExactDecimal {
     }
 
     const digits = quotient.toString().padStart(scale + 1, "0");
-    const unsigned = scale === 0
-      ? digits
-      : `${digits.slice(0, -scale)}.${digits.slice(-scale)}`;
+    const unsigned =
+      scale === 0
+        ? digits
+        : `${digits.slice(0, -scale)}.${digits.slice(-scale)}`;
     return negative && quotient !== 0n ? `-${unsigned}` : unsigned;
   }
 
@@ -180,28 +190,46 @@ function parsePositiveQuantity(value: QuantityInput): bigint | null {
 }
 
 function isEmptyDecimal(value: DecimalInput): value is null | undefined | "" {
-  return value === null || value === undefined || (typeof value === "string" && value.trim() === "");
+  return (
+    value === null ||
+    value === undefined ||
+    (typeof value === "string" && value.trim() === "")
+  );
 }
 
-function parseOptionalNonNegativeDecimal(value: DecimalInput, fieldName: string): ExactDecimal {
-  const parsed = isEmptyDecimal(value) ? ExactDecimal.zero() : ExactDecimal.from(value);
+function parseOptionalNonNegativeDecimal(
+  value: DecimalInput,
+  fieldName: string,
+): ExactDecimal {
+  const parsed = isEmptyDecimal(value)
+    ? ExactDecimal.zero()
+    : ExactDecimal.from(value);
   if (parsed.isNegative()) {
     throw new RangeError(`${fieldName} cannot be negative`);
   }
   return parsed;
 }
 
-function applyOverride(fieldName: string, calculated: ExactDecimal, override?: ManualOverride): ExactDecimal {
+function applyOverride(
+  fieldName: string,
+  calculated: ExactDecimal,
+  override?: ManualOverride,
+): ExactDecimal {
   if (!override?.isOverridden) {
     return calculated;
   }
   if (isEmptyDecimal(override.value)) {
     throw new TypeError(`${fieldName} override requires a decimal value`);
   }
-  return parseOptionalNonNegativeDecimal(override.value, `${fieldName} override`);
+  return parseOptionalNonNegativeDecimal(
+    override.value,
+    `${fieldName} override`,
+  );
 }
 
-export function calculateTransportCost(input: TransportCostInput): TransportCostResult {
+export function calculateTransportCost(
+  input: TransportCostInput,
+): TransportCostResult {
   const estQty = parsePositiveQuantity(input.estQty);
   if (estQty === null) {
     return {
@@ -227,14 +255,26 @@ export function calculateTransportCost(input: TransportCostInput): TransportCost
     };
   }
 
-  const exchangeRate = parseOptionalNonNegativeDecimal(input.exchangeRate, "exchangeRate");
+  const exchangeRate = parseOptionalNonNegativeDecimal(
+    input.exchangeRate,
+    "exchangeRate",
+  );
   const quantity = ExactDecimal.from(estQty);
   const trainJpy = parseOptionalNonNegativeDecimal(input.trainJpy, "trainJpy");
   const fuelJpy = parseOptionalNonNegativeDecimal(input.fuelJpy, "fuelJpy");
-  const parkingJpy = parseOptionalNonNegativeDecimal(input.parkingJpy, "parkingJpy");
+  const parkingJpy = parseOptionalNonNegativeDecimal(
+    input.parkingJpy,
+    "parkingJpy",
+  );
   const etcJpy = parseOptionalNonNegativeDecimal(input.etcJpy, "etcJpy");
-  const cardboardJpy = parseOptionalNonNegativeDecimal(input.cardboardJpy, "cardboardJpy");
-  const shippingJpy = parseOptionalNonNegativeDecimal(input.shippingJpy, "shippingJpy");
+  const cardboardJpy = parseOptionalNonNegativeDecimal(
+    input.cardboardJpy,
+    "cardboardJpy",
+  );
+  const shippingJpy = parseOptionalNonNegativeDecimal(
+    input.shippingJpy,
+    "shippingJpy",
+  );
 
   const fee1_5Pct = applyOverride(
     "fee1_5Pct",
@@ -259,7 +299,12 @@ export function calculateTransportCost(input: TransportCostInput): TransportCost
   );
   const transportPerItem = applyOverride(
     "transportPerItem",
-    etcJpy.add(trainJpy).add(fuelJpy).add(parkingJpy).add(fee1_5Pct).divide(quantity),
+    etcJpy
+      .add(trainJpy)
+      .add(fuelJpy)
+      .add(parkingJpy)
+      .add(fee1_5Pct)
+      .divide(quantity),
     input.overrides?.transportPerItem,
   );
   const finalCostPerItem = applyOverride(

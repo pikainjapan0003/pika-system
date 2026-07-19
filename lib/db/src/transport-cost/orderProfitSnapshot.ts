@@ -1,8 +1,6 @@
 import { ExactDecimal } from "./index.ts";
 import type { DecimalInput } from "./index.ts";
-import {
-  calculateProductUnitProfit,
-} from "./productUnitProfit.ts";
+import { calculateProductUnitProfit } from "./productUnitProfit.ts";
 import type {
   CalculateProductUnitProfitInput,
   PendingProductUnitProfit,
@@ -36,23 +34,25 @@ export interface InitialOrderProfitSnapshot extends OrderProfitSnapshotValues {
 
 export type BackfillOrderProfitSnapshotResult =
   | {
-    outcome: "backfilled";
-    values: OrderProfitSnapshotValues;
-    profitSnapshotBackfilledAt: Date;
-  }
+      outcome: "backfilled";
+      values: OrderProfitSnapshotValues;
+      profitSnapshotBackfilledAt: Date;
+    }
   | {
-    outcome: "still_pending";
-    reason: PendingProductUnitProfit["reason"];
-  }
+      outcome: "still_pending";
+      reason: PendingProductUnitProfit["reason"];
+    }
   | {
-    outcome: "rejected";
-    reason: "snapshot_not_pending";
-  };
+      outcome: "rejected";
+      reason: "snapshot_not_pending";
+    };
 
 function isEmpty(value: DecimalInput): value is null | undefined | "" {
-  return value === null
-    || value === undefined
-    || (typeof value === "string" && value.trim() === "");
+  return (
+    value === null ||
+    value === undefined ||
+    (typeof value === "string" && value.trim() === "")
+  );
 }
 
 function captureInputDecimal(value: DecimalInput): string | null {
@@ -79,7 +79,9 @@ function snapshotValuesFromResult(
 ): OrderProfitSnapshotValues {
   const inputValues = {
     profitSnapshotCostJpy: captureInputDecimal(input.costJpy),
-    profitSnapshotExchangeRate: captureInputDecimal(input.storePurchaseExchangeRate),
+    profitSnapshotExchangeRate: captureInputDecimal(
+      input.storePurchaseExchangeRate,
+    ),
   };
 
   if (result.status === "pending_confirmation") {
@@ -95,11 +97,20 @@ function snapshotValuesFromResult(
 
   return {
     ...inputValues,
-    profitSnapshotProductCostTwd: result.productCostTwd.toDecimalPlaces(ORDER_PROFIT_SNAPSHOT_SCALE),
-    profitSnapshotTransportCostTwd: result.unitTransportCostTwd.toDecimalPlaces(ORDER_PROFIT_SNAPSHOT_SCALE),
-    profitSnapshotUnitProfitTwd: result.unitProfitTwd.toDecimalPlaces(ORDER_PROFIT_SNAPSHOT_SCALE),
-    profitSnapshotFullUnitProfitTwd: result.fullUnitProfitTwd.toDecimalPlaces(ORDER_PROFIT_SNAPSHOT_SCALE),
-    profitSnapshotStatus: result.transportStatus === "exempt" ? "exempt" : "captured",
+    profitSnapshotProductCostTwd: result.productCostTwd.toDecimalPlaces(
+      ORDER_PROFIT_SNAPSHOT_SCALE,
+    ),
+    profitSnapshotTransportCostTwd: result.unitTransportCostTwd.toDecimalPlaces(
+      ORDER_PROFIT_SNAPSHOT_SCALE,
+    ),
+    profitSnapshotUnitProfitTwd: result.unitProfitTwd.toDecimalPlaces(
+      ORDER_PROFIT_SNAPSHOT_SCALE,
+    ),
+    profitSnapshotFullUnitProfitTwd: result.fullUnitProfitTwd.toDecimalPlaces(
+      ORDER_PROFIT_SNAPSHOT_SCALE,
+    ),
+    profitSnapshotStatus:
+      result.transportStatus === "exempt" ? "exempt" : "captured",
   };
 }
 
@@ -136,6 +147,8 @@ export function backfillPendingOrderProfitSnapshot(
   };
 }
 
-export function displayOrderProfitSnapshotAmount(value: string | null): string | null {
+export function displayOrderProfitSnapshotAmount(
+  value: string | null,
+): string | null {
   return value === null ? null : ExactDecimal.from(value).toDecimalPlaces(0);
 }

@@ -27,9 +27,7 @@
       "status": "completed"
     }
   ],
-  "completedCities": [
-    "新北市"
-  ],
+  "completedCities": ["新北市"],
   "failedCities": [],
   "dbTotalFinal": 4245,
   "completedAt": "2026-06-04T06:08:06.078Z"

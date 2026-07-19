@@ -28,8 +28,12 @@ export interface ValidCustomerInput {
 export const CUSTOMER_TIERS = customerTierEnum;
 
 export function parseCustomerTier(value: unknown): CustomerTier {
-  const tier = value === undefined || value === null || value === "" ? "general" : value;
-  if (typeof tier !== "string" || !CUSTOMER_TIERS.includes(tier as CustomerTier)) {
+  const tier =
+    value === undefined || value === null || value === "" ? "general" : value;
+  if (
+    typeof tier !== "string" ||
+    !CUSTOMER_TIERS.includes(tier as CustomerTier)
+  ) {
     throw new TypeError("tier must be general, vip, wholesale, or partner");
   }
   return tier as CustomerTier;
@@ -46,7 +50,9 @@ function optionalText(value: unknown): string | null {
   return typeof value === "string" && value.trim() !== "" ? value.trim() : null;
 }
 
-export function validateCustomerInput(input: CustomerInput): ValidCustomerInput {
+export function validateCustomerInput(
+  input: CustomerInput,
+): ValidCustomerInput {
   return {
     code: requiredText(input.code, "code"),
     name: requiredText(input.name, "name"),

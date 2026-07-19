@@ -1,4 +1,12 @@
-import { check, index, integer, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import {
+  check,
+  index,
+  integer,
+  pgTable,
+  serial,
+  text,
+  timestamp,
+} from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
 import { storesTable } from "./stores.ts";
@@ -17,9 +25,18 @@ export const auditLogsTable = pgTable(
   },
   (table) => [
     index("audit_logs_store_at_idx").on(table.storeId, table.at),
-    check("audit_logs_actor_non_empty", sql`char_length(${table.actor}) BETWEEN 1 AND 200`),
-    check("audit_logs_action_non_empty", sql`char_length(${table.action}) BETWEEN 1 AND 100`),
-    check("audit_logs_target_non_empty", sql`char_length(${table.target}) BETWEEN 1 AND 200`),
+    check(
+      "audit_logs_actor_non_empty",
+      sql`char_length(${table.actor}) BETWEEN 1 AND 200`,
+    ),
+    check(
+      "audit_logs_action_non_empty",
+      sql`char_length(${table.action}) BETWEEN 1 AND 100`,
+    ),
+    check(
+      "audit_logs_target_non_empty",
+      sql`char_length(${table.target}) BETWEEN 1 AND 200`,
+    ),
   ],
 );
 
