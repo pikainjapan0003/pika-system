@@ -76,7 +76,8 @@ jobs:
             src/routes/logisticsSyncCommitKillSwitch.route.test.mjs \
             src/routes/customersAndProfitIsolation.route.test.mjs \
             src/routes/public.route.test.mjs \
-            src/routes/skills.route.test.mjs
+            src/routes/skills.route.test.mjs \
+            src/routes/devHandoffProductionGuard.route.test.mjs
 
       - name: Test pure function suites
         id: pure-function-tests
@@ -86,7 +87,9 @@ jobs:
           mapfile -t pure_tests < <(
             find ../../lib -type f -name '*.test.mjs' ! -path '*/generated/*' -print
             find ../shop-app/src/lib -type f -name '*.test.mjs' -print
+            find ../shop-app/src/test -type f -name '*.test.mjs' -print
             find src/lib -type f -name '*.test.mjs' -print
+            find src -maxdepth 1 -type f -name '*.integration.test.mjs' -print
           )
           TSX_TSCONFIG_PATH=../shop-app/tsconfig.json node \
             --experimental-test-module-mocks \
