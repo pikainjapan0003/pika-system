@@ -56,6 +56,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Check Prettier formatting
+        run: pnpm exec prettier --check . --ignore-path .prettierignore --end-of-line auto
+
       - name: Create disposable test schema
         run: pnpm --filter @workspace/db run push-force
 
