@@ -19,6 +19,8 @@
 
 ## 開發測試
 
+需要人工驗證、但尚未納入主 CI 的瀏覽器測試放在 `e2e/pending/`。可從 GitHub Actions 手動執行「Pending E2E」；失敗時會保留 7 天的 trace 與截圖，且不影響主 CI 的紅綠燈。
+
 需要 Node.js 24、Corepack 與 pnpm。先安裝固定 lockfile 依賴：
 
 ```bash
