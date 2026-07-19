@@ -1,1 +1,9 @@
 pnpm-lock.yaml
+.agents/**
+.claude/**
+data/**
+dev-handoff/**
+**/generated/**
+**/.generated/**
+**/dist/**
+**/node_modules/**
