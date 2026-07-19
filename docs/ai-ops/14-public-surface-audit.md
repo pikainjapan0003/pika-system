@@ -191,3 +191,4 @@
 - commit `34c74e8` 已在所有 middleware 與公開路由前設定 `Referrer-Policy: no-referrer`，降低 bearer URL 經瀏覽器 Referer 外流的風險。
 - 同一 commit 設定 `X-Content-Type-Options: nosniff`，避免瀏覽器自行猜測回應內容型別。
 - 真實 Express HTTP 測試已覆蓋成功與 404 回應，兩種回應都必須帶上述標頭；未加入會改變現有頁面載入語意的 CSP/HSTS。
+- BATCH-13 包2已在 SPA HTML `<head>` 加入 `<meta name="referrer" content="no-referrer" />`，補足 API 回應標頭無法涵蓋公開追蹤頁 HTML 的缺口。
