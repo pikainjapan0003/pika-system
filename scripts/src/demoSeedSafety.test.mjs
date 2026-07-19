@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { AWAITING_PAYMENT_DEMO_ORDER } from "../demo-seed.mjs";
+
 import {
   assertDemoAppendAllowed,
   parseExplicitDemoDatabaseUrl,
@@ -102,4 +104,11 @@ test("rejects duplicate, unknown, malformed, and non-PostgreSQL arguments", () =
       ]),
     /must use postgres/,
   );
+});
+
+test("the demo fixture includes an explicit awaiting-payment receipt state", () => {
+  assert.deepEqual(AWAITING_PAYMENT_DEMO_ORDER, {
+    publicTokenPrefix: "demo-order-awaiting-payment-",
+    status: "awaiting_payment",
+  });
 });
