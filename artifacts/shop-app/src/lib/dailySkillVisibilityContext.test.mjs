@@ -137,7 +137,12 @@ test("an older request cannot overwrite a newer refresh result", async () => {
   older.resolve(
     response([{ configured: true, enabled: false, skillKey: "S-19" }]),
   );
-  await Promise.resolve();
+  await assert.rejects(
+    waitFor(
+      () => assert.equal(view.getByTestId("customers").textContent, "hidden"),
+      { interval: 10, timeout: 120 },
+    ),
+  );
   assert.equal(view.getByTestId("customers").textContent, "visible");
 });
 
