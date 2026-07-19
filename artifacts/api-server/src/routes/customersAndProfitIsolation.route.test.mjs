@@ -30,6 +30,7 @@ if (!process.env.DATABASE_URL) {
   const { db, ordersTable, pool, productsTable, storesTable } =
     await import("@workspace/db");
   const { eq } = await import("drizzle-orm");
+  const { default: auditLogsRouter } = await import("./auditLogs.ts");
   const { default: customersRouter } = await import("./customers.ts");
   const { default: ordersRouter } = await import("./orders.ts");
 
@@ -39,6 +40,7 @@ if (!process.env.DATABASE_URL) {
     req.log = { info() {}, warn() {}, error() {} };
     next();
   });
+  app.use("/api", auditLogsRouter);
   app.use("/api", customersRouter);
   app.use("/api", ordersRouter);
 
@@ -190,12 +192,42 @@ if (!process.env.DATABASE_URL) {
     assert.equal(crossStoreCustomer.status, 404);
   });
 
-  test("customer routes reject unauthenticated requests", async () => {
-    const response = await request("GET", `/stores/${storeAId}/customers`, {
+  test("customer read routes reject unauthenticated and cross-store requests", async () => {
+    const list = await request("GET", `/stores/${storeAId}/customers`, {
       userId: null,
     });
+    const detail = await request("GET", `/stores/${storeAId}/customers/1`, {
+      userId: null,
+    });
+    const exported = await request(
+      "GET",
+      `/stores/${storeAId}/customers/export`,
+      { userId: null },
+    );
+    const crossStoreExport = await request(
+      "GET",
+      `/stores/${storeAId}/customers/export`,
+      { userId: MERCHANT_B },
+    );
 
-    assert.equal(response.status, 401);
+    assert.equal(list.status, 401);
+    assert.equal(detail.status, 401);
+    assert.equal(exported.status, 401);
+    assert.equal(crossStoreExport.status, 403);
+  });
+
+  test("audit log reads reject unauthenticated and cross-store requests", async () => {
+    const unauthenticated = await request(
+      "GET",
+      `/stores/${storeAId}/audit-logs`,
+      { userId: null },
+    );
+    const crossStore = await request("GET", `/stores/${storeAId}/audit-logs`, {
+      userId: MERCHANT_B,
+    });
+
+    assert.equal(unauthenticated.status, 401);
+    assert.equal(crossStore.status, 403);
   });
 
   test("customer cleartext export needs its header and CSV formulas stay neutralized", async () => {
