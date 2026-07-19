@@ -43,6 +43,8 @@ node --test lib/privacy/src/index.test.mjs lib/shipping/src/index.test.mjs
 
 完整 CI 會在 Ubuntu runner 執行 typecheck、build 與 PostgreSQL route tests。含資料庫的測試只能使用 workflow 提供的拋棄式服務或另建測試庫；不要把 production `DATABASE_URL` 帶進本機測試。
 
+React Provider 與導覽元件測試使用 `@testing-library/react`＋`jsdom` 的共用 DOM bootstrap，由 `node:test` 執行，不需要另開瀏覽器。
+
 ## 拋棄式示範資料
 
 示範資料腳本會建立假店鋪、假客戶、部分已開技能、成本商品與四種訂單狀態。唯一支援入口如下；它只接受命令列明確提供的拋棄式 PostgreSQL URL，並會拒絕含 `replit` 或 `prod` 字樣的目標：
