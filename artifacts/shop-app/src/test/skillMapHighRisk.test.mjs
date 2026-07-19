@@ -83,7 +83,7 @@ mock.module("../pages/Dashboard.tsx", {
   },
 });
 
-const { cleanup, fireEvent, render, waitFor } =
+const { cleanup, fireEvent, render, waitFor, within } =
   await import("@testing-library/react");
 const { default: SkillMapPage } = await import("../pages/SkillMap.tsx");
 
@@ -102,7 +102,11 @@ after(() => {
 });
 
 async function openHighRiskConfirmation(view) {
-  const toggle = await view.findByRole("button", { name: "可開啟" });
+  const skillKey = await view.findByText("S-19");
+  const skillCard = skillKey.closest("article");
+  assert.ok(skillCard);
+  const toggle = within(skillCard).getByRole("button");
+  await waitFor(() => assert.equal(toggle.disabled, false));
   fireEvent.click(toggle);
   return view.findByRole("dialog", { name: /第二次確認：客戶個資保護/ });
 }
