@@ -70,6 +70,6 @@
 
 ## BATCH-12 修復結果（2026-07-19）
 
-- commit `ab2d268` 將首頁最近訂單金額改為 `NT$`，並明示為「商品小計」；顯示來源與既有 `totalPrice` 語意不變。
+- commit `ab2d268` 將首頁最近訂單金額改為 `NT$`，並把顯示口徑改用與訂單列表相同的既有 fallback（`orderTotal`，缺值時 `totalPrice+shippingFee`），抽出共用 `resolveOrderDisplayTotal` helper；未發明新計算。畫面未加文字標籤。
 - commit `dabee42` 將公開單品、公開購物車與後台訂單編輯的「畫面預覽」乘加運算改為共用 `ExactDecimal` helper，涵蓋 `0.1 × 3` 等浮點判別案例。
 - 上述變更只影響顯示預覽；送出、資料庫寫入、訂單快照與成本毛利公式均未變更。顯示層仍依既有規則定格到兩位小數。
