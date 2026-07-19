@@ -3,7 +3,14 @@
 日期：2026-07-19  
 範圍：唯讀盤點現有依賴與測試結構；本包未安裝套件、未修改產品碼。
 
-## 結論
+## BATCH-13 落地狀態
+
+- 測試基建已於 commit `25a3703` 落地：僅在 `@workspace/shop-app` 新增 `@testing-library/react`、`jsdom` 與共用 DOM bootstrap。
+- Provider 五態測試已於 commit `d141715` 落地；Gate／BottomNav 五態測試已於 commit `6f8a3f1` 落地，本機合跑結果為 `10 pass / 0 fail`。
+- CI 純測試命令同步使用 Node module-mock 旗標與 shop-app tsconfig；現行 45 個純測試檔合跑結果為 `166 pass / 0 fail`。
+- 下方內容保留為導入前的可行性紀錄，不再代表目前依賴狀態。
+
+## 導入前結論
 
 現有依賴無法在 `node:test` 中做有判別力的 Provider 狀態測試。repo 沒有 DOM 環境，也沒有 React 元件測試 renderer；目前單元測試只能鎖住抽出的純函式，無法實際觸發 `useEffect`、非同步 `refresh()`、背景刷新與子元件重繪。
 
@@ -44,7 +51,7 @@
 4. 至少釘住：初次載入顯示 loading、首次完成後顯示 children、背景 refresh 保留 children、不讓較舊 request 覆蓋較新結果、錯誤時進階 surface fail-closed。
 5. Playwright 繼續保留一條技能開關端到端測試，形成「Provider 單測＋整頁 E2E」雙層防線。
 
-## 未解問題
+## 原報告未解問題的後續
 
-- 新增測試依賴是否接受，需由審查位確認；本報告不代替批准。
+- 新增測試依賴已由審查位核准並於 BATCH-13 落地。
 - BATCH-12 包 1 的 Windows→Docker E2E command harness 仍需另案整理，不能把「容器啟動」誤當成 Playwright 已執行。

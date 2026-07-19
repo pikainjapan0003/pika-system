@@ -1,5 +1,15 @@
 # Prettier 欠帳盤點
 
+## BATCH-13 後現況（2026-07-19）
+
+- BATCH-13 包 13 已完成 `lib/`：75 個可檢查檔全綠，49 個實際 Git 變更均通過舊版重跑 Prettier 的逐位元比對。
+- BATCH-13 包 14 已完成 `docs/`：159 個可檢查檔全綠，141 個實際 Git 變更均通過同款逐位元比對。
+- 依原盤點範圍並排除 `generated/`、`.generated/`、`dist/`、`node_modules/`、控制目錄與資料檔後，目前剩 257 個欠帳：`artifacts/` 256 個，另有 `e2e/playwright.config.mjs` 1 個。
+- repo root、`scripts/`、`lib/`、`docs/` 目前皆為 0；下一個主要機械化批次只剩 `artifacts/`，E2E 單檔可隨該批一併收尾。
+- 下方清單是 2026-07-18 的歷史基準，不再代表目前剩餘欠帳。
+
+## 歷史基準（2026-07-18）
+
 - 盤點日：2026-07-18
 - 指令：`prettier --check`（涵蓋 artifacts、lib、scripts、e2e、docs 與 repo root）
 - 排除：`generated/`、`dist/`、`node_modules/`
@@ -7,7 +17,7 @@
 - 本包只列欠帳，不批次改寫；指定的 `App.tsx` 與 `customerRoutes.test.mjs` 已另外格式化。
 - `pnpm-lock.yaml` 已退出 Prettier 管轄並自下方清單剔除；lockfile 由 pnpm 產生，交給 Prettier 排版會在下次安裝時造成全檔重生與無意義 churn。
 
-## 依第一層目錄統計
+### 依第一層目錄統計
 
 | 範圍        | 檔案數 |
 | ----------- | -----: |
@@ -17,7 +27,7 @@
 | lib         |     63 |
 | scripts     |     37 |
 
-## 完整違規清單
+### 完整違規清單
 
 - `artifacts/api-server/build.mjs`
 - `artifacts/api-server/src/app.ts`
