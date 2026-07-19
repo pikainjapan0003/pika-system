@@ -10,6 +10,11 @@ import {
   parseExplicitDemoSeedOptions,
 } from "./src/demoSeedSafety.ts";
 
+export const AWAITING_PAYMENT_DEMO_ORDER = Object.freeze({
+  publicTokenPrefix: "demo-order-awaiting-payment-",
+  status: "awaiting_payment",
+});
+
 function snapshotInput({ product, route, trip, store, unitPriceTwd }) {
   return {
     unitPriceTwd,
@@ -261,6 +266,17 @@ export async function seedDemoData(databaseUrl, { append = false } = {}) {
             unitPrice: pendingProduct.price,
             totalPrice: multiplyMoneyByQuantity(pendingProduct.price, 1),
             ...pendingSnapshot,
+          },
+          {
+            ...sharedOrderValues,
+            productId: allocatedProduct.id,
+            productName: allocatedProduct.name,
+            publicToken: `${AWAITING_PAYMENT_DEMO_ORDER.publicTokenPrefix}${runId}`,
+            quantity: 1,
+            unitPrice: allocatedProduct.price,
+            totalPrice: multiplyMoneyByQuantity(allocatedProduct.price, 1),
+            status: AWAITING_PAYMENT_DEMO_ORDER.status,
+            ...allocatedSnapshot,
           },
           {
             ...sharedOrderValues,
