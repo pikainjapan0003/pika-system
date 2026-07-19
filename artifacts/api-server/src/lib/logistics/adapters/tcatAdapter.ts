@@ -59,22 +59,21 @@ export async function queryTcatTracking(
 
   let res: Response;
   try {
-    res = await doFetch(`${BASE_URL}?BillID=${encodeURIComponent(trackingCode)}`, {
-      method: "GET",
-      headers: { "User-Agent": USER_AGENT },
-      signal: AbortSignal.timeout(timeoutMs),
-    });
+    res = await doFetch(
+      `${BASE_URL}?BillID=${encodeURIComponent(trackingCode)}`,
+      {
+        method: "GET",
+        headers: { "User-Agent": USER_AGENT },
+        signal: AbortSignal.timeout(timeoutMs),
+      },
+    );
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     if (
       err instanceof Error &&
       (err.name === "TimeoutError" || err.name === "AbortError")
     ) {
-      return failure(
-        "TIMEOUT",
-        `Request timed out after ${timeoutMs}ms`,
-        true,
-      );
+      return failure("TIMEOUT", `Request timed out after ${timeoutMs}ms`, true);
     }
     return failure("NETWORK_FAILED", msg, true);
   }
@@ -128,7 +127,11 @@ export async function queryTcatTracking(
   // Sort newest first by occurredAt
   events.sort((a, b) => {
     if (!a.occurredAt || !b.occurredAt) return 0;
-    return a.occurredAt > b.occurredAt ? -1 : a.occurredAt < b.occurredAt ? 1 : 0;
+    return a.occurredAt > b.occurredAt
+      ? -1
+      : a.occurredAt < b.occurredAt
+        ? 1
+        : 0;
   });
 
   const latest = events[0];
@@ -152,7 +155,10 @@ const DATETIME_RE = /(\d{4}\/\d{2}\/\d{2})\s+(\d{2}:\d{2})/;
  * First row has rowspan carrying the trackingCode; subsequent rows have 3 cells.
  * Each data row: [statusText | datetime | location]
  */
-function parseResultTable(tableHtml: string, trackingCode: string): TrackingEvent[] {
+function parseResultTable(
+  tableHtml: string,
+  trackingCode: string,
+): TrackingEvent[] {
   const rows = tableHtml.match(/<tr[^>]*>([\s\S]*?)<\/tr>/gi) ?? [];
   const events: TrackingEvent[] = [];
 
@@ -173,7 +179,10 @@ function parseResultTable(tableHtml: string, trackingCode: string): TrackingEven
     const textWithoutDt = textWithoutCode.replace(occurredAt, "").trim();
 
     // Split remaining text into parts; first non-empty is status, last is location
-    const parts = textWithoutDt.split(/\s{2,}|\t/).map((p) => p.trim()).filter(Boolean);
+    const parts = textWithoutDt
+      .split(/\s{2,}|\t/)
+      .map((p) => p.trim())
+      .filter(Boolean);
 
     let statusText = "";
     let location: string | null = null;

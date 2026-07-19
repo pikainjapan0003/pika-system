@@ -9,7 +9,11 @@
  * 修改 provider metadata 時兩邊要同步。
  */
 
-export type CanonicalTrackingProvider = "711" | "familymart" | "tcat" | "postoffice";
+export type CanonicalTrackingProvider =
+  | "711"
+  | "familymart"
+  | "tcat"
+  | "postoffice";
 
 export type LogisticsProviderMeta = {
   code: CanonicalTrackingProvider;
@@ -76,15 +80,20 @@ export const LOGISTICS_PROVIDERS: readonly LogisticsProviderMeta[] = [
 // alias（trim + lowercase 後）→ canonical code。
 // 刻意不收錄：「宅配」（語意歧義，不可斷定黑貓或郵局）、home_delivery / other（是配送方式
 // /fallback，不是物流商）。未知值一律回 null，不要默默轉 other。
-const PROVIDER_ALIASES: Record<string, CanonicalTrackingProvider> = Object.fromEntries(
-  LOGISTICS_PROVIDERS.flatMap((p) => p.aliases.map((a) => [a.toLowerCase(), p.code])),
-);
+const PROVIDER_ALIASES: Record<string, CanonicalTrackingProvider> =
+  Object.fromEntries(
+    LOGISTICS_PROVIDERS.flatMap((p) =>
+      p.aliases.map((a) => [a.toLowerCase(), p.code]),
+    ),
+  );
 
-const PROVIDER_BY_CODE: Record<CanonicalTrackingProvider, LogisticsProviderMeta> =
-  Object.fromEntries(LOGISTICS_PROVIDERS.map((p) => [p.code, p])) as Record<
-    CanonicalTrackingProvider,
-    LogisticsProviderMeta
-  >;
+const PROVIDER_BY_CODE: Record<
+  CanonicalTrackingProvider,
+  LogisticsProviderMeta
+> = Object.fromEntries(LOGISTICS_PROVIDERS.map((p) => [p.code, p])) as Record<
+  CanonicalTrackingProvider,
+  LogisticsProviderMeta
+>;
 
 export function normalizeTrackingProvider(
   raw: string | null | undefined,
@@ -93,33 +102,48 @@ export function normalizeTrackingProvider(
   return PROVIDER_ALIASES[raw.trim().toLowerCase()] ?? null;
 }
 
-export function getProviderMeta(raw: string | null | undefined): LogisticsProviderMeta | null {
+export function getProviderMeta(
+  raw: string | null | undefined,
+): LogisticsProviderMeta | null {
   const code = normalizeTrackingProvider(raw);
   return code ? PROVIDER_BY_CODE[code] : null;
 }
 
-export function getProviderDisplayName(raw: string | null | undefined): string | null {
+export function getProviderDisplayName(
+  raw: string | null | undefined,
+): string | null {
   return getProviderMeta(raw)?.displayName ?? null;
 }
 
-export function getProviderShortName(raw: string | null | undefined): string | null {
+export function getProviderShortName(
+  raw: string | null | undefined,
+): string | null {
   return getProviderMeta(raw)?.shortName ?? null;
 }
 
 export function getSupportedAutoSyncProviders(): CanonicalTrackingProvider[] {
-  return LOGISTICS_PROVIDERS.filter((p) => p.supportsAutoSync).map((p) => p.code);
+  return LOGISTICS_PROVIDERS.filter((p) => p.supportsAutoSync).map(
+    (p) => p.code,
+  );
 }
 
 export function getUnsupportedAutoSyncProviders(): CanonicalTrackingProvider[] {
-  return LOGISTICS_PROVIDERS.filter((p) => !p.supportsAutoSync).map((p) => p.code);
+  return LOGISTICS_PROVIDERS.filter((p) => !p.supportsAutoSync).map(
+    (p) => p.code,
+  );
 }
 
 export function getExcelImportProviders(): CanonicalTrackingProvider[] {
-  return LOGISTICS_PROVIDERS.filter((p) => p.supportsExcelImport).map((p) => p.code);
+  return LOGISTICS_PROVIDERS.filter((p) => p.supportsExcelImport).map(
+    (p) => p.code,
+  );
 }
 
 /** cvsStores.provider（門市語境）→ tracking provider（貨態語境）單向對應 */
-export const CVS_PROVIDER_TO_TRACKING: Record<string, CanonicalTrackingProvider> = {
+export const CVS_PROVIDER_TO_TRACKING: Record<
+  string,
+  CanonicalTrackingProvider
+> = {
   seven: "711",
   family: "familymart",
 };

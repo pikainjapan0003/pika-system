@@ -28,7 +28,10 @@ import {
 } from "@workspace/db";
 import { queryPostOfficeTracking } from "../adapters/postOfficeAdapter.ts";
 import { queryTcatTracking } from "../adapters/tcatAdapter.ts";
-import type { NormalizedTrackingStatus, TrackingAdapterResult } from "../adapters/types.ts";
+import type {
+  NormalizedTrackingStatus,
+  TrackingAdapterResult,
+} from "../adapters/types.ts";
 import { toTrackingStatus } from "./familyMartTrackingWorker.ts";
 import { buildDryRunIdempotencyKey } from "./multiProviderDryRunWorker.ts";
 
@@ -104,7 +107,9 @@ export interface ControlledWriteDeps {
 /** postoffice 事件時間（台灣時區 YYYY/MM/DD HH:mm:ss）→ +08:00 Date；parse 失敗回 null */
 export function parsePostOfficeEventDate(raw: string | null): Date | null {
   if (!raw) return null;
-  const m = raw.trim().match(/^(\d{4})\/(\d{2})\/(\d{2})\s+(\d{2}):(\d{2}):(\d{2})$/);
+  const m = raw
+    .trim()
+    .match(/^(\d{4})\/(\d{2})\/(\d{2})\s+(\d{2}):(\d{2}):(\d{2})$/);
   if (!m) return null;
   const d = new Date(`${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:${m[6]}+08:00`);
   return Number.isNaN(d.getTime()) ? null : d;
@@ -119,7 +124,10 @@ export function parseTcatEventDate(raw: string | null): Date | null {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
-const EVENT_DATE_PARSERS: Record<ControlledWriteProvider, (raw: string | null) => Date | null> = {
+const EVENT_DATE_PARSERS: Record<
+  ControlledWriteProvider,
+  (raw: string | null) => Date | null
+> = {
   postoffice: parsePostOfficeEventDate,
   tcat: parseTcatEventDate,
 };
@@ -133,17 +141,24 @@ const DEFAULT_ADAPTERS: Record<ControlledWriteProvider, AdapterFn> = {
 const EMPTY_ERROR_CODES = new Set(["EMPTY_LIST", "NO_RESULT"]);
 
 function isTerminalStatus(normalized: NormalizedTrackingStatus): boolean {
-  return normalized === "picked_up" || normalized === "delivered" || normalized === "returned";
+  return (
+    normalized === "picked_up" ||
+    normalized === "delivered" ||
+    normalized === "returned"
+  );
 }
 
-const defaultSleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+const defaultSleep = (ms: number) =>
+  new Promise<void>((r) => setTimeout(r, ms));
 
 export async function runControlledDbWrite(
   inputs: ControlledWriteInput[],
   deps: ControlledWriteDeps = {},
 ): Promise<ControlledWriteSummary> {
   if (inputs.length > MAX_BATCH_SIZE) {
-    throw new Error(`BATCH_SIZE_EXCEEDED: got ${inputs.length} jobs, max ${MAX_BATCH_SIZE}`);
+    throw new Error(
+      `BATCH_SIZE_EXCEEDED: got ${inputs.length} jobs, max ${MAX_BATCH_SIZE}`,
+    );
   }
   const now = deps.now ?? new Date();
   const adapters = { ...DEFAULT_ADAPTERS, ...deps.adapters };
@@ -151,7 +166,9 @@ export async function runControlledDbWrite(
   const sleep = deps.sleep ?? defaultSleep;
 
   // 1. 只撈明確指定的 trackingIds（不掃 active trackings）
-  const ids = inputs.map((i) => Number(i.trackingId)).filter((n) => Number.isInteger(n) && n > 0);
+  const ids = inputs
+    .map((i) => Number(i.trackingId))
+    .filter((n) => Number.isInteger(n) && n > 0);
   const rows = ids.length
     ? await db
         .select({
@@ -164,7 +181,10 @@ export async function runControlledDbWrite(
           storeId: ordersTable.storeId,
         })
         .from(shipmentTrackingsTable)
-        .innerJoin(ordersTable, eq(shipmentTrackingsTable.orderId, ordersTable.id))
+        .innerJoin(
+          ordersTable,
+          eq(shipmentTrackingsTable.orderId, ordersTable.id),
+        )
         .where(inArray(shipmentTrackingsTable.id, ids))
     : [];
   const rowById = new Map(rows.map((r) => [r.id, r]));
@@ -199,7 +219,13 @@ export async function runControlledDbWrite(
     const trackingId = Number(input.trackingId);
     const trackingCode = String(input.trackingCode ?? "").trim();
     const writeMode = input.writeMode === "write" ? "write" : "dryRun";
-    const base: ControlledWriteJobResult = { provider, trackingId, trackingCode, writeMode, status: "skipped" };
+    const base: ControlledWriteJobResult = {
+      provider,
+      trackingId,
+      trackingCode,
+      writeMode,
+      status: "skipped",
+    };
 
     // gate：只允許 postoffice / tcat
     if (!ALLOWED_PROVIDERS.includes(provider as ControlledWriteProvider)) {
@@ -218,10 +244,16 @@ export async function runControlledDbWrite(
     // 安全比對：DB row 必須存在且 provider / trackingCode 與輸入一致
     const row = rowById.get(trackingId);
     if (!row) {
-      jobs.push({ ...base, skippedReason: `TRACKING_NOT_FOUND: id=${trackingId}` });
+      jobs.push({
+        ...base,
+        skippedReason: `TRACKING_NOT_FOUND: id=${trackingId}`,
+      });
       continue;
     }
-    if (row.trackingProvider !== provider || row.trackingCode !== trackingCode) {
+    if (
+      row.trackingProvider !== provider ||
+      row.trackingCode !== trackingCode
+    ) {
       jobs.push({
         ...base,
         skippedReason: `SAFETY_MISMATCH: DB row provider/code 與輸入不一致（db=${row.trackingProvider}）`,
@@ -245,7 +277,8 @@ export async function runControlledDbWrite(
         provider,
         trackingCode,
         errorCode: "UNKNOWN_ERROR",
-        message: err instanceof Error ? err.message.slice(0, 200) : "unknown error",
+        message:
+          err instanceof Error ? err.message.slice(0, 200) : "unknown error",
         retryable: true,
       };
     }
@@ -256,7 +289,14 @@ export async function runControlledDbWrite(
       const latestEventAt = parseDate(adapterResult.latestEventAt);
       const insertable = adapterResult.events
         .map((e) => ({ event: e, occurredAt: parseDate(e.occurredAt) }))
-        .filter((x): x is { event: (typeof adapterResult.events)[number]; occurredAt: Date } => x.occurredAt !== null);
+        .filter(
+          (
+            x,
+          ): x is {
+            event: (typeof adapterResult.events)[number];
+            occurredAt: Date;
+          } => x.occurredAt !== null,
+        );
       const keys = insertable.map(({ event }) =>
         buildDryRunIdempotencyKey(provider, trackingCode, event),
       );
@@ -273,7 +313,9 @@ export async function runControlledDbWrite(
             latestEventDescription: adapterResult.latestStatusText,
             latestEventAt,
             lastCheckedAt: now,
-            nextCheckAt: isTerminalStatus(normalized) ? null : new Date(now.getTime() + RECHECK_INTERVAL_MS),
+            nextCheckAt: isTerminalStatus(normalized)
+              ? null
+              : new Date(now.getTime() + RECHECK_INTERVAL_MS),
             failureCount: 0,
             checkError: null,
           })
@@ -291,7 +333,11 @@ export async function runControlledDbWrite(
                 eventLocation: event.eventLocation,
                 occurredAt,
                 rawData: event.rawData,
-                idempotencyKey: buildDryRunIdempotencyKey(provider, trackingCode, event),
+                idempotencyKey: buildDryRunIdempotencyKey(
+                  provider,
+                  trackingCode,
+                  event,
+                ),
               })),
             )
             .onConflictDoNothing({
@@ -312,7 +358,8 @@ export async function runControlledDbWrite(
         latestStatusText: adapterResult.latestStatusText,
         latestEventAt: adapterResult.latestEventAt,
         wouldWriteEvents: insertable.length,
-        insertedEventCount: writeMode === "write" ? insertedEventCount : undefined,
+        insertedEventCount:
+          writeMode === "write" ? insertedEventCount : undefined,
         snapshotUpdated,
         idempotencyKeysPreview: keys,
         unparseableEventCount: adapterResult.events.length - insertable.length,
@@ -351,7 +398,13 @@ export async function runControlledDbWrite(
           failureCount: newFailureCount,
           checkError: `${errorCode}: ${message}`.slice(0, 300),
           nextCheckAt: retryable
-            ? new Date(now.getTime() + Math.min(RECHECK_INTERVAL_MS, RETRY_BASE_MS * newFailureCount))
+            ? new Date(
+                now.getTime() +
+                  Math.min(
+                    RECHECK_INTERVAL_MS,
+                    RETRY_BASE_MS * newFailureCount,
+                  ),
+              )
             : null,
         })
         .where(eq(shipmentTrackingsTable.id, trackingId));
@@ -374,7 +427,13 @@ export async function runControlledDbWrite(
       exceptionWritten = true;
     }
 
-    jobs.push({ ...base, status: "failed", errorCode, retryable, exceptionWritten });
+    jobs.push({
+      ...base,
+      status: "failed",
+      errorCode,
+      retryable,
+      exceptionWritten,
+    });
   }
 
   const successCount = jobs.filter((j) => j.status === "success").length;
@@ -385,7 +444,8 @@ export async function runControlledDbWrite(
     errorCodeCounts.size > 0
       ? [...errorCodeCounts.entries()].map(([c, n]) => `${c}x${n}`).join(", ")
       : null;
-  const runStatus = failedCount === 0 ? "success" : successCount > 0 ? "partial" : "failed";
+  const runStatus =
+    failedCount === 0 ? "success" : successCount > 0 ? "partial" : "failed";
 
   if (runLogId !== null) {
     await db

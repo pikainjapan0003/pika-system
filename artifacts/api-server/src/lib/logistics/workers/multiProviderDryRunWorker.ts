@@ -14,7 +14,10 @@
 
 import { queryPostOfficeTracking } from "../adapters/postOfficeAdapter.ts";
 import { queryTcatTracking } from "../adapters/tcatAdapter.ts";
-import type { TrackingAdapterResult, TrackingEvent } from "../adapters/types.ts";
+import type {
+  TrackingAdapterResult,
+  TrackingEvent,
+} from "../adapters/types.ts";
 
 export type DryRunProvider = "familymart" | "postoffice" | "tcat" | "711";
 
@@ -31,29 +34,30 @@ export interface DryRunProviderGate {
  * 注意：這不是正式 provider registry（providers.ts supportsAutoSync），
  * 正式 UI 文案仍由 registry 控制，本 config 只作用於 dry-run / 未來 controlled worker。
  */
-export const DRY_RUN_PROVIDER_GATE: Record<DryRunProvider, DryRunProviderGate> = {
-  familymart: {
-    manualSyncEnabled: true,
-    controlledWorkerEnabled: true,
-    scheduledSyncEnabled: true,
-  },
-  postoffice: {
-    manualSyncEnabled: true,
-    controlledWorkerEnabled: true,
-    scheduledSyncEnabled: false,
-  },
-  tcat: {
-    manualSyncEnabled: true,
-    controlledWorkerEnabled: true,
-    scheduledSyncEnabled: false,
-  },
-  "711": {
-    manualSyncEnabled: true,
-    controlledWorkerEnabled: false,
-    scheduledSyncEnabled: false,
-    requiresManualFallback: true,
-  },
-};
+export const DRY_RUN_PROVIDER_GATE: Record<DryRunProvider, DryRunProviderGate> =
+  {
+    familymart: {
+      manualSyncEnabled: true,
+      controlledWorkerEnabled: true,
+      scheduledSyncEnabled: true,
+    },
+    postoffice: {
+      manualSyncEnabled: true,
+      controlledWorkerEnabled: true,
+      scheduledSyncEnabled: false,
+    },
+    tcat: {
+      manualSyncEnabled: true,
+      controlledWorkerEnabled: true,
+      scheduledSyncEnabled: false,
+    },
+    "711": {
+      manualSyncEnabled: true,
+      controlledWorkerEnabled: false,
+      scheduledSyncEnabled: false,
+      requiresManualFallback: true,
+    },
+  };
 
 export interface DryRunTrackingInput {
   provider: DryRunProvider | string;
@@ -131,10 +135,13 @@ function validateAdapterSuccess(
   const warnings: string[] = [];
   if (!Array.isArray(result.events)) warnings.push("events is not an array");
   if (!result.latestStatusText) warnings.push("latestStatusText is empty");
-  if (!result.latestEventAt) warnings.push("latestEventAt is null（接受，但 snapshot 會缺時間）");
+  if (!result.latestEventAt)
+    warnings.push("latestEventAt is null（接受，但 snapshot 會缺時間）");
   for (const [i, e] of (result.events ?? []).entries()) {
-    if (!e.occurredAt) warnings.push(`event[${i}] occurredAt missing（key 以 no-date 標示）`);
-    if (!e.eventDescription && !e.eventStatus) warnings.push(`event[${i}] has no description/status`);
+    if (!e.occurredAt)
+      warnings.push(`event[${i}] occurredAt missing（key 以 no-date 標示）`);
+    if (!e.eventDescription && !e.eventStatus)
+      warnings.push(`event[${i}] has no description/status`);
   }
   return warnings;
 }
@@ -170,9 +177,14 @@ export async function runMultiProviderDryRun(
     };
 
     // 1. provider gate
-    const gate = (DRY_RUN_PROVIDER_GATE as Record<string, DryRunProviderGate>)[provider];
+    const gate = (DRY_RUN_PROVIDER_GATE as Record<string, DryRunProviderGate>)[
+      provider
+    ];
     if (!gate) {
-      results.push({ ...base, skippedReason: `UNSUPPORTED_PROVIDER: ${provider || "(empty)"}` });
+      results.push({
+        ...base,
+        skippedReason: `UNSUPPORTED_PROVIDER: ${provider || "(empty)"}`,
+      });
       continue;
     }
     base.gate = gate;
@@ -198,13 +210,19 @@ export async function runMultiProviderDryRun(
     // 3. adapter call（dry-run 階段只實跑 postoffice / tcat）
     const adapterFn = adapters[provider as DryRunProvider];
     if (!adapterFn) {
-      results.push({ ...base, skippedReason: `NO_DRY_RUN_ADAPTER: ${provider}` });
+      results.push({
+        ...base,
+        skippedReason: `NO_DRY_RUN_ADAPTER: ${provider}`,
+      });
       continue;
     }
 
     let adapterResult: TrackingAdapterResult<string>;
     try {
-      adapterResult = await adapterFn({ trackingCode, timeoutMs: deps.timeoutMs });
+      adapterResult = await adapterFn({
+        trackingCode,
+        timeoutMs: deps.timeoutMs,
+      });
     } catch (err) {
       // adapter 設計上不 throw；萬一 throw 轉標準失敗，不中斷整輪（沿用既有 worker 慣例）
       adapterResult = {
@@ -212,7 +230,8 @@ export async function runMultiProviderDryRun(
         provider,
         trackingCode,
         errorCode: "UNKNOWN_ERROR",
-        message: err instanceof Error ? err.message.slice(0, 200) : "unknown error",
+        message:
+          err instanceof Error ? err.message.slice(0, 200) : "unknown error",
         retryable: true,
       };
     }
@@ -333,7 +352,8 @@ const DEFAULT_DELAY_MS = 500;
 const DEFAULT_CIRCUIT_BREAKER_THRESHOLD = 2;
 const DEFAULT_MAX_BATCH_SIZE = 5;
 
-const defaultSleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+const defaultSleep = (ms: number) =>
+  new Promise<void>((r) => setTimeout(r, ms));
 
 /**
  * Controlled worker（no-write）：在 dry-run pipeline 上加批次上限、
@@ -353,7 +373,8 @@ export async function runControlledWorkerBatch(
 
   const delayMs = deps.delayMs ?? DEFAULT_DELAY_MS;
   const sleep = deps.sleep ?? defaultSleep;
-  const threshold = deps.circuitBreakerThreshold ?? DEFAULT_CIRCUIT_BREAKER_THRESHOLD;
+  const threshold =
+    deps.circuitBreakerThreshold ?? DEFAULT_CIRCUIT_BREAKER_THRESHOLD;
   const adapters = { ...deps.adapters };
 
   const jobs: ControlledWorkerJobResult[] = [];
@@ -396,9 +417,15 @@ export async function runControlledWorkerBatch(
     }
 
     // gate：沿用 dry-run gate，外加 controlledWorkerEnabled 檢查
-    const gate = (DRY_RUN_PROVIDER_GATE as Record<string, DryRunProviderGate>)[provider];
+    const gate = (DRY_RUN_PROVIDER_GATE as Record<string, DryRunProviderGate>)[
+      provider
+    ];
     if (!gate) {
-      jobs.push({ ...base, skipped: true, skippedReason: `UNSUPPORTED_PROVIDER: ${provider || "(empty)"}` });
+      jobs.push({
+        ...base,
+        skipped: true,
+        skippedReason: `UNSUPPORTED_PROVIDER: ${provider || "(empty)"}`,
+      });
       continue;
     }
     if (!gate.controlledWorkerEnabled) {
@@ -416,18 +443,29 @@ export async function runControlledWorkerBatch(
       jobs.push({
         ...base,
         skipped: true,
-        skippedReason: "USE_EXISTING_WORKER: familymart 由正式 familyMartTrackingWorker 負責，本 executor 不重跑",
+        skippedReason:
+          "USE_EXISTING_WORKER: familymart 由正式 familyMartTrackingWorker 負責，本 executor 不重跑",
       });
       continue;
     }
     if (!trackingCode) {
-      jobs.push({ ...base, skipped: true, skippedReason: "EMPTY_TRACKING_CODE" });
+      jobs.push({
+        ...base,
+        skipped: true,
+        skippedReason: "EMPTY_TRACKING_CODE",
+      });
       continue;
     }
 
-    const adapterFn = adapters[provider as DryRunProvider] ?? DEFAULT_ADAPTERS[provider as DryRunProvider];
+    const adapterFn =
+      adapters[provider as DryRunProvider] ??
+      DEFAULT_ADAPTERS[provider as DryRunProvider];
     if (!adapterFn) {
-      jobs.push({ ...base, skipped: true, skippedReason: `NO_ADAPTER: ${provider}` });
+      jobs.push({
+        ...base,
+        skipped: true,
+        skippedReason: `NO_ADAPTER: ${provider}`,
+      });
       continue;
     }
 
@@ -440,14 +478,18 @@ export async function runControlledWorkerBatch(
 
     let adapterResult: TrackingAdapterResult<string>;
     try {
-      adapterResult = await adapterFn({ trackingCode, timeoutMs: deps.timeoutMs });
+      adapterResult = await adapterFn({
+        trackingCode,
+        timeoutMs: deps.timeoutMs,
+      });
     } catch (err) {
       adapterResult = {
         ok: false,
         provider,
         trackingCode,
         errorCode: "UNKNOWN_ERROR",
-        message: err instanceof Error ? err.message.slice(0, 200) : "unknown error",
+        message:
+          err instanceof Error ? err.message.slice(0, 200) : "unknown error",
         retryable: true,
       };
     }

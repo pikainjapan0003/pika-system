@@ -1,7 +1,12 @@
 import { Router } from "express";
 import { eq } from "drizzle-orm";
 import { db, tripsTable, tripRoutesTable } from "@workspace/db";
-import { CreateTripBody, UpdateTripBody, CreateTripRouteBody, UpdateTripRouteBody } from "@workspace/api-zod";
+import {
+  CreateTripBody,
+  UpdateTripBody,
+  CreateTripRouteBody,
+  UpdateTripRouteBody,
+} from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/auth.ts";
 
 const router = Router();
@@ -37,7 +42,10 @@ router.post("/trips", requireAuth, async (req: any, res) => {
     .insert(tripsTable)
     .values({
       name: parsed.data.name,
-      exchangeRate: parsed.data.exchangeRate != null ? String(parsed.data.exchangeRate) : null,
+      exchangeRate:
+        parsed.data.exchangeRate != null
+          ? String(parsed.data.exchangeRate)
+          : null,
       notes: parsed.data.notes ?? null,
     })
     .returning();
@@ -56,7 +64,10 @@ router.patch("/trips/:tripId", requireAuth, async (req: any, res) => {
   const updateData: Record<string, unknown> = {};
   if (parsed.data.name !== undefined) updateData.name = parsed.data.name;
   if (parsed.data.exchangeRate !== undefined) {
-    updateData.exchangeRate = parsed.data.exchangeRate != null ? String(parsed.data.exchangeRate) : null;
+    updateData.exchangeRate =
+      parsed.data.exchangeRate != null
+        ? String(parsed.data.exchangeRate)
+        : null;
   }
   if (parsed.data.notes !== undefined) updateData.notes = parsed.data.notes;
 
@@ -79,7 +90,11 @@ router.post("/trips/:tripId/routes", requireAuth, async (req: any, res) => {
     return res.status(400).json({ error: parsed.error.message });
   }
 
-  const [trip] = await db.select({ id: tripsTable.id }).from(tripsTable).where(eq(tripsTable.id, tripId)).limit(1);
+  const [trip] = await db
+    .select({ id: tripsTable.id })
+    .from(tripsTable)
+    .where(eq(tripsTable.id, tripId))
+    .limit(1);
   if (!trip) return res.status(404).json({ error: "Trip not found" });
 
   try {
@@ -91,12 +106,25 @@ router.post("/trips/:tripId/routes", requireAuth, async (req: any, res) => {
         startPlace: parsed.data.startPlace,
         endPlace: parsed.data.endPlace,
         estQty: parsed.data.estQty,
-        trainJpy: parsed.data.trainJpy != null ? String(parsed.data.trainJpy) : undefined,
-        fuelJpy: parsed.data.fuelJpy != null ? String(parsed.data.fuelJpy) : undefined,
-        parkingJpy: parsed.data.parkingJpy != null ? String(parsed.data.parkingJpy) : undefined,
+        trainJpy:
+          parsed.data.trainJpy != null
+            ? String(parsed.data.trainJpy)
+            : undefined,
+        fuelJpy:
+          parsed.data.fuelJpy != null ? String(parsed.data.fuelJpy) : undefined,
+        parkingJpy:
+          parsed.data.parkingJpy != null
+            ? String(parsed.data.parkingJpy)
+            : undefined,
         etcJpy: String(parsed.data.etcJpy),
-        cardboardJpy: parsed.data.cardboardJpy != null ? String(parsed.data.cardboardJpy) : undefined,
-        shippingJpy: parsed.data.shippingJpy != null ? String(parsed.data.shippingJpy) : undefined,
+        cardboardJpy:
+          parsed.data.cardboardJpy != null
+            ? String(parsed.data.cardboardJpy)
+            : undefined,
+        shippingJpy:
+          parsed.data.shippingJpy != null
+            ? String(parsed.data.shippingJpy)
+            : undefined,
         parcelCount: parsed.data.parcelCount ?? undefined,
       })
       .returning();
@@ -109,47 +137,64 @@ router.post("/trips/:tripId/routes", requireAuth, async (req: any, res) => {
   }
 });
 
-router.patch("/trips/:tripId/routes/:routeId", requireAuth, async (req: any, res) => {
-  const tripId = parseInt(req.params.tripId);
-  const routeId = parseInt(req.params.routeId);
-  if (isNaN(tripId) || isNaN(routeId)) return res.status(400).json({ error: "Invalid id" });
+router.patch(
+  "/trips/:tripId/routes/:routeId",
+  requireAuth,
+  async (req: any, res) => {
+    const tripId = parseInt(req.params.tripId);
+    const routeId = parseInt(req.params.routeId);
+    if (isNaN(tripId) || isNaN(routeId))
+      return res.status(400).json({ error: "Invalid id" });
 
-  const parsed = UpdateTripRouteBody.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({ error: parsed.error.message });
-  }
-
-  const updateData: Record<string, unknown> = {};
-  if (parsed.data.areaTitle !== undefined) updateData.areaTitle = parsed.data.areaTitle;
-  if (parsed.data.startPlace !== undefined) updateData.startPlace = parsed.data.startPlace;
-  if (parsed.data.endPlace !== undefined) updateData.endPlace = parsed.data.endPlace;
-  if (parsed.data.estQty !== undefined) updateData.estQty = parsed.data.estQty;
-  if (parsed.data.trainJpy !== undefined) updateData.trainJpy = String(parsed.data.trainJpy);
-  if (parsed.data.fuelJpy !== undefined) updateData.fuelJpy = String(parsed.data.fuelJpy);
-  if (parsed.data.parkingJpy !== undefined) updateData.parkingJpy = String(parsed.data.parkingJpy);
-  if (parsed.data.etcJpy !== undefined) {
-    updateData.etcJpy = parsed.data.etcJpy == null ? null : String(parsed.data.etcJpy);
-  }
-  if (parsed.data.cardboardJpy !== undefined) updateData.cardboardJpy = String(parsed.data.cardboardJpy);
-  if (parsed.data.shippingJpy !== undefined) updateData.shippingJpy = String(parsed.data.shippingJpy);
-  if (parsed.data.parcelCount !== undefined) updateData.parcelCount = parsed.data.parcelCount;
-
-  try {
-    const [updated] = await db
-      .update(tripRoutesTable)
-      .set(updateData)
-      .where(eq(tripRoutesTable.id, routeId))
-      .returning();
-
-    if (!updated || updated.tripId !== tripId) return res.status(404).json({ error: "Route not found" });
-    return res.json(formatTripRoute(updated));
-  } catch (err: any) {
-    if (err?.code === "23505") {
-      return res.status(409).json({ error: "此行程已有相同名稱的路線" });
+    const parsed = UpdateTripRouteBody.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.message });
     }
-    throw err;
-  }
-});
+
+    const updateData: Record<string, unknown> = {};
+    if (parsed.data.areaTitle !== undefined)
+      updateData.areaTitle = parsed.data.areaTitle;
+    if (parsed.data.startPlace !== undefined)
+      updateData.startPlace = parsed.data.startPlace;
+    if (parsed.data.endPlace !== undefined)
+      updateData.endPlace = parsed.data.endPlace;
+    if (parsed.data.estQty !== undefined)
+      updateData.estQty = parsed.data.estQty;
+    if (parsed.data.trainJpy !== undefined)
+      updateData.trainJpy = String(parsed.data.trainJpy);
+    if (parsed.data.fuelJpy !== undefined)
+      updateData.fuelJpy = String(parsed.data.fuelJpy);
+    if (parsed.data.parkingJpy !== undefined)
+      updateData.parkingJpy = String(parsed.data.parkingJpy);
+    if (parsed.data.etcJpy !== undefined) {
+      updateData.etcJpy =
+        parsed.data.etcJpy == null ? null : String(parsed.data.etcJpy);
+    }
+    if (parsed.data.cardboardJpy !== undefined)
+      updateData.cardboardJpy = String(parsed.data.cardboardJpy);
+    if (parsed.data.shippingJpy !== undefined)
+      updateData.shippingJpy = String(parsed.data.shippingJpy);
+    if (parsed.data.parcelCount !== undefined)
+      updateData.parcelCount = parsed.data.parcelCount;
+
+    try {
+      const [updated] = await db
+        .update(tripRoutesTable)
+        .set(updateData)
+        .where(eq(tripRoutesTable.id, routeId))
+        .returning();
+
+      if (!updated || updated.tripId !== tripId)
+        return res.status(404).json({ error: "Route not found" });
+      return res.json(formatTripRoute(updated));
+    } catch (err: any) {
+      if (err?.code === "23505") {
+        return res.status(409).json({ error: "此行程已有相同名稱的路線" });
+      }
+      throw err;
+    }
+  },
+);
 
 function formatTrip(t: any) {
   return {

@@ -42,7 +42,9 @@ const uploadLimiter = rateLimit({
   standardHeaders: "draft-8",
   legacyHeaders: false,
   handler: (_req, res) => {
-    res.status(429).json({ error: "Too many upload requests, please try again later." });
+    res
+      .status(429)
+      .json({ error: "Too many upload requests, please try again later." });
   },
 });
 
@@ -54,7 +56,8 @@ router.post(
   uploadLimiter,
   async (req: any, res: any) => {
     const storeId = parseInt(req.params.storeId);
-    if (isNaN(storeId)) return res.status(400).json({ error: "Invalid storeId" });
+    if (isNaN(storeId))
+      return res.status(400).json({ error: "Invalid storeId" });
 
     if (!(await verifyStoreOwner(req, res, storeId))) return;
 
@@ -91,13 +94,13 @@ router.post(
           Key: key,
           Body: req.file.buffer,
           ContentType: req.file.mimetype,
-        })
+        }),
       );
       return res.status(201).json({ imageUrl: `${r2Config.publicUrl}/${key}` });
     } catch {
       return res.status(500).json({ error: "Upload failed" });
     }
-  }
+  },
 );
 
 export default router;

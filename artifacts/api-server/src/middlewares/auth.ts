@@ -13,8 +13,16 @@ export const requireAuth = (req: any, res: any, next: any) => {
 };
 
 // Returns true if req.userId owns storeId; otherwise sends 404/403 and returns false.
-export const verifyStoreOwner = async (req: any, res: any, storeId: number): Promise<boolean> => {
-  const store = await db.select().from(storesTable).where(eq(storesTable.id, storeId)).limit(1);
+export const verifyStoreOwner = async (
+  req: any,
+  res: any,
+  storeId: number,
+): Promise<boolean> => {
+  const store = await db
+    .select()
+    .from(storesTable)
+    .where(eq(storesTable.id, storeId))
+    .limit(1);
   if (store.length === 0) {
     res.status(404).json({ error: "Store not found" });
     return false;

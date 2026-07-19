@@ -7,19 +7,19 @@
  * Runner:  tsx (TypeScript strip-types loader) for importing .ts routes
  */
 
-import { mock, describe, test, before, after } from 'node:test';
-import assert from 'node:assert/strict';
+import { mock, describe, test, before, after } from "node:test";
+import assert from "node:assert/strict";
 
-const TEST_MERCHANT_ID = 'test_merchant_step4b';
+const TEST_MERCHANT_ID = "test_merchant_step4b";
 
 // ─────────────────────────────────────────────────────────────
 // 1. Mock @clerk/express BEFORE any module that depends on it loads.
 //    getAuth reads x-test-user-id header; absent = unauthenticated.
 // ─────────────────────────────────────────────────────────────
-mock.module('@clerk/express', {
+mock.module("@clerk/express", {
   namedExports: {
     getAuth: (req) => {
-      const userId = req.headers?.['x-test-user-id'] ?? null;
+      const userId = req.headers?.["x-test-user-id"] ?? null;
       return {
         userId: userId || null,
         sessionClaims: userId ? { userId } : undefined,
@@ -32,19 +32,20 @@ mock.module('@clerk/express', {
 // ─────────────────────────────────────────────────────────────
 // 2. Dynamic imports — resolved AFTER mock is registered
 // ─────────────────────────────────────────────────────────────
-const { default: express }          = await import('express');
-const { db, storesTable, productsTable, ordersTable, pool } = await import('@workspace/db');
-const { eq, inArray }               = await import('drizzle-orm');
-const { default: ordersRouter }     = await import('./orders.ts');
-const { default: publicRouter }     = await import('./public.ts');
+const { default: express } = await import("express");
+const { db, storesTable, productsTable, ordersTable, pool } =
+  await import("@workspace/db");
+const { eq, inArray } = await import("drizzle-orm");
+const { default: ordersRouter } = await import("./orders.ts");
+const { default: publicRouter } = await import("./public.ts");
 
 // ─────────────────────────────────────────────────────────────
 // 3. Minimal test Express app (no clerkMiddleware, no Clerk keys needed)
 // ─────────────────────────────────────────────────────────────
 const app = express();
 app.use(express.json());
-app.use('/api', ordersRouter);
-app.use('/api', publicRouter);
+app.use("/api", ordersRouter);
+app.use("/api", publicRouter);
 
 // ─────────────────────────────────────────────────────────────
 // 4. Shared test state
@@ -58,12 +59,18 @@ let testProductId;
 // 5. Global setup / teardown
 // ─────────────────────────────────────────────────────────────
 before(async () => {
-  await new Promise((resolve) => { server = app.listen(0, resolve); });
+  await new Promise((resolve) => {
+    server = app.listen(0, resolve);
+  });
   baseUrl = `http://localhost:${server.address().port}/api`;
 
   const [store] = await db
     .insert(storesTable)
-    .values({ merchantId: TEST_MERCHANT_ID, name: '__test_store__', slug: `test-store-${Date.now()}` })
+    .values({
+      merchantId: TEST_MERCHANT_ID,
+      name: "__test_store__",
+      slug: `test-store-${Date.now()}`,
+    })
     .returning();
   testStoreId = store.id;
 
@@ -71,8 +78,8 @@ before(async () => {
     .insert(productsTable)
     .values({
       storeId: testStoreId,
-      name: '__test_product__',
-      price: '100.00',
+      name: "__test_product__",
+      price: "100.00",
       shareToken: `test-share-${Date.now()}`,
       isActive: true,
     })
@@ -83,7 +90,9 @@ before(async () => {
 after(async () => {
   if (testStoreId) {
     await db.delete(ordersTable).where(eq(ordersTable.storeId, testStoreId));
-    await db.delete(productsTable).where(eq(productsTable.storeId, testStoreId));
+    await db
+      .delete(productsTable)
+      .where(eq(productsTable.storeId, testStoreId));
     await db.delete(storesTable).where(eq(storesTable.id, testStoreId));
   }
   await new Promise((resolve) => server.close(resolve));
@@ -94,21 +103,21 @@ after(async () => {
 // 6. HTTP helper
 // ─────────────────────────────────────────────────────────────
 async function req(method, path, body, userId = TEST_MERCHANT_ID) {
-  const headers = { 'Content-Type': 'application/json' };
-  if (userId) headers['x-test-user-id'] = userId;
+  const headers = { "Content-Type": "application/json" };
+  if (userId) headers["x-test-user-id"] = userId;
   const res = await fetch(`${baseUrl}${path}`, {
     method,
     headers,
     body: body != null ? JSON.stringify(body) : undefined,
   });
-  const ct = res.headers.get('content-type') ?? '';
-  const data = ct.includes('json') ? await res.json() : await res.text();
+  const ct = res.headers.get("content-type") ?? "";
+  const data = ct.includes("json") ? await res.json() : await res.text();
   return { status: res.status, data };
 }
 
 async function rawFetch(method, path, body, userId = TEST_MERCHANT_ID) {
-  const headers = { 'Content-Type': 'application/json' };
-  if (userId) headers['x-test-user-id'] = userId;
+  const headers = { "Content-Type": "application/json" };
+  if (userId) headers["x-test-user-id"] = userId;
   return fetch(`${baseUrl}${path}`, {
     method,
     headers,
@@ -119,86 +128,109 @@ async function rawFetch(method, path, body, userId = TEST_MERCHANT_ID) {
 // ─────────────────────────────────────────────────────────────
 // 7. POST /stores/:storeId/orders
 // ─────────────────────────────────────────────────────────────
-describe('POST /stores/:storeId/orders', () => {
-  test('201 — creates order, snapshots price, generates publicToken', async () => {
-    const { status, data } = await req('POST', `/stores/${testStoreId}/orders`, {
-      productId: testProductId,
-      buyerName: 'Test Buyer',
-      buyerPhone: '0912345678',
-      pickupMethod: 'pickup',
-      quantity: 2,
-    });
+describe("POST /stores/:storeId/orders", () => {
+  test("201 — creates order, snapshots price, generates publicToken", async () => {
+    const { status, data } = await req(
+      "POST",
+      `/stores/${testStoreId}/orders`,
+      {
+        productId: testProductId,
+        buyerName: "Test Buyer",
+        buyerPhone: "0912345678",
+        pickupMethod: "pickup",
+        quantity: 2,
+      },
+    );
     assert.strictEqual(status, 201);
-    assert.ok(data.id, 'should have id');
-    assert.strictEqual(data.buyerName, 'Test Buyer');
-    assert.strictEqual(data.buyerPhone, '0912345678');
-    assert.strictEqual(data.pickupMethod, 'pickup');
+    assert.ok(data.id, "should have id");
+    assert.strictEqual(data.buyerName, "Test Buyer");
+    assert.strictEqual(data.buyerPhone, "0912345678");
+    assert.strictEqual(data.pickupMethod, "pickup");
     assert.strictEqual(data.quantity, 2);
-    assert.strictEqual(data.unitPrice, 100, 'unitPrice snapshots product price');
-    assert.strictEqual(data.totalPrice, 200, 'totalPrice = unitPrice * quantity');
-    assert.strictEqual(data.status, 'pending');
-    assert.ok(data.publicToken && data.publicToken.length > 0, 'publicToken present');
-    assert.strictEqual(data.productName, '__test_product__');
+    assert.strictEqual(
+      data.unitPrice,
+      100,
+      "unitPrice snapshots product price",
+    );
+    assert.strictEqual(
+      data.totalPrice,
+      200,
+      "totalPrice = unitPrice * quantity",
+    );
+    assert.strictEqual(data.status, "pending");
+    assert.ok(
+      data.publicToken && data.publicToken.length > 0,
+      "publicToken present",
+    );
+    assert.strictEqual(data.productName, "__test_product__");
   });
 
-  test('201 — GET /stores/:storeId/orders lists new order', async () => {
-    const { status, data } = await req('GET', `/stores/${testStoreId}/orders`);
+  test("201 — GET /stores/:storeId/orders lists new order", async () => {
+    const { status, data } = await req("GET", `/stores/${testStoreId}/orders`);
     assert.strictEqual(status, 200);
-    assert.ok(Array.isArray(data), 'should return array');
-    assert.ok(data.length >= 1, 'should have at least one order');
-    assert.ok(data.some((o) => o.buyerName === 'Test Buyer'), 'created order should appear');
+    assert.ok(Array.isArray(data), "should return array");
+    assert.ok(data.length >= 1, "should have at least one order");
+    assert.ok(
+      data.some((o) => o.buyerName === "Test Buyer"),
+      "created order should appear",
+    );
   });
 
-  test('400 — missing buyerName', async () => {
-    const { status } = await req('POST', `/stores/${testStoreId}/orders`, {
+  test("400 — missing buyerName", async () => {
+    const { status } = await req("POST", `/stores/${testStoreId}/orders`, {
       productId: testProductId,
-      buyerPhone: '0912345678',
-      pickupMethod: 'pickup',
+      buyerPhone: "0912345678",
+      pickupMethod: "pickup",
       quantity: 1,
     });
     assert.strictEqual(status, 400);
   });
 
-  test('400 — missing buyerPhone', async () => {
-    const { status } = await req('POST', `/stores/${testStoreId}/orders`, {
+  test("400 — missing buyerPhone", async () => {
+    const { status } = await req("POST", `/stores/${testStoreId}/orders`, {
       productId: testProductId,
-      buyerName: 'Test',
-      pickupMethod: 'pickup',
+      buyerName: "Test",
+      pickupMethod: "pickup",
       quantity: 1,
     });
     assert.strictEqual(status, 400);
   });
 
-  test('400 — quantity = 0', async () => {
-    const { status } = await req('POST', `/stores/${testStoreId}/orders`, {
+  test("400 — quantity = 0", async () => {
+    const { status } = await req("POST", `/stores/${testStoreId}/orders`, {
       productId: testProductId,
-      buyerName: 'Test',
-      buyerPhone: '0912345678',
-      pickupMethod: 'pickup',
+      buyerName: "Test",
+      buyerPhone: "0912345678",
+      pickupMethod: "pickup",
       quantity: 0,
     });
     assert.strictEqual(status, 400);
   });
 
-  test('404 — productId does not belong to store', async () => {
-    const { status } = await req('POST', `/stores/${testStoreId}/orders`, {
+  test("404 — productId does not belong to store", async () => {
+    const { status } = await req("POST", `/stores/${testStoreId}/orders`, {
       productId: 999999999,
-      buyerName: 'Test',
-      buyerPhone: '0912345678',
-      pickupMethod: 'pickup',
+      buyerName: "Test",
+      buyerPhone: "0912345678",
+      pickupMethod: "pickup",
       quantity: 1,
     });
     assert.strictEqual(status, 404);
   });
 
-  test('401 — unauthenticated', async () => {
-    const { status } = await req('POST', `/stores/${testStoreId}/orders`, {
-      productId: testProductId,
-      buyerName: 'Test',
-      buyerPhone: '0912345678',
-      pickupMethod: 'pickup',
-      quantity: 1,
-    }, null);
+  test("401 — unauthenticated", async () => {
+    const { status } = await req(
+      "POST",
+      `/stores/${testStoreId}/orders`,
+      {
+        productId: testProductId,
+        buyerName: "Test",
+        buyerPhone: "0912345678",
+        pickupMethod: "pickup",
+        quantity: 1,
+      },
+      null,
+    );
     assert.strictEqual(status, 401);
   });
 });
@@ -206,7 +238,7 @@ describe('POST /stores/:storeId/orders', () => {
 // ─────────────────────────────────────────────────────────────
 // 8. PATCH /orders/:orderId
 // ─────────────────────────────────────────────────────────────
-describe('PATCH /orders/:orderId', () => {
+describe("PATCH /orders/:orderId", () => {
   let patchOrderId;
 
   before(async () => {
@@ -215,141 +247,189 @@ describe('PATCH /orders/:orderId', () => {
       .values({
         productId: testProductId,
         storeId: testStoreId,
-        productName: '__test_product__',
+        productName: "__test_product__",
         publicToken: `tok-patch-${Date.now()}`,
-        buyerName: 'Original Buyer',
-        buyerPhone: '0900000000',
-        pickupMethod: 'pickup',
+        buyerName: "Original Buyer",
+        buyerPhone: "0900000000",
+        pickupMethod: "pickup",
         quantity: 1,
-        unitPrice: '100.00',
-        totalPrice: '100.00',
-        status: 'pending',
+        unitPrice: "100.00",
+        totalPrice: "100.00",
+        status: "pending",
         specValues: {},
       })
       .returning();
     patchOrderId = order.id;
   });
 
-  test('200 — updates buyerName', async () => {
-    const { status, data } = await req('PATCH', `/orders/${patchOrderId}`, {
-      buyerName: 'Updated Buyer',
+  test("200 — updates buyerName", async () => {
+    const { status, data } = await req("PATCH", `/orders/${patchOrderId}`, {
+      buyerName: "Updated Buyer",
     });
     assert.strictEqual(status, 200);
-    assert.strictEqual(data.buyerName, 'Updated Buyer');
+    assert.strictEqual(data.buyerName, "Updated Buyer");
   });
 
-  test('200 — updates buyerPhone', async () => {
-    const { status, data } = await req('PATCH', `/orders/${patchOrderId}`, {
-      buyerPhone: '0988888888',
+  test("200 — updates buyerPhone", async () => {
+    const { status, data } = await req("PATCH", `/orders/${patchOrderId}`, {
+      buyerPhone: "0988888888",
     });
     assert.strictEqual(status, 200);
-    assert.strictEqual(data.buyerPhone, '0988888888');
+    assert.strictEqual(data.buyerPhone, "0988888888");
   });
 
-  test('200 — quantity change recalculates totalPrice, unitPrice unchanged', async () => {
-    const { status, data } = await req('PATCH', `/orders/${patchOrderId}`, {
+  test("200 — quantity change recalculates totalPrice, unitPrice unchanged", async () => {
+    const { status, data } = await req("PATCH", `/orders/${patchOrderId}`, {
       quantity: 3,
     });
     assert.strictEqual(status, 200);
     assert.strictEqual(data.quantity, 3);
-    assert.strictEqual(data.totalPrice, 300, 'totalPrice = unitPrice * new quantity');
-    assert.strictEqual(data.unitPrice, 100, 'unitPrice must not change');
+    assert.strictEqual(
+      data.totalPrice,
+      300,
+      "totalPrice = unitPrice * new quantity",
+    );
+    assert.strictEqual(data.unitPrice, 100, "unitPrice must not change");
   });
 
-  test('200 — empty body returns order unchanged', async () => {
-    const { status, data } = await req('PATCH', `/orders/${patchOrderId}`, {});
+  test("200 — empty body returns order unchanged", async () => {
+    const { status, data } = await req("PATCH", `/orders/${patchOrderId}`, {});
     assert.strictEqual(status, 200);
-    assert.ok(data.id, 'should return order');
+    assert.ok(data.id, "should return order");
   });
 
-  test('200 — extra forbidden fields (status, totalPrice) are ignored', async () => {
-    const { status, data } = await req('PATCH', `/orders/${patchOrderId}`, {
-      buyerName: 'Legit Name',
-      status: 'completed',
+  test("200 — extra forbidden fields (status, totalPrice) are ignored", async () => {
+    const { status, data } = await req("PATCH", `/orders/${patchOrderId}`, {
+      buyerName: "Legit Name",
+      status: "completed",
       totalPrice: 9999,
       unitPrice: 9999,
       productId: 9999,
     });
     assert.strictEqual(status, 200);
-    assert.strictEqual(data.buyerName, 'Legit Name');
-    assert.strictEqual(data.status, 'pending', 'status must not be changed via PATCH body');
-    assert.notStrictEqual(data.totalPrice, 9999, 'totalPrice must not be set by caller');
-    assert.notStrictEqual(data.unitPrice, 9999, 'unitPrice must not be set by caller');
-    assert.strictEqual(data.productId, testProductId, 'productId must not change');
+    assert.strictEqual(data.buyerName, "Legit Name");
+    assert.strictEqual(
+      data.status,
+      "pending",
+      "status must not be changed via PATCH body",
+    );
+    assert.notStrictEqual(
+      data.totalPrice,
+      9999,
+      "totalPrice must not be set by caller",
+    );
+    assert.notStrictEqual(
+      data.unitPrice,
+      9999,
+      "unitPrice must not be set by caller",
+    );
+    assert.strictEqual(
+      data.productId,
+      testProductId,
+      "productId must not change",
+    );
   });
 
-  test('400 — quantity = 0', async () => {
-    const { status } = await req('PATCH', `/orders/${patchOrderId}`, { quantity: 0 });
+  test("400 — quantity = 0", async () => {
+    const { status } = await req("PATCH", `/orders/${patchOrderId}`, {
+      quantity: 0,
+    });
     assert.strictEqual(status, 400);
   });
 
-  test('401 — unauthenticated', async () => {
-    const { status } = await req('PATCH', `/orders/${patchOrderId}`, { buyerName: 'x' }, null);
+  test("401 — unauthenticated", async () => {
+    const { status } = await req(
+      "PATCH",
+      `/orders/${patchOrderId}`,
+      { buyerName: "x" },
+      null,
+    );
     assert.strictEqual(status, 401);
   });
 
-  test('403 — wrong merchant cannot edit order', async () => {
-    const { status } = await req('PATCH', `/orders/${patchOrderId}`, { buyerName: 'x' }, 'other_merchant_id');
+  test("403 — wrong merchant cannot edit order", async () => {
+    const { status } = await req(
+      "PATCH",
+      `/orders/${patchOrderId}`,
+      { buyerName: "x" },
+      "other_merchant_id",
+    );
     assert.strictEqual(status, 403);
   });
 
-  test('422 — completed order is immutable', async () => {
-    await db.update(ordersTable).set({ status: 'completed' }).where(eq(ordersTable.id, patchOrderId));
-    const { status, data } = await req('PATCH', `/orders/${patchOrderId}`, { buyerName: 'x' });
+  test("422 — completed order is immutable", async () => {
+    await db
+      .update(ordersTable)
+      .set({ status: "completed" })
+      .where(eq(ordersTable.id, patchOrderId));
+    const { status, data } = await req("PATCH", `/orders/${patchOrderId}`, {
+      buyerName: "x",
+    });
     assert.strictEqual(status, 422);
-    assert.ok(data.error, 'should return error message');
+    assert.ok(data.error, "should return error message");
   });
 
-  test('422 — cancelled order is immutable', async () => {
-    await db.update(ordersTable).set({ status: 'cancelled' }).where(eq(ordersTable.id, patchOrderId));
-    const { status, data } = await req('PATCH', `/orders/${patchOrderId}`, { buyerName: 'x' });
+  test("422 — cancelled order is immutable", async () => {
+    await db
+      .update(ordersTable)
+      .set({ status: "cancelled" })
+      .where(eq(ordersTable.id, patchOrderId));
+    const { status, data } = await req("PATCH", `/orders/${patchOrderId}`, {
+      buyerName: "x",
+    });
     assert.strictEqual(status, 422);
-    assert.ok(data.error, 'should return error message');
+    assert.ok(data.error, "should return error message");
   });
 });
 
 // ─────────────────────────────────────────────────────────────
 // 9. Regression: existing routes still work
 // ─────────────────────────────────────────────────────────────
-describe('Regression: existing routes unbroken', () => {
-  test('PATCH /orders/:orderId/status still works', async () => {
+describe("Regression: existing routes unbroken", () => {
+  test("PATCH /orders/:orderId/status still works", async () => {
     const [order] = await db
       .insert(ordersTable)
       .values({
         productId: testProductId,
         storeId: testStoreId,
-        productName: '__test_product__',
+        productName: "__test_product__",
         publicToken: `tok-reg-${Date.now()}`,
-        buyerName: 'Regression Buyer',
-        buyerPhone: '0911111111',
-        pickupMethod: 'pickup',
+        buyerName: "Regression Buyer",
+        buyerPhone: "0911111111",
+        pickupMethod: "pickup",
         quantity: 1,
-        unitPrice: '100.00',
-        totalPrice: '100.00',
-        status: 'pending',
+        unitPrice: "100.00",
+        totalPrice: "100.00",
+        status: "pending",
         specValues: {},
       })
       .returning();
 
-    const { status, data } = await req('PATCH', `/orders/${order.id}/status`, {
-      status: 'awaiting_payment',
+    const { status, data } = await req("PATCH", `/orders/${order.id}/status`, {
+      status: "awaiting_payment",
     });
     assert.strictEqual(status, 200);
-    assert.strictEqual(data.status, 'awaiting_payment');
+    assert.strictEqual(data.status, "awaiting_payment");
   });
 
-  test('GET /stores/:storeId/orders/export returns CSV', async () => {
-    const { status, data } = await req('GET', `/stores/${testStoreId}/orders/export`);
+  test("GET /stores/:storeId/orders/export returns CSV", async () => {
+    const { status, data } = await req(
+      "GET",
+      `/stores/${testStoreId}/orders/export`,
+    );
     assert.strictEqual(status, 200);
-    assert.ok(typeof data === 'string', 'export should return text/csv as string');
-    assert.ok(data.includes('訂單編號'), 'CSV should have header row');
+    assert.ok(
+      typeof data === "string",
+      "export should return text/csv as string",
+    );
+    assert.ok(data.includes("訂單編號"), "CSV should have header row");
   });
 });
 
 // ─────────────────────────────────────────────────────────────
 // 10. Step 5C: payment / logistics fields on PATCH
 // ─────────────────────────────────────────────────────────────
-describe('Step 5C: payment / logistics fields', () => {
+describe("Step 5C: payment / logistics fields", () => {
   let step5OrderId;
 
   before(async () => {
@@ -358,16 +438,16 @@ describe('Step 5C: payment / logistics fields', () => {
       .values({
         productId: testProductId,
         storeId: testStoreId,
-        productName: '__test_product__',
+        productName: "__test_product__",
         publicToken: `tok-step5-${Date.now()}`,
-        buyerName: 'Step5 Buyer',
-        buyerPhone: '0933333333',
-        pickupMethod: 'pickup',
+        buyerName: "Step5 Buyer",
+        buyerPhone: "0933333333",
+        pickupMethod: "pickup",
         quantity: 2,
-        unitPrice: '100.00',
-        shippingFee: '60.00',
-        totalPrice: '200.00',
-        status: 'pending',
+        unitPrice: "100.00",
+        shippingFee: "60.00",
+        totalPrice: "200.00",
+        status: "pending",
         specValues: {},
       })
       .returning();
@@ -375,174 +455,212 @@ describe('Step 5C: payment / logistics fields', () => {
   });
 
   // ── orderTotal / remainingAmount computed fields ──────────
-  test('GET /stores/:storeId/orders includes orderTotal and remainingAmount', async () => {
-    const { status, data } = await req('GET', `/stores/${testStoreId}/orders`);
+  test("GET /stores/:storeId/orders includes orderTotal and remainingAmount", async () => {
+    const { status, data } = await req("GET", `/stores/${testStoreId}/orders`);
     assert.strictEqual(status, 200);
     const order = data.find((o) => o.id === step5OrderId);
-    assert.ok(order, 'created order should appear in list');
-    assert.strictEqual(order.orderTotal, 260, 'orderTotal = totalPrice(200) + shippingFee(60)');
-    assert.strictEqual(order.remainingAmount, 260, 'remainingAmount = orderTotal when paidAmount is null');
-    assert.strictEqual(order.paidAmount, null, 'paidAmount should be null initially');
-    assert.strictEqual(order.paymentStatus, 'unpaid', 'paymentStatus defaults to unpaid');
-    assert.strictEqual(order.shippingStatus, 'not_shipped', 'shippingStatus defaults to not_shipped');
+    assert.ok(order, "created order should appear in list");
+    assert.strictEqual(
+      order.orderTotal,
+      260,
+      "orderTotal = totalPrice(200) + shippingFee(60)",
+    );
+    assert.strictEqual(
+      order.remainingAmount,
+      260,
+      "remainingAmount = orderTotal when paidAmount is null",
+    );
+    assert.strictEqual(
+      order.paidAmount,
+      null,
+      "paidAmount should be null initially",
+    );
+    assert.strictEqual(
+      order.paymentStatus,
+      "unpaid",
+      "paymentStatus defaults to unpaid",
+    );
+    assert.strictEqual(
+      order.shippingStatus,
+      "not_shipped",
+      "shippingStatus defaults to not_shipped",
+    );
   });
 
   // ── PATCH: update payment fields ─────────────────────────
-  test('200 — PATCH updates paymentMethod and paymentStatus', async () => {
-    const { status, data } = await req('PATCH', `/orders/${step5OrderId}`, {
-      paymentMethod: 'bank_transfer',
-      paymentStatus: 'paid',
+  test("200 — PATCH updates paymentMethod and paymentStatus", async () => {
+    const { status, data } = await req("PATCH", `/orders/${step5OrderId}`, {
+      paymentMethod: "bank_transfer",
+      paymentStatus: "paid",
     });
     assert.strictEqual(status, 200);
-    assert.strictEqual(data.paymentMethod, 'bank_transfer');
-    assert.strictEqual(data.paymentStatus, 'paid');
+    assert.strictEqual(data.paymentMethod, "bank_transfer");
+    assert.strictEqual(data.paymentStatus, "paid");
   });
 
-  test('200 — PATCH updates paidAmount and computes remainingAmount', async () => {
-    const { status, data } = await req('PATCH', `/orders/${step5OrderId}`, {
+  test("200 — PATCH updates paidAmount and computes remainingAmount", async () => {
+    const { status, data } = await req("PATCH", `/orders/${step5OrderId}`, {
       paidAmount: 150,
     });
     assert.strictEqual(status, 200);
     assert.strictEqual(data.paidAmount, 150);
     assert.strictEqual(data.orderTotal, 260);
-    assert.strictEqual(data.remainingAmount, 110, 'remainingAmount = 260 - 150');
+    assert.strictEqual(
+      data.remainingAmount,
+      110,
+      "remainingAmount = 260 - 150",
+    );
   });
 
-  test('200 — PATCH sets paidAmount to null clears it', async () => {
-    const { status, data } = await req('PATCH', `/orders/${step5OrderId}`, {
+  test("200 — PATCH sets paidAmount to null clears it", async () => {
+    const { status, data } = await req("PATCH", `/orders/${step5OrderId}`, {
       paidAmount: null,
     });
     assert.strictEqual(status, 200);
     assert.strictEqual(data.paidAmount, null);
-    assert.strictEqual(data.remainingAmount, data.orderTotal, 'remainingAmount = orderTotal when paidAmount is null');
+    assert.strictEqual(
+      data.remainingAmount,
+      data.orderTotal,
+      "remainingAmount = orderTotal when paidAmount is null",
+    );
   });
 
   // ── PATCH: update shipping / logistics fields ─────────────
-  test('200 — PATCH updates shippingStatus and trackingCode', async () => {
-    const { status, data } = await req('PATCH', `/orders/${step5OrderId}`, {
-      shippingStatus: 'shipped',
-      trackingCode: 'TEST12345',
-      trackingProvider: '黑貓宅急便',
+  test("200 — PATCH updates shippingStatus and trackingCode", async () => {
+    const { status, data } = await req("PATCH", `/orders/${step5OrderId}`, {
+      shippingStatus: "shipped",
+      trackingCode: "TEST12345",
+      trackingProvider: "黑貓宅急便",
     });
     assert.strictEqual(status, 200);
-    assert.strictEqual(data.shippingStatus, 'shipped');
-    assert.strictEqual(data.trackingCode, 'TEST12345');
+    assert.strictEqual(data.shippingStatus, "shipped");
+    assert.strictEqual(data.trackingCode, "TEST12345");
     // Step 7H-C：別名 soft normalize 成 canonical code
-    assert.strictEqual(data.trackingProvider, 'tcat');
+    assert.strictEqual(data.trackingProvider, "tcat");
   });
 
   // ── Step 7H-C: trackingProvider soft normalize ─────────────
   test('200 — PATCH normalizes "7-11" alias to canonical "711"', async () => {
-    const { status, data } = await req('PATCH', `/orders/${step5OrderId}`, {
-      trackingProvider: '7-11',
+    const { status, data } = await req("PATCH", `/orders/${step5OrderId}`, {
+      trackingProvider: "7-11",
     });
     assert.strictEqual(status, 200);
-    assert.strictEqual(data.trackingProvider, '711');
+    assert.strictEqual(data.trackingProvider, "711");
   });
 
   test('200 — PATCH normalizes "全家" / "郵局宅配" aliases', async () => {
-    let r = await req('PATCH', `/orders/${step5OrderId}`, { trackingProvider: '全家' });
-    assert.strictEqual(r.data.trackingProvider, 'familymart');
-    r = await req('PATCH', `/orders/${step5OrderId}`, { trackingProvider: '郵局宅配' });
-    assert.strictEqual(r.data.trackingProvider, 'postoffice');
+    let r = await req("PATCH", `/orders/${step5OrderId}`, {
+      trackingProvider: "全家",
+    });
+    assert.strictEqual(r.data.trackingProvider, "familymart");
+    r = await req("PATCH", `/orders/${step5OrderId}`, {
+      trackingProvider: "郵局宅配",
+    });
+    assert.strictEqual(r.data.trackingProvider, "postoffice");
   });
 
   test('200 — PATCH keeps unknown trackingProvider as-is (no silent "other")', async () => {
-    const { status, data } = await req('PATCH', `/orders/${step5OrderId}`, {
-      trackingProvider: '某快遞XYZ',
+    const { status, data } = await req("PATCH", `/orders/${step5OrderId}`, {
+      trackingProvider: "某快遞XYZ",
     });
     assert.strictEqual(status, 200);
-    assert.strictEqual(data.trackingProvider, '某快遞XYZ');
+    assert.strictEqual(data.trackingProvider, "某快遞XYZ");
   });
 
-  test('200 — PATCH trackingProvider null clears the field', async () => {
-    const { status, data } = await req('PATCH', `/orders/${step5OrderId}`, {
+  test("200 — PATCH trackingProvider null clears the field", async () => {
+    const { status, data } = await req("PATCH", `/orders/${step5OrderId}`, {
       trackingProvider: null,
     });
     assert.strictEqual(status, 200);
     assert.strictEqual(data.trackingProvider, null);
   });
 
-  test('200 — PATCH updates shippingFee recalculates orderTotal', async () => {
-    const { status, data } = await req('PATCH', `/orders/${step5OrderId}`, {
+  test("200 — PATCH updates shippingFee recalculates orderTotal", async () => {
+    const { status, data } = await req("PATCH", `/orders/${step5OrderId}`, {
       shippingFee: 100,
     });
     assert.strictEqual(status, 200);
     assert.strictEqual(data.shippingFee, 100);
-    assert.strictEqual(data.orderTotal, 300, 'orderTotal = totalPrice(200) + shippingFee(100)');
+    assert.strictEqual(
+      data.orderTotal,
+      300,
+      "orderTotal = totalPrice(200) + shippingFee(100)",
+    );
   });
 
-  test('200 — PATCH updates storeCode and storeName (maps to cvsStoreId/cvsStoreName)', async () => {
-    const { status, data } = await req('PATCH', `/orders/${step5OrderId}`, {
-      storeCode: '170268',
-      storeName: '全家台北信義店',
+  test("200 — PATCH updates storeCode and storeName (maps to cvsStoreId/cvsStoreName)", async () => {
+    const { status, data } = await req("PATCH", `/orders/${step5OrderId}`, {
+      storeCode: "170268",
+      storeName: "全家台北信義店",
     });
     assert.strictEqual(status, 200);
-    assert.strictEqual(data.storeCode, '170268');
-    assert.strictEqual(data.storeName, '全家台北信義店');
+    assert.strictEqual(data.storeCode, "170268");
+    assert.strictEqual(data.storeName, "全家台北信義店");
   });
 
-  test('200 — PATCH updates internalNote', async () => {
-    const { status, data } = await req('PATCH', `/orders/${step5OrderId}`, {
-      internalNote: '內部備註測試',
+  test("200 — PATCH updates internalNote", async () => {
+    const { status, data } = await req("PATCH", `/orders/${step5OrderId}`, {
+      internalNote: "內部備註測試",
     });
     assert.strictEqual(status, 200);
-    assert.strictEqual(data.internalNote, '內部備註測試');
+    assert.strictEqual(data.internalNote, "內部備註測試");
   });
 
   // ── PATCH enum validation → 422 ───────────────────────────
-  test('422 — invalid paymentMethod enum value', async () => {
-    const { status, data } = await req('PATCH', `/orders/${step5OrderId}`, {
-      paymentMethod: 'unpaid',
+  test("422 — invalid paymentMethod enum value", async () => {
+    const { status, data } = await req("PATCH", `/orders/${step5OrderId}`, {
+      paymentMethod: "unpaid",
     });
     assert.strictEqual(status, 422);
-    assert.ok(data.error, 'should return error message');
+    assert.ok(data.error, "should return error message");
   });
 
-  test('422 — invalid paymentStatus enum value', async () => {
-    const { status, data } = await req('PATCH', `/orders/${step5OrderId}`, {
-      paymentStatus: 'invalid_status',
+  test("422 — invalid paymentStatus enum value", async () => {
+    const { status, data } = await req("PATCH", `/orders/${step5OrderId}`, {
+      paymentStatus: "invalid_status",
     });
     assert.strictEqual(status, 422);
-    assert.ok(data.error, 'should return error message');
+    assert.ok(data.error, "should return error message");
   });
 
-  test('422 — invalid shippingStatus enum value', async () => {
-    const { status, data } = await req('PATCH', `/orders/${step5OrderId}`, {
-      shippingStatus: 'not_a_status',
+  test("422 — invalid shippingStatus enum value", async () => {
+    const { status, data } = await req("PATCH", `/orders/${step5OrderId}`, {
+      shippingStatus: "not_a_status",
     });
     assert.strictEqual(status, 422);
-    assert.ok(data.error, 'should return error message');
+    assert.ok(data.error, "should return error message");
   });
 
-  test('422 — invalid shippingMethod enum value', async () => {
-    const { status, data } = await req('PATCH', `/orders/${step5OrderId}`, {
-      shippingMethod: 'teleport',
+  test("422 — invalid shippingMethod enum value", async () => {
+    const { status, data } = await req("PATCH", `/orders/${step5OrderId}`, {
+      shippingMethod: "teleport",
     });
     assert.strictEqual(status, 422);
-    assert.ok(data.error, 'should return error message');
+    assert.ok(data.error, "should return error message");
   });
 
   // ── PATCH negative amount → 422 ───────────────────────────
-  test('422 — negative paidAmount', async () => {
-    const { status, data } = await req('PATCH', `/orders/${step5OrderId}`, {
+  test("422 — negative paidAmount", async () => {
+    const { status, data } = await req("PATCH", `/orders/${step5OrderId}`, {
       paidAmount: -1,
     });
     assert.strictEqual(status, 422);
-    assert.ok(data.error, 'should return error message');
+    assert.ok(data.error, "should return error message");
   });
 
-  test('422 — negative shippingFee', async () => {
-    const { status, data } = await req('PATCH', `/orders/${step5OrderId}`, {
+  test("422 — negative shippingFee", async () => {
+    const { status, data } = await req("PATCH", `/orders/${step5OrderId}`, {
       shippingFee: -10,
     });
     assert.strictEqual(status, 422);
-    assert.ok(data.error, 'should return error message');
+    assert.ok(data.error, "should return error message");
   });
 
   // ── Existing validation still returns 400 (not 422) ──────
-  test('400 — quantity=0 still returns 400 (not 422)', async () => {
-    const { status } = await req('PATCH', `/orders/${step5OrderId}`, { quantity: 0 });
+  test("400 — quantity=0 still returns 400 (not 422)", async () => {
+    const { status } = await req("PATCH", `/orders/${step5OrderId}`, {
+      quantity: 0,
+    });
     assert.strictEqual(status, 400);
   });
 });
@@ -550,7 +668,7 @@ describe('Step 5C: payment / logistics fields', () => {
 // ─────────────────────────────────────────────────────────────
 // 11. Step 5C: public tracking API privacy guard
 // ─────────────────────────────────────────────────────────────
-describe('Step 5C: public tracking API — privacy guard', () => {
+describe("Step 5C: public tracking API — privacy guard", () => {
   let publicOrderToken;
 
   before(async () => {
@@ -560,86 +678,165 @@ describe('Step 5C: public tracking API — privacy guard', () => {
       .values({
         productId: testProductId,
         storeId: testStoreId,
-        productName: '__test_product__',
+        productName: "__test_product__",
         publicToken: token,
-        buyerName: 'Privacy Buyer',
-        buyerPhone: '0944444444',
-        pickupMethod: 'home_delivery',
+        buyerName: "Privacy Buyer",
+        buyerPhone: "0944444444",
+        pickupMethod: "home_delivery",
         quantity: 1,
-        unitPrice: '200.00',
-        shippingFee: '80.00',
-        totalPrice: '200.00',
-        status: 'pending',
+        unitPrice: "200.00",
+        shippingFee: "80.00",
+        totalPrice: "200.00",
+        status: "pending",
         specValues: {},
         // Fields that must NOT appear in public response
-        internalNote: '這是內部備註，不能公開',
-        paymentNote: '這是付款備註，不能公開',
-        paidAmount: '50.00',
-        recipientPhone: '0999999999',
-        recipientAddress: '台北市信義區信義路五段7號',
-        shippingNote: '這是物流備註，不能公開',
+        internalNote: "這是內部備註，不能公開",
+        paymentNote: "這是付款備註，不能公開",
+        paidAmount: "50.00",
+        recipientPhone: "0999999999",
+        recipientAddress: "台北市信義區信義路五段7號",
+        shippingNote: "這是物流備註，不能公開",
         // Fields that ARE safe to show
-        shippingStatus: 'shipped',
-        trackingCode: 'PUB-TRACK-123',
-        trackingProvider: '黑貓宅急便',
+        shippingStatus: "shipped",
+        trackingCode: "PUB-TRACK-123",
+        trackingProvider: "黑貓宅急便",
       })
       .returning();
     publicOrderToken = token;
   });
 
-  test('200 — public tracking returns safe shipping fields', async () => {
-    const { status, data } = await req('GET', `/orders/track/${publicOrderToken}`, null, null);
+  test("200 — public tracking returns safe shipping fields", async () => {
+    const { status, data } = await req(
+      "GET",
+      `/orders/track/${publicOrderToken}`,
+      null,
+      null,
+    );
     assert.strictEqual(status, 200);
-    assert.strictEqual(data.shippingStatus, 'shipped');
-    assert.ok(typeof data.shippingStatusLabel === 'string', 'shippingStatusLabel should be present');
-    assert.strictEqual(data.trackingCode, 'PUB-TRACK-123');
-    assert.strictEqual(data.trackingProvider, '黑貓宅急便');
+    assert.strictEqual(data.shippingStatus, "shipped");
+    assert.ok(
+      typeof data.shippingStatusLabel === "string",
+      "shippingStatusLabel should be present",
+    );
+    assert.strictEqual(data.trackingCode, "PUB-TRACK-123");
+    assert.strictEqual(data.trackingProvider, "黑貓宅急便");
     assert.strictEqual(data.shippingFee, 80);
-    assert.strictEqual(data.orderTotal, 280, 'orderTotal = totalPrice(200) + shippingFee(80)');
+    assert.strictEqual(
+      data.orderTotal,
+      280,
+      "orderTotal = totalPrice(200) + shippingFee(80)",
+    );
   });
 
-  test('public tracking MUST NOT return internalNote', async () => {
-    const { data } = await req('GET', `/orders/track/${publicOrderToken}`, null, null);
-    assert.strictEqual(data.internalNote, undefined, 'internalNote MUST NOT be in public response');
+  test("public tracking MUST NOT return internalNote", async () => {
+    const { data } = await req(
+      "GET",
+      `/orders/track/${publicOrderToken}`,
+      null,
+      null,
+    );
+    assert.strictEqual(
+      data.internalNote,
+      undefined,
+      "internalNote MUST NOT be in public response",
+    );
   });
 
-  test('public tracking MUST NOT return paymentNote', async () => {
-    const { data } = await req('GET', `/orders/track/${publicOrderToken}`, null, null);
-    assert.strictEqual(data.paymentNote, undefined, 'paymentNote MUST NOT be in public response');
+  test("public tracking MUST NOT return paymentNote", async () => {
+    const { data } = await req(
+      "GET",
+      `/orders/track/${publicOrderToken}`,
+      null,
+      null,
+    );
+    assert.strictEqual(
+      data.paymentNote,
+      undefined,
+      "paymentNote MUST NOT be in public response",
+    );
   });
 
-  test('public tracking MUST NOT return paidAmount', async () => {
-    const { data } = await req('GET', `/orders/track/${publicOrderToken}`, null, null);
-    assert.strictEqual(data.paidAmount, undefined, 'paidAmount MUST NOT be in public response');
+  test("public tracking MUST NOT return paidAmount", async () => {
+    const { data } = await req(
+      "GET",
+      `/orders/track/${publicOrderToken}`,
+      null,
+      null,
+    );
+    assert.strictEqual(
+      data.paidAmount,
+      undefined,
+      "paidAmount MUST NOT be in public response",
+    );
   });
 
-  test('public tracking MUST NOT return recipientPhone', async () => {
-    const { data } = await req('GET', `/orders/track/${publicOrderToken}`, null, null);
-    assert.strictEqual(data.recipientPhone, undefined, 'recipientPhone MUST NOT be in public response');
+  test("public tracking MUST NOT return recipientPhone", async () => {
+    const { data } = await req(
+      "GET",
+      `/orders/track/${publicOrderToken}`,
+      null,
+      null,
+    );
+    assert.strictEqual(
+      data.recipientPhone,
+      undefined,
+      "recipientPhone MUST NOT be in public response",
+    );
   });
 
-  test('public tracking MUST NOT return recipientAddress', async () => {
-    const { data } = await req('GET', `/orders/track/${publicOrderToken}`, null, null);
-    assert.strictEqual(data.recipientAddress, undefined, 'recipientAddress MUST NOT be in public response');
+  test("public tracking MUST NOT return recipientAddress", async () => {
+    const { data } = await req(
+      "GET",
+      `/orders/track/${publicOrderToken}`,
+      null,
+      null,
+    );
+    assert.strictEqual(
+      data.recipientAddress,
+      undefined,
+      "recipientAddress MUST NOT be in public response",
+    );
   });
 
-  test('public tracking MUST NOT return shippingNote', async () => {
-    const { data } = await req('GET', `/orders/track/${publicOrderToken}`, null, null);
-    assert.strictEqual(data.shippingNote, undefined, 'shippingNote MUST NOT be in public response');
+  test("public tracking MUST NOT return shippingNote", async () => {
+    const { data } = await req(
+      "GET",
+      `/orders/track/${publicOrderToken}`,
+      null,
+      null,
+    );
+    assert.strictEqual(
+      data.shippingNote,
+      undefined,
+      "shippingNote MUST NOT be in public response",
+    );
   });
 
-  test('publicToken is NOT trackingCode', async () => {
-    const { data } = await req('GET', `/orders/track/${publicOrderToken}`, null, null);
-    assert.ok(data.publicToken, 'publicToken should be present');
-    assert.notStrictEqual(data.publicToken, data.trackingCode, 'publicToken must not equal trackingCode');
-    assert.strictEqual(data.trackingCode, 'PUB-TRACK-123', 'trackingCode should be the logistics tracking number');
+  test("publicToken is NOT trackingCode", async () => {
+    const { data } = await req(
+      "GET",
+      `/orders/track/${publicOrderToken}`,
+      null,
+      null,
+    );
+    assert.ok(data.publicToken, "publicToken should be present");
+    assert.notStrictEqual(
+      data.publicToken,
+      data.trackingCode,
+      "publicToken must not equal trackingCode",
+    );
+    assert.strictEqual(
+      data.trackingCode,
+      "PUB-TRACK-123",
+      "trackingCode should be the logistics tracking number",
+    );
   });
 });
 
 // ─────────────────────────────────────────────────────────────
 // 12. Step 5E: PATCH /orders/bulk
 // ─────────────────────────────────────────────────────────────
-describe('Step 5E: PATCH /orders/bulk', () => {
+describe("Step 5E: PATCH /orders/bulk", () => {
   let bulkOrder1Id;
   let bulkOrder2Id;
   let bulkCompletedId;
@@ -647,20 +844,23 @@ describe('Step 5E: PATCH /orders/bulk', () => {
 
   before(async () => {
     const insertOrder = (token) =>
-      db.insert(ordersTable).values({
-        productId: testProductId,
-        storeId: testStoreId,
-        productName: '__test_product__',
-        publicToken: token,
-        buyerName: 'Bulk Buyer',
-        buyerPhone: '0955555555',
-        pickupMethod: 'pickup',
-        quantity: 1,
-        unitPrice: '100.00',
-        totalPrice: '100.00',
-        status: 'pending',
-        specValues: {},
-      }).returning();
+      db
+        .insert(ordersTable)
+        .values({
+          productId: testProductId,
+          storeId: testStoreId,
+          productName: "__test_product__",
+          publicToken: token,
+          buyerName: "Bulk Buyer",
+          buyerPhone: "0955555555",
+          pickupMethod: "pickup",
+          quantity: 1,
+          unitPrice: "100.00",
+          totalPrice: "100.00",
+          status: "pending",
+          specValues: {},
+        })
+        .returning();
 
     const [o1] = await insertOrder(`bulk-tok-1-${Date.now()}`);
     const [o2] = await insertOrder(`bulk-tok-2-${Date.now()}`);
@@ -672,205 +872,267 @@ describe('Step 5E: PATCH /orders/bulk', () => {
     bulkCompletedId = oComp.id;
     bulkCancelledId = oCanc.id;
 
-    await db.update(ordersTable).set({ status: 'completed' }).where(eq(ordersTable.id, bulkCompletedId));
-    await db.update(ordersTable).set({ status: 'cancelled' }).where(eq(ordersTable.id, bulkCancelledId));
+    await db
+      .update(ordersTable)
+      .set({ status: "completed" })
+      .where(eq(ordersTable.id, bulkCompletedId));
+    await db
+      .update(ordersTable)
+      .set({ status: "cancelled" })
+      .where(eq(ordersTable.id, bulkCancelledId));
   });
 
-  test('200 — bulk update paymentStatus for multiple orders', async () => {
-    const { status, data } = await req('PATCH', '/orders/bulk', {
+  test("200 — bulk update paymentStatus for multiple orders", async () => {
+    const { status, data } = await req("PATCH", "/orders/bulk", {
       orderIds: [bulkOrder1Id, bulkOrder2Id],
-      paymentStatus: 'paid',
+      paymentStatus: "paid",
     });
     assert.strictEqual(status, 200);
     assert.strictEqual(data.updatedCount, 2);
     assert.strictEqual(data.skippedCount, 0);
     assert.deepStrictEqual(data.skippedOrderIds, []);
 
-    const { data: orders } = await req('GET', `/stores/${testStoreId}/orders`);
+    const { data: orders } = await req("GET", `/stores/${testStoreId}/orders`);
     const o1 = orders.find((o) => o.id === bulkOrder1Id);
     const o2 = orders.find((o) => o.id === bulkOrder2Id);
-    assert.strictEqual(o1.paymentStatus, 'paid');
-    assert.strictEqual(o2.paymentStatus, 'paid');
+    assert.strictEqual(o1.paymentStatus, "paid");
+    assert.strictEqual(o2.paymentStatus, "paid");
   });
 
-  test('200 — bulk update shippingStatus for multiple orders', async () => {
-    const { status, data } = await req('PATCH', '/orders/bulk', {
+  test("200 — bulk update shippingStatus for multiple orders", async () => {
+    const { status, data } = await req("PATCH", "/orders/bulk", {
       orderIds: [bulkOrder1Id, bulkOrder2Id],
-      shippingStatus: 'shipped',
+      shippingStatus: "shipped",
     });
     assert.strictEqual(status, 200);
     assert.strictEqual(data.updatedCount, 2);
 
-    const { data: orders } = await req('GET', `/stores/${testStoreId}/orders`);
+    const { data: orders } = await req("GET", `/stores/${testStoreId}/orders`);
     const o1 = orders.find((o) => o.id === bulkOrder1Id);
-    assert.strictEqual(o1.shippingStatus, 'shipped');
+    assert.strictEqual(o1.shippingStatus, "shipped");
   });
 
-  test('200 — bulk update both paymentStatus and shippingStatus', async () => {
-    const { status, data } = await req('PATCH', '/orders/bulk', {
+  test("200 — bulk update both paymentStatus and shippingStatus", async () => {
+    const { status, data } = await req("PATCH", "/orders/bulk", {
       orderIds: [bulkOrder1Id],
-      paymentStatus: 'unpaid',
-      shippingStatus: 'not_shipped',
+      paymentStatus: "unpaid",
+      shippingStatus: "not_shipped",
     });
     assert.strictEqual(status, 200);
     assert.strictEqual(data.updatedCount, 1);
   });
 
-  test('200 — completed and cancelled orders are skipped', async () => {
-    const { status, data } = await req('PATCH', '/orders/bulk', {
+  test("200 — completed and cancelled orders are skipped", async () => {
+    const { status, data } = await req("PATCH", "/orders/bulk", {
       orderIds: [bulkOrder1Id, bulkCompletedId, bulkCancelledId],
-      paymentStatus: 'paid',
+      paymentStatus: "paid",
     });
     assert.strictEqual(status, 200);
-    assert.strictEqual(data.updatedCount, 1, 'only the pending order should be updated');
-    assert.strictEqual(data.skippedCount, 2, 'completed and cancelled should be skipped');
-    assert.ok(data.skippedOrderIds.includes(bulkCompletedId), 'completed order in skippedOrderIds');
-    assert.ok(data.skippedOrderIds.includes(bulkCancelledId), 'cancelled order in skippedOrderIds');
+    assert.strictEqual(
+      data.updatedCount,
+      1,
+      "only the pending order should be updated",
+    );
+    assert.strictEqual(
+      data.skippedCount,
+      2,
+      "completed and cancelled should be skipped",
+    );
+    assert.ok(
+      data.skippedOrderIds.includes(bulkCompletedId),
+      "completed order in skippedOrderIds",
+    );
+    assert.ok(
+      data.skippedOrderIds.includes(bulkCancelledId),
+      "cancelled order in skippedOrderIds",
+    );
   });
 
-  test('200 — all skipped returns updatedCount 0', async () => {
-    const { status, data } = await req('PATCH', '/orders/bulk', {
+  test("200 — all skipped returns updatedCount 0", async () => {
+    const { status, data } = await req("PATCH", "/orders/bulk", {
       orderIds: [bulkCompletedId, bulkCancelledId],
-      shippingStatus: 'shipped',
+      shippingStatus: "shipped",
     });
     assert.strictEqual(status, 200);
     assert.strictEqual(data.updatedCount, 0);
     assert.strictEqual(data.skippedCount, 2);
   });
 
-  test('400 — empty orderIds array', async () => {
-    const { status } = await req('PATCH', '/orders/bulk', {
+  test("400 — empty orderIds array", async () => {
+    const { status } = await req("PATCH", "/orders/bulk", {
       orderIds: [],
-      paymentStatus: 'paid',
+      paymentStatus: "paid",
     });
     assert.strictEqual(status, 400);
   });
 
-  test('400 — missing orderIds', async () => {
-    const { status } = await req('PATCH', '/orders/bulk', {
-      paymentStatus: 'paid',
+  test("400 — missing orderIds", async () => {
+    const { status } = await req("PATCH", "/orders/bulk", {
+      paymentStatus: "paid",
     });
     assert.strictEqual(status, 400);
   });
 
-  test('422 — neither paymentStatus nor shippingStatus provided', async () => {
-    const { status, data } = await req('PATCH', '/orders/bulk', {
+  test("422 — neither paymentStatus nor shippingStatus provided", async () => {
+    const { status, data } = await req("PATCH", "/orders/bulk", {
       orderIds: [bulkOrder1Id],
     });
     assert.strictEqual(status, 422);
-    assert.ok(data.error, 'should return error message');
+    assert.ok(data.error, "should return error message");
   });
 
-  test('422 — invalid paymentStatus enum', async () => {
-    const { status, data } = await req('PATCH', '/orders/bulk', {
+  test("422 — invalid paymentStatus enum", async () => {
+    const { status, data } = await req("PATCH", "/orders/bulk", {
       orderIds: [bulkOrder1Id],
-      paymentStatus: 'not_valid',
+      paymentStatus: "not_valid",
     });
     assert.strictEqual(status, 422);
-    assert.ok(data.error, 'should return error message');
+    assert.ok(data.error, "should return error message");
   });
 
-  test('422 — invalid shippingStatus enum', async () => {
-    const { status, data } = await req('PATCH', '/orders/bulk', {
+  test("422 — invalid shippingStatus enum", async () => {
+    const { status, data } = await req("PATCH", "/orders/bulk", {
       orderIds: [bulkOrder1Id],
-      shippingStatus: 'flying',
+      shippingStatus: "flying",
     });
     assert.strictEqual(status, 422);
-    assert.ok(data.error, 'should return error message');
+    assert.ok(data.error, "should return error message");
   });
 
-  test('401 — unauthenticated', async () => {
-    const { status } = await req('PATCH', '/orders/bulk', {
-      orderIds: [bulkOrder1Id],
-      paymentStatus: 'paid',
-    }, null);
+  test("401 — unauthenticated", async () => {
+    const { status } = await req(
+      "PATCH",
+      "/orders/bulk",
+      {
+        orderIds: [bulkOrder1Id],
+        paymentStatus: "paid",
+      },
+      null,
+    );
     assert.strictEqual(status, 401);
   });
 
-  test('403 — wrong merchant cannot bulk update orders', async () => {
-    const { status } = await req('PATCH', '/orders/bulk', {
-      orderIds: [bulkOrder1Id],
-      paymentStatus: 'paid',
-    }, 'other_merchant_id');
+  test("403 — wrong merchant cannot bulk update orders", async () => {
+    const { status } = await req(
+      "PATCH",
+      "/orders/bulk",
+      {
+        orderIds: [bulkOrder1Id],
+        paymentStatus: "paid",
+      },
+      "other_merchant_id",
+    );
     assert.strictEqual(status, 403);
   });
 
-  test('422 — orderIds contains non-existent order', async () => {
-    const { status, data } = await req('PATCH', '/orders/bulk', {
+  test("422 — orderIds contains non-existent order", async () => {
+    const { status, data } = await req("PATCH", "/orders/bulk", {
       orderIds: [999999999],
-      paymentStatus: 'paid',
+      paymentStatus: "paid",
     });
     assert.strictEqual(status, 422);
-    assert.ok(data.error, 'should return error message');
+    assert.ok(data.error, "should return error message");
   });
 });
 
 // ─────────────────────────────────────────────────────────────
 // 13. Step 5F-B: POST /orders/picking-list
 // ─────────────────────────────────────────────────────────────
-describe('Step 5F-B: POST /orders/picking-list', () => {
+describe("Step 5F-B: POST /orders/picking-list", () => {
   let pickOrder1Id;
   let pickOrder2Id;
   let pickCancelledId;
 
   before(async () => {
     const insertOrder = (token, spec, qty) =>
-      db.insert(ordersTable).values({
-        productId: testProductId,
-        storeId: testStoreId,
-        productName: '__test_product__',
-        publicToken: token,
-        buyerName: 'Pick Buyer',
-        buyerPhone: '0966666666',
-        pickupMethod: 'pickup',
-        quantity: qty,
-        unitPrice: '100.00',
-        totalPrice: String(100 * qty),
-        status: 'pending',
-        specValues: spec,
-        notes: null,
-      }).returning();
+      db
+        .insert(ordersTable)
+        .values({
+          productId: testProductId,
+          storeId: testStoreId,
+          productName: "__test_product__",
+          publicToken: token,
+          buyerName: "Pick Buyer",
+          buyerPhone: "0966666666",
+          pickupMethod: "pickup",
+          quantity: qty,
+          unitPrice: "100.00",
+          totalPrice: String(100 * qty),
+          status: "pending",
+          specValues: spec,
+          notes: null,
+        })
+        .returning();
 
-    const [o1] = await insertOrder(`pick-tok-1-${Date.now()}`, { color: 'red' }, 2);
-    const [o2] = await insertOrder(`pick-tok-2-${Date.now()}`, { color: 'red' }, 3);
+    const [o1] = await insertOrder(
+      `pick-tok-1-${Date.now()}`,
+      { color: "red" },
+      2,
+    );
+    const [o2] = await insertOrder(
+      `pick-tok-2-${Date.now()}`,
+      { color: "red" },
+      3,
+    );
     const [oCanc] = await insertOrder(`pick-tok-c-${Date.now()}`, {}, 1);
 
     pickOrder1Id = o1.id;
     pickOrder2Id = o2.id;
     pickCancelledId = oCanc.id;
 
-    await db.update(ordersTable).set({ status: 'cancelled' }).where(eq(ordersTable.id, pickCancelledId));
+    await db
+      .update(ordersTable)
+      .set({ status: "cancelled" })
+      .where(eq(ordersTable.id, pickCancelledId));
   });
 
-  test('401 — unauthenticated', async () => {
-    const { status } = await req('POST', '/orders/picking-list', { orderIds: [pickOrder1Id] }, null);
+  test("401 — unauthenticated", async () => {
+    const { status } = await req(
+      "POST",
+      "/orders/picking-list",
+      { orderIds: [pickOrder1Id] },
+      null,
+    );
     assert.strictEqual(status, 401);
   });
 
-  test('422 — empty orderIds', async () => {
-    const { status } = await req('POST', '/orders/picking-list', { orderIds: [] });
+  test("422 — empty orderIds", async () => {
+    const { status } = await req("POST", "/orders/picking-list", {
+      orderIds: [],
+    });
     assert.strictEqual(status, 422);
   });
 
-  test('422 — orderId does not exist', async () => {
-    const { status, data } = await req('POST', '/orders/picking-list', { orderIds: [999999999] });
+  test("422 — orderId does not exist", async () => {
+    const { status, data } = await req("POST", "/orders/picking-list", {
+      orderIds: [999999999],
+    });
     assert.strictEqual(status, 422);
     assert.ok(data.error);
   });
 
-  test('403 — wrong merchant cannot access picking list', async () => {
-    const { status } = await req('POST', '/orders/picking-list', { orderIds: [pickOrder1Id] }, 'other_merchant_id');
+  test("403 — wrong merchant cannot access picking list", async () => {
+    const { status } = await req(
+      "POST",
+      "/orders/picking-list",
+      { orderIds: [pickOrder1Id] },
+      "other_merchant_id",
+    );
     assert.strictEqual(status, 403);
   });
 
-  test('200 — groups by product+spec and sums quantity', async () => {
-    const { status, data } = await req('POST', '/orders/picking-list', {
+  test("200 — groups by product+spec and sums quantity", async () => {
+    const { status, data } = await req("POST", "/orders/picking-list", {
       orderIds: [pickOrder1Id, pickOrder2Id],
     });
     assert.strictEqual(status, 200);
-    assert.ok(Array.isArray(data.items), 'items should be an array');
-    assert.strictEqual(data.items.length, 1, 'both orders have same product+spec, should merge into 1 item');
-    assert.strictEqual(data.items[0].quantityTotal, 5, 'qty 2 + 3 = 5');
+    assert.ok(Array.isArray(data.items), "items should be an array");
+    assert.strictEqual(
+      data.items.length,
+      1,
+      "both orders have same product+spec, should merge into 1 item",
+    );
+    assert.strictEqual(data.items[0].quantityTotal, 5, "qty 2 + 3 = 5");
     assert.strictEqual(data.items[0].productId, testProductId);
     assert.ok(data.items[0].orderIds.includes(pickOrder1Id));
     assert.ok(data.items[0].orderIds.includes(pickOrder2Id));
@@ -878,36 +1140,44 @@ describe('Step 5F-B: POST /orders/picking-list', () => {
     assert.deepStrictEqual(data.excludedOrderIds, []);
   });
 
-  test('200 — cancelled orders excluded and in excludedOrderIds', async () => {
-    const { status, data } = await req('POST', '/orders/picking-list', {
+  test("200 — cancelled orders excluded and in excludedOrderIds", async () => {
+    const { status, data } = await req("POST", "/orders/picking-list", {
       orderIds: [pickOrder1Id, pickCancelledId],
     });
     assert.strictEqual(status, 200);
-    assert.ok(data.excludedOrderIds.includes(pickCancelledId), 'cancelled order in excludedOrderIds');
-    assert.strictEqual(data.orderCount, 1, 'only 1 non-cancelled order');
+    assert.ok(
+      data.excludedOrderIds.includes(pickCancelledId),
+      "cancelled order in excludedOrderIds",
+    );
+    assert.strictEqual(data.orderCount, 1, "only 1 non-cancelled order");
     const includedOrderId = data.items.flatMap((i) => i.orderIds);
-    assert.ok(!includedOrderId.includes(pickCancelledId), 'cancelled order not in items');
+    assert.ok(
+      !includedOrderId.includes(pickCancelledId),
+      "cancelled order not in items",
+    );
   });
 
-  test('200 — empty specValues does not crash', async () => {
-    const { status, data } = await req('POST', '/orders/picking-list', {
-      orderIds: [pickCancelledId === pickOrder1Id ? pickOrder2Id : pickOrder1Id],
+  test("200 — empty specValues does not crash", async () => {
+    const { status, data } = await req("POST", "/orders/picking-list", {
+      orderIds: [
+        pickCancelledId === pickOrder1Id ? pickOrder2Id : pickOrder1Id,
+      ],
     });
     assert.strictEqual(status, 200);
     assert.ok(Array.isArray(data.items));
   });
 
-  test('200 — generatedAt and structure present', async () => {
-    const { status, data } = await req('POST', '/orders/picking-list', {
+  test("200 — generatedAt and structure present", async () => {
+    const { status, data } = await req("POST", "/orders/picking-list", {
       orderIds: [pickOrder1Id],
     });
     assert.strictEqual(status, 200);
-    assert.ok(data.generatedAt, 'generatedAt should be present');
-    assert.ok(typeof data.orderCount === 'number');
+    assert.ok(data.generatedAt, "generatedAt should be present");
+    assert.ok(typeof data.orderCount === "number");
     assert.ok(Array.isArray(data.excludedOrderIds));
     assert.ok(Array.isArray(data.items));
     const item = data.items[0];
-    assert.ok(typeof item.quantityTotal === 'number');
+    assert.ok(typeof item.quantityTotal === "number");
     assert.ok(Array.isArray(item.orderIds));
     assert.ok(Array.isArray(item.orderNumbers));
   });
@@ -916,7 +1186,7 @@ describe('Step 5F-B: POST /orders/picking-list', () => {
 // ─────────────────────────────────────────────────────────────
 // 14. Step 5F-B: POST /orders/shipping-list
 // ─────────────────────────────────────────────────────────────
-describe('Step 5F-B: POST /orders/shipping-list', () => {
+describe("Step 5F-B: POST /orders/shipping-list", () => {
   let shipOrder1Id;
   let shipUnpaidId;
   let shipCancelledId;
@@ -924,35 +1194,38 @@ describe('Step 5F-B: POST /orders/shipping-list', () => {
 
   before(async () => {
     const insertOrder = (token, overrides) =>
-      db.insert(ordersTable).values({
-        productId: testProductId,
-        storeId: testStoreId,
-        productName: '__test_product__',
-        publicToken: token,
-        buyerName: 'Ship Buyer',
-        buyerPhone: '0977777777',
-        pickupMethod: 'delivery',
-        quantity: 1,
-        unitPrice: '200.00',
-        totalPrice: '200.00',
-        status: 'pending',
-        specValues: {},
-        internalNote: 'INTERNAL_SECRET',
-        paymentNote: 'PAYMENT_SECRET',
-        trackingCode: 'SHIP-TRACK-001',
-        ...overrides,
-      }).returning();
+      db
+        .insert(ordersTable)
+        .values({
+          productId: testProductId,
+          storeId: testStoreId,
+          productName: "__test_product__",
+          publicToken: token,
+          buyerName: "Ship Buyer",
+          buyerPhone: "0977777777",
+          pickupMethod: "delivery",
+          quantity: 1,
+          unitPrice: "200.00",
+          totalPrice: "200.00",
+          status: "pending",
+          specValues: {},
+          internalNote: "INTERNAL_SECRET",
+          paymentNote: "PAYMENT_SECRET",
+          trackingCode: "SHIP-TRACK-001",
+          ...overrides,
+        })
+        .returning();
 
     shipOrder1Token = `ship-tok-1-${Date.now()}`;
     const [o1] = await insertOrder(shipOrder1Token, {
-      paymentStatus: 'paid',
-      shippingStatus: 'shipped',
-      recipientName: '王收件',
-      recipientPhone: '0911111111',
-      recipientAddress: '台北市信義區某路1號',
+      paymentStatus: "paid",
+      shippingStatus: "shipped",
+      recipientName: "王收件",
+      recipientPhone: "0911111111",
+      recipientAddress: "台北市信義區某路1號",
     });
     const [oUnpaid] = await insertOrder(`ship-tok-u-${Date.now()}`, {
-      paymentStatus: 'unpaid',
+      paymentStatus: "unpaid",
     });
     const [oCanc] = await insertOrder(`ship-tok-c-${Date.now()}`, {});
 
@@ -960,27 +1233,42 @@ describe('Step 5F-B: POST /orders/shipping-list', () => {
     shipUnpaidId = oUnpaid.id;
     shipCancelledId = oCanc.id;
 
-    await db.update(ordersTable).set({ status: 'cancelled' }).where(eq(ordersTable.id, shipCancelledId));
+    await db
+      .update(ordersTable)
+      .set({ status: "cancelled" })
+      .where(eq(ordersTable.id, shipCancelledId));
   });
 
-  test('401 — unauthenticated', async () => {
-    const { status } = await req('POST', '/orders/shipping-list', { orderIds: [shipOrder1Id] }, null);
+  test("401 — unauthenticated", async () => {
+    const { status } = await req(
+      "POST",
+      "/orders/shipping-list",
+      { orderIds: [shipOrder1Id] },
+      null,
+    );
     assert.strictEqual(status, 401);
   });
 
-  test('422 — orderId does not exist', async () => {
-    const { status, data } = await req('POST', '/orders/shipping-list', { orderIds: [999999998] });
+  test("422 — orderId does not exist", async () => {
+    const { status, data } = await req("POST", "/orders/shipping-list", {
+      orderIds: [999999998],
+    });
     assert.strictEqual(status, 422);
     assert.ok(data.error);
   });
 
-  test('403 — wrong merchant cannot access shipping list', async () => {
-    const { status } = await req('POST', '/orders/shipping-list', { orderIds: [shipOrder1Id] }, 'other_merchant_id');
+  test("403 — wrong merchant cannot access shipping list", async () => {
+    const { status } = await req(
+      "POST",
+      "/orders/shipping-list",
+      { orderIds: [shipOrder1Id] },
+      "other_merchant_id",
+    );
     assert.strictEqual(status, 403);
   });
 
-  test('200 — returns shipping data with correct fields', async () => {
-    const { status, data } = await req('POST', '/orders/shipping-list', {
+  test("200 — returns shipping data with correct fields", async () => {
+    const { status, data } = await req("POST", "/orders/shipping-list", {
       orderIds: [shipOrder1Id],
     });
     assert.strictEqual(status, 200);
@@ -988,91 +1276,122 @@ describe('Step 5F-B: POST /orders/shipping-list', () => {
     assert.ok(Array.isArray(data.orders));
     const order = data.orders[0];
     assert.strictEqual(order.orderId, shipOrder1Id);
-    assert.strictEqual(order.paymentStatus, 'paid');
-    assert.strictEqual(order.shippingStatus, 'shipped');
-    assert.strictEqual(order.recipientName, '王收件');
-    assert.strictEqual(order.recipientPhone, '0911111111');
-    assert.strictEqual(order.recipientAddress, '台北市信義區某路1號');
-    assert.strictEqual(order.trackingCode, 'SHIP-TRACK-001');
-    assert.ok(typeof order.itemsText === 'string', 'itemsText should be present');
-    assert.ok(order.orderNumber, 'orderNumber should be present');
+    assert.strictEqual(order.paymentStatus, "paid");
+    assert.strictEqual(order.shippingStatus, "shipped");
+    assert.strictEqual(order.recipientName, "王收件");
+    assert.strictEqual(order.recipientPhone, "0911111111");
+    assert.strictEqual(order.recipientAddress, "台北市信義區某路1號");
+    assert.strictEqual(order.trackingCode, "SHIP-TRACK-001");
+    assert.ok(
+      typeof order.itemsText === "string",
+      "itemsText should be present",
+    );
+    assert.ok(order.orderNumber, "orderNumber should be present");
   });
 
-  test('200 — unpaid order included, paymentStatus present', async () => {
-    const { status, data } = await req('POST', '/orders/shipping-list', {
+  test("200 — unpaid order included, paymentStatus present", async () => {
+    const { status, data } = await req("POST", "/orders/shipping-list", {
       orderIds: [shipUnpaidId],
     });
     assert.strictEqual(status, 200);
     assert.strictEqual(data.orderCount, 1);
     const order = data.orders[0];
-    assert.ok(order.paymentStatus !== undefined, 'paymentStatus must be present even for unpaid');
-    assert.strictEqual(order.paymentStatus, 'unpaid');
+    assert.ok(
+      order.paymentStatus !== undefined,
+      "paymentStatus must be present even for unpaid",
+    );
+    assert.strictEqual(order.paymentStatus, "unpaid");
   });
 
-  test('200 — cancelled orders excluded and in excludedOrderIds', async () => {
-    const { status, data } = await req('POST', '/orders/shipping-list', {
+  test("200 — cancelled orders excluded and in excludedOrderIds", async () => {
+    const { status, data } = await req("POST", "/orders/shipping-list", {
       orderIds: [shipOrder1Id, shipCancelledId],
     });
     assert.strictEqual(status, 200);
-    assert.ok(data.excludedOrderIds.includes(shipCancelledId), 'cancelled order in excludedOrderIds');
+    assert.ok(
+      data.excludedOrderIds.includes(shipCancelledId),
+      "cancelled order in excludedOrderIds",
+    );
     assert.strictEqual(data.orderCount, 1);
-    assert.ok(!data.orders.find((o) => o.orderId === shipCancelledId), 'cancelled order not in orders array');
+    assert.ok(
+      !data.orders.find((o) => o.orderId === shipCancelledId),
+      "cancelled order not in orders array",
+    );
   });
 
-  test('200 — internalNote MUST NOT be returned', async () => {
-    const { status, data } = await req('POST', '/orders/shipping-list', {
+  test("200 — internalNote MUST NOT be returned", async () => {
+    const { status, data } = await req("POST", "/orders/shipping-list", {
       orderIds: [shipOrder1Id],
     });
     assert.strictEqual(status, 200);
     const order = data.orders[0];
-    assert.strictEqual(order.internalNote, undefined, 'internalNote must not appear in shipping list response');
+    assert.strictEqual(
+      order.internalNote,
+      undefined,
+      "internalNote must not appear in shipping list response",
+    );
   });
 
-  test('200 — paymentNote MUST NOT be returned', async () => {
-    const { status, data } = await req('POST', '/orders/shipping-list', {
+  test("200 — paymentNote MUST NOT be returned", async () => {
+    const { status, data } = await req("POST", "/orders/shipping-list", {
       orderIds: [shipOrder1Id],
     });
     assert.strictEqual(status, 200);
     const order = data.orders[0];
-    assert.strictEqual(order.paymentNote, undefined, 'paymentNote must not appear in shipping list response');
+    assert.strictEqual(
+      order.paymentNote,
+      undefined,
+      "paymentNote must not appear in shipping list response",
+    );
   });
 
-  test('200 — publicToken is NOT trackingCode', async () => {
-    const { status, data } = await req('POST', '/orders/shipping-list', {
+  test("200 — publicToken is NOT trackingCode", async () => {
+    const { status, data } = await req("POST", "/orders/shipping-list", {
       orderIds: [shipOrder1Id],
     });
     assert.strictEqual(status, 200);
     const order = data.orders[0];
-    assert.strictEqual(order.trackingCode, 'SHIP-TRACK-001', 'trackingCode should be logistics tracking number');
-    assert.strictEqual(order.publicToken, undefined, 'publicToken should not appear in shipping list');
+    assert.strictEqual(
+      order.trackingCode,
+      "SHIP-TRACK-001",
+      "trackingCode should be logistics tracking number",
+    );
+    assert.strictEqual(
+      order.publicToken,
+      undefined,
+      "publicToken should not appear in shipping list",
+    );
   });
 });
 
 // ─────────────────────────────────────────────────────────────
 // 15. Step 5F-C: POST /orders/picking-list.csv
 // ─────────────────────────────────────────────────────────────
-describe('Step 5F-C: POST /orders/picking-list.csv', () => {
+describe("Step 5F-C: POST /orders/picking-list.csv", () => {
   let csvPickOrder1Id;
   let csvPickCancelledId;
   let csvPickSpecialId;
 
   before(async () => {
     const insertOrder = (token, overrides) =>
-      db.insert(ordersTable).values({
-        productId: testProductId,
-        storeId: testStoreId,
-        productName: '__test_product__',
-        publicToken: token,
-        buyerName: 'CSV Pick Buyer',
-        buyerPhone: '0911222333',
-        pickupMethod: 'pickup',
-        quantity: 3,
-        unitPrice: '100.00',
-        totalPrice: '300.00',
-        status: 'pending',
-        specValues: { color: 'blue' },
-        ...overrides,
-      }).returning();
+      db
+        .insert(ordersTable)
+        .values({
+          productId: testProductId,
+          storeId: testStoreId,
+          productName: "__test_product__",
+          publicToken: token,
+          buyerName: "CSV Pick Buyer",
+          buyerPhone: "0911222333",
+          pickupMethod: "pickup",
+          quantity: 3,
+          unitPrice: "100.00",
+          totalPrice: "300.00",
+          status: "pending",
+          specValues: { color: "blue" },
+          ...overrides,
+        })
+        .returning();
 
     const [o1] = await insertOrder(`csv-pick-1-${Date.now()}`, {});
     const [oCanc] = await insertOrder(`csv-pick-c-${Date.now()}`, {});
@@ -1084,109 +1403,150 @@ describe('Step 5F-C: POST /orders/picking-list.csv', () => {
     csvPickCancelledId = oCanc.id;
     csvPickSpecialId = oSpec.id;
 
-    await db.update(ordersTable).set({ status: 'cancelled' }).where(eq(ordersTable.id, csvPickCancelledId));
+    await db
+      .update(ordersTable)
+      .set({ status: "cancelled" })
+      .where(eq(ordersTable.id, csvPickCancelledId));
   });
 
-  test('401 — unauthenticated', async () => {
-    const { status } = await req('POST', '/orders/picking-list.csv', { orderIds: [csvPickOrder1Id] }, null);
+  test("401 — unauthenticated", async () => {
+    const { status } = await req(
+      "POST",
+      "/orders/picking-list.csv",
+      { orderIds: [csvPickOrder1Id] },
+      null,
+    );
     assert.strictEqual(status, 401);
   });
 
-  test('422 — empty orderIds', async () => {
-    const { status } = await req('POST', '/orders/picking-list.csv', { orderIds: [] });
+  test("422 — empty orderIds", async () => {
+    const { status } = await req("POST", "/orders/picking-list.csv", {
+      orderIds: [],
+    });
     assert.strictEqual(status, 422);
   });
 
-  test('403 — cannot export other merchant orders', async () => {
-    const { status } = await req('POST', '/orders/picking-list.csv', { orderIds: [csvPickOrder1Id] }, 'other_merchant_id');
+  test("403 — cannot export other merchant orders", async () => {
+    const { status } = await req(
+      "POST",
+      "/orders/picking-list.csv",
+      { orderIds: [csvPickOrder1Id] },
+      "other_merchant_id",
+    );
     assert.strictEqual(status, 403);
   });
 
-  test('200 — Content-Type is text/csv', async () => {
-    const response = await rawFetch('POST', '/orders/picking-list.csv', { orderIds: [csvPickOrder1Id] });
+  test("200 — Content-Type is text/csv", async () => {
+    const response = await rawFetch("POST", "/orders/picking-list.csv", {
+      orderIds: [csvPickOrder1Id],
+    });
     assert.strictEqual(response.status, 200);
-    const ct = response.headers.get('content-type') ?? '';
-    assert.ok(ct.includes('text/csv'), `expected text/csv, got: ${ct}`);
+    const ct = response.headers.get("content-type") ?? "";
+    assert.ok(ct.includes("text/csv"), `expected text/csv, got: ${ct}`);
   });
 
-  test('200 — CSV starts with UTF-8 BOM (raw bytes EF BB BF)', async () => {
-    const response = await rawFetch('POST', '/orders/picking-list.csv', { orderIds: [csvPickOrder1Id] });
+  test("200 — CSV starts with UTF-8 BOM (raw bytes EF BB BF)", async () => {
+    const response = await rawFetch("POST", "/orders/picking-list.csv", {
+      orderIds: [csvPickOrder1Id],
+    });
     assert.strictEqual(response.status, 200);
     const buf = await response.arrayBuffer();
     const bytes = new Uint8Array(buf);
-    assert.strictEqual(bytes[0], 0xEF, 'BOM byte 1 should be 0xEF');
-    assert.strictEqual(bytes[1], 0xBB, 'BOM byte 2 should be 0xBB');
-    assert.strictEqual(bytes[2], 0xBF, 'BOM byte 3 should be 0xBF');
+    assert.strictEqual(bytes[0], 0xef, "BOM byte 1 should be 0xEF");
+    assert.strictEqual(bytes[1], 0xbb, "BOM byte 2 should be 0xBB");
+    assert.strictEqual(bytes[2], 0xbf, "BOM byte 3 should be 0xBF");
   });
 
-  test('200 — CSV contains product name, quantityTotal, order number', async () => {
-    const { status, data } = await req('POST', '/orders/picking-list.csv', { orderIds: [csvPickOrder1Id] });
+  test("200 — CSV contains product name, quantityTotal, order number", async () => {
+    const { status, data } = await req("POST", "/orders/picking-list.csv", {
+      orderIds: [csvPickOrder1Id],
+    });
     assert.strictEqual(status, 200);
-    assert.ok(data.includes('__test_product__'), 'product name in CSV');
-    assert.ok(data.includes('3'), 'quantity in CSV');
-    assert.ok(data.includes(`#${csvPickOrder1Id}`), 'order number in CSV');
+    assert.ok(data.includes("__test_product__"), "product name in CSV");
+    assert.ok(data.includes("3"), "quantity in CSV");
+    assert.ok(data.includes(`#${csvPickOrder1Id}`), "order number in CSV");
   });
 
-  test('200 — cancelled orders not in CSV', async () => {
-    const { status, data } = await req('POST', '/orders/picking-list.csv', {
+  test("200 — cancelled orders not in CSV", async () => {
+    const { status, data } = await req("POST", "/orders/picking-list.csv", {
       orderIds: [csvPickOrder1Id, csvPickCancelledId],
     });
     assert.strictEqual(status, 200);
-    const lines = data.split('\n');
+    const lines = data.split("\n");
     // Header + 1 data row (cancelled excluded)
-    assert.strictEqual(lines.filter((l) => l.trim()).length, 2, 'header + 1 active row');
-    assert.ok(!data.includes(`#${csvPickCancelledId}`), 'cancelled order not in CSV');
+    assert.strictEqual(
+      lines.filter((l) => l.trim()).length,
+      2,
+      "header + 1 active row",
+    );
+    assert.ok(
+      !data.includes(`#${csvPickCancelledId}`),
+      "cancelled order not in CSV",
+    );
   });
 
-  test('200 — comma, quote, newline correctly escaped', async () => {
-    const { status, data } = await req('POST', '/orders/picking-list.csv', { orderIds: [csvPickSpecialId] });
+  test("200 — comma, quote, newline correctly escaped", async () => {
+    const { status, data } = await req("POST", "/orders/picking-list.csv", {
+      orderIds: [csvPickSpecialId],
+    });
     assert.strictEqual(status, 200);
     // Properly escaped: comma inside quotes, quote doubled, newline inside quotes
-    assert.ok(data.includes('"has,comma ""quote""\nnewline"'), 'special chars properly escaped in CSV');
+    assert.ok(
+      data.includes('"has,comma ""quote""\nnewline"'),
+      "special chars properly escaped in CSV",
+    );
   });
 
-  test('200 — Content-Disposition has picking-list filename', async () => {
-    const response = await rawFetch('POST', '/orders/picking-list.csv', { orderIds: [csvPickOrder1Id] });
+  test("200 — Content-Disposition has picking-list filename", async () => {
+    const response = await rawFetch("POST", "/orders/picking-list.csv", {
+      orderIds: [csvPickOrder1Id],
+    });
     assert.strictEqual(response.status, 200);
-    const cd = response.headers.get('content-disposition') ?? '';
-    assert.ok(cd.includes('picking-list'), `filename should contain picking-list, got: ${cd}`);
-    assert.ok(cd.includes('.csv'), 'filename should have .csv extension');
+    const cd = response.headers.get("content-disposition") ?? "";
+    assert.ok(
+      cd.includes("picking-list"),
+      `filename should contain picking-list, got: ${cd}`,
+    );
+    assert.ok(cd.includes(".csv"), "filename should have .csv extension");
   });
 });
 
 // ─────────────────────────────────────────────────────────────
 // 16. Step 5F-C: POST /orders/shipping-list.csv
 // ─────────────────────────────────────────────────────────────
-describe('Step 5F-C: POST /orders/shipping-list.csv', () => {
+describe("Step 5F-C: POST /orders/shipping-list.csv", () => {
   let csvShipOrder1Id;
   let csvShipCancelledId;
   let csvShipSpecialId;
 
   before(async () => {
     const insertOrder = (token, overrides) =>
-      db.insert(ordersTable).values({
-        productId: testProductId,
-        storeId: testStoreId,
-        productName: '__test_product__',
-        publicToken: token,
-        buyerName: 'CSV Ship Buyer',
-        buyerPhone: '0922333444',
-        pickupMethod: 'delivery',
-        quantity: 1,
-        unitPrice: '150.00',
-        totalPrice: '150.00',
-        status: 'pending',
-        specValues: {},
-        paymentStatus: 'paid',
-        shippingStatus: 'shipped',
-        trackingCode: 'CSV-TRACK-001',
-        recipientName: '王收件人',
-        recipientPhone: '0933444555',
-        recipientAddress: '台南市中西區某路2號',
-        internalNote: 'INTERNAL_DO_NOT_EXPORT',
-        paymentNote: 'PAYMENT_DO_NOT_EXPORT',
-        ...overrides,
-      }).returning();
+      db
+        .insert(ordersTable)
+        .values({
+          productId: testProductId,
+          storeId: testStoreId,
+          productName: "__test_product__",
+          publicToken: token,
+          buyerName: "CSV Ship Buyer",
+          buyerPhone: "0922333444",
+          pickupMethod: "delivery",
+          quantity: 1,
+          unitPrice: "150.00",
+          totalPrice: "150.00",
+          status: "pending",
+          specValues: {},
+          paymentStatus: "paid",
+          shippingStatus: "shipped",
+          trackingCode: "CSV-TRACK-001",
+          recipientName: "王收件人",
+          recipientPhone: "0933444555",
+          recipientAddress: "台南市中西區某路2號",
+          internalNote: "INTERNAL_DO_NOT_EXPORT",
+          paymentNote: "PAYMENT_DO_NOT_EXPORT",
+          ...overrides,
+        })
+        .returning();
 
     const [o1] = await insertOrder(`csv-ship-1-${Date.now()}`, {});
     const [oCanc] = await insertOrder(`csv-ship-c-${Date.now()}`, {});
@@ -1198,84 +1558,130 @@ describe('Step 5F-C: POST /orders/shipping-list.csv', () => {
     csvShipCancelledId = oCanc.id;
     csvShipSpecialId = oSpec.id;
 
-    await db.update(ordersTable).set({ status: 'cancelled' }).where(eq(ordersTable.id, csvShipCancelledId));
+    await db
+      .update(ordersTable)
+      .set({ status: "cancelled" })
+      .where(eq(ordersTable.id, csvShipCancelledId));
   });
 
-  test('401 — unauthenticated', async () => {
-    const { status } = await req('POST', '/orders/shipping-list.csv', { orderIds: [csvShipOrder1Id] }, null);
+  test("401 — unauthenticated", async () => {
+    const { status } = await req(
+      "POST",
+      "/orders/shipping-list.csv",
+      { orderIds: [csvShipOrder1Id] },
+      null,
+    );
     assert.strictEqual(status, 401);
   });
 
-  test('200 — Content-Type is text/csv', async () => {
-    const response = await rawFetch('POST', '/orders/shipping-list.csv', { orderIds: [csvShipOrder1Id] });
+  test("200 — Content-Type is text/csv", async () => {
+    const response = await rawFetch("POST", "/orders/shipping-list.csv", {
+      orderIds: [csvShipOrder1Id],
+    });
     assert.strictEqual(response.status, 200);
-    const ct = response.headers.get('content-type') ?? '';
-    assert.ok(ct.includes('text/csv'), `expected text/csv, got: ${ct}`);
+    const ct = response.headers.get("content-type") ?? "";
+    assert.ok(ct.includes("text/csv"), `expected text/csv, got: ${ct}`);
   });
 
-  test('200 — CSV contains buyer name, payment status, shipping status, tracking code', async () => {
-    const { status, data } = await req('POST', '/orders/shipping-list.csv', { orderIds: [csvShipOrder1Id] });
+  test("200 — CSV contains buyer name, payment status, shipping status, tracking code", async () => {
+    const { status, data } = await req("POST", "/orders/shipping-list.csv", {
+      orderIds: [csvShipOrder1Id],
+    });
     assert.strictEqual(status, 200);
-    assert.ok(data.includes('CSV Ship Buyer'), 'buyer name in CSV');
-    assert.ok(data.includes('paid'), 'paymentStatus in CSV');
-    assert.ok(data.includes('shipped'), 'shippingStatus in CSV');
-    assert.ok(data.includes('CSV-TRACK-001'), 'trackingCode in CSV');
+    assert.ok(data.includes("CSV Ship Buyer"), "buyer name in CSV");
+    assert.ok(data.includes("paid"), "paymentStatus in CSV");
+    assert.ok(data.includes("shipped"), "shippingStatus in CSV");
+    assert.ok(data.includes("CSV-TRACK-001"), "trackingCode in CSV");
   });
 
-  test('200 — CSV contains recipient phone and address', async () => {
-    const { status, data } = await req('POST', '/orders/shipping-list.csv', { orderIds: [csvShipOrder1Id] });
+  test("200 — CSV contains recipient phone and address", async () => {
+    const { status, data } = await req("POST", "/orders/shipping-list.csv", {
+      orderIds: [csvShipOrder1Id],
+    });
     assert.strictEqual(status, 200);
-    assert.ok(data.includes('0933444555'), 'recipientPhone in CSV');
-    assert.ok(data.includes('台南市中西區某路2號'), 'recipientAddress in CSV');
+    assert.ok(data.includes("0933444555"), "recipientPhone in CSV");
+    assert.ok(data.includes("台南市中西區某路2號"), "recipientAddress in CSV");
   });
 
-  test('200 — internalNote NOT in CSV', async () => {
-    const { status, data } = await req('POST', '/orders/shipping-list.csv', { orderIds: [csvShipOrder1Id] });
+  test("200 — internalNote NOT in CSV", async () => {
+    const { status, data } = await req("POST", "/orders/shipping-list.csv", {
+      orderIds: [csvShipOrder1Id],
+    });
     assert.strictEqual(status, 200);
-    assert.ok(!data.includes('INTERNAL_DO_NOT_EXPORT'), 'internalNote must not appear in CSV');
+    assert.ok(
+      !data.includes("INTERNAL_DO_NOT_EXPORT"),
+      "internalNote must not appear in CSV",
+    );
   });
 
-  test('200 — paymentNote NOT in CSV', async () => {
-    const { status, data } = await req('POST', '/orders/shipping-list.csv', { orderIds: [csvShipOrder1Id] });
+  test("200 — paymentNote NOT in CSV", async () => {
+    const { status, data } = await req("POST", "/orders/shipping-list.csv", {
+      orderIds: [csvShipOrder1Id],
+    });
     assert.strictEqual(status, 200);
-    assert.ok(!data.includes('PAYMENT_DO_NOT_EXPORT'), 'paymentNote must not appear in CSV');
+    assert.ok(
+      !data.includes("PAYMENT_DO_NOT_EXPORT"),
+      "paymentNote must not appear in CSV",
+    );
   });
 
-  test('200 — publicToken NOT in CSV', async () => {
-    const { status, data } = await req('POST', '/orders/shipping-list.csv', { orderIds: [csvShipOrder1Id] });
+  test("200 — publicToken NOT in CSV", async () => {
+    const { status, data } = await req("POST", "/orders/shipping-list.csv", {
+      orderIds: [csvShipOrder1Id],
+    });
     assert.strictEqual(status, 200);
-    assert.ok(!data.includes('csv-ship-1-'), 'publicToken must not appear in CSV');
+    assert.ok(
+      !data.includes("csv-ship-1-"),
+      "publicToken must not appear in CSV",
+    );
   });
 
-  test('200 — cancelled orders not in CSV', async () => {
-    const { status, data } = await req('POST', '/orders/shipping-list.csv', {
+  test("200 — cancelled orders not in CSV", async () => {
+    const { status, data } = await req("POST", "/orders/shipping-list.csv", {
       orderIds: [csvShipOrder1Id, csvShipCancelledId],
     });
     assert.strictEqual(status, 200);
-    const lines = data.split('\n');
-    assert.strictEqual(lines.filter((l) => l.trim()).length, 2, 'header + 1 active row');
-    assert.ok(!data.includes(`#${csvShipCancelledId}`), 'cancelled order not in CSV');
+    const lines = data.split("\n");
+    assert.strictEqual(
+      lines.filter((l) => l.trim()).length,
+      2,
+      "header + 1 active row",
+    );
+    assert.ok(
+      !data.includes(`#${csvShipCancelledId}`),
+      "cancelled order not in CSV",
+    );
   });
 
-  test('200 — comma, quote, newline correctly escaped', async () => {
-    const { status, data } = await req('POST', '/orders/shipping-list.csv', { orderIds: [csvShipSpecialId] });
+  test("200 — comma, quote, newline correctly escaped", async () => {
+    const { status, data } = await req("POST", "/orders/shipping-list.csv", {
+      orderIds: [csvShipSpecialId],
+    });
     assert.strictEqual(status, 200);
-    assert.ok(data.includes('"Buyer,With""Special\nChars"'), 'special chars properly escaped in CSV');
+    assert.ok(
+      data.includes('"Buyer,With""Special\nChars"'),
+      "special chars properly escaped in CSV",
+    );
   });
 
-  test('200 — Content-Disposition has shipping-list filename', async () => {
-    const response = await rawFetch('POST', '/orders/shipping-list.csv', { orderIds: [csvShipOrder1Id] });
+  test("200 — Content-Disposition has shipping-list filename", async () => {
+    const response = await rawFetch("POST", "/orders/shipping-list.csv", {
+      orderIds: [csvShipOrder1Id],
+    });
     assert.strictEqual(response.status, 200);
-    const cd = response.headers.get('content-disposition') ?? '';
-    assert.ok(cd.includes('shipping-list'), `filename should contain shipping-list, got: ${cd}`);
-    assert.ok(cd.includes('.csv'), 'filename should have .csv extension');
+    const cd = response.headers.get("content-disposition") ?? "";
+    assert.ok(
+      cd.includes("shipping-list"),
+      `filename should contain shipping-list, got: ${cd}`,
+    );
+    assert.ok(cd.includes(".csv"), "filename should have .csv extension");
   });
 });
 
 // ─────────────────────────────────────────────────────────────
 // Step 6C: CVS snapshot fields on PATCH /orders/:orderId
 // ─────────────────────────────────────────────────────────────
-describe('Step 6C: CVS snapshot fields', () => {
+describe("Step 6C: CVS snapshot fields", () => {
   let cvs6cOrderId;
   let cvs6cPublicToken;
 
@@ -1286,16 +1692,16 @@ describe('Step 6C: CVS snapshot fields', () => {
       .values({
         productId: testProductId,
         storeId: testStoreId,
-        productName: '__test_product__',
+        productName: "__test_product__",
         publicToken: token,
-        buyerName: 'CVS Buyer',
-        buyerPhone: '0966666666',
-        pickupMethod: '7-11 取貨（先付款）',
+        buyerName: "CVS Buyer",
+        buyerPhone: "0966666666",
+        pickupMethod: "7-11 取貨（先付款）",
         quantity: 1,
-        unitPrice: '100.00',
-        shippingFee: '60.00',
-        totalPrice: '100.00',
-        status: 'pending',
+        unitPrice: "100.00",
+        shippingFee: "60.00",
+        totalPrice: "100.00",
+        status: "pending",
         specValues: {},
       })
       .returning();
@@ -1304,181 +1710,278 @@ describe('Step 6C: CVS snapshot fields', () => {
   });
 
   // ── PATCH can set full CVS snapshot ──────────────────────────
-  test('200 — PATCH can update cvsStoreAddress via general update endpoint', async () => {
-    const { status, data } = await req('PATCH', `/orders/${cvs6cOrderId}`, {
-      storeCode: '171717',
-      storeName: '7-11 測試門市',
-      cvsStoreAddress: '台北市信義區松仁路28號',
-      cvsStorePhone: '02-12345678',
-      storeSelectedBy: 'admin',
+  test("200 — PATCH can update cvsStoreAddress via general update endpoint", async () => {
+    const { status, data } = await req("PATCH", `/orders/${cvs6cOrderId}`, {
+      storeCode: "171717",
+      storeName: "7-11 測試門市",
+      cvsStoreAddress: "台北市信義區松仁路28號",
+      cvsStorePhone: "02-12345678",
+      storeSelectedBy: "admin",
     });
-    assert.strictEqual(status, 200, `expected 200, got ${status}: ${JSON.stringify(data)}`);
-    assert.strictEqual(data.storeCode, '171717');
-    assert.strictEqual(data.storeName, '7-11 測試門市');
-    assert.strictEqual(data.cvsStoreAddress, '台北市信義區松仁路28號');
-    assert.strictEqual(data.cvsStorePhone, '02-12345678');
-    assert.strictEqual(data.storeSelectedBy, 'admin');
-    assert.ok(data.storeSelectedAt, 'storeSelectedAt should be set automatically');
+    assert.strictEqual(
+      status,
+      200,
+      `expected 200, got ${status}: ${JSON.stringify(data)}`,
+    );
+    assert.strictEqual(data.storeCode, "171717");
+    assert.strictEqual(data.storeName, "7-11 測試門市");
+    assert.strictEqual(data.cvsStoreAddress, "台北市信義區松仁路28號");
+    assert.strictEqual(data.cvsStorePhone, "02-12345678");
+    assert.strictEqual(data.storeSelectedBy, "admin");
+    assert.ok(
+      data.storeSelectedAt,
+      "storeSelectedAt should be set automatically",
+    );
   });
 
-  test('200 — PATCH can clear cvsStoreAddress with null', async () => {
-    const { status, data } = await req('PATCH', `/orders/${cvs6cOrderId}`, {
+  test("200 — PATCH can clear cvsStoreAddress with null", async () => {
+    const { status, data } = await req("PATCH", `/orders/${cvs6cOrderId}`, {
       cvsStoreAddress: null,
     });
-    assert.strictEqual(status, 200, `expected 200, got ${status}: ${JSON.stringify(data)}`);
+    assert.strictEqual(
+      status,
+      200,
+      `expected 200, got ${status}: ${JSON.stringify(data)}`,
+    );
     assert.strictEqual(data.cvsStoreAddress, null);
   });
 
-  test('200 — PATCH storeSelectedBy=customer sets storeSelectedAt', async () => {
-    const { status, data } = await req('PATCH', `/orders/${cvs6cOrderId}`, {
-      storeSelectedBy: 'customer',
+  test("200 — PATCH storeSelectedBy=customer sets storeSelectedAt", async () => {
+    const { status, data } = await req("PATCH", `/orders/${cvs6cOrderId}`, {
+      storeSelectedBy: "customer",
     });
     assert.strictEqual(status, 200);
-    assert.strictEqual(data.storeSelectedBy, 'customer');
-    assert.ok(data.storeSelectedAt, 'storeSelectedAt should be set when storeSelectedBy changes');
+    assert.strictEqual(data.storeSelectedBy, "customer");
+    assert.ok(
+      data.storeSelectedAt,
+      "storeSelectedAt should be set when storeSelectedBy changes",
+    );
   });
 
   // ── GET list returns CVS snapshot fields ─────────────────────
-  test('200 — GET list order includes CVS snapshot fields in response', async () => {
+  test("200 — GET list order includes CVS snapshot fields in response", async () => {
     // First set known values
-    await req('PATCH', `/orders/${cvs6cOrderId}`, {
-      storeCode: '180180',
-      storeName: '7-11 清水門市',
-      cvsStoreAddress: '台中市清水區中山路1號',
-      cvsStorePhone: '04-26222222',
-      storeSelectedBy: 'admin',
+    await req("PATCH", `/orders/${cvs6cOrderId}`, {
+      storeCode: "180180",
+      storeName: "7-11 清水門市",
+      cvsStoreAddress: "台中市清水區中山路1號",
+      cvsStorePhone: "04-26222222",
+      storeSelectedBy: "admin",
     });
 
-    const { status, data } = await req('GET', `/stores/${testStoreId}/orders`);
+    const { status, data } = await req("GET", `/stores/${testStoreId}/orders`);
     assert.strictEqual(status, 200);
     const order = data.find((o) => o.id === cvs6cOrderId);
-    assert.ok(order, 'order should appear in list');
-    assert.strictEqual(order.storeCode, '180180');
-    assert.strictEqual(order.storeName, '7-11 清水門市');
-    assert.strictEqual(order.cvsStoreAddress, '台中市清水區中山路1號');
-    assert.strictEqual(order.cvsStorePhone, '04-26222222');
-    assert.strictEqual(order.storeSelectedBy, 'admin');
-    assert.ok(order.storeSelectedAt, 'storeSelectedAt should be present');
+    assert.ok(order, "order should appear in list");
+    assert.strictEqual(order.storeCode, "180180");
+    assert.strictEqual(order.storeName, "7-11 清水門市");
+    assert.strictEqual(order.cvsStoreAddress, "台中市清水區中山路1號");
+    assert.strictEqual(order.cvsStorePhone, "04-26222222");
+    assert.strictEqual(order.storeSelectedBy, "admin");
+    assert.ok(order.storeSelectedAt, "storeSelectedAt should be present");
   });
 
   // ── Public tracking does NOT expose CVS store details ─────────
-  test('public tracking MUST NOT return cvsStoreAddress', async () => {
-    const { data } = await req('GET', `/orders/track/${cvs6cPublicToken}`, null, null);
-    assert.strictEqual(data.cvsStoreAddress, undefined, 'cvsStoreAddress MUST NOT be in public response');
+  test("public tracking MUST NOT return cvsStoreAddress", async () => {
+    const { data } = await req(
+      "GET",
+      `/orders/track/${cvs6cPublicToken}`,
+      null,
+      null,
+    );
+    assert.strictEqual(
+      data.cvsStoreAddress,
+      undefined,
+      "cvsStoreAddress MUST NOT be in public response",
+    );
   });
 
-  test('public tracking MUST NOT return cvsStorePhone', async () => {
-    const { data } = await req('GET', `/orders/track/${cvs6cPublicToken}`, null, null);
-    assert.strictEqual(data.cvsStorePhone, undefined, 'cvsStorePhone MUST NOT be in public response');
+  test("public tracking MUST NOT return cvsStorePhone", async () => {
+    const { data } = await req(
+      "GET",
+      `/orders/track/${cvs6cPublicToken}`,
+      null,
+      null,
+    );
+    assert.strictEqual(
+      data.cvsStorePhone,
+      undefined,
+      "cvsStorePhone MUST NOT be in public response",
+    );
   });
 
-  test('public tracking MUST NOT return storeSelectedBy', async () => {
-    const { data } = await req('GET', `/orders/track/${cvs6cPublicToken}`, null, null);
-    assert.strictEqual(data.storeSelectedBy, undefined, 'storeSelectedBy MUST NOT be in public response');
+  test("public tracking MUST NOT return storeSelectedBy", async () => {
+    const { data } = await req(
+      "GET",
+      `/orders/track/${cvs6cPublicToken}`,
+      null,
+      null,
+    );
+    assert.strictEqual(
+      data.storeSelectedBy,
+      undefined,
+      "storeSelectedBy MUST NOT be in public response",
+    );
   });
 
-  test('public tracking MUST NOT return storeSelectedAt', async () => {
-    const { data } = await req('GET', `/orders/track/${cvs6cPublicToken}`, null, null);
-    assert.strictEqual(data.storeSelectedAt, undefined, 'storeSelectedAt MUST NOT be in public response');
+  test("public tracking MUST NOT return storeSelectedAt", async () => {
+    const { data } = await req(
+      "GET",
+      `/orders/track/${cvs6cPublicToken}`,
+      null,
+      null,
+    );
+    assert.strictEqual(
+      data.storeSelectedAt,
+      undefined,
+      "storeSelectedAt MUST NOT be in public response",
+    );
   });
 });
 
 // ─────────────────────────────────────────────────────────────
 // Step 7B: POST /orders/tracking-import
 // ─────────────────────────────────────────────────────────────
-describe('POST /orders/tracking-import', () => {
+describe("POST /orders/tracking-import", () => {
   let importOrderId1;
   let importOrderId2;
   let importOrderId3; // pre-filled trackingCode
 
   before(async () => {
     const makeOrder = async (suffix) => {
-      const [o] = await db.insert(ordersTable).values({
-        storeId: testStoreId,
-        productId: testProductId,
-        productName: `__import_test_${suffix}__`,
-        buyerName: `Import Buyer ${suffix}`,
-        buyerPhone: '0912345678',
-        pickupMethod: 'pickup',
-        quantity: 1,
-        unitPrice: '100.00',
-        totalPrice: '100.00',
-        shippingFee: '0',
-        status: 'pending',
-        shippingStatus: 'not_shipped',
-        publicToken: `import_test_token_${suffix}_${Date.now()}`,
-      }).returning();
+      const [o] = await db
+        .insert(ordersTable)
+        .values({
+          storeId: testStoreId,
+          productId: testProductId,
+          productName: `__import_test_${suffix}__`,
+          buyerName: `Import Buyer ${suffix}`,
+          buyerPhone: "0912345678",
+          pickupMethod: "pickup",
+          quantity: 1,
+          unitPrice: "100.00",
+          totalPrice: "100.00",
+          shippingFee: "0",
+          status: "pending",
+          shippingStatus: "not_shipped",
+          publicToken: `import_test_token_${suffix}_${Date.now()}`,
+        })
+        .returning();
       return o.id;
     };
-    importOrderId1 = await makeOrder('a');
-    importOrderId2 = await makeOrder('b');
-    importOrderId3 = await makeOrder('pre_filled');
+    importOrderId1 = await makeOrder("a");
+    importOrderId2 = await makeOrder("b");
+    importOrderId3 = await makeOrder("pre_filled");
     // Pre-fill trackingCode on order3 to test duplicate protection
-    await db.update(ordersTable)
-      .set({ trackingCode: 'EXISTING123', trackingProvider: '711' })
+    await db
+      .update(ordersTable)
+      .set({ trackingCode: "EXISTING123", trackingProvider: "711" })
       .where(eq(ordersTable.id, importOrderId3));
   });
 
   after(async () => {
-    await db.delete(ordersTable).where(
-      inArray(ordersTable.id, [importOrderId1, importOrderId2, importOrderId3])
-    );
+    await db
+      .delete(ordersTable)
+      .where(
+        inArray(ordersTable.id, [
+          importOrderId1,
+          importOrderId2,
+          importOrderId3,
+        ]),
+      );
   });
 
   // ── Success cases ─────────────────────────────────────────
-  test('200 — single row import succeeds', async () => {
-    const { status, data } = await req('POST', '/orders/tracking-import', {
-      rows: [{ orderId: importOrderId1, trackingProvider: '711', trackingCode: 'TRACK001' }],
+  test("200 — single row import succeeds", async () => {
+    const { status, data } = await req("POST", "/orders/tracking-import", {
+      rows: [
+        {
+          orderId: importOrderId1,
+          trackingProvider: "711",
+          trackingCode: "TRACK001",
+        },
+      ],
     });
-    assert.strictEqual(status, 200, `expected 200, got ${status}: ${JSON.stringify(data)}`);
+    assert.strictEqual(
+      status,
+      200,
+      `expected 200, got ${status}: ${JSON.stringify(data)}`,
+    );
     assert.strictEqual(data.totalRows, 1);
     assert.strictEqual(data.successCount, 1);
     assert.strictEqual(data.failedCount, 0);
     assert.deepStrictEqual(data.errors, []);
 
-    const [order] = await db.select().from(ordersTable).where(eq(ordersTable.id, importOrderId1));
-    assert.strictEqual(order.trackingCode, 'TRACK001');
-    assert.strictEqual(order.trackingProvider, '711');
-    assert.strictEqual(order.shippingStatus, 'not_shipped', 'shippingStatus MUST NOT change');
+    const [order] = await db
+      .select()
+      .from(ordersTable)
+      .where(eq(ordersTable.id, importOrderId1));
+    assert.strictEqual(order.trackingCode, "TRACK001");
+    assert.strictEqual(order.trackingProvider, "711");
+    assert.strictEqual(
+      order.shippingStatus,
+      "not_shipped",
+      "shippingStatus MUST NOT change",
+    );
   });
 
-  test('200 — multi-row import succeeds', async () => {
-    const { status, data } = await req('POST', '/orders/tracking-import', {
+  test("200 — multi-row import succeeds", async () => {
+    const { status, data } = await req("POST", "/orders/tracking-import", {
       rows: [
-        { orderId: importOrderId2, trackingProvider: 'familymart', trackingCode: 'FM999888777' },
+        {
+          orderId: importOrderId2,
+          trackingProvider: "familymart",
+          trackingCode: "FM999888777",
+        },
       ],
     });
     assert.strictEqual(status, 200);
     assert.strictEqual(data.successCount, 1);
     assert.strictEqual(data.failedCount, 0);
-    const [order] = await db.select().from(ordersTable).where(eq(ordersTable.id, importOrderId2));
-    assert.strictEqual(order.trackingCode, 'FM999888777');
-    assert.strictEqual(order.trackingProvider, 'familymart');
+    const [order] = await db
+      .select()
+      .from(ordersTable)
+      .where(eq(ordersTable.id, importOrderId2));
+    assert.strictEqual(order.trackingCode, "FM999888777");
+    assert.strictEqual(order.trackingProvider, "familymart");
   });
 
-  test('200 — orderId in #123 format works', async () => {
+  test("200 — orderId in #123 format works", async () => {
     // Need a fresh order since importOrderId1 already has trackingCode
-    const [o] = await db.insert(ordersTable).values({
-      storeId: testStoreId,
-      productId: testProductId,
-      productName: '__import_hash_test__',
-      buyerName: 'Hash Test',
-      buyerPhone: '0987654321',
-      pickupMethod: 'pickup',
-      quantity: 1,
-      unitPrice: '100.00',
-      totalPrice: '100.00',
-      shippingFee: '0',
-      status: 'pending',
-      shippingStatus: 'not_shipped',
-      publicToken: `import_hash_token_${Date.now()}`,
-    }).returning();
+    const [o] = await db
+      .insert(ordersTable)
+      .values({
+        storeId: testStoreId,
+        productId: testProductId,
+        productName: "__import_hash_test__",
+        buyerName: "Hash Test",
+        buyerPhone: "0987654321",
+        pickupMethod: "pickup",
+        quantity: 1,
+        unitPrice: "100.00",
+        totalPrice: "100.00",
+        shippingFee: "0",
+        status: "pending",
+        shippingStatus: "not_shipped",
+        publicToken: `import_hash_token_${Date.now()}`,
+      })
+      .returning();
     const hashOrderId = o.id;
     try {
-      const { status, data } = await req('POST', '/orders/tracking-import', {
-        rows: [{ orderId: `#${hashOrderId}`, trackingProvider: 'home_delivery', trackingCode: 'HD123456' }],
+      const { status, data } = await req("POST", "/orders/tracking-import", {
+        rows: [
+          {
+            orderId: `#${hashOrderId}`,
+            trackingProvider: "home_delivery",
+            trackingCode: "HD123456",
+          },
+        ],
       });
-      assert.strictEqual(status, 200, `expected 200, got ${status}: ${JSON.stringify(data)}`);
+      assert.strictEqual(
+        status,
+        200,
+        `expected 200, got ${status}: ${JSON.stringify(data)}`,
+      );
       assert.strictEqual(data.successCount, 1);
     } finally {
       await db.delete(ordersTable).where(eq(ordersTable.id, hashOrderId));
@@ -1486,85 +1989,140 @@ describe('POST /orders/tracking-import', () => {
   });
 
   // ── Validation errors ─────────────────────────────────────
-  test('200 — order not found returns error in errors array', async () => {
-    const { status, data } = await req('POST', '/orders/tracking-import', {
-      rows: [{ orderId: 9999999, trackingProvider: '711', trackingCode: 'TRACK_NF' }],
+  test("200 — order not found returns error in errors array", async () => {
+    const { status, data } = await req("POST", "/orders/tracking-import", {
+      rows: [
+        { orderId: 9999999, trackingProvider: "711", trackingCode: "TRACK_NF" },
+      ],
     });
     assert.strictEqual(status, 200);
     assert.strictEqual(data.successCount, 0);
     assert.strictEqual(data.failedCount, 1);
     assert.strictEqual(data.errors.length, 1);
-    assert.ok(data.errors[0].reason.includes('找不到訂單'));
+    assert.ok(data.errors[0].reason.includes("找不到訂單"));
   });
 
-  test('200 — unsupported trackingProvider returns error', async () => {
-    const { status, data } = await req('POST', '/orders/tracking-import', {
-      rows: [{ orderId: importOrderId1, trackingProvider: '黑貓', trackingCode: 'TRACK_P' }],
+  test("200 — unsupported trackingProvider returns error", async () => {
+    const { status, data } = await req("POST", "/orders/tracking-import", {
+      rows: [
+        {
+          orderId: importOrderId1,
+          trackingProvider: "黑貓",
+          trackingCode: "TRACK_P",
+        },
+      ],
     });
     assert.strictEqual(status, 200);
     assert.strictEqual(data.failedCount, 1);
-    assert.ok(data.errors[0].reason.includes('trackingProvider 不支援'));
+    assert.ok(data.errors[0].reason.includes("trackingProvider 不支援"));
   });
 
-  test('200 — empty trackingCode returns error', async () => {
-    const { status, data } = await req('POST', '/orders/tracking-import', {
-      rows: [{ orderId: importOrderId1, trackingProvider: '711', trackingCode: '   ' }],
+  test("200 — empty trackingCode returns error", async () => {
+    const { status, data } = await req("POST", "/orders/tracking-import", {
+      rows: [
+        {
+          orderId: importOrderId1,
+          trackingProvider: "711",
+          trackingCode: "   ",
+        },
+      ],
     });
     assert.strictEqual(status, 200);
     assert.strictEqual(data.failedCount, 1);
-    assert.ok(data.errors[0].reason.includes('trackingCode 空白'));
+    assert.ok(data.errors[0].reason.includes("trackingCode 空白"));
   });
 
-  test('200 — trackingCode over 100 chars returns error', async () => {
-    const { status, data } = await req('POST', '/orders/tracking-import', {
-      rows: [{ orderId: importOrderId1, trackingProvider: '711', trackingCode: 'A'.repeat(101) }],
+  test("200 — trackingCode over 100 chars returns error", async () => {
+    const { status, data } = await req("POST", "/orders/tracking-import", {
+      rows: [
+        {
+          orderId: importOrderId1,
+          trackingProvider: "711",
+          trackingCode: "A".repeat(101),
+        },
+      ],
     });
     assert.strictEqual(status, 200);
     assert.strictEqual(data.failedCount, 1);
-    assert.ok(data.errors[0].reason.includes('100 字元'));
+    assert.ok(data.errors[0].reason.includes("100 字元"));
   });
 
-  test('200 — existing trackingCode not overwritten (D3)', async () => {
-    const { status, data } = await req('POST', '/orders/tracking-import', {
-      rows: [{ orderId: importOrderId3, trackingProvider: 'familymart', trackingCode: 'NEW_CODE' }],
+  test("200 — existing trackingCode not overwritten (D3)", async () => {
+    const { status, data } = await req("POST", "/orders/tracking-import", {
+      rows: [
+        {
+          orderId: importOrderId3,
+          trackingProvider: "familymart",
+          trackingCode: "NEW_CODE",
+        },
+      ],
     });
     assert.strictEqual(status, 200);
     assert.strictEqual(data.failedCount, 1);
-    assert.ok(data.errors[0].reason.includes('已有物流追蹤碼'));
+    assert.ok(data.errors[0].reason.includes("已有物流追蹤碼"));
     // Verify DB unchanged
-    const [order] = await db.select().from(ordersTable).where(eq(ordersTable.id, importOrderId3));
-    assert.strictEqual(order.trackingCode, 'EXISTING123', 'trackingCode must not be overwritten');
+    const [order] = await db
+      .select()
+      .from(ordersTable)
+      .where(eq(ordersTable.id, importOrderId3));
+    assert.strictEqual(
+      order.trackingCode,
+      "EXISTING123",
+      "trackingCode must not be overwritten",
+    );
   });
 
-  test('422 — publicToken in rows rejects entire request (D10)', async () => {
-    const { status, data } = await req('POST', '/orders/tracking-import', {
-      rows: [{ orderId: importOrderId1, trackingProvider: '711', trackingCode: 'T1', publicToken: 'abc' }],
+  test("422 — publicToken in rows rejects entire request (D10)", async () => {
+    const { status, data } = await req("POST", "/orders/tracking-import", {
+      rows: [
+        {
+          orderId: importOrderId1,
+          trackingProvider: "711",
+          trackingCode: "T1",
+          publicToken: "abc",
+        },
+      ],
     });
-    assert.strictEqual(status, 422, `expected 422, got ${status}: ${JSON.stringify(data)}`);
-    assert.ok(data.error.includes('publicToken'));
+    assert.strictEqual(
+      status,
+      422,
+      `expected 422, got ${status}: ${JSON.stringify(data)}`,
+    );
+    assert.ok(data.error.includes("publicToken"));
   });
 
-  test('200 — partial success / partial failure returns correct stats (D7)', async () => {
-    const [fresh] = await db.insert(ordersTable).values({
-      storeId: testStoreId,
-      productId: testProductId,
-      productName: '__import_partial__',
-      buyerName: 'Partial Buyer',
-      buyerPhone: '0912000000',
-      pickupMethod: 'pickup',
-      quantity: 1,
-      unitPrice: '100.00',
-      totalPrice: '100.00',
-      shippingFee: '0',
-      status: 'pending',
-      shippingStatus: 'not_shipped',
-      publicToken: `import_partial_token_${Date.now()}`,
-    }).returning();
+  test("200 — partial success / partial failure returns correct stats (D7)", async () => {
+    const [fresh] = await db
+      .insert(ordersTable)
+      .values({
+        storeId: testStoreId,
+        productId: testProductId,
+        productName: "__import_partial__",
+        buyerName: "Partial Buyer",
+        buyerPhone: "0912000000",
+        pickupMethod: "pickup",
+        quantity: 1,
+        unitPrice: "100.00",
+        totalPrice: "100.00",
+        shippingFee: "0",
+        status: "pending",
+        shippingStatus: "not_shipped",
+        publicToken: `import_partial_token_${Date.now()}`,
+      })
+      .returning();
     try {
-      const { status, data } = await req('POST', '/orders/tracking-import', {
+      const { status, data } = await req("POST", "/orders/tracking-import", {
         rows: [
-          { orderId: fresh.id, trackingProvider: '711', trackingCode: 'PARTIAL_OK' },
-          { orderId: 9999999, trackingProvider: '711', trackingCode: 'PARTIAL_FAIL' },
+          {
+            orderId: fresh.id,
+            trackingProvider: "711",
+            trackingCode: "PARTIAL_OK",
+          },
+          {
+            orderId: 9999999,
+            trackingProvider: "711",
+            trackingCode: "PARTIAL_FAIL",
+          },
         ],
       });
       assert.strictEqual(status, 200);
@@ -1577,49 +2135,78 @@ describe('POST /orders/tracking-import', () => {
     }
   });
 
-  test('200 — shippingStatus does NOT change after import (D9)', async () => {
-    const [fresh] = await db.insert(ordersTable).values({
-      storeId: testStoreId,
-      productId: testProductId,
-      productName: '__import_status_test__',
-      buyerName: 'Status Test',
-      buyerPhone: '0912111111',
-      pickupMethod: 'pickup',
-      quantity: 1,
-      unitPrice: '100.00',
-      totalPrice: '100.00',
-      shippingFee: '0',
-      status: 'pending',
-      shippingStatus: 'not_shipped',
-      publicToken: `import_status_token_${Date.now()}`,
-    }).returning();
+  test("200 — shippingStatus does NOT change after import (D9)", async () => {
+    const [fresh] = await db
+      .insert(ordersTable)
+      .values({
+        storeId: testStoreId,
+        productId: testProductId,
+        productName: "__import_status_test__",
+        buyerName: "Status Test",
+        buyerPhone: "0912111111",
+        pickupMethod: "pickup",
+        quantity: 1,
+        unitPrice: "100.00",
+        totalPrice: "100.00",
+        shippingFee: "0",
+        status: "pending",
+        shippingStatus: "not_shipped",
+        publicToken: `import_status_token_${Date.now()}`,
+      })
+      .returning();
     try {
-      await req('POST', '/orders/tracking-import', {
-        rows: [{ orderId: fresh.id, trackingProvider: 'other', trackingCode: 'STATUS_TEST' }],
+      await req("POST", "/orders/tracking-import", {
+        rows: [
+          {
+            orderId: fresh.id,
+            trackingProvider: "other",
+            trackingCode: "STATUS_TEST",
+          },
+        ],
       });
-      const [order] = await db.select().from(ordersTable).where(eq(ordersTable.id, fresh.id));
-      assert.strictEqual(order.shippingStatus, 'not_shipped', 'shippingStatus MUST remain not_shipped');
+      const [order] = await db
+        .select()
+        .from(ordersTable)
+        .where(eq(ordersTable.id, fresh.id));
+      assert.strictEqual(
+        order.shippingStatus,
+        "not_shipped",
+        "shippingStatus MUST remain not_shipped",
+      );
     } finally {
       await db.delete(ordersTable).where(eq(ordersTable.id, fresh.id));
     }
   });
 
   // ── Auth ─────────────────────────────────────────────────
-  test('401 — unauthenticated request rejected', async () => {
-    const { status } = await req('POST', '/orders/tracking-import', {
-      rows: [{ orderId: importOrderId1, trackingProvider: '711', trackingCode: 'UNAUTH' }],
-    }, null);
+  test("401 — unauthenticated request rejected", async () => {
+    const { status } = await req(
+      "POST",
+      "/orders/tracking-import",
+      {
+        rows: [
+          {
+            orderId: importOrderId1,
+            trackingProvider: "711",
+            trackingCode: "UNAUTH",
+          },
+        ],
+      },
+      null,
+    );
     assert.strictEqual(status, 401, `expected 401, got ${status}`);
   });
 
   // ── Request shape ─────────────────────────────────────────
-  test('400 — missing rows array', async () => {
-    const { status } = await req('POST', '/orders/tracking-import', {});
+  test("400 — missing rows array", async () => {
+    const { status } = await req("POST", "/orders/tracking-import", {});
     assert.strictEqual(status, 400);
   });
 
-  test('400 — empty rows array', async () => {
-    const { status } = await req('POST', '/orders/tracking-import', { rows: [] });
+  test("400 — empty rows array", async () => {
+    const { status } = await req("POST", "/orders/tracking-import", {
+      rows: [],
+    });
     assert.strictEqual(status, 400);
   });
 });
@@ -1629,7 +2216,7 @@ describe('POST /orders/tracking-import', () => {
 //   storeSelectedAt must only update when a CVS store field
 //   actually changes value — not on payment / logistics edits.
 // ─────────────────────────────────────────────────────────────
-describe('Step 6D-Fix: storeSelectedAt dirty tracking', () => {
+describe("Step 6D-Fix: storeSelectedAt dirty tracking", () => {
   let fixOrderId;
   let baseStoreSelectedAt;
 
@@ -1640,99 +2227,105 @@ describe('Step 6D-Fix: storeSelectedAt dirty tracking', () => {
       .values({
         productId: testProductId,
         storeId: testStoreId,
-        productName: '__test_product__',
+        productName: "__test_product__",
         publicToken: token,
-        buyerName: '6DFix Buyer',
-        buyerPhone: '0977777777',
-        pickupMethod: '7-11 取貨（先付款）',
+        buyerName: "6DFix Buyer",
+        buyerPhone: "0977777777",
+        pickupMethod: "7-11 取貨（先付款）",
         quantity: 1,
-        unitPrice: '100.00',
-        shippingFee: '60.00',
-        totalPrice: '100.00',
-        status: 'pending',
+        unitPrice: "100.00",
+        shippingFee: "60.00",
+        totalPrice: "100.00",
+        status: "pending",
         specValues: {},
       })
       .returning();
     fixOrderId = order.id;
 
     // Establish an initial CVS snapshot so storeSelectedAt is non-null.
-    const { data } = await req('PATCH', `/orders/${fixOrderId}`, {
-      storeCode: '284754',
-      storeName: '懷民門市',
-      cvsStoreAddress: '新北市板橋區民治街111號',
-      cvsStorePhone: '02-11111111',
-      storeSelectedBy: 'admin',
+    const { data } = await req("PATCH", `/orders/${fixOrderId}`, {
+      storeCode: "284754",
+      storeName: "懷民門市",
+      cvsStoreAddress: "新北市板橋區民治街111號",
+      cvsStorePhone: "02-11111111",
+      storeSelectedBy: "admin",
     });
     baseStoreSelectedAt = data.storeSelectedAt;
-    assert.ok(baseStoreSelectedAt, 'before: storeSelectedAt must be set after initial CVS PATCH');
+    assert.ok(
+      baseStoreSelectedAt,
+      "before: storeSelectedAt must be set after initial CVS PATCH",
+    );
   });
 
-  test('paymentStatus update does NOT change storeSelectedAt', async () => {
-    const { status, data } = await req('PATCH', `/orders/${fixOrderId}`, {
-      paymentStatus: 'paid',
+  test("paymentStatus update does NOT change storeSelectedAt", async () => {
+    const { status, data } = await req("PATCH", `/orders/${fixOrderId}`, {
+      paymentStatus: "paid",
     });
     assert.strictEqual(status, 200);
     assert.strictEqual(
       data.storeSelectedAt,
       baseStoreSelectedAt,
-      'storeSelectedAt must not change on payment-only update'
+      "storeSelectedAt must not change on payment-only update",
     );
   });
 
-  test('shippingStatus update does NOT change storeSelectedAt', async () => {
-    const { status, data } = await req('PATCH', `/orders/${fixOrderId}`, {
-      shippingStatus: 'shipped',
+  test("shippingStatus update does NOT change storeSelectedAt", async () => {
+    const { status, data } = await req("PATCH", `/orders/${fixOrderId}`, {
+      shippingStatus: "shipped",
     });
     assert.strictEqual(status, 200);
     assert.strictEqual(
       data.storeSelectedAt,
       baseStoreSelectedAt,
-      'storeSelectedAt must not change on shippingStatus-only update'
+      "storeSelectedAt must not change on shippingStatus-only update",
     );
   });
 
-  test('trackingCode update does NOT change storeSelectedAt', async () => {
-    const { status, data } = await req('PATCH', `/orders/${fixOrderId}`, {
-      trackingCode: 'TRK123456',
+  test("trackingCode update does NOT change storeSelectedAt", async () => {
+    const { status, data } = await req("PATCH", `/orders/${fixOrderId}`, {
+      trackingCode: "TRK123456",
     });
     assert.strictEqual(status, 200);
     assert.strictEqual(
       data.storeSelectedAt,
       baseStoreSelectedAt,
-      'storeSelectedAt must not change on trackingCode-only update'
+      "storeSelectedAt must not change on trackingCode-only update",
     );
   });
 
-  test('sending identical CVS snapshot does NOT change storeSelectedAt', async () => {
-    const { status, data } = await req('PATCH', `/orders/${fixOrderId}`, {
-      storeCode: '284754',
-      storeName: '懷民門市',
-      cvsStoreAddress: '新北市板橋區民治街111號',
-      cvsStorePhone: '02-11111111',
-      storeSelectedBy: 'admin',
+  test("sending identical CVS snapshot does NOT change storeSelectedAt", async () => {
+    const { status, data } = await req("PATCH", `/orders/${fixOrderId}`, {
+      storeCode: "284754",
+      storeName: "懷民門市",
+      cvsStoreAddress: "新北市板橋區民治街111號",
+      cvsStorePhone: "02-11111111",
+      storeSelectedBy: "admin",
     });
     assert.strictEqual(status, 200);
     assert.strictEqual(
       data.storeSelectedAt,
       baseStoreSelectedAt,
-      'storeSelectedAt must not change when CVS snapshot is identical to existing'
+      "storeSelectedAt must not change when CVS snapshot is identical to existing",
     );
   });
 
-  test('changing cvsStoreAddress DOES update storeSelectedAt', async () => {
-    const { status, data } = await req('PATCH', `/orders/${fixOrderId}`, {
-      storeCode: '999999',
-      storeName: '新測試門市',
-      cvsStoreAddress: '台北市中山區中山北路1號',
+  test("changing cvsStoreAddress DOES update storeSelectedAt", async () => {
+    const { status, data } = await req("PATCH", `/orders/${fixOrderId}`, {
+      storeCode: "999999",
+      storeName: "新測試門市",
+      cvsStoreAddress: "台北市中山區中山北路1號",
       cvsStorePhone: null,
-      storeSelectedBy: 'admin',
+      storeSelectedBy: "admin",
     });
     assert.strictEqual(status, 200);
-    assert.ok(data.storeSelectedAt, 'storeSelectedAt must be present after CVS store change');
+    assert.ok(
+      data.storeSelectedAt,
+      "storeSelectedAt must be present after CVS store change",
+    );
     assert.notStrictEqual(
       data.storeSelectedAt,
       baseStoreSelectedAt,
-      'storeSelectedAt must update when CVS store fields actually change'
+      "storeSelectedAt must update when CVS store fields actually change",
     );
   });
 });
@@ -1740,21 +2333,21 @@ describe('Step 6D-Fix: storeSelectedAt dirty tracking', () => {
 // ─────────────────────────────────────────────────────────────
 // 11. Step 8C: every order status is manually switchable (no dead ends)
 // ─────────────────────────────────────────────────────────────
-describe('Step 8C: order status transitions are no longer one-way', () => {
+describe("Step 8C: order status transitions are no longer one-way", () => {
   async function makeOrder(status) {
     const [order] = await db
       .insert(ordersTable)
       .values({
         productId: testProductId,
         storeId: testStoreId,
-        productName: '__test_product__',
+        productName: "__test_product__",
         publicToken: `tok-8c-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-        buyerName: 'Step8C Buyer',
-        buyerPhone: '0922222222',
-        pickupMethod: 'pickup',
+        buyerName: "Step8C Buyer",
+        buyerPhone: "0922222222",
+        pickupMethod: "pickup",
         quantity: 1,
-        unitPrice: '100.00',
-        totalPrice: '100.00',
+        unitPrice: "100.00",
+        totalPrice: "100.00",
         status,
         specValues: {},
       })
@@ -1762,65 +2355,65 @@ describe('Step 8C: order status transitions are no longer one-way', () => {
     return order.id;
   }
 
-  test('200 — cancelled order can be restored to pending', async () => {
-    const orderId = await makeOrder('cancelled');
-    const { status, data } = await req('PATCH', `/orders/${orderId}/status`, {
-      status: 'pending',
+  test("200 — cancelled order can be restored to pending", async () => {
+    const orderId = await makeOrder("cancelled");
+    const { status, data } = await req("PATCH", `/orders/${orderId}/status`, {
+      status: "pending",
     });
     assert.strictEqual(status, 200);
-    assert.strictEqual(data.status, 'pending');
+    assert.strictEqual(data.status, "pending");
   });
 
-  test('200 — completed order can be restored to pending', async () => {
-    const orderId = await makeOrder('completed');
-    const { status, data } = await req('PATCH', `/orders/${orderId}/status`, {
-      status: 'pending',
+  test("200 — completed order can be restored to pending", async () => {
+    const orderId = await makeOrder("completed");
+    const { status, data } = await req("PATCH", `/orders/${orderId}/status`, {
+      status: "pending",
     });
     assert.strictEqual(status, 200);
-    assert.strictEqual(data.status, 'pending');
+    assert.strictEqual(data.status, "pending");
   });
 
-  test('200 — completed order can be switched to cancelled', async () => {
-    const orderId = await makeOrder('completed');
-    const { status, data } = await req('PATCH', `/orders/${orderId}/status`, {
-      status: 'cancelled',
+  test("200 — completed order can be switched to cancelled", async () => {
+    const orderId = await makeOrder("completed");
+    const { status, data } = await req("PATCH", `/orders/${orderId}/status`, {
+      status: "cancelled",
     });
     assert.strictEqual(status, 200);
-    assert.strictEqual(data.status, 'cancelled');
+    assert.strictEqual(data.status, "cancelled");
   });
 
-  test('200 — pending order can still move forward to awaiting_payment', async () => {
-    const orderId = await makeOrder('pending');
-    const { status, data } = await req('PATCH', `/orders/${orderId}/status`, {
-      status: 'awaiting_payment',
+  test("200 — pending order can still move forward to awaiting_payment", async () => {
+    const orderId = await makeOrder("pending");
+    const { status, data } = await req("PATCH", `/orders/${orderId}/status`, {
+      status: "awaiting_payment",
     });
     assert.strictEqual(status, 200);
-    assert.strictEqual(data.status, 'awaiting_payment');
+    assert.strictEqual(data.status, "awaiting_payment");
   });
 
-  test('400 — invalid status string is still rejected by schema validation', async () => {
-    const orderId = await makeOrder('pending');
-    const { status, data } = await req('PATCH', `/orders/${orderId}/status`, {
-      status: 'not_a_real_status',
+  test("400 — invalid status string is still rejected by schema validation", async () => {
+    const orderId = await makeOrder("pending");
+    const { status, data } = await req("PATCH", `/orders/${orderId}/status`, {
+      status: "not_a_real_status",
     });
     assert.strictEqual(status, 400);
-    assert.ok(data.error, 'should return error message');
+    assert.ok(data.error, "should return error message");
   });
 
-  test('422 — setting status to its current value is rejected', async () => {
-    const orderId = await makeOrder('pending');
-    const { status, data } = await req('PATCH', `/orders/${orderId}/status`, {
-      status: 'pending',
+  test("422 — setting status to its current value is rejected", async () => {
+    const orderId = await makeOrder("pending");
+    const { status, data } = await req("PATCH", `/orders/${orderId}/status`, {
+      status: "pending",
     });
     assert.strictEqual(status, 422);
-    assert.ok(data.error, 'should return error message');
+    assert.ok(data.error, "should return error message");
   });
 });
 
 // ─────────────────────────────────────────────────────────────
 // Step 8J: discountAmount + discountNote
 // ─────────────────────────────────────────────────────────────
-describe('Step 8J: discountAmount + discountNote', () => {
+describe("Step 8J: discountAmount + discountNote", () => {
   let discountOrderId;
   let discountPublicToken;
 
@@ -1831,16 +2424,16 @@ describe('Step 8J: discountAmount + discountNote', () => {
       .values({
         productId: testProductId,
         storeId: testStoreId,
-        productName: '__test_discount__',
+        productName: "__test_discount__",
         publicToken: token,
-        buyerName: 'Discount Buyer',
-        buyerPhone: '0966666666',
-        pickupMethod: 'pickup',
+        buyerName: "Discount Buyer",
+        buyerPhone: "0966666666",
+        pickupMethod: "pickup",
         quantity: 3,
-        unitPrice: '100.00',
-        shippingFee: '100.00',
-        totalPrice: '300.00',
-        status: 'pending',
+        unitPrice: "100.00",
+        shippingFee: "100.00",
+        totalPrice: "300.00",
+        status: "pending",
         specValues: {},
       })
       .returning();
@@ -1849,167 +2442,247 @@ describe('Step 8J: discountAmount + discountNote', () => {
   });
 
   // ── Defaults ─────────────────────────────────────────────────
-  test('GET — discountAmount defaults to 0', async () => {
-    const { status, data } = await req('GET', `/stores/${testStoreId}/orders`);
+  test("GET — discountAmount defaults to 0", async () => {
+    const { status, data } = await req("GET", `/stores/${testStoreId}/orders`);
     assert.strictEqual(status, 200);
     const order = data.find((o) => o.id === discountOrderId);
-    assert.ok(order, 'created order should appear in list');
-    assert.strictEqual(order.discountAmount, 0, 'discountAmount defaults to 0');
+    assert.ok(order, "created order should appear in list");
+    assert.strictEqual(order.discountAmount, 0, "discountAmount defaults to 0");
   });
 
-  test('GET — discountNote defaults to null', async () => {
-    const { status, data } = await req('GET', `/stores/${testStoreId}/orders`);
+  test("GET — discountNote defaults to null", async () => {
+    const { status, data } = await req("GET", `/stores/${testStoreId}/orders`);
     assert.strictEqual(status, 200);
     const order = data.find((o) => o.id === discountOrderId);
-    assert.strictEqual(order.discountNote, null, 'discountNote defaults to null');
+    assert.strictEqual(
+      order.discountNote,
+      null,
+      "discountNote defaults to null",
+    );
   });
 
-  test('GET — orderTotal = totalPrice(300) + shippingFee(100) when discountAmount = 0', async () => {
-    const { status, data } = await req('GET', `/stores/${testStoreId}/orders`);
+  test("GET — orderTotal = totalPrice(300) + shippingFee(100) when discountAmount = 0", async () => {
+    const { status, data } = await req("GET", `/stores/${testStoreId}/orders`);
     assert.strictEqual(status, 200);
     const order = data.find((o) => o.id === discountOrderId);
-    assert.strictEqual(order.orderTotal, 400, 'orderTotal = 300 + 100 with no discount');
+    assert.strictEqual(
+      order.orderTotal,
+      400,
+      "orderTotal = 300 + 100 with no discount",
+    );
   });
 
   // ── PATCH: set discount ──────────────────────────────────────
-  test('200 — PATCH sets discountAmount and updates orderTotal', async () => {
-    const { status, data } = await req('PATCH', `/orders/${discountOrderId}`, {
+  test("200 — PATCH sets discountAmount and updates orderTotal", async () => {
+    const { status, data } = await req("PATCH", `/orders/${discountOrderId}`, {
       discountAmount: 50,
     });
     assert.strictEqual(status, 200);
     assert.strictEqual(data.discountAmount, 50);
-    assert.strictEqual(data.orderTotal, 350, 'orderTotal = max(300 + 100 - 50, 0)');
+    assert.strictEqual(
+      data.orderTotal,
+      350,
+      "orderTotal = max(300 + 100 - 50, 0)",
+    );
   });
 
-  test('200 — PATCH sets discountNote', async () => {
-    const { status, data } = await req('PATCH', `/orders/${discountOrderId}`, {
-      discountNote: '會員折扣',
+  test("200 — PATCH sets discountNote", async () => {
+    const { status, data } = await req("PATCH", `/orders/${discountOrderId}`, {
+      discountNote: "會員折扣",
     });
     assert.strictEqual(status, 200);
-    assert.strictEqual(data.discountNote, '會員折扣');
+    assert.strictEqual(data.discountNote, "會員折扣");
   });
 
-  test('200 — remainingAmount respects discounted orderTotal', async () => {
-    await req('PATCH', `/orders/${discountOrderId}`, { discountAmount: 100 });
-    const { status, data } = await req('PATCH', `/orders/${discountOrderId}`, { paidAmount: 200 });
+  test("200 — remainingAmount respects discounted orderTotal", async () => {
+    await req("PATCH", `/orders/${discountOrderId}`, { discountAmount: 100 });
+    const { status, data } = await req("PATCH", `/orders/${discountOrderId}`, {
+      paidAmount: 200,
+    });
     assert.strictEqual(status, 200);
     assert.strictEqual(data.discountAmount, 100);
-    assert.strictEqual(data.orderTotal, 300, 'orderTotal = 300 + 100 - 100');
-    assert.strictEqual(data.remainingAmount, 100, 'remainingAmount = 300 - 200');
+    assert.strictEqual(data.orderTotal, 300, "orderTotal = 300 + 100 - 100");
+    assert.strictEqual(
+      data.remainingAmount,
+      100,
+      "remainingAmount = 300 - 200",
+    );
   });
 
-  test('200 — discountAmount = 0 resets discount', async () => {
-    const { status, data } = await req('PATCH', `/orders/${discountOrderId}`, {
+  test("200 — discountAmount = 0 resets discount", async () => {
+    const { status, data } = await req("PATCH", `/orders/${discountOrderId}`, {
       discountAmount: 0,
     });
     assert.strictEqual(status, 200);
     assert.strictEqual(data.discountAmount, 0);
-    assert.strictEqual(data.orderTotal, 400, 'orderTotal = 300 + 100 - 0');
+    assert.strictEqual(data.orderTotal, 400, "orderTotal = 300 + 100 - 0");
   });
 
-  test('200 — discountNote = null clears note', async () => {
-    await req('PATCH', `/orders/${discountOrderId}`, { discountNote: '臨時備註' });
-    const { status, data } = await req('PATCH', `/orders/${discountOrderId}`, { discountNote: null });
+  test("200 — discountNote = null clears note", async () => {
+    await req("PATCH", `/orders/${discountOrderId}`, {
+      discountNote: "臨時備註",
+    });
+    const { status, data } = await req("PATCH", `/orders/${discountOrderId}`, {
+      discountNote: null,
+    });
     assert.strictEqual(status, 200);
-    assert.strictEqual(data.discountNote, null, 'discountNote should be cleared to null');
+    assert.strictEqual(
+      data.discountNote,
+      null,
+      "discountNote should be cleared to null",
+    );
   });
 
-  test('200 — discountAmount equal to totalPrice+shippingFee clamps orderTotal to 0', async () => {
-    const { status, data } = await req('PATCH', `/orders/${discountOrderId}`, {
+  test("200 — discountAmount equal to totalPrice+shippingFee clamps orderTotal to 0", async () => {
+    const { status, data } = await req("PATCH", `/orders/${discountOrderId}`, {
       discountAmount: 400,
     });
     assert.strictEqual(status, 200);
     assert.strictEqual(data.discountAmount, 400);
-    assert.strictEqual(data.orderTotal, 0, 'orderTotal = max(300 + 100 - 400, 0) = 0');
+    assert.strictEqual(
+      data.orderTotal,
+      0,
+      "orderTotal = max(300 + 100 - 400, 0) = 0",
+    );
     // restore
-    await req('PATCH', `/orders/${discountOrderId}`, { discountAmount: 0 });
+    await req("PATCH", `/orders/${discountOrderId}`, { discountAmount: 0 });
   });
 
   // ── PATCH validation → 422 ───────────────────────────────────
-  test('422 — discountAmount < 0 is rejected', async () => {
-    const { status, data } = await req('PATCH', `/orders/${discountOrderId}`, {
+  test("422 — discountAmount < 0 is rejected", async () => {
+    const { status, data } = await req("PATCH", `/orders/${discountOrderId}`, {
       discountAmount: -1,
     });
     assert.strictEqual(status, 422);
-    assert.ok(data.error, 'should return error message');
+    assert.ok(data.error, "should return error message");
   });
 
-  test('422 — discountAmount > totalPrice + shippingFee is rejected', async () => {
-    const { status, data } = await req('PATCH', `/orders/${discountOrderId}`, {
+  test("422 — discountAmount > totalPrice + shippingFee is rejected", async () => {
+    const { status, data } = await req("PATCH", `/orders/${discountOrderId}`, {
       discountAmount: 401,
     });
     assert.strictEqual(status, 422);
-    assert.ok(data.error, 'should contain error message');
+    assert.ok(data.error, "should contain error message");
   });
 
   // ── Public tracking: discountAmount hidden, orderTotal correct ─
-  test('public tracking — discountAmount NOT exposed in response', async () => {
-    await req('PATCH', `/orders/${discountOrderId}`, { discountAmount: 80 });
-    const { status, data } = await req('GET', `/orders/track/${discountPublicToken}`, null, null);
+  test("public tracking — discountAmount NOT exposed in response", async () => {
+    await req("PATCH", `/orders/${discountOrderId}`, { discountAmount: 80 });
+    const { status, data } = await req(
+      "GET",
+      `/orders/track/${discountPublicToken}`,
+      null,
+      null,
+    );
     assert.strictEqual(status, 200);
-    assert.strictEqual(data.discountAmount, undefined, 'discountAmount MUST NOT appear in public response');
+    assert.strictEqual(
+      data.discountAmount,
+      undefined,
+      "discountAmount MUST NOT appear in public response",
+    );
   });
 
-  test('public tracking — orderTotal reflects discountAmount', async () => {
-    const { status, data } = await req('GET', `/orders/track/${discountPublicToken}`, null, null);
+  test("public tracking — orderTotal reflects discountAmount", async () => {
+    const { status, data } = await req(
+      "GET",
+      `/orders/track/${discountPublicToken}`,
+      null,
+      null,
+    );
     assert.strictEqual(status, 200);
-    assert.strictEqual(data.orderTotal, 320, 'public orderTotal = max(300 + 100 - 80, 0)');
+    assert.strictEqual(
+      data.orderTotal,
+      320,
+      "public orderTotal = max(300 + 100 - 80, 0)",
+    );
   });
 
-  test('public tracking — discountNote NOT exposed in response', async () => {
-    await req('PATCH', `/orders/${discountOrderId}`, { discountNote: '私密備註' });
-    const { status, data } = await req('GET', `/orders/track/${discountPublicToken}`, null, null);
+  test("public tracking — discountNote NOT exposed in response", async () => {
+    await req("PATCH", `/orders/${discountOrderId}`, {
+      discountNote: "私密備註",
+    });
+    const { status, data } = await req(
+      "GET",
+      `/orders/track/${discountPublicToken}`,
+      null,
+      null,
+    );
     assert.strictEqual(status, 200);
-    assert.strictEqual(data.discountNote, undefined, 'discountNote MUST NOT appear in public response');
+    assert.strictEqual(
+      data.discountNote,
+      undefined,
+      "discountNote MUST NOT appear in public response",
+    );
   });
 
-  test('200 — discountNote empty string is normalized to null', async () => {
-    await req('PATCH', `/orders/${discountOrderId}`, { discountNote: '先設一個值' });
-    const { status, data } = await req('PATCH', `/orders/${discountOrderId}`, { discountNote: '' });
+  test("200 — discountNote empty string is normalized to null", async () => {
+    await req("PATCH", `/orders/${discountOrderId}`, {
+      discountNote: "先設一個值",
+    });
+    const { status, data } = await req("PATCH", `/orders/${discountOrderId}`, {
+      discountNote: "",
+    });
     assert.strictEqual(status, 200);
-    assert.strictEqual(data.discountNote, null, 'empty string discountNote should be normalized to null');
+    assert.strictEqual(
+      data.discountNote,
+      null,
+      "empty string discountNote should be normalized to null",
+    );
   });
 
   // ── Integer validation ────────────────────────────────────────
-  test('422 — discountAmount decimal (1.5) is rejected', async () => {
-    const { status, data } = await req('PATCH', `/orders/${discountOrderId}`, {
+  test("422 — discountAmount decimal (1.5) is rejected", async () => {
+    const { status, data } = await req("PATCH", `/orders/${discountOrderId}`, {
       discountAmount: 1.5,
     });
     assert.strictEqual(status, 422);
-    assert.ok(data.error, 'should return error message');
+    assert.ok(data.error, "should return error message");
   });
 
-  test('422 — discountAmount decimal rejected and DB value unchanged', async () => {
-    await req('PATCH', `/orders/${discountOrderId}`, { discountAmount: 30 });
-    await req('PATCH', `/orders/${discountOrderId}`, { discountAmount: 1.5 });
-    const { data: orders } = await req('GET', `/stores/${testStoreId}/orders`);
+  test("422 — discountAmount decimal rejected and DB value unchanged", async () => {
+    await req("PATCH", `/orders/${discountOrderId}`, { discountAmount: 30 });
+    await req("PATCH", `/orders/${discountOrderId}`, { discountAmount: 1.5 });
+    const { data: orders } = await req("GET", `/stores/${testStoreId}/orders`);
     const o = orders.find((x) => x.id === discountOrderId);
-    assert.strictEqual(o.discountAmount, 30, 'discountAmount must remain 30 after decimal rejection');
+    assert.strictEqual(
+      o.discountAmount,
+      30,
+      "discountAmount must remain 30 after decimal rejection",
+    );
     // restore
-    await req('PATCH', `/orders/${discountOrderId}`, { discountAmount: 0 });
+    await req("PATCH", `/orders/${discountOrderId}`, { discountAmount: 0 });
   });
 
   // ── CSV export row values ─────────────────────────────────────
-  test('CSV export — discount row includes discountAmount and discountNote values', async () => {
-    await req('PATCH', `/orders/${discountOrderId}`, {
+  test("CSV export — discount row includes discountAmount and discountNote values", async () => {
+    await req("PATCH", `/orders/${discountOrderId}`, {
       discountAmount: 50,
-      discountNote: '測試折讓',
+      discountNote: "測試折讓",
     });
-    const { status, data } = await req('GET', `/stores/${testStoreId}/orders/export`);
+    const { status, data } = await req(
+      "GET",
+      `/stores/${testStoreId}/orders/export`,
+    );
     assert.strictEqual(status, 200);
-    assert.ok(typeof data === 'string', 'export should return text/csv');
-    assert.ok(data.includes('折讓金額'), 'CSV header should include 折讓金額');
-    assert.ok(data.includes('折讓備註'), 'CSV header should include 折讓備註');
-    assert.ok(data.includes('"50","測試折讓"'), 'CSV row should include discountAmount 50 and discountNote in sequence');
+    assert.ok(typeof data === "string", "export should return text/csv");
+    assert.ok(data.includes("折讓金額"), "CSV header should include 折讓金額");
+    assert.ok(data.includes("折讓備註"), "CSV header should include 折讓備註");
+    assert.ok(
+      data.includes('"50","測試折讓"'),
+      "CSV row should include discountAmount 50 and discountNote in sequence",
+    );
     // restore
-    await req('PATCH', `/orders/${discountOrderId}`, { discountAmount: 0, discountNote: null });
+    await req("PATCH", `/orders/${discountOrderId}`, {
+      discountAmount: 0,
+      discountNote: null,
+    });
   });
 });
 
 // ─────────────────────────────────────────────────────────────
 // Step 7G — orders list includes active shipmentTracking summary
 // ─────────────────────────────────────────────────────────────
-describe('GET /stores/:storeId/orders — shipmentTracking summary', () => {
+describe("GET /stores/:storeId/orders — shipmentTracking summary", () => {
   let trackOrderId;
 
   before(async () => {
@@ -2019,78 +2692,81 @@ describe('GET /stores/:storeId/orders — shipmentTracking summary', () => {
         productId: testProductId,
         storeId: testStoreId,
         publicToken: `track-${Date.now()}`,
-        buyerName: 'Track Buyer',
-        buyerPhone: '0900000077',
-        pickupMethod: 'cvs',
+        buyerName: "Track Buyer",
+        buyerPhone: "0900000077",
+        pickupMethod: "cvs",
         quantity: 1,
-        unitPrice: '100',
-        totalPrice: '100',
-        status: 'preparing',
+        unitPrice: "100",
+        totalPrice: "100",
+        status: "preparing",
       })
       .returning();
     trackOrderId = order.id;
   });
 
-  test('order without tracking → shipmentTracking is null, order still returned', async () => {
-    const { status, data } = await req('GET', `/stores/${testStoreId}/orders`);
+  test("order without tracking → shipmentTracking is null, order still returned", async () => {
+    const { status, data } = await req("GET", `/stores/${testStoreId}/orders`);
     assert.strictEqual(status, 200);
     const order = data.find((o) => o.id === trackOrderId);
-    assert.ok(order, 'order present');
+    assert.ok(order, "order present");
     assert.strictEqual(order.shipmentTracking, null);
   });
 
-  test('active tracking → summary returned with correct fields, no rawData', async () => {
-    const { shipmentTrackingsTable } = await import('@workspace/db');
+  test("active tracking → summary returned with correct fields, no rawData", async () => {
+    const { shipmentTrackingsTable } = await import("@workspace/db");
     const code = `7GTEST${Date.now()}`;
     await db.insert(shipmentTrackingsTable).values({
       orderId: trackOrderId,
       trackingCode: code,
-      trackingProvider: 'familymart',
-      sourceType: 'file_import',
-      trackingStatus: 'pending',
+      trackingProvider: "familymart",
+      sourceType: "file_import",
+      trackingStatus: "pending",
       isActive: true,
     });
 
-    const { status, data } = await req('GET', `/stores/${testStoreId}/orders`);
+    const { status, data } = await req("GET", `/stores/${testStoreId}/orders`);
     assert.strictEqual(status, 200);
     const order = data.find((o) => o.id === trackOrderId);
     const t = order.shipmentTracking;
-    assert.ok(t, 'shipmentTracking present');
+    assert.ok(t, "shipmentTracking present");
     assert.strictEqual(t.trackingCode, code);
-    assert.strictEqual(t.trackingProvider, 'familymart');
-    assert.strictEqual(t.sourceType, 'file_import');
-    assert.strictEqual(t.trackingStatus, 'pending');
+    assert.strictEqual(t.trackingProvider, "familymart");
+    assert.strictEqual(t.sourceType, "file_import");
+    assert.strictEqual(t.trackingStatus, "pending");
     assert.strictEqual(t.latestEventStatus, null);
     assert.strictEqual(t.latestEventAt, null);
     assert.strictEqual(t.lastCheckedAt, null);
     assert.strictEqual(t.checkError, null);
     assert.strictEqual(t.isActive, true);
-    assert.ok(!('rawData' in t) && !('raw_data' in t), 'must not expose raw data');
+    assert.ok(
+      !("rawData" in t) && !("raw_data" in t),
+      "must not expose raw data",
+    );
   });
 
-  test('multiple trackings → only latest active returned', async () => {
-    const { shipmentTrackingsTable } = await import('@workspace/db');
+  test("multiple trackings → only latest active returned", async () => {
+    const { shipmentTrackingsTable } = await import("@workspace/db");
     // deactivate the first, add an inactive and a newer active one
     await db
       .update(shipmentTrackingsTable)
-      .set({ isActive: false, trackingStatus: 'inactive' })
+      .set({ isActive: false, trackingStatus: "inactive" })
       .where(eq(shipmentTrackingsTable.orderId, trackOrderId));
     const newCode = `7GNEW${Date.now()}`;
     await db.insert(shipmentTrackingsTable).values({
       orderId: trackOrderId,
       trackingCode: newCode,
-      trackingProvider: 'familymart',
-      sourceType: 'manual',
-      trackingStatus: 'active',
+      trackingProvider: "familymart",
+      sourceType: "manual",
+      trackingStatus: "active",
       isActive: true,
     });
 
-    const { status, data } = await req('GET', `/stores/${testStoreId}/orders`);
+    const { status, data } = await req("GET", `/stores/${testStoreId}/orders`);
     assert.strictEqual(status, 200);
     const t = data.find((o) => o.id === trackOrderId).shipmentTracking;
     assert.ok(t);
-    assert.strictEqual(t.trackingCode, newCode, 'latest active tracking wins');
-    assert.strictEqual(t.sourceType, 'manual');
-    assert.strictEqual(t.trackingStatus, 'active');
+    assert.strictEqual(t.trackingCode, newCode, "latest active tracking wins");
+    assert.strictEqual(t.sourceType, "manual");
+    assert.strictEqual(t.trackingStatus, "active");
   });
 });

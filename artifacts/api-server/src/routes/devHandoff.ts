@@ -8,15 +8,15 @@ const router = Router();
 // correct regardless of the working directory the server is started from.
 const HANDOFF_PATH = path.resolve(
   path.dirname(process.argv[1]),
-  "../../../dev-handoff/latest.json"
+  "../../../dev-handoff/latest.json",
 );
 const HANDOFF_PATH_A = path.resolve(
   path.dirname(process.argv[1]),
-  "../../../dev-handoff/latest-A.json"
+  "../../../dev-handoff/latest-A.json",
 );
 const HANDOFF_PATH_B = path.resolve(
   path.dirname(process.argv[1]),
-  "../../../dev-handoff/latest-B.json"
+  "../../../dev-handoff/latest-B.json",
 );
 
 const SECRET_PATTERNS: RegExp[] = [
@@ -43,7 +43,10 @@ function maskValue(val: unknown): unknown {
   if (Array.isArray(val)) return val.map(maskValue);
   if (val !== null && typeof val === "object") {
     return Object.fromEntries(
-      Object.entries(val as Record<string, unknown>).map(([k, v]) => [k, maskValue(v)])
+      Object.entries(val as Record<string, unknown>).map(([k, v]) => [
+        k,
+        maskValue(v),
+      ]),
     );
   }
   return val;
@@ -122,7 +125,11 @@ router.delete("/dev/handoff/data", async (_req, res) => {
   };
 
   try {
-    await writeFile(HANDOFF_PATH, JSON.stringify(empty, null, 2) + "\n", "utf-8");
+    await writeFile(
+      HANDOFF_PATH,
+      JSON.stringify(empty, null, 2) + "\n",
+      "utf-8",
+    );
     return res.json({ ok: true });
   } catch {
     return res.status(500).json({ error: "Failed to clear handoff file" });

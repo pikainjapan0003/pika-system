@@ -5,10 +5,15 @@ const maskName = (s: string): string =>
 
 const maskPhone = (s: string): string => {
   const t = s.replace(/[-\s()]/g, "");
-  return t.length <= 4 ? "****" : t.slice(0, 2) + "*".repeat(t.length - 4) + t.slice(-2);
+  return t.length <= 4
+    ? "****"
+    : t.slice(0, 2) + "*".repeat(t.length - 4) + t.slice(-2);
 };
 
-const ensureMasked = (value: string | null | undefined, masker: (v: string) => string): string | null =>
+const ensureMasked = (
+  value: string | null | undefined,
+  masker: (v: string) => string,
+): string | null =>
   value == null ? null : value.includes("*") ? value : masker(value);
 
 /**

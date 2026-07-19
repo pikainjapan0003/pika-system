@@ -16,16 +16,25 @@ export const agentTokenAuth = async (req: any, res: any, next: any) => {
     const authHeader = req.headers["authorization"] as string | undefined;
 
     if (!authHeader) {
-      return res.status(401).json({ error: "agent_auth_missing", message: "Authorization header required" });
+      return res.status(401).json({
+        error: "agent_auth_missing",
+        message: "Authorization header required",
+      });
     }
 
     if (!authHeader.startsWith("Bearer ") || authHeader.length <= 7) {
-      return res.status(401).json({ error: "agent_auth_invalid_format", message: "Authorization must be: Bearer <token>" });
+      return res.status(401).json({
+        error: "agent_auth_invalid_format",
+        message: "Authorization must be: Bearer <token>",
+      });
     }
 
     const token = authHeader.slice(7).trim();
     if (!token) {
-      return res.status(401).json({ error: "agent_auth_invalid_format", message: "Authorization must be: Bearer <token>" });
+      return res.status(401).json({
+        error: "agent_auth_invalid_format",
+        message: "Authorization must be: Bearer <token>",
+      });
     }
 
     // Hash the token — never log or store the plaintext
@@ -49,8 +58,14 @@ export const agentTokenAuth = async (req: any, res: any, next: any) => {
 
     if (!record) {
       // Log only a hash prefix — never the raw token
-      logger.warn({ tokenHashPrefix: tokenHash.slice(0, 8) }, "agent_token_auth_failed");
-      return res.status(401).json({ error: "agent_auth_unauthorized", message: "Invalid or expired token" });
+      logger.warn(
+        { tokenHashPrefix: tokenHash.slice(0, 8) },
+        "agent_token_auth_failed",
+      );
+      return res.status(401).json({
+        error: "agent_auth_unauthorized",
+        message: "Invalid or expired token",
+      });
     }
 
     const agentToken: AgentTokenLocals = {
@@ -67,7 +82,10 @@ export const agentTokenAuth = async (req: any, res: any, next: any) => {
       .set({ lastUsedAt: new Date() })
       .where(eq(sellerAgentTokensTable.id, record.id))
       .catch((updateErr: unknown) => {
-        logger.warn({ tokenId: record.id, err: updateErr }, "agent_token_lastUsedAt_update_failed");
+        logger.warn(
+          { tokenId: record.id, err: updateErr },
+          "agent_token_lastUsedAt_update_failed",
+        );
       });
 
     next();

@@ -16,11 +16,24 @@ import {
   shipmentTrackingsTable,
 } from "@workspace/db";
 import type { CustomerTier, OrderStatus } from "@workspace/db";
-import { CreateMerchantOrderBody, UpdateOrderBody, UpdateOrderStatusBody, BulkUpdateOrdersBody, GetPickingListBody, GetShippingListBody } from "@workspace/api-zod";
+import {
+  CreateMerchantOrderBody,
+  UpdateOrderBody,
+  UpdateOrderStatusBody,
+  BulkUpdateOrdersBody,
+  GetPickingListBody,
+  GetShippingListBody,
+} from "@workspace/api-zod";
 import { requireAuth, verifyStoreOwner } from "../middlewares/auth.ts";
 import { getShippingFee } from "../lib/shippingFee.ts";
-import { isValidTransition, getTransitionError } from "../lib/orderStatusMachine.ts";
-import { TRACKING_IMPORT_ALLOWED_PROVIDERS, normalizeTrackingProvider } from "../lib/logistics/providers.ts";
+import {
+  isValidTransition,
+  getTransitionError,
+} from "../lib/orderStatusMachine.ts";
+import {
+  TRACKING_IMPORT_ALLOWED_PROVIDERS,
+  normalizeTrackingProvider,
+} from "../lib/logistics/providers.ts";
 import { ensureManualProviderTrackingRow } from "../lib/logistics/trackingSeed.ts";
 import { loadOrderProfitSnapshotInput } from "../lib/orderProfitSnapshot.ts";
 import { summarizeOrderProfits } from "../lib/orderProfitSummary.ts";
@@ -39,43 +52,53 @@ import {
 
 const router = Router();
 
-router.get("/stores/:storeId/orders/profit-summary", requireAuth, async (req: any, res) => {
-  const storeId = parseInt(req.params.storeId);
-  if (isNaN(storeId)) return res.status(400).json({ error: "Invalid storeId" });
-  if (!(await verifyStoreOwner(req, res, storeId))) return;
+router.get(
+  "/stores/:storeId/orders/profit-summary",
+  requireAuth,
+  async (req: any, res) => {
+    const storeId = parseInt(req.params.storeId);
+    if (isNaN(storeId))
+      return res.status(400).json({ error: "Invalid storeId" });
+    if (!(await verifyStoreOwner(req, res, storeId))) return;
 
-  const orders = await db
-    .select()
-    .from(ordersTable)
-    .where(eq(ordersTable.storeId, storeId));
-  return res.json(summarizeOrderProfits(orders));
-});
+    const orders = await db
+      .select()
+      .from(ordersTable)
+      .where(eq(ordersTable.storeId, storeId));
+    return res.json(summarizeOrderProfits(orders));
+  },
+);
 
-router.get("/stores/:storeId/orders/monthly-profit", requireAuth, async (req: any, res) => {
-  const storeId = parseInt(req.params.storeId);
-  if (isNaN(storeId)) return res.status(400).json({ error: "Invalid storeId" });
-  if (!(await verifyStoreOwner(req, res, storeId))) return;
+router.get(
+  "/stores/:storeId/orders/monthly-profit",
+  requireAuth,
+  async (req: any, res) => {
+    const storeId = parseInt(req.params.storeId);
+    if (isNaN(storeId))
+      return res.status(400).json({ error: "Invalid storeId" });
+    if (!(await verifyStoreOwner(req, res, storeId))) return;
 
-  const month = typeof req.query.month === "string" ? req.query.month : "";
-  let range: ReturnType<typeof parseTaipeiMonthRange>;
-  try {
-    range = parseTaipeiMonthRange(month);
-  } catch (error) {
-    return res.status(400).json({ error: (error as Error).message });
-  }
+    const month = typeof req.query.month === "string" ? req.query.month : "";
+    let range: ReturnType<typeof parseTaipeiMonthRange>;
+    try {
+      range = parseTaipeiMonthRange(month);
+    } catch (error) {
+      return res.status(400).json({ error: (error as Error).message });
+    }
 
-  const orders = await db
-    .select()
-    .from(ordersTable)
-    .where(
-      and(
-        eq(ordersTable.storeId, storeId),
-        gte(ordersTable.createdAt, range.start),
-        lt(ordersTable.createdAt, range.end),
-      ),
-    );
-  return res.json(summarizeMonthlyOrderProfits(month, orders));
-});
+    const orders = await db
+      .select()
+      .from(ordersTable)
+      .where(
+        and(
+          eq(ordersTable.storeId, storeId),
+          gte(ordersTable.createdAt, range.start),
+          lt(ordersTable.createdAt, range.end),
+        ),
+      );
+    return res.json(summarizeMonthlyOrderProfits(month, orders));
+  },
+);
 
 router.get("/stores/:storeId/orders", requireAuth, async (req: any, res) => {
   const storeId = parseInt(req.params.storeId);
@@ -91,19 +114,33 @@ router.get("/stores/:storeId/orders", requireAuth, async (req: any, res) => {
 
   // Active shipment tracking summary per order — single IN query, latest per order.
   const orderIds = orders.map((o) => o.id);
-  const trackingByOrderId = new Map<number, ReturnType<typeof formatShipmentTracking>>();
+  const trackingByOrderId = new Map<
+    number,
+    ReturnType<typeof formatShipmentTracking>
+  >();
   if (orderIds.length) {
     const trackings = await db
       .select()
       .from(shipmentTrackingsTable)
-      .where(and(inArray(shipmentTrackingsTable.orderId, orderIds), eq(shipmentTrackingsTable.isActive, true)));
+      .where(
+        and(
+          inArray(shipmentTrackingsTable.orderId, orderIds),
+          eq(shipmentTrackingsTable.isActive, true),
+        ),
+      );
     for (const t of trackings) {
       const existing = trackingByOrderId.get(t.orderId);
-      if (!existing || t.id > existing.id) trackingByOrderId.set(t.orderId, formatShipmentTracking(t));
+      if (!existing || t.id > existing.id)
+        trackingByOrderId.set(t.orderId, formatShipmentTracking(t));
     }
   }
 
-  return res.json(orders.map((o) => ({ ...formatOrder(o), shipmentTracking: trackingByOrderId.get(o.id) ?? null })));
+  return res.json(
+    orders.map((o) => ({
+      ...formatOrder(o),
+      shipmentTracking: trackingByOrderId.get(o.id) ?? null,
+    })),
+  );
 });
 
 router.post("/stores/:storeId/orders", requireAuth, async (req: any, res) => {
@@ -118,9 +155,22 @@ router.post("/stores/:storeId/orders", requireAuth, async (req: any, res) => {
   }
 
   const {
-    productId, buyerName, buyerPhone, quantity, pickupMethod, notes, specValues,
-    shippingMethod, recipientName, recipientPhone, recipientAddress,
-    storeCode, storeName, cvsStoreAddress, cvsStorePhone, storeSelectedBy,
+    productId,
+    buyerName,
+    buyerPhone,
+    quantity,
+    pickupMethod,
+    notes,
+    specValues,
+    shippingMethod,
+    recipientName,
+    recipientPhone,
+    recipientAddress,
+    storeCode,
+    storeName,
+    cvsStoreAddress,
+    cvsStorePhone,
+    storeSelectedBy,
   } = parsed.data;
   let customerId: number | null;
   try {
@@ -143,7 +193,12 @@ router.post("/stores/:storeId/orders", requireAuth, async (req: any, res) => {
         const [product] = await tx
           .select()
           .from(productsTable)
-          .where(and(eq(productsTable.id, productId), eq(productsTable.storeId, storeId)))
+          .where(
+            and(
+              eq(productsTable.id, productId),
+              eq(productsTable.storeId, storeId),
+            ),
+          )
           .limit(1);
 
         if (!product) {
@@ -152,33 +207,46 @@ router.post("/stores/:storeId/orders", requireAuth, async (req: any, res) => {
           throw err;
         }
 
-        const customer = customerId === null
-          ? null
-          : (await tx
-              .select()
-              .from(customersTable)
-              .where(and(eq(customersTable.id, customerId), eq(customersTable.storeId, storeId)))
-              .limit(1))[0] ?? null;
+        const customer =
+          customerId === null
+            ? null
+            : ((
+                await tx
+                  .select()
+                  .from(customersTable)
+                  .where(
+                    and(
+                      eq(customersTable.id, customerId),
+                      eq(customersTable.storeId, storeId),
+                    ),
+                  )
+                  .limit(1)
+              )[0] ?? null);
         if (customerId !== null && !customer) {
           const err = new Error("Customer not found") as any;
           err.status = 404;
           throw err;
         }
-        const cvsSelection = resolveCustomerCvsDefaults({
-          storeCode,
-          storeName,
-          cvsStoreAddress,
-          cvsStorePhone,
-        }, customer);
+        const cvsSelection = resolveCustomerCvsDefaults(
+          {
+            storeCode,
+            storeName,
+            cvsStoreAddress,
+            cvsStorePhone,
+          },
+          customer,
+        );
         const hasCvsStore = Boolean(
-          cvsSelection.storeCode
-          || cvsSelection.storeName
-          || cvsSelection.cvsStoreAddress
-          || cvsSelection.cvsStorePhone,
+          cvsSelection.storeCode ||
+          cvsSelection.storeName ||
+          cvsSelection.cvsStoreAddress ||
+          cvsSelection.cvsStorePhone,
         );
 
         const storedCustomerTier = customer?.tier;
-        const customerTier = customerTierEnum.includes(storedCustomerTier as CustomerTier)
+        const customerTier = customerTierEnum.includes(
+          storedCustomerTier as CustomerTier,
+        )
           ? (storedCustomerTier as CustomerTier)
           : null;
         const unitPrice = resolveTierPrice({
@@ -233,7 +301,9 @@ router.post("/stores/:storeId/orders", requireAuth, async (req: any, res) => {
             cvsStoreAddress: cvsSelection.cvsStoreAddress,
             cvsStorePhone: cvsSelection.cvsStorePhone,
             storeSelectedBy: hasCvsStore
-              ? (cvsSelection.usedCustomerDefault ? "customer_default" : (storeSelectedBy ?? "admin"))
+              ? cvsSelection.usedCustomerDefault
+                ? "customer_default"
+                : (storeSelectedBy ?? "admin")
               : null,
             storeSelectedAt: hasCvsStore ? new Date() : null,
           })
@@ -245,7 +315,8 @@ router.post("/stores/:storeId/orders", requireAuth, async (req: any, res) => {
 
       return res.status(201).json(formatOrder(order));
     } catch (err: any) {
-      if (err.status === 404) return res.status(404).json({ error: err.message });
+      if (err.status === 404)
+        return res.status(404).json({ error: err.message });
       if (err.code === "23505" && retries < 3) {
         retries++;
         continue;
@@ -272,7 +343,9 @@ router.post("/orders/picking-list", requireAuth, async (req: any, res) => {
   const foundIds = new Set(orders.map((o) => o.id));
   const notFoundIds = orderIds.filter((id) => !foundIds.has(id));
   if (notFoundIds.length > 0) {
-    return res.status(422).json({ error: `Orders not found: ${notFoundIds.join(", ")}` });
+    return res
+      .status(422)
+      .json({ error: `Orders not found: ${notFoundIds.join(", ")}` });
   }
 
   const uniqueStoreIds = [...new Set(orders.map((o) => o.storeId))];
@@ -281,35 +354,45 @@ router.post("/orders/picking-list", requireAuth, async (req: any, res) => {
     if (!owned) return;
   }
 
-  const excludedOrderIds = orders.filter((o) => o.status === "cancelled").map((o) => o.id);
+  const excludedOrderIds = orders
+    .filter((o) => o.status === "cancelled")
+    .map((o) => o.id);
   const activeOrders = orders.filter((o) => o.status !== "cancelled");
 
   // Fetch product details for all products in active orders
   const productIds = [...new Set(activeOrders.map((o) => o.productId))];
-  const products = productIds.length > 0
-    ? await db.select().from(productsTable).where(inArray(productsTable.id, productIds))
-    : [];
+  const products =
+    productIds.length > 0
+      ? await db
+          .select()
+          .from(productsTable)
+          .where(inArray(productsTable.id, productIds))
+      : [];
   const productMap = new Map(products.map((p) => [p.id, p]));
 
   // Group by productId + specValues key
-  const groupMap = new Map<string, {
-    productId: number;
-    skuCode: string | null;
-    productName: string;
-    specValues: Record<string, unknown>;
-    storageTemp: string | null;
-    shelfLife: string | null;
-    quantityTotal: number;
-    orderIds: number[];
-    orderNumbers: string[];
-    noteSet: Set<string>;
-  }>();
+  const groupMap = new Map<
+    string,
+    {
+      productId: number;
+      skuCode: string | null;
+      productName: string;
+      specValues: Record<string, unknown>;
+      storageTemp: string | null;
+      shelfLife: string | null;
+      quantityTotal: number;
+      orderIds: number[];
+      orderNumbers: string[];
+      noteSet: Set<string>;
+    }
+  >();
 
   for (const order of activeOrders) {
     const specValues = (order.specValues ?? {}) as Record<string, unknown>;
     const groupKey = `${order.productId}::${JSON.stringify(specValues)}`;
     const product = productMap.get(order.productId);
-    const productName = order.productName ?? product?.name ?? `Product #${order.productId}`;
+    const productName =
+      order.productName ?? product?.name ?? `Product #${order.productId}`;
 
     if (!groupMap.has(groupKey)) {
       groupMap.set(groupKey, {
@@ -335,9 +418,10 @@ router.post("/orders/picking-list", requireAuth, async (req: any, res) => {
 
   const items = [...groupMap.values()].map((g) => {
     const specEntries = Object.entries(g.specValues);
-    const specLabel = specEntries.length > 0
-      ? specEntries.map(([k, v]) => `${k}: ${v}`).join("、")
-      : null;
+    const specLabel =
+      specEntries.length > 0
+        ? specEntries.map(([k, v]) => `${k}: ${v}`).join("、")
+        : null;
 
     return {
       productId: g.productId,
@@ -373,24 +457,28 @@ router.post("/orders/picking-list.csv", requireAuth, async (req: any, res) => {
 
   const { activeOrders, productMap } = result;
 
-  const groupMap = new Map<string, {
-    productId: number;
-    skuCode: string | null;
-    productName: string;
-    specValues: Record<string, unknown>;
-    storageTemp: string | null;
-    shelfLife: string | null;
-    quantityTotal: number;
-    orderIds: number[];
-    orderNumbers: string[];
-    noteSet: Set<string>;
-  }>();
+  const groupMap = new Map<
+    string,
+    {
+      productId: number;
+      skuCode: string | null;
+      productName: string;
+      specValues: Record<string, unknown>;
+      storageTemp: string | null;
+      shelfLife: string | null;
+      quantityTotal: number;
+      orderIds: number[];
+      orderNumbers: string[];
+      noteSet: Set<string>;
+    }
+  >();
 
   for (const order of activeOrders) {
     const specValues = (order.specValues ?? {}) as Record<string, unknown>;
     const groupKey = `${order.productId}::${JSON.stringify(specValues)}`;
     const product = productMap.get(order.productId);
-    const productName = order.productName ?? product?.name ?? `Product #${order.productId}`;
+    const productName =
+      order.productName ?? product?.name ?? `Product #${order.productId}`;
 
     if (!groupMap.has(groupKey)) {
       groupMap.set(groupKey, {
@@ -414,12 +502,24 @@ router.post("/orders/picking-list.csv", requireAuth, async (req: any, res) => {
     if (order.notes) group.noteSet.add(order.notes);
   }
 
-  const headers = ["商品ID", "SKU / 商品編號", "商品名稱", "規格", "溫層", "保存期限", "數量合計", "對應訂單ID", "對應訂單編號", "備註"];
+  const headers = [
+    "商品ID",
+    "SKU / 商品編號",
+    "商品名稱",
+    "規格",
+    "溫層",
+    "保存期限",
+    "數量合計",
+    "對應訂單ID",
+    "對應訂單編號",
+    "備註",
+  ];
   const rows = [...groupMap.values()].map((g) => {
     const specEntries = Object.entries(g.specValues);
-    const specLabel = specEntries.length > 0
-      ? specEntries.map(([k, v]) => `${k}: ${v}`).join("、")
-      : "";
+    const specLabel =
+      specEntries.length > 0
+        ? specEntries.map(([k, v]) => `${k}: ${v}`).join("、")
+        : "";
     return [
       g.productId,
       g.skuCode,
@@ -437,7 +537,10 @@ router.post("/orders/picking-list.csv", requireAuth, async (req: any, res) => {
   const now = new Date();
   const csvContent = [headers, ...rows].map(csvRow).join("\n");
   res.setHeader("Content-Type", "text/csv; charset=utf-8");
-  res.setHeader("Content-Disposition", `attachment; filename="${csvFilename("picking-list", now)}"`);
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename="${csvFilename("picking-list", now)}"`,
+  );
   return res.send("﻿" + csvContent);
 });
 
@@ -457,7 +560,9 @@ router.post("/orders/shipping-list", requireAuth, async (req: any, res) => {
   const foundIds = new Set(orders.map((o) => o.id));
   const notFoundIds = orderIds.filter((id) => !foundIds.has(id));
   if (notFoundIds.length > 0) {
-    return res.status(422).json({ error: `Orders not found: ${notFoundIds.join(", ")}` });
+    return res
+      .status(422)
+      .json({ error: `Orders not found: ${notFoundIds.join(", ")}` });
   }
 
   const uniqueStoreIds = [...new Set(orders.map((o) => o.storeId))];
@@ -466,23 +571,30 @@ router.post("/orders/shipping-list", requireAuth, async (req: any, res) => {
     if (!owned) return;
   }
 
-  const excludedOrderIds = orders.filter((o) => o.status === "cancelled").map((o) => o.id);
+  const excludedOrderIds = orders
+    .filter((o) => o.status === "cancelled")
+    .map((o) => o.id);
   const activeOrders = orders.filter((o) => o.status !== "cancelled");
 
   // Fetch product details for skuCode
   const productIds = [...new Set(activeOrders.map((o) => o.productId))];
-  const products = productIds.length > 0
-    ? await db.select().from(productsTable).where(inArray(productsTable.id, productIds))
-    : [];
+  const products =
+    productIds.length > 0
+      ? await db
+          .select()
+          .from(productsTable)
+          .where(inArray(productsTable.id, productIds))
+      : [];
   const productMap = new Map(products.map((p) => [p.id, p]));
 
   const shippingOrders = activeOrders.map((order) => {
     const product = productMap.get(order.productId);
     const specValues = (order.specValues ?? {}) as Record<string, unknown>;
     const specEntries = Object.entries(specValues);
-    const specLabel = specEntries.length > 0
-      ? specEntries.map(([k, v]) => `${k}: ${v}`).join("、")
-      : null;
+    const specLabel =
+      specEntries.length > 0
+        ? specEntries.map(([k, v]) => `${k}: ${v}`).join("、")
+        : null;
     const productName = order.productName ?? product?.name ?? null;
     const itemsText = specLabel
       ? `${productName} (${specLabel}) × ${order.quantity}`
@@ -536,19 +648,36 @@ router.post("/orders/shipping-list.csv", requireAuth, async (req: any, res) => {
   const { activeOrders, productMap } = result;
 
   const headers = [
-    "訂單ID", "訂單編號", "訂單狀態", "買家姓名", "買家電話",
-    "商品名稱", "規格", "數量", "付款狀態", "出貨狀態",
-    "物流方式", "物流追蹤碼", "物流商", "超商店號", "超商店名",
-    "收件人", "收件電話", "收件地址", "物流備註", "商品明細文字",
+    "訂單ID",
+    "訂單編號",
+    "訂單狀態",
+    "買家姓名",
+    "買家電話",
+    "商品名稱",
+    "規格",
+    "數量",
+    "付款狀態",
+    "出貨狀態",
+    "物流方式",
+    "物流追蹤碼",
+    "物流商",
+    "超商店號",
+    "超商店名",
+    "收件人",
+    "收件電話",
+    "收件地址",
+    "物流備註",
+    "商品明細文字",
   ];
 
   const rows = activeOrders.map((order) => {
     const product = productMap.get(order.productId);
     const specValues = (order.specValues ?? {}) as Record<string, unknown>;
     const specEntries = Object.entries(specValues);
-    const specLabel = specEntries.length > 0
-      ? specEntries.map(([k, v]) => `${k}: ${v}`).join("、")
-      : "";
+    const specLabel =
+      specEntries.length > 0
+        ? specEntries.map(([k, v]) => `${k}: ${v}`).join("、")
+        : "";
     const productName = order.productName ?? product?.name ?? "";
     const itemsText = specLabel
       ? `${productName} (${specLabel}) × ${order.quantity}`
@@ -583,7 +712,10 @@ router.post("/orders/shipping-list.csv", requireAuth, async (req: any, res) => {
   const now = new Date();
   const csvContent = [headers, ...rows].map(csvRow).join("\n");
   res.setHeader("Content-Type", "text/csv; charset=utf-8");
-  res.setHeader("Content-Disposition", `attachment; filename="${csvFilename("shipping-list", now)}"`);
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename="${csvFilename("shipping-list", now)}"`,
+  );
   return res.send("﻿" + csvContent);
 });
 
@@ -594,7 +726,9 @@ router.patch("/orders/bulk", requireAuth, async (req: any, res) => {
     const is422 = parsed.error.issues.some(
       (i) =>
         i.code === "invalid_enum_value" ||
-        (i.code === "invalid_union" && i.path.length > 0 && ENUM_UNION_PATHS.has(i.path[0] as string))
+        (i.code === "invalid_union" &&
+          i.path.length > 0 &&
+          ENUM_UNION_PATHS.has(i.path[0] as string)),
     );
     return res.status(is422 ? 422 : 400).json({ error: parsed.error.message });
   }
@@ -602,7 +736,9 @@ router.patch("/orders/bulk", requireAuth, async (req: any, res) => {
   const { orderIds, paymentStatus, shippingStatus } = parsed.data;
 
   if (!paymentStatus && !shippingStatus) {
-    return res.status(422).json({ error: "At least one of paymentStatus or shippingStatus is required" });
+    return res.status(422).json({
+      error: "At least one of paymentStatus or shippingStatus is required",
+    });
   }
 
   const orders = await db
@@ -614,7 +750,9 @@ router.patch("/orders/bulk", requireAuth, async (req: any, res) => {
   const foundIds = new Set(orders.map((o) => o.id));
   const notFoundIds = orderIds.filter((id) => !foundIds.has(id));
   if (notFoundIds.length > 0) {
-    return res.status(422).json({ error: `Orders not found: ${notFoundIds.join(", ")}` });
+    return res
+      .status(422)
+      .json({ error: `Orders not found: ${notFoundIds.join(", ")}` });
   }
 
   const uniqueStoreIds = [...new Set(orders.map((o) => o.storeId))];
@@ -623,8 +761,12 @@ router.patch("/orders/bulk", requireAuth, async (req: any, res) => {
     if (!owned) return;
   }
 
-  const updatable = orders.filter((o) => o.status !== "completed" && o.status !== "cancelled");
-  const skipped = orders.filter((o) => o.status === "completed" || o.status === "cancelled");
+  const updatable = orders.filter(
+    (o) => o.status !== "completed" && o.status !== "cancelled",
+  );
+  const skipped = orders.filter(
+    (o) => o.status === "completed" || o.status === "cancelled",
+  );
 
   if (updatable.length > 0) {
     const updates: Record<string, unknown> = {};
@@ -634,7 +776,12 @@ router.patch("/orders/bulk", requireAuth, async (req: any, res) => {
     await db
       .update(ordersTable)
       .set(updates)
-      .where(inArray(ordersTable.id, updatable.map((o) => o.id)));
+      .where(
+        inArray(
+          ordersTable.id,
+          updatable.map((o) => o.id),
+        ),
+      );
   }
 
   return res.json({
@@ -665,7 +812,8 @@ router.post("/orders/tracking-import", requireAuth, async (req: any, res) => {
   );
   if (hasPublicToken) {
     return res.status(422).json({
-      error: "CSV 不應包含 publicToken 欄位，請改用 orderId 或 orderNumber 作為訂單識別",
+      error:
+        "CSV 不應包含 publicToken 欄位，請改用 orderId 或 orderNumber 作為訂單識別",
     });
   }
 
@@ -675,7 +823,13 @@ router.post("/orders/tracking-import", requireAuth, async (req: any, res) => {
   const totalRows = rows.length;
 
   // Parse and validate each row first
-  type ParsedRow = { rowIndex: number; rawOrderId: string; numericOrderId: number; trackingProvider: string; trackingCode: string };
+  type ParsedRow = {
+    rowIndex: number;
+    rawOrderId: string;
+    numericOrderId: number;
+    trackingProvider: string;
+    trackingCode: string;
+  };
   const parsedRows: ParsedRow[] = [];
 
   for (let i = 0; i < rows.length; i++) {
@@ -692,33 +846,63 @@ router.post("/orders/tracking-import", requireAuth, async (req: any, res) => {
 
     // Validate orderId: pure number or #123 format (D1)
     if (!rawOrderId) {
-      errors.push({ row: rowNum, orderId: rawOrderId, reason: "缺少必要欄位：orderId" });
+      errors.push({
+        row: rowNum,
+        orderId: rawOrderId,
+        reason: "缺少必要欄位：orderId",
+      });
       continue;
     }
-    const normalizedId = rawOrderId.startsWith("#") ? rawOrderId.slice(1) : rawOrderId;
+    const normalizedId = rawOrderId.startsWith("#")
+      ? rawOrderId.slice(1)
+      : rawOrderId;
     const numericOrderId = parseInt(normalizedId, 10);
     if (isNaN(numericOrderId) || String(numericOrderId) !== normalizedId) {
-      errors.push({ row: rowNum, orderId: rawOrderId, reason: "orderId 格式錯誤：需為純數字或 #數字" });
+      errors.push({
+        row: rowNum,
+        orderId: rawOrderId,
+        reason: "orderId 格式錯誤：需為純數字或 #數字",
+      });
       continue;
     }
 
     // Validate provider (D2, D6)
     if (!rawProvider) {
-      errors.push({ row: rowNum, orderId: rawOrderId, reason: "缺少必要欄位：trackingProvider" });
+      errors.push({
+        row: rowNum,
+        orderId: rawOrderId,
+        reason: "缺少必要欄位：trackingProvider",
+      });
       continue;
     }
-    if (!(ALLOWED_TRACKING_PROVIDERS as readonly string[]).includes(rawProvider.toLowerCase())) {
-      errors.push({ row: rowNum, orderId: rawOrderId, reason: `trackingProvider 不支援：'${rawProvider}'，允許值為 ${ALLOWED_TRACKING_PROVIDERS.join(" / ")}` });
+    if (
+      !(ALLOWED_TRACKING_PROVIDERS as readonly string[]).includes(
+        rawProvider.toLowerCase(),
+      )
+    ) {
+      errors.push({
+        row: rowNum,
+        orderId: rawOrderId,
+        reason: `trackingProvider 不支援：'${rawProvider}'，允許值為 ${ALLOWED_TRACKING_PROVIDERS.join(" / ")}`,
+      });
       continue;
     }
 
     // Validate trackingCode (D5)
     if (!rawTrackingCode) {
-      errors.push({ row: rowNum, orderId: rawOrderId, reason: "trackingCode 空白" });
+      errors.push({
+        row: rowNum,
+        orderId: rawOrderId,
+        reason: "trackingCode 空白",
+      });
       continue;
     }
     if (rawTrackingCode.length > 100) {
-      errors.push({ row: rowNum, orderId: rawOrderId, reason: "trackingCode 超過 100 字元上限" });
+      errors.push({
+        row: rowNum,
+        orderId: rawOrderId,
+        reason: "trackingCode 超過 100 字元上限",
+      });
       continue;
     }
 
@@ -751,7 +935,11 @@ router.post("/orders/tracking-import", requireAuth, async (req: any, res) => {
     for (const pr of parsedRows) {
       const order = orderMap.get(pr.numericOrderId);
       if (!order) {
-        errors.push({ row: pr.rowIndex, orderId: pr.rawOrderId, reason: "找不到訂單" });
+        errors.push({
+          row: pr.rowIndex,
+          orderId: pr.rawOrderId,
+          reason: "找不到訂單",
+        });
         continue;
       }
 
@@ -760,14 +948,21 @@ router.post("/orders/tracking-import", requireAuth, async (req: any, res) => {
 
       // D3 / D4: reject if trackingCode already exists
       if (order.trackingCode != null && order.trackingCode.trim() !== "") {
-        errors.push({ row: pr.rowIndex, orderId: pr.rawOrderId, reason: "訂單已有物流追蹤碼，如需修改請至後台手動更新" });
+        errors.push({
+          row: pr.rowIndex,
+          orderId: pr.rawOrderId,
+          reason: "訂單已有物流追蹤碼，如需修改請至後台手動更新",
+        });
         continue;
       }
 
       // D9: only update trackingCode + trackingProvider, never shippingStatus
       await db
         .update(ordersTable)
-        .set({ trackingCode: pr.trackingCode, trackingProvider: pr.trackingProvider })
+        .set({
+          trackingCode: pr.trackingCode,
+          trackingProvider: pr.trackingProvider,
+        })
         .where(eq(ordersTable.id, pr.numericOrderId));
 
       // Step 7B-FIX-1: seed shipment_trackings so the agent tracking-jobs queue has a row
@@ -782,7 +977,10 @@ router.post("/orders/tracking-import", requireAuth, async (req: any, res) => {
         )
         .limit(1);
 
-      if (existingTracking && existingTracking.trackingCode === pr.trackingCode) {
+      if (
+        existingTracking &&
+        existingTracking.trackingCode === pr.trackingCode
+      ) {
         // Same active tracking already registered — nothing to do
       } else {
         if (existingTracking) {
@@ -822,29 +1020,57 @@ router.patch("/orders/:orderId", requireAuth, async (req: any, res) => {
     const is422 = parsed.error.issues.some(
       (i) =>
         i.code === "invalid_enum_value" ||
-        (i.code === "invalid_union" && i.path.length > 0 && ENUM_UNION_PATHS.has(i.path[0] as string)) ||
-        (i.code === "too_small" && AMOUNT_PATHS.includes(i.path[0] as string))
+        (i.code === "invalid_union" &&
+          i.path.length > 0 &&
+          ENUM_UNION_PATHS.has(i.path[0] as string)) ||
+        (i.code === "too_small" && AMOUNT_PATHS.includes(i.path[0] as string)),
     );
     return res.status(is422 ? 422 : 400).json({ error: parsed.error.message });
   }
 
-  const [order] = await db.select().from(ordersTable).where(eq(ordersTable.id, orderId)).limit(1);
+  const [order] = await db
+    .select()
+    .from(ordersTable)
+    .where(eq(ordersTable.id, orderId))
+    .limit(1);
   if (!order) return res.status(404).json({ error: "Order not found" });
 
   if (!(await verifyStoreOwner(req, res, order.storeId))) return;
 
   if (order.status === "completed" || order.status === "cancelled") {
-    return res.status(422).json({ error: "Cannot edit a completed or cancelled order" });
+    return res
+      .status(422)
+      .json({ error: "Cannot edit a completed or cancelled order" });
   }
 
   const {
-    buyerName, buyerPhone, quantity, pickupMethod, notes, specValues,
-    paymentMethod, paymentStatus, paidAmount, paymentNote,
-    shippingMethod, shippingStatus, shippingFee,
-    recipientName, recipientPhone, recipientAddress,
-    storeCode, storeName, cvsStoreAddress, cvsStorePhone, storeSelectedBy,
-    trackingCode, trackingProvider, shippingNote, internalNote,
-    discountAmount, discountNote,
+    buyerName,
+    buyerPhone,
+    quantity,
+    pickupMethod,
+    notes,
+    specValues,
+    paymentMethod,
+    paymentStatus,
+    paidAmount,
+    paymentNote,
+    shippingMethod,
+    shippingStatus,
+    shippingFee,
+    recipientName,
+    recipientPhone,
+    recipientAddress,
+    storeCode,
+    storeName,
+    cvsStoreAddress,
+    cvsStorePhone,
+    storeSelectedBy,
+    trackingCode,
+    trackingProvider,
+    shippingNote,
+    internalNote,
+    discountAmount,
+    discountNote,
   } = parsed.data;
 
   const updates: Record<string, unknown> = {};
@@ -861,7 +1087,8 @@ router.patch("/orders/:orderId", requireAuth, async (req: any, res) => {
   // Payment fields
   if (paymentMethod !== undefined) updates.paymentMethod = paymentMethod;
   if (paymentStatus !== undefined) updates.paymentStatus = paymentStatus;
-  if (paidAmount !== undefined) updates.paidAmount = paidAmount !== null ? String(paidAmount) : null;
+  if (paidAmount !== undefined)
+    updates.paidAmount = paidAmount !== null ? String(paidAmount) : null;
   if (paymentNote !== undefined) updates.paymentNote = paymentNote;
   // Shipping / logistics fields
   if (shippingMethod !== undefined) updates.shippingMethod = shippingMethod;
@@ -869,7 +1096,9 @@ router.patch("/orders/:orderId", requireAuth, async (req: any, res) => {
   if (shippingFee !== undefined) updates.shippingFee = String(shippingFee);
   if (Object.prototype.hasOwnProperty.call(req.body ?? {}, "paymentLast5")) {
     if (order.status !== "pending" && order.status !== "awaiting_payment") {
-      return res.status(422).json({ error: "付款末五碼僅能在待確認或待付款期間修改" });
+      return res
+        .status(422)
+        .json({ error: "付款末五碼僅能在待確認或待付款期間修改" });
     }
     try {
       updates.paymentLast5 = parsePaymentLast5(req.body.paymentLast5);
@@ -879,7 +1108,8 @@ router.patch("/orders/:orderId", requireAuth, async (req: any, res) => {
   }
   if (recipientName !== undefined) updates.recipientName = recipientName;
   if (recipientPhone !== undefined) updates.recipientPhone = recipientPhone;
-  if (recipientAddress !== undefined) updates.recipientAddress = recipientAddress;
+  if (recipientAddress !== undefined)
+    updates.recipientAddress = recipientAddress;
   // CVS store snapshot fields
   if (storeCode !== undefined) updates.cvsStoreId = storeCode;
   if (storeName !== undefined) updates.cvsStoreName = storeName;
@@ -889,11 +1119,16 @@ router.patch("/orders/:orderId", requireAuth, async (req: any, res) => {
   // Only update storeSelectedAt when a CVS store field actually changes value.
   // Guards against saves that don't change the store (e.g. payment-only edits).
   const cvsChanged =
-    (storeCode !== undefined && (storeCode ?? null) !== (order.cvsStoreId ?? null)) ||
-    (storeName !== undefined && (storeName ?? null) !== (order.cvsStoreName ?? null)) ||
-    (cvsStoreAddress !== undefined && (cvsStoreAddress ?? null) !== (order.cvsStoreAddress ?? null)) ||
-    (cvsStorePhone !== undefined && (cvsStorePhone ?? null) !== (order.cvsStorePhone ?? null)) ||
-    (storeSelectedBy !== undefined && (storeSelectedBy ?? null) !== (order.storeSelectedBy ?? null));
+    (storeCode !== undefined &&
+      (storeCode ?? null) !== (order.cvsStoreId ?? null)) ||
+    (storeName !== undefined &&
+      (storeName ?? null) !== (order.cvsStoreName ?? null)) ||
+    (cvsStoreAddress !== undefined &&
+      (cvsStoreAddress ?? null) !== (order.cvsStoreAddress ?? null)) ||
+    (cvsStorePhone !== undefined &&
+      (cvsStorePhone ?? null) !== (order.cvsStorePhone ?? null)) ||
+    (storeSelectedBy !== undefined &&
+      (storeSelectedBy ?? null) !== (order.storeSelectedBy ?? null));
   if (cvsChanged) updates.storeSelectedAt = new Date();
   if (trackingCode !== undefined) updates.trackingCode = trackingCode;
   // Step 7H-C soft normalize：認得的別名轉 canonical（如 "7-11" → "711"），
@@ -909,20 +1144,27 @@ router.patch("/orders/:orderId", requireAuth, async (req: any, res) => {
   // Discount fields — validate after shippingFee / totalPrice may be updated
   if (discountAmount !== undefined) {
     if (!Number.isInteger(discountAmount)) {
-      return res.status(422).json({ error: "discountAmount must be an integer" });
+      return res
+        .status(422)
+        .json({ error: "discountAmount must be an integer" });
     }
-    const effectiveTotalPrice = updates.totalPrice !== undefined
-      ? parseFloat(updates.totalPrice as string)
-      : parseFloat(order.totalPrice as string);
-    const effectiveShippingFee = updates.shippingFee !== undefined
-      ? parseFloat(updates.shippingFee as string)
-      : parseFloat(order.shippingFee as string ?? "0");
+    const effectiveTotalPrice =
+      updates.totalPrice !== undefined
+        ? parseFloat(updates.totalPrice as string)
+        : parseFloat(order.totalPrice as string);
+    const effectiveShippingFee =
+      updates.shippingFee !== undefined
+        ? parseFloat(updates.shippingFee as string)
+        : parseFloat((order.shippingFee as string) ?? "0");
     if (discountAmount > effectiveTotalPrice + effectiveShippingFee) {
-      return res.status(422).json({ error: "discountAmount cannot exceed totalPrice + shippingFee" });
+      return res.status(422).json({
+        error: "discountAmount cannot exceed totalPrice + shippingFee",
+      });
     }
     updates.discountAmount = discountAmount;
   }
-  if (discountNote !== undefined) updates.discountNote = discountNote === "" ? null : discountNote;
+  if (discountNote !== undefined)
+    updates.discountNote = discountNote === "" ? null : discountNote;
 
   if (Object.keys(updates).length === 0) {
     return res.json(formatOrder(order));
@@ -953,261 +1195,328 @@ router.patch("/orders/:orderId", requireAuth, async (req: any, res) => {
   return res.json(formatOrder(updated));
 });
 
-router.get("/stores/:storeId/orders/export", requireAuth, async (req: any, res) => {
-  const storeId = parseInt(req.params.storeId);
-  if (isNaN(storeId)) return res.status(400).json({ error: "Invalid storeId" });
+router.get(
+  "/stores/:storeId/orders/export",
+  requireAuth,
+  async (req: any, res) => {
+    const storeId = parseInt(req.params.storeId);
+    if (isNaN(storeId))
+      return res.status(400).json({ error: "Invalid storeId" });
 
-  if (!(await verifyStoreOwner(req, res, storeId))) return;
+    if (!(await verifyStoreOwner(req, res, storeId))) return;
 
-  const orders = await db
-    .select()
-    .from(ordersTable)
-    .where(eq(ordersTable.storeId, storeId))
-    .orderBy(ordersTable.createdAt);
+    const orders = await db
+      .select()
+      .from(ordersTable)
+      .where(eq(ordersTable.storeId, storeId))
+      .orderBy(ordersTable.createdAt);
 
-  let mode;
-  try {
-    mode = parseCustomerExportMode(
-      req.query.mode,
-      req.get("x-confirm-cleartext-export") === "true",
+    let mode;
+    try {
+      mode = parseCustomerExportMode(
+        req.query.mode,
+        req.get("x-confirm-cleartext-export") === "true",
+      );
+    } catch (error) {
+      return res.status(400).json({ error: (error as Error).message });
+    }
+    const csv = formatOrderExportCsv(orders, mode);
+    await recordAuditLog({
+      storeId,
+      actor: req.userId,
+      action:
+        mode === "cleartext"
+          ? "export_orders_cleartext"
+          : "export_orders_masked",
+      target: `orders:${orders.length}`,
+    });
+    req.log.info(
+      { action: "order_export", storeId, mode, count: orders.length },
+      "Order CSV exported",
     );
-  } catch (error) {
-    return res.status(400).json({ error: (error as Error).message });
-  }
-  const csv = formatOrderExportCsv(orders, mode);
-  await recordAuditLog({
-    storeId,
-    actor: req.userId,
-    action: mode === "cleartext" ? "export_orders_cleartext" : "export_orders_masked",
-    target: `orders:${orders.length}`,
-  });
-  req.log.info(
-    { action: "order_export", storeId, mode, count: orders.length },
-    "Order CSV exported",
-  );
-  res.setHeader("Content-Type", "text/csv; charset=utf-8");
-  res.setHeader(
-    "Content-Disposition",
-    `attachment; filename="orders-${mode}.csv"`,
-  );
-  return res.send(csv);
-});
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="orders-${mode}.csv"`,
+    );
+    return res.send(csv);
+  },
+);
 
 // Step 7H: 刪除誤建立 / 誤下的訂單。第一版僅允許未出貨、未完成且無物流追蹤的訂單。
-router.delete("/stores/:storeId/orders/:orderId", requireAuth, async (req: any, res) => {
-  const storeId = parseInt(req.params.storeId);
-  const orderId = parseInt(req.params.orderId);
-  if (isNaN(storeId)) return res.status(400).json({ error: "Invalid storeId" });
-  if (isNaN(orderId)) return res.status(400).json({ error: "Invalid orderId" });
+router.delete(
+  "/stores/:storeId/orders/:orderId",
+  requireAuth,
+  async (req: any, res) => {
+    const storeId = parseInt(req.params.storeId);
+    const orderId = parseInt(req.params.orderId);
+    if (isNaN(storeId))
+      return res.status(400).json({ error: "Invalid storeId" });
+    if (isNaN(orderId))
+      return res.status(400).json({ error: "Invalid orderId" });
 
-  if (!(await verifyStoreOwner(req, res, storeId))) return;
+    if (!(await verifyStoreOwner(req, res, storeId))) return;
 
-  const [order] = await db
-    .select()
-    .from(ordersTable)
-    .where(and(eq(ordersTable.id, orderId), eq(ordersTable.storeId, storeId)))
-    .limit(1);
-  if (!order) return res.status(404).json({ error: "找不到此訂單" });
+    const [order] = await db
+      .select()
+      .from(ordersTable)
+      .where(and(eq(ordersTable.id, orderId), eq(ordersTable.storeId, storeId)))
+      .limit(1);
+    if (!order) return res.status(404).json({ error: "找不到此訂單" });
 
-  const BLOCKED_DELETE_MESSAGE =
-    "這筆訂單已有物流或完成紀錄，為避免帳務與物流資料不一致，請保留紀錄或改用取消訂單。";
+    const BLOCKED_DELETE_MESSAGE =
+      "這筆訂單已有物流或完成紀錄，為避免帳務與物流資料不一致，請保留紀錄或改用取消訂單。";
 
-  if (order.status === "shipped" || order.status === "completed") {
-    return res.status(409).json({ error: BLOCKED_DELETE_MESSAGE });
-  }
+    if (order.status === "shipped" || order.status === "completed") {
+      return res.status(409).json({ error: BLOCKED_DELETE_MESSAGE });
+    }
 
-  const [tracking] = await db
-    .select({ id: shipmentTrackingsTable.id })
-    .from(shipmentTrackingsTable)
-    .where(eq(shipmentTrackingsTable.orderId, orderId))
-    .limit(1);
-  if (tracking) {
-    return res.status(409).json({ error: BLOCKED_DELETE_MESSAGE });
-  }
+    const [tracking] = await db
+      .select({ id: shipmentTrackingsTable.id })
+      .from(shipmentTrackingsTable)
+      .where(eq(shipmentTrackingsTable.orderId, orderId))
+      .limit(1);
+    if (tracking) {
+      return res.status(409).json({ error: BLOCKED_DELETE_MESSAGE });
+    }
 
-  await db.delete(ordersTable).where(and(eq(ordersTable.id, orderId), eq(ordersTable.storeId, storeId)));
+    await db
+      .delete(ordersTable)
+      .where(
+        and(eq(ordersTable.id, orderId), eq(ordersTable.storeId, storeId)),
+      );
 
-  return res.json({ ok: true });
-});
+    return res.json({ ok: true });
+  },
+);
 
-router.post("/orders/:orderId/profit-snapshot/backfill", requireAuth, async (req: any, res) => {
-  const orderId = parseInt(req.params.orderId);
-  if (isNaN(orderId)) return res.status(400).json({ error: "Invalid orderId" });
+router.post(
+  "/orders/:orderId/profit-snapshot/backfill",
+  requireAuth,
+  async (req: any, res) => {
+    const orderId = parseInt(req.params.orderId);
+    if (isNaN(orderId))
+      return res.status(400).json({ error: "Invalid orderId" });
 
-  const [order] = await db
-    .select()
-    .from(ordersTable)
-    .where(eq(ordersTable.id, orderId))
-    .limit(1);
-  if (!order) return res.status(404).json({ error: "Order not found" });
-  if (!(await verifyStoreOwner(req, res, order.storeId))) return;
+    const [order] = await db
+      .select()
+      .from(ordersTable)
+      .where(eq(ordersTable.id, orderId))
+      .limit(1);
+    if (!order) return res.status(404).json({ error: "Order not found" });
+    if (!(await verifyStoreOwner(req, res, order.storeId))) return;
 
-  try {
-    const updated = await db.transaction(async (tx) => {
-      const [lockedOrder] = await tx
-        .select()
-        .from(ordersTable)
-        .where(eq(ordersTable.id, orderId))
-        .for("update")
-        .limit(1);
-      if (!lockedOrder) {
-        const err = new Error("Order not found") as Error & { status?: number };
-        err.status = 404;
-        throw err;
-      }
+    try {
+      const updated = await db.transaction(async (tx) => {
+        const [lockedOrder] = await tx
+          .select()
+          .from(ordersTable)
+          .where(eq(ordersTable.id, orderId))
+          .for("update")
+          .limit(1);
+        if (!lockedOrder) {
+          const err = new Error("Order not found") as Error & {
+            status?: number;
+          };
+          err.status = 404;
+          throw err;
+        }
 
-      if (Array.isArray(lockedOrder.items)) {
-        if (
-          lockedOrder.cartProfitSnapshotStatus !== "pending"
-          && lockedOrder.cartProfitSnapshotStatus !== null
-        ) {
-          const err = new Error("Cart profit snapshot is not pending") as Error & { status?: number };
+        if (Array.isArray(lockedOrder.items)) {
+          if (
+            lockedOrder.cartProfitSnapshotStatus !== "pending" &&
+            lockedOrder.cartProfitSnapshotStatus !== null
+          ) {
+            const err = new Error(
+              "Cart profit snapshot is not pending",
+            ) as Error & { status?: number };
+            err.status = 409;
+            throw err;
+          }
+
+          const backfilledAt = new Date();
+          const snapshotItems = [];
+          for (const rawItem of lockedOrder.items as Array<
+            Record<string, unknown>
+          >) {
+            const productId = Number(rawItem.productId);
+            const quantity = Number(rawItem.quantity);
+            const unitPrice = String(rawItem.unitPrice ?? "");
+            if (
+              !Number.isInteger(productId) ||
+              !Number.isInteger(quantity) ||
+              quantity < 1 ||
+              !unitPrice
+            ) {
+              const err = new Error(
+                "Cart item snapshot data is invalid",
+              ) as Error & { status?: number };
+              err.status = 409;
+              throw err;
+            }
+
+            const [product] = await tx
+              .select()
+              .from(productsTable)
+              .where(eq(productsTable.id, productId))
+              .limit(1);
+            if (!product) {
+              const err = new Error("Product not found") as Error & {
+                status?: number;
+              };
+              err.status = 409;
+              throw err;
+            }
+
+            const { profitSnapshot: _oldSnapshot, ...item } = rawItem;
+            snapshotItems.push({
+              item,
+              quantity,
+              snapshotInput: await loadOrderProfitSnapshotInput(
+                tx,
+                product,
+                unitPrice,
+              ),
+            });
+          }
+
+          const cartBackfill = backfillPendingCartOrderProfitSnapshot(
+            lockedOrder.cartProfitSnapshotStatus,
+            snapshotItems,
+            backfilledAt,
+          );
+          if (cartBackfill.outcome === "still_pending") {
+            const err = new Error(
+              "Cart profit snapshot data is still pending",
+            ) as Error & { status?: number };
+            err.status = 409;
+            throw err;
+          }
+          if (cartBackfill.outcome === "rejected") {
+            const err = new Error(
+              "Cart profit snapshot is not pending",
+            ) as Error & { status?: number };
+            err.status = 409;
+            throw err;
+          }
+
+          const items = cartBackfill.snapshot.items.map(
+            ({ item, profitSnapshot }) => ({
+              ...item,
+              profitSnapshot,
+            }),
+          );
+          const [backfilledOrder] = await tx
+            .update(ordersTable)
+            .set({
+              items,
+              cartProfitSnapshotTotalTwd:
+                cartBackfill.snapshot.cartProfitSnapshotTotalTwd,
+              cartProfitSnapshotStatus:
+                cartBackfill.snapshot.cartProfitSnapshotStatus,
+            })
+            .where(
+              and(
+                eq(ordersTable.id, orderId),
+                or(
+                  eq(ordersTable.cartProfitSnapshotStatus, "pending"),
+                  isNull(ordersTable.cartProfitSnapshotStatus),
+                ),
+              ),
+            )
+            .returning();
+          if (!backfilledOrder)
+            throw new Error("Cart profit snapshot backfill updated no row");
+          return backfilledOrder;
+        }
+
+        const [product] = await tx
+          .select()
+          .from(productsTable)
+          .where(eq(productsTable.id, lockedOrder.productId))
+          .limit(1);
+        if (!product) {
+          const err = new Error("Product not found") as Error & {
+            status?: number;
+          };
           err.status = 409;
           throw err;
         }
 
-        const backfilledAt = new Date();
-        const snapshotItems = [];
-        for (const rawItem of lockedOrder.items as Array<Record<string, unknown>>) {
-          const productId = Number(rawItem.productId);
-          const quantity = Number(rawItem.quantity);
-          const unitPrice = String(rawItem.unitPrice ?? "");
-          if (!Number.isInteger(productId) || !Number.isInteger(quantity) || quantity < 1 || !unitPrice) {
-            const err = new Error("Cart item snapshot data is invalid") as Error & { status?: number };
-            err.status = 409;
-            throw err;
-          }
-
-          const [product] = await tx
-            .select()
-            .from(productsTable)
-            .where(eq(productsTable.id, productId))
-            .limit(1);
-          if (!product) {
-            const err = new Error("Product not found") as Error & { status?: number };
-            err.status = 409;
-            throw err;
-          }
-
-          const { profitSnapshot: _oldSnapshot, ...item } = rawItem;
-          snapshotItems.push({
-            item,
-            quantity,
-            snapshotInput: await loadOrderProfitSnapshotInput(tx, product, unitPrice),
-          });
-        }
-
-        const cartBackfill = backfillPendingCartOrderProfitSnapshot(
-          lockedOrder.cartProfitSnapshotStatus,
-          snapshotItems,
-          backfilledAt,
+        const snapshotInput = await loadOrderProfitSnapshotInput(
+          tx,
+          product,
+          lockedOrder.unitPrice,
         );
-        if (cartBackfill.outcome === "still_pending") {
-          const err = new Error("Cart profit snapshot data is still pending") as Error & { status?: number };
+        const backfill = backfillPendingOrderProfitSnapshot(
+          lockedOrder.profitSnapshotStatus,
+          snapshotInput,
+          new Date(),
+        );
+        if (backfill.outcome === "rejected") {
+          const err = new Error("成本快照已定格，不能再次補拍") as Error & {
+            status?: number;
+          };
           err.status = 409;
           throw err;
         }
-        if (cartBackfill.outcome === "rejected") {
-          const err = new Error("Cart profit snapshot is not pending") as Error & { status?: number };
+        if (backfill.outcome === "still_pending") {
+          const missing: string[] = [];
+          if (snapshotInput.costJpy == null) missing.push("productCostJpy");
+          if (snapshotInput.storePurchaseExchangeRate == null)
+            missing.push("storeExchangeRate");
+          if (
+            !snapshotInput.isTransportCostExempt &&
+            (snapshotInput.transport.product.tripRouteId == null ||
+              snapshotInput.transport.route == null ||
+              snapshotInput.transport.trip == null)
+          ) {
+            missing.push("tripRoute");
+          }
+          const err = new Error("成本資料仍待確認，尚無法補拍") as Error & {
+            status?: number;
+            missing?: string[];
+          };
           err.status = 409;
+          err.missing = missing;
           throw err;
         }
 
-        const items = cartBackfill.snapshot.items.map(({ item, profitSnapshot }) => ({
-          ...item,
-          profitSnapshot,
-        }));
         const [backfilledOrder] = await tx
           .update(ordersTable)
           .set({
-            items,
-            cartProfitSnapshotTotalTwd: cartBackfill.snapshot.cartProfitSnapshotTotalTwd,
-            cartProfitSnapshotStatus: cartBackfill.snapshot.cartProfitSnapshotStatus,
+            ...backfill.values,
+            profitSnapshotBackfilledAt: backfill.profitSnapshotBackfilledAt,
           })
-          .where(and(
-            eq(ordersTable.id, orderId),
-            or(
-              eq(ordersTable.cartProfitSnapshotStatus, "pending"),
-              isNull(ordersTable.cartProfitSnapshotStatus),
+          .where(
+            and(
+              eq(ordersTable.id, orderId),
+              or(
+                eq(ordersTable.profitSnapshotStatus, "pending"),
+                isNull(ordersTable.profitSnapshotStatus),
+              ),
             ),
-          ))
+          )
           .returning();
-        if (!backfilledOrder) throw new Error("Cart profit snapshot backfill updated no row");
+        if (!backfilledOrder)
+          throw new Error("Profit snapshot backfill updated no row");
         return backfilledOrder;
-      }
+      });
 
-      const [product] = await tx
-        .select()
-        .from(productsTable)
-        .where(eq(productsTable.id, lockedOrder.productId))
-        .limit(1);
-      if (!product) {
-        const err = new Error("Product not found") as Error & { status?: number };
-        err.status = 409;
-        throw err;
+      return res.json(formatOrder(updated));
+    } catch (err) {
+      const status = (err as { status?: number }).status;
+      if (status === 404 || status === 409) {
+        const missing = (err as { missing?: string[] }).missing;
+        return res.status(status).json({
+          error: (err as Error).message,
+          ...(missing ? { missing } : {}),
+        });
       }
-
-      const snapshotInput = await loadOrderProfitSnapshotInput(
-        tx,
-        product,
-        lockedOrder.unitPrice,
-      );
-      const backfill = backfillPendingOrderProfitSnapshot(
-        lockedOrder.profitSnapshotStatus,
-        snapshotInput,
-        new Date(),
-      );
-      if (backfill.outcome === "rejected") {
-        const err = new Error("成本快照已定格，不能再次補拍") as Error & { status?: number };
-        err.status = 409;
-        throw err;
-      }
-      if (backfill.outcome === "still_pending") {
-        const missing: string[] = [];
-        if (snapshotInput.costJpy == null) missing.push("productCostJpy");
-        if (snapshotInput.storePurchaseExchangeRate == null) missing.push("storeExchangeRate");
-        if (
-          !snapshotInput.isTransportCostExempt &&
-          (snapshotInput.transport.product.tripRouteId == null ||
-            snapshotInput.transport.route == null ||
-            snapshotInput.transport.trip == null)
-        ) {
-          missing.push("tripRoute");
-        }
-        const err = new Error("成本資料仍待確認，尚無法補拍") as Error & { status?: number; missing?: string[] };
-        err.status = 409;
-        err.missing = missing;
-        throw err;
-      }
-
-      const [backfilledOrder] = await tx
-        .update(ordersTable)
-        .set({
-          ...backfill.values,
-          profitSnapshotBackfilledAt: backfill.profitSnapshotBackfilledAt,
-        })
-        .where(and(
-          eq(ordersTable.id, orderId),
-          or(
-            eq(ordersTable.profitSnapshotStatus, "pending"),
-            isNull(ordersTable.profitSnapshotStatus),
-          ),
-        ))
-        .returning();
-      if (!backfilledOrder) throw new Error("Profit snapshot backfill updated no row");
-      return backfilledOrder;
-    });
-
-    return res.json(formatOrder(updated));
-  } catch (err) {
-    const status = (err as { status?: number }).status;
-    if (status === 404 || status === 409) {
-      const missing = (err as { missing?: string[] }).missing;
-      return res.status(status).json({ error: (err as Error).message, ...(missing ? { missing } : {}) });
+      throw err;
     }
-    throw err;
-  }
-});
+  },
+);
 
 router.patch("/orders/:orderId/status", requireAuth, async (req: any, res) => {
   const orderId = parseInt(req.params.orderId);
@@ -1218,7 +1527,11 @@ router.patch("/orders/:orderId/status", requireAuth, async (req: any, res) => {
     return res.status(400).json({ error: parsed.error.message });
   }
 
-  const [order] = await db.select().from(ordersTable).where(eq(ordersTable.id, orderId)).limit(1);
+  const [order] = await db
+    .select()
+    .from(ordersTable)
+    .where(eq(ordersTable.id, orderId))
+    .limit(1);
   if (!order) return res.status(404).json({ error: "Order not found" });
 
   if (!(await verifyStoreOwner(req, res, order.storeId))) return;
@@ -1226,7 +1539,9 @@ router.patch("/orders/:orderId/status", requireAuth, async (req: any, res) => {
   const currentStatus = order.status as OrderStatus;
   const nextStatus = parsed.data.status as OrderStatus;
   if (!isValidTransition(currentStatus, nextStatus)) {
-    return res.status(422).json({ error: getTransitionError(currentStatus, nextStatus) });
+    return res
+      .status(422)
+      .json({ error: getTransitionError(currentStatus, nextStatus) });
   }
 
   const [updated] = await db
@@ -1252,13 +1567,22 @@ async function fetchAndValidate(
   orderIds: number[],
   req: any,
   res: any,
-): Promise<{ excludedOrderIds: number[]; activeOrders: any[]; productMap: Map<number, any> } | null> {
-  const orders = await db.select().from(ordersTable).where(inArray(ordersTable.id, orderIds));
+): Promise<{
+  excludedOrderIds: number[];
+  activeOrders: any[];
+  productMap: Map<number, any>;
+} | null> {
+  const orders = await db
+    .select()
+    .from(ordersTable)
+    .where(inArray(ordersTable.id, orderIds));
 
   const foundIds = new Set(orders.map((o) => o.id));
   const notFoundIds = orderIds.filter((id) => !foundIds.has(id));
   if (notFoundIds.length > 0) {
-    res.status(422).json({ error: `Orders not found: ${notFoundIds.join(", ")}` });
+    res
+      .status(422)
+      .json({ error: `Orders not found: ${notFoundIds.join(", ")}` });
     return null;
   }
 
@@ -1267,13 +1591,19 @@ async function fetchAndValidate(
     if (!(await verifyStoreOwner(req, res, storeId))) return null;
   }
 
-  const excludedOrderIds = orders.filter((o) => o.status === "cancelled").map((o) => o.id);
+  const excludedOrderIds = orders
+    .filter((o) => o.status === "cancelled")
+    .map((o) => o.id);
   const activeOrders = orders.filter((o) => o.status !== "cancelled");
 
   const productIds = [...new Set(activeOrders.map((o) => o.productId))];
-  const products = productIds.length > 0
-    ? await db.select().from(productsTable).where(inArray(productsTable.id, productIds))
-    : [];
+  const products =
+    productIds.length > 0
+      ? await db
+          .select()
+          .from(productsTable)
+          .where(inArray(productsTable.id, productIds))
+      : [];
   const productMap = new Map(products.map((p) => [p.id, p]));
 
   return { excludedOrderIds, activeOrders, productMap };
@@ -1303,19 +1633,28 @@ function formatShipmentTracking(t: any) {
 function formatOrder(o: any) {
   const shippingFee = parseFloat(o.shippingFee ?? "0");
   const totalPrice = parseFloat(o.totalPrice);
-  const paidAmount = o.paidAmount != null ? parseFloat(o.paidAmount as string) : null;
+  const paidAmount =
+    o.paidAmount != null ? parseFloat(o.paidAmount as string) : null;
   const discountAmount = o.discountAmount ?? 0;
   const orderTotal = Math.max(totalPrice + shippingFee - discountAmount, 0);
   const remainingAmount = Math.max(orderTotal - (paidAmount ?? 0), 0);
-  const profitSnapshotDisplay = o.profitSnapshotStatus === "captured"
-    || o.profitSnapshotStatus === "exempt"
-    ? {
-      productCostTwd: displayOrderProfitSnapshotAmount(o.profitSnapshotProductCostTwd),
-      transportCostTwd: displayOrderProfitSnapshotAmount(o.profitSnapshotTransportCostTwd),
-      unitProfitTwd: displayOrderProfitSnapshotAmount(o.profitSnapshotUnitProfitTwd),
-      fullUnitProfitTwd: displayOrderProfitSnapshotAmount(o.profitSnapshotFullUnitProfitTwd),
-    }
-    : null;
+  const profitSnapshotDisplay =
+    o.profitSnapshotStatus === "captured" || o.profitSnapshotStatus === "exempt"
+      ? {
+          productCostTwd: displayOrderProfitSnapshotAmount(
+            o.profitSnapshotProductCostTwd,
+          ),
+          transportCostTwd: displayOrderProfitSnapshotAmount(
+            o.profitSnapshotTransportCostTwd,
+          ),
+          unitProfitTwd: displayOrderProfitSnapshotAmount(
+            o.profitSnapshotUnitProfitTwd,
+          ),
+          fullUnitProfitTwd: displayOrderProfitSnapshotAmount(
+            o.profitSnapshotFullUnitProfitTwd,
+          ),
+        }
+      : null;
   return {
     ...o,
     unitPrice: parseFloat(o.unitPrice),
@@ -1330,7 +1669,8 @@ function formatOrder(o: any) {
     orderTotal,
     remainingAmount,
     profitSnapshotCapturedAt: o.profitSnapshotCapturedAt?.toISOString() ?? null,
-    profitSnapshotBackfilledAt: o.profitSnapshotBackfilledAt?.toISOString() ?? null,
+    profitSnapshotBackfilledAt:
+      o.profitSnapshotBackfilledAt?.toISOString() ?? null,
     profitSnapshotDisplay,
   };
 }
