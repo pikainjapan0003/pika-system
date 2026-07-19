@@ -76,6 +76,7 @@ jobs:
             src/routes/logisticsSyncCommitKillSwitch.route.test.mjs \
             src/routes/customersAndProfitIsolation.route.test.mjs \
             src/routes/public.route.test.mjs \
+            src/routes/publicRateLimit.route.test.mjs \
             src/routes/skills.route.test.mjs \
             src/routes/devHandoffProductionGuard.route.test.mjs
 
