@@ -5,6 +5,7 @@
 - 排除：`generated/`、`dist/`、`node_modules/`
 - 結果：505 個既有檔案未符合目前 Prettier 設定。
 - 本包只列欠帳，不批次改寫；指定的 `App.tsx` 與 `customerRoutes.test.mjs` 已另外格式化。
+- `pnpm-lock.yaml` 已退出 Prettier 管轄並自下方清單剔除；lockfile 由 pnpm 產生，交給 Prettier 排版會在下次安裝時造成全檔重生與無意義 churn。
 
 ## 依第一層目錄統計
 
@@ -518,7 +519,6 @@
 - `AGENTS.md`
 - `CLAUDE.md`
 - `package.json`
-- `pnpm-lock.yaml`
 - `pnpm-workspace.yaml`
 - `replit.md`
 - `tsconfig.base.json`
