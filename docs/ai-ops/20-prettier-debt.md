@@ -1,11 +1,13 @@
 # Prettier 欠帳盤點
 
-## BATCH-13 後現況（2026-07-19）
+## BATCH-14 後現況（2026-07-19）
 
 - BATCH-13 包 13 已完成 `lib/`：75 個可檢查檔全綠，49 個實際 Git 變更均通過舊版重跑 Prettier 的逐位元比對。
 - BATCH-13 包 14 已完成 `docs/`：159 個可檢查檔全綠，141 個實際 Git 變更均通過同款逐位元比對。
-- 依原盤點範圍並排除 `generated/`、`.generated/`、`dist/`、`node_modules/`、控制目錄與資料檔後，目前剩 257 個欠帳：`artifacts/` 256 個，另有 `e2e/playwright.config.mjs` 1 個。
-- repo root、`scripts/`、`lib/`、`docs/` 目前皆為 0；下一個主要機械化批次只剩 `artifacts/`，E2E 單檔可隨該批一併收尾。
+- BATCH-14 包 15 以 `28e63dc` 完成 `artifacts/shop-app/`：149 個追蹤中且可檢查的非產生檔全綠，112 個實際變更通過第二次 Prettier 不再改變位元的 fixed-point 驗證。
+- BATCH-14 包 16 以 `c01ff65` 完成 `artifacts/api-server/`、`artifacts/mockup-sandbox/` 與 `e2e/playwright.config.mjs`：180 個非產生檔全綠，115 個實際變更通過同款 fixed-point 驗證。
+- 依原盤點範圍排除 `generated/`、`.generated/`、`dist/`、`node_modules/`、控制目錄與資料檔後，Prettier 欠帳為 **0**。
+- `generated/` 與 `.generated/` 仍是明確豁免區，由各自產生器管理，不列入人工格式化或 CI gate。
 - 下方清單是 2026-07-18 的歷史基準，不再代表目前剩餘欠帳。
 
 ## 歷史基準（2026-07-18）
