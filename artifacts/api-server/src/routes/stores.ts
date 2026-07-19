@@ -41,7 +41,8 @@ router.post("/stores", requireAuth, async (req: any, res) => {
   }
 
   const shippingSettings = getShippingSettings(req.body);
-  if (!shippingSettings.ok) return res.status(400).json({ error: shippingSettings.error });
+  if (!shippingSettings.ok)
+    return res.status(400).json({ error: shippingSettings.error });
 
   try {
     const [store] = await db
@@ -49,7 +50,10 @@ router.post("/stores", requireAuth, async (req: any, res) => {
       .values({
         ...parsed.data,
         merchantId: req.userId,
-        purchaseExchangeRate: parsed.data.purchaseExchangeRate != null ? String(parsed.data.purchaseExchangeRate) : undefined,
+        purchaseExchangeRate:
+          parsed.data.purchaseExchangeRate != null
+            ? String(parsed.data.purchaseExchangeRate)
+            : undefined,
         ...shippingSettings.value,
       })
       .returning();
@@ -78,19 +82,25 @@ router.patch("/stores/:storeId", requireAuth, async (req: any, res) => {
     .where(eq(storesTable.id, storeId))
     .limit(1);
 
-  if (store.length === 0) return res.status(404).json({ error: "Store not found" });
-  if (store[0].merchantId !== req.userId) return res.status(403).json({ error: "Forbidden" });
+  if (store.length === 0)
+    return res.status(404).json({ error: "Store not found" });
+  if (store[0].merchantId !== req.userId)
+    return res.status(403).json({ error: "Forbidden" });
 
   const shippingSettings = getShippingSettings(req.body);
-  if (!shippingSettings.ok) return res.status(400).json({ error: shippingSettings.error });
+  if (!shippingSettings.ok)
+    return res.status(400).json({ error: shippingSettings.error });
 
   const [updated] = await db
     .update(storesTable)
     .set({
       ...parsed.data,
-      purchaseExchangeRate: parsed.data.purchaseExchangeRate !== undefined
-        ? (parsed.data.purchaseExchangeRate != null ? String(parsed.data.purchaseExchangeRate) : null)
-        : undefined,
+      purchaseExchangeRate:
+        parsed.data.purchaseExchangeRate !== undefined
+          ? parsed.data.purchaseExchangeRate != null
+            ? String(parsed.data.purchaseExchangeRate)
+            : null
+          : undefined,
       ...shippingSettings.value,
     })
     .where(eq(storesTable.id, storeId))
@@ -99,12 +109,15 @@ router.patch("/stores/:storeId", requireAuth, async (req: any, res) => {
 });
 
 function getShippingSettings(body: unknown):
-  | { ok: true; value: Partial<{
-      shippingCvsEnabled: boolean;
-      shippingBlackCatEnabled: boolean;
-      shippingPostOfficeEnabled: boolean;
-      shippingSelfPickupEnabled: boolean;
-    }> }
+  | {
+      ok: true;
+      value: Partial<{
+        shippingCvsEnabled: boolean;
+        shippingBlackCatEnabled: boolean;
+        shippingPostOfficeEnabled: boolean;
+        shippingSelfPickupEnabled: boolean;
+      }>;
+    }
   | { ok: false; error: string } {
   if (!body || typeof body !== "object") return { ok: true, value: {} };
   const record = body as Record<string, unknown>;
@@ -117,7 +130,8 @@ function getShippingSettings(body: unknown):
   const value: Record<string, boolean> = {};
   for (const key of keys) {
     if (record[key] === undefined) continue;
-    if (typeof record[key] !== "boolean") return { ok: false, error: `${key} must be boolean` };
+    if (typeof record[key] !== "boolean")
+      return { ok: false, error: `${key} must be boolean` };
     value[key] = record[key];
   }
   return { ok: true, value };
@@ -127,11 +141,20 @@ router.get("/stores/:storeId/stats", requireAuth, async (req: any, res) => {
   const storeId = parseInt(req.params.storeId);
   if (isNaN(storeId)) return res.status(400).json({ error: "Invalid storeId" });
 
-  const store = await db.select().from(storesTable).where(eq(storesTable.id, storeId)).limit(1);
-  if (store.length === 0) return res.status(404).json({ error: "Store not found" });
-  if (store[0].merchantId !== req.userId) return res.status(403).json({ error: "Forbidden" });
+  const store = await db
+    .select()
+    .from(storesTable)
+    .where(eq(storesTable.id, storeId))
+    .limit(1);
+  if (store.length === 0)
+    return res.status(404).json({ error: "Store not found" });
+  if (store[0].merchantId !== req.userId)
+    return res.status(403).json({ error: "Forbidden" });
 
-  const orders = await db.select().from(ordersTable).where(eq(ordersTable.storeId, storeId));
+  const orders = await db
+    .select()
+    .from(ordersTable)
+    .where(eq(ordersTable.storeId, storeId));
 
   const totalOrders = orders.length;
   const pendingOrders = orders.filter((o) => o.status === "pending").length;
@@ -143,15 +166,26 @@ router.get("/stores/:storeId/stats", requireAuth, async (req: any, res) => {
   for (const o of orders) {
     statusMap[o.status] = (statusMap[o.status] || 0) + 1;
   }
-  const statusBreakdown = Object.entries(statusMap).map(([status, count]) => ({ status, count }));
+  const statusBreakdown = Object.entries(statusMap).map(([status, count]) => ({
+    status,
+    count,
+  }));
 
-  return res.json({ totalOrders, pendingOrders, totalRevenue, statusBreakdown });
+  return res.json({
+    totalOrders,
+    pendingOrders,
+    totalRevenue,
+    statusBreakdown,
+  });
 });
 
 function formatStore(s: any) {
   return {
     ...s,
-    purchaseExchangeRate: s.purchaseExchangeRate != null ? parseFloat(s.purchaseExchangeRate) : null,
+    purchaseExchangeRate:
+      s.purchaseExchangeRate != null
+        ? parseFloat(s.purchaseExchangeRate)
+        : null,
   };
 }
 

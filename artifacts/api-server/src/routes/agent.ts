@@ -1,7 +1,16 @@
 import { Router } from "express";
 import { eq, and, or, isNull, lte } from "drizzle-orm";
-import { db, shipmentTrackingsTable, ordersTable, shipmentTrackingEventsTable, agentRunLogsTable } from "@workspace/db";
-import { agentTokenAuth, type AgentTokenLocals } from "../middlewares/agentAuth.ts";
+import {
+  db,
+  shipmentTrackingsTable,
+  ordersTable,
+  shipmentTrackingEventsTable,
+  agentRunLogsTable,
+} from "@workspace/db";
+import {
+  agentTokenAuth,
+  type AgentTokenLocals,
+} from "../middlewares/agentAuth.ts";
 import { logger } from "../lib/logger.ts";
 
 const router = Router();
@@ -12,19 +21,52 @@ const NOT_IMPLEMENTED = {
 } as const;
 
 const VALID_TRACKING_STATUSES = new Set([
-  "pending", "checking", "active", "delivered", "failed", "inactive",
+  "pending",
+  "checking",
+  "active",
+  "delivered",
+  "failed",
+  "inactive",
 ]);
 
 const VALID_EVENT_STATUSES = new Set([
-  "unknown", "pending", "in_transit", "arrived_store", "picked_up", "delivered", "returned", "exception",
+  "unknown",
+  "pending",
+  "in_transit",
+  "arrived_store",
+  "picked_up",
+  "delivered",
+  "returned",
+  "exception",
 ]);
 
-const VALID_RUN_TYPES = new Set(["manual", "scheduled", "webhook", "csv_after_import", "test"]);
-const VALID_RUN_STATUSES = new Set(["running", "completed", "failed", "partial"]);
+const VALID_RUN_TYPES = new Set([
+  "manual",
+  "scheduled",
+  "webhook",
+  "csv_after_import",
+  "test",
+]);
+const VALID_RUN_STATUSES = new Set([
+  "running",
+  "completed",
+  "failed",
+  "partial",
+]);
 
 const SENSITIVE_KEY_PATTERNS = [
-  "phone", "tel", "mobile", "address", "addr", "name", "email",
-  "token", "secret", "password", "credential", "authorization",
+  "phone",
+  "tel",
+  "mobile",
+  "address",
+  "addr",
+  "name",
+  "email",
+  "token",
+  "secret",
+  "password",
+  "credential",
+  "authorization",
 ];
 
 function sanitizePayload(value: unknown, depth = 0): unknown {
@@ -41,85 +83,104 @@ function sanitizePayload(value: unknown, depth = 0): unknown {
   return result;
 }
 
-router.get("/orders/tracking-jobs", agentTokenAuth, async (req: any, res: any) => {
-  try {
-    const { storeId } = res.locals.agentToken as AgentTokenLocals;
+router.get(
+  "/orders/tracking-jobs",
+  agentTokenAuth,
+  async (req: any, res: any) => {
+    try {
+      const { storeId } = res.locals.agentToken as AgentTokenLocals;
 
-    const rawLimit = Number(req.query.limit ?? 50);
-    const limit = Number.isFinite(rawLimit)
-      ? Math.min(Math.max(1, Math.floor(rawLimit)), 100)
-      : 50;
+      const rawLimit = Number(req.query.limit ?? 50);
+      const limit = Number.isFinite(rawLimit)
+        ? Math.min(Math.max(1, Math.floor(rawLimit)), 100)
+        : 50;
 
-    const statusFilter = typeof req.query.status === "string" ? req.query.status : undefined;
-    if (statusFilter !== undefined && !VALID_TRACKING_STATUSES.has(statusFilter)) {
-      return res.status(400).json({
-        error: "invalid_tracking_status",
-        message: `status must be one of: ${[...VALID_TRACKING_STATUSES].join(", ")}`,
+      const statusFilter =
+        typeof req.query.status === "string" ? req.query.status : undefined;
+      if (
+        statusFilter !== undefined &&
+        !VALID_TRACKING_STATUSES.has(statusFilter)
+      ) {
+        return res.status(400).json({
+          error: "invalid_tracking_status",
+          message: `status must be one of: ${[...VALID_TRACKING_STATUSES].join(", ")}`,
+        });
+      }
+
+      const dueOnly = req.query.dueOnly === "true";
+
+      const rows = await db
+        .select({
+          trackingId: shipmentTrackingsTable.id,
+          orderId: shipmentTrackingsTable.orderId,
+          trackingCode: shipmentTrackingsTable.trackingCode,
+          trackingProvider: shipmentTrackingsTable.trackingProvider,
+          trackingStatus: shipmentTrackingsTable.trackingStatus,
+          latestEventStatus: shipmentTrackingsTable.latestEventStatus,
+          latestEventDescription: shipmentTrackingsTable.latestEventDescription,
+          latestEventAt: shipmentTrackingsTable.latestEventAt,
+          lastCheckedAt: shipmentTrackingsTable.lastCheckedAt,
+          nextCheckAt: shipmentTrackingsTable.nextCheckAt,
+          failureCount: shipmentTrackingsTable.failureCount,
+          orderNumber: ordersTable.publicToken,
+          orderStoreId: ordersTable.storeId,
+          shippingStatus: ordersTable.shippingStatus,
+        })
+        .from(shipmentTrackingsTable)
+        .innerJoin(
+          ordersTable,
+          eq(shipmentTrackingsTable.orderId, ordersTable.id),
+        )
+        .where(
+          and(
+            eq(ordersTable.storeId, storeId),
+            eq(shipmentTrackingsTable.isActive, true),
+            statusFilter
+              ? eq(shipmentTrackingsTable.trackingStatus, statusFilter)
+              : undefined,
+            dueOnly
+              ? or(
+                  isNull(shipmentTrackingsTable.nextCheckAt),
+                  lte(shipmentTrackingsTable.nextCheckAt, new Date()),
+                )
+              : undefined,
+          ),
+        )
+        .orderBy(
+          shipmentTrackingsTable.nextCheckAt,
+          shipmentTrackingsTable.createdAt,
+        )
+        .limit(limit);
+
+      const jobs = rows.map((row) => ({
+        trackingId: row.trackingId,
+        orderId: row.orderId,
+        trackingCode: row.trackingCode,
+        trackingProvider: row.trackingProvider,
+        trackingStatus: row.trackingStatus,
+        latestEventStatus: row.latestEventStatus,
+        latestEventDescription: row.latestEventDescription,
+        latestEventAt: row.latestEventAt,
+        lastCheckedAt: row.lastCheckedAt,
+        nextCheckAt: row.nextCheckAt,
+        failureCount: row.failureCount,
+        order: {
+          orderNumber: row.orderNumber,
+          storeId: row.orderStoreId,
+          shippingStatus: row.shippingStatus,
+        },
+      }));
+
+      return res.json({ jobs, nextCursor: null });
+    } catch (err) {
+      logger.error({ err }, "agent_tracking_jobs_failed");
+      return res.status(500).json({
+        error: "agent_tracking_jobs_failed",
+        message: "Failed to fetch tracking jobs",
       });
     }
-
-    const dueOnly = req.query.dueOnly === "true";
-
-    const rows = await db
-      .select({
-        trackingId: shipmentTrackingsTable.id,
-        orderId: shipmentTrackingsTable.orderId,
-        trackingCode: shipmentTrackingsTable.trackingCode,
-        trackingProvider: shipmentTrackingsTable.trackingProvider,
-        trackingStatus: shipmentTrackingsTable.trackingStatus,
-        latestEventStatus: shipmentTrackingsTable.latestEventStatus,
-        latestEventDescription: shipmentTrackingsTable.latestEventDescription,
-        latestEventAt: shipmentTrackingsTable.latestEventAt,
-        lastCheckedAt: shipmentTrackingsTable.lastCheckedAt,
-        nextCheckAt: shipmentTrackingsTable.nextCheckAt,
-        failureCount: shipmentTrackingsTable.failureCount,
-        orderNumber: ordersTable.publicToken,
-        orderStoreId: ordersTable.storeId,
-        shippingStatus: ordersTable.shippingStatus,
-      })
-      .from(shipmentTrackingsTable)
-      .innerJoin(ordersTable, eq(shipmentTrackingsTable.orderId, ordersTable.id))
-      .where(
-        and(
-          eq(ordersTable.storeId, storeId),
-          eq(shipmentTrackingsTable.isActive, true),
-          statusFilter ? eq(shipmentTrackingsTable.trackingStatus, statusFilter) : undefined,
-          dueOnly
-            ? or(
-                isNull(shipmentTrackingsTable.nextCheckAt),
-                lte(shipmentTrackingsTable.nextCheckAt, new Date()),
-              )
-            : undefined,
-        ),
-      )
-      .orderBy(shipmentTrackingsTable.nextCheckAt, shipmentTrackingsTable.createdAt)
-      .limit(limit);
-
-    const jobs = rows.map((row) => ({
-      trackingId: row.trackingId,
-      orderId: row.orderId,
-      trackingCode: row.trackingCode,
-      trackingProvider: row.trackingProvider,
-      trackingStatus: row.trackingStatus,
-      latestEventStatus: row.latestEventStatus,
-      latestEventDescription: row.latestEventDescription,
-      latestEventAt: row.latestEventAt,
-      lastCheckedAt: row.lastCheckedAt,
-      nextCheckAt: row.nextCheckAt,
-      failureCount: row.failureCount,
-      order: {
-        orderNumber: row.orderNumber,
-        storeId: row.orderStoreId,
-        shippingStatus: row.shippingStatus,
-      },
-    }));
-
-    return res.json({ jobs, nextCursor: null });
-  } catch (err) {
-    logger.error({ err }, "agent_tracking_jobs_failed");
-    return res.status(500).json({ error: "agent_tracking_jobs_failed", message: "Failed to fetch tracking jobs" });
-  }
-});
+  },
+);
 
 router.post("/shipment-events", agentTokenAuth, async (req: any, res: any) => {
   try {
@@ -128,7 +189,8 @@ router.post("/shipment-events", agentTokenAuth, async (req: any, res: any) => {
 
     // Validate trackingId
     const rawTrackingId = body.trackingId;
-    const trackingId = rawTrackingId !== undefined ? Number(rawTrackingId) : NaN;
+    const trackingId =
+      rawTrackingId !== undefined ? Number(rawTrackingId) : NaN;
     if (!Number.isInteger(trackingId) || trackingId <= 0) {
       return res.status(400).json({
         error: "invalid_tracking_id",
@@ -137,7 +199,8 @@ router.post("/shipment-events", agentTokenAuth, async (req: any, res: any) => {
     }
 
     // Validate eventStatus
-    const eventStatus = typeof body.eventStatus === "string" ? body.eventStatus : "";
+    const eventStatus =
+      typeof body.eventStatus === "string" ? body.eventStatus : "";
     if (!VALID_EVENT_STATUSES.has(eventStatus)) {
       return res.status(400).json({
         error: "invalid_event_status",
@@ -160,10 +223,13 @@ router.post("/shipment-events", agentTokenAuth, async (req: any, res: any) => {
       occurredAt = new Date();
     }
 
-    const idempotencyKey = typeof body.idempotencyKey === "string" ? body.idempotencyKey : null;
+    const idempotencyKey =
+      typeof body.idempotencyKey === "string" ? body.idempotencyKey : null;
     const rawPayload = body.rawPayload;
     const sanitizedPayload: Record<string, unknown> | null =
-      rawPayload !== null && typeof rawPayload === "object" && !Array.isArray(rawPayload)
+      rawPayload !== null &&
+      typeof rawPayload === "object" &&
+      !Array.isArray(rawPayload)
         ? (sanitizePayload(rawPayload) as Record<string, unknown>)
         : null;
 
@@ -171,7 +237,10 @@ router.post("/shipment-events", agentTokenAuth, async (req: any, res: any) => {
     const [tracking] = await db
       .select({ trackingId: shipmentTrackingsTable.id })
       .from(shipmentTrackingsTable)
-      .innerJoin(ordersTable, eq(shipmentTrackingsTable.orderId, ordersTable.id))
+      .innerJoin(
+        ordersTable,
+        eq(shipmentTrackingsTable.orderId, ordersTable.id),
+      )
       .where(
         and(
           eq(shipmentTrackingsTable.id, trackingId),
@@ -182,7 +251,10 @@ router.post("/shipment-events", agentTokenAuth, async (req: any, res: any) => {
       .limit(1);
 
     if (!tracking) {
-      return res.status(404).json({ error: "tracking_not_found", message: "Tracking job not found or not accessible" });
+      return res.status(404).json({
+        error: "tracking_not_found",
+        message: "Tracking job not found or not accessible",
+      });
     }
 
     // Pre-insert idempotency check
@@ -229,8 +301,12 @@ router.post("/shipment-events", agentTokenAuth, async (req: any, res: any) => {
         .values({
           shipmentTrackingId: trackingId,
           eventStatus,
-          eventDescription: typeof body.eventDescription === "string" ? body.eventDescription : null,
-          eventLocation: typeof body.eventLocation === "string" ? body.eventLocation : null,
+          eventDescription:
+            typeof body.eventDescription === "string"
+              ? body.eventDescription
+              : null,
+          eventLocation:
+            typeof body.eventLocation === "string" ? body.eventLocation : null,
           occurredAt,
           rawData: sanitizedPayload,
           idempotencyKey,
@@ -308,7 +384,8 @@ router.patch("/shipment-status", agentTokenAuth, async (req: any, res: any) => {
 
     // Validate trackingId
     const rawTrackingId = body.trackingId;
-    const trackingId = rawTrackingId !== undefined ? Number(rawTrackingId) : NaN;
+    const trackingId =
+      rawTrackingId !== undefined ? Number(rawTrackingId) : NaN;
     if (!Number.isInteger(trackingId) || trackingId <= 0) {
       return res.status(400).json({
         error: "invalid_tracking_id",
@@ -317,7 +394,8 @@ router.patch("/shipment-status", agentTokenAuth, async (req: any, res: any) => {
     }
 
     // Validate trackingStatus (required)
-    const trackingStatus = typeof body.trackingStatus === "string" ? body.trackingStatus : "";
+    const trackingStatus =
+      typeof body.trackingStatus === "string" ? body.trackingStatus : "";
     if (!VALID_TRACKING_STATUSES.has(trackingStatus)) {
       return res.status(400).json({
         error: "invalid_tracking_status",
@@ -328,7 +406,10 @@ router.patch("/shipment-status", agentTokenAuth, async (req: any, res: any) => {
     // Validate latestEventStatus (optional)
     let latestEventStatus: string | undefined;
     if (body.latestEventStatus !== undefined) {
-      const les = typeof body.latestEventStatus === "string" ? body.latestEventStatus : "";
+      const les =
+        typeof body.latestEventStatus === "string"
+          ? body.latestEventStatus
+          : "";
       if (!VALID_EVENT_STATUSES.has(les)) {
         return res.status(400).json({
           error: "invalid_event_status",
@@ -394,7 +475,10 @@ router.patch("/shipment-status", agentTokenAuth, async (req: any, res: any) => {
     const [tracking] = await db
       .select({ trackingId: shipmentTrackingsTable.id })
       .from(shipmentTrackingsTable)
-      .innerJoin(ordersTable, eq(shipmentTrackingsTable.orderId, ordersTable.id))
+      .innerJoin(
+        ordersTable,
+        eq(shipmentTrackingsTable.orderId, ordersTable.id),
+      )
       .where(
         and(
           eq(shipmentTrackingsTable.id, trackingId),
@@ -405,14 +489,24 @@ router.patch("/shipment-status", agentTokenAuth, async (req: any, res: any) => {
       .limit(1);
 
     if (!tracking) {
-      return res.status(404).json({ error: "tracking_not_found", message: "Tracking job not found or not accessible" });
+      return res.status(404).json({
+        error: "tracking_not_found",
+        message: "Tracking job not found or not accessible",
+      });
     }
 
     // Build update values — only include fields provided in the request
-    const setValues: Record<string, unknown> = { trackingStatus, updatedAt: new Date() };
-    if (latestEventStatus !== undefined) setValues.latestEventStatus = latestEventStatus;
+    const setValues: Record<string, unknown> = {
+      trackingStatus,
+      updatedAt: new Date(),
+    };
+    if (latestEventStatus !== undefined)
+      setValues.latestEventStatus = latestEventStatus;
     if (body.latestEventDescription !== undefined) {
-      setValues.latestEventDescription = typeof body.latestEventDescription === "string" ? body.latestEventDescription : null;
+      setValues.latestEventDescription =
+        typeof body.latestEventDescription === "string"
+          ? body.latestEventDescription
+          : null;
     }
     if (latestEventAt !== undefined) setValues.latestEventAt = latestEventAt;
     if (lastCheckedAt !== undefined) setValues.lastCheckedAt = lastCheckedAt;
@@ -449,7 +543,8 @@ router.patch("/shipment-status", agentTokenAuth, async (req: any, res: any) => {
 
 router.post("/run-log", agentTokenAuth, async (req: any, res: any) => {
   try {
-    const { tokenId, merchantId, storeId } = res.locals.agentToken as AgentTokenLocals;
+    const { tokenId, merchantId, storeId } = res.locals
+      .agentToken as AgentTokenLocals;
     const body = req.body ?? {};
 
     // Validate runType (required)
@@ -537,12 +632,29 @@ router.post("/run-log", agentTokenAuth, async (req: any, res: any) => {
       failedCount = n;
     }
 
-    const errorCode = body.errorCode != null ? String(body.errorCode).slice(0, 120) : null;
-    const errorMessage = body.errorMessage != null ? String(body.errorMessage).slice(0, 500) : null;
+    const errorCode =
+      body.errorCode != null ? String(body.errorCode).slice(0, 120) : null;
+    const errorMessage =
+      body.errorMessage != null
+        ? String(body.errorMessage).slice(0, 500)
+        : null;
 
     const [inserted] = await db
       .insert(agentRunLogsTable)
-      .values({ tokenId, merchantId, storeId, runType, status, startedAt, finishedAt, checkedCount, successCount, failedCount, errorCode, errorMessage })
+      .values({
+        tokenId,
+        merchantId,
+        storeId,
+        runType,
+        status,
+        startedAt,
+        finishedAt,
+        checkedCount,
+        successCount,
+        failedCount,
+        errorCode,
+        errorMessage,
+      })
       .returning();
 
     return res.status(201).json({

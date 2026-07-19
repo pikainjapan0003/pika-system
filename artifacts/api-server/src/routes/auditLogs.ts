@@ -16,40 +16,48 @@ function parseStoreId(value: string): number {
   return storeId;
 }
 
-router.get("/stores/:storeId/audit-logs", requireAuth, async (req: any, res) => {
-  let storeId: number;
-  try {
-    storeId = parseStoreId(req.params.storeId);
-  } catch (error) {
-    return res.status(400).json({ error: (error as Error).message });
-  }
-  if (!(await verifyStoreOwner(req, res, storeId))) return;
-  const rows = await db
-    .select()
-    .from(auditLogsTable)
-    .where(eq(auditLogsTable.storeId, storeId))
-    .orderBy(desc(auditLogsTable.at))
-    .limit(100);
-  return res.json(rows);
-});
+router.get(
+  "/stores/:storeId/audit-logs",
+  requireAuth,
+  async (req: any, res) => {
+    let storeId: number;
+    try {
+      storeId = parseStoreId(req.params.storeId);
+    } catch (error) {
+      return res.status(400).json({ error: (error as Error).message });
+    }
+    if (!(await verifyStoreOwner(req, res, storeId))) return;
+    const rows = await db
+      .select()
+      .from(auditLogsTable)
+      .where(eq(auditLogsTable.storeId, storeId))
+      .orderBy(desc(auditLogsTable.at))
+      .limit(100);
+    return res.json(rows);
+  },
+);
 
-router.post("/stores/:storeId/audit-events", requireAuth, async (req: any, res) => {
-  let storeId: number;
-  let event: ReturnType<typeof parseClientAuditEvent>;
-  try {
-    storeId = parseStoreId(req.params.storeId);
-    event = parseClientAuditEvent(req.body);
-  } catch (error) {
-    return res.status(400).json({ error: (error as Error).message });
-  }
-  if (!(await verifyStoreOwner(req, res, storeId))) return;
-  await recordAuditLog({
-    storeId,
-    actor: req.userId,
-    action: event.action,
-    target: event.target,
-  });
-  return res.status(204).send();
-});
+router.post(
+  "/stores/:storeId/audit-events",
+  requireAuth,
+  async (req: any, res) => {
+    let storeId: number;
+    let event: ReturnType<typeof parseClientAuditEvent>;
+    try {
+      storeId = parseStoreId(req.params.storeId);
+      event = parseClientAuditEvent(req.body);
+    } catch (error) {
+      return res.status(400).json({ error: (error as Error).message });
+    }
+    if (!(await verifyStoreOwner(req, res, storeId))) return;
+    await recordAuditLog({
+      storeId,
+      actor: req.userId,
+      action: event.action,
+      target: event.target,
+    });
+    return res.status(204).send();
+  },
+);
 
 export default router;

@@ -8,19 +8,38 @@ export interface CustomerOrderProfitInput {
 }
 
 export type CustomerOrderProfitDisplay =
-  | { status: "captured" | "exempt"; label: string; amountTwd: string; scope: "unit" | "order" }
-  | { status: "pending" | "missing"; label: "待確認" | "尚無快照"; amountTwd: null; scope: "unit" | "order" };
+  | {
+      status: "captured" | "exempt";
+      label: string;
+      amountTwd: string;
+      scope: "unit" | "order";
+    }
+  | {
+      status: "pending" | "missing";
+      label: "待確認" | "尚無快照";
+      amountTwd: null;
+      scope: "unit" | "order";
+    };
 
 function displayCapturedSnapshot(value: string): string {
   const displayed = displayOrderProfitSnapshotAmount(value);
-  if (displayed === null) throw new TypeError("captured snapshot amount is missing");
+  if (displayed === null)
+    throw new TypeError("captured snapshot amount is missing");
   return displayed;
 }
 
 /** Formats existing immutable snapshots only. It never recalculates live product cost or profit. */
-export function formatCustomerOrderProfit(order: CustomerOrderProfitInput): CustomerOrderProfitDisplay {
-  if (order.cartProfitSnapshotStatus !== undefined && order.cartProfitSnapshotStatus !== null) {
-    if (order.cartProfitSnapshotStatus === "captured" && order.cartProfitSnapshotTotalTwd != null) {
+export function formatCustomerOrderProfit(
+  order: CustomerOrderProfitInput,
+): CustomerOrderProfitDisplay {
+  if (
+    order.cartProfitSnapshotStatus !== undefined &&
+    order.cartProfitSnapshotStatus !== null
+  ) {
+    if (
+      order.cartProfitSnapshotStatus === "captured" &&
+      order.cartProfitSnapshotTotalTwd != null
+    ) {
       return {
         status: "captured",
         label: "定格整單毛利",
@@ -28,22 +47,41 @@ export function formatCustomerOrderProfit(order: CustomerOrderProfitInput): Cust
         scope: "order",
       };
     }
-    return { status: "pending", label: "待確認", amountTwd: null, scope: "order" };
+    return {
+      status: "pending",
+      label: "待確認",
+      amountTwd: null,
+      scope: "order",
+    };
   }
 
   if (
-    (order.profitSnapshotStatus === "captured" || order.profitSnapshotStatus === "exempt")
-    && order.profitSnapshotUnitProfitTwd != null
+    (order.profitSnapshotStatus === "captured" ||
+      order.profitSnapshotStatus === "exempt") &&
+    order.profitSnapshotUnitProfitTwd != null
   ) {
     return {
       status: order.profitSnapshotStatus,
-      label: order.profitSnapshotStatus === "exempt" ? "免攤單件毛利" : "定格單件毛利",
+      label:
+        order.profitSnapshotStatus === "exempt"
+          ? "免攤單件毛利"
+          : "定格單件毛利",
       amountTwd: displayCapturedSnapshot(order.profitSnapshotUnitProfitTwd),
       scope: "unit",
     };
   }
   if (order.profitSnapshotStatus === "pending") {
-    return { status: "pending", label: "待確認", amountTwd: null, scope: "unit" };
+    return {
+      status: "pending",
+      label: "待確認",
+      amountTwd: null,
+      scope: "unit",
+    };
   }
-  return { status: "missing", label: "尚無快照", amountTwd: null, scope: "unit" };
+  return {
+    status: "missing",
+    label: "尚無快照",
+    amountTwd: null,
+    scope: "unit",
+  };
 }

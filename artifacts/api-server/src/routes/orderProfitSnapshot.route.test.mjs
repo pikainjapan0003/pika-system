@@ -7,9 +7,13 @@ import assert from "node:assert/strict";
 import { after, before, mock, test } from "node:test";
 
 if (!process.env.DATABASE_URL) {
-  test("order profit snapshot route integration requires a disposable DATABASE_URL", {
-    skip: "DATABASE_URL not set",
-  }, () => {});
+  test(
+    "order profit snapshot route integration requires a disposable DATABASE_URL",
+    {
+      skip: "DATABASE_URL not set",
+    },
+    () => {},
+  );
 } else {
   const TEST_MERCHANT_ID = "mvp3_pkg2_fake_merchant";
 
@@ -24,14 +28,8 @@ if (!process.env.DATABASE_URL) {
   });
 
   const { default: express } = await import("express");
-  const {
-    db,
-    customersTable,
-    ordersTable,
-    pool,
-    productsTable,
-    storesTable,
-  } = await import("@workspace/db");
+  const { db, customersTable, ordersTable, pool, productsTable, storesTable } =
+    await import("@workspace/db");
   const { eq } = await import("drizzle-orm");
   const { default: publicRouter } = await import("./public.ts");
   const { default: ordersRouter } = await import("./orders.ts");
@@ -48,35 +46,44 @@ if (!process.env.DATABASE_URL) {
   let shareToken;
 
   before(async () => {
-    await new Promise((resolve) => { server = app.listen(0, resolve); });
+    await new Promise((resolve) => {
+      server = app.listen(0, resolve);
+    });
     baseUrl = `http://localhost:${server.address().port}/api`;
 
-    const [store] = await db.insert(storesTable).values({
-      merchantId: TEST_MERCHANT_ID,
-      name: "MVP3 包2 假店鋪",
-      slug: `mvp3-pkg2-fake-${Date.now()}`,
-      purchaseExchangeRate: null,
-    }).returning();
+    const [store] = await db
+      .insert(storesTable)
+      .values({
+        merchantId: TEST_MERCHANT_ID,
+        name: "MVP3 包2 假店鋪",
+        slug: `mvp3-pkg2-fake-${Date.now()}`,
+        purchaseExchangeRate: null,
+      })
+      .returning();
     storeId = store.id;
 
     shareToken = `mvp3-pkg2-fake-product-${Date.now()}`;
-    const [product] = await db.insert(productsTable).values({
-      storeId,
-      name: "MVP3 包2 假商品",
-      price: "1900.00",
-      vipPrice: "1800.00",
-      wholesalePrice: null,
-      partnerPrice: "1500.00",
-      shareToken,
-      isActive: true,
-      costJpy: null,
-      isTransportCostExempt: false,
-    }).returning();
+    const [product] = await db
+      .insert(productsTable)
+      .values({
+        storeId,
+        name: "MVP3 包2 假商品",
+        price: "1900.00",
+        vipPrice: "1800.00",
+        wholesalePrice: null,
+        partnerPrice: "1500.00",
+        shareToken,
+        isActive: true,
+        costJpy: null,
+        isTransportCostExempt: false,
+      })
+      .returning();
     productId = product.id;
   });
 
   after(async () => {
-    if (storeId) await db.delete(storesTable).where(eq(storesTable.id, storeId));
+    if (storeId)
+      await db.delete(storesTable).where(eq(storesTable.id, storeId));
     await new Promise((resolve) => server.close(resolve));
     await pool.end();
   });
@@ -105,21 +112,32 @@ if (!process.env.DATABASE_URL) {
   }
 
   async function placeMerchantOrder(buyerName, customerId = null) {
-    return request("POST", `/stores/${storeId}/orders`, {
-      productId,
-      customerId,
-      buyerName,
-      buyerPhone: "0900000000",
-      pickupMethod: "假資料面交",
-      quantity: 1,
-    }, true);
+    return request(
+      "POST",
+      `/stores/${storeId}/orders`,
+      {
+        productId,
+        customerId,
+        buyerName,
+        buyerPhone: "0900000000",
+        pickupMethod: "假資料面交",
+        quantity: 1,
+      },
+      true,
+    );
   }
 
-  async function setCostState(purchaseExchangeRate, costJpy, isTransportCostExempt) {
-    await db.update(storesTable)
+  async function setCostState(
+    purchaseExchangeRate,
+    costJpy,
+    isTransportCostExempt,
+  ) {
+    await db
+      .update(storesTable)
       .set({ purchaseExchangeRate })
       .where(eq(storesTable.id, storeId));
-    await db.update(productsTable)
+    await db
+      .update(productsTable)
       .set({ costJpy, isTransportCostExempt })
       .where(eq(productsTable.id, productId));
   }
@@ -139,7 +157,11 @@ if (!process.env.DATABASE_URL) {
       "profitSnapshotCapturedAt",
       "profitSnapshotBackfilledAt",
     ]) {
-      assert.equal(Object.hasOwn(pendingResponse.data, field), false, `${field} leaked publicly`);
+      assert.equal(
+        Object.hasOwn(pendingResponse.data, field),
+        false,
+        `${field} leaked publicly`,
+      );
     }
 
     const [pendingOrder] = await db
@@ -149,10 +171,12 @@ if (!process.env.DATABASE_URL) {
     assert.equal(pendingOrder.profitSnapshotStatus, "pending");
     assert.equal(pendingOrder.profitSnapshotUnitProfitTwd, null);
 
-    await db.update(storesTable)
+    await db
+      .update(storesTable)
       .set({ purchaseExchangeRate: "0.21" })
       .where(eq(storesTable.id, storeId));
-    await db.update(productsTable)
+    await db
+      .update(productsTable)
       .set({ costJpy: "8000", isTransportCostExempt: true })
       .where(eq(productsTable.id, productId));
 
@@ -183,7 +207,8 @@ if (!process.env.DATABASE_URL) {
       .where(eq(ordersTable.publicToken, capturedAt021.data.publicToken));
     assert.equal(orderAt021.profitSnapshotUnitProfitTwd, "220.000000000000");
 
-    await db.update(storesTable)
+    await db
+      .update(storesTable)
       .set({ purchaseExchangeRate: "0.22" })
       .where(eq(storesTable.id, storeId));
     const capturedAt022 = await placeOrder("假買家丙");
@@ -197,7 +222,10 @@ if (!process.env.DATABASE_URL) {
       .select()
       .from(ordersTable)
       .where(eq(ordersTable.publicToken, capturedAt022.data.publicToken));
-    assert.equal(oldOrderAfterRateChange.profitSnapshotUnitProfitTwd, "220.000000000000");
+    assert.equal(
+      oldOrderAfterRateChange.profitSnapshotUnitProfitTwd,
+      "220.000000000000",
+    );
     assert.equal(newOrder.profitSnapshotUnitProfitTwd, "140.000000000000");
   });
 
@@ -218,7 +246,10 @@ if (!process.env.DATABASE_URL) {
     );
     assert.equal(backfill.status, 200);
     assert.equal(backfill.data.profitSnapshotStatus, "exempt");
-    assert.equal(backfill.data.profitSnapshotTransportCostTwd, "0.000000000000");
+    assert.equal(
+      backfill.data.profitSnapshotTransportCostTwd,
+      "0.000000000000",
+    );
     assert.equal(backfill.data.profitSnapshotUnitProfitTwd, "220.000000000000");
     assert.ok(backfill.data.profitSnapshotBackfilledAt);
 
@@ -233,40 +264,71 @@ if (!process.env.DATABASE_URL) {
     const capturedAt021 = await placeMerchantOrder("假後台買家乙");
     assert.equal(capturedAt021.status, 201);
     assert.equal(capturedAt021.data.profitSnapshotStatus, "exempt");
-    assert.equal(capturedAt021.data.profitSnapshotUnitProfitTwd, "220.000000000000");
+    assert.equal(
+      capturedAt021.data.profitSnapshotUnitProfitTwd,
+      "220.000000000000",
+    );
 
     await setCostState("0.22", "8000", true);
     const capturedAt022 = await placeMerchantOrder("假後台買家丙");
     assert.equal(capturedAt022.status, 201);
-    assert.equal(capturedAt022.data.profitSnapshotUnitProfitTwd, "140.000000000000");
+    assert.equal(
+      capturedAt022.data.profitSnapshotUnitProfitTwd,
+      "140.000000000000",
+    );
 
     const [oldOrderAfterRateChange] = await db
       .select()
       .from(ordersTable)
       .where(eq(ordersTable.id, capturedAt021.data.id));
-    assert.equal(oldOrderAfterRateChange.profitSnapshotUnitProfitTwd, "220.000000000000");
+    assert.equal(
+      oldOrderAfterRateChange.profitSnapshotUnitProfitTwd,
+      "220.000000000000",
+    );
   });
 
   test("merchant creation resolves customer tier price before freezing the snapshot", async () => {
     await setCostState("0.21", "8000", true);
-    await db.update(productsTable)
+    await db
+      .update(productsTable)
       .set({ vipPrice: "1800.00", wholesalePrice: null })
       .where(eq(productsTable.id, productId));
 
     const [generalCustomer, vipCustomer, wholesaleCustomer] = await db
       .insert(customersTable)
       .values([
-        { storeId, code: `general-${Date.now()}`, name: "假資料一般客", tier: "general" },
-        { storeId, code: `vip-${Date.now()}`, name: "假資料 VIP 客", tier: "vip" },
-        { storeId, code: `wholesale-${Date.now()}`, name: "假資料批發客", tier: "wholesale" },
+        {
+          storeId,
+          code: `general-${Date.now()}`,
+          name: "假資料一般客",
+          tier: "general",
+        },
+        {
+          storeId,
+          code: `vip-${Date.now()}`,
+          name: "假資料 VIP 客",
+          tier: "vip",
+        },
+        {
+          storeId,
+          code: `wholesale-${Date.now()}`,
+          name: "假資料批發客",
+          tier: "wholesale",
+        },
       ])
       .returning();
 
     // Hand-fixed fixtures: 8000 * 0.21 = 1680.
     // General 1900 -> 220; VIP 1800 -> 120; missing wholesale -> general 1900 -> 220.
-    const general = await placeMerchantOrder("假資料一般訂單", generalCustomer.id);
+    const general = await placeMerchantOrder(
+      "假資料一般訂單",
+      generalCustomer.id,
+    );
     const vip = await placeMerchantOrder("假資料 VIP 訂單", vipCustomer.id);
-    const wholesale = await placeMerchantOrder("假資料批發訂單", wholesaleCustomer.id);
+    const wholesale = await placeMerchantOrder(
+      "假資料批發訂單",
+      wholesaleCustomer.id,
+    );
 
     assert.equal(general.status, 201);
     assert.equal(general.data.unitPrice, 1900);
@@ -276,14 +338,24 @@ if (!process.env.DATABASE_URL) {
     assert.equal(vip.data.profitSnapshotUnitProfitTwd, "120.000000000000");
     assert.equal(wholesale.status, 201);
     assert.equal(wholesale.data.unitPrice, 1900);
-    assert.equal(wholesale.data.profitSnapshotUnitProfitTwd, "220.000000000000");
+    assert.equal(
+      wholesale.data.profitSnapshotUnitProfitTwd,
+      "220.000000000000",
+    );
 
-    await db.update(productsTable)
+    await db
+      .update(productsTable)
       .set({ vipPrice: "0.00" })
       .where(eq(productsTable.id, productId));
-    const zeroVip = await placeMerchantOrder("假資料零元 VIP 訂單", vipCustomer.id);
+    const zeroVip = await placeMerchantOrder(
+      "假資料零元 VIP 訂單",
+      vipCustomer.id,
+    );
     assert.equal(zeroVip.status, 201);
     assert.equal(zeroVip.data.unitPrice, 0);
-    assert.equal(zeroVip.data.profitSnapshotUnitProfitTwd, "-1680.000000000000");
+    assert.equal(
+      zeroVip.data.profitSnapshotUnitProfitTwd,
+      "-1680.000000000000",
+    );
   });
 }

@@ -24,17 +24,23 @@ test("customer CVS defaults fill an otherwise blank merchant order", () => {
 });
 
 test("an explicit CVS selection wins over customer defaults", () => {
-  assert.deepEqual(resolveCustomerCvsDefaults({
-    storeCode: "654321",
-    storeName: "另選門市",
-    cvsStoreAddress: "台中市測試區另一條路2號",
-  }, fakeCustomer), {
-    storeCode: "654321",
-    storeName: "另選門市",
-    cvsStoreAddress: "台中市測試區另一條路2號",
-    cvsStorePhone: null,
-    usedCustomerDefault: false,
-  });
+  assert.deepEqual(
+    resolveCustomerCvsDefaults(
+      {
+        storeCode: "654321",
+        storeName: "另選門市",
+        cvsStoreAddress: "台中市測試區另一條路2號",
+      },
+      fakeCustomer,
+    ),
+    {
+      storeCode: "654321",
+      storeName: "另選門市",
+      cvsStoreAddress: "台中市測試區另一條路2號",
+      cvsStorePhone: null,
+      usedCustomerDefault: false,
+    },
+  );
 });
 
 test("optional customer id accepts blank and rejects invalid identifiers", () => {

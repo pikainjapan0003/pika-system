@@ -38,9 +38,13 @@ export interface ManualSnapshotRefreshResult {
 
 function parseTrackingTs(raw: string | null | undefined): Date | null {
   if (!raw) return null;
-  const m = raw.trim().match(/^(\d{4})\/(\d{2})\/(\d{2})\s+(\d{2}):(\d{2})(?::(\d{2}))?$/);
+  const m = raw
+    .trim()
+    .match(/^(\d{4})\/(\d{2})\/(\d{2})\s+(\d{2}):(\d{2})(?::(\d{2}))?$/);
   if (!m) return null;
-  const d = new Date(`${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:${m[6] ?? "00"}+08:00`);
+  const d = new Date(
+    `${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:${m[6] ?? "00"}+08:00`,
+  );
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
@@ -51,18 +55,23 @@ async function saveSnapshot(
   normalizedStatus: string | null,
 ): Promise<void> {
   const parsedAt = parseTrackingTs(latestEventAtStr);
-  await db.update(shipmentTrackingsTable).set({
-    latestEventDescription: latestStatusText,
-    ...(parsedAt !== null ? { latestEventAt: parsedAt } : {}),
-    ...(normalizedStatus ? { latestEventStatus: normalizedStatus } : {}),
-    lastCheckedAt: new Date(),
-  }).where(eq(shipmentTrackingsTable.id, trackingId));
+  await db
+    .update(shipmentTrackingsTable)
+    .set({
+      latestEventDescription: latestStatusText,
+      ...(parsedAt !== null ? { latestEventAt: parsedAt } : {}),
+      ...(normalizedStatus ? { latestEventStatus: normalizedStatus } : {}),
+      lastCheckedAt: new Date(),
+    })
+    .where(eq(shipmentTrackingsTable.id, trackingId));
 }
 
-export async function runManualSnapshotRefresh(input: {
-  providers?: RefreshProvider[];
-  limit?: number;
-} = {}): Promise<ManualSnapshotRefreshResult> {
+export async function runManualSnapshotRefresh(
+  input: {
+    providers?: RefreshProvider[];
+    limit?: number;
+  } = {},
+): Promise<ManualSnapshotRefreshResult> {
   const providers = input.providers ?? ALLOWED_PROVIDERS;
   const limit = input.limit ?? DEFAULT_LIMIT;
   const cutoff = new Date(Date.now() - RECHECK_INTERVAL_MS);
@@ -94,7 +103,12 @@ export async function runManualSnapshotRefresh(input: {
     const trackingCode = row.trackingCode.trim();
 
     if (!trackingCode || !ALLOWED_PROVIDERS.includes(provider)) {
-      results.push({ trackingId: row.id, trackingCode, provider, status: "skipped" });
+      results.push({
+        trackingId: row.id,
+        trackingCode,
+        provider,
+        status: "skipped",
+      });
       continue;
     }
 
@@ -105,12 +119,16 @@ export async function runManualSnapshotRefresh(input: {
           : await queryTcatTracking({ trackingCode });
 
       if (!adapterResult.ok) {
-        await db.update(shipmentTrackingsTable)
+        await db
+          .update(shipmentTrackingsTable)
           .set({ lastCheckedAt: new Date() })
           .where(eq(shipmentTrackingsTable.id, row.id));
         results.push({
-          trackingId: row.id, trackingCode, provider,
-          status: "empty", errorCode: adapterResult.errorCode,
+          trackingId: row.id,
+          trackingCode,
+          provider,
+          status: "empty",
+          errorCode: adapterResult.errorCode,
         });
         continue;
       }
@@ -122,19 +140,33 @@ export async function runManualSnapshotRefresh(input: {
         adapterResult.normalizedStatus ?? null,
       );
       results.push({
-        trackingId: row.id, trackingCode, provider,
-        status: "refreshed", latestStatusText: adapterResult.latestStatusText,
+        trackingId: row.id,
+        trackingCode,
+        provider,
+        status: "refreshed",
+        latestStatusText: adapterResult.latestStatusText,
       });
     } catch (err) {
-      console.error(`[manual-snapshot-refresh] trackingId=${row.id} error:`, err);
-      results.push({ trackingId: row.id, trackingCode, provider, status: "failed", errorCode: "ADAPTER_ERROR" });
+      console.error(
+        `[manual-snapshot-refresh] trackingId=${row.id} error:`,
+        err,
+      );
+      results.push({
+        trackingId: row.id,
+        trackingCode,
+        provider,
+        status: "failed",
+        errorCode: "ADAPTER_ERROR",
+      });
     }
   }
 
   return {
     scannedCount: rows.length,
     refreshedCount: results.filter((r) => r.status === "refreshed").length,
-    skippedCount: results.filter((r) => r.status === "skipped" || r.status === "empty").length,
+    skippedCount: results.filter(
+      (r) => r.status === "skipped" || r.status === "empty",
+    ).length,
     failedCount: results.filter((r) => r.status === "failed").length,
     results,
   };

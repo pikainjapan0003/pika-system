@@ -23,7 +23,13 @@ export type SeedResult =
   | { action: "reactivated"; trackingId: number }
   | { action: "replaced"; trackingId: number; retiredTrackingId: number }
   | { action: "unchanged"; trackingId: number }
-  | { action: "skipped"; reason: "provider_not_seedable" | "empty_tracking_code" | "code_used_by_other_order" };
+  | {
+      action: "skipped";
+      reason:
+        | "provider_not_seedable"
+        | "empty_tracking_code"
+        | "code_used_by_other_order";
+    };
 
 export async function ensureManualProviderTrackingRow(input: {
   orderId: number;
@@ -92,7 +98,11 @@ export async function ensureManualProviderTrackingRow(input: {
       .set({ isActive: true, trackingStatus: "pending", checkError: null })
       .where(eq(shipmentTrackingsTable.id, codeRow.id));
     return activeRow
-      ? { action: "replaced", trackingId: codeRow.id, retiredTrackingId: activeRow.id }
+      ? {
+          action: "replaced",
+          trackingId: codeRow.id,
+          retiredTrackingId: activeRow.id,
+        }
       : { action: "reactivated", trackingId: codeRow.id };
   }
 
@@ -107,6 +117,10 @@ export async function ensureManualProviderTrackingRow(input: {
     .returning({ id: shipmentTrackingsTable.id });
 
   return activeRow
-    ? { action: "replaced", trackingId: inserted.id, retiredTrackingId: activeRow.id }
+    ? {
+        action: "replaced",
+        trackingId: inserted.id,
+        retiredTrackingId: activeRow.id,
+      }
     : { action: "inserted", trackingId: inserted.id };
 }

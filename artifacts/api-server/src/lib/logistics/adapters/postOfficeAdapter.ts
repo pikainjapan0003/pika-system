@@ -19,8 +19,7 @@ import type {
   TrackingEvent,
 } from "./types.ts";
 
-const ENDPOINT =
-  "https://postserv.post.gov.tw/pstmail/EsoafDispatcher";
+const ENDPOINT = "https://postserv.post.gov.tw/pstmail/EsoafDispatcher";
 const REFERER =
   "https://postserv.post.gov.tw/pstmail/main_mail.html?targetTxn=EB500100";
 const USER_AGENT =
@@ -75,8 +74,7 @@ export async function queryPostOfficeTracking(
   const uuid = randomUUID();
   const payload = {
     header: {
-      InputVOClass:
-        "com.systex.jbranch.app.server.post.vo.EB500100InputVO",
+      InputVOClass: "com.systex.jbranch.app.server.post.vo.EB500100InputVO",
       TxnCode: "EB500100",
       BizCode: "query2",
       StampTime: true,
@@ -120,11 +118,7 @@ export async function queryPostOfficeTracking(
       err instanceof Error &&
       (err.name === "TimeoutError" || err.name === "AbortError")
     ) {
-      return failure(
-        "TIMEOUT",
-        `Request timed out after ${timeoutMs}ms`,
-        true,
-      );
+      return failure("TIMEOUT", `Request timed out after ${timeoutMs}ms`, true);
     }
     return failure("NETWORK_FAILED", msg, true);
   }
@@ -188,11 +182,7 @@ export async function queryPostOfficeTracking(
 
   const items = hostRs.ITEM;
   if (!Array.isArray(items)) {
-    return failure(
-      "REMOTE_CHANGED",
-      "host_rs.ITEM is not an array",
-      false,
-    );
+    return failure("REMOTE_CHANGED", "host_rs.ITEM is not an array", false);
   }
   if (items.length === 0) {
     return failure("EMPTY_LIST", "host_rs.ITEM is empty", false);
@@ -214,7 +204,11 @@ export async function queryPostOfficeTracking(
   // Sort newest first by occurredAt string (ISO-comparable after formatting)
   events.sort((a, b) => {
     if (!a.occurredAt || !b.occurredAt) return 0;
-    return a.occurredAt > b.occurredAt ? -1 : a.occurredAt < b.occurredAt ? 1 : 0;
+    return a.occurredAt > b.occurredAt
+      ? -1
+      : a.occurredAt < b.occurredAt
+        ? 1
+        : 0;
   });
 
   const latest = events[0];

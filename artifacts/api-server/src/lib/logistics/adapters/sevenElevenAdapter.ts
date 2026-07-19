@@ -166,7 +166,10 @@ export async function trackSevenElevenShipment(
       const html = await getRes.text();
 
       const viewState = extractInputValue(html, "__VIEWSTATE");
-      const viewStateGenerator = extractInputValue(html, "__VIEWSTATEGENERATOR");
+      const viewStateGenerator = extractInputValue(
+        html,
+        "__VIEWSTATEGENERATOR",
+      );
       if (!viewState || !viewStateGenerator) {
         lastError = "REMOTE_CHANGED";
         lastMessage = "Missing __VIEWSTATE / __VIEWSTATEGENERATOR";
@@ -182,7 +185,11 @@ export async function trackSevenElevenShipment(
 
       // 2. 下載 captcha 並 OCR
       const imgRes = await doFetch(captchaUrl, {
-        headers: { "User-Agent": USER_AGENT, Cookie: cookie, Referer: SEARCH_URL },
+        headers: {
+          "User-Agent": USER_AGENT,
+          Cookie: cookie,
+          Referer: SEARCH_URL,
+        },
       });
       if (!imgRes.ok) {
         lastError = "NETWORK_FAILED";
@@ -412,7 +419,7 @@ function parseResponse(html: string): ParsedResponse {
   return {
     kind: "success",
     info,
-    mNews: mNews ? stripTags(mNews) : shipping[0] ?? "",
+    mNews: mNews ? stripTags(mNews) : (shipping[0] ?? ""),
     shipping,
   };
 }
@@ -428,7 +435,10 @@ function buildEvents(shipping: string[]): SevenElevenEvent[] {
   });
 }
 
-function extractLatestStatus(mNews: string, events: SevenElevenEvent[]): string {
+function extractLatestStatus(
+  mNews: string,
+  events: SevenElevenEvent[],
+): string {
   // m_news 形如「包裹配達取件門市2026/06/10 03:37:10」
   const m = mNews.match(/^([\s\S]*?)(\d{4}\/\d{2}\/\d{2})/);
   if (m && m[1].trim()) return m[1].trim();
@@ -458,7 +468,14 @@ const defaultTesseractSolver: CaptchaSolver = async (imageBytes) => {
   return await new Promise<string>((resolve, reject) => {
     const proc = spawn(
       tesseractBin,
-      ["stdin", "stdout", "--psm", "8", "-c", "tessedit_char_whitelist=0123456789"],
+      [
+        "stdin",
+        "stdout",
+        "--psm",
+        "8",
+        "-c",
+        "tessedit_char_whitelist=0123456789",
+      ],
       { stdio: ["pipe", "pipe", "pipe"] },
     );
     let out = "";

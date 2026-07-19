@@ -34,10 +34,10 @@ export function resolveCustomerCvsDefaults(
   customer: CustomerCvsDefaults | null,
 ): ResolvedCvsSelection {
   const hasExplicit = Boolean(
-    explicit.storeCode
-    || explicit.storeName
-    || explicit.cvsStoreAddress
-    || explicit.cvsStorePhone,
+    explicit.storeCode ||
+    explicit.storeName ||
+    explicit.cvsStoreAddress ||
+    explicit.cvsStorePhone,
   );
   if (hasExplicit || !customer) {
     return {
@@ -54,10 +54,10 @@ export function resolveCustomerCvsDefaults(
     cvsStoreAddress: customer.cvsStoreAddress,
     cvsStorePhone: customer.cvsStorePhone,
     usedCustomerDefault: Boolean(
-      customer.cvsStoreId
-      || customer.cvsStoreName
-      || customer.cvsStoreAddress
-      || customer.cvsStorePhone,
+      customer.cvsStoreId ||
+      customer.cvsStoreName ||
+      customer.cvsStoreAddress ||
+      customer.cvsStorePhone,
     ),
   };
 }

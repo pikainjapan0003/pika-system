@@ -64,15 +64,22 @@ export interface FamilyMartWorkerResult {
 
 export interface FamilyMartWorkerDeps {
   /** 測試用：mock adapter，預設 live queryFamilyMartTracking */
-  queryTracking?: (input: { trackingCode: string; timeoutMs?: number }) => Promise<FamilyMartTrackingResult>;
+  queryTracking?: (input: {
+    trackingCode: string;
+    timeoutMs?: number;
+  }) => Promise<FamilyMartTrackingResult>;
 }
 
 /** 全家事件時間為台灣時區字串（YYYY/MM/DD HH:mm），轉 +08:00 Date；parse 失敗回 null。 */
 export function parseFamiEventDate(raw: string | null): Date | null {
   if (!raw) return null;
-  const m = raw.trim().match(/^(\d{4})\/(\d{2})\/(\d{2})(?:\s+(\d{2}):(\d{2})(?::(\d{2}))?)?$/);
+  const m = raw
+    .trim()
+    .match(/^(\d{4})\/(\d{2})\/(\d{2})(?:\s+(\d{2}):(\d{2})(?::(\d{2}))?)?$/);
   if (!m) return null;
-  const d = new Date(`${m[1]}-${m[2]}-${m[3]}T${m[4] ?? "00"}:${m[5] ?? "00"}:${m[6] ?? "00"}+08:00`);
+  const d = new Date(
+    `${m[1]}-${m[2]}-${m[3]}T${m[4] ?? "00"}:${m[5] ?? "00"}:${m[6] ?? "00"}+08:00`,
+  );
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
@@ -87,10 +94,18 @@ export function toTrackingStatus(normalized: NormalizedTrackingStatus): string {
 
 /** 終態貨態（picked_up / delivered / returned）→ 停止巡查（next_check_at = null） */
 function isTerminalStatus(normalized: NormalizedTrackingStatus): boolean {
-  return normalized === "picked_up" || normalized === "delivered" || normalized === "returned";
+  return (
+    normalized === "picked_up" ||
+    normalized === "delivered" ||
+    normalized === "returned"
+  );
 }
 
-export function buildEventIdempotencyKey(trackingCode: string, occurredAtRaw: string | null, description: string): string {
+export function buildEventIdempotencyKey(
+  trackingCode: string,
+  occurredAtRaw: string | null,
+  description: string,
+): string {
   return `familymart:${trackingCode}:${occurredAtRaw ?? "no-date"}:${description}`;
 }
 
@@ -107,17 +122,26 @@ export async function runFamilyMartTrackingWorker(
   const conditions = [
     eq(shipmentTrackingsTable.trackingProvider, PROVIDER),
     eq(shipmentTrackingsTable.isActive, true),
-    inArray(shipmentTrackingsTable.trackingStatus, ["pending", "checking", "active", "failed"]),
+    inArray(shipmentTrackingsTable.trackingStatus, [
+      "pending",
+      "checking",
+      "active",
+      "failed",
+    ]),
   ];
   if (input.trackingIds?.length) {
     conditions.push(inArray(shipmentTrackingsTable.id, input.trackingIds));
   } else {
     // 指定 trackingIds 時略過 nextCheckAt gate，方便手動重查
     conditions.push(
-      or(isNull(shipmentTrackingsTable.nextCheckAt), lte(shipmentTrackingsTable.nextCheckAt, now))!,
+      or(
+        isNull(shipmentTrackingsTable.nextCheckAt),
+        lte(shipmentTrackingsTable.nextCheckAt, now),
+      )!,
     );
   }
-  if (input.storeId !== undefined) conditions.push(eq(ordersTable.storeId, input.storeId));
+  if (input.storeId !== undefined)
+    conditions.push(eq(ordersTable.storeId, input.storeId));
 
   const jobs = await db
     .select({
@@ -158,13 +182,21 @@ export async function runFamilyMartTrackingWorker(
   for (const job of jobs) {
     const trackingCode = job.trackingCode.trim();
     if (!trackingCode) {
-      results.push({ shipmentTrackingId: job.id, trackingCode, status: "skipped", errorCode: "EMPTY_TRACKING_CODE" });
+      results.push({
+        shipmentTrackingId: job.id,
+        trackingCode,
+        status: "skipped",
+        errorCode: "EMPTY_TRACKING_CODE",
+      });
       continue;
     }
 
     let adapterResult: FamilyMartTrackingResult;
     try {
-      adapterResult = await queryTracking({ trackingCode, timeoutMs: input.timeoutMs });
+      adapterResult = await queryTracking({
+        trackingCode,
+        timeoutMs: input.timeoutMs,
+      });
     } catch (err) {
       // adapter 設計上不 throw；萬一 throw 仍轉成標準失敗，不讓整輪中斷
       adapterResult = {
@@ -172,7 +204,8 @@ export async function runFamilyMartTrackingWorker(
         provider: PROVIDER,
         trackingCode,
         errorCode: "UNKNOWN_ERROR",
-        message: err instanceof Error ? err.message.slice(0, 200) : "unknown error",
+        message:
+          err instanceof Error ? err.message.slice(0, 200) : "unknown error",
         retryable: true,
       };
     }
@@ -191,7 +224,9 @@ export async function runFamilyMartTrackingWorker(
             latestEventDescription: adapterResult.latestStatusText,
             latestEventAt,
             lastCheckedAt: now,
-            nextCheckAt: isTerminalStatus(normalized) ? null : new Date(now.getTime() + RECHECK_INTERVAL_MS),
+            nextCheckAt: isTerminalStatus(normalized)
+              ? null
+              : new Date(now.getTime() + RECHECK_INTERVAL_MS),
             failureCount: 0,
             checkError: null,
           })
@@ -199,8 +234,14 @@ export async function runFamilyMartTrackingWorker(
 
         // events：occurred_at NOT NULL，日期 parse 不出的事件跳過不寫（極少數，回報於 rawSummary）
         const insertable = adapterResult.events
-          .map((e) => ({ event: e, occurredAt: parseFamiEventDate(e.occurredAt) }))
-          .filter((x): x is { event: typeof x.event; occurredAt: Date } => x.occurredAt !== null);
+          .map((e) => ({
+            event: e,
+            occurredAt: parseFamiEventDate(e.occurredAt),
+          }))
+          .filter(
+            (x): x is { event: typeof x.event; occurredAt: Date } =>
+              x.occurredAt !== null,
+          );
         if (insertable.length > 0) {
           const inserted = await db
             .insert(shipmentTrackingEventsTable)
@@ -212,11 +253,18 @@ export async function runFamilyMartTrackingWorker(
                 eventLocation: event.eventLocation,
                 occurredAt,
                 rawData: event.rawData,
-                idempotencyKey: buildEventIdempotencyKey(trackingCode, event.occurredAt, event.eventDescription),
+                idempotencyKey: buildEventIdempotencyKey(
+                  trackingCode,
+                  event.occurredAt,
+                  event.eventDescription,
+                ),
               })),
             )
             .onConflictDoNothing({
-              target: [shipmentTrackingEventsTable.shipmentTrackingId, shipmentTrackingEventsTable.idempotencyKey],
+              target: [
+                shipmentTrackingEventsTable.shipmentTrackingId,
+                shipmentTrackingEventsTable.idempotencyKey,
+              ],
             })
             .returning({ id: shipmentTrackingEventsTable.id });
           insertedEventCount = inserted.length;
@@ -247,7 +295,13 @@ export async function runFamilyMartTrackingWorker(
             failureCount: newFailureCount,
             checkError: `${errorCode}: ${message}`.slice(0, 300),
             nextCheckAt: retryable
-              ? new Date(now.getTime() + Math.min(RECHECK_INTERVAL_MS, RETRY_BASE_MS * newFailureCount))
+              ? new Date(
+                  now.getTime() +
+                    Math.min(
+                      RECHECK_INTERVAL_MS,
+                      RETRY_BASE_MS * newFailureCount,
+                    ),
+                )
               : null,
           })
           .where(eq(shipmentTrackingsTable.id, job.id));
@@ -288,7 +342,9 @@ export async function runFamilyMartTrackingWorker(
   if (!dryRun && runLogId !== null) {
     const errorSummary =
       errorCodeCounts.size > 0
-        ? [...errorCodeCounts.entries()].map(([code, count]) => `${code}x${count}`).join(", ")
+        ? [...errorCodeCounts.entries()]
+            .map(([code, count]) => `${code}x${count}`)
+            .join(", ")
         : null;
     await db
       .update(shipmentTrackingRunLogsTable)

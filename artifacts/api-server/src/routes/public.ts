@@ -29,7 +29,9 @@ const submitOrderLimiter = rateLimit({
   standardHeaders: "draft-8",
   legacyHeaders: false,
   handler: (_req, res) => {
-    res.status(429).json({ error: "Too many requests, please try again later." });
+    res
+      .status(429)
+      .json({ error: "Too many requests, please try again later." });
   },
 });
 
@@ -39,7 +41,9 @@ const trackOrderLimiter = rateLimit({
   standardHeaders: "draft-8",
   legacyHeaders: false,
   handler: (_req, res) => {
-    res.status(429).json({ error: "Too many requests, please try again later." });
+    res
+      .status(429)
+      .json({ error: "Too many requests, please try again later." });
   },
 });
 
@@ -71,13 +75,17 @@ function publicTrackingProviderLabel(raw: string): string {
   return meta.code === "tcat" ? meta.displayName : meta.shortName;
 }
 
-function isShippingMethodEnabled(method: string, store: {
-  shippingCvsEnabled?: boolean | null;
-  shippingBlackCatEnabled?: boolean | null;
-  shippingPostOfficeEnabled?: boolean | null;
-  shippingSelfPickupEnabled?: boolean | null;
-}): boolean {
-  if (method.startsWith("7-11") || method.startsWith("全家")) return store.shippingCvsEnabled !== false;
+function isShippingMethodEnabled(
+  method: string,
+  store: {
+    shippingCvsEnabled?: boolean | null;
+    shippingBlackCatEnabled?: boolean | null;
+    shippingPostOfficeEnabled?: boolean | null;
+    shippingSelfPickupEnabled?: boolean | null;
+  },
+): boolean {
+  if (method.startsWith("7-11") || method.startsWith("全家"))
+    return store.shippingCvsEnabled !== false;
   if (method === "黑貓宅急便") return store.shippingBlackCatEnabled !== false;
   if (method === "郵局") return store.shippingPostOfficeEnabled !== false;
   if (method === "面交") return store.shippingSelfPickupEnabled !== false;
@@ -143,7 +151,8 @@ router.get("/p/:shareToken", async (req, res) => {
     orderDeadlineAt: product.orderDeadlineAt?.toISOString() ?? null,
     storageTemp: product.storageTemp,
     shelfLife: product.shelfLife,
-    weightKg: product.weightKg != null ? parseFloat(product.weightKg as string) : null,
+    weightKg:
+      product.weightKg != null ? parseFloat(product.weightKg as string) : null,
     brandPrimaryColor: store?.brandPrimaryColor ?? null,
     shippingCvsEnabled: store?.shippingCvsEnabled ?? true,
     shippingBlackCatEnabled: store?.shippingBlackCatEnabled ?? true,
@@ -161,7 +170,10 @@ router.post("/p/:shareToken/orders", submitOrderLimiter, async (req, res) => {
   }
 
   // shippingFee override: allow client to pass, but validate it's a number
-  const shippingFeeOverride = typeof req.body?.shippingFee === "number" ? req.body.shippingFee : undefined;
+  const shippingFeeOverride =
+    typeof req.body?.shippingFee === "number"
+      ? req.body.shippingFee
+      : undefined;
   let paymentLast5: string | null;
   try {
     paymentLast5 = parsePaymentLast5(req.body?.paymentLast5);
@@ -198,7 +210,10 @@ router.post("/p/:shareToken/orders", submitOrderLimiter, async (req, res) => {
           .from(storesTable)
           .where(eq(storesTable.id, product.storeId))
           .limit(1);
-        if (store && !isShippingMethodEnabled(parsed.data.pickupMethod, store)) {
+        if (
+          store &&
+          !isShippingMethodEnabled(parsed.data.pickupMethod, store)
+        ) {
           const err = new Error("此店鋪目前未開放所選物流方式") as any;
           err.status = 422;
           throw err;
@@ -211,17 +226,26 @@ router.post("/p/:shareToken/orders", submitOrderLimiter, async (req, res) => {
           throw err;
         }
 
-        if (product.inventory !== null && parsed.data.quantity > product.inventory) {
+        if (
+          product.inventory !== null &&
+          parsed.data.quantity > product.inventory
+        ) {
           const err = new Error("庫存不足") as any;
           err.status = 409;
           throw err;
         }
 
         const unitPrice = product.price as string;
-        const shippingFee = getShippingFee(parsed.data.pickupMethod, shippingFeeOverride);
+        const shippingFee = getShippingFee(
+          parsed.data.pickupMethod,
+          shippingFeeOverride,
+        );
         // totalPrice = 商品小計（不含運費）。訂單總額由 shippingFee + totalPrice 計算
         // （與 merchant orders 的 formatOrder 語意一致，避免運費被重複計算）。
-        const totalPrice = multiplyMoneyByQuantity(unitPrice, parsed.data.quantity);
+        const totalPrice = multiplyMoneyByQuantity(
+          unitPrice,
+          parsed.data.quantity,
+        );
         // Snapshot sale price is product.price, the order-time unit price.
         // If discounts later change the actual unit price, pass that order unitPrice here instead.
         const profitSnapshotInput = await loadOrderProfitSnapshotInput(
@@ -244,7 +268,7 @@ router.post("/p/:shareToken/orders", submitOrderLimiter, async (req, res) => {
 
         // CVS store data from validated body. storeSelectedBy is always forced to
         // "customer" on this public endpoint — never trust the client's value.
-        const hasCvs = !!(parsed.data.cvsStoreId);
+        const hasCvs = !!parsed.data.cvsStoreId;
 
         const [newOrder] = await tx
           .insert(ordersTable)
@@ -267,7 +291,9 @@ router.post("/p/:shareToken/orders", submitOrderLimiter, async (req, res) => {
             status: "pending",
             cvsStoreId: hasCvs ? (parsed.data.cvsStoreId ?? null) : null,
             cvsStoreName: hasCvs ? (parsed.data.cvsStoreName ?? null) : null,
-            cvsStoreAddress: hasCvs ? (parsed.data.cvsStoreAddress ?? null) : null,
+            cvsStoreAddress: hasCvs
+              ? (parsed.data.cvsStoreAddress ?? null)
+              : null,
             cvsStorePhone: hasCvs ? (parsed.data.cvsStorePhone ?? null) : null,
             storeSelectedBy: hasCvs ? "customer" : null,
             storeSelectedAt: hasCvs ? new Date() : null,
@@ -285,9 +311,14 @@ router.post("/p/:shareToken/orders", submitOrderLimiter, async (req, res) => {
 
       return res.status(201).json(formatPublicOrderCreatedResponse(order));
     } catch (err: any) {
-      if (err.status === 404) return res.status(404).json({ error: err.message });
-      if (err.status === 409) return res.status(409).json({ error: err.message });
-      if (err.status === 422) return res.status(422).json({ error: err.message, message: err.displayMessage });
+      if (err.status === 404)
+        return res.status(404).json({ error: err.message });
+      if (err.status === 409)
+        return res.status(409).json({ error: err.message });
+      if (err.status === 422)
+        return res
+          .status(422)
+          .json({ error: err.message, message: err.displayMessage });
       // Retry on publicToken unique collision (Postgres code 23505)
       if (err.code === "23505" && retries < 3) {
         retries++;
@@ -307,16 +338,25 @@ router.post("/cart/orders", submitOrderLimiter, async (req, res) => {
   const body = req.body;
 
   // Manual validation (no zod dep needed for inline schema)
-  if (!body.buyerName?.trim() || !body.buyerPhone?.trim() || !body.pickupMethod?.trim()) {
-    return res.status(400).json({ error: "buyerName, buyerPhone, and pickupMethod are required" });
+  if (
+    !body.buyerName?.trim() ||
+    !body.buyerPhone?.trim() ||
+    !body.pickupMethod?.trim()
+  ) {
+    return res
+      .status(400)
+      .json({ error: "buyerName, buyerPhone, and pickupMethod are required" });
   }
   if (!Array.isArray(body.items) || body.items.length === 0) {
     return res.status(400).json({ error: "items must be a non-empty array" });
   }
   for (const item of body.items) {
-    if (!item.shareToken?.trim()) return res.status(400).json({ error: "each item requires shareToken" });
+    if (!item.shareToken?.trim())
+      return res.status(400).json({ error: "each item requires shareToken" });
     if (!Number.isInteger(item.quantity) || item.quantity < 1) {
-      return res.status(400).json({ error: "each item quantity must be a positive integer" });
+      return res
+        .status(400)
+        .json({ error: "each item quantity must be a positive integer" });
     }
   }
   let paymentLast5: string | null;
@@ -326,9 +366,10 @@ router.post("/cart/orders", submitOrderLimiter, async (req, res) => {
     return res.status(422).json({ error: (error as Error).message });
   }
 
-  const shippingFeeOverride = typeof body.shippingFee === "number" ? body.shippingFee : undefined;
+  const shippingFeeOverride =
+    typeof body.shippingFee === "number" ? body.shippingFee : undefined;
   const shippingFee = getShippingFee(body.pickupMethod, shippingFeeOverride);
-  const hasCvs = !!(body.cvsStoreId);
+  const hasCvs = !!body.cvsStoreId;
 
   let retries = 0;
   while (retries <= 3) {
@@ -381,7 +422,10 @@ router.post("/cart/orders", submitOrderLimiter, async (req, res) => {
             err.status = 422;
             throw err;
           }
-          if (product.orderDeadlineAt && new Date() >= product.orderDeadlineAt) {
+          if (
+            product.orderDeadlineAt &&
+            new Date() >= product.orderDeadlineAt
+          ) {
             const err = new Error("PRODUCT_ORDER_DEADLINE_PASSED") as any;
             err.status = 422;
             err.displayMessage = `商品「${product.name}」已截止收單，無法送出訂單。`;
@@ -414,21 +458,32 @@ router.post("/cart/orders", submitOrderLimiter, async (req, res) => {
           snapshotItems.push({
             item: resolvedItem,
             quantity: qty,
-            snapshotInput: await loadOrderProfitSnapshotInput(tx, product, product.price),
+            snapshotInput: await loadOrderProfitSnapshotInput(
+              tx,
+              product,
+              product.price,
+            ),
           });
         }
 
-        const cartSnapshot = createCartOrderProfitSnapshot(snapshotItems, capturedAt);
-        const resolvedItems = cartSnapshot.items.map(({ item, profitSnapshot }) => ({
-          ...item,
-          profitSnapshot,
-        }));
+        const cartSnapshot = createCartOrderProfitSnapshot(
+          snapshotItems,
+          capturedAt,
+        );
+        const resolvedItems = cartSnapshot.items.map(
+          ({ item, profitSnapshot }) => ({
+            ...item,
+            profitSnapshot,
+          }),
+        );
         const first = resolvedItems[0];
         const itemsSubtotal = snapshotItems.reduce(
-          (sum, { snapshotInput, quantity }) => sum.add(
-            ExactDecimal.from(snapshotInput.unitPriceTwd as string)
-              .multiply(ExactDecimal.from(String(quantity))),
-          ),
+          (sum, { snapshotInput, quantity }) =>
+            sum.add(
+              ExactDecimal.from(snapshotInput.unitPriceTwd as string).multiply(
+                ExactDecimal.from(String(quantity)),
+              ),
+            ),
           ExactDecimal.zero(),
         );
 
@@ -436,7 +491,13 @@ router.post("/cart/orders", submitOrderLimiter, async (req, res) => {
           .insert(ordersTable)
           .values({
             productId: first.productId,
-            storeId: (await tx.select({ storeId: productsTable.storeId }).from(productsTable).where(eq(productsTable.id, first.productId)).limit(1))[0].storeId,
+            storeId: (
+              await tx
+                .select({ storeId: productsTable.storeId })
+                .from(productsTable)
+                .where(eq(productsTable.id, first.productId))
+                .limit(1)
+            )[0].storeId,
             productName: first.productName,
             publicToken,
             buyerName: body.buyerName.trim(),
@@ -478,124 +539,157 @@ router.post("/cart/orders", submitOrderLimiter, async (req, res) => {
         items: sanitizePublicCartItems(result.items) ?? [],
       });
     } catch (err: any) {
-      if (err.status === 404) return res.status(404).json({ error: err.message });
-      if (err.status === 409) return res.status(409).json({ error: err.message });
-      if (err.status === 422) return res.status(422).json({ error: err.message, message: err.displayMessage });
-      if (err.code === "23505" && retries < 3) { retries++; continue; }
+      if (err.status === 404)
+        return res.status(404).json({ error: err.message });
+      if (err.status === 409)
+        return res.status(409).json({ error: err.message });
+      if (err.status === 422)
+        return res
+          .status(422)
+          .json({ error: err.message, message: err.displayMessage });
+      if (err.code === "23505" && retries < 3) {
+        retries++;
+        continue;
+      }
       throw err;
     }
   }
   throw new Error("Failed to generate unique publicToken after retries");
 });
 
-router.get("/orders/track/:publicToken", trackOrderLimiter, async (req, res) => {
-  const publicToken = req.params.publicToken as string;
+router.get(
+  "/orders/track/:publicToken",
+  trackOrderLimiter,
+  async (req, res) => {
+    const publicToken = req.params.publicToken as string;
 
-  const [order] = await db
-    .select()
-    .from(ordersTable)
-    .where(eq(ordersTable.publicToken, publicToken))
-    .limit(1);
+    const [order] = await db
+      .select()
+      .from(ordersTable)
+      .where(eq(ordersTable.publicToken, publicToken))
+      .limit(1);
 
-  if (!order || !order.publicToken) {
-    return res.status(404).json({ error: "Order not found" });
-  }
+    if (!order || !order.publicToken) {
+      return res.status(404).json({ error: "Order not found" });
+    }
 
-  const [store] = await db
-    .select({ name: storesTable.name })
-    .from(storesTable)
-    .where(eq(storesTable.id, order.storeId))
-    .limit(1);
+    const [store] = await db
+      .select({ name: storesTable.name })
+      .from(storesTable)
+      .where(eq(storesTable.id, order.storeId))
+      .limit(1);
 
-  const [tracking] = await db
-    .select({
-      trackingCode: shipmentTrackingsTable.trackingCode,
-      trackingProvider: shipmentTrackingsTable.trackingProvider,
-      trackingStatus: shipmentTrackingsTable.trackingStatus,
-      latestEventStatus: shipmentTrackingsTable.latestEventStatus,
-      latestEventAt: shipmentTrackingsTable.latestEventAt,
-      updatedAt: shipmentTrackingsTable.updatedAt,
-    })
-    .from(shipmentTrackingsTable)
-    .where(and(eq(shipmentTrackingsTable.orderId, order.id), eq(shipmentTrackingsTable.isActive, true)))
-    .orderBy(desc(shipmentTrackingsTable.id))
-    .limit(1);
+    const [tracking] = await db
+      .select({
+        trackingCode: shipmentTrackingsTable.trackingCode,
+        trackingProvider: shipmentTrackingsTable.trackingProvider,
+        trackingStatus: shipmentTrackingsTable.trackingStatus,
+        latestEventStatus: shipmentTrackingsTable.latestEventStatus,
+        latestEventAt: shipmentTrackingsTable.latestEventAt,
+        updatedAt: shipmentTrackingsTable.updatedAt,
+      })
+      .from(shipmentTrackingsTable)
+      .where(
+        and(
+          eq(shipmentTrackingsTable.orderId, order.id),
+          eq(shipmentTrackingsTable.isActive, true),
+        ),
+      )
+      .orderBy(desc(shipmentTrackingsTable.id))
+      .limit(1);
 
-  const trackingCode = tracking?.trackingCode ?? order.trackingCode ?? null;
-  const trackingProvider = tracking?.trackingProvider ?? order.trackingProvider ?? null;
-  // 查詢任務連續失敗（failed）對客人顯示為「需店家確認」，不暴露技術錯誤
-  const latestTrackingStatus = tracking
-    ? (tracking.trackingStatus === "failed" ? "exception" : tracking.latestEventStatus)
-    : null;
+    const trackingCode = tracking?.trackingCode ?? order.trackingCode ?? null;
+    const trackingProvider =
+      tracking?.trackingProvider ?? order.trackingProvider ?? null;
+    // 查詢任務連續失敗（failed）對客人顯示為「需店家確認」，不暴露技術錯誤
+    const latestTrackingStatus = tracking
+      ? tracking.trackingStatus === "failed"
+        ? "exception"
+        : tracking.latestEventStatus
+      : null;
 
-  const shippingFee = parseFloat(order.shippingFee as string ?? "0");
-  const totalPrice = parseFloat(order.totalPrice as string);
-  return res.json({
-    publicToken: order.publicToken,
-    productName: order.productName,
-    quantity: order.quantity,
-    unitPrice: parseFloat(order.unitPrice as string),
-    shippingFee,
-    totalPrice,
-    orderTotal: Math.max(totalPrice + shippingFee - (order.discountAmount ?? 0), 0),
-    paymentLast5: order.paymentLast5 ?? null,
-    pickupMethod: order.pickupMethod,
-    specValues: order.specValues ?? {},
-    status: order.status,
-    statusLabel: STATUS_LABELS[order.status] ?? order.status,
-    shippingStatus: order.shippingStatus ?? "not_shipped",
-    shippingStatusLabel: SHIPPING_STATUS_LABELS[order.shippingStatus ?? "not_shipped"] ?? order.shippingStatus,
-    trackingCode,
-    trackingProvider,
-    trackingProviderLabel: trackingProvider
-      ? publicTrackingProviderLabel(trackingProvider)
-      : null,
-    latestTrackingStatus,
-    latestTrackingStatusLabel: latestTrackingStatus
-      ? (TRACKING_EVENT_STATUS_LABELS[latestTrackingStatus] ?? "物流資料需要店家確認")
-      : null,
-    latestTrackingTime: tracking?.latestEventAt?.toISOString() ?? null,
-    shipmentUpdatedAt: tracking?.updatedAt?.toISOString() ?? null,
-    storeName: store?.name ?? null,
-    recipientNameMasked: maskNameStrict(order.recipientName ?? order.buyerName ?? null) || null,
-    recipientPhoneMasked: maskPhone(order.recipientPhone ?? null) || null,
-    recipientAddressMasked: summarizeAddress(order.recipientAddress ?? null),
-    items: sanitizePublicCartItems(order.items),
-    createdAt: order.createdAt,
-    // STRICTLY EXCLUDED (private / personal info):
-    // internalNote, paymentNote, paidAmount, recipientPhone (full), recipientAddress (full),
-    // shippingNote, recipientName (full), paymentMethod, paymentStatus, remainingAmount,
-    // checkError, eventCode, rawData, cvsStoreId, cvsStoreName, cvsStoreAddress, cvsStorePhone,
-    // storeSelectedBy, storeSelectedAt
-  });
-});
+    const shippingFee = parseFloat((order.shippingFee as string) ?? "0");
+    const totalPrice = parseFloat(order.totalPrice as string);
+    return res.json({
+      publicToken: order.publicToken,
+      productName: order.productName,
+      quantity: order.quantity,
+      unitPrice: parseFloat(order.unitPrice as string),
+      shippingFee,
+      totalPrice,
+      orderTotal: Math.max(
+        totalPrice + shippingFee - (order.discountAmount ?? 0),
+        0,
+      ),
+      paymentLast5: order.paymentLast5 ?? null,
+      pickupMethod: order.pickupMethod,
+      specValues: order.specValues ?? {},
+      status: order.status,
+      statusLabel: STATUS_LABELS[order.status] ?? order.status,
+      shippingStatus: order.shippingStatus ?? "not_shipped",
+      shippingStatusLabel:
+        SHIPPING_STATUS_LABELS[order.shippingStatus ?? "not_shipped"] ??
+        order.shippingStatus,
+      trackingCode,
+      trackingProvider,
+      trackingProviderLabel: trackingProvider
+        ? publicTrackingProviderLabel(trackingProvider)
+        : null,
+      latestTrackingStatus,
+      latestTrackingStatusLabel: latestTrackingStatus
+        ? (TRACKING_EVENT_STATUS_LABELS[latestTrackingStatus] ??
+          "物流資料需要店家確認")
+        : null,
+      latestTrackingTime: tracking?.latestEventAt?.toISOString() ?? null,
+      shipmentUpdatedAt: tracking?.updatedAt?.toISOString() ?? null,
+      storeName: store?.name ?? null,
+      recipientNameMasked:
+        maskNameStrict(order.recipientName ?? order.buyerName ?? null) || null,
+      recipientPhoneMasked: maskPhone(order.recipientPhone ?? null) || null,
+      recipientAddressMasked: summarizeAddress(order.recipientAddress ?? null),
+      items: sanitizePublicCartItems(order.items),
+      createdAt: order.createdAt,
+      // STRICTLY EXCLUDED (private / personal info):
+      // internalNote, paymentNote, paidAmount, recipientPhone (full), recipientAddress (full),
+      // shippingNote, recipientName (full), paymentMethod, paymentStatus, remainingAmount,
+      // checkError, eventCode, rawData, cvsStoreId, cvsStoreName, cvsStoreAddress, cvsStorePhone,
+      // storeSelectedBy, storeSelectedAt
+    });
+  },
+);
 
-router.patch("/orders/track/:publicToken/payment-last5", trackOrderLimiter, async (req, res) => {
-  const publicToken = req.params.publicToken as string;
-  const [order] = await db
-    .select({ id: ordersTable.id, status: ordersTable.status })
-    .from(ordersTable)
-    .where(eq(ordersTable.publicToken, publicToken))
-    .limit(1);
+router.patch(
+  "/orders/track/:publicToken/payment-last5",
+  trackOrderLimiter,
+  async (req, res) => {
+    const publicToken = req.params.publicToken as string;
+    const [order] = await db
+      .select({ id: ordersTable.id, status: ordersTable.status })
+      .from(ordersTable)
+      .where(eq(ordersTable.publicToken, publicToken))
+      .limit(1);
 
-  if (!order) return res.status(404).json({ error: "Order not found" });
-  if (order.status !== "pending" && order.status !== "awaiting_payment") {
-    return res.status(409).json({ error: "付款末五碼僅能在待確認或待付款期間修改" });
-  }
+    if (!order) return res.status(404).json({ error: "Order not found" });
+    if (order.status !== "pending" && order.status !== "awaiting_payment") {
+      return res
+        .status(409)
+        .json({ error: "付款末五碼僅能在待確認或待付款期間修改" });
+    }
 
-  let paymentLast5: string | null;
-  try {
-    paymentLast5 = parsePaymentLast5(req.body?.paymentLast5);
-  } catch (error) {
-    return res.status(422).json({ error: (error as Error).message });
-  }
+    let paymentLast5: string | null;
+    try {
+      paymentLast5 = parsePaymentLast5(req.body?.paymentLast5);
+    } catch (error) {
+      return res.status(422).json({ error: (error as Error).message });
+    }
 
-  const [updated] = await db
-    .update(ordersTable)
-    .set({ paymentLast5 })
-    .where(eq(ordersTable.id, order.id))
-    .returning({ paymentLast5: ordersTable.paymentLast5 });
-  return res.json({ paymentLast5: updated?.paymentLast5 ?? null });
-});
+    const [updated] = await db
+      .update(ordersTable)
+      .set({ paymentLast5 })
+      .where(eq(ordersTable.id, order.id))
+      .returning({ paymentLast5: ordersTable.paymentLast5 });
+    return res.json({ paymentLast5: updated?.paymentLast5 ?? null });
+  },
+);
 
 export default router;

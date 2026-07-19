@@ -15,13 +15,19 @@ import assert from "node:assert/strict";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
+const ROOT = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../../../..",
+);
 
 mock.module("@clerk/express", {
   namedExports: {
     getAuth: (req) => {
       const userId = req.headers?.["x-test-user-id"] ?? null;
-      return { userId: userId || null, sessionClaims: userId ? { userId } : undefined };
+      return {
+        userId: userId || null,
+        sessionClaims: userId ? { userId } : undefined,
+      };
     },
     clerkMiddleware: () => (_req, _res, next) => next(),
   },
@@ -56,7 +62,10 @@ async function makeOrder() {
 const patchOrder = (orderId, body) =>
   fetch(`${baseUrl}/orders/${orderId}`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json", "x-test-user-id": TEST_USER },
+    headers: {
+      "Content-Type": "application/json",
+      "x-test-user-id": TEST_USER,
+    },
     body: JSON.stringify(body),
   });
 
@@ -71,11 +80,16 @@ const activeRows = async (orderId) =>
 
 const allRows = async (orderId) =>
   (
-    await pool.query(`SELECT id, is_active, tracking_status FROM shipment_trackings WHERE order_id = $1`, [orderId])
+    await pool.query(
+      `SELECT id, is_active, tracking_status FROM shipment_trackings WHERE order_id = $1`,
+      [orderId],
+    )
   ).rows;
 
 before(async () => {
-  await new Promise((resolve) => { server = app.listen(0, resolve); });
+  await new Promise((resolve) => {
+    server = app.listen(0, resolve);
+  });
   baseUrl = `http://localhost:${server.address().port}/api`;
 
   const store = await pool.query(
@@ -99,7 +113,10 @@ after(async () => {
 describe("PATCH manual tracking seed — postoffice / tcat", () => {
   test("postoffice：建立 active pending manual row，不寫 events", async () => {
     const orderId = await makeOrder();
-    const res = await patchOrder(orderId, { trackingCode: CODE_A, trackingProvider: "postoffice" });
+    const res = await patchOrder(orderId, {
+      trackingCode: CODE_A,
+      trackingProvider: "postoffice",
+    });
     assert.equal(res.status, 200);
 
     const rows = await activeRows(orderId);
@@ -118,8 +135,14 @@ describe("PATCH manual tracking seed — postoffice / tcat", () => {
 
   test("idempotent：同 provider + 同碼重複 PATCH 不重複 insert", async () => {
     const orderId = await makeOrder();
-    await patchOrder(orderId, { trackingCode: TCAT_CODE, trackingProvider: "tcat" });
-    const res = await patchOrder(orderId, { trackingCode: TCAT_CODE, trackingProvider: "tcat" });
+    await patchOrder(orderId, {
+      trackingCode: TCAT_CODE,
+      trackingProvider: "tcat",
+    });
+    const res = await patchOrder(orderId, {
+      trackingCode: TCAT_CODE,
+      trackingProvider: "tcat",
+    });
     assert.equal(res.status, 200);
 
     const rows = await allRows(orderId);
@@ -128,8 +151,14 @@ describe("PATCH manual tracking seed — postoffice / tcat", () => {
 
   test("換碼：舊 active row retire，新 row 建立，同時只有一筆 active", async () => {
     const orderId = await makeOrder();
-    await patchOrder(orderId, { trackingCode: CODE_B, trackingProvider: "postoffice" });
-    const res = await patchOrder(orderId, { trackingCode: "97300922002170839003", trackingProvider: "postoffice" });
+    await patchOrder(orderId, {
+      trackingCode: CODE_B,
+      trackingProvider: "postoffice",
+    });
+    const res = await patchOrder(orderId, {
+      trackingCode: "97300922002170839003",
+      trackingProvider: "postoffice",
+    });
     assert.equal(res.status, 200);
 
     const all = await allRows(orderId);
@@ -143,7 +172,10 @@ describe("PATCH manual tracking seed — postoffice / tcat", () => {
 
   test("tcat：建 row", async () => {
     const orderId = await makeOrder();
-    await patchOrder(orderId, { trackingCode: "135063214098", trackingProvider: "tcat" });
+    await patchOrder(orderId, {
+      trackingCode: "135063214098",
+      trackingProvider: "tcat",
+    });
     const rows = await activeRows(orderId);
     assert.equal(rows.length, 1);
     assert.equal(rows[0].tracking_provider, "tcat");
@@ -153,21 +185,30 @@ describe("PATCH manual tracking seed — postoffice / tcat", () => {
 describe("PATCH manual tracking seed — out of scope providers", () => {
   test("711：不建 row", async () => {
     const orderId = await makeOrder();
-    const res = await patchOrder(orderId, { trackingCode: "C55282156299", trackingProvider: "711" });
+    const res = await patchOrder(orderId, {
+      trackingCode: "C55282156299",
+      trackingProvider: "711",
+    });
     assert.equal(res.status, 200);
     assert.equal((await allRows(orderId)).length, 0);
   });
 
   test("familymart：不建 row（避免影響 scheduled sync）", async () => {
     const orderId = await makeOrder();
-    const res = await patchOrder(orderId, { trackingCode: "F1234567890", trackingProvider: "familymart" });
+    const res = await patchOrder(orderId, {
+      trackingCode: "F1234567890",
+      trackingProvider: "familymart",
+    });
     assert.equal(res.status, 200);
     assert.equal((await allRows(orderId)).length, 0);
   });
 
   test("空 trackingCode：不建 row", async () => {
     const orderId = await makeOrder();
-    const res = await patchOrder(orderId, { trackingCode: "", trackingProvider: "postoffice" });
+    const res = await patchOrder(orderId, {
+      trackingCode: "",
+      trackingProvider: "postoffice",
+    });
     assert.equal(res.status, 200);
     assert.equal((await allRows(orderId)).length, 0);
   });

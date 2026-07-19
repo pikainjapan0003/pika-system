@@ -3,7 +3,9 @@ import { db, ordersTable } from "@workspace/db";
 import type { CandidateOrder } from "./types.ts";
 
 /** Read-only projection of one store's orders for dry-run matching. Never mutates anything. */
-export async function loadCandidateOrders(storeId: number): Promise<CandidateOrder[]> {
+export async function loadCandidateOrders(
+  storeId: number,
+): Promise<CandidateOrder[]> {
   const rows = await db
     .select({
       id: ordersTable.id,

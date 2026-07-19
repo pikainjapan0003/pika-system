@@ -5,7 +5,10 @@ import {
 
 export const SHIPPING_FEE_MAP = PICKUP_METHOD_SHIPPING_FEE;
 
-export function getShippingFee(pickupMethod: string, overrideShippingFee?: number): number {
+export function getShippingFee(
+  pickupMethod: string,
+  overrideShippingFee?: number,
+): number {
   if (overrideShippingFee !== undefined) return overrideShippingFee;
   return getCanonicalShippingFee(pickupMethod);
 }

@@ -45,8 +45,15 @@ export function signPreviewToken(
   payload: Omit<PreviewTokenPayload, "v" | "purpose" | "expiresAt">,
   now: Date = new Date(),
 ): { token: string; expiresAt: string } {
-  const expiresAt = new Date(now.getTime() + PREVIEW_TOKEN_TTL_MS).toISOString();
-  const full: PreviewTokenPayload = { v: 1, purpose: "manual-provider-commit", ...payload, expiresAt };
+  const expiresAt = new Date(
+    now.getTime() + PREVIEW_TOKEN_TTL_MS,
+  ).toISOString();
+  const full: PreviewTokenPayload = {
+    v: 1,
+    purpose: "manual-provider-commit",
+    ...payload,
+    expiresAt,
+  };
   const payloadPart = b64url(Buffer.from(JSON.stringify(full), "utf8"));
   const sig = createHmac("sha256", deriveKey()).update(payloadPart).digest();
   return { token: `${payloadPart}.${b64url(sig)}`, expiresAt };
@@ -56,7 +63,10 @@ export type VerifyPreviewTokenResult =
   | { ok: true; payload: PreviewTokenPayload }
   | { ok: false; errorCode: "PREVIEW_HASH_INVALID" | "PREVIEW_EXPIRED" };
 
-export function verifyPreviewToken(token: string, now: Date = new Date()): VerifyPreviewTokenResult {
+export function verifyPreviewToken(
+  token: string,
+  now: Date = new Date(),
+): VerifyPreviewTokenResult {
   const parts = token.split(".");
   if (parts.length !== 2 || !parts[0] || !parts[1]) {
     return { ok: false, errorCode: "PREVIEW_HASH_INVALID" };
@@ -80,7 +90,10 @@ export function verifyPreviewToken(token: string, now: Date = new Date()): Verif
   if (payload.v !== 1 || payload.purpose !== "manual-provider-commit") {
     return { ok: false, errorCode: "PREVIEW_HASH_INVALID" };
   }
-  if (!payload.expiresAt || new Date(payload.expiresAt).getTime() <= now.getTime()) {
+  if (
+    !payload.expiresAt ||
+    new Date(payload.expiresAt).getTime() <= now.getTime()
+  ) {
     return { ok: false, errorCode: "PREVIEW_EXPIRED" };
   }
   return { ok: true, payload };

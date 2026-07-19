@@ -14,7 +14,11 @@ const COLUMN_CANDIDATES: Record<string, string[]> = {
 const cellText = (cell: ExcelJS.Cell): string => {
   const v = cell.value;
   if (v == null) return "";
-  if (typeof v === "object" && "richText" in v) return v.richText.map((r) => r.text).join("").trim();
+  if (typeof v === "object" && "richText" in v)
+    return v.richText
+      .map((r) => r.text)
+      .join("")
+      .trim();
   if (typeof v === "object" && "text" in v) return String(v.text).trim();
   return String(v).trim();
 };
@@ -23,7 +27,10 @@ const cellText = (cell: ExcelJS.Cell): string => {
  * Parses a FamilyMart 好賣＋ order export. Columns are located by header label
  * (the header row is the one containing 寄件編號), never by fixed letters.
  */
-export async function parseFamilyMartSpreadsheet(filePath: string, fileName: string): Promise<ParsedSpreadsheet> {
+export async function parseFamilyMartSpreadsheet(
+  filePath: string,
+  fileName: string,
+): Promise<ParsedSpreadsheet> {
   const wb = new ExcelJS.Workbook();
   await wb.xlsx.readFile(filePath);
   const ws = wb.worksheets[0];
@@ -35,22 +42,32 @@ export async function parseFamilyMartSpreadsheet(filePath: string, fileName: str
     if (headerRow) return;
     const labels: Record<string, string> = {};
     row.eachCell((cell) => {
-      labels[cell.address.replace(/\d+/g, "")] = cellText(cell).replace(/\s/g, "");
+      labels[cell.address.replace(/\d+/g, "")] = cellText(cell).replace(
+        /\s/g,
+        "",
+      );
     });
     if (!Object.values(labels).some((l) => l.includes("寄件編號"))) return;
     headerRow = rowNumber;
     for (const [field, names] of Object.entries(COLUMN_CANDIDATES)) {
       for (const [col, label] of Object.entries(labels)) {
-        if (names.some((n) => label.includes(n))) { columnMapping[field] = col; break; }
+        if (names.some((n) => label.includes(n))) {
+          columnMapping[field] = col;
+          break;
+        }
       }
     }
   });
-  if (!headerRow || !columnMapping.trackingCode) throw new Error("FORM_PARSE_FAILED: FamilyMart header row not found");
+  if (!headerRow || !columnMapping.trackingCode)
+    throw new Error("FORM_PARSE_FAILED: FamilyMart header row not found");
 
   const rows: LogisticsImportRow[] = [];
   ws.eachRow((row, rowNumber) => {
     if (rowNumber <= headerRow) return;
-    const get = (field: string) => (columnMapping[field] ? cellText(row.getCell(columnMapping[field])) || null : null);
+    const get = (field: string) =>
+      columnMapping[field]
+        ? cellText(row.getCell(columnMapping[field])) || null
+        : null;
     const trackingCode = get("trackingCode");
     if (!trackingCode) return;
     rows.push({
