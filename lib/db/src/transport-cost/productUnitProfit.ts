@@ -1,11 +1,6 @@
-import {
-  ExactDecimal,
-  PENDING_CONFIRMATION_LABEL,
-} from "./index.ts";
+import { ExactDecimal, PENDING_CONFIRMATION_LABEL } from "./index.ts";
 import type { DecimalInput } from "./index.ts";
-import {
-  resolveProductTransportCost,
-} from "./productTransportCost.ts";
+import { resolveProductTransportCost } from "./productTransportCost.ts";
 import type {
   ProductTransportCostResult,
   ResolveProductTransportCostInput,
@@ -64,12 +59,17 @@ export type ProductUnitProfitResult =
   | PendingProductUnitProfit;
 
 function isEmptyDecimal(value: DecimalInput): value is null | undefined | "" {
-  return value === null
-    || value === undefined
-    || (typeof value === "string" && value.trim() === "");
+  return (
+    value === null ||
+    value === undefined ||
+    (typeof value === "string" && value.trim() === "")
+  );
 }
 
-function parseRequiredNonNegativeDecimal(value: DecimalInput, fieldName: string): ExactDecimal {
+function parseRequiredNonNegativeDecimal(
+  value: DecimalInput,
+  fieldName: string,
+): ExactDecimal {
   if (isEmptyDecimal(value)) {
     throw new TypeError(`${fieldName} requires a decimal value`);
   }
@@ -126,7 +126,10 @@ export function calculateProductUnitProfit(
     };
   }
 
-  const unitPriceTwd = parseRequiredNonNegativeDecimal(input.unitPriceTwd, "unitPriceTwd");
+  const unitPriceTwd = parseRequiredNonNegativeDecimal(
+    input.unitPriceTwd,
+    "unitPriceTwd",
+  );
   const costJpy = parseRequiredNonNegativeDecimal(input.costJpy, "costJpy");
   const storeRate = parseRequiredNonNegativeDecimal(
     input.storePurchaseExchangeRate,

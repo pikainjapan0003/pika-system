@@ -1,4 +1,12 @@
-import { index, integer, pgTable, serial, text, timestamp, unique } from "drizzle-orm/pg-core";
+import {
+  index,
+  integer,
+  pgTable,
+  serial,
+  text,
+  timestamp,
+  unique,
+} from "drizzle-orm/pg-core";
 import { storesTable } from "./stores.ts";
 
 export const productCategoriesTable = pgTable(
@@ -9,7 +17,9 @@ export const productCategoriesTable = pgTable(
       .notNull()
       .references(() => storesTable.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     index("product_categories_store_id_idx").on(t.storeId),

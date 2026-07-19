@@ -950,7 +950,8 @@ components:
 
     Product:
       type: object
-      required: [id, storeId, name, price, inventory, shareToken, isActive, createdAt]
+      required:
+        [id, storeId, name, price, inventory, shareToken, isActive, createdAt]
       properties:
         id:
           type: integer
@@ -1141,7 +1142,22 @@ components:
 
     TripRoute:
       type: object
-      required: [id, tripId, areaTitle, startPlace, endPlace, trainJpy, fuelJpy, parkingJpy, estQty, cardboardJpy, shippingJpy, parcelCount, createdAt]
+      required:
+        [
+          id,
+          tripId,
+          areaTitle,
+          startPlace,
+          endPlace,
+          trainJpy,
+          fuelJpy,
+          parkingJpy,
+          estQty,
+          cardboardJpy,
+          shippingJpy,
+          parcelCount,
+          createdAt,
+        ]
       properties:
         id:
           type: integer
@@ -1298,11 +1314,33 @@ components:
 
     ShippingStatus:
       type: string
-      enum: [not_shipped, preparing, shipped, arrived, picked_up, returned, cancelled]
+      enum:
+        [
+          not_shipped,
+          preparing,
+          shipped,
+          arrived,
+          picked_up,
+          returned,
+          cancelled,
+        ]
 
     Order:
       type: object
-      required: [id, productId, storeId, publicToken, buyerName, buyerPhone, pickupMethod, quantity, totalPrice, status, createdAt]
+      required:
+        [
+          id,
+          productId,
+          storeId,
+          publicToken,
+          buyerName,
+          buyerPhone,
+          pickupMethod,
+          quantity,
+          totalPrice,
+          status,
+          createdAt,
+        ]
       properties:
         id:
           type: integer
@@ -1342,7 +1380,15 @@ components:
           type: ["string", "null"]
         status:
           type: string
-          enum: [pending, awaiting_payment, preparing, shipped, completed, cancelled]
+          enum:
+            [
+              pending,
+              awaiting_payment,
+              preparing,
+              shipped,
+              completed,
+              cancelled,
+            ]
         paymentMethod:
           $ref: "#/components/schemas/PaymentMethod"
         paymentStatus:
@@ -1386,7 +1432,20 @@ components:
 
     PublicOrder:
       type: object
-      required: [publicToken, quantity, unitPrice, shippingFee, totalPrice, orderTotal, pickupMethod, status, statusLabel, shippingStatus, createdAt]
+      required:
+        [
+          publicToken,
+          quantity,
+          unitPrice,
+          shippingFee,
+          totalPrice,
+          orderTotal,
+          pickupMethod,
+          status,
+          statusLabel,
+          shippingStatus,
+          createdAt,
+        ]
       properties:
         publicToken:
           type: string
@@ -1408,7 +1467,15 @@ components:
           type: object
         status:
           type: string
-          enum: [pending, awaiting_payment, preparing, shipped, completed, cancelled]
+          enum:
+            [
+              pending,
+              awaiting_payment,
+              preparing,
+              shipped,
+              completed,
+              cancelled,
+            ]
         statusLabel:
           type: string
         shippingStatus:
@@ -1596,7 +1663,15 @@ components:
       properties:
         status:
           type: string
-          enum: [pending, awaiting_payment, preparing, shipped, completed, cancelled]
+          enum:
+            [
+              pending,
+              awaiting_payment,
+              preparing,
+              shipped,
+              completed,
+              cancelled,
+            ]
 
     StoreStats:
       type: object
@@ -1704,7 +1779,19 @@ components:
 
     ShippingListOrder:
       type: object
-      required: [orderId, orderNumber, status, buyerName, buyerPhone, productName, quantity, paymentStatus, shippingStatus, itemsText]
+      required:
+        [
+          orderId,
+          orderNumber,
+          status,
+          buyerName,
+          buyerPhone,
+          productName,
+          quantity,
+          paymentStatus,
+          shippingStatus,
+          itemsText,
+        ]
       properties:
         orderId:
           type: integer
@@ -1889,7 +1976,13 @@ components:
           enum: [disabled, enabled]
         agentMode:
           type: string
-          enum: [rule_worker, external_agent, self_hosted_webhook, platform_managed_reserved]
+          enum:
+            [
+              rule_worker,
+              external_agent,
+              self_hosted_webhook,
+              platform_managed_reserved,
+            ]
         enabledLogistics:
           type: array
           items:

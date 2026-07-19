@@ -1,7 +1,4 @@
-import {
-  PENDING_CONFIRMATION_LABEL,
-  calculateTransportCost,
-} from "./index.ts";
+import { PENDING_CONFIRMATION_LABEL, calculateTransportCost } from "./index.ts";
 import type {
   DecimalInput,
   PendingTransportCost,
@@ -49,7 +46,10 @@ export interface ResolveProductTransportCostInput {
 export interface PendingProductTransportCost {
   status: "pending_confirmation";
   label: typeof PENDING_CONFIRMATION_LABEL;
-  reason: "missing_trip_route_attachment" | "missing_trip_route" | "missing_trip";
+  reason:
+    | "missing_trip_route_attachment"
+    | "missing_trip_route"
+    | "missing_trip";
 }
 
 export type ProductTransportCostResult =
@@ -57,7 +57,9 @@ export type ProductTransportCostResult =
   | PendingTransportCost
   | PendingProductTransportCost;
 
-function pending(reason: PendingProductTransportCost["reason"]): PendingProductTransportCost {
+function pending(
+  reason: PendingProductTransportCost["reason"],
+): PendingProductTransportCost {
   return {
     status: "pending_confirmation",
     label: PENDING_CONFIRMATION_LABEL,
