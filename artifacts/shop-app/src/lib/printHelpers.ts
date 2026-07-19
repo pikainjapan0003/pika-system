@@ -1,4 +1,9 @@
-import type { Order, PickingListResponse, ShippingListResponse, ShippingListOrder } from "@workspace/api-client-react";
+import type {
+  Order,
+  PickingListResponse,
+  ShippingListResponse,
+  ShippingListOrder,
+} from "@workspace/api-client-react";
 import type { OrderStatus } from "@workspace/db";
 
 import { STATUS_LABELS } from "./orderStatus";
@@ -21,20 +26,30 @@ type PrintableOrder = Order & {
 function normalizeOrderItems(order: PrintableOrder): PrintOrderItem[] {
   if (Array.isArray(order.items) && order.items.length > 0) return order.items;
   const qty = order.quantity ?? 1;
-  const unitPrice = order.unitPrice != null
-    ? Number(order.unitPrice)
-    : (order.totalPrice != null && qty > 0 ? Number(order.totalPrice) / qty : 0);
-  return [{
-    productName: order.productName ?? "（商品）",
-    specValues: (order.specValues as Record<string, string> | null | undefined) ?? null,
-    quantity: qty,
-    unitPrice,
-    subtotal: unitPrice * qty,
-  }];
+  const unitPrice =
+    order.unitPrice != null
+      ? Number(order.unitPrice)
+      : order.totalPrice != null && qty > 0
+        ? Number(order.totalPrice) / qty
+        : 0;
+  return [
+    {
+      productName: order.productName ?? "（商品）",
+      specValues:
+        (order.specValues as Record<string, string> | null | undefined) ?? null,
+      quantity: qty,
+      unitPrice,
+      subtotal: unitPrice * qty,
+    },
+  ];
 }
 
 function esc(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 const SHARED_CSS = `
@@ -103,13 +118,25 @@ function showReceiptPreviewOverlay(html: string): void {
   document.body.appendChild(overlay);
 
   const pdoc = preview.contentDocument ?? preview.contentWindow?.document;
-  if (pdoc) { pdoc.open(); pdoc.write(html); pdoc.close(); }
+  if (pdoc) {
+    pdoc.open();
+    pdoc.write(html);
+    pdoc.close();
+  }
 
-  document.getElementById("__receipt_close__")?.addEventListener("click", () => overlay.remove());
-  document.getElementById("__receipt_open_tab__")?.addEventListener("click", () => {
-    const p = window.open("", "_blank");
-    if (p) { p.document.open(); p.document.write(html); p.document.close(); }
-  });
+  document
+    .getElementById("__receipt_close__")
+    ?.addEventListener("click", () => overlay.remove());
+  document
+    .getElementById("__receipt_open_tab__")
+    ?.addEventListener("click", () => {
+      const p = window.open("", "_blank");
+      if (p) {
+        p.document.open();
+        p.document.write(html);
+        p.document.close();
+      }
+    });
 }
 
 function openPrint(html: string): void {
@@ -118,13 +145,17 @@ function openPrint(html: string): void {
     // route. This ensures iOS Chrome / Google App share / PDF captures only the receipt
     // page, not the surrounding Orders page.
     try {
-      const key = (crypto as { randomUUID?: () => string }).randomUUID?.()
-        ?? `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+      const key =
+        (crypto as { randomUUID?: () => string }).randomUUID?.() ??
+        `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
       localStorage.setItem(
         `pickbee-receipt-preview:${key}`,
         JSON.stringify({ html, title: "銷貨單", createdAt: Date.now() }),
       );
-      const base = (import.meta.env.BASE_URL as string ?? "/").replace(/\/$/, "");
+      const base = ((import.meta.env.BASE_URL as string) ?? "/").replace(
+        /\/$/,
+        "",
+      );
       const url = `${base}/receipt-preview?key=${encodeURIComponent(key)}`;
       const opened = window.open(url, "_blank");
       if (opened) return;
@@ -158,7 +189,10 @@ function openPrint(html: string): void {
   document.body.appendChild(iframe);
 
   const doc = iframe.contentDocument ?? iframe.contentWindow?.document;
-  if (!doc) { cleanup(); return; }
+  if (!doc) {
+    cleanup();
+    return;
+  }
 
   doc.open();
   doc.write(html);
@@ -166,15 +200,25 @@ function openPrint(html: string): void {
 
   const triggerPrint = () => {
     const cw = iframe.contentWindow;
-    if (!cw) { cleanup(); return; }
-    try { cw.focus(); cw.print(); } catch { /* ignore */ }
+    if (!cw) {
+      cleanup();
+      return;
+    }
+    try {
+      cw.focus();
+      cw.print();
+    } catch {
+      /* ignore */
+    }
     cw.addEventListener("afterprint", cleanup, { once: true });
     setTimeout(cleanup, 5 * 60_000);
   };
 
   // Wait for images to load before printing (e.g. store logo from R2).
   setTimeout(() => {
-    const imgs = Array.from((doc as Document).images ?? []) as HTMLImageElement[];
+    const imgs = Array.from(
+      (doc as Document).images ?? [],
+    ) as HTMLImageElement[];
     const pending = imgs.filter((img) => !img.complete);
     if (pending.length === 0) {
       triggerPrint();
@@ -194,7 +238,12 @@ function openPrint(html: string): void {
       img.addEventListener("error", onSettle, { once: true });
     });
     // Safety: print even if images don't load within 5s.
-    setTimeout(() => { if (!fired) { fired = true; triggerPrint(); } }, 5000);
+    setTimeout(() => {
+      if (!fired) {
+        fired = true;
+        triggerPrint();
+      }
+    }, 5000);
   }, 250);
 }
 
@@ -207,22 +256,38 @@ const STORAGE_TEMP_LABELS: Record<string, string> = {
 export function printPickingList(data: PickingListResponse): void {
   const generatedAt = new Date(data.generatedAt).toLocaleString("zh-TW");
 
-  const excludedHtml = data.excludedOrderIds.length > 0
-    ? `<div class="warning">已排除 ${data.excludedOrderIds.length} 筆已取消訂單（ID: ${esc(data.excludedOrderIds.join("、"))}）</div>`
-    : "";
+  const excludedHtml =
+    data.excludedOrderIds.length > 0
+      ? `<div class="warning">已排除 ${data.excludedOrderIds.length} 筆已取消訂單（ID: ${esc(data.excludedOrderIds.join("、"))}）</div>`
+      : "";
 
-  const itemsHtml = data.items.map((item) => {
-    const tempLabel = item.storageTemp ? (STORAGE_TEMP_LABELS[item.storageTemp] ?? item.storageTemp) : null;
-    const rows = [
-      item.specLabel ? `<div class="row"><span class="row-label">規格</span><span class="row-value">${esc(item.specLabel)}</span></div>` : "",
-      item.skuCode ? `<div class="row"><span class="row-label">SKU</span><span class="row-value">${esc(item.skuCode)}</span></div>` : "",
-      tempLabel ? `<div class="row"><span class="row-label">溫層</span><span class="row-value">${esc(tempLabel)}</span></div>` : "",
-      item.shelfLife ? `<div class="row"><span class="row-label">保存期限</span><span class="row-value">${esc(item.shelfLife)}</span></div>` : "",
-      `<div class="row"><span class="row-label">對應訂單</span><span class="row-value">${esc(item.orderNumbers.join("、"))}</span></div>`,
-      item.notes ? `<div class="row"><span class="row-label">備註</span><span class="row-value" style="font-style:italic">${esc(item.notes)}</span></div>` : "",
-    ].filter(Boolean).join("");
+  const itemsHtml = data.items
+    .map((item) => {
+      const tempLabel = item.storageTemp
+        ? (STORAGE_TEMP_LABELS[item.storageTemp] ?? item.storageTemp)
+        : null;
+      const rows = [
+        item.specLabel
+          ? `<div class="row"><span class="row-label">規格</span><span class="row-value">${esc(item.specLabel)}</span></div>`
+          : "",
+        item.skuCode
+          ? `<div class="row"><span class="row-label">SKU</span><span class="row-value">${esc(item.skuCode)}</span></div>`
+          : "",
+        tempLabel
+          ? `<div class="row"><span class="row-label">溫層</span><span class="row-value">${esc(tempLabel)}</span></div>`
+          : "",
+        item.shelfLife
+          ? `<div class="row"><span class="row-label">保存期限</span><span class="row-value">${esc(item.shelfLife)}</span></div>`
+          : "",
+        `<div class="row"><span class="row-label">對應訂單</span><span class="row-value">${esc(item.orderNumbers.join("、"))}</span></div>`,
+        item.notes
+          ? `<div class="row"><span class="row-label">備註</span><span class="row-value" style="font-style:italic">${esc(item.notes)}</span></div>`
+          : "",
+      ]
+        .filter(Boolean)
+        .join("");
 
-    return `<div class="card">
+      return `<div class="card">
   <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px">
     <div>
       <div style="font-weight:600;font-size:13px">${esc(item.productName)}</div>
@@ -231,7 +296,8 @@ export function printPickingList(data: PickingListResponse): void {
   </div>
   ${rows}
 </div>`;
-  }).join("");
+    })
+    .join("");
 
   const body = `<h1>撿貨單</h1>
 <div class="meta">產生時間：${esc(generatedAt)}　｜　${data.orderCount} 筆訂單　｜　${data.items.length} 項商品組合</div>
@@ -265,12 +331,21 @@ const SHIPPING_METHOD_LABELS: Record<string, string> = {
   other: "其他",
 };
 
-type ReceiptFulfillmentCat = "self_pickup" | "cvs_711" | "cvs_family" | "home_black_cat" | "home_post" | "other";
+type ReceiptFulfillmentCat =
+  | "self_pickup"
+  | "cvs_711"
+  | "cvs_family"
+  | "home_black_cat"
+  | "home_post"
+  | "other";
 
-function getReceiptFulfillmentCat(order: PrintableOrder): ReceiptFulfillmentCat {
+function getReceiptFulfillmentCat(
+  order: PrintableOrder,
+): ReceiptFulfillmentCat {
   const m = (order.pickupMethod ?? "").trim();
   if (m === "自取" || m === "面交") return "self_pickup";
-  if (m.startsWith("7-11") || m.includes("711") || m.includes("統一")) return "cvs_711";
+  if (m.startsWith("7-11") || m.includes("711") || m.includes("統一"))
+    return "cvs_711";
   if (m.startsWith("全家")) return "cvs_family";
   if (m.includes("黑貓") || m.includes("宅急便")) return "home_black_cat";
   if (m.includes("郵局")) return "home_post";
@@ -282,27 +357,52 @@ function getReceiptFulfillmentCat(order: PrintableOrder): ReceiptFulfillmentCat 
 }
 
 function shippingOrderHtml(order: ShippingListOrder): string {
-  const specText = order.specValues && Object.keys(order.specValues).length > 0
-    ? Object.entries(order.specValues).map(([k, v]) => `${k}: ${v}`).join("、")
-    : null;
+  const specText =
+    order.specValues && Object.keys(order.specValues).length > 0
+      ? Object.entries(order.specValues)
+          .map(([k, v]) => `${k}: ${v}`)
+          .join("、")
+      : null;
 
   const rows: string[] = [
     `<div class="row"><span class="row-label">買家</span><span class="row-value">${esc(order.buyerName)}</span></div>`,
     `<div class="row"><span class="row-label">電話</span><span class="row-value">${esc(order.buyerPhone)}</span></div>`,
-    order.productName ? `<div class="row"><span class="row-label">商品</span><span class="row-value">${esc(order.productName)}</span></div>` : "",
-    specText ? `<div class="row"><span class="row-label">規格</span><span class="row-value">${esc(specText)}</span></div>` : "",
+    order.productName
+      ? `<div class="row"><span class="row-label">商品</span><span class="row-value">${esc(order.productName)}</span></div>`
+      : "",
+    specText
+      ? `<div class="row"><span class="row-label">規格</span><span class="row-value">${esc(specText)}</span></div>`
+      : "",
     `<div class="row"><span class="row-label">數量</span><span class="row-value">× ${order.quantity}</span></div>`,
     `<div class="row"><span class="row-label">付款狀態</span><span class="row-value">${esc(PAYMENT_STATUS_LABELS[order.paymentStatus] ?? order.paymentStatus)}</span></div>`,
     `<div class="row"><span class="row-label">出貨狀態</span><span class="row-value">${esc(SHIPPING_STATUS_LABELS[order.shippingStatus] ?? order.shippingStatus)}</span></div>`,
-    order.shippingMethod ? `<div class="row"><span class="row-label">物流方式</span><span class="row-value">${esc(SHIPPING_METHOD_LABELS[order.shippingMethod] ?? order.shippingMethod)}</span></div>` : "",
-    order.trackingCode ? `<div class="row"><span class="row-label">追蹤碼</span><span class="row-value">${esc(order.trackingCode)}</span></div>` : "",
-    order.trackingProvider ? `<div class="row"><span class="row-label">物流商</span><span class="row-value">${esc(order.trackingProvider)}</span></div>` : "",
-    order.storeCode ? `<div class="row"><span class="row-label">超商店號</span><span class="row-value">${esc(order.storeCode)}</span></div>` : "",
-    order.storeName ? `<div class="row"><span class="row-label">超商店名</span><span class="row-value">${esc(order.storeName)}</span></div>` : "",
-    order.recipientName ? `<div class="row"><span class="row-label">收件人</span><span class="row-value">${esc(order.recipientName)}</span></div>` : "",
-    order.recipientPhone ? `<div class="row"><span class="row-label">收件電話</span><span class="row-value">${esc(order.recipientPhone)}</span></div>` : "",
-    order.recipientAddress ? `<div class="row"><span class="row-label">收件地址</span><span class="row-value">${esc(order.recipientAddress)}</span></div>` : "",
-    order.shippingNote ? `<div class="row"><span class="row-label">物流備註</span><span class="row-value">${esc(order.shippingNote)}</span></div>` : "",
+    order.shippingMethod
+      ? `<div class="row"><span class="row-label">物流方式</span><span class="row-value">${esc(SHIPPING_METHOD_LABELS[order.shippingMethod] ?? order.shippingMethod)}</span></div>`
+      : "",
+    order.trackingCode
+      ? `<div class="row"><span class="row-label">追蹤碼</span><span class="row-value">${esc(order.trackingCode)}</span></div>`
+      : "",
+    order.trackingProvider
+      ? `<div class="row"><span class="row-label">物流商</span><span class="row-value">${esc(order.trackingProvider)}</span></div>`
+      : "",
+    order.storeCode
+      ? `<div class="row"><span class="row-label">超商店號</span><span class="row-value">${esc(order.storeCode)}</span></div>`
+      : "",
+    order.storeName
+      ? `<div class="row"><span class="row-label">超商店名</span><span class="row-value">${esc(order.storeName)}</span></div>`
+      : "",
+    order.recipientName
+      ? `<div class="row"><span class="row-label">收件人</span><span class="row-value">${esc(order.recipientName)}</span></div>`
+      : "",
+    order.recipientPhone
+      ? `<div class="row"><span class="row-label">收件電話</span><span class="row-value">${esc(order.recipientPhone)}</span></div>`
+      : "",
+    order.recipientAddress
+      ? `<div class="row"><span class="row-label">收件地址</span><span class="row-value">${esc(order.recipientAddress)}</span></div>`
+      : "",
+    order.shippingNote
+      ? `<div class="row"><span class="row-label">物流備註</span><span class="row-value">${esc(order.shippingNote)}</span></div>`
+      : "",
     `<div class="row"><span class="row-label">商品明細</span><span class="row-value">${esc(order.itemsText)}</span></div>`,
   ].filter(Boolean) as string[];
 
@@ -318,9 +418,10 @@ function shippingOrderHtml(order: ShippingListOrder): string {
 export function printShippingList(data: ShippingListResponse): void {
   const generatedAt = new Date(data.generatedAt).toLocaleString("zh-TW");
 
-  const excludedHtml = data.excludedOrderIds.length > 0
-    ? `<div class="warning">已排除 ${data.excludedOrderIds.length} 筆已取消訂單（ID: ${esc(data.excludedOrderIds.join("、"))}）</div>`
-    : "";
+  const excludedHtml =
+    data.excludedOrderIds.length > 0
+      ? `<div class="warning">已排除 ${data.excludedOrderIds.length} 筆已取消訂單（ID: ${esc(data.excludedOrderIds.join("、"))}）</div>`
+      : "";
 
   const ordersHtml = data.orders.map(shippingOrderHtml).join("");
 
@@ -457,8 +558,14 @@ body {
 }
 `;
 
-function receiptHtmlDoc(title: string, body: string, brandColor = "#F57572"): string {
-  const safeColor = /^#[0-9a-fA-F]{6}$/.test(brandColor) ? brandColor : "#F57572";
+function receiptHtmlDoc(
+  title: string,
+  body: string,
+  brandColor = "#F57572",
+): string {
+  const safeColor = /^#[0-9a-fA-F]{6}$/.test(brandColor)
+    ? brandColor
+    : "#F57572";
   return `<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -475,7 +582,11 @@ ${body}
 
 export function printOrderReceipt(
   order: PrintableOrder,
-  storeSettings?: { name?: string | null; logoUrl?: string | null; brandPrimaryColor?: string | null },
+  storeSettings?: {
+    name?: string | null;
+    logoUrl?: string | null;
+    brandPrimaryColor?: string | null;
+  },
 ): void {
   const storeName = storeSettings?.name?.trim() || "畫夢代購";
   const brandColor = storeSettings?.brandPrimaryColor?.trim() || "#F57572";
@@ -486,40 +597,42 @@ export function printOrderReceipt(
   const productSubtotal = Number(order.totalPrice ?? 0);
   const shippingFee = Number(order.shippingFee ?? 0);
   const discountAmount = Number(order.discountAmount ?? 0);
-  const orderTotal = order.orderTotal ?? (productSubtotal + shippingFee);
+  const orderTotal = order.orderTotal ?? productSubtotal + shippingFee;
   const paidAmount = Number(order.paidAmount ?? 0);
-  const remainingAmount = order.remainingAmount ?? Math.max(orderTotal - paidAmount, 0);
+  const remainingAmount =
+    order.remainingAmount ?? Math.max(orderTotal - paidAmount, 0);
 
   const paymentStatusText = order.paymentStatus
     ? (PAYMENT_STATUS_LABELS[order.paymentStatus] ?? order.paymentStatus)
     : null;
 
   const receiptCat = getReceiptFulfillmentCat(order);
-  const fulfillmentLabel = (order.pickupMethod ?? "").trim() ||
-    (order.shippingMethod ? (SHIPPING_METHOD_LABELS[order.shippingMethod] ?? order.shippingMethod) : null);
+  const fulfillmentLabel =
+    (order.pickupMethod ?? "").trim() ||
+    (order.shippingMethod
+      ? (SHIPPING_METHOD_LABELS[order.shippingMethod] ?? order.shippingMethod)
+      : null);
 
   const discountRow =
     discountAmount > 0
       ? `<tr><td class="sl">折讓</td><td class="sr" style="color:#e11d48">-${formatCurrency(discountAmount)}</td></tr>`
       : "";
 
-  const discountNoteRow =
-    (order.discountNote ?? "").trim()
-      ? `<tr><td class="sl" style="padding-left:10px;font-size:11px;color:#888">折讓備註</td><td class="sr" style="font-size:11px;color:#888">${esc((order.discountNote ?? "").trim())}</td></tr>`
-      : "";
+  const discountNoteRow = (order.discountNote ?? "").trim()
+    ? `<tr><td class="sl" style="padding-left:10px;font-size:11px;color:#888">折讓備註</td><td class="sr" style="font-size:11px;color:#888">${esc((order.discountNote ?? "").trim())}</td></tr>`
+    : "";
 
   const remainingBlock =
     remainingAmount <= 0
       ? `<div class="paid-clear">&#x2713; 已付清</div>`
       : `<div class="remaining-due">待收金額<span class="remaining-amount">${formatCurrency(remainingAmount)}</span></div>`;
 
-  const orderNotesHtml =
-    (order.notes ?? "").trim()
-      ? `<div class="section-card notes-section">
+  const orderNotesHtml = (order.notes ?? "").trim()
+    ? `<div class="section-card notes-section">
   <div class="section-title">訂單備註</div>
   <div style="font-size:12px;line-height:1.6;word-break:break-word">${esc((order.notes ?? "").trim())}</div>
 </div>`
-      : "";
+    : "";
 
   const noPickupInfo = `<div class="info-row"><span class="info-label" style="color:#bbb">－</span><span class="info-value" style="color:#bbb">取貨資訊未設定</span></div>`;
   let pickupRows: string;
@@ -532,32 +645,52 @@ export function printOrderReceipt(
     const cvsLabel = receiptCat === "cvs_711" ? "7-11" : "全家";
     const parts = [
       `<div class="info-row"><span class="info-label">超商</span><span class="info-value">${esc(cvsLabel)}</span></div>`,
-      order.storeName ? `<div class="info-row"><span class="info-label">門市</span><span class="info-value">${esc(order.storeName)}</span></div>` : "",
-    ].filter(Boolean).join("");
+      order.storeName
+        ? `<div class="info-row"><span class="info-label">門市</span><span class="info-value">${esc(order.storeName)}</span></div>`
+        : "",
+    ]
+      .filter(Boolean)
+      .join("");
     pickupRows = parts;
   } else if (receiptCat === "home_black_cat" || receiptCat === "home_post") {
     pickupSectionTitle = "配送資訊";
-    const carrierLabel = order.trackingProvider || (receiptCat === "home_black_cat" ? "黑貓宅急便" : "郵局宅配");
+    const carrierLabel =
+      order.trackingProvider ||
+      (receiptCat === "home_black_cat" ? "黑貓宅急便" : "郵局宅配");
     const parts = [
       `<div class="info-row"><span class="info-label">物流方式</span><span class="info-value">${esc(carrierLabel)}</span></div>`,
-      order.recipientAddress ? `<div class="info-row"><span class="info-label">收件地址</span><span class="info-value" style="word-break:break-word">${esc(order.recipientAddress)}</span></div>` : "",
-      order.trackingCode ? `<div class="info-row"><span class="info-label">物流追蹤碼</span><span class="info-value mono">${esc(order.trackingCode)}</span></div>` : "",
-    ].filter(Boolean).join("");
+      order.recipientAddress
+        ? `<div class="info-row"><span class="info-label">收件地址</span><span class="info-value" style="word-break:break-word">${esc(order.recipientAddress)}</span></div>`
+        : "",
+      order.trackingCode
+        ? `<div class="info-row"><span class="info-label">物流追蹤碼</span><span class="info-value mono">${esc(order.trackingCode)}</span></div>`
+        : "",
+    ]
+      .filter(Boolean)
+      .join("");
     pickupRows = parts || noPickupInfo;
   } else {
     pickupSectionTitle = "取貨資訊";
     const parts = [
-      order.storeName ? `<div class="info-row"><span class="info-label">門市</span><span class="info-value">${esc(order.storeName)}</span></div>` : "",
-      order.recipientAddress ? `<div class="info-row"><span class="info-label">收件地址</span><span class="info-value" style="word-break:break-word">${esc(order.recipientAddress)}</span></div>` : "",
-    ].filter(Boolean).join("");
+      order.storeName
+        ? `<div class="info-row"><span class="info-label">門市</span><span class="info-value">${esc(order.storeName)}</span></div>`
+        : "",
+      order.recipientAddress
+        ? `<div class="info-row"><span class="info-label">收件地址</span><span class="info-value" style="word-break:break-word">${esc(order.recipientAddress)}</span></div>`
+        : "",
+    ]
+      .filter(Boolean)
+      .join("");
     pickupRows = parts || noPickupInfo;
   }
 
   const body = `
 <div class="brand-hero">
-  ${logoUrl
-    ? `<img src="${esc(logoUrl)}" class="brand-logo-img" alt="${esc(storeName)}">`
-    : `<div class="brand-badge-text">${esc(storeName.charAt(0).toUpperCase())}</div>`}
+  ${
+    logoUrl
+      ? `<img src="${esc(logoUrl)}" class="brand-logo-img" alt="${esc(storeName)}">`
+      : `<div class="brand-badge-text">${esc(storeName.charAt(0).toUpperCase())}</div>`
+  }
   <div class="brand-name">${esc(storeName)}</div>
   <div class="brand-sub">銷貨單 &middot; Order Receipt</div>
   <div class="brand-tagline">感謝您的購買，請確認以下訂單、付款與取貨資訊。</div>
@@ -617,13 +750,18 @@ export function printOrderReceipt(
       </tr>
     </thead>
     <tbody>
-      ${normalizeOrderItems(order).map((item) => {
-        const sv = item.specValues;
-        const itemSpec = sv && Object.keys(sv).length > 0
-          ? Object.entries(sv).map(([k, v]) => `${esc(k)}：${esc(String(v))}`).join("、")
-          : null;
-        const itemSub = item.subtotal ?? (Number(item.unitPrice ?? 0) * item.quantity);
-        return `<tr>
+      ${normalizeOrderItems(order)
+        .map((item) => {
+          const sv = item.specValues;
+          const itemSpec =
+            sv && Object.keys(sv).length > 0
+              ? Object.entries(sv)
+                  .map(([k, v]) => `${esc(k)}：${esc(String(v))}`)
+                  .join("、")
+              : null;
+          const itemSub =
+            item.subtotal ?? Number(item.unitPrice ?? 0) * item.quantity;
+          return `<tr>
         <td>
           <div class="product-name">${esc(item.productName ?? "（商品）")}</div>
           ${itemSpec ? `<div class="product-spec">${itemSpec}</div>` : ""}
@@ -632,7 +770,8 @@ export function printOrderReceipt(
         <td class="td-price">${item.unitPrice != null ? formatCurrency(Number(item.unitPrice)) : "－"}</td>
         <td class="td-sub">${formatCurrency(itemSub)}</td>
       </tr>`;
-      }).join("")}
+        })
+        .join("")}
     </tbody>
   </table>
 </div>

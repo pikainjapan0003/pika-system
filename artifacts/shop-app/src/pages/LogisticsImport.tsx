@@ -43,7 +43,12 @@ interface ConfirmResponse {
   batchStatus: string;
   importedCount: number;
   skippedCount: number;
-  rows: Array<{ rowId: number; rowNumber: number; status: "imported" | "skipped"; errorCode: string | null }>;
+  rows: Array<{
+    rowId: number;
+    rowNumber: number;
+    status: "imported" | "skipped";
+    errorCode: string | null;
+  }>;
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -83,7 +88,10 @@ const ERROR_MESSAGE: Record<string, string> = {
   UNKNOWN_ERROR: "發生未知錯誤，請稍後再試",
 };
 
-const IMPORT_ROW_REASON_TEXTS: Record<string, { reason: string; description: string }> = {
+const IMPORT_ROW_REASON_TEXTS: Record<
+  string,
+  { reason: string; description: string }
+> = {
   TRACKING_CODE_CONFLICT: {
     reason: "物流貨號重複",
     description: "這個物流貨號已經存在，因此系統沒有重複匯入。",
@@ -98,15 +106,18 @@ const IMPORT_ROW_REASON_TEXTS: Record<string, { reason: string; description: str
   },
   NO_MATCH: {
     reason: "找不到對應訂單",
-    description: "系統找不到能對應這列資料的訂單，請確認 Excel 內容或訂單資料。",
+    description:
+      "系統找不到能對應這列資料的訂單，請確認 Excel 內容或訂單資料。",
   },
   NOT_FOUND: {
     reason: "找不到對應訂單",
-    description: "系統找不到能對應這列資料的訂單，請確認 Excel 內容或訂單資料。",
+    description:
+      "系統找不到能對應這列資料的訂單，請確認 Excel 內容或訂單資料。",
   },
   ORDER_NOT_FOUND: {
     reason: "找不到對應訂單",
-    description: "系統找不到能對應這列資料的訂單，請確認 Excel 內容或訂單資料。",
+    description:
+      "系統找不到能對應這列資料的訂單，請確認 Excel 內容或訂單資料。",
   },
   AMBIGUOUS_MATCH: {
     reason: "可能對應多筆訂單",
@@ -126,7 +137,10 @@ const IMPORT_ROW_REASON_TEXTS: Record<string, { reason: string; description: str
   },
 };
 
-function getImportRowTexts(errorCode: string | null, status: string): { reason: string; description: string } {
+function getImportRowTexts(
+  errorCode: string | null,
+  status: string,
+): { reason: string; description: string } {
   if (errorCode) {
     return (
       IMPORT_ROW_REASON_TEXTS[errorCode] ?? {
@@ -139,16 +153,24 @@ function getImportRowTexts(errorCode: string | null, status: string): { reason: 
     return { reason: "已略過", description: "這列資料不需要再次匯入。" };
   }
   if (status === "imported") {
-    return { reason: "已成功匯入", description: "這列資料已成功建立物流追蹤資料。" };
+    return {
+      reason: "已成功匯入",
+      description: "這列資料已成功建立物流追蹤資料。",
+    };
   }
-  return { reason: "匯入失敗", description: "這列資料未完成匯入，請人工確認。" };
+  return {
+    reason: "匯入失敗",
+    description: "這列資料未完成匯入，請人工確認。",
+  };
 }
 
 function errorText(errorCode: string | undefined, httpStatus: number): string {
   if (httpStatus === 401) return "請先登入";
   if (httpStatus === 403) return "沒有此店家的權限";
   const text = errorCode ? ERROR_MESSAGE[errorCode] : undefined;
-  return text ? `${text}（${errorCode}）` : `發生錯誤（${errorCode ?? httpStatus}）`;
+  return text
+    ? `${text}（${errorCode}）`
+    : `發生錯誤（${errorCode ?? httpStatus}）`;
 }
 
 export default function LogisticsImportPage() {
@@ -164,7 +186,9 @@ export default function LogisticsImportPage() {
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dryRun, setDryRun] = useState<DryRunResponse | null>(null);
-  const [confirmResult, setConfirmResult] = useState<ConfirmResponse | null>(null);
+  const [confirmResult, setConfirmResult] = useState<ConfirmResponse | null>(
+    null,
+  );
 
   const reset = () => {
     setDryRun(null);
@@ -183,12 +207,15 @@ export default function LogisticsImportPage() {
       const form = new FormData();
       form.append("provider", provider);
       form.append("file", file);
-      const res = await fetch(`/api/stores/${storeId}/logistics/imports/dry-run`, {
-        method: "POST",
-        credentials: "include",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body: form,
-      });
+      const res = await fetch(
+        `/api/stores/${storeId}/logistics/imports/dry-run`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          body: form,
+        },
+      );
       const body = await res.json().catch(() => ({}));
       if (!res.ok || !body.ok) {
         setError(errorText(body.errorCode, res.status));
@@ -204,21 +231,26 @@ export default function LogisticsImportPage() {
 
   const handleConfirm = async () => {
     if (!storeId || !dryRun) return;
-    const okToGo = window.confirm("只會匯入「可匯入（matched）」的資料列，其他狀態不會自動匯入。確定要匯入嗎？");
+    const okToGo = window.confirm(
+      "只會匯入「可匯入（matched）」的資料列，其他狀態不會自動匯入。確定要匯入嗎？",
+    );
     if (!okToGo) return;
     setConfirming(true);
     setError(null);
     try {
       const token = await getToken();
-      const res = await fetch(`/api/stores/${storeId}/logistics/imports/${dryRun.batchId}/confirm`, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "content-type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      const res = await fetch(
+        `/api/stores/${storeId}/logistics/imports/${dryRun.batchId}/confirm`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "content-type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ confirmAllMatched: true }),
         },
-        body: JSON.stringify({ confirmAllMatched: true }),
-      });
+      );
       const body = await res.json().catch(() => ({}));
       if (!res.ok || !body.ok) {
         setError(errorText(body.errorCode, res.status));
@@ -239,7 +271,8 @@ export default function LogisticsImportPage() {
       <header className="bg-white border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
         <h1 className="text-lg font-bold text-foreground">物流 Excel 匯入</h1>
         <p className="text-xs text-muted-foreground mt-1">
-          支援 7-11 / 全家 Excel。上傳後先比對（不會寫入），確認後只匯入「可匯入」的資料列。
+          支援 7-11 / 全家
+          Excel。上傳後先比對（不會寫入），確認後只匯入「可匯入」的資料列。
         </p>
         <button
           type="button"
@@ -256,15 +289,27 @@ export default function LogisticsImportPage() {
         {/* provider + file */}
         <div className="bg-white rounded-2xl border border-border p-5 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">物流商</label>
+            <label className="block text-sm font-medium text-foreground mb-1.5">
+              物流商
+            </label>
             <div className="grid grid-cols-2 gap-2">
-              {([["711", "7-11"], ["familymart", "全家"]] as const).map(([value, label]) => (
+              {(
+                [
+                  ["711", "7-11"],
+                  ["familymart", "全家"],
+                ] as const
+              ).map(([value, label]) => (
                 <button
                   key={value}
                   type="button"
-                  onClick={() => { setProvider(value); reset(); }}
+                  onClick={() => {
+                    setProvider(value);
+                    reset();
+                  }}
                   className={`h-11 rounded-xl text-sm font-medium border ${
-                    provider === value ? "bg-primary text-white border-primary" : "bg-secondary text-foreground border-input"
+                    provider === value
+                      ? "bg-primary text-white border-primary"
+                      : "bg-secondary text-foreground border-input"
                   }`}
                 >
                   {label}
@@ -274,13 +319,18 @@ export default function LogisticsImportPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Excel 檔案（.xlsx）</label>
+            <label className="block text-sm font-medium text-foreground mb-1.5">
+              Excel 檔案（.xlsx）
+            </label>
             <input
               ref={fileInputRef}
               type="file"
               accept=".xlsx"
               className="hidden"
-              onChange={(e) => { setFile(e.target.files?.[0] ?? null); reset(); }}
+              onChange={(e) => {
+                setFile(e.target.files?.[0] ?? null);
+                reset();
+              }}
             />
             <button
               type="button"
@@ -302,7 +352,9 @@ export default function LogisticsImportPage() {
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">{error}</div>
+          <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">
+            {error}
+          </div>
         )}
 
         {/* dry-run summary */}
@@ -310,21 +362,27 @@ export default function LogisticsImportPage() {
           <div className="bg-white rounded-2xl border border-border p-5 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-bold text-foreground">比對結果</h2>
-              <span className="text-xs text-muted-foreground">批次 #{dryRun!.batchId}</span>
+              <span className="text-xs text-muted-foreground">
+                批次 #{dryRun!.batchId}
+              </span>
             </div>
             <div className="grid grid-cols-3 gap-2 text-center">
-              {([
-                ["總列數", summary.totalRows, ""],
-                ["可匯入", summary.matchedRows, "text-green-600"],
-                ["需確認", summary.needsReviewRows, "text-yellow-600"],
-                ["多候選", summary.ambiguousRows, "text-yellow-600"],
-                ["找不到", summary.notFoundRows, "text-muted-foreground"],
-                ["衝突", summary.conflictRows, "text-red-600"],
-                ["不完整", summary.invalidRows, "text-red-600"],
-              ] as const).map(([label, value, cls]) => (
+              {(
+                [
+                  ["總列數", summary.totalRows, ""],
+                  ["可匯入", summary.matchedRows, "text-green-600"],
+                  ["需確認", summary.needsReviewRows, "text-yellow-600"],
+                  ["多候選", summary.ambiguousRows, "text-yellow-600"],
+                  ["找不到", summary.notFoundRows, "text-muted-foreground"],
+                  ["衝突", summary.conflictRows, "text-red-600"],
+                  ["不完整", summary.invalidRows, "text-red-600"],
+                ] as const
+              ).map(([label, value, cls]) => (
                 <div key={label} className="bg-secondary rounded-xl py-2">
                   <div className={`text-base font-bold ${cls}`}>{value}</div>
-                  <div className="text-[11px] text-muted-foreground">{label}</div>
+                  <div className="text-[11px] text-muted-foreground">
+                    {label}
+                  </div>
                 </div>
               ))}
             </div>
@@ -332,7 +390,8 @@ export default function LogisticsImportPage() {
             {/* confirm */}
             {confirmResult ? (
               <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-sm text-green-800">
-                已確認匯入：成功 {confirmResult.importedCount} 筆、略過 {confirmResult.skippedCount} 筆。
+                已確認匯入：成功 {confirmResult.importedCount} 筆、略過{" "}
+                {confirmResult.skippedCount} 筆。
                 {confirmResult.rows.some((r) => r.status === "skipped") && (
                   <ul className="mt-2 space-y-1.5">
                     {confirmResult.rows
@@ -341,10 +400,16 @@ export default function LogisticsImportPage() {
                         const texts = getImportRowTexts(r.errorCode, r.status);
                         return (
                           <li key={r.rowId} className="text-xs text-green-700">
-                            <div>Excel 第 {r.rowNumber} 列 — 原因：{texts.reason}</div>
-                            <div className="text-green-700/80">說明：{texts.description}</div>
+                            <div>
+                              Excel 第 {r.rowNumber} 列 — 原因：{texts.reason}
+                            </div>
+                            <div className="text-green-700/80">
+                              說明：{texts.description}
+                            </div>
                             {r.errorCode && (
-                              <div className="text-[10px] text-muted-foreground/70">技術代碼：{r.errorCode}</div>
+                              <div className="text-[10px] text-muted-foreground/70">
+                                技術代碼：{r.errorCode}
+                              </div>
                             )}
                           </li>
                         );
@@ -359,7 +424,9 @@ export default function LogisticsImportPage() {
                 onClick={handleConfirm}
                 className="w-full h-11 bg-primary text-white font-semibold rounded-xl text-sm disabled:opacity-50"
               >
-                {confirming ? "匯入中…" : `確認匯入全部可匯入列（${summary.matchedRows} 筆）`}
+                {confirming
+                  ? "匯入中…"
+                  : `確認匯入全部可匯入列（${summary.matchedRows} 筆）`}
               </button>
             )}
           </div>
@@ -369,7 +436,9 @@ export default function LogisticsImportPage() {
         {summary && summary.rows.length > 0 && (
           <div className="bg-white rounded-2xl border border-border overflow-hidden">
             <div className="px-5 pt-4 pb-2">
-              <h2 className="text-sm font-bold text-foreground">明細（個資已遮罩）</h2>
+              <h2 className="text-sm font-bold text-foreground">
+                明細（個資已遮罩）
+              </h2>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
@@ -387,16 +456,27 @@ export default function LogisticsImportPage() {
                 </thead>
                 <tbody>
                   {summary.rows.map((row) => (
-                    <tr key={row.rowNumber} className="border-b border-border last:border-0">
+                    <tr
+                      key={row.rowNumber}
+                      className="border-b border-border last:border-0"
+                    >
                       <td className="px-3 py-2">{row.rowNumber}</td>
                       <td className="px-3 py-2">
-                        <span className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_CLASS[row.matchStatus] ?? "bg-gray-100 text-gray-500"}`}>
+                        <span
+                          className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_CLASS[row.matchStatus] ?? "bg-gray-100 text-gray-500"}`}
+                        >
                           {STATUS_LABEL[row.matchStatus] ?? row.matchStatus}
                         </span>
                       </td>
-                      <td className="px-3 py-2 font-mono">{row.trackingCode ?? "—"}</td>
-                      <td className="px-3 py-2">{row.recipientNameMasked ?? "—"}</td>
-                      <td className="px-3 py-2">{row.recipientPhoneMasked ?? "—"}</td>
+                      <td className="px-3 py-2 font-mono">
+                        {row.trackingCode ?? "—"}
+                      </td>
+                      <td className="px-3 py-2">
+                        {row.recipientNameMasked ?? "—"}
+                      </td>
+                      <td className="px-3 py-2">
+                        {row.recipientPhoneMasked ?? "—"}
+                      </td>
                       <td className="px-3 py-2">{row.storeName ?? "—"}</td>
                       <td className="px-3 py-2">{row.confidence ?? "—"}</td>
                       <td className="px-3 py-2 text-muted-foreground">

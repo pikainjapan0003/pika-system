@@ -55,9 +55,23 @@ function buildCodexPayload(data: HandoffData): string {
     data.filesChanged.forEach((f) => lines.push(`- ${f}`));
     lines.push("");
   }
-  lines.push("### Git status", "```", data.gitStatus?.trim() || "(none)", "```", "");
-  if (data.gitLog?.trim()) lines.push("### Recent commits", "```", data.gitLog.trim(), "```", "");
-  if (data.stagedChanges?.trim()) lines.push("### Staged changes", "```", data.stagedChanges.trim(), "```", "");
+  lines.push(
+    "### Git status",
+    "```",
+    data.gitStatus?.trim() || "(none)",
+    "```",
+    "",
+  );
+  if (data.gitLog?.trim())
+    lines.push("### Recent commits", "```", data.gitLog.trim(), "```", "");
+  if (data.stagedChanges?.trim())
+    lines.push(
+      "### Staged changes",
+      "```",
+      data.stagedChanges.trim(),
+      "```",
+      "",
+    );
   if (data.acceptedFixes?.length) {
     lines.push("### Accepted fixes");
     data.acceptedFixes.forEach((f) => lines.push(`- ${f}`));
@@ -73,7 +87,7 @@ function buildCodexPayload(data: HandoffData): string {
     "### Safety notes",
     `- Status: ${data.finalStatus ?? "unknown"}`,
     `- .claude/ untracked: ${data.claudeUntracked ? "YES (check before staging)" : "ok"}`,
-    ""
+    "",
   );
   return lines.join("\n");
 }
@@ -87,7 +101,13 @@ function buildSummaryPayload(data: HandoffData): string {
     data.filesChanged.forEach((f) => lines.push(`- ${f}`));
     lines.push("");
   }
-  lines.push("### Git status", "```", data.gitStatus?.trim() || "(none)", "```", "");
+  lines.push(
+    "### Git status",
+    "```",
+    data.gitStatus?.trim() || "(none)",
+    "```",
+    "",
+  );
   if (data.blockedDeferred?.length) {
     lines.push("### Blocked / deferred");
     data.blockedDeferred.forEach((f) => lines.push(`- ${f}`));
@@ -144,10 +164,13 @@ function useCopy() {
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const copy = useCallback((key: string, text: string) => {
     if (!text.trim()) return;
-    navigator.clipboard.writeText(text).then(() => {
-      setCopiedKey(key);
-      setTimeout(() => setCopiedKey(null), 2000);
-    }).catch(() => {});
+    navigator.clipboard
+      .writeText(text)
+      .then(() => {
+        setCopiedKey(key);
+        setTimeout(() => setCopiedKey(null), 2000);
+      })
+      .catch(() => {});
   }, []);
   return { copiedKey, copy };
 }
@@ -163,7 +186,8 @@ function Section({
 }) {
   const [open, setOpen] = useState(true);
   const isEmpty =
-    !content || (Array.isArray(content) ? content.length === 0 : !content.trim());
+    !content ||
+    (Array.isArray(content) ? content.length === 0 : !content.trim());
   return (
     <div className="bg-white rounded-2xl border border-border overflow-hidden">
       <button
@@ -172,7 +196,9 @@ function Section({
         className="w-full flex items-center justify-between px-4 py-3 text-left"
       >
         <span className="text-sm font-semibold text-foreground">{title}</span>
-        <span className="text-muted-foreground text-xs">{open ? "▲" : "▼"}</span>
+        <span className="text-muted-foreground text-xs">
+          {open ? "▲" : "▼"}
+        </span>
       </button>
       {open && (
         <div className="border-t border-border px-4 py-3">
@@ -189,7 +215,9 @@ function Section({
           ) : (
             <pre
               className={`text-sm text-foreground whitespace-pre-wrap break-words ${
-                mono ? "font-mono bg-secondary rounded-lg px-3 py-2 text-xs" : ""
+                mono
+                  ? "font-mono bg-secondary rounded-lg px-3 py-2 text-xs"
+                  : ""
               }`}
             >
               {content}
@@ -223,7 +251,9 @@ function WorkerCard({
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/dev/handoff/data/${worker}?t=${Date.now()}`);
+      const res = await fetch(
+        `/api/dev/handoff/data/${worker}?t=${Date.now()}`,
+      );
       if (!res.ok) {
         setError(`API returned ${res.status}`);
         return;
@@ -242,9 +272,13 @@ function WorkerCard({
   const copyPayload = hasData ? buildV2CopyPayload(label, data) : "";
   const rawReplyLen = data?.rawReply?.length ?? 0;
 
-  const a = accent === "blue"
-    ? { badge: "bg-blue-100 text-blue-800", btn: "bg-blue-600 text-white" }
-    : { badge: "bg-purple-100 text-purple-800", btn: "bg-purple-600 text-white" };
+  const a =
+    accent === "blue"
+      ? { badge: "bg-blue-100 text-blue-800", btn: "bg-blue-600 text-white" }
+      : {
+          badge: "bg-purple-100 text-purple-800",
+          btn: "bg-purple-600 text-white",
+        };
 
   return (
     <div className="bg-white rounded-2xl border border-border overflow-hidden">
@@ -253,13 +287,17 @@ function WorkerCard({
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className={`text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${a.badge}`}>
+              <span
+                className={`text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${a.badge}`}
+              >
                 {label}
               </span>
               {hasData && data.status && (
                 <span
                   className={`text-xs font-medium ${
-                    data.status === "completed" ? "text-green-600" : "text-yellow-600"
+                    data.status === "completed"
+                      ? "text-green-600"
+                      : "text-yellow-600"
                   }`}
                 >
                   {data.status}
@@ -286,7 +324,11 @@ function WorkerCard({
             disabled={loading}
             className="h-8 px-3 text-xs font-medium bg-secondary text-foreground rounded-xl disabled:opacity-50 flex-shrink-0"
           >
-            {loading ? "載入中..." : hasData ? "重新載入" : `載入 ${label} Handoff`}
+            {loading
+              ? "載入中..."
+              : hasData
+                ? "重新載入"
+                : `載入 ${label} Handoff`}
           </button>
         </div>
       </div>
@@ -301,7 +343,9 @@ function WorkerCard({
 
         {!data && !loading && !error && (
           <div className="text-center py-4">
-            <p className="text-sm text-muted-foreground mb-3">按下按鈕載入 handoff</p>
+            <p className="text-sm text-muted-foreground mb-3">
+              按下按鈕載入 handoff
+            </p>
             <button
               type="button"
               onClick={load}
@@ -441,13 +485,17 @@ function LegacySection() {
             舊版 / optional
           </span>
         </div>
-        <span className="text-muted-foreground text-xs">{open ? "▲" : "▼"}</span>
+        <span className="text-muted-foreground text-xs">
+          {open ? "▲" : "▼"}
+        </span>
       </button>
 
       {open && (
         <div className="border-t border-border px-4 py-4 space-y-3">
           <p className="text-xs text-muted-foreground">
-            <code className="bg-secondary px-1 rounded">dev-handoff/latest.json</code>{" "}
+            <code className="bg-secondary px-1 rounded">
+              dev-handoff/latest.json
+            </code>{" "}
             為舊版 / optional，不是 Fixed Latest File Mode 的預設輸出。
           </p>
 
@@ -461,7 +509,9 @@ function LegacySection() {
             </button>
           )}
 
-          {loading && <p className="text-xs text-muted-foreground">載入中...</p>}
+          {loading && (
+            <p className="text-xs text-muted-foreground">載入中...</p>
+          )}
 
           {fetchError && (
             <div className="bg-destructive/10 text-destructive text-sm px-4 py-3 rounded-xl">
@@ -517,21 +567,25 @@ function LegacySection() {
                   isExactMode && hasVerification
                     ? "bg-green-50 border border-green-200"
                     : isExactMode
-                    ? "bg-blue-50 border border-blue-200"
-                    : "bg-yellow-50 border border-yellow-200"
+                      ? "bg-blue-50 border border-blue-200"
+                      : "bg-yellow-50 border border-yellow-200"
                 }`}
               >
                 <div className="flex items-center gap-2">
                   <span>
-                    {isExactMode && hasVerification ? "✓" : isExactMode ? "~" : "⚠"}
+                    {isExactMode && hasVerification
+                      ? "✓"
+                      : isExactMode
+                        ? "~"
+                        : "⚠"}
                   </span>
                   <span
                     className={`font-medium ${
                       isExactMode && hasVerification
                         ? "text-green-800"
                         : isExactMode
-                        ? "text-blue-800"
-                        : "text-yellow-800"
+                          ? "text-blue-800"
+                          : "text-yellow-800"
                     }`}
                   >
                     rawReply mode: {data.rawReplyMode ?? "(未設定)"}
@@ -595,30 +649,45 @@ function WriteInstructions() {
         <span className="text-xs font-semibold text-muted-foreground">
           如何讓 Claude Code 寫入 Handoff（展開說明）
         </span>
-        <span className="text-muted-foreground text-xs">{open ? "▲" : "▼"}</span>
+        <span className="text-muted-foreground text-xs">
+          {open ? "▲" : "▼"}
+        </span>
       </button>
       {open && (
         <div className="border-t border-border px-4 py-3 space-y-3">
-          <p className="text-xs font-semibold text-primary">Fixed Latest File Mode</p>
+          <p className="text-xs font-semibold text-primary">
+            Fixed Latest File Mode
+          </p>
           <ul className="text-xs text-muted-foreground space-y-1">
             <li>
               • Claude A 完成任務後寫入：
-              <code className="bg-secondary px-1 rounded mx-0.5">dev-handoff/latest-A.json</code>、
-              <code className="bg-secondary px-1 rounded mx-0.5">latest-A.md</code>
+              <code className="bg-secondary px-1 rounded mx-0.5">
+                dev-handoff/latest-A.json
+              </code>
+              、
+              <code className="bg-secondary px-1 rounded mx-0.5">
+                latest-A.md
+              </code>
             </li>
             <li>
               • Claude B 完成任務後寫入：
-              <code className="bg-secondary px-1 rounded mx-0.5">dev-handoff/latest-B.json</code>、
-              <code className="bg-secondary px-1 rounded mx-0.5">latest-B.md</code>
+              <code className="bg-secondary px-1 rounded mx-0.5">
+                dev-handoff/latest-B.json
+              </code>
+              、
+              <code className="bg-secondary px-1 rounded mx-0.5">
+                latest-B.md
+              </code>
             </li>
             <li>• 不需要更新 latest.json（已是 legacy / optional）</li>
             <li>• 不需要整合（A/B 各自獨立）</li>
           </ul>
           <p className="text-xs font-semibold text-destructive">
-            rawReply 必須是終端機最終回覆原文的 exact copy，一字不漏，不可重寫、摘要或修改。
+            rawReply 必須是終端機最終回覆原文的 exact
+            copy，一字不漏，不可重寫、摘要或修改。
           </p>
           <pre className="text-xs font-mono bg-secondary rounded-lg px-3 py-3 whitespace-pre-wrap break-words text-foreground">
-{`dev-handoff/latest-A.json
+            {`dev-handoff/latest-A.json
 
 {
   "handoffVersion": "fixed-latest-v1",
@@ -663,11 +732,14 @@ function DevHandoffInner() {
             <span className="text-xs font-bold bg-yellow-400 text-yellow-900 px-2 py-0.5 rounded-full">
               DEV
             </span>
-            <h1 className="text-lg font-bold text-foreground">Dev Handoff Relay</h1>
+            <h1 className="text-lg font-bold text-foreground">
+              Dev Handoff Relay
+            </h1>
           </div>
         </div>
         <p className="text-xs text-muted-foreground mt-1">
-          Fixed Latest File Mode：Claude A / Claude B 各自寫入自己的 handoff 檔案，避免互相覆蓋。
+          Fixed Latest File Mode：Claude A / Claude B 各自寫入自己的 handoff
+          檔案，避免互相覆蓋。
         </p>
       </header>
 

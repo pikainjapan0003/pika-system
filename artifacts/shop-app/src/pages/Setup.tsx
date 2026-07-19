@@ -1,6 +1,10 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { useCreateStore, useGetMyStore, getGetMyStoreQueryKey } from "@workspace/api-client-react";
+import {
+  useCreateStore,
+  useGetMyStore,
+  getGetMyStoreQueryKey,
+} from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 
 export default function SetupPage() {
@@ -50,7 +54,13 @@ export default function SetupPage() {
       return;
     }
     try {
-      await createStore.mutateAsync({ data: { name: name.trim(), slug: slug.trim(), description: description.trim() || undefined } });
+      await createStore.mutateAsync({
+        data: {
+          name: name.trim(),
+          slug: slug.trim(),
+          description: description.trim() || undefined,
+        },
+      });
       qc.invalidateQueries({ queryKey: getGetMyStoreQueryKey() });
       setLocation("/dashboard");
     } catch (err: any) {
@@ -66,12 +76,16 @@ export default function SetupPage() {
             <span className="text-white font-bold text-xl">畫</span>
           </div>
           <h1 className="text-2xl font-bold text-foreground">建立您的店鋪</h1>
-          <p className="text-muted-foreground text-sm mt-1">設定完成後即可開始新增商品</p>
+          <p className="text-muted-foreground text-sm mt-1">
+            設定完成後即可開始新增商品
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">店鋪名稱</label>
+            <label className="block text-sm font-medium text-foreground mb-1.5">
+              店鋪名稱
+            </label>
             <input
               type="text"
               value={name}
@@ -82,7 +96,9 @@ export default function SetupPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">網址代碼</label>
+            <label className="block text-sm font-medium text-foreground mb-1.5">
+              網址代碼
+            </label>
             <div className="flex items-center gap-2">
               <input
                 type="text"
@@ -92,11 +108,15 @@ export default function SetupPage() {
                 className="flex-1 h-12 px-4 rounded-xl border border-input bg-white text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 text-base"
               />
             </div>
-            <p className="text-xs text-muted-foreground mt-1">只能包含英文、數字和連字號</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              只能包含英文、數字和連字號
+            </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">店鋪簡介（選填）</label>
+            <label className="block text-sm font-medium text-foreground mb-1.5">
+              店鋪簡介（選填）
+            </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}

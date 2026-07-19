@@ -8,7 +8,7 @@ interface Props {
   publicToken: string;
 }
 
-type StepStatus = typeof STATUS_STEPS[number];
+type StepStatus = (typeof STATUS_STEPS)[number];
 type StepState = "done" | "current" | "future";
 
 function getStepState(step: StepStatus, currentStatus: string): StepState {
@@ -51,7 +51,10 @@ function getTrackingBadge(order: {
   if (order.trackingCode) {
     return { label: "已出貨", className: "bg-blue-100 text-blue-700" };
   }
-  return { label: "店家處理中", className: "bg-secondary text-muted-foreground" };
+  return {
+    label: "店家處理中",
+    className: "bg-secondary text-muted-foreground",
+  };
 }
 
 // 面交 / 自取同屬 self_pickup，文案與判斷需一致（同 printHelpers 的 fulfillment category 邏輯）
@@ -90,14 +93,18 @@ function normalizeOrderItems(order: {
   const raw = order.items as OrderItem[] | null | undefined;
   if (Array.isArray(raw) && raw.length > 0) return raw;
   const qty = order.quantity ?? 1;
-  const unitPrice = order.unitPrice ?? (order.totalPrice != null && qty > 0 ? order.totalPrice / qty : 0);
-  return [{
-    productName: order.productName ?? "（商品）",
-    specValues: (order.specValues as Record<string, string>) ?? {},
-    quantity: qty,
-    unitPrice,
-    subtotal: unitPrice * qty,
-  }];
+  const unitPrice =
+    order.unitPrice ??
+    (order.totalPrice != null && qty > 0 ? order.totalPrice / qty : 0);
+  return [
+    {
+      productName: order.productName ?? "（商品）",
+      specValues: (order.specValues as Record<string, string>) ?? {},
+      quantity: qty,
+      unitPrice,
+      subtotal: unitPrice * qty,
+    },
+  ];
 }
 
 function formatSpecSummary(specValues: Record<string, string>): string {
@@ -121,41 +128,56 @@ export default function TrackOrderPage({ publicToken }: Props) {
 
   const handleCopyToken = (text: string) => {
     if (!navigator.clipboard) return;
-    navigator.clipboard.writeText(text).then(() => {
-      setCopiedToken(true);
-      setTimeout(() => setCopiedToken(false), 2000);
-    }).catch(() => {});
+    navigator.clipboard
+      .writeText(text)
+      .then(() => {
+        setCopiedToken(true);
+        setTimeout(() => setCopiedToken(false), 2000);
+      })
+      .catch(() => {});
   };
 
   const handleCopyTracking = (text: string) => {
     if (!navigator.clipboard) return;
-    navigator.clipboard.writeText(text).then(() => {
-      setCopiedTracking(true);
-      setTimeout(() => setCopiedTracking(false), 2000);
-    }).catch(() => {});
+    navigator.clipboard
+      .writeText(text)
+      .then(() => {
+        setCopiedTracking(true);
+        setTimeout(() => setCopiedTracking(false), 2000);
+      })
+      .catch(() => {});
   };
 
-  const canEditPaymentLast5 = order?.status === "pending" || order?.status === "awaiting_payment";
+  const canEditPaymentLast5 =
+    order?.status === "pending" || order?.status === "awaiting_payment";
   const handleSavePaymentLast5 = async () => {
     setSavingPaymentLast5(true);
     setPaymentMessage("");
     try {
-      const response = await fetch(`/api/orders/track/${encodeURIComponent(publicToken)}/payment-last5`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ paymentLast5: paymentLast5.trim() || null }),
-      });
+      const response = await fetch(
+        `/api/orders/track/${encodeURIComponent(publicToken)}/payment-last5`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ paymentLast5: paymentLast5.trim() || null }),
+        },
+      );
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error ?? "付款末五碼儲存失敗");
       setPaymentLast5(payload.paymentLast5 ?? "");
       setPaymentMessage("已儲存，僅供人工對帳。");
     } catch (saveError) {
-      setPaymentMessage(formatActionableError({
-        happened: "付款末五碼沒有儲存。",
-        reason: saveError instanceof Error ? saveError.message : "網路或系統暫時沒有回應。",
-        action: "請確認仍在可修改的付款階段，再重新儲存。",
-        support: "若仍失敗，請把訂單查詢碼提供給店家。",
-      }));
+      setPaymentMessage(
+        formatActionableError({
+          happened: "付款末五碼沒有儲存。",
+          reason:
+            saveError instanceof Error
+              ? saveError.message
+              : "網路或系統暫時沒有回應。",
+          action: "請確認仍在可修改的付款階段，再重新儲存。",
+          support: "若仍失敗，請把訂單查詢碼提供給店家。",
+        }),
+      );
     } finally {
       setSavingPaymentLast5(false);
     }
@@ -179,17 +201,21 @@ export default function TrackOrderPage({ publicToken }: Props) {
             {is404 ? "找不到此訂單" : "查詢失敗"}
           </h1>
           <p className="text-muted-foreground text-sm mt-2 whitespace-pre-line">
-            {formatActionableError(is404 ? {
-              happened: "目前找不到這張訂單。",
-              reason: "訂單查詢碼可能不完整或不正確。",
-              action: "請回到查詢入口，重新貼上完整查詢碼。",
-              support: "若仍找不到，請把查詢碼提供給店家。",
-            } : {
-              happened: "訂單狀態暫時無法載入。",
-              reason: "網路或系統暫時沒有回應。",
-              action: "請保留查詢碼，稍後再試一次。",
-              support: "若持續失敗，請把畫面截圖傳給店家。",
-            })}
+            {formatActionableError(
+              is404
+                ? {
+                    happened: "目前找不到這張訂單。",
+                    reason: "訂單查詢碼可能不完整或不正確。",
+                    action: "請回到查詢入口，重新貼上完整查詢碼。",
+                    support: "若仍找不到，請把查詢碼提供給店家。",
+                  }
+                : {
+                    happened: "訂單狀態暫時無法載入。",
+                    reason: "網路或系統暫時沒有回應。",
+                    action: "請保留查詢碼，稍後再試一次。",
+                    support: "若持續失敗，請把畫面截圖傳給店家。",
+                  },
+            )}
           </p>
           <button
             onClick={() => setLocation("/track")}
@@ -203,12 +229,12 @@ export default function TrackOrderPage({ publicToken }: Props) {
   }
 
   const isCancelled = order.status === "cancelled";
-  const statusColor = STATUS_COLORS[order.status] ?? "bg-gray-100 text-gray-600";
+  const statusColor =
+    STATUS_COLORS[order.status] ?? "bg-gray-100 text-gray-600";
 
   return (
     <div className="min-h-[100dvh] bg-background px-5 py-8">
       <div className="max-w-sm mx-auto w-full">
-
         {/* Header */}
         <div className="flex items-center mb-5 gap-3">
           <button
@@ -219,7 +245,9 @@ export default function TrackOrderPage({ publicToken }: Props) {
           </button>
           <div className="flex-1 text-center">
             {order.storeName && (
-              <p className="text-xs text-muted-foreground mb-0.5">{order.storeName}</p>
+              <p className="text-xs text-muted-foreground mb-0.5">
+                {order.storeName}
+              </p>
             )}
             <h1 className="text-xl font-bold text-foreground">物流查詢</h1>
           </div>
@@ -232,7 +260,9 @@ export default function TrackOrderPage({ publicToken }: Props) {
           return (
             <div className="bg-white rounded-2xl border border-border px-5 py-4 mb-3 flex items-center justify-between">
               <span className="text-sm text-muted-foreground">物流狀態</span>
-              <span className={`text-sm px-3 py-1.5 rounded-full font-semibold ${badge.className}`}>
+              <span
+                className={`text-sm px-3 py-1.5 rounded-full font-semibold ${badge.className}`}
+              >
                 {badge.label}
               </span>
             </div>
@@ -242,13 +272,19 @@ export default function TrackOrderPage({ publicToken }: Props) {
         {/* Cancelled notice OR progress timeline */}
         {isCancelled ? (
           <div className="bg-destructive/5 rounded-2xl border border-destructive/20 px-5 py-4 mb-3">
-            <p className="text-sm font-semibold text-destructive">此訂單已取消</p>
-            <p className="text-xs text-muted-foreground mt-1">如有疑問，請聯繫商家。</p>
+            <p className="text-sm font-semibold text-destructive">
+              此訂單已取消
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              如有疑問，請聯繫商家。
+            </p>
           </div>
         ) : (
           <div className="bg-white rounded-2xl border border-border mb-3 overflow-hidden">
             <div className="px-5 py-3 border-b border-border">
-              <h2 className="text-xs font-semibold text-muted-foreground">訂單進度</h2>
+              <h2 className="text-xs font-semibold text-muted-foreground">
+                訂單進度
+              </h2>
             </div>
             <div className="px-5 py-4">
               {STATUS_STEPS.map((step, i) => {
@@ -258,29 +294,37 @@ export default function TrackOrderPage({ publicToken }: Props) {
                   <div key={step} className="flex gap-3 items-start">
                     {/* Circle + connector line */}
                     <div className="flex flex-col items-center flex-shrink-0">
-                      <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 ${
-                        state === "done"
-                          ? "bg-green-100 text-green-700"
-                          : state === "current"
-                          ? "bg-primary text-white"
-                          : "bg-secondary text-muted-foreground"
-                      }`}>
+                      <div
+                        className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 ${
+                          state === "done"
+                            ? "bg-green-100 text-green-700"
+                            : state === "current"
+                              ? "bg-primary text-white"
+                              : "bg-secondary text-muted-foreground"
+                        }`}
+                      >
                         {state === "done" ? "✓" : ""}
                       </div>
                       {!isLast && (
-                        <div className={`w-px h-5 mt-0.5 ${state === "done" ? "bg-green-200" : "bg-border"}`} />
+                        <div
+                          className={`w-px h-5 mt-0.5 ${state === "done" ? "bg-green-200" : "bg-border"}`}
+                        />
                       )}
                     </div>
 
                     {/* Label + "目前" badge */}
-                    <div className={`flex-1 flex items-center gap-2 ${isLast ? "pb-0" : "pb-3"}`}>
-                      <span className={`text-sm ${
-                        state === "done"
-                          ? "text-green-700 font-medium"
-                          : state === "current"
-                          ? "text-primary font-semibold"
-                          : "text-muted-foreground"
-                      }`}>
+                    <div
+                      className={`flex-1 flex items-center gap-2 ${isLast ? "pb-0" : "pb-3"}`}
+                    >
+                      <span
+                        className={`text-sm ${
+                          state === "done"
+                            ? "text-green-700 font-medium"
+                            : state === "current"
+                              ? "text-primary font-semibold"
+                              : "text-muted-foreground"
+                        }`}
+                      >
                         {STATUS_LABELS[step]}
                       </span>
                       {state === "current" && (
@@ -302,7 +346,9 @@ export default function TrackOrderPage({ publicToken }: Props) {
           return (
             <div className="bg-white rounded-2xl border border-border overflow-hidden mb-3">
               <div className="px-5 py-3 border-b border-border">
-                <h2 className="text-xs font-semibold text-muted-foreground">商品明細</h2>
+                <h2 className="text-xs font-semibold text-muted-foreground">
+                  商品明細
+                </h2>
               </div>
               <div className="divide-y divide-border">
                 {items.map((item, idx) => {
@@ -317,13 +363,18 @@ export default function TrackOrderPage({ publicToken }: Props) {
                         />
                       )}
                       <div className="flex-1 min-w-0 space-y-1">
-                        <div className="text-sm font-medium text-foreground">{item.productName}</div>
+                        <div className="text-sm font-medium text-foreground">
+                          {item.productName}
+                        </div>
                         {specSummary && (
-                          <div className="text-xs text-muted-foreground">規格：{specSummary}</div>
+                          <div className="text-xs text-muted-foreground">
+                            規格：{specSummary}
+                          </div>
                         )}
                         <div className="flex items-center justify-between mt-1">
                           <span className="text-xs text-muted-foreground">
-                            × {item.quantity} 件 · NT$ {item.unitPrice.toLocaleString()} / 件
+                            × {item.quantity} 件 · NT${" "}
+                            {item.unitPrice.toLocaleString()} / 件
                           </span>
                           <span className="text-sm font-semibold text-foreground">
                             NT$ {item.subtotal.toLocaleString()}
@@ -335,7 +386,9 @@ export default function TrackOrderPage({ publicToken }: Props) {
                 })}
               </div>
               <div className="px-5 py-3 border-t border-border flex items-center justify-between">
-                <span className="text-sm font-semibold text-foreground">訂單總額</span>
+                <span className="text-sm font-semibold text-foreground">
+                  訂單總額
+                </span>
                 <span className="text-base font-bold text-primary">
                   NT$ {Number(order.orderTotal).toLocaleString()}
                 </span>
@@ -348,7 +401,9 @@ export default function TrackOrderPage({ publicToken }: Props) {
         <div className="bg-white rounded-2xl border border-border overflow-hidden">
           <div className="px-5 py-4 border-b border-border flex items-center justify-between">
             <span className="text-sm text-muted-foreground">目前狀態</span>
-            <span className={`text-sm px-3 py-1 rounded-full font-medium ${statusColor}`}>
+            <span
+              className={`text-sm px-3 py-1 rounded-full font-medium ${statusColor}`}
+            >
               {order.statusLabel}
             </span>
           </div>
@@ -362,24 +417,41 @@ export default function TrackOrderPage({ publicToken }: Props) {
         {/* Shipment info card */}
         <div className="bg-white rounded-2xl border border-border overflow-hidden mt-3">
           <div className="px-5 py-3 border-b border-border">
-            <h2 className="text-xs font-semibold text-muted-foreground">物流資訊</h2>
+            <h2 className="text-xs font-semibold text-muted-foreground">
+              物流資訊
+            </h2>
           </div>
           <div className="px-5 py-4 space-y-3">
             {order.trackingCode ? (
               <>
                 {(order.trackingProviderLabel ?? order.trackingProvider) && (
-                  <InfoRow label="物流商" value={order.trackingProviderLabel ?? order.trackingProvider!} />
+                  <InfoRow
+                    label="物流商"
+                    value={
+                      order.trackingProviderLabel ?? order.trackingProvider!
+                    }
+                  />
                 )}
                 <InfoRow label="物流貨號" value={order.trackingCode} />
                 {order.latestTrackingStatusLabel ? (
-                  <InfoRow label="最新貨態" value={order.latestTrackingStatusLabel} />
+                  <InfoRow
+                    label="最新貨態"
+                    value={order.latestTrackingStatusLabel}
+                  />
                 ) : (
                   <InfoRow label="最新貨態" value="等待物流商更新" />
                 )}
                 {(order.latestTrackingTime ?? order.shipmentUpdatedAt) && (
-                  <InfoRow label="貨態時間" value={formatDate((order.latestTrackingTime ?? order.shipmentUpdatedAt)!)} />
+                  <InfoRow
+                    label="貨態時間"
+                    value={formatDate(
+                      (order.latestTrackingTime ?? order.shipmentUpdatedAt)!,
+                    )}
+                  />
                 )}
-                {(order.latestTrackingStatus === "exception" || order.latestTrackingStatus === "unknown" || order.latestTrackingStatus === "returned") && (
+                {(order.latestTrackingStatus === "exception" ||
+                  order.latestTrackingStatus === "unknown" ||
+                  order.latestTrackingStatus === "returned") && (
                   <p className="text-xs text-amber-700 leading-relaxed">
                     物流資料需要店家確認，請稍後再查看，或聯絡店家。
                   </p>
@@ -387,7 +459,8 @@ export default function TrackOrderPage({ publicToken }: Props) {
               </>
             ) : isSelfPickup(order.pickupMethod) ? (
               <p className="text-sm text-muted-foreground leading-relaxed">
-                此訂單為面交 / 自取，不會有物流貨態。取貨地點請見下方資訊，實際時間與地點請依店家通知為準。
+                此訂單為面交 /
+                自取，不會有物流貨態。取貨地點請見下方資訊，實際時間與地點請依店家通知為準。
               </p>
             ) : (
               <p className="text-sm text-muted-foreground leading-relaxed">
@@ -400,7 +473,9 @@ export default function TrackOrderPage({ publicToken }: Props) {
         {/* Pickup / recipient info card */}
         <div className="bg-white rounded-2xl border border-border overflow-hidden mt-3">
           <div className="px-5 py-3 border-b border-border">
-            <h2 className="text-xs font-semibold text-muted-foreground">取貨 / 收件資訊</h2>
+            <h2 className="text-xs font-semibold text-muted-foreground">
+              取貨 / 收件資訊
+            </h2>
           </div>
           <div className="px-5 py-4 space-y-3">
             <InfoRow label="取貨方式" value={order.pickupMethod} />
@@ -414,12 +489,21 @@ export default function TrackOrderPage({ publicToken }: Props) {
             {/* 面交 / 自取：顯示地點摘要（public-safe），未填則請依店家通知 */}
             {isSelfPickup(order.pickupMethod) ? (
               <InfoRow
-                label={order.pickupMethod === "面交" ? "面交地點" : order.pickupMethod === "自取" ? "自取地點" : "取貨地點"}
+                label={
+                  order.pickupMethod === "面交"
+                    ? "面交地點"
+                    : order.pickupMethod === "自取"
+                      ? "自取地點"
+                      : "取貨地點"
+                }
                 value={order.recipientAddressMasked ?? "請依店家通知為準"}
               />
             ) : (
               order.recipientAddressMasked && (
-                <InfoRow label="收件地址" value={order.recipientAddressMasked} />
+                <InfoRow
+                  label="收件地址"
+                  value={order.recipientAddressMasked}
+                />
               )
             )}
           </div>
@@ -428,7 +512,9 @@ export default function TrackOrderPage({ publicToken }: Props) {
         {canEditPaymentLast5 && (
           <div className="bg-white rounded-2xl border border-border overflow-hidden mt-3">
             <div className="px-5 py-3 border-b border-border">
-              <h2 className="text-xs font-semibold text-muted-foreground">付款末五碼（選填）</h2>
+              <h2 className="text-xs font-semibold text-muted-foreground">
+                付款末五碼（選填）
+              </h2>
             </div>
             <div className="px-5 py-4 space-y-2">
               <input
@@ -437,20 +523,31 @@ export default function TrackOrderPage({ publicToken }: Props) {
                 maxLength={5}
                 pattern="[0-9]{5}"
                 value={paymentLast5}
-                onChange={(event) => setPaymentLast5(event.target.value.replace(/\D/g, "").slice(0, 5))}
+                onChange={(event) =>
+                  setPaymentLast5(
+                    event.target.value.replace(/\D/g, "").slice(0, 5),
+                  )
+                }
                 placeholder="請填 5 位數字"
                 className="w-full h-11 px-3 rounded-xl border border-input bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
               <button
                 type="button"
                 onClick={handleSavePaymentLast5}
-                disabled={savingPaymentLast5 || (paymentLast5.length > 0 && paymentLast5.length !== 5)}
+                disabled={
+                  savingPaymentLast5 ||
+                  (paymentLast5.length > 0 && paymentLast5.length !== 5)
+                }
                 className="w-full h-11 rounded-xl bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50"
               >
                 {savingPaymentLast5 ? "儲存中…" : "儲存付款末五碼"}
               </button>
-              <p className="text-xs text-muted-foreground">僅供人工對帳，不會自動判定付款。</p>
-              {paymentMessage && <p className="text-xs text-primary">{paymentMessage}</p>}
+              <p className="text-xs text-muted-foreground">
+                僅供人工對帳，不會自動判定付款。
+              </p>
+              {paymentMessage && (
+                <p className="text-xs text-primary">{paymentMessage}</p>
+              )}
             </div>
           </div>
         )}
@@ -482,17 +579,26 @@ export default function TrackOrderPage({ publicToken }: Props) {
             如有疑問，請聯繫商家。
           </p>
         )}
-
       </div>
     </div>
   );
 }
 
-function InfoRow({ label, value, bold }: { label: string; value: string; bold?: boolean }) {
+function InfoRow({
+  label,
+  value,
+  bold,
+}: {
+  label: string;
+  value: string;
+  bold?: boolean;
+}) {
   return (
     <div className="flex items-center justify-between text-sm gap-2">
       <span className="text-muted-foreground shrink-0">{label}</span>
-      <span className={`text-foreground text-right ${bold ? "font-bold" : ""}`}>{value}</span>
+      <span className={`text-foreground text-right ${bold ? "font-bold" : ""}`}>
+        {value}
+      </span>
     </div>
   );
 }

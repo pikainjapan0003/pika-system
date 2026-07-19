@@ -31,8 +31,13 @@ export function saveCart(items: BuyerCartItem[]): void {
   } catch {}
 }
 
-export function makeItemKey(shareToken: string, specValues: Record<string, string>): string {
-  const sorted = Object.entries(specValues).sort(([a], [b]) => a.localeCompare(b));
+export function makeItemKey(
+  shareToken: string,
+  specValues: Record<string, string>,
+): string {
+  const sorted = Object.entries(specValues).sort(([a], [b]) =>
+    a.localeCompare(b),
+  );
   return `${shareToken}:${JSON.stringify(sorted)}`;
 }
 
@@ -55,7 +60,9 @@ export function addToCart(params: {
   let newCart: BuyerCartItem[];
   if (existing) {
     newCart = cart.map((i) =>
-      i.itemKey === itemKey ? { ...i, quantity: i.quantity + params.quantity } : i,
+      i.itemKey === itemKey
+        ? { ...i, quantity: i.quantity + params.quantity }
+        : i,
     );
   } else {
     newCart = [...cart, { ...params, itemKey }];
@@ -64,8 +71,13 @@ export function addToCart(params: {
   return newCart;
 }
 
-export function updateCartQty(itemKey: string, quantity: number): BuyerCartItem[] {
-  const cart = getCart().map((i) => (i.itemKey === itemKey ? { ...i, quantity } : i));
+export function updateCartQty(
+  itemKey: string,
+  quantity: number,
+): BuyerCartItem[] {
+  const cart = getCart().map((i) =>
+    i.itemKey === itemKey ? { ...i, quantity } : i,
+  );
   saveCart(cart);
   return cart;
 }

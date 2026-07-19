@@ -158,7 +158,14 @@ function groupExceptions(items: TrackingException[]): ExceptionGroup[] {
     return isNaN(t) ? null : t;
   };
   for (const item of items) {
-    const key = [item.provider, item.sourceType, item.trackingCode ?? "", item.orderId ?? "", item.errorCode, item.status].join("|");
+    const key = [
+      item.provider,
+      item.sourceType,
+      item.trackingCode ?? "",
+      item.orderId ?? "",
+      item.errorCode,
+      item.status,
+    ].join("|");
     let group = map.get(key);
     if (!group) {
       group = {
@@ -189,8 +196,14 @@ function groupExceptions(items: TrackingException[]): ExceptionGroup[] {
       if (earliest == null || t < earliest) group.earliestAt = item.createdAt;
     }
     // 嚴重程度取最高的那筆
-    const rank: Record<string, number> = { info: 0, warning: 1, error: 2, critical: 3 };
-    if ((rank[item.severity] ?? 0) > (rank[group.severity] ?? 0)) group.severity = item.severity;
+    const rank: Record<string, number> = {
+      info: 0,
+      warning: 1,
+      error: 2,
+      critical: 3,
+    };
+    if ((rank[item.severity] ?? 0) > (rank[group.severity] ?? 0))
+      group.severity = item.severity;
   }
   return order.map((k) => map.get(k)!);
 }
@@ -205,7 +218,10 @@ const RETRYABLE_ERROR_CODES = new Set([
 ]);
 
 function canRetryException(group: ExceptionGroup): boolean {
-  return group.provider === "familymart" && RETRYABLE_ERROR_CODES.has(group.errorCode);
+  return (
+    group.provider === "familymart" &&
+    RETRYABLE_ERROR_CODES.has(group.errorCode)
+  );
 }
 
 function formatTime(iso: string | null): string {
@@ -241,15 +257,28 @@ export default function LogisticsExceptionsPage() {
     setError(null);
     try {
       const token = await getToken();
-      const params = new URLSearchParams({ status, provider, sourceType, limit: "100" });
-      const res = await fetch(`/api/stores/${storeId}/logistics/exceptions?${params}`, {
-        credentials: "include",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      const params = new URLSearchParams({
+        status,
+        provider,
+        sourceType,
+        limit: "100",
       });
+      const res = await fetch(
+        `/api/stores/${storeId}/logistics/exceptions?${params}`,
+        {
+          credentials: "include",
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        },
+      );
       const body = await res.json().catch(() => ({}));
       if (!res.ok || !body.ok) {
         // debug 僅輸出狀態碼與 errorCode，不含 token / rawData / 個資
-        console.error("logistics exceptions load failed", res.status, body.errorCode ?? null, body.message ?? null);
+        console.error(
+          "logistics exceptions load failed",
+          res.status,
+          body.errorCode ?? null,
+          body.message ?? null,
+        );
         setError("物流異常資料載入失敗");
         return;
       }
@@ -276,15 +305,18 @@ export default function LogisticsExceptionsPage() {
     try {
       const token = await getToken();
       for (const item of group.items) {
-        const res = await fetch(`/api/stores/${storeId}/logistics/exceptions/${item.id}`, {
-          method: "PATCH",
-          credentials: "include",
-          headers: {
-            "content-type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        const res = await fetch(
+          `/api/stores/${storeId}/logistics/exceptions/${item.id}`,
+          {
+            method: "PATCH",
+            credentials: "include",
+            headers: {
+              "content-type": "application/json",
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify({ status: next }),
           },
-          body: JSON.stringify({ status: next }),
-        });
+        );
         const body = await res.json().catch(() => ({}));
         if (!res.ok || !body.ok) {
           setActionError("批次處理失敗，請稍後再試。");
@@ -309,11 +341,14 @@ export default function LogisticsExceptionsPage() {
     setActionError(null);
     try {
       const token = await getToken();
-      const res = await fetch(`/api/stores/${storeId}/logistics/exceptions/${target.id}/retry`, {
-        method: "POST",
-        credentials: "include",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
+      const res = await fetch(
+        `/api/stores/${storeId}/logistics/exceptions/${target.id}/retry`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        },
+      );
       const body = await res.json().catch(() => ({}));
       if (!res.ok || !body.ok) {
         setActionError("重新查詢失敗，請稍後再試。");
@@ -342,21 +377,41 @@ export default function LogisticsExceptionsPage() {
     <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-24">
       <header className="bg-white border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
         <h1 className="text-lg font-bold text-foreground">物流異常處理</h1>
-        <p className="text-xs text-muted-foreground mt-1">集中處理匯入與物流查詢失敗的資料。</p>
+        <p className="text-xs text-muted-foreground mt-1">
+          集中處理匯入與物流查詢失敗的資料。
+        </p>
         <div className="flex items-center gap-2 mt-3">
-          <select className={SELECT} value={status} onChange={(e) => setStatus(e.target.value)}>
+          <select
+            className={SELECT}
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+          >
             {STATUS_FILTERS.map((f) => (
-              <option key={f.value} value={f.value}>{f.label}</option>
+              <option key={f.value} value={f.value}>
+                {f.label}
+              </option>
             ))}
           </select>
-          <select className={SELECT} value={provider} onChange={(e) => setProvider(e.target.value)}>
+          <select
+            className={SELECT}
+            value={provider}
+            onChange={(e) => setProvider(e.target.value)}
+          >
             {PROVIDER_FILTERS.map((f) => (
-              <option key={f.value} value={f.value}>{f.label}</option>
+              <option key={f.value} value={f.value}>
+                {f.label}
+              </option>
             ))}
           </select>
-          <select className={SELECT} value={sourceType} onChange={(e) => setSourceType(e.target.value)}>
+          <select
+            className={SELECT}
+            value={sourceType}
+            onChange={(e) => setSourceType(e.target.value)}
+          >
             {SOURCE_FILTERS.map((f) => (
-              <option key={f.value} value={f.value}>{f.label}</option>
+              <option key={f.value} value={f.value}>
+                {f.label}
+              </option>
             ))}
           </select>
           <button
@@ -372,12 +427,16 @@ export default function LogisticsExceptionsPage() {
       <div className="px-5 py-4 space-y-3">
         <LogisticsSyncStatusHint />
         {actionError && !loading && !error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">{actionError}</div>
+          <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">
+            {actionError}
+          </div>
         )}
         {loading ? (
           <div className="flex flex-col items-center gap-3 py-12">
             <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-            <p className="text-xs text-muted-foreground">物流異常資料載入中...</p>
+            <p className="text-xs text-muted-foreground">
+              物流異常資料載入中...
+            </p>
           </div>
         ) : error ? (
           <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-4 text-center space-y-2">
@@ -393,17 +452,25 @@ export default function LogisticsExceptionsPage() {
         ) : items.length === 0 ? (
           <div className="bg-white rounded-2xl p-10 border border-border text-center">
             <p className="text-muted-foreground text-sm">
-              {status === "open" ? "目前沒有待處理物流異常" : "沒有符合條件的物流異常"}
+              {status === "open"
+                ? "目前沒有待處理物流異常"
+                : "沒有符合條件的物流異常"}
             </p>
           </div>
         ) : (
           groups.map((group) => {
-            const { reason, description, rowHint } = getExceptionReasonText(group.errorCode, group.message);
+            const { reason, description, rowHint } = getExceptionReasonText(
+              group.errorCode,
+              group.message,
+            );
             const acting = actingGroup === group.key;
             const retrying = retryingGroup === group.key;
             const isExpanded = expanded.has(group.key);
             return (
-              <div key={group.key} className="bg-white rounded-2xl border border-border px-4 py-3.5 space-y-2">
+              <div
+                key={group.key}
+                className="bg-white rounded-2xl border border-border px-4 py-3.5 space-y-2"
+              >
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <span className="text-xs font-bold text-foreground">
                     {group.orderId != null ? `#${group.orderId}` : "未配對訂單"}
@@ -414,10 +481,14 @@ export default function LogisticsExceptionsPage() {
                   <span className="text-[11px] px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">
                     {SOURCE_LABELS[group.sourceType] ?? "系統"}
                   </span>
-                  <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${STATUS_BADGE[group.status] ?? "bg-gray-100 text-gray-500"}`}>
+                  <span
+                    className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${STATUS_BADGE[group.status] ?? "bg-gray-100 text-gray-500"}`}
+                  >
                     {STATUS_LABELS[group.status] ?? "其他狀態"}
                   </span>
-                  <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${SEVERITY_BADGE[group.severity] ?? "bg-gray-100 text-gray-600"}`}>
+                  <span
+                    className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${SEVERITY_BADGE[group.severity] ?? "bg-gray-100 text-gray-600"}`}
+                  >
                     {SEVERITY_LABELS[group.severity] ?? "一般"}
                   </span>
                 </div>
@@ -429,9 +500,15 @@ export default function LogisticsExceptionsPage() {
                     {rowHint ? `（${rowHint}）` : ""}
                   </p>
                   <p>同類異常：{group.items.length} 筆</p>
-                  <p className="text-muted-foreground">最新發生：{formatTime(group.latestAt)}</p>
-                  <p className="text-muted-foreground">最早發生：{formatTime(group.earliestAt)}</p>
-                  <p className="text-muted-foreground">失敗總次數：{group.totalFailures} 次</p>
+                  <p className="text-muted-foreground">
+                    最新發生：{formatTime(group.latestAt)}
+                  </p>
+                  <p className="text-muted-foreground">
+                    最早發生：{formatTime(group.earliestAt)}
+                  </p>
+                  <p className="text-muted-foreground">
+                    失敗總次數：{group.totalFailures} 次
+                  </p>
                 </div>
                 <div className="flex items-center gap-2 pt-1 flex-wrap">
                   {group.status === "open" || group.status === "reviewing" ? (
@@ -439,7 +516,9 @@ export default function LogisticsExceptionsPage() {
                       <button
                         type="button"
                         disabled={acting}
-                        onClick={() => void updateGroupStatus(group, "resolved")}
+                        onClick={() =>
+                          void updateGroupStatus(group, "resolved")
+                        }
                         className="h-8 px-3 rounded-lg bg-primary text-white text-xs font-medium disabled:opacity-50"
                       >
                         {acting ? "處理中..." : "全部標記已處理"}
@@ -463,16 +542,18 @@ export default function LogisticsExceptionsPage() {
                       {acting ? "處理中..." : "全部重新打開"}
                     </button>
                   )}
-                  {canRetryException(group) && (group.status === "open" || group.status === "reviewing") && (
-                    <button
-                      type="button"
-                      disabled={retrying || acting}
-                      onClick={() => void retryGroup(group)}
-                      className="h-8 px-3 rounded-lg border border-primary/30 bg-primary/5 text-xs font-medium text-primary disabled:opacity-50"
-                    >
-                      {retrying ? "查詢中..." : "重新查詢"}
-                    </button>
-                  )}
+                  {canRetryException(group) &&
+                    (group.status === "open" ||
+                      group.status === "reviewing") && (
+                      <button
+                        type="button"
+                        disabled={retrying || acting}
+                        onClick={() => void retryGroup(group)}
+                        className="h-8 px-3 rounded-lg border border-primary/30 bg-primary/5 text-xs font-medium text-primary disabled:opacity-50"
+                      >
+                        {retrying ? "查詢中..." : "重新查詢"}
+                      </button>
+                    )}
                   <button
                     type="button"
                     onClick={() => toggleExpanded(group.key)}
@@ -484,9 +565,15 @@ export default function LogisticsExceptionsPage() {
                 {isExpanded && (
                   <div className="border-t border-border pt-2 space-y-1">
                     {group.items.map((item) => (
-                      <div key={item.id} className="text-[11px] text-muted-foreground">
-                        #{item.id}　建立 {formatTime(item.createdAt)}　失敗 {item.failureCount} 次
-                        {item.resolvedAt ? `　處理時間 ${formatTime(item.resolvedAt)}` : ""}
+                      <div
+                        key={item.id}
+                        className="text-[11px] text-muted-foreground"
+                      >
+                        #{item.id}　建立 {formatTime(item.createdAt)}　失敗{" "}
+                        {item.failureCount} 次
+                        {item.resolvedAt
+                          ? `　處理時間 ${formatTime(item.resolvedAt)}`
+                          : ""}
                       </div>
                     ))}
                     <p className="text-[10px] text-muted-foreground/70 break-all">

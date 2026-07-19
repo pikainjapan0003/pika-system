@@ -9,7 +9,11 @@
  * 刻意不收錄為別名。
  */
 
-export type CanonicalTrackingProvider = "711" | "familymart" | "tcat" | "postoffice";
+export type CanonicalTrackingProvider =
+  | "711"
+  | "familymart"
+  | "tcat"
+  | "postoffice";
 
 export type LogisticsProviderMeta = {
   code: CanonicalTrackingProvider;
@@ -70,9 +74,12 @@ export const LOGISTICS_PROVIDERS: readonly LogisticsProviderMeta[] = [
   },
 ] as const;
 
-const PROVIDER_ALIASES: Record<string, CanonicalTrackingProvider> = Object.fromEntries(
-  LOGISTICS_PROVIDERS.flatMap((p) => p.aliases.map((a) => [a.toLowerCase(), p.code])),
-);
+const PROVIDER_ALIASES: Record<string, CanonicalTrackingProvider> =
+  Object.fromEntries(
+    LOGISTICS_PROVIDERS.flatMap((p) =>
+      p.aliases.map((a) => [a.toLowerCase(), p.code]),
+    ),
+  );
 
 const PROVIDER_BY_CODE = Object.fromEntries(
   LOGISTICS_PROVIDERS.map((p) => [p.code, p]),
@@ -85,28 +92,40 @@ export function normalizeTrackingProvider(
   return PROVIDER_ALIASES[raw.trim().toLowerCase()] ?? null;
 }
 
-export function getProviderMeta(raw: string | null | undefined): LogisticsProviderMeta | null {
+export function getProviderMeta(
+  raw: string | null | undefined,
+): LogisticsProviderMeta | null {
   const code = normalizeTrackingProvider(raw);
   return code ? PROVIDER_BY_CODE[code] : null;
 }
 
-export function getProviderDisplayName(raw: string | null | undefined): string | null {
+export function getProviderDisplayName(
+  raw: string | null | undefined,
+): string | null {
   return getProviderMeta(raw)?.displayName ?? null;
 }
 
-export function getProviderShortName(raw: string | null | undefined): string | null {
+export function getProviderShortName(
+  raw: string | null | undefined,
+): string | null {
   return getProviderMeta(raw)?.shortName ?? null;
 }
 
 /** 該 provider 是否支援自動同步；未知 provider 回 false（誠實預設） */
-export function getProviderSyncSupport(raw: string | null | undefined): boolean {
+export function getProviderSyncSupport(
+  raw: string | null | undefined,
+): boolean {
   return getProviderMeta(raw)?.supportsAutoSync ?? false;
 }
 
 export function getSupportedAutoSyncProviders(): CanonicalTrackingProvider[] {
-  return LOGISTICS_PROVIDERS.filter((p) => p.supportsAutoSync).map((p) => p.code);
+  return LOGISTICS_PROVIDERS.filter((p) => p.supportsAutoSync).map(
+    (p) => p.code,
+  );
 }
 
 export function getUnsupportedAutoSyncProviders(): CanonicalTrackingProvider[] {
-  return LOGISTICS_PROVIDERS.filter((p) => !p.supportsAutoSync).map((p) => p.code);
+  return LOGISTICS_PROVIDERS.filter((p) => !p.supportsAutoSync).map(
+    (p) => p.code,
+  );
 }

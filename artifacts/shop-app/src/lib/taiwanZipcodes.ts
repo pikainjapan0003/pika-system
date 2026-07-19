@@ -508,11 +508,18 @@ export interface ParsedRecipientAddress {
 }
 
 // 「郵遞區號 縣市行政區詳細地址」←→ 結構化欄位（與買家端 recipientAddress 格式一致）
-export function combineRecipientAddress(zip: string, city: string, district: string, line: string): string {
+export function combineRecipientAddress(
+  zip: string,
+  city: string,
+  district: string,
+  line: string,
+): string {
   return `${zip} ${city}${district}${line.trim()}`;
 }
 
-export function parseRecipientAddress(full: string | null | undefined): ParsedRecipientAddress | null {
+export function parseRecipientAddress(
+  full: string | null | undefined,
+): ParsedRecipientAddress | null {
   const text = (full ?? "").trim();
   if (!text) return null;
   const m = text.match(/^(\d{3,6})?\s*(.*)$/);
@@ -530,7 +537,12 @@ export function parseRecipientAddress(full: string | null | undefined): ParsedRe
           };
         }
       }
-      return { zip: m?.[1] ?? "", city: region.city, district: "", line: afterCity.trim() };
+      return {
+        zip: m?.[1] ?? "",
+        city: region.city,
+        district: "",
+        line: afterCity.trim(),
+      };
     }
   }
   return null;

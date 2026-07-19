@@ -55,22 +55,45 @@ export default function AuditLogsPage() {
   return (
     <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-24">
       <header className="sticky top-0 z-10 border-b border-border bg-white px-5 pb-4 pt-10">
-        <button type="button" onClick={() => setLocation("/settings")} className="text-sm font-medium text-primary">
+        <button
+          type="button"
+          onClick={() => setLocation("/settings")}
+          className="text-sm font-medium text-primary"
+        >
           ‹ 返回設定
         </button>
         <h1 className="mt-2 text-lg font-bold">操作紀錄</h1>
-        <p className="mt-1 text-xs text-muted-foreground">只記動作與資料編號，不保存 token 或完整個資。</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          只記動作與資料編號，不保存 token 或完整個資。
+        </p>
       </header>
       <main className="space-y-3 p-5">
-        {error && <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+        {error && (
+          <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">
+            {error}
+          </p>
+        )}
         {rows.map((row) => (
-          <article key={row.id} className="rounded-2xl border border-border bg-white p-4">
-            <p className="font-medium">{ACTION_LABELS[row.action] ?? row.action}</p>
-            <p className="mt-1 text-sm text-muted-foreground">對象：{row.target}</p>
-            <p className="mt-1 text-xs text-muted-foreground">{new Date(row.at).toLocaleString("zh-TW")}</p>
+          <article
+            key={row.id}
+            className="rounded-2xl border border-border bg-white p-4"
+          >
+            <p className="font-medium">
+              {ACTION_LABELS[row.action] ?? row.action}
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              對象：{row.target}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {new Date(row.at).toLocaleString("zh-TW")}
+            </p>
           </article>
         ))}
-        {!error && rows.length === 0 && <p className="py-8 text-center text-sm text-muted-foreground">尚無操作紀錄</p>}
+        {!error && rows.length === 0 && (
+          <p className="py-8 text-center text-sm text-muted-foreground">
+            尚無操作紀錄
+          </p>
+        )}
       </main>
       <BottomNav active="settings" />
     </div>

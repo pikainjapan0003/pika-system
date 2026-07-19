@@ -1,7 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@clerk/react";
-import { useGetMyStore, useUpdateStore, getGetMyStoreQueryKey } from "@workspace/api-client-react";
+import {
+  useGetMyStore,
+  useUpdateStore,
+  getGetMyStoreQueryKey,
+} from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { BottomNav } from "./Dashboard";
 import { ExchangeRateReferenceHint } from "@/components/ExchangeRateReferenceHint";
@@ -41,11 +45,24 @@ const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 type LogoUploadStatus = "idle" | "uploading" | "done" | "error";
 
 const PRESET_COLORS = [
-  "#F57572", "#EF4444", "#F97316", "#F59E0B",
-  "#10B981", "#06B6D4", "#3B82F6", "#8B5CF6", "#111827",
+  "#F57572",
+  "#EF4444",
+  "#F97316",
+  "#F59E0B",
+  "#10B981",
+  "#06B6D4",
+  "#3B82F6",
+  "#8B5CF6",
+  "#111827",
 ];
 
-type PreviewKey = "receiptTitle" | "receiptFooter" | "socialLinks" | "returnPolicy" | "shoppingNotice" | "orderFooter";
+type PreviewKey =
+  | "receiptTitle"
+  | "receiptFooter"
+  | "socialLinks"
+  | "returnPolicy"
+  | "shoppingNotice"
+  | "orderFooter";
 
 interface PreviewCardConfig {
   title: string;
@@ -155,11 +172,7 @@ const PREVIEW_CONFIGS: Record<PreviewKey, FeaturePreviewConfig> = {
     previewCards: [
       {
         title: "預覽：訂單頁尾說明",
-        items: [
-          "如有問題請私訊客服",
-          "取貨前請留意通知",
-          "感謝您的耐心等候",
-        ],
+        items: ["如有問題請私訊客服", "取貨前請留意通知", "感謝您的耐心等候"],
         style: "list",
       },
     ],
@@ -185,25 +198,35 @@ export default function SettingsPage() {
   const [exchangeRateError, setExchangeRateError] = useState("");
   const [shippingCvsEnabled, setShippingCvsEnabled] = useState(true);
   const [shippingBlackCatEnabled, setShippingBlackCatEnabled] = useState(true);
-  const [shippingPostOfficeEnabled, setShippingPostOfficeEnabled] = useState(true);
-  const [shippingSelfPickupEnabled, setShippingSelfPickupEnabled] = useState(true);
+  const [shippingPostOfficeEnabled, setShippingPostOfficeEnabled] =
+    useState(true);
+  const [shippingSelfPickupEnabled, setShippingSelfPickupEnabled] =
+    useState(true);
   const storeInitialized = useRef(false);
 
-  const [editingField, setEditingField] = useState<"name" | "description" | null>(null);
+  const [editingField, setEditingField] = useState<
+    "name" | "description" | null
+  >(null);
   const [showColorPicker, setShowColorPicker] = useState(false);
-  const [activeSection, setActiveSection] = useState<"main" | "storeHub">("main");
-  const [activePreviewKey, setActivePreviewKey] = useState<PreviewKey | null>(null);
+  const [activeSection, setActiveSection] = useState<"main" | "storeHub">(
+    "main",
+  );
+  const [activePreviewKey, setActivePreviewKey] = useState<PreviewKey | null>(
+    null,
+  );
 
   // Logo upload state
   const [logoLocalPreview, setLogoLocalPreview] = useState<string | null>(null);
-  const [logoUploadStatus, setLogoUploadStatus] = useState<LogoUploadStatus>("idle");
+  const [logoUploadStatus, setLogoUploadStatus] =
+    useState<LogoUploadStatus>("idle");
   const [logoUploadError, setLogoUploadError] = useState("");
   const logoFileInputRef = useRef<HTMLInputElement>(null);
   const logoPreviewObjectUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
     return () => {
-      if (logoPreviewObjectUrlRef.current) URL.revokeObjectURL(logoPreviewObjectUrlRef.current);
+      if (logoPreviewObjectUrlRef.current)
+        URL.revokeObjectURL(logoPreviewObjectUrlRef.current);
     };
   }, []);
 
@@ -216,11 +239,21 @@ export default function SettingsPage() {
       const savedColor = store.brandPrimaryColor ?? DEFAULT_BRAND_PRIMARY_COLOR;
       setBrandColor(savedColor);
       applyBrandColor(savedColor);
-      setPurchaseExchangeRate(store.purchaseExchangeRate != null ? String(store.purchaseExchangeRate) : "");
+      setPurchaseExchangeRate(
+        store.purchaseExchangeRate != null
+          ? String(store.purchaseExchangeRate)
+          : "",
+      );
       setShippingCvsEnabled((store as any).shippingCvsEnabled !== false);
-      setShippingBlackCatEnabled((store as any).shippingBlackCatEnabled !== false);
-      setShippingPostOfficeEnabled((store as any).shippingPostOfficeEnabled !== false);
-      setShippingSelfPickupEnabled((store as any).shippingSelfPickupEnabled !== false);
+      setShippingBlackCatEnabled(
+        (store as any).shippingBlackCatEnabled !== false,
+      );
+      setShippingPostOfficeEnabled(
+        (store as any).shippingPostOfficeEnabled !== false,
+      );
+      setShippingSelfPickupEnabled(
+        (store as any).shippingSelfPickupEnabled !== false,
+      );
     }
   }, [store]);
 
@@ -239,7 +272,9 @@ export default function SettingsPage() {
     setLogoLocalPreview(null);
   };
 
-  const handleLogoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoFileChange = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
@@ -257,7 +292,8 @@ export default function SettingsPage() {
       return;
     }
 
-    if (logoPreviewObjectUrlRef.current) URL.revokeObjectURL(logoPreviewObjectUrlRef.current);
+    if (logoPreviewObjectUrlRef.current)
+      URL.revokeObjectURL(logoPreviewObjectUrlRef.current);
     const preview = URL.createObjectURL(file);
     logoPreviewObjectUrlRef.current = preview;
     setLogoLocalPreview(preview);
@@ -294,14 +330,14 @@ export default function SettingsPage() {
         return;
       }
       if (!res.ok) {
-        const body = await res.json().catch(() => ({})) as { error?: string };
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
         clearLogoLocalPreview();
         setLogoUploadStatus("error");
         setLogoUploadError(body.error ?? "圖片上傳失敗，請稍後再試");
         return;
       }
 
-      const data = await res.json() as { imageUrl?: string };
+      const data = (await res.json()) as { imageUrl?: string };
       if (!data.imageUrl) {
         clearLogoLocalPreview();
         setLogoUploadStatus("error");
@@ -332,12 +368,14 @@ export default function SettingsPage() {
     setExchangeRateError("");
     setSaved(false);
     if (!name.trim()) {
-      setError(formatActionableError({
-        happened: "店家設定沒有儲存。",
-        reason: "店鋪名稱是必填欄位。",
-        action: "請填入店鋪名稱後再按儲存。",
-        support: "若名稱已填仍失敗，請截圖交給系統管理者。",
-      }));
+      setError(
+        formatActionableError({
+          happened: "店家設定沒有儲存。",
+          reason: "店鋪名稱是必填欄位。",
+          action: "請填入店鋪名稱後再按儲存。",
+          support: "若名稱已填仍失敗，請截圖交給系統管理者。",
+        }),
+      );
       return;
     }
     const normalizedColor = normalizeHex(brandColor);
@@ -347,13 +385,20 @@ export default function SettingsPage() {
     }
     const trimmedRate = purchaseExchangeRate.trim();
     const exchangeRateNum = trimmedRate ? parseFloat(trimmedRate) : null;
-    if (trimmedRate && (exchangeRateNum === null || isNaN(exchangeRateNum) || exchangeRateNum < 0)) {
-      setExchangeRateError(formatActionableError({
-        happened: "進貨匯率沒有儲存。",
-        reason: "匯率必須是 0 以上的數字，或留空表示待確認。",
-        action: "請修正匯率，或清空欄位後再儲存。",
-        support: "不確定匯率時可先留空，不要填入猜測值。",
-      }));
+    if (
+      trimmedRate &&
+      (exchangeRateNum === null ||
+        isNaN(exchangeRateNum) ||
+        exchangeRateNum < 0)
+    ) {
+      setExchangeRateError(
+        formatActionableError({
+          happened: "進貨匯率沒有儲存。",
+          reason: "匯率必須是 0 以上的數字，或留空表示待確認。",
+          action: "請修正匯率，或清空欄位後再儲存。",
+          support: "不確定匯率時可先留空，不要填入猜測值。",
+        }),
+      );
       return;
     }
     if (!store) return;
@@ -377,12 +422,14 @@ export default function SettingsPage() {
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch (err: any) {
-      setError(formatActionableError({
-        happened: "店家設定沒有儲存。",
-        reason: err?.data?.error ?? "網路或系統暫時沒有回應。",
-        action: "請保留本頁內容並稍後再按一次儲存。",
-        support: "若仍失敗，請截圖交給系統管理者。",
-      }));
+      setError(
+        formatActionableError({
+          happened: "店家設定沒有儲存。",
+          reason: err?.data?.error ?? "網路或系統暫時沒有回應。",
+          action: "請保留本頁內容並稍後再按一次儲存。",
+          support: "若仍失敗，請截圖交給系統管理者。",
+        }),
+      );
     }
   };
 
@@ -391,7 +438,6 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-24">
-
       {/* Hidden file input — always mounted so ref stays stable */}
       <input
         ref={logoFileInputRef}
@@ -429,7 +475,9 @@ export default function SettingsPage() {
             <TripsEntry />
             <SkillMapEntry />
             {skillVisibility.isVisible("audit-logs") && <AuditLogsEntry />}
-            {skillVisibility.isVisible("agent-settings") && <AgentSettingsEntry />}
+            {skillVisibility.isVisible("agent-settings") && (
+              <AgentSettingsEntry />
+            )}
             {IS_DEV && <DevHandoffEntry />}
           </div>
         </>
@@ -447,24 +495,33 @@ export default function SettingsPage() {
             >
               ‹ 返回
             </button>
-            <h1 className="text-base font-bold text-foreground flex-1 text-center">店家設定</h1>
+            <h1 className="text-base font-bold text-foreground flex-1 text-center">
+              店家設定
+            </h1>
             <div className="flex justify-end flex-shrink-0">
               <button
                 type="button"
                 onClick={handleSave}
-                disabled={updateStore.isPending || logoUploadStatus === "uploading"}
+                disabled={
+                  updateStore.isPending || logoUploadStatus === "uploading"
+                }
                 className="h-8 px-4 bg-primary text-white text-sm font-semibold rounded-full disabled:opacity-60 whitespace-nowrap"
               >
-                {saved ? "已儲存！" : updateStore.isPending ? "儲存中..." : "儲存"}
+                {saved
+                  ? "已儲存！"
+                  : updateStore.isPending
+                    ? "儲存中..."
+                    : "儲存"}
               </button>
             </div>
           </header>
 
           <div className="px-4 pt-5 pb-8 space-y-6">
-
             {/* ════════════════ 店家資料 ════════════════ */}
             <div>
-              <p className="text-sm font-bold text-foreground px-1 mb-3">店家資料</p>
+              <p className="text-sm font-bold text-foreground px-1 mb-3">
+                店家資料
+              </p>
 
               {/* Logo 主卡 */}
               <div className="bg-white rounded-2xl border border-border overflow-hidden mb-3">
@@ -477,7 +534,9 @@ export default function SettingsPage() {
                           src={displayLogoPreview}
                           alt="店鋪 Logo"
                           className="w-full h-full object-contain bg-secondary"
-                          onError={(e) => (e.currentTarget.style.display = "none")}
+                          onError={(e) =>
+                            (e.currentTarget.style.display = "none")
+                          }
                         />
                         {logoUploadStatus === "uploading" && (
                           <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
@@ -508,16 +567,22 @@ export default function SettingsPage() {
                     <button
                       type="button"
                       onClick={handleRemoveLogo}
-                      disabled={logoUploadStatus === "uploading" || !displayLogoPreview}
+                      disabled={
+                        logoUploadStatus === "uploading" || !displayLogoPreview
+                      }
                       className="h-11 px-4 rounded-xl bg-destructive/10 text-destructive text-sm font-semibold disabled:opacity-40"
                     >
                       移除 Logo
                     </button>
                     {logoUploadStatus === "done" && (
-                      <p className="text-xs text-green-600 font-medium text-center">✓ Logo 已上傳</p>
+                      <p className="text-xs text-green-600 font-medium text-center">
+                        ✓ Logo 已上傳
+                      </p>
                     )}
                     {logoUploadStatus === "error" && logoUploadError && (
-                      <p className="text-xs text-destructive text-center">{logoUploadError}</p>
+                      <p className="text-xs text-destructive text-center">
+                        {logoUploadError}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -528,21 +593,31 @@ export default function SettingsPage() {
 
               {/* 店家資訊列表卡 */}
               <div className="bg-white rounded-2xl border border-border overflow-hidden">
-
                 {/* 店名 / 抬頭 */}
                 <button
                   type="button"
-                  onClick={() => setEditingField(editingField === "name" ? null : "name")}
+                  onClick={() =>
+                    setEditingField(editingField === "name" ? null : "name")
+                  }
                   className="w-full group flex items-center px-5 py-4 text-left hover:bg-muted/30 transition-colors duration-200"
                 >
                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mr-4 group-hover:scale-105 group-hover:-translate-y-0.5 transition-transform duration-300">
-                    <Store size={17} className="text-primary animate-cs-pulse-soft" />
+                    <Store
+                      size={17}
+                      className="text-primary animate-cs-pulse-soft"
+                    />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs text-muted-foreground font-medium">店名 / 抬頭</div>
-                    <div className="text-sm font-semibold text-foreground truncate mt-0.5">{name || "未設定"}</div>
+                    <div className="text-xs text-muted-foreground font-medium">
+                      店名 / 抬頭
+                    </div>
+                    <div className="text-sm font-semibold text-foreground truncate mt-0.5">
+                      {name || "未設定"}
+                    </div>
                   </div>
-                  <span className="text-muted-foreground text-sm ml-2 shrink-0">{editingField === "name" ? "∨" : "›"}</span>
+                  <span className="text-muted-foreground text-sm ml-2 shrink-0">
+                    {editingField === "name" ? "∨" : "›"}
+                  </span>
                 </button>
                 {editingField === "name" && (
                   <div className="px-5 pb-4">
@@ -561,19 +636,32 @@ export default function SettingsPage() {
                 {/* 店鋪簡介 */}
                 <button
                   type="button"
-                  onClick={() => setEditingField(editingField === "description" ? null : "description")}
+                  onClick={() =>
+                    setEditingField(
+                      editingField === "description" ? null : "description",
+                    )
+                  }
                   className="w-full group flex items-center px-5 py-4 text-left hover:bg-muted/30 transition-colors duration-200"
                 >
                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mr-4 group-hover:scale-105 group-hover:-translate-y-0.5 transition-transform duration-300">
-                    <PenLine size={17} className="text-primary transition-transform duration-300 group-hover:rotate-6" />
+                    <PenLine
+                      size={17}
+                      className="text-primary transition-transform duration-300 group-hover:rotate-6"
+                    />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs text-muted-foreground font-medium">店鋪簡介</div>
+                    <div className="text-xs text-muted-foreground font-medium">
+                      店鋪簡介
+                    </div>
                     <div className="text-sm text-foreground truncate mt-0.5">
-                      {description.trim() || <span className="text-muted-foreground">選填</span>}
+                      {description.trim() || (
+                        <span className="text-muted-foreground">選填</span>
+                      )}
                     </div>
                   </div>
-                  <span className="text-muted-foreground text-sm ml-2 shrink-0">{editingField === "description" ? "∨" : "›"}</span>
+                  <span className="text-muted-foreground text-sm ml-2 shrink-0">
+                    {editingField === "description" ? "∨" : "›"}
+                  </span>
                 </button>
                 {editingField === "description" && (
                   <div className="px-5 pb-4">
@@ -597,13 +685,23 @@ export default function SettingsPage() {
                   className="w-full group flex items-center px-5 py-4 text-left hover:bg-muted/30 transition-colors duration-200"
                 >
                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mr-4 group-hover:scale-105 group-hover:-translate-y-0.5 transition-transform duration-300">
-                    <Palette size={17} className="text-primary transition-transform duration-300 group-hover:scale-110" />
+                    <Palette
+                      size={17}
+                      className="text-primary transition-transform duration-300 group-hover:scale-110"
+                    />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs text-muted-foreground font-medium">品牌顏色</div>
+                    <div className="text-xs text-muted-foreground font-medium">
+                      品牌顏色
+                    </div>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <div className="w-4 h-4 rounded-full border border-border shrink-0" style={{ backgroundColor: previewHex }} />
-                      <span className="text-sm font-mono font-medium text-foreground">{previewHex}</span>
+                      <div
+                        className="w-4 h-4 rounded-full border border-border shrink-0"
+                        style={{ backgroundColor: previewHex }}
+                      />
+                      <span className="text-sm font-mono font-medium text-foreground">
+                        {previewHex}
+                      </span>
                     </div>
                   </div>
                   <span className="text-xs text-primary font-medium ml-2 shrink-0">
@@ -612,7 +710,10 @@ export default function SettingsPage() {
                 </button>
                 {showColorPicker && (
                   <div className="px-5 pb-5 space-y-3">
-                    <ColorPicker hex={brandColor} onChange={handleBrandColorChange} />
+                    <ColorPicker
+                      hex={brandColor}
+                      onChange={handleBrandColorChange}
+                    />
                     <div className="flex flex-wrap gap-2">
                       {PRESET_COLORS.map((hex) => (
                         <button
@@ -622,13 +723,22 @@ export default function SettingsPage() {
                           className="w-8 h-8 rounded-full flex items-center justify-center transition-transform hover:scale-110 shrink-0"
                           style={{
                             backgroundColor: hex,
-                            boxShadow: previewHex === hex
-                              ? "0 0 0 2px white, 0 0 0 4px #111827"
-                              : "0 1px 3px rgba(0,0,0,0.2)",
+                            boxShadow:
+                              previewHex === hex
+                                ? "0 0 0 2px white, 0 0 0 4px #111827"
+                                : "0 1px 3px rgba(0,0,0,0.2)",
                           }}
                         >
                           {previewHex === hex && (
-                            <span style={{ color: getContrastForeground(hex), fontSize: 12, fontWeight: 700 }}>✓</span>
+                            <span
+                              style={{
+                                color: getContrastForeground(hex),
+                                fontSize: 12,
+                                fontWeight: 700,
+                              }}
+                            >
+                              ✓
+                            </span>
                           )}
                         </button>
                       ))}
@@ -641,7 +751,9 @@ export default function SettingsPage() {
                       maxLength={7}
                       className={inputClass}
                     />
-                    {colorError && <p className="text-xs text-destructive">{colorError}</p>}
+                    {colorError && (
+                      <p className="text-xs text-destructive">{colorError}</p>
+                    )}
                   </div>
                 )}
 
@@ -669,7 +781,11 @@ export default function SettingsPage() {
                       context="store"
                       onApply={setPurchaseExchangeRate}
                     />
-                    {exchangeRateError && <p className="text-xs text-destructive mt-1">{exchangeRateError}</p>}
+                    {exchangeRateError && (
+                      <p className="text-xs text-destructive mt-1">
+                        {exchangeRateError}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -677,26 +793,53 @@ export default function SettingsPage() {
 
                 {/* 物流方式 */}
                 <div className="px-5 py-4">
-                  <div className="text-xs text-muted-foreground font-medium mb-3">客人可選物流方式</div>
+                  <div className="text-xs text-muted-foreground font-medium mb-3">
+                    客人可選物流方式
+                  </div>
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     {[
-                      ["超商（7-11／全家）", shippingCvsEnabled, setShippingCvsEnabled],
-                      ["黑貓宅急便", shippingBlackCatEnabled, setShippingBlackCatEnabled],
-                      ["郵局", shippingPostOfficeEnabled, setShippingPostOfficeEnabled],
-                      ["面交／自取", shippingSelfPickupEnabled, setShippingSelfPickupEnabled],
+                      [
+                        "超商（7-11／全家）",
+                        shippingCvsEnabled,
+                        setShippingCvsEnabled,
+                      ],
+                      [
+                        "黑貓宅急便",
+                        shippingBlackCatEnabled,
+                        setShippingBlackCatEnabled,
+                      ],
+                      [
+                        "郵局",
+                        shippingPostOfficeEnabled,
+                        setShippingPostOfficeEnabled,
+                      ],
+                      [
+                        "面交／自取",
+                        shippingSelfPickupEnabled,
+                        setShippingSelfPickupEnabled,
+                      ],
                     ].map(([label, enabled, setter]) => (
-                      <label key={label as string} className="flex items-center gap-2 rounded-xl border border-border/60 px-3 py-2.5 cursor-pointer">
+                      <label
+                        key={label as string}
+                        className="flex items-center gap-2 rounded-xl border border-border/60 px-3 py-2.5 cursor-pointer"
+                      >
                         <input
                           type="checkbox"
                           checked={enabled as boolean}
-                          onChange={(event) => (setter as (value: boolean) => void)(event.target.checked)}
+                          onChange={(event) =>
+                            (setter as (value: boolean) => void)(
+                              event.target.checked,
+                            )
+                          }
                           className="w-4 h-4 accent-primary"
                         />
                         <span>{label as string}</span>
                       </label>
                     ))}
                   </div>
-                  <p className="mt-2 text-xs text-muted-foreground">關閉後只影響新客人下單頁；既有訂單不變。</p>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    關閉後只影響新客人下單頁；既有訂單不變。
+                  </p>
                 </div>
 
                 <div className="border-t border-border/40 mx-5" />
@@ -707,18 +850,25 @@ export default function SettingsPage() {
                     <Fingerprint size={17} className="text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs text-muted-foreground font-medium">網址代碼</div>
-                    <div className="text-sm font-mono font-medium text-foreground mt-0.5">{store?.slug ?? "—"}</div>
+                    <div className="text-xs text-muted-foreground font-medium">
+                      網址代碼
+                    </div>
+                    <div className="text-sm font-mono font-medium text-foreground mt-0.5">
+                      {store?.slug ?? "—"}
+                    </div>
                   </div>
-                  <span className="text-xs text-muted-foreground shrink-0">系統產生</span>
+                  <span className="text-xs text-muted-foreground shrink-0">
+                    系統產生
+                  </span>
                 </div>
-
               </div>
             </div>
 
             {/* ════════════════ 賣場連結 ════════════════ */}
             <div>
-              <p className="text-sm font-bold text-foreground px-1 mb-3">賣場連結</p>
+              <p className="text-sm font-bold text-foreground px-1 mb-3">
+                賣場連結
+              </p>
               <div className="bg-white rounded-2xl border border-border overflow-hidden">
                 <ProfileLinkRow />
                 <div className="border-t border-border/40 mx-5" />
@@ -730,7 +880,9 @@ export default function SettingsPage() {
 
             {/* ════════════════ 銷貨單設定 ════════════════ */}
             <div>
-              <p className="text-sm font-bold text-foreground px-1 mb-3">銷貨單設定</p>
+              <p className="text-sm font-bold text-foreground px-1 mb-3">
+                銷貨單設定
+              </p>
               <div className="bg-white rounded-2xl border border-border overflow-hidden">
                 <ComingSoonRow
                   icon={ReceiptText}
@@ -756,7 +908,9 @@ export default function SettingsPage() {
 
             {/* ════════════════ 賣場資訊 ════════════════ */}
             <div>
-              <p className="text-sm font-bold text-foreground px-1 mb-3">賣場資訊</p>
+              <p className="text-sm font-bold text-foreground px-1 mb-3">
+                賣場資訊
+              </p>
               <div className="bg-white rounded-2xl border border-border overflow-hidden">
                 <ComingSoonRow
                   icon={Share2}
@@ -805,7 +959,6 @@ export default function SettingsPage() {
                 {error}
               </div>
             )}
-
           </div>
         </>
       )}
@@ -831,10 +984,14 @@ function CustomersEntry() {
         className="w-full bg-white border border-border rounded-2xl px-4 py-4 flex items-center justify-between text-left hover:bg-secondary/50 transition-colors"
       >
         <div className="flex items-center gap-3">
-          <span className="w-9 h-9 rounded-xl bg-sky-100 flex items-center justify-center text-lg shrink-0">👥</span>
+          <span className="w-9 h-9 rounded-xl bg-sky-100 flex items-center justify-center text-lg shrink-0">
+            👥
+          </span>
           <div>
             <p className="text-sm font-semibold text-foreground">客戶管理</p>
-            <p className="text-xs text-muted-foreground">客戶代號、常用門市與隱私遮罩</p>
+            <p className="text-xs text-muted-foreground">
+              客戶代號、常用門市與隱私遮罩
+            </p>
           </div>
         </div>
         <span className="text-muted-foreground text-sm">›</span>
@@ -857,8 +1014,12 @@ function TripsEntry() {
             🧳
           </span>
           <div>
-            <p className="text-sm font-semibold text-foreground">行程與路線管理</p>
-            <p className="text-xs text-muted-foreground">用於商品的交通成本分攤設定</p>
+            <p className="text-sm font-semibold text-foreground">
+              行程與路線管理
+            </p>
+            <p className="text-xs text-muted-foreground">
+              用於商品的交通成本分攤設定
+            </p>
           </div>
         </div>
         <span className="text-muted-foreground text-sm">›</span>
@@ -877,10 +1038,16 @@ function ExchangeRateReferenceEntry() {
         className="w-full bg-white border border-border rounded-2xl px-4 py-4 flex items-center justify-between text-left hover:bg-secondary/50 transition-colors"
       >
         <div className="flex items-center gap-3">
-          <span className="w-9 h-9 rounded-xl bg-sky-100 flex items-center justify-center text-lg flex-shrink-0">💱</span>
+          <span className="w-9 h-9 rounded-xl bg-sky-100 flex items-center justify-center text-lg flex-shrink-0">
+            💱
+          </span>
           <div>
-            <p className="text-sm font-semibold text-foreground">銀行匯率參考</p>
-            <p className="text-xs text-muted-foreground">比較銀行日圓即期賣出並手動套用</p>
+            <p className="text-sm font-semibold text-foreground">
+              銀行匯率參考
+            </p>
+            <p className="text-xs text-muted-foreground">
+              比較銀行日圓即期賣出並手動套用
+            </p>
           </div>
         </div>
         <span className="text-muted-foreground text-sm">›</span>
@@ -904,7 +1071,9 @@ function AgentSettingsEntry() {
           </span>
           <div>
             <p className="text-sm font-semibold text-foreground">AI 代查設定</p>
-            <p className="text-xs text-muted-foreground">Seller Agent / 物流自動查詢設定</p>
+            <p className="text-xs text-muted-foreground">
+              Seller Agent / 物流自動查詢設定
+            </p>
           </div>
         </div>
         <span className="text-muted-foreground text-sm">›</span>
@@ -923,10 +1092,14 @@ function SkillMapEntry() {
         className="w-full bg-white border border-border rounded-2xl px-4 py-4 flex items-center justify-between text-left hover:bg-secondary/50 transition-colors"
       >
         <div className="flex items-center gap-3">
-          <span className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center text-lg flex-shrink-0">🗺️</span>
+          <span className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center text-lg flex-shrink-0">
+            🗺️
+          </span>
           <div>
             <p className="text-sm font-semibold text-foreground">技能地圖</p>
-            <p className="text-xs text-muted-foreground">查看六種套餐、前置條件與目前解鎖狀態</p>
+            <p className="text-xs text-muted-foreground">
+              查看六種套餐、前置條件與目前解鎖狀態
+            </p>
           </div>
         </div>
         <span className="text-muted-foreground text-sm">›</span>
@@ -945,10 +1118,14 @@ function AuditLogsEntry() {
         className="w-full bg-white border border-border rounded-2xl px-4 py-4 flex items-center justify-between text-left hover:bg-secondary/50 transition-colors"
       >
         <div className="flex items-center gap-3">
-          <span className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-lg flex-shrink-0">🧾</span>
+          <span className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-lg flex-shrink-0">
+            🧾
+          </span>
           <div>
             <p className="text-sm font-semibold text-foreground">操作紀錄</p>
-            <p className="text-xs text-muted-foreground">查看個資揭露、匯出與參考匯率套用紀錄</p>
+            <p className="text-xs text-muted-foreground">
+              查看個資揭露、匯出與參考匯率套用紀錄
+            </p>
           </div>
         </div>
         <span className="text-muted-foreground text-sm">›</span>
@@ -971,8 +1148,12 @@ function DevHandoffEntry() {
             📋
           </span>
           <div>
-            <p className="text-sm font-semibold text-foreground">研發中繼剪貼板</p>
-            <p className="text-xs text-muted-foreground">Claude Handoff / Codex Copy Center</p>
+            <p className="text-sm font-semibold text-foreground">
+              研發中繼剪貼板
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Claude Handoff / Codex Copy Center
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -1033,10 +1214,13 @@ function ProfileLinkRow() {
   const linkText = `${origin}${basePath}/p/{商品追蹤碼}`;
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(linkText).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }).catch(() => {});
+    navigator.clipboard
+      .writeText(linkText)
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      })
+      .catch(() => {});
   };
 
   return (
@@ -1045,8 +1229,12 @@ function ProfileLinkRow() {
         <Globe size={17} className="text-primary animate-cs-float" />
       </div>
       <div className="flex-1 min-w-0">
-        <div className="text-xs text-muted-foreground font-medium">個人賣場連結</div>
-        <div className="text-xs font-mono text-foreground truncate mt-0.5">{linkText}</div>
+        <div className="text-xs text-muted-foreground font-medium">
+          個人賣場連結
+        </div>
+        <div className="text-xs font-mono text-foreground truncate mt-0.5">
+          {linkText}
+        </div>
       </div>
       <button
         type="button"
@@ -1064,18 +1252,28 @@ function ProfileLinkRow() {
   );
 }
 
-function PreviewCard({ title, items, style = "list" }: PreviewCardConfig & { style?: "list" | "pill" | "receipt" }) {
+function PreviewCard({
+  title,
+  items,
+  style = "list",
+}: PreviewCardConfig & { style?: "list" | "pill" | "receipt" }) {
   if (style === "receipt") {
     return (
       <div className="rounded-2xl border border-border/60 bg-white overflow-hidden">
         <div className="px-4 pt-3 pb-1">
-          <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">{title}</span>
+          <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+            {title}
+          </span>
         </div>
         <div className="px-4 py-5 text-center border-t border-border/40">
           <p className="text-base font-bold text-foreground">{items[0]}</p>
-          <p className="text-sm text-muted-foreground mt-1 tracking-widest">{items[1]}</p>
+          <p className="text-sm text-muted-foreground mt-1 tracking-widest">
+            {items[1]}
+          </p>
           {items[2] && (
-            <p className="text-[10px] text-muted-foreground/60 mt-3">{items[2]}</p>
+            <p className="text-[10px] text-muted-foreground/60 mt-3">
+              {items[2]}
+            </p>
           )}
         </div>
       </div>
@@ -1085,11 +1283,16 @@ function PreviewCard({ title, items, style = "list" }: PreviewCardConfig & { sty
     return (
       <div className="rounded-2xl border border-border/60 bg-white overflow-hidden">
         <div className="px-4 pt-3 pb-1">
-          <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">{title}</span>
+          <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+            {title}
+          </span>
         </div>
         <div className="px-4 py-3 border-t border-border/40 flex flex-wrap gap-2">
           {items.map((item, i) => (
-            <span key={i} className="text-xs bg-fuchsia-50 text-fuchsia-500 border border-fuchsia-100 px-3 py-1 rounded-full font-medium">
+            <span
+              key={i}
+              className="text-xs bg-fuchsia-50 text-fuchsia-500 border border-fuchsia-100 px-3 py-1 rounded-full font-medium"
+            >
               {item}
             </span>
           ))}
@@ -1100,13 +1303,22 @@ function PreviewCard({ title, items, style = "list" }: PreviewCardConfig & { sty
   return (
     <div className="rounded-2xl border border-border/60 bg-white overflow-hidden">
       <div className="px-4 pt-3 pb-1">
-        <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">{title}</span>
+        <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+          {title}
+        </span>
       </div>
       <div className="border-t border-border/40">
         {items.map((item, i) => (
-          <div key={i} className={`flex items-start gap-2.5 px-4 py-2.5 ${i < items.length - 1 ? "border-b border-border/30" : ""}`}>
-            <span className="text-muted-foreground/50 mt-0.5 text-xs shrink-0">•</span>
-            <span className="text-sm text-foreground/80 leading-relaxed">{item}</span>
+          <div
+            key={i}
+            className={`flex items-start gap-2.5 px-4 py-2.5 ${i < items.length - 1 ? "border-b border-border/30" : ""}`}
+          >
+            <span className="text-muted-foreground/50 mt-0.5 text-xs shrink-0">
+              •
+            </span>
+            <span className="text-sm text-foreground/80 leading-relaxed">
+              {item}
+            </span>
           </div>
         ))}
       </div>
@@ -1143,20 +1355,28 @@ function SettingsPreviewPanel({
               <ArrowLeft size={16} className="text-foreground/70" />
             </button>
             <div className="flex items-center gap-2 flex-1 min-w-0">
-              <div className={`w-8 h-8 rounded-full ${config.iconBg} flex items-center justify-center shrink-0`}>
+              <div
+                className={`w-8 h-8 rounded-full ${config.iconBg} flex items-center justify-center shrink-0`}
+              >
                 <Icon size={14} className={config.iconColor} />
               </div>
-              <span className="text-sm font-semibold text-foreground truncate">{config.label}</span>
+              <span className="text-sm font-semibold text-foreground truncate">
+                {config.label}
+              </span>
             </div>
             <span className="text-[10px] font-medium bg-indigo-50 text-indigo-400 px-2.5 py-1 rounded-full border border-indigo-100 whitespace-nowrap shrink-0">
               設計預覽
             </span>
           </div>
           <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
-            <p className="text-sm text-muted-foreground leading-relaxed">{config.desc}</p>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              {config.desc}
+            </p>
             <div className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-2.5 flex items-start gap-2">
               <span className="text-amber-400 text-sm mt-0.5 shrink-0">⚠</span>
-              <p className="text-xs text-amber-600 leading-relaxed">尚未串接正式儲存，此為設計預覽</p>
+              <p className="text-xs text-amber-600 leading-relaxed">
+                尚未串接正式儲存，此為設計預覽
+              </p>
             </div>
             {config.previewCards.map((card, i) => (
               <PreviewCard key={i} {...card} />
@@ -1206,12 +1426,16 @@ function ComingSoonRow({
           : "cursor-default hover:bg-muted/40"
       }`}
     >
-      <div className={`w-11 h-11 rounded-full ${iconBg} flex items-center justify-center shrink-0 mr-4 group-hover:scale-105 group-hover:-translate-y-0.5 transition-transform duration-300`}>
+      <div
+        className={`w-11 h-11 rounded-full ${iconBg} flex items-center justify-center shrink-0 mr-4 group-hover:scale-105 group-hover:-translate-y-0.5 transition-transform duration-300`}
+      >
         <Icon size={18} className={`${iconColor} ${animClass}`} />
       </div>
       <div className="flex-1 min-w-0">
         <div className="text-sm font-medium text-foreground">{label}</div>
-        <div className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{desc}</div>
+        <div className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+          {desc}
+        </div>
       </div>
       {clickable ? (
         <span className="text-[10px] font-medium bg-indigo-50 text-indigo-400 px-2.5 py-1 rounded-full shrink-0 ml-3 border border-indigo-100 whitespace-nowrap">
@@ -1235,18 +1459,43 @@ function hsvToRgb(h: number, s: number, v: number): [number, number, number] {
   const q = v * (1 - f * s);
   const t = v * (1 - (1 - f) * s);
   let r: number, g: number, b: number;
-  if (hi === 0)      { r = v; g = t; b = p; }
-  else if (hi === 1) { r = q; g = v; b = p; }
-  else if (hi === 2) { r = p; g = v; b = t; }
-  else if (hi === 3) { r = p; g = q; b = v; }
-  else if (hi === 4) { r = t; g = p; b = v; }
-  else               { r = v; g = p; b = q; }
+  if (hi === 0) {
+    r = v;
+    g = t;
+    b = p;
+  } else if (hi === 1) {
+    r = q;
+    g = v;
+    b = p;
+  } else if (hi === 2) {
+    r = p;
+    g = v;
+    b = t;
+  } else if (hi === 3) {
+    r = p;
+    g = q;
+    b = v;
+  } else if (hi === 4) {
+    r = t;
+    g = p;
+    b = v;
+  } else {
+    r = v;
+    g = p;
+    b = q;
+  }
   return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
 }
 
 function hsvToHex(h: number, s: number, v: number): string {
   const [r, g, b] = hsvToRgb(h, s, v);
-  return "#" + [r, g, b].map((c) => c.toString(16).padStart(2, "0")).join("").toUpperCase();
+  return (
+    "#" +
+    [r, g, b]
+      .map((c) => c.toString(16).padStart(2, "0"))
+      .join("")
+      .toUpperCase()
+  );
 }
 
 function hexToHsv(hex: string): { h: number; s: number; v: number } {
@@ -1277,8 +1526,8 @@ interface ColorPickerProps {
 
 function ColorPicker({ hex, onChange }: ColorPickerProps) {
   const interacting = useRef(false);
-  const [hsv, setHsv] = useState<{ h: number; s: number; v: number }>(
-    () => hexToHsv(safeHex(hex))
+  const [hsv, setHsv] = useState<{ h: number; s: number; v: number }>(() =>
+    hexToHsv(safeHex(hex)),
   );
   const hsvRef = useRef(hsv);
 
@@ -1299,7 +1548,10 @@ function ColorPicker({ hex, onChange }: ColorPickerProps) {
   const calcPanel = (e: React.PointerEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const s = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    const v = Math.max(0, Math.min(1, 1 - (e.clientY - rect.top) / rect.height));
+    const v = Math.max(
+      0,
+      Math.min(1, 1 - (e.clientY - rect.top) / rect.height),
+    );
     emit({ ...hsvRef.current, s, v });
   };
   const onPanelDown = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -1311,7 +1563,9 @@ function ColorPicker({ hex, onChange }: ColorPickerProps) {
     if (!interacting.current) return;
     calcPanel(e);
   };
-  const onPanelUp = () => { interacting.current = false; };
+  const onPanelUp = () => {
+    interacting.current = false;
+  };
 
   // Hue bar
   const calcHue = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -1329,7 +1583,9 @@ function ColorPicker({ hex, onChange }: ColorPickerProps) {
     if (!interacting.current) return;
     calcHue(e);
   };
-  const onHueUp = () => { interacting.current = false; };
+  const onHueUp = () => {
+    interacting.current = false;
+  };
 
   const pureHueHex = hsvToHex(hsv.h, 1, 1);
 
@@ -1346,14 +1602,21 @@ function ColorPicker({ hex, onChange }: ColorPickerProps) {
         className="relative w-full rounded-xl overflow-hidden select-none touch-none"
         style={{ height: 140, cursor: "crosshair" }}
       >
-        <div className="absolute inset-0" style={{ backgroundColor: pureHueHex }} />
         <div
           className="absolute inset-0"
-          style={{ background: "linear-gradient(to right, #ffffff, transparent)" }}
+          style={{ backgroundColor: pureHueHex }}
         />
         <div
           className="absolute inset-0"
-          style={{ background: "linear-gradient(to bottom, transparent, #000000)" }}
+          style={{
+            background: "linear-gradient(to right, #ffffff, transparent)",
+          }}
+        />
+        <div
+          className="absolute inset-0"
+          style={{
+            background: "linear-gradient(to bottom, transparent, #000000)",
+          }}
         />
         <div
           className="absolute pointer-events-none"
@@ -1406,7 +1669,6 @@ function ColorPicker({ hex, onChange }: ColorPickerProps) {
     </div>
   );
 }
-
 
 const inputClass =
   "w-full h-12 px-4 rounded-xl border border-input bg-white text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 text-base";

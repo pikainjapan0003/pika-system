@@ -16,7 +16,11 @@ function formatRemainingTime(ms: number): string {
   ].join(":");
 }
 
-export default function LaundryCountdownTimer({ remainingMs, closed, deadlineLabel }: Props) {
+export default function LaundryCountdownTimer({
+  remainingMs,
+  closed,
+  deadlineLabel,
+}: Props) {
   const timeStr = formatRemainingTime(remainingMs);
 
   if (closed) {
@@ -24,7 +28,9 @@ export default function LaundryCountdownTimer({ remainingMs, closed, deadlineLab
       <div className="mt-3 mb-1 rounded-2xl bg-red-50 border-2 border-red-100 overflow-hidden select-none">
         <div className="px-4 py-3 text-center">
           <div className="text-base font-bold text-red-500">已截止收單</div>
-          <div className="text-xs text-red-400 mt-0.5">此商品目前無法送出訂單。</div>
+          <div className="text-xs text-red-400 mt-0.5">
+            此商品目前無法送出訂單。
+          </div>
         </div>
       </div>
     );

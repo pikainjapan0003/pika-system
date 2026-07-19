@@ -7,7 +7,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@clerk/react";
 import { useGetMyStore } from "@workspace/api-client-react";
-import { LOGISTICS_PROVIDERS, getProviderShortName } from "@/lib/logisticsProviders";
+import {
+  LOGISTICS_PROVIDERS,
+  getProviderShortName,
+} from "@/lib/logisticsProviders";
 
 interface SyncRun {
   id: number;
@@ -36,15 +39,18 @@ interface SyncStatusResponse {
 
 // provider label 收斂至 @/lib/logisticsProviders（Step 7H-B）。
 // "all" 是 run log 的跨物流商彙總值（非 canonical provider），registry 查不到，這裡補顯示用 label（Step 7N-E）
-const providerLabel = (c: string) => (c === "all" ? "全部物流" : (getProviderShortName(c) ?? c));
+const providerLabel = (c: string) =>
+  c === "all" ? "全部物流" : (getProviderShortName(c) ?? c);
 
-const EXCEL_IMPORT_LABEL = LOGISTICS_PROVIDERS
-  .filter((p) => p.supportsExcelImport)
+const EXCEL_IMPORT_LABEL = LOGISTICS_PROVIDERS.filter(
+  (p) => p.supportsExcelImport,
+)
   .map((p) => p.shortName)
   .join(" / ");
 
-const NO_EXCEL_IMPORT_LABEL = LOGISTICS_PROVIDERS
-  .filter((p) => !p.supportsExcelImport)
+const NO_EXCEL_IMPORT_LABEL = LOGISTICS_PROVIDERS.filter(
+  (p) => !p.supportsExcelImport,
+)
   .map((p) => p.shortName)
   .join(" / ");
 
@@ -152,11 +158,17 @@ export function LogisticsSyncStatusNotice() {
     <div className="bg-white rounded-2xl border border-border p-5 space-y-3">
       <h2 className="text-sm font-bold text-foreground">物流同步狀態</h2>
 
-      {loading && !status && <p className="text-xs text-muted-foreground">載入同步狀態中…</p>}
+      {loading && !status && (
+        <p className="text-xs text-muted-foreground">載入同步狀態中…</p>
+      )}
       {loadError && (
         <div className="text-xs text-red-700 bg-red-50 border border-red-200 rounded-xl px-3 py-2 flex items-center justify-between gap-2">
           <span>{loadError}</span>
-          <button type="button" onClick={fetchStatus} className="shrink-0 underline">
+          <button
+            type="button"
+            onClick={fetchStatus}
+            className="shrink-0 underline"
+          >
             重試
           </button>
         </div>
@@ -177,11 +189,15 @@ export function LogisticsSyncStatusNotice() {
         </div>
         <div className="bg-secondary rounded-xl px-3 py-2">
           <div className="text-muted-foreground">Excel 匯入支援</div>
-          <div className="font-medium text-foreground">{EXCEL_IMPORT_LABEL}</div>
+          <div className="font-medium text-foreground">
+            {EXCEL_IMPORT_LABEL}
+          </div>
         </div>
         <div className="bg-secondary rounded-xl px-3 py-2">
           <div className="text-muted-foreground">手動查詢</div>
-          <div className="font-medium text-foreground">{NO_EXCEL_IMPORT_LABEL}</div>
+          <div className="font-medium text-foreground">
+            {NO_EXCEL_IMPORT_LABEL}
+          </div>
         </div>
       </div>
 
@@ -189,7 +205,8 @@ export function LogisticsSyncStatusNotice() {
         上次同步：
         {status?.lastRun ? (
           <span className="text-foreground">
-            {formatTime(status.lastRun.startedAt)}（{providerLabel(status.lastRun.provider)}・
+            {formatTime(status.lastRun.startedAt)}（
+            {providerLabel(status.lastRun.provider)}・
             {RUN_STATUS_LABEL[status.lastRun.status] ?? status.lastRun.status}）
           </span>
         ) : (
@@ -208,7 +225,9 @@ export function LogisticsSyncStatusNotice() {
         </button>
       )}
       {syncError && (
-        <div className="text-xs text-red-700 bg-red-50 border border-red-200 rounded-xl px-3 py-2">{syncError}</div>
+        <div className="text-xs text-red-700 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+          {syncError}
+        </div>
       )}
       {syncMessage && (
         <div className="text-xs text-green-800 bg-green-50 border border-green-200 rounded-xl px-3 py-2">
@@ -217,7 +236,9 @@ export function LogisticsSyncStatusNotice() {
       )}
 
       <div>
-        <div className="text-xs font-medium text-foreground mb-1">最近同步紀錄</div>
+        <div className="text-xs font-medium text-foreground mb-1">
+          最近同步紀錄
+        </div>
         {recentRuns.length === 0 ? (
           <p className="text-xs text-muted-foreground bg-secondary rounded-xl px-3 py-2">
             尚無同步紀錄。匯入物流單號後，可按「立即同步已支援物流」查詢最新貨態。
@@ -225,14 +246,18 @@ export function LogisticsSyncStatusNotice() {
         ) : (
           <ul className="space-y-1">
             {recentRuns.slice(0, 5).map((run) => (
-              <li key={run.id} className="text-[11px] text-muted-foreground bg-secondary rounded-xl px-3 py-2">
+              <li
+                key={run.id}
+                className="text-[11px] text-muted-foreground bg-secondary rounded-xl px-3 py-2"
+              >
                 <span className="text-foreground font-medium">
                   {formatTime(run.startedAt)}・{providerLabel(run.provider)}・
-                  {RUN_TYPE_LABEL[run.runType] ?? run.runType}・{RUN_STATUS_LABEL[run.status] ?? run.status}
+                  {RUN_TYPE_LABEL[run.runType] ?? run.runType}・
+                  {RUN_STATUS_LABEL[run.status] ?? run.status}
                 </span>
                 <span className="block">
-                  掃描 {run.scannedCount} 筆／成功 {run.updatedCount} 筆／失敗 {run.exceptionCount} 筆／略過{" "}
-                  {run.skippedCount} 筆
+                  掃描 {run.scannedCount} 筆／成功 {run.updatedCount} 筆／失敗{" "}
+                  {run.exceptionCount} 筆／略過 {run.skippedCount} 筆
                 </span>
               </li>
             ))}

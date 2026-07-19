@@ -21,7 +21,11 @@ import {
 
 type AgentStatus = "disabled" | "enabled";
 type AgentMode = "rule_worker" | "external_agent" | "self_hosted_webhook";
-type QueryFrequency = "manual" | "daily" | "every_6_hours" | "every_2_hours_high_tier";
+type QueryFrequency =
+  | "manual"
+  | "daily"
+  | "every_6_hours"
+  | "every_2_hours_high_tier";
 
 type FormState = {
   agentStatus: AgentStatus;
@@ -101,7 +105,9 @@ export default function AgentSettingsPage() {
 
     const rawMode = settings.agentMode;
     const safeMode: AgentMode =
-      rawMode === "rule_worker" || rawMode === "external_agent" || rawMode === "self_hosted_webhook"
+      rawMode === "rule_worker" ||
+      rawMode === "external_agent" ||
+      rawMode === "self_hosted_webhook"
         ? rawMode
         : "rule_worker";
 
@@ -150,7 +156,9 @@ export default function AgentSettingsPage() {
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await updateMutation.mutateAsync({ storeId, data: payload as any });
-      await qc.invalidateQueries({ queryKey: getGetSellerAgentSettingsQueryKey(storeId) });
+      await qc.invalidateQueries({
+        queryKey: getGetSellerAgentSettingsQueryKey(storeId),
+      });
       initialized.current = false;
       setSecretMode("hidden");
       setNewSecret("");
@@ -167,7 +175,8 @@ export default function AgentSettingsPage() {
 
   const handleClearSecret = async () => {
     if (!storeId) return;
-    if (!window.confirm("確定要清除 Webhook Secret 嗎？此操作無法復原。")) return;
+    if (!window.confirm("確定要清除 Webhook Secret 嗎？此操作無法復原。"))
+      return;
     setIsSaving(true);
     try {
       await updateMutation.mutateAsync({
@@ -175,7 +184,9 @@ export default function AgentSettingsPage() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         data: { webhookSecret: null } as any,
       });
-      await qc.invalidateQueries({ queryKey: getGetSellerAgentSettingsQueryKey(storeId) });
+      await qc.invalidateQueries({
+        queryKey: getGetSellerAgentSettingsQueryKey(storeId),
+      });
       initialized.current = false;
       setSecretMode("hidden");
       setNewSecret("");
@@ -248,7 +259,8 @@ export default function AgentSettingsPage() {
       <div className="px-5 py-5 space-y-5">
         {isDefault && (
           <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 text-xs text-blue-700">
-            目前尚未儲存 Agent 設定。你可以先調整欄位，按下儲存後系統會建立設定。
+            目前尚未儲存 Agent
+            設定。你可以先調整欄位，按下儲存後系統會建立設定。
           </div>
         )}
 
@@ -258,7 +270,10 @@ export default function AgentSettingsPage() {
             label="啟用 AI 代查"
             checked={form.agentStatus === "enabled"}
             onCheckedChange={(v) =>
-              setForm((f) => ({ ...f, agentStatus: v ? "enabled" : "disabled" }))
+              setForm((f) => ({
+                ...f,
+                agentStatus: v ? "enabled" : "disabled",
+              }))
             }
             disabled={isSaving}
           />
@@ -290,7 +305,10 @@ export default function AgentSettingsPage() {
               { value: "manual", label: "手動" },
               { value: "daily", label: "每日" },
               { value: "every_6_hours", label: "每 6 小時" },
-              { value: "every_2_hours_high_tier", label: "每 2 小時，高頻方案" },
+              {
+                value: "every_2_hours_high_tier",
+                label: "每 2 小時，高頻方案",
+              },
             ]}
           />
           <div>
@@ -339,7 +357,9 @@ export default function AgentSettingsPage() {
           <SwitchRow
             label="未知狀態通知老闆"
             checked={form.notifyOnUnknown}
-            onCheckedChange={(v) => setForm((f) => ({ ...f, notifyOnUnknown: v }))}
+            onCheckedChange={(v) =>
+              setForm((f) => ({ ...f, notifyOnUnknown: v }))
+            }
             disabled={isSaving}
           />
           <SwitchRow
@@ -381,7 +401,9 @@ export default function AgentSettingsPage() {
           <SwitchRow
             label="啟用 Webhook"
             checked={form.webhookEnabled}
-            onCheckedChange={(v) => setForm((f) => ({ ...f, webhookEnabled: v }))}
+            onCheckedChange={(v) =>
+              setForm((f) => ({ ...f, webhookEnabled: v }))
+            }
             disabled={isSaving}
           />
           {form.webhookEnabled && (
@@ -392,7 +414,9 @@ export default function AgentSettingsPage() {
               <input
                 type="url"
                 value={form.webhookUrl}
-                onChange={(e) => setForm((f) => ({ ...f, webhookUrl: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, webhookUrl: e.target.value }))
+                }
                 placeholder="https://..."
                 disabled={isSaving}
                 className={inputClass}
@@ -401,9 +425,12 @@ export default function AgentSettingsPage() {
           )}
 
           <div className="space-y-2 pt-1">
-            <p className="text-sm font-medium text-foreground">Webhook Secret</p>
+            <p className="text-sm font-medium text-foreground">
+              Webhook Secret
+            </p>
             <p className="text-xs text-muted-foreground">
-              Webhook Secret 不會顯示原文。若需要更換，請輸入新的 Secret 後儲存。
+              Webhook Secret 不會顯示原文。若需要更換，請輸入新的 Secret
+              後儲存。
             </p>
             <div className="flex items-center gap-2 flex-wrap">
               <span
@@ -497,7 +524,11 @@ function SwitchRow({
   return (
     <div className="flex items-center justify-between gap-3">
       <span className="text-sm text-foreground">{label}</span>
-      <Switch checked={checked} onCheckedChange={onCheckedChange} disabled={disabled} />
+      <Switch
+        checked={checked}
+        onCheckedChange={onCheckedChange}
+        disabled={disabled}
+      />
     </div>
   );
 }

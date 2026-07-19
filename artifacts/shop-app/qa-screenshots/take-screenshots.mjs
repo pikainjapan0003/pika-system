@@ -48,12 +48,16 @@ console.log("Saved: receipt-full-page.png");
 
 // Section 1: 有折讓訂單
 const section1 = await page.locator(".test-section").first();
-await section1.screenshot({ path: join(__dirname, "receipt-discount-order.png") });
+await section1.screenshot({
+  path: join(__dirname, "receipt-discount-order.png"),
+});
 console.log("Saved: receipt-discount-order.png");
 
 // Section 2: 無折讓訂單
 const section2 = await page.locator(".test-section").nth(1);
-await section2.screenshot({ path: join(__dirname, "receipt-no-discount-order.png") });
+await section2.screenshot({
+  path: join(__dirname, "receipt-no-discount-order.png"),
+});
 console.log("Saved: receipt-no-discount-order.png");
 
 await browser.close();

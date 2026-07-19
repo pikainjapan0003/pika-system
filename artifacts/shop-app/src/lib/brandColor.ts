@@ -20,7 +20,8 @@ function hexToHsl(hex: string): string | null {
   const r = parseInt(m[1], 16) / 255;
   const g = parseInt(m[2], 16) / 255;
   const b = parseInt(m[3], 16) / 255;
-  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  const max = Math.max(r, g, b),
+    min = Math.min(r, g, b);
   const l = (max + min) / 2;
   if (max === min) return `0 0% ${Math.round(l * 100)}%`;
   const d = max - min;
@@ -42,7 +43,7 @@ export function getLuminance(hex: string): number {
 }
 
 export function getContrastForeground(hex: string): "#ffffff" | "#1a1a1a" {
-  return getLuminance(hex) > 0.60 ? "#1a1a1a" : "#ffffff";
+  return getLuminance(hex) > 0.6 ? "#1a1a1a" : "#ffffff";
 }
 
 export function applyBrandColor(hexInput: string | null | undefined): void {
@@ -57,6 +58,6 @@ export function applyBrandColor(hexInput: string | null | undefined): void {
   root.style.setProperty("--chart-1", hsl);
   root.style.setProperty(
     "--primary-foreground",
-    getLuminance(hex) > 0.60 ? "20 15% 15%" : "0 0% 100%"
+    getLuminance(hex) > 0.6 ? "20 15% 15%" : "0 0% 100%",
   );
 }

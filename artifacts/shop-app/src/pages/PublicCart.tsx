@@ -71,7 +71,8 @@ const ALL_PICKUP_METHODS: PickupMethod[] = [
 ];
 
 function isPickupMethodEnabled(method: string, item: BuyerCartItem): boolean {
-  if (method.startsWith("7-11") || method.startsWith("全家")) return item.shippingCvsEnabled !== false;
+  if (method.startsWith("7-11") || method.startsWith("全家"))
+    return item.shippingCvsEnabled !== false;
   if (method === "黑貓宅急便") return item.shippingBlackCatEnabled !== false;
   if (method === "郵局") return item.shippingPostOfficeEnabled !== false;
   if (method === "面交") return item.shippingSelfPickupEnabled !== false;
@@ -144,9 +145,13 @@ function CartItemCard({
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-1">
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-foreground truncate">{item.productName}</p>
+            <p className="text-sm font-semibold text-foreground truncate">
+              {item.productName}
+            </p>
             {specSummary && (
-              <p className="text-xs text-muted-foreground mt-0.5">{specSummary}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {specSummary}
+              </p>
             )}
             <p className="text-xs text-muted-foreground mt-0.5">
               NT$ {item.unitPrice.toLocaleString()} / 件
@@ -232,10 +237,13 @@ function SuccessPage({ order }: { order: CartOrderResult }) {
 
   const handleCopy = () => {
     if (!navigator.clipboard) return;
-    navigator.clipboard.writeText(order.publicToken).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }).catch(() => {});
+    navigator.clipboard
+      .writeText(order.publicToken)
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      })
+      .catch(() => {});
   };
 
   const orderTotal = order.totalPrice + order.shippingFee;
@@ -243,7 +251,9 @@ function SuccessPage({ order }: { order: CartOrderResult }) {
   return (
     <div className="min-h-[100dvh] bg-background px-5 py-10 max-w-[480px] mx-auto">
       <div className="text-center mb-6">
-        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">✓</div>
+        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+          ✓
+        </div>
         <h1 className="text-xl font-bold text-foreground">下單成功！</h1>
         <p className="text-muted-foreground text-sm mt-2 leading-relaxed">
           您的訂單已收到，商家確認後會與您聯繫。
@@ -260,7 +270,9 @@ function SuccessPage({ order }: { order: CartOrderResult }) {
       {/* Items list */}
       <div className="bg-white rounded-2xl border border-border overflow-hidden mb-3">
         <div className="px-4 py-3 border-b border-border">
-          <span className="text-xs font-semibold text-muted-foreground">商品明細</span>
+          <span className="text-xs font-semibold text-muted-foreground">
+            商品明細
+          </span>
         </div>
         <div className="divide-y divide-border">
           {order.items.map((item, idx) => {
@@ -275,11 +287,17 @@ function SuccessPage({ order }: { order: CartOrderResult }) {
                   />
                 )}
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-foreground">{item.productName}</div>
+                  <div className="text-sm font-medium text-foreground">
+                    {item.productName}
+                  </div>
                   {specSummary && (
-                    <div className="text-xs text-muted-foreground mt-0.5">{specSummary}</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      {specSummary}
+                    </div>
                   )}
-                  <div className="text-xs text-muted-foreground mt-0.5">× {item.quantity}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">
+                    × {item.quantity}
+                  </div>
                 </div>
                 <div className="text-sm font-semibold text-foreground shrink-0">
                   NT$ {item.subtotal.toLocaleString()}
@@ -292,12 +310,16 @@ function SuccessPage({ order }: { order: CartOrderResult }) {
           {order.shippingFee > 0 && (
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">運費</span>
-              <span className="text-foreground">NT$ {order.shippingFee.toLocaleString()}</span>
+              <span className="text-foreground">
+                NT$ {order.shippingFee.toLocaleString()}
+              </span>
             </div>
           )}
           <div className="flex items-center justify-between text-sm">
             <span className="font-semibold text-foreground">訂單總額</span>
-            <span className="font-bold text-primary text-base">NT$ {orderTotal.toLocaleString()}</span>
+            <span className="font-bold text-primary text-base">
+              NT$ {orderTotal.toLocaleString()}
+            </span>
           </div>
         </div>
       </div>
@@ -340,7 +362,9 @@ export default function PublicCartPage() {
   const [shippingAddressLine, setShippingAddressLine] = useState("");
   const [formError, setFormError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submittedOrder, setSubmittedOrder] = useState<CartOrderResult | null>(null);
+  const [submittedOrder, setSubmittedOrder] = useState<CartOrderResult | null>(
+    null,
+  );
   const availablePickupMethods = ALL_PICKUP_METHODS.filter((method) =>
     cartItems.every((item) => isPickupMethodEnabled(method, item)),
   );
@@ -352,12 +376,17 @@ export default function PublicCartPage() {
     if (stored) setCvsStore(stored);
     try {
       const savedMethod = localStorage.getItem(CART_CVS_METHOD_KEY);
-      if (savedMethod && isStorePickupMethod(savedMethod)) setPickupMethod(savedMethod);
+      if (savedMethod && isStorePickupMethod(savedMethod))
+        setPickupMethod(savedMethod);
     } catch {}
   }, []);
 
   useEffect(() => {
-    if (pickupMethod && !availablePickupMethods.includes(pickupMethod as PickupMethod)) setPickupMethod("");
+    if (
+      pickupMethod &&
+      !availablePickupMethods.includes(pickupMethod as PickupMethod)
+    )
+      setPickupMethod("");
   }, [availablePickupMethods, pickupMethod]);
 
   useEffect(() => {
@@ -406,7 +435,9 @@ export default function PublicCartPage() {
 
   const handleShippingDistrictChange = (district: string) => {
     setShippingDistrict(district);
-    const cityData = TAIWAN_ZIPCODE_REGIONS.find((r) => r.city === shippingCity);
+    const cityData = TAIWAN_ZIPCODE_REGIONS.find(
+      (r) => r.city === shippingCity,
+    );
     const distData = cityData?.districts.find((d) => d.district === district);
     setShippingZip(distData?.zip ?? "");
   };
@@ -415,7 +446,8 @@ export default function PublicCartPage() {
     try {
       localStorage.setItem(CART_CVS_METHOD_KEY, pickupMethod);
     } catch {}
-    const basePath = (import.meta as any).env?.BASE_URL?.replace(/\/$/, "") ?? "";
+    const basePath =
+      (import.meta as any).env?.BASE_URL?.replace(/\/$/, "") ?? "";
     openCvsStoreMap({
       provider: getPickupProvider(pickupMethod),
       returnPath: `${basePath}/cart`,
@@ -442,7 +474,12 @@ export default function PublicCartPage() {
       return;
     }
     if (isHomeDeliveryMethod(pickupMethod)) {
-      if (!shippingCity || !shippingDistrict || !shippingZip || !shippingAddressLine.trim()) {
+      if (
+        !shippingCity ||
+        !shippingDistrict ||
+        !shippingZip ||
+        !shippingAddressLine.trim()
+      ) {
         setFormError("請完整填寫收件地址");
         return;
       }
@@ -472,7 +509,9 @@ export default function PublicCartPage() {
         ...(paymentLast5.trim() ? { paymentLast5: paymentLast5.trim() } : {}),
         recipientName: buyerName.trim(),
         recipientPhone: buyerPhone.trim(),
-        ...(recipientAddressPayload ? { recipientAddress: recipientAddressPayload } : {}),
+        ...(recipientAddressPayload
+          ? { recipientAddress: recipientAddressPayload }
+          : {}),
         ...(cvsStore && needsCvsStore
           ? {
               cvsStoreId: cvsStore.storeId,
@@ -483,7 +522,10 @@ export default function PublicCartPage() {
           : {}),
         items: cartItems.map((item) => ({
           shareToken: item.shareToken,
-          specValues: Object.keys(item.specValues).length > 0 ? item.specValues : undefined,
+          specValues:
+            Object.keys(item.specValues).length > 0
+              ? item.specValues
+              : undefined,
           quantity: item.quantity,
         })),
       };
@@ -498,22 +540,26 @@ export default function PublicCartPage() {
         const errData = await resp.json().catch(() => ({}));
         throw new Error(errData?.message || errData?.error || "下單失敗");
       }
-      const order = await resp.json() as CartOrderResult;
+      const order = (await resp.json()) as CartOrderResult;
 
       clearCart();
       if (needsCvsStore) {
         clearCvsStore(CART_CVS_KEY);
-        try { localStorage.removeItem(CART_CVS_METHOD_KEY); } catch {}
+        try {
+          localStorage.removeItem(CART_CVS_METHOD_KEY);
+        } catch {}
       }
       setSubmittedOrder(order);
       setCartItems([]);
     } catch (err: any) {
-      setFormError(formatActionableError({
-        happened: "購物車訂單沒有送出。",
-        reason: err?.message || "網路或系統暫時沒有回應。",
-        action: "請確認欄位與網路後再試；購物車內容仍會保留。",
-        support: "若仍失敗，請截圖並聯絡店家。",
-      }));
+      setFormError(
+        formatActionableError({
+          happened: "購物車訂單沒有送出。",
+          reason: err?.message || "網路或系統暫時沒有回應。",
+          action: "請確認欄位與網路後再試；購物車內容仍會保留。",
+          support: "若仍失敗，請截圖並聯絡店家。",
+        }),
+      );
       setIsSubmitting(false);
     }
   };
@@ -537,7 +583,9 @@ export default function PublicCartPage() {
         <div className="flex flex-col items-center justify-center py-24 px-5">
           <div className="text-5xl mb-4">🛒</div>
           <p className="text-muted-foreground text-base">購物車是空的</p>
-          <p className="text-muted-foreground text-sm mt-1">快去挑選喜歡的商品吧！</p>
+          <p className="text-muted-foreground text-sm mt-1">
+            快去挑選喜歡的商品吧！
+          </p>
         </div>
       </div>
     );
@@ -576,7 +624,9 @@ export default function PublicCartPage() {
         <div className="text-base font-bold text-foreground">填寫取貨資訊</div>
 
         <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">姓名 *</label>
+          <label className="block text-sm font-medium text-foreground mb-1.5">
+            姓名 *
+          </label>
           <input
             type="text"
             value={buyerName}
@@ -587,7 +637,9 @@ export default function PublicCartPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">電話 *</label>
+          <label className="block text-sm font-medium text-foreground mb-1.5">
+            電話 *
+          </label>
           <input
             type="tel"
             value={buyerPhone}
@@ -597,32 +649,45 @@ export default function PublicCartPage() {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">付款末五碼（選填）</label>
+          <label className="block text-sm font-medium text-foreground mb-1.5">
+            付款末五碼（選填）
+          </label>
           <input
             type="text"
             inputMode="numeric"
             maxLength={5}
             pattern="[0-9]{5}"
             value={paymentLast5}
-            onChange={(e) => setPaymentLast5(e.target.value.replace(/\D/g, "").slice(0, 5))}
+            onChange={(e) =>
+              setPaymentLast5(e.target.value.replace(/\D/g, "").slice(0, 5))
+            }
             placeholder="請填 5 位數字"
             className={inputClass}
           />
-          <p className="mt-1 text-xs text-muted-foreground">僅供人工對帳，不會自動判定付款。</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            僅供人工對帳，不會自動判定付款。
+          </p>
         </div>
 
         {/* Pickup method */}
         <div>
-          <label className="block text-sm font-medium text-foreground mb-2">取貨方式 *</label>
+          <label className="block text-sm font-medium text-foreground mb-2">
+            取貨方式 *
+          </label>
           <div className="space-y-4">
             {availablePickupMethods.map((m, index) => {
               const isSelected = pickupMethod === m;
               const groupLabel = pickupMethodGroup(m);
-              const previousGroup = index > 0 ? pickupMethodGroup(availablePickupMethods[index - 1]) : null;
+              const previousGroup =
+                index > 0
+                  ? pickupMethodGroup(availablePickupMethods[index - 1])
+                  : null;
               return (
                 <div key={m}>
                   {groupLabel !== previousGroup && (
-                    <p className="mb-2 text-xs font-semibold text-muted-foreground">{groupLabel}</p>
+                    <p className="mb-2 text-xs font-semibold text-muted-foreground">
+                      {groupLabel}
+                    </p>
                   )}
                   <button
                     type="button"
@@ -635,7 +700,9 @@ export default function PublicCartPage() {
                   >
                     <div
                       className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
-                        isSelected ? "border-primary" : "border-muted-foreground/40"
+                        isSelected
+                          ? "border-primary"
+                          : "border-muted-foreground/40"
                       }`}
                     >
                       {isSelected && (
@@ -643,22 +710,45 @@ export default function PublicCartPage() {
                       )}
                     </div>
                     {/* Horizontal logos get a wider container; square icons stay compact */}
-                    {(isSevenElevenMethod(m) || isFamilyMartMethod(m) || m === "黑貓宅急便") ? (
+                    {isSevenElevenMethod(m) ||
+                    isFamilyMartMethod(m) ||
+                    m === "黑貓宅急便" ? (
                       <div className="w-[88px] h-10 flex items-center justify-center shrink-0">
                         {isSevenElevenMethod(m) ? (
-                          <img src={sevenElevenLogo} alt="7-ELEVEN" className="max-w-full h-auto max-h-10 object-contain" />
+                          <img
+                            src={sevenElevenLogo}
+                            alt="7-ELEVEN"
+                            className="max-w-full h-auto max-h-10 object-contain"
+                          />
                         ) : isFamilyMartMethod(m) ? (
-                          <img src={familymartLogo} alt="全家" className="max-w-full h-auto max-h-10 object-contain" />
+                          <img
+                            src={familymartLogo}
+                            alt="全家"
+                            className="max-w-full h-auto max-h-10 object-contain"
+                          />
                         ) : (
-                          <img src={blackcatLogo} alt="黑貓" className="max-w-full h-auto max-h-10 object-contain" />
+                          <img
+                            src={blackcatLogo}
+                            alt="黑貓"
+                            className="max-w-full h-auto max-h-10 object-contain"
+                          />
                         )}
                       </div>
                     ) : (
                       <div className="w-12 h-12 flex items-center justify-center shrink-0">
                         {m === "郵局" ? (
-                          <img src={postofficeLogo} alt="郵局" className="w-11 h-11 object-contain" />
+                          <img
+                            src={postofficeLogo}
+                            alt="郵局"
+                            className="w-11 h-11 object-contain"
+                          />
                         ) : (
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-9 h-9 text-muted-foreground">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                            className="w-9 h-9 text-muted-foreground"
+                          >
                             <path d="M7.5 6.375a4.125 4.125 0 1 1 8.25 0 4.125 4.125 0 0 1-8.25 0ZM1.5 19.125a7.5 7.5 0 0 1 15 0v.003c0 .278-.034.551-.098.815a.75.75 0 0 1-.364.63 13.067 13.067 0 0 1-6.761 1.873c-2.472 0-4.786-.684-6.76-1.873a.75.75 0 0 1-.364-.63A6.75 6.75 0 0 1 1.5 19.128Z" />
                           </svg>
                         )}
@@ -720,7 +810,9 @@ export default function PublicCartPage() {
                             </>
                           ) : (
                             <>
-                              <p className="text-xs text-muted-foreground mb-2">請選擇取貨門市</p>
+                              <p className="text-xs text-muted-foreground mb-2">
+                                請選擇取貨門市
+                              </p>
                               <button
                                 type="button"
                                 onClick={handleSelectStore}
@@ -775,7 +867,9 @@ export default function PublicCartPage() {
                             </>
                           ) : (
                             <>
-                              <p className="text-xs text-muted-foreground mb-2">請選擇取貨門市</p>
+                              <p className="text-xs text-muted-foreground mb-2">
+                                請選擇取貨門市
+                              </p>
                               <button
                                 type="button"
                                 onClick={handleSelectStore}
@@ -792,7 +886,9 @@ export default function PublicCartPage() {
                       {isHomeDeliveryMethod(m) && (
                         <div className="bg-white border border-border rounded-2xl px-4 py-4 space-y-4">
                           <p className="text-sm font-semibold text-foreground">
-                            {m === "黑貓宅急便" ? "黑貓宅急便收件資訊" : "郵局收件資訊"}
+                            {m === "黑貓宅急便"
+                              ? "黑貓宅急便收件資訊"
+                              : "郵局收件資訊"}
                           </p>
                           <div>
                             <label className="block text-xs font-medium text-foreground mb-1">
@@ -800,7 +896,9 @@ export default function PublicCartPage() {
                             </label>
                             <select
                               value={shippingCity}
-                              onChange={(e) => handleShippingCityChange(e.target.value)}
+                              onChange={(e) =>
+                                handleShippingCityChange(e.target.value)
+                              }
                               className={selectClass}
                             >
                               <option value="">請選擇縣市</option>
@@ -817,7 +915,9 @@ export default function PublicCartPage() {
                             </label>
                             <select
                               value={shippingDistrict}
-                              onChange={(e) => handleShippingDistrictChange(e.target.value)}
+                              onChange={(e) =>
+                                handleShippingDistrictChange(e.target.value)
+                              }
                               disabled={!shippingCity}
                               className={`${selectClass} disabled:opacity-50`}
                             >
@@ -848,7 +948,9 @@ export default function PublicCartPage() {
                             <input
                               type="text"
                               value={shippingAddressLine}
-                              onChange={(e) => setShippingAddressLine(e.target.value)}
+                              onChange={(e) =>
+                                setShippingAddressLine(e.target.value)
+                              }
                               placeholder="路名、門牌號、樓層"
                               className={inputClass}
                             />
@@ -887,20 +989,21 @@ export default function PublicCartPage() {
         </div>
 
         {/* Notes */}
-        {!isHomeDeliveryMethod(pickupMethod) && !isMeetupMethod(pickupMethod) && (
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">
-              備註（選填）
-            </label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="有任何特殊需求請填寫..."
-              rows={3}
-              className={`${inputClass} h-auto resize-none py-3`}
-            />
-          </div>
-        )}
+        {!isHomeDeliveryMethod(pickupMethod) &&
+          !isMeetupMethod(pickupMethod) && (
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">
+                備註（選填）
+              </label>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="有任何特殊需求請填寫..."
+                rows={3}
+                className={`${inputClass} h-auto resize-none py-3`}
+              />
+            </div>
+          )}
 
         {/* Price summary */}
         {pickupMethod && (
@@ -915,7 +1018,9 @@ export default function PublicCartPage() {
             </div>
             <div className="flex justify-between text-base font-bold text-foreground pt-1 border-t border-border/50">
               <span>訂單總額</span>
-              <span className="text-primary">NT$ {moneyPreview.orderTotal}</span>
+              <span className="text-primary">
+                NT$ {moneyPreview.orderTotal}
+              </span>
             </div>
           </div>
         )}

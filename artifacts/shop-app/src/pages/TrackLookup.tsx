@@ -24,23 +24,26 @@ export default function TrackLookupPage() {
             🔍
           </div>
           <h1 className="text-xl font-bold text-foreground">查詢訂單狀態</h1>
-          <p className="text-muted-foreground text-sm mt-2">輸入下單時收到的追蹤碼</p>
+          <p className="text-muted-foreground text-sm mt-2">
+            輸入下單時收到的追蹤碼
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
             type="text"
             value={token}
-            onChange={(e) => { setToken(e.target.value); setError(""); }}
+            onChange={(e) => {
+              setToken(e.target.value);
+              setError("");
+            }}
             placeholder="貼上追蹤碼..."
             className="w-full h-12 px-4 rounded-xl border border-input bg-white text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm font-mono"
             autoComplete="off"
             autoCorrect="off"
             spellCheck={false}
           />
-          {error && (
-            <p className="text-destructive text-sm">{error}</p>
-          )}
+          {error && <p className="text-destructive text-sm">{error}</p>}
           <button
             type="submit"
             className="w-full h-12 bg-primary text-white font-semibold rounded-xl text-base"
@@ -50,7 +53,9 @@ export default function TrackLookupPage() {
         </form>
 
         <p className="text-xs text-muted-foreground text-center mt-6 leading-relaxed">
-          追蹤碼顯示於下單成功頁面，<br />請截圖或複製保存。
+          追蹤碼顯示於下單成功頁面，
+          <br />
+          請截圖或複製保存。
         </p>
       </div>
     </div>
