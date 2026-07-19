@@ -70,3 +70,10 @@ test("the assembled app retains headers on its JSON 404", async () => {
   assert.equal(response.status, 404);
   assertSecurityHeaders(response);
 });
+
+test("the assembled app retains headers on its global 500 response", async () => {
+  const response = await fetch(`${baseUrl}/api/p/batch15-forced-db-error`);
+  assert.equal(response.status, 500);
+  assert.deepEqual(await response.json(), { error: "Internal server error" });
+  assertSecurityHeaders(response);
+});
