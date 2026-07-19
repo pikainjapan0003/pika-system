@@ -51,3 +51,40 @@ test("preview totals clamp at zero and detect an excessive discount", () => {
   assert.equal(result.remainingAmount, "0");
   assert.equal(result.discountExceedsGross, true);
 });
+
+test("unsafe, zero, and negative quantities contribute zero", () => {
+  for (const quantity of [Number.MAX_SAFE_INTEGER + 1, 0, -1]) {
+    const result = calculateMoneyPreview({
+      lines: [{ unitPrice: "99.5", quantity }],
+    });
+
+    assert.equal(result.itemSubtotal, "0");
+    assert.equal(result.orderTotal, "0");
+  }
+});
+
+test("garbage money fails closed while surrounding whitespace is accepted", () => {
+  const garbage = calculateMoneyPreview({
+    lines: [{ unitPrice: "not-money", quantity: 3 }],
+  });
+  const whitespace = calculateMoneyPreview({
+    lines: [{ unitPrice: " 0.1 ", quantity: 3 }],
+  });
+
+  assert.equal(garbage.unitPrice, "0");
+  assert.equal(garbage.itemSubtotal, "0");
+  assert.equal(whitespace.unitPrice, "0.1");
+  assert.equal(whitespace.itemSubtotal, "0.3");
+});
+
+test("multiple lines intentionally expose no single unit price", () => {
+  const result = calculateMoneyPreview({
+    lines: [
+      { unitPrice: "10", quantity: 1 },
+      { unitPrice: "20", quantity: 1 },
+    ],
+  });
+
+  assert.equal(result.unitPrice, "0");
+  assert.equal(result.itemSubtotal, "30");
+});

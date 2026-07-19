@@ -86,6 +86,8 @@ export function calculateMoneyPreview(input: {
   const remainingAmount = clampToZero(subtract(orderTotal, paidAmount));
 
   return {
+    // A cart has no single canonical unit price, so its summary intentionally
+    // exposes "0" here; callers must use each line or itemSubtotal instead.
     unitPrice: formatExactTwd(
       input.lines.length === 1
         ? parseNonNegativeMoney(input.lines[0]?.unitPrice)
