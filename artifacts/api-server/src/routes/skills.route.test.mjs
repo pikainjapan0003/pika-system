@@ -95,6 +95,18 @@ if (!process.env.DATABASE_URL) {
     await pool.end();
   });
 
+  async function request(method, path, body) {
+    const response = await fetch(`${baseUrl}${path}`, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+        "x-test-user-id": TEST_MERCHANT_ID,
+      },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+    return { status: response.status, data: await response.json() };
+  }
+
   test("enabling the linked-route cost skill makes the trips surface visible", async () => {
     const response = await fetch(
       `${baseUrl}/stores/${storeId}/skills/S-09/enable`,
@@ -133,5 +145,65 @@ if (!process.env.DATABASE_URL) {
       headers: { "x-test-user-id": OTHER_MERCHANT_ID },
     });
     assert.equal(crossStore.status, 403);
+  });
+
+  test("direct enable rejects a stale catalog version", async () => {
+    const { status, data } = await request(
+      "POST",
+      `/stores/${storeId}/skills/S-19/enable`,
+      {
+        enabled: true,
+        catalogVersion: 0,
+        confirmImpact: true,
+        confirmRisk: true,
+      },
+    );
+    assert.equal(status, 409);
+    assert.equal(data.error, "Skill catalog changed; preview again");
+  });
+
+  test("direct enable rejects an unmet prerequisite", async () => {
+    const { status, data } = await request(
+      "POST",
+      `/stores/${storeId}/skills/S-21/enable`,
+      {
+        enabled: true,
+        catalogVersion: 1,
+        confirmImpact: true,
+        confirmRisk: true,
+      },
+    );
+    assert.equal(status, 409);
+    assert.equal(data.error, "Skill prerequisite is not ready");
+    assert.equal(data.prerequisite.ready, false);
+    assert.ok(data.prerequisite.missing.length > 0);
+  });
+
+  test("direct enable rejects a high-risk skill without both confirmations", async () => {
+    const { status, data } = await request(
+      "POST",
+      `/stores/${storeId}/skills/S-19/enable`,
+      { enabled: true, catalogVersion: 1, confirmImpact: true },
+    );
+    assert.equal(status, 409);
+    assert.equal(data.error, "High-risk skill requires two confirmations");
+  });
+
+  test("package apply rejects stale catalogs and unknown package keys", async () => {
+    const stale = await request(
+      "POST",
+      `/stores/${storeId}/skill-packages/beginner/apply`,
+      { catalogVersion: 0 },
+    );
+    assert.equal(stale.status, 409);
+    assert.equal(stale.data.error, "Skill catalog changed; preview again");
+
+    const unknown = await request(
+      "POST",
+      `/stores/${storeId}/skill-packages/not-a-package/apply`,
+      { catalogVersion: 1 },
+    );
+    assert.equal(unknown.status, 404);
+    assert.equal(unknown.data.error, "Skill package not found");
   });
 }
