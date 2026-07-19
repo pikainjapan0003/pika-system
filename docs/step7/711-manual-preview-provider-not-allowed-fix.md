@@ -33,6 +33,7 @@ PROVIDER_NOT_ALLOWED
    若 DB 存 `"7-11"` 則 `isManualSyncProvider("7-11")` 為 false，panel 不顯示。
 
 最可能的觸發路徑（UI 截圖情境）：
+
 - DB `trackingProvider = "711"` → panel 顯示
 - 前端送 `provider: "711"`
 - 但部署的 backend 尚未執行 commit 50e4cd4（無 711 preview routing）
@@ -43,22 +44,34 @@ PROVIDER_NOT_ALLOWED
 ### Backend (`artifacts/api-server/src/routes/logisticsSync.ts`)
 
 新增 helper：
+
 ```typescript
-function normalizeSevenElevenProvider(provider: string | null | undefined): "711" | null {
+function normalizeSevenElevenProvider(
+  provider: string | null | undefined,
+): "711" | null {
   if (!provider) return null;
   const s = provider.trim().toLowerCase();
-  if (s === "711" || s === "7-11" || s === "seven-eleven" || s === "seveneleven" || s === "seven_eleven") return "711";
+  if (
+    s === "711" ||
+    s === "7-11" ||
+    s === "seven-eleven" ||
+    s === "seveneleven" ||
+    s === "seven_eleven"
+  )
+    return "711";
   return null;
 }
 ```
 
 Preview route 攔截：
+
 ```diff
 -if (reqProvider === "711") {
 +if (normalizeSevenElevenProvider(reqProvider) === "711") {
 ```
 
 `handle711Preview` DB 比對：
+
 ```diff
 -if (rows.some((r) => r.trackingProvider !== "711")) {
 +if (rows.some((r) => normalizeSevenElevenProvider(r.trackingProvider) !== "711")) {
@@ -67,15 +80,23 @@ Preview route 攔截：
 ### Frontend (`artifacts/shop-app/src/components/ManualTrackingSyncPanel.tsx`)
 
 新增 helper：
+
 ```typescript
 function isSevenElevenProvider(p: string | null | undefined): boolean {
   if (!p) return false;
   const s = p.trim().toLowerCase();
-  return s === "711" || s === "7-11" || s === "seven-eleven" || s === "seveneleven" || s === "seven_eleven";
+  return (
+    s === "711" ||
+    s === "7-11" ||
+    s === "seven-eleven" ||
+    s === "seveneleven" ||
+    s === "seven_eleven"
+  );
 }
 ```
 
 Provider normalization：
+
 ```diff
 -const provider = shipmentTracking?.trackingProvider ?? null;
 +const rawProvider = shipmentTracking?.trackingProvider ?? null;
@@ -85,6 +106,7 @@ Provider normalization：
 ### Tests (`artifacts/api-server/src/routes/logisticsSyncManualProvider.route.test.mjs`)
 
 新增：
+
 - alias DB row（`trackingProvider = "7-11"`）
 - `provider: "7-11"` + alias row → 200, dryRun=true
 - `provider: "seven-eleven"` + canonical row → 200, dryRun=true

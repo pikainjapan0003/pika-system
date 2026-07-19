@@ -22,24 +22,24 @@ Step 7 目前整體狀態為 `IN PROGRESS / PARTIAL PASS`（見 `docs/step7/Step
 
 ## Support Level 定義
 
-| Level | 名稱 | 定義 |
-|---|---|---|
-| Level 0 | Blocked / Research Only | 不顯示正式 manual UI；不可 production write；不可 `supportsAutoSync`；只允許研究文件或另開 research task |
+| Level   | 名稱                       | 定義                                                                                                                                         |
+| ------- | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Level 0 | Blocked / Research Only    | 不顯示正式 manual UI；不可 production write；不可 `supportsAutoSync`；只允許研究文件或另開 research task                                     |
 | Level 1 | Formal Manual Preview-Only | 可在 owner UI 查詢 / preview；可顯示貨態摘要；duplicate-only 不顯示寫入按鈕；can-write 也不可直接正式寫入；production 維持 safe-preview-only |
-| Level 2 | One-Shot Authorized Commit | 僅限單一 provider / orderId / trackingCode / expected event count；必須有明確授權；寫完必須關回 gate；不可變成常態功能 |
-| Level 3 | Formal Regular Write | 可常態性正式寫入（非批次排程）；需另行授權；不可自動觸發；目前無 provider 達此層級 |
-| Level 4 | Formal Auto Sync | 可 scheduled / batch sync；必須經過完整上線審核；目前只有 familymart |
+| Level 2 | One-Shot Authorized Commit | 僅限單一 provider / orderId / trackingCode / expected event count；必須有明確授權；寫完必須關回 gate；不可變成常態功能                       |
+| Level 3 | Formal Regular Write       | 可常態性正式寫入（非批次排程）；需另行授權；不可自動觸發；目前無 provider 達此層級                                                           |
+| Level 4 | Formal Auto Sync           | 可 scheduled / batch sync；必須經過完整上線審核；目前只有 familymart                                                                         |
 
 ---
 
 ## 2. Current Provider Matrix
 
-| Provider | Current Evidence | Current Support Level | Production Write Policy | supportsAutoSync | Manual UI | Status | Next Action |
-|---|---|---|---|---|---|---|---|
-| familymart | 正式自動同步已上線運作中；`supportsAutoSync: true`（`logisticsProviders.ts` / `providers.ts`）；scheduled / batch sync 目前僅 familymart | **Level 4 — Formal Auto Sync** | allowed via existing scheduled/batch sync only | `true` | hidden / not needed（不在 `MANUAL_SYNC_PROVIDERS` 內） | keep as-is | 無；維持現狀 |
-| postoffice | adapter / preview / controlled production E2E 已驗證（J5A～J5E：order #39 / trackingId=2，insertedEventCount=5，delivered）；#38 為 can-write candidate（外部6 / DB0 / 可寫6，最新貨態「投遞成功」），尚未授權 | **Level 1 — Formal Manual Preview-Only** | no broad write; one-shot authorization required | `false` | preview only（`MANUAL_SYNC_PROVIDERS` 含 postoffice） | partial rollout, not full formal write | keep preview-only; postoffice #38 requires separate authorization |
-| tcat | adapter / preview / controlled production E2E 已驗證（J6A～J6E：order #40 / trackingId=3，insertedEventCount=4，delivered）；#36 owner UI one-shot production commit 已成功（外部5 / DB0 → 寫入5筆，最新貨態「順利送達」），one-shot gate 已關回 | **Level 1 — Formal Manual Preview-Only** | no broad write; one-shot authorization required | `false` | preview only（`MANUAL_SYNC_PROVIDERS` 含 tcat） | partial rollout, not full formal write | keep preview-only |
-| 7-11 | manual preview-only 已完成；Published 正式網站 UI QA PASS（8 筆外部事件，最新貨態：已完成包裹成功取件）；未列入 `MANUAL_SYNC_PROVIDERS`；`supportsAutoSync: false`；未 production write；未開 auto-sync；見 `docs/step7/711-preview-only-closeout.md` | **Level 1 — Manual Preview-Only** | none（7-11 preview-only；不支援正式寫入；不支援 auto-sync；不進 commit route） | `false` | preview only（7-11 可進 manual preview，但不在 `MANUAL_SYNC_PROVIDERS` 正式清單中） | Level 1 manual preview-only PASS（**updated 2026-06-26**） | Step 7P-MANUAL-PREVIEW-ALL-PROVIDERS-QA；之後再評估 write candidate decision |
+| Provider   | Current Evidence                                                                                                                                                                                                                                      | Current Support Level                    | Production Write Policy                                                        | supportsAutoSync | Manual UI                                                                           | Status                                                     | Next Action                                                                  |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------ | ---------------- | ----------------------------------------------------------------------------------- | ---------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| familymart | 正式自動同步已上線運作中；`supportsAutoSync: true`（`logisticsProviders.ts` / `providers.ts`）；scheduled / batch sync 目前僅 familymart                                                                                                              | **Level 4 — Formal Auto Sync**           | allowed via existing scheduled/batch sync only                                 | `true`           | hidden / not needed（不在 `MANUAL_SYNC_PROVIDERS` 內）                              | keep as-is                                                 | 無；維持現狀                                                                 |
+| postoffice | adapter / preview / controlled production E2E 已驗證（J5A～J5E：order #39 / trackingId=2，insertedEventCount=5，delivered）；#38 為 can-write candidate（外部6 / DB0 / 可寫6，最新貨態「投遞成功」），尚未授權                                        | **Level 1 — Formal Manual Preview-Only** | no broad write; one-shot authorization required                                | `false`          | preview only（`MANUAL_SYNC_PROVIDERS` 含 postoffice）                               | partial rollout, not full formal write                     | keep preview-only; postoffice #38 requires separate authorization            |
+| tcat       | adapter / preview / controlled production E2E 已驗證（J6A～J6E：order #40 / trackingId=3，insertedEventCount=4，delivered）；#36 owner UI one-shot production commit 已成功（外部5 / DB0 → 寫入5筆，最新貨態「順利送達」），one-shot gate 已關回      | **Level 1 — Formal Manual Preview-Only** | no broad write; one-shot authorization required                                | `false`          | preview only（`MANUAL_SYNC_PROVIDERS` 含 tcat）                                     | partial rollout, not full formal write                     | keep preview-only                                                            |
+| 7-11       | manual preview-only 已完成；Published 正式網站 UI QA PASS（8 筆外部事件，最新貨態：已完成包裹成功取件）；未列入 `MANUAL_SYNC_PROVIDERS`；`supportsAutoSync: false`；未 production write；未開 auto-sync；見 `docs/step7/711-preview-only-closeout.md` | **Level 1 — Manual Preview-Only**        | none（7-11 preview-only；不支援正式寫入；不支援 auto-sync；不進 commit route） | `false`          | preview only（7-11 可進 manual preview，但不在 `MANUAL_SYNC_PROVIDERS` 正式清單中） | Level 1 manual preview-only PASS（**updated 2026-06-26**） | Step 7P-MANUAL-PREVIEW-ALL-PROVIDERS-QA；之後再評估 write candidate decision |
 
 ---
 
@@ -96,12 +96,12 @@ Step 7P-ONE-SHOT-WRITE-SAFETY-GATE
 Step 7P-MANUAL-PREVIEW-ALL-PROVIDERS-QA = COMPLETED / PARTIAL
 ```
 
-| Provider | Level | 狀態 |
-|----------|-------|------|
-| familymart | Level 4 — Formal Auto Sync | ✅ unchanged |
+| Provider   | Level                         | 狀態         |
+| ---------- | ----------------------------- | ------------ |
+| familymart | Level 4 — Formal Auto Sync    | ✅ unchanged |
 | postoffice | Level 1 — Manual Preview-Only | ✅ confirmed |
-| tcat | Level 1 — Manual Preview-Only | ✅ confirmed |
-| 7-11 | Level 1 — Manual Preview-Only | ✅ confirmed |
+| tcat       | Level 1 — Manual Preview-Only | ✅ confirmed |
+| 7-11       | Level 1 — Manual Preview-Only | ✅ confirmed |
 
 - Docs + repo safety: PASS
 - 7-11 Published UI QA: PASS（Step 7O / Step 7P 截圖驗收）
@@ -118,12 +118,12 @@ Step 7P-MANUAL-PREVIEW-ALL-PROVIDERS-QA = COMPLETED / PARTIAL
 Step 7P-PROVIDER-WRITE-CANDIDATE-DECISION = COMPLETED / PASS
 ```
 
-| Provider | 決策 | 說明 |
-|----------|------|------|
-| familymart | 不參與 | 維持 Level 4 正式自動同步 |
+| Provider   | 決策                                  | 說明                                                             |
+| ---------- | ------------------------------------- | ---------------------------------------------------------------- |
+| familymart | 不參與                                | 維持 Level 4 正式自動同步                                        |
 | postoffice | **第一順位 one-shot write candidate** | hash-present；duplicate-only PASS；Published UI PASS；Level 不升 |
-| tcat | **第二順位 one-shot write candidate** | hash-present；duplicate-only PASS；Published UI PASS；Level 不升 |
-| 711 | **暫不列入第一批** | hash-null；不計算 duplicate-only；維持 Level 1 preview-only |
+| tcat       | **第二順位 one-shot write candidate** | hash-present；duplicate-only PASS；Published UI PASS；Level 不升 |
+| 711        | **暫不列入第一批**                    | hash-null；不計算 duplicate-only；維持 Level 1 preview-only      |
 
 - postoffice / tcat 列為候選不等於已授權寫入；下一步需另開 one-shot authorization task
 - 安全門規則：13 條，見 `docs/step7/provider-write-candidate-decision.md` Section 7
@@ -139,12 +139,12 @@ Step 7P-ONE-SHOT-WRITE-SAFETY-GATE = COMPLETED / PASS
 
 安全門規格已建立：`docs/step7/one-shot-write-safety-gate.md`
 
-| Provider | 安全門狀態 | 說明 |
-|----------|-----------|------|
-| familymart | 不適用 | 維持 Level 4 正式自動同步 |
+| Provider   | 安全門狀態                   | 說明                                       |
+| ---------- | ---------------------------- | ------------------------------------------ |
+| familymart | 不適用                       | 維持 Level 4 正式自動同步                  |
 | postoffice | **規格已建立；尚未授權寫入** | 待使用者提供完整授權文字後方可進入寫入流程 |
-| tcat | **規格已建立；尚未授權寫入** | 待使用者提供完整授權文字後方可進入寫入流程 |
-| 711 | 不適用 | 不列入第一批 candidate |
+| tcat       | **規格已建立；尚未授權寫入** | 待使用者提供完整授權文字後方可進入寫入流程 |
+| 711        | 不適用                       | 不列入第一批 candidate                     |
 
 - postoffice #38（外部 6 / DB 0 / 可寫 6）尚未授權；不得直接操作
 - 下一步：`Step 7P-POSTOFFICE-ONE-SHOT-AUTHORIZATION`
@@ -172,22 +172,22 @@ Step 7P-ONE-SHOT-WRITE-SAFETY-GATE = COMPLETED / PASS
 
 ## Safety Check（本輪執行，read-only）
 
-| 項目 | 結果 |
-|---|---|
-| `COMMIT_ENABLED` | `false`（`ManualTrackingSyncPanel.tsx:141`） |
-| `/manual-provider/commit` | 僅 `ManualTrackingSyncPanel.tsx:371`，於 guarded fetch 內（`!COMMIT_ENABLED` early return，未送出） |
-| `MANUAL_SYNC_PROVIDERS` | `["postoffice", "tcat"] as const`（`ManualTrackingSyncPanel.tsx:37`），未變動 |
-| `supportsAutoSync` | `logisticsProviders.ts` / `providers.ts` 皆未變動；僅 familymart=`true`，7-11 / tcat / postoffice 均為 `false` |
-| `localStorage` / `sessionStorage` | CLEAN（`ManualTrackingSyncPanel.tsx` 內 0 處） |
+| 項目                              | 結果                                                                                                           |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `COMMIT_ENABLED`                  | `false`（`ManualTrackingSyncPanel.tsx:141`）                                                                   |
+| `/manual-provider/commit`         | 僅 `ManualTrackingSyncPanel.tsx:371`，於 guarded fetch 內（`!COMMIT_ENABLED` early return，未送出）            |
+| `MANUAL_SYNC_PROVIDERS`           | `["postoffice", "tcat"] as const`（`ManualTrackingSyncPanel.tsx:37`），未變動                                  |
+| `supportsAutoSync`                | `logisticsProviders.ts` / `providers.ts` 皆未變動；僅 familymart=`true`，7-11 / tcat / postoffice 均為 `false` |
+| `localStorage` / `sessionStorage` | CLEAN（`ManualTrackingSyncPanel.tsx` 內 0 處）                                                                 |
 
 ---
 
 ## 參考文件
 
-| 文件 | 內容 |
-|---|---|
-| `docs/step7/Step7完整計畫核取清單_總表版_更新至7N-STATUS-CORRECTION.md` | Step 7 目前狀態（IN PROGRESS / PARTIAL PASS）、已完成 / 未完成清單 |
-| `docs/step7/manual-provider-production-can-write-candidates.md` | postoffice #38 / tcat #36 can-write candidate 詳情 |
-| `docs/step7/manual-provider-commit-release-gate-decision.md` | one-shot authorization 流程、Authorization Text 格式、Rollback Plan |
-| `docs/step7/manual-provider-production-one-shot-final-closeout.md` | tcat #36 one-shot commit 收尾、gate 關回紀錄 |
-| `docs/step7/mobile-brand-qa-closeout.md` | safe-preview-only 安全狀態重新確認 |
+| 文件                                                                    | 內容                                                                |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `docs/step7/Step7完整計畫核取清單_總表版_更新至7N-STATUS-CORRECTION.md` | Step 7 目前狀態（IN PROGRESS / PARTIAL PASS）、已完成 / 未完成清單  |
+| `docs/step7/manual-provider-production-can-write-candidates.md`         | postoffice #38 / tcat #36 can-write candidate 詳情                  |
+| `docs/step7/manual-provider-commit-release-gate-decision.md`            | one-shot authorization 流程、Authorization Text 格式、Rollback Plan |
+| `docs/step7/manual-provider-production-one-shot-final-closeout.md`      | tcat #36 one-shot commit 收尾、gate 關回紀錄                        |
+| `docs/step7/mobile-brand-qa-closeout.md`                                | safe-preview-only 安全狀態重新確認                                  |

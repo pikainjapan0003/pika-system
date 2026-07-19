@@ -57,6 +57,7 @@ export function resolveTesseractBinary(): string {
 ```
 
 優先順序：
+
 1. `process.env.TESSERACT_BIN`
 2. 已知 nix store tesseract 5.3.4 路徑
 3. 已知 nix store tesseract 3.05.00 路徑
@@ -72,6 +73,7 @@ const proc = spawn(tesseractBin, [...]);
 ### 測試 (`scripts/step7/test-711-tesseract-runtime-resolution.mjs`)
 
 新增 6-case resolution test：
+
 - TESSERACT_BIN unset → 找到 5.3.4 nix path
 - resolved binary executable
 - `--version` 輸出含 "tesseract"

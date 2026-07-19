@@ -9,21 +9,21 @@ Integration test 25 tests pass，0 fail，API 無 bug，DB 已清理。
 
 ## 2. UI Worktree / Branch
 
-| 項目 | 值 |
-|------|-----|
-| Worktree | `/home/runner/workspace/.worktrees/step7e-ui` |
-| Branch | `qa/step7e-seller-agent-settings-ui` |
+| 項目        | 值                                                            |
+| ----------- | ------------------------------------------------------------- |
+| Worktree    | `/home/runner/workspace/.worktrees/step7e-ui`                 |
+| Branch      | `qa/step7e-seller-agent-settings-ui`                          |
 | 起始 commit | `5a62b9b` (test-api-step7e-seller-agent-settings-integration) |
-| 起點 | `qa/step7e-seller-agent-settings-api` |
+| 起點        | `qa/step7e-seller-agent-settings-api`                         |
 
 ## 3. Reviewed Commits
 
-| commit | message |
-|--------|---------|
+| commit    | message                                           |
+| --------- | ------------------------------------------------- |
 | `5a62b9b` | test-api-step7e-seller-agent-settings-integration |
-| `793a17f` | docs-step7e-seller-agent-settings-db-push |
-| `dc75672` | feat-api-step7e-seller-agent-settings |
-| `626b399` | feat-db-step7e-seller-agent-settings-schema |
+| `793a17f` | docs-step7e-seller-agent-settings-db-push         |
+| `dc75672` | feat-api-step7e-seller-agent-settings             |
+| `626b399` | feat-db-step7e-seller-agent-settings-schema       |
 
 ---
 
@@ -120,16 +120,18 @@ const [error, setError] = useState("");
 if (isLoading) return <SpinnerUI />;
 
 // Error inline:
-{error && (
-  <div className="bg-destructive/10 text-destructive text-sm px-4 py-3 rounded-xl">
-    {error}
-  </div>
-)}
+{
+  error && (
+    <div className="bg-destructive/10 text-destructive text-sm px-4 py-3 rounded-xl">
+      {error}
+    </div>
+  );
+}
 
 // Button state:
 <button disabled={mutation.isPending}>
   {saved ? "已儲存！" : mutation.isPending ? "儲存中..." : "儲存設定"}
-</button>
+</button>;
 ```
 
 ### Toast Pattern（Orders.tsx）
@@ -162,6 +164,7 @@ import {
 ### 底層 fetch
 
 `custom-fetch.ts` 封裝 `customFetch()`：
+
 - 自動附加 `Authorization: Bearer <token>`（由 `ClerkTokenBridge` 設定 `setAuthTokenGetter`）
 - 自動解析 JSON response
 - 非 2xx → 拋出 `ApiError`（含 `status`、`data.error`）
@@ -171,6 +174,7 @@ import {
 **重要：`/stores/:storeId/agent/settings` 目前不在 `openapi.yaml` 中。**
 
 因此：
+
 - `lib/api-client-react/src/generated/api.ts` 無 `useGetSellerAgentSettings` / `usePatchSellerAgentSettings`
 - 需要補充 API spec 或手寫 hook
 
@@ -180,13 +184,13 @@ import {
 
 ### 結論：新增獨立 route `/settings/agent`
 
-| 項目 | 建議 |
-|------|------|
-| Route path | `/settings/agent` |
-| Component | `AgentSettingsPage` |
-| File | `artifacts/shop-app/src/pages/AgentSettings.tsx` |
+| 項目        | 建議                                               |
+| ----------- | -------------------------------------------------- |
+| Route path  | `/settings/agent`                                  |
+| Component   | `AgentSettingsPage`                                |
+| File        | `artifacts/shop-app/src/pages/AgentSettings.tsx`   |
 | Entry point | 在 `Settings.tsx` 加一個 navigation card，點擊跳轉 |
-| BottomNav | `active="settings"`（與 Settings.tsx 相同） |
+| BottomNav   | `active="settings"`（與 Settings.tsx 相同）        |
 
 ### 理由
 
@@ -275,7 +279,11 @@ export type AgentSettings = {
   agentMode: "self_hosted_webhook" | "external_agent" | "rule_worker";
   enabledLogistics: string[];
   queryMethods: string[];
-  queryFrequency: "manual" | "daily" | "every_6_hours" | "every_2_hours_high_tier";
+  queryFrequency:
+    | "manual"
+    | "daily"
+    | "every_6_hours"
+    | "every_2_hours_high_tier";
   notifyOnUnknown: boolean;
   requireConfirmOnException: boolean;
   requireConfirmOnReturned: boolean;
@@ -286,20 +294,22 @@ export type AgentSettings = {
   hasWebhookSecret: boolean;
 };
 
-export async function getSellerAgentSettings(storeId: number): Promise<AgentSettings> {
+export async function getSellerAgentSettings(
+  storeId: number,
+): Promise<AgentSettings> {
   const res = await customFetch<{ data: AgentSettings }>(
-    `/api/stores/${storeId}/agent/settings`
+    `/api/stores/${storeId}/agent/settings`,
   );
   return res.data;
 }
 
 export async function patchSellerAgentSettings(
   storeId: number,
-  patch: Partial<AgentSettings> & { webhookSecret?: string | null }
+  patch: Partial<AgentSettings> & { webhookSecret?: string | null },
 ): Promise<AgentSettings> {
   const res = await customFetch<{ data: AgentSettings }>(
     `/api/stores/${storeId}/agent/settings`,
-    { method: "PATCH", body: JSON.stringify(patch) }
+    { method: "PATCH", body: JSON.stringify(patch) },
   );
   return res.data;
 }
@@ -313,8 +323,14 @@ useEffect(() => {
   if (!storeId) return;
   setIsLoading(true);
   getSellerAgentSettings(storeId)
-    .then(s => { setSettings(s); setIsLoading(false); })
-    .catch(err => { setError("載入設定失敗"); setIsLoading(false); });
+    .then((s) => {
+      setSettings(s);
+      setIsLoading(false);
+    })
+    .catch((err) => {
+      setError("載入設定失敗");
+      setIsLoading(false);
+    });
 }, [storeId]);
 
 // PATCH on submit
@@ -345,42 +361,42 @@ const handleSubmit = async (e: React.FormEvent) => {
 
 ### 群組 1：AI 助理狀態
 
-| 欄位 | UI 元件 | 選項 |
-|------|---------|------|
-| `agentStatus` | Switch（開/關） | `enabled` / `disabled` |
-| `agentMode` | Select | `rule_worker`（規則工人）/ `external_agent`（外部 Agent）/ `self_hosted_webhook`（自架 Webhook） |
+| 欄位          | UI 元件         | 選項                                                                                             |
+| ------------- | --------------- | ------------------------------------------------------------------------------------------------ |
+| `agentStatus` | Switch（開/關） | `enabled` / `disabled`                                                                           |
+| `agentMode`   | Select          | `rule_worker`（規則工人）/ `external_agent`（外部 Agent）/ `self_hosted_webhook`（自架 Webhook） |
 
 注意：`platform_managed_reserved` **不出現在 UI**。
 
 ### 群組 2：查詢設定
 
-| 欄位 | UI 元件 | 選項 |
-|------|---------|------|
-| `queryFrequency` | Select | manual / daily / every_6_hours / every_2_hours_high_tier |
-| `queryMethods` | Checkbox group | manual / csv_import / webhook / scheduled |
+| 欄位             | UI 元件        | 選項                                                     |
+| ---------------- | -------------- | -------------------------------------------------------- |
+| `queryFrequency` | Select         | manual / daily / every_6_hours / every_2_hours_high_tier |
+| `queryMethods`   | Checkbox group | manual / csv_import / webhook / scheduled                |
 
 ### 群組 3：出貨物流
 
-| 欄位 | UI 元件 | 選項 |
-|------|---------|------|
+| 欄位               | UI 元件        | 選項                                                         |
+| ------------------ | -------------- | ------------------------------------------------------------ |
 | `enabledLogistics` | Checkbox group | seven_eleven / family_mart / home_delivery / other / webhook |
 
 ### 群組 4：確認設定
 
-| 欄位 | UI 元件 |
-|------|---------|
-| `notifyOnUnknown` | Switch（發現未知狀態時通知）|
-| `requireConfirmOnException` | Switch（例外狀態需確認）|
-| `requireConfirmOnReturned` | Switch（退回需確認）|
-| `requireConfirmOnDelivered` | Switch（已送達需確認）|
-| `hideErrorDetailsFromBuyer` | Switch（對買家隱藏錯誤細節）|
+| 欄位                        | UI 元件                      |
+| --------------------------- | ---------------------------- |
+| `notifyOnUnknown`           | Switch（發現未知狀態時通知） |
+| `requireConfirmOnException` | Switch（例外狀態需確認）     |
+| `requireConfirmOnReturned`  | Switch（退回需確認）         |
+| `requireConfirmOnDelivered` | Switch（已送達需確認）       |
+| `hideErrorDetailsFromBuyer` | Switch（對買家隱藏錯誤細節） |
 
 ### 群組 5：Webhook
 
-| 欄位 | UI 元件 |
-|------|---------|
-| `webhookEnabled` | Switch（啟用 Webhook）|
-| `webhookUrl` | Input（條件顯示：webhookEnabled = true）|
+| 欄位             | UI 元件                                  |
+| ---------------- | ---------------------------------------- |
+| `webhookEnabled` | Switch（啟用 Webhook）                   |
+| `webhookUrl`     | Input（條件顯示：webhookEnabled = true） |
 
 ---
 
@@ -432,11 +448,11 @@ await patchSellerAgentSettings(storeId, { webhookSecret: null });
 
 ### Client-side validation
 
-| 欄位 | 驗證 |
-|------|------|
-| `webhookUrl` | 若 webhookEnabled=true 且 url 不空，validate URL format |
-| `agentMode` | 下拉已限制不含 `platform_managed_reserved`，無需額外 validation |
-| `enabledLogistics` / `queryMethods` | 陣列型，空值允許（API 不限制非空）|
+| 欄位                                | 驗證                                                            |
+| ----------------------------------- | --------------------------------------------------------------- |
+| `webhookUrl`                        | 若 webhookEnabled=true 且 url 不空，validate URL format         |
+| `agentMode`                         | 下拉已限制不含 `platform_managed_reserved`，無需額外 validation |
+| `enabledLogistics` / `queryMethods` | 陣列型，空值允許（API 不限制非空）                              |
 
 ### API error handling
 
@@ -451,6 +467,7 @@ catch (err: any) {
 ### 「尚未儲存」狀態
 
 GET 回傳的 default config（無 DB row 時）：
+
 - API 文件確認：GET 無 row 時回傳 in-memory default，不建立 DB row
 - UI 建議：**不特別顯示「尚未儲存」**，因為 default config 與初次儲存後的 UI 相同，顯示「尚未儲存」反而容易誤導
 - 等使用者首次 PATCH 後，UI 正常顯示「已儲存！」
@@ -479,16 +496,16 @@ GET 回傳的 default config（無 DB row 時）：
 
 ## 14. 未執行項目
 
-| 項目 | 狀態 |
-|------|------|
-| 施工 UI | **本次未執行** |
-| 修改 API | **本次未執行** |
-| 修改 openapi.yaml | **本次未執行**（施工時方案 A 需要） |
-| DB push | **本次未執行** |
-| migrate | **本次未執行** |
-| seed | **本次未執行** |
-| push GitHub | **本次未執行** |
-| 修改 package.json / lockfile | **本次未執行** |
+| 項目                         | 狀態                                |
+| ---------------------------- | ----------------------------------- |
+| 施工 UI                      | **本次未執行**                      |
+| 修改 API                     | **本次未執行**                      |
+| 修改 openapi.yaml            | **本次未執行**（施工時方案 A 需要） |
+| DB push                      | **本次未執行**                      |
+| migrate                      | **本次未執行**                      |
+| seed                         | **本次未執行**                      |
+| push GitHub                  | **本次未執行**                      |
+| 修改 package.json / lockfile | **本次未執行**                      |
 
 ---
 

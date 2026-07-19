@@ -9,20 +9,20 @@
 
 ## 1. 結論
 
-| 項目 | 結果 |
-|------|------|
-| 7-11 manual preview-only | **PASS** |
-| Published 正式網站 UI QA | **PASS** |
-| 外部貨態事件 | **8 筆** |
-| 最新貨態 | 已完成包裹成功取件 |
-| 取件門市 | 麟林 |
-| 取件期限 | 2026-06-23 |
-| OCR_FAILED | 無 |
-| PROVIDER_NOT_ALLOWED | 無 |
-| 未寫 DB | ✅ 確認 |
-| 未開正式寫入 | ✅ 確認 |
-| 未開 auto-sync | ✅ 確認 |
-| 7-11 目前層級 | **Level 1 — Manual Preview-Only** |
+| 項目                     | 結果                              |
+| ------------------------ | --------------------------------- |
+| 7-11 manual preview-only | **PASS**                          |
+| Published 正式網站 UI QA | **PASS**                          |
+| 外部貨態事件             | **8 筆**                          |
+| 最新貨態                 | 已完成包裹成功取件                |
+| 取件門市                 | 麟林                              |
+| 取件期限                 | 2026-06-23                        |
+| OCR_FAILED               | 無                                |
+| PROVIDER_NOT_ALLOWED     | 無                                |
+| 未寫 DB                  | ✅ 確認                           |
+| 未開正式寫入             | ✅ 確認                           |
+| 未開 auto-sync           | ✅ 確認                           |
+| 7-11 目前層級            | **Level 1 — Manual Preview-Only** |
 
 ---
 
@@ -44,19 +44,19 @@
 
 ## 3. 完成項目
 
-| 步驟 | 內容 | 結果 |
-|------|------|------|
-| Step 7O-711-LIGHTWEIGHT-FEASIBILITY | 7-11 tracking path 可行性確認 | ✅ Done |
-| Step 7O-711-MINIMAL-PREVIEW-ADAPTER-SPIKE | fixture / parser / normalize spike | ✅ Done |
-| Step 7O-711-OCR-OR-SOURCE-VALIDATION | captcha image 可下載；OCR environment 可用 | ✅ Done |
-| Step 7O-711-FULL-PREVIEW-E2E-TEST | 真實 E2E 查詢；取得 8 筆貨態事件 | ✅ Done |
-| Step 7O-711-E2E-STABILITY-RETRY | normalization 2/8 → 8/8 correct | ✅ Done |
-| Step 7O-711-MANUAL-PREVIEW-INTEGRATION | 7-11 接入手動預覽流程；commit route 仍拒絕 | ✅ Done |
-| Step 7O-711-MANUAL-PREVIEW-PROVIDER-NOT-ALLOWED-FIX | provider alias 修正（711 / 7-11 / seven-eleven 可進 preview） | ✅ Done |
-| Step 7O-711-RUNTIME-TESSERACT-FIX | workspace / preview 可找到 tesseract binary | ✅ Done |
-| Step 7O-711-PUBLISHED-RUNTIME-TESSERACT-FIX | 確認 Published runtime 缺 tesseract；診斷根因 | ✅ Done |
-| Step 7O-711-REPLIT-NIX-TESSERACT-ENABLE | 建立 replit.nix，pkgs.tesseract4 啟用，commit `74de9b3` | ✅ Done |
-| Published UI QA | 使用者人工驗收正式網站截圖 | ✅ **PASS** |
+| 步驟                                                | 內容                                                          | 結果        |
+| --------------------------------------------------- | ------------------------------------------------------------- | ----------- |
+| Step 7O-711-LIGHTWEIGHT-FEASIBILITY                 | 7-11 tracking path 可行性確認                                 | ✅ Done     |
+| Step 7O-711-MINIMAL-PREVIEW-ADAPTER-SPIKE           | fixture / parser / normalize spike                            | ✅ Done     |
+| Step 7O-711-OCR-OR-SOURCE-VALIDATION                | captcha image 可下載；OCR environment 可用                    | ✅ Done     |
+| Step 7O-711-FULL-PREVIEW-E2E-TEST                   | 真實 E2E 查詢；取得 8 筆貨態事件                              | ✅ Done     |
+| Step 7O-711-E2E-STABILITY-RETRY                     | normalization 2/8 → 8/8 correct                               | ✅ Done     |
+| Step 7O-711-MANUAL-PREVIEW-INTEGRATION              | 7-11 接入手動預覽流程；commit route 仍拒絕                    | ✅ Done     |
+| Step 7O-711-MANUAL-PREVIEW-PROVIDER-NOT-ALLOWED-FIX | provider alias 修正（711 / 7-11 / seven-eleven 可進 preview） | ✅ Done     |
+| Step 7O-711-RUNTIME-TESSERACT-FIX                   | workspace / preview 可找到 tesseract binary                   | ✅ Done     |
+| Step 7O-711-PUBLISHED-RUNTIME-TESSERACT-FIX         | 確認 Published runtime 缺 tesseract；診斷根因                 | ✅ Done     |
+| Step 7O-711-REPLIT-NIX-TESSERACT-ENABLE             | 建立 replit.nix，pkgs.tesseract4 啟用，commit `74de9b3`       | ✅ Done     |
+| Published UI QA                                     | 使用者人工驗收正式網站截圖                                    | ✅ **PASS** |
 
 ---
 
@@ -83,12 +83,12 @@
 
 ## 5. 目前四家物流狀態
 
-| Provider | 層級 | 備註 |
-|----------|------|------|
-| familymart | **Level 4 — Formal Auto Sync** | `supportsAutoSync: true`；正式自動同步運作中 |
+| Provider   | 層級                              | 備註                                                                                   |
+| ---------- | --------------------------------- | -------------------------------------------------------------------------------------- |
+| familymart | **Level 4 — Formal Auto Sync**    | `supportsAutoSync: true`；正式自動同步運作中                                           |
 | postoffice | **Level 1 — Manual Preview-Only** | adapter / preview / production E2E 完成；postoffice #38 can-write candidate 待另行授權 |
-| tcat | **Level 1 — Manual Preview-Only** | adapter / preview / production E2E 完成；#36 one-shot commit 已完成並關回 gate |
-| 7-11 | **Level 1 — Manual Preview-Only** | Published UI QA PASS；未正式寫入；未 auto-sync |
+| tcat       | **Level 1 — Manual Preview-Only** | adapter / preview / production E2E 完成；#36 one-shot commit 已完成並關回 gate         |
+| 7-11       | **Level 1 — Manual Preview-Only** | Published UI QA PASS；未正式寫入；未 auto-sync                                         |
 
 ---
 
@@ -110,16 +110,16 @@
 
 ## 參考文件
 
-| 文件 | 內容 |
-|------|------|
-| `docs/step7/711-tracking-lightweight-feasibility.md` | 7-11 可行性研究 |
-| `docs/step7/711-minimal-preview-adapter-spike.md` | adapter spike |
-| `docs/step7/711-ocr-or-source-validation.md` | OCR / captcha 驗證 |
-| `docs/step7/711-full-preview-e2e-test.md` | 真實 E2E 查詢結果 |
-| `docs/step7/711-manual-preview-integration.md` | manual preview 整合 |
-| `docs/step7/711-manual-preview-provider-not-allowed-fix.md` | provider alias 修正 |
-| `docs/step7/711-runtime-tesseract-fix.md` | tesseract runtime 修正 |
-| `docs/step7/711-published-runtime-tesseract-fix.md` | Published runtime 診斷 |
-| `docs/step7/711-replit-nix-tesseract-enable.md` | replit.nix tesseract 啟用 |
-| `docs/step7/provider-rollout-decision-matrix.md` | 各 provider Support Level 決策 |
-| `docs/step7/provider-rollout-policy.md` | Provider rollout 政策 |
+| 文件                                                        | 內容                           |
+| ----------------------------------------------------------- | ------------------------------ |
+| `docs/step7/711-tracking-lightweight-feasibility.md`        | 7-11 可行性研究                |
+| `docs/step7/711-minimal-preview-adapter-spike.md`           | adapter spike                  |
+| `docs/step7/711-ocr-or-source-validation.md`                | OCR / captcha 驗證             |
+| `docs/step7/711-full-preview-e2e-test.md`                   | 真實 E2E 查詢結果              |
+| `docs/step7/711-manual-preview-integration.md`              | manual preview 整合            |
+| `docs/step7/711-manual-preview-provider-not-allowed-fix.md` | provider alias 修正            |
+| `docs/step7/711-runtime-tesseract-fix.md`                   | tesseract runtime 修正         |
+| `docs/step7/711-published-runtime-tesseract-fix.md`         | Published runtime 診斷         |
+| `docs/step7/711-replit-nix-tesseract-enable.md`             | replit.nix tesseract 啟用      |
+| `docs/step7/provider-rollout-decision-matrix.md`            | 各 provider Support Level 決策 |
+| `docs/step7/provider-rollout-policy.md`                     | Provider rollout 政策          |

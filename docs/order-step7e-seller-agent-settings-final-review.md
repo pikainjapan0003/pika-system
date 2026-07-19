@@ -19,17 +19,17 @@ base:      qa/step7e-seller-agent-settings-active-preview
 
 ## 3. Reviewed Branch / Commits
 
-| Commit | 說明 |
-|--------|------|
-| `626b399` | feat-schema-step7e-seller-agent-settings（DB schema） |
-| `dc75672` | feat-api-step7e-seller-agent-settings（API） |
+| Commit    | 說明                                                    |
+| --------- | ------------------------------------------------------- |
+| `626b399` | feat-schema-step7e-seller-agent-settings（DB schema）   |
+| `dc75672` | feat-api-step7e-seller-agent-settings（API）            |
 | `c73a68f` | test-api-step7e-seller-agent-settings（API mock tests） |
-| `793a17f` | docs-step7e-seller-agent-settings-db-push |
-| `5a62b9b` | test-api-step7e-seller-agent-settings-integration |
+| `793a17f` | docs-step7e-seller-agent-settings-db-push               |
+| `5a62b9b` | test-api-step7e-seller-agent-settings-integration       |
 | `68659ce` | feat-client-step7e-seller-agent-settings-api（codegen） |
-| `6a8153a` | feat-ui-step7e-seller-agent-settings |
-| `b17403b` | docs-step7e-seller-agent-settings-ui-review |
-| `758e918` | docs-step7e-browser-smoke-closeout |
+| `6a8153a` | feat-ui-step7e-seller-agent-settings                    |
+| `b17403b` | docs-step7e-seller-agent-settings-ui-review             |
+| `758e918` | docs-step7e-browser-smoke-closeout                      |
 
 所有 commits 均包含在 `qa/step7e-seller-agent-settings-active-preview` 中，ancestry 驗證通過。
 
@@ -39,20 +39,20 @@ base:      qa/step7e-seller-agent-settings-active-preview
 
 檔案：`lib/db/src/schema/sellerAgentSettings.ts`
 
-| 審查項目 | 結果 |
-|---------|------|
-| agentStatus: disabled / enabled | ✅ DB CHECK constraint 完整 |
-| agentMode: 4 values（含 platform_managed_reserved） | ✅ DB CHECK constraint 完整 |
-| queryFrequency: 4 values | ✅ DB CHECK constraint 完整 |
-| enabledLogistics: JSONB（白名單於應用層驗證） | ✅ |
-| queryMethods: JSONB（白名單於應用層驗證） | ✅ |
-| webhookSecretHash: 只存 hash | ✅ 欄位有明確注釋 |
-| unique storeId 約束 | ✅ `seller_agent_settings_store_id_unique` |
-| FK storeId → stores(id) ON DELETE CASCADE | ✅ |
-| merchantId index | ✅ |
-| agentStatus index | ✅ |
-| queryFrequency index | ✅ |
-| schema 匯出 (index.ts) | ✅ `export * from "./sellerAgentSettings.ts"` |
+| 審查項目                                            | 結果                                          |
+| --------------------------------------------------- | --------------------------------------------- |
+| agentStatus: disabled / enabled                     | ✅ DB CHECK constraint 完整                   |
+| agentMode: 4 values（含 platform_managed_reserved） | ✅ DB CHECK constraint 完整                   |
+| queryFrequency: 4 values                            | ✅ DB CHECK constraint 完整                   |
+| enabledLogistics: JSONB（白名單於應用層驗證）       | ✅                                            |
+| queryMethods: JSONB（白名單於應用層驗證）           | ✅                                            |
+| webhookSecretHash: 只存 hash                        | ✅ 欄位有明確注釋                             |
+| unique storeId 約束                                 | ✅ `seller_agent_settings_store_id_unique`    |
+| FK storeId → stores(id) ON DELETE CASCADE           | ✅                                            |
+| merchantId index                                    | ✅                                            |
+| agentStatus index                                   | ✅                                            |
+| queryFrequency index                                | ✅                                            |
+| schema 匯出 (index.ts)                              | ✅ `export * from "./sellerAgentSettings.ts"` |
 
 ## 5. API Review
 
@@ -60,48 +60,48 @@ base:      qa/step7e-seller-agent-settings-active-preview
 
 檔案：`artifacts/api-server/src/routes/sellerAgent.ts`
 
-| 審查項目 | 結果 |
-|---------|------|
-| GET route 存在 | ✅ `GET /stores/:storeId/agent/settings` |
-| PATCH route 存在 | ✅ `PATCH /stores/:storeId/agent/settings` |
-| requireAuth 存在（GET） | ✅ |
-| requireAuth 存在（PATCH） | ✅ |
-| verifyStoreOwner 存在（GET） | ✅ |
-| verifyStoreOwner 存在（PATCH） | ✅ |
-| GET 無 row → 回 defaultSettings，不寫 DB | ✅ |
-| PATCH upsert（INSERT + onConflictDoUpdate） | ✅ |
-| response 不含 webhookSecret | ✅ toSafeSettings 不含此欄位 |
-| response 不含 webhookSecretHash | ✅ toSafeSettings 不含此欄位 |
-| response 含 hasWebhookSecret（boolean） | ✅ `webhookSecretHash !== null` |
-| PATCH 禁止 platform_managed_reserved | ✅ VALID_AGENT_MODE_SELLER 不含此值 |
-| PATCH 禁止 forbidden keys（id, storeId, merchantId, ..., webhookSecretHash） | ✅ FORBIDDEN_PATCH_KEYS |
-| PATCH 禁止 unknown keys | ✅ ALLOWED_PATCH_KEYS 白名單外一律拒絕 |
-| webhookSecret 空 patch → 400 | ✅ `No patchable fields provided` |
-| webhookSecret: null → 清除 hash | ✅ `patch.webhookSecretHash = null` |
-| webhookSecret: string → SHA-256 hash | ✅ `createHash("sha256").update(...).digest("hex")` |
-| webhookSecret 長度限制 16–256 chars | ✅ |
-| webhookUrl 格式驗證 | ✅ `new URL(...)` |
-| route 在 index.ts 正確 use | ✅ `router.use(sellerAgentRouter)` |
+| 審查項目                                                                     | 結果                                                |
+| ---------------------------------------------------------------------------- | --------------------------------------------------- |
+| GET route 存在                                                               | ✅ `GET /stores/:storeId/agent/settings`            |
+| PATCH route 存在                                                             | ✅ `PATCH /stores/:storeId/agent/settings`          |
+| requireAuth 存在（GET）                                                      | ✅                                                  |
+| requireAuth 存在（PATCH）                                                    | ✅                                                  |
+| verifyStoreOwner 存在（GET）                                                 | ✅                                                  |
+| verifyStoreOwner 存在（PATCH）                                               | ✅                                                  |
+| GET 無 row → 回 defaultSettings，不寫 DB                                     | ✅                                                  |
+| PATCH upsert（INSERT + onConflictDoUpdate）                                  | ✅                                                  |
+| response 不含 webhookSecret                                                  | ✅ toSafeSettings 不含此欄位                        |
+| response 不含 webhookSecretHash                                              | ✅ toSafeSettings 不含此欄位                        |
+| response 含 hasWebhookSecret（boolean）                                      | ✅ `webhookSecretHash !== null`                     |
+| PATCH 禁止 platform_managed_reserved                                         | ✅ VALID_AGENT_MODE_SELLER 不含此值                 |
+| PATCH 禁止 forbidden keys（id, storeId, merchantId, ..., webhookSecretHash） | ✅ FORBIDDEN_PATCH_KEYS                             |
+| PATCH 禁止 unknown keys                                                      | ✅ ALLOWED_PATCH_KEYS 白名單外一律拒絕              |
+| webhookSecret 空 patch → 400                                                 | ✅ `No patchable fields provided`                   |
+| webhookSecret: null → 清除 hash                                              | ✅ `patch.webhookSecretHash = null`                 |
+| webhookSecret: string → SHA-256 hash                                         | ✅ `createHash("sha256").update(...).digest("hex")` |
+| webhookSecret 長度限制 16–256 chars                                          | ✅                                                  |
+| webhookUrl 格式驗證                                                          | ✅ `new URL(...)`                                   |
+| route 在 index.ts 正確 use                                                   | ✅ `router.use(sellerAgentRouter)`                  |
 
 ## 6. OpenAPI / Client Review
 
 **結果：✅ PASS**
 
-| 審查項目 | 結果 |
-|---------|------|
-| GET path `/stores/{storeId}/agent/settings` | ✅ |
-| PATCH path `/stores/{storeId}/agent/settings` | ✅ |
-| response schema `{ data: SellerAgentSettings }` | ✅ |
-| SellerAgentSettings schema 有 hasWebhookSecret | ✅ |
-| SellerAgentSettings schema 無 webhookSecretHash | ✅ |
-| SellerAgentSettings agentMode enum 含 platform_managed_reserved（response 可表示） | ✅ |
-| UpdateSellerAgentSettingsRequest agentMode enum 不含 platform_managed_reserved | ✅ 只有 3 個 seller-selectable 值 |
-| UpdateSellerAgentSettingsRequest 含 webhookSecret（可 null 或 string） | ✅ |
-| UpdateSellerAgentSettingsRequest 不含 webhookSecretHash | ✅ |
-| 生成 hook useGetSellerAgentSettings | ✅ |
-| 生成 hook useUpdateSellerAgentSettings | ✅ |
-| 生成 getGetSellerAgentSettingsQueryKey | ✅ |
-| UI 使用 `settingsResp?.data` 存取資料 | ✅ `const settings = settingsResp?.data` |
+| 審查項目                                                                           | 結果                                     |
+| ---------------------------------------------------------------------------------- | ---------------------------------------- |
+| GET path `/stores/{storeId}/agent/settings`                                        | ✅                                       |
+| PATCH path `/stores/{storeId}/agent/settings`                                      | ✅                                       |
+| response schema `{ data: SellerAgentSettings }`                                    | ✅                                       |
+| SellerAgentSettings schema 有 hasWebhookSecret                                     | ✅                                       |
+| SellerAgentSettings schema 無 webhookSecretHash                                    | ✅                                       |
+| SellerAgentSettings agentMode enum 含 platform_managed_reserved（response 可表示） | ✅                                       |
+| UpdateSellerAgentSettingsRequest agentMode enum 不含 platform_managed_reserved     | ✅ 只有 3 個 seller-selectable 值        |
+| UpdateSellerAgentSettingsRequest 含 webhookSecret（可 null 或 string）             | ✅                                       |
+| UpdateSellerAgentSettingsRequest 不含 webhookSecretHash                            | ✅                                       |
+| 生成 hook useGetSellerAgentSettings                                                | ✅                                       |
+| 生成 hook useUpdateSellerAgentSettings                                             | ✅                                       |
+| 生成 getGetSellerAgentSettingsQueryKey                                             | ✅                                       |
+| UI 使用 `settingsResp?.data` 存取資料                                              | ✅ `const settings = settingsResp?.data` |
 
 ## 7. UI Review
 
@@ -109,18 +109,18 @@ base:      qa/step7e-seller-agent-settings-active-preview
 
 檔案：`artifacts/shop-app/src/pages/AgentSettings.tsx`, `Settings.tsx`, `App.tsx`
 
-| 審查項目 | 結果 |
-|---------|------|
-| `/settings/agent` route 掛上 App.tsx | ✅ line 252 |
-| Settings page 有「AI 代查設定」入口 | ✅ AgentSettingsEntry component |
-| UI 不顯示 platform_managed_reserved | ✅ AgentMode type 僅 3 values，select option 僅 3 個 |
-| UI 不顯示 secret 明文 | ✅ 僅顯示 hasWebhookSecret 狀態（「已設定」/「未設定」） |
-| UI 不顯示 webhookSecretHash | ✅ |
-| PATCH payload 不送 forbidden fields | ✅ payload 僅含 allowed fields |
-| Secret 更換送 `webhookSecret: newSecret.trim()` | ✅ line 148 |
-| Secret 清除送 `webhookSecret: null` | ✅ line 176 |
-| UI review（前輪）結論 | ✅ PASS — 無 blocking issue |
-| Browser smoke test | ✅ PASS（使用者人工確認） |
+| 審查項目                                        | 結果                                                     |
+| ----------------------------------------------- | -------------------------------------------------------- |
+| `/settings/agent` route 掛上 App.tsx            | ✅ line 252                                              |
+| Settings page 有「AI 代查設定」入口             | ✅ AgentSettingsEntry component                          |
+| UI 不顯示 platform_managed_reserved             | ✅ AgentMode type 僅 3 values，select option 僅 3 個     |
+| UI 不顯示 secret 明文                           | ✅ 僅顯示 hasWebhookSecret 狀態（「已設定」/「未設定」） |
+| UI 不顯示 webhookSecretHash                     | ✅                                                       |
+| PATCH payload 不送 forbidden fields             | ✅ payload 僅含 allowed fields                           |
+| Secret 更換送 `webhookSecret: newSecret.trim()` | ✅ line 148                                              |
+| Secret 清除送 `webhookSecret: null`             | ✅ line 176                                              |
+| UI review（前輪）結論                           | ✅ PASS — 無 blocking issue                              |
+| Browser smoke test                              | ✅ PASS（使用者人工確認）                                |
 
 ## 8. Security Review
 
@@ -138,14 +138,14 @@ base:      qa/step7e-seller-agent-settings-active-preview
 
 ### Secret 保護
 
-| 層 | 處理方式 |
-|----|---------|
-| PATCH request | 接受明文 `webhookSecret`（transient） |
-| API 處理 | 即刻 SHA-256 hash，丟棄明文 |
-| DB | 只存 `webhook_secret_hash`，明文不存 |
-| GET response | 只回 `hasWebhookSecret: boolean` |
-| PATCH response | `toSafeSettings()` 不含 hash 也不含明文 |
-| UI | 只讀 `hasWebhookSecret`，不顯示 secret 或 hash |
+| 層             | 處理方式                                       |
+| -------------- | ---------------------------------------------- |
+| PATCH request  | 接受明文 `webhookSecret`（transient）          |
+| API 處理       | 即刻 SHA-256 hash，丟棄明文                    |
+| DB             | 只存 `webhook_secret_hash`，明文不存           |
+| GET response   | 只回 `hasWebhookSecret: boolean`               |
+| PATCH response | `toSafeSettings()` 不含 hash 也不含明文        |
+| UI             | 只讀 `hasWebhookSecret`，不顯示 secret 或 hash |
 
 ### Over-posting 防護
 
@@ -162,17 +162,17 @@ base:      qa/step7e-seller-agent-settings-active-preview
 
 ## 9. Test Evidence
 
-| 測試項目 | 結果 | 說明 |
-|---------|------|------|
-| DB schema typecheck | ✅ PASS | exit code 0，無 errors（order-step7e-seller-agent-settings-typecheck.md） |
-| API mock tests | ✅ 45 pass / 0 fail | order-step7e-seller-agent-settings-api-mock-test.md |
-| API integration tests | ✅ 25 pass / 0 fail | order-step7e-seller-agent-settings-integration-test.md |
-| OpenAPI codegen | ✅ hooks generated | lib/api-client-react/src/generated/api.ts |
-| typecheck:libs（pnpm -w） | ✅ 0 errors | 本次執行確認 |
-| UI typecheck（tsc --noEmit） | ✅ 0 errors | order-step7e-seller-agent-settings-ui-review.md |
-| vite build | ✅ success（2.75s） | order-step7e-seller-agent-settings-ui-review.md |
-| UI review（前輪） | ✅ PASS | b17403b docs-step7e-seller-agent-settings-ui-review |
-| Browser smoke test | ✅ PASS | 758e918 docs-step7e-browser-smoke-closeout |
+| 測試項目                     | 結果                | 說明                                                                      |
+| ---------------------------- | ------------------- | ------------------------------------------------------------------------- |
+| DB schema typecheck          | ✅ PASS             | exit code 0，無 errors（order-step7e-seller-agent-settings-typecheck.md） |
+| API mock tests               | ✅ 45 pass / 0 fail | order-step7e-seller-agent-settings-api-mock-test.md                       |
+| API integration tests        | ✅ 25 pass / 0 fail | order-step7e-seller-agent-settings-integration-test.md                    |
+| OpenAPI codegen              | ✅ hooks generated  | lib/api-client-react/src/generated/api.ts                                 |
+| typecheck:libs（pnpm -w）    | ✅ 0 errors         | 本次執行確認                                                              |
+| UI typecheck（tsc --noEmit） | ✅ 0 errors         | order-step7e-seller-agent-settings-ui-review.md                           |
+| vite build                   | ✅ success（2.75s） | order-step7e-seller-agent-settings-ui-review.md                           |
+| UI review（前輪）            | ✅ PASS             | b17403b docs-step7e-seller-agent-settings-ui-review                       |
+| Browser smoke test           | ✅ PASS             | 758e918 docs-step7e-browser-smoke-closeout                                |
 
 ## 10. Browser Smoke Evidence
 
@@ -221,6 +221,7 @@ PASS — Step 7E Seller Agent Settings 可進 MERGE-PREP
 ```
 
 所有審查項目通過：
+
 - DB schema ✅
 - API ✅
 - OpenAPI / Client ✅
@@ -242,14 +243,14 @@ Step 7E Seller Agent Settings 已具備以下條件可進入 MERGE-PREP：
 
 ## 16. 未執行項目
 
-| 項目 | 原因 |
-|------|------|
+| 項目                       | 原因                                  |
+| -------------------------- | ------------------------------------- |
 | 重新執行 integration tests | 禁止重跑 DB write tests，引用既有結果 |
-| E2E 自動化測試 | 超出本輪範疇 |
-| DB push | 明確禁止 |
-| migrate | 明確禁止 |
-| seed | 明確禁止 |
-| GitHub push | 明確禁止 |
+| E2E 自動化測試             | 超出本輪範疇                          |
+| DB push                    | 明確禁止                              |
+| migrate                    | 明確禁止                              |
+| seed                       | 明確禁止                              |
+| GitHub push                | 明確禁止                              |
 
 ## 17. 風險與待確認
 

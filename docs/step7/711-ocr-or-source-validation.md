@@ -25,32 +25,32 @@
 
 ### 2-1 環境狀態
 
-| 項目 | 結果 | 細節 |
-|------|------|------|
-| tesseract 可執行 | YES | `/nix/store/89jwgijqcyl56r4h3vwv6v5dprd7xnr9-tesseract-3.05.00/bin/tesseract` 3.05.00 |
-| tesseract in PATH | NO | `which tesseract` → NOT_FOUND（需用 nix 絕對路徑） |
-| tesseract 5.x | AVAILABLE | `/nix/store/44vcjbcy1p2yhc974bcw250k2r5x5cpa-tesseract-5.3.4/bin/tesseract` 5.3.4 |
-| eng.traineddata | YES | 包含於 3.05.00 及 5.3.4 套件中 |
-| ImageMagick (magick) | YES | `/nix/store/.../bin/magick`（Replit runtime PATH） |
-| ImageMagick (convert) | YES | 同上 |
+| 項目                  | 結果      | 細節                                                                                  |
+| --------------------- | --------- | ------------------------------------------------------------------------------------- |
+| tesseract 可執行      | YES       | `/nix/store/89jwgijqcyl56r4h3vwv6v5dprd7xnr9-tesseract-3.05.00/bin/tesseract` 3.05.00 |
+| tesseract in PATH     | NO        | `which tesseract` → NOT_FOUND（需用 nix 絕對路徑）                                    |
+| tesseract 5.x         | AVAILABLE | `/nix/store/44vcjbcy1p2yhc974bcw250k2r5x5cpa-tesseract-5.3.4/bin/tesseract` 5.3.4     |
+| eng.traineddata       | YES       | 包含於 3.05.00 及 5.3.4 套件中                                                        |
+| ImageMagick (magick)  | YES       | `/nix/store/.../bin/magick`（Replit runtime PATH）                                    |
+| ImageMagick (convert) | YES       | 同上                                                                                  |
 
 ### 2-2 網路與 captcha 取得
 
-| 項目 | 結果 | 細節 |
-|------|------|------|
-| 7-11 eservice 連線 | YES | `GET search.aspx` → HTTP 200 |
-| ValidateImage URL 抽取 | YES | HTML 中 `ValidateImage.aspx?ts=XXXXX` 存在 |
-| captcha 圖片下載 | YES | 2864 bytes JPEG |
+| 項目                   | 結果 | 細節                                       |
+| ---------------------- | ---- | ------------------------------------------ |
+| 7-11 eservice 連線     | YES  | `GET search.aspx` → HTTP 200               |
+| ValidateImage URL 抽取 | YES  | HTML 中 `ValidateImage.aspx?ts=XXXXX` 存在 |
+| captcha 圖片下載       | YES  | 2864 bytes JPEG                            |
 
 ### 2-3 OCR 前處理 × tesseract 結果
 
-| 變體 | 前處理 | OCR 輸出 | 4 位數？ |
-|------|--------|----------|---------|
-| raw（無前處理） | なし | "" | NO |
-| threshold 45% | Gray+400%+45% | "37257775575217" | NO（過多） |
-| threshold 55% | Gray+400%+55% | "8851" | **YES** |
-| threshold 65% | Gray+400%+65% | "8358" | **YES** |
-| normalize+50% | Gray+400%+normalize+50% | "" | NO |
+| 變體            | 前處理                  | OCR 輸出         | 4 位數？   |
+| --------------- | ----------------------- | ---------------- | ---------- |
+| raw（無前處理） | なし                    | ""               | NO         |
+| threshold 45%   | Gray+400%+45%           | "37257775575217" | NO（過多） |
+| threshold 55%   | Gray+400%+55%           | "8851"           | **YES**    |
+| threshold 65%   | Gray+400%+65%           | "8358"           | **YES**    |
+| normalize+50%   | Gray+400%+normalize+50% | ""               | NO         |
 
 **合計：2/5 変体 → 4位数出力 PASS**
 
@@ -59,18 +59,19 @@
 
 ### 2-4 代替 API 調査
 
-| 調査先 | 結果 |
-|--------|------|
-| codebase / docs 全文検索 | 代替 API 言及なし |
-| emap.pcsc.com.tw | 門市選択用（tracking 無関係） |
-| idelivery / 交貨便 app API | 公開文件なし、codebase に記載なし |
-| 7-11 JSON endpoint | **未確認**（非公開の可能性、要追加調査） |
+| 調査先                     | 結果                                     |
+| -------------------------- | ---------------------------------------- |
+| codebase / docs 全文検索   | 代替 API 言及なし                        |
+| emap.pcsc.com.tw           | 門市選択用（tracking 無関係）            |
+| idelivery / 交貨便 app API | 公開文件なし、codebase に記載なし        |
+| 7-11 JSON endpoint         | **未確認**（非公開の可能性、要追加調査） |
 
 ---
 
 ## 3. 既存テストスクリプト状態
 
 `scripts/step7/test-seven-eleven-adapter.mjs` は：
+
 - tesseract nix パス（`89jwgijqcyl56r4h3vwv6v5dprd7xnr9-tesseract-3.05.00`）が既に設定済み
 - ImageMagick 前処理 5 変体が実装済み
 - DB write なし、production write なし
@@ -97,6 +98,7 @@ node scripts/step7/test-seven-eleven-adapter.mjs <tracking_code> 6
 **→ Step 7O-711-FULL-PREVIEW-E2E-TEST**
 
 理由：
+
 - OCR 環境は動作確認済み
 - 7-11 サーバーに到達可能
 - captcha 取得・4 桁 OCR 出力まで PASS

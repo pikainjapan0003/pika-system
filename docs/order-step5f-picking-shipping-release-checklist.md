@@ -8,15 +8,15 @@
 
 ## 1. Step 5F 總覽
 
-| 階段 | 說明 | 主要 Commit | 狀態 |
-|------|------|-------------|------|
-| **5F-A** | 撿貨單 / 出貨單 / CSV / 列印規格文件 | `e2aa067` | ✅ 完成 |
-| **5F MVP 決策** | MVP 範圍決策文件（不做 server-side PDF / 物流標籤） | `5b5709a` | ✅ 完成 |
-| **5F-B** | 撿貨單 JSON API（`POST /orders/picking-list`）| `a98f359` | ✅ 完成 |
-| **5F-C** | 撿貨 CSV API（`POST /orders/picking-list.csv`）& 出貨 CSV API（`POST /orders/shipping-list.csv`）| `134dc8e` | ✅ 完成 |
-| **5F-D** | Orders 前端：查看撿貨單 / 出貨單 / 下載 CSV | `c7bdac8` | ✅ 完成 |
-| **5F-E** | Orders 前端：撿貨單 / 出貨單瀏覽器列印 | `9f029c9` | ✅ 完成 |
-| **5F-E QA 修正** | 列印黑畫面修正（hidden iframe）；X 按鈕 focus 樣式修正 | `a9ec99f` `d4f8ff5` | ✅ 完成 |
+| 階段             | 說明                                                                                              | 主要 Commit         | 狀態    |
+| ---------------- | ------------------------------------------------------------------------------------------------- | ------------------- | ------- |
+| **5F-A**         | 撿貨單 / 出貨單 / CSV / 列印規格文件                                                              | `e2aa067`           | ✅ 完成 |
+| **5F MVP 決策**  | MVP 範圍決策文件（不做 server-side PDF / 物流標籤）                                               | `5b5709a`           | ✅ 完成 |
+| **5F-B**         | 撿貨單 JSON API（`POST /orders/picking-list`）                                                    | `a98f359`           | ✅ 完成 |
+| **5F-C**         | 撿貨 CSV API（`POST /orders/picking-list.csv`）& 出貨 CSV API（`POST /orders/shipping-list.csv`） | `134dc8e`           | ✅ 完成 |
+| **5F-D**         | Orders 前端：查看撿貨單 / 出貨單 / 下載 CSV                                                       | `c7bdac8`           | ✅ 完成 |
+| **5F-E**         | Orders 前端：撿貨單 / 出貨單瀏覽器列印                                                            | `9f029c9`           | ✅ 完成 |
+| **5F-E QA 修正** | 列印黑畫面修正（hidden iframe）；X 按鈕 focus 樣式修正                                            | `a9ec99f` `d4f8ff5` | ✅ 完成 |
 
 > **出貨單 JSON API**（`POST /orders/shipping-list`）同於 5F-B 階段完成，commit 同 `a98f359`。
 
@@ -40,16 +40,17 @@ d4f8ff5 fix-order-step5f-dialog-close-focus-style
 
 ### 後台 API（需登入，`requireAuth` + `verifyStoreOwner`）
 
-| 功能 | 路由 | 方法 | 格式 |
-|------|------|------|------|
-| 撿貨單資料 | `/api/orders/picking-list` | POST | JSON |
-| 出貨單資料 | `/api/orders/shipping-list` | POST | JSON |
-| 撿貨 CSV 匯出 | `/api/orders/picking-list.csv` | POST | CSV（BOM UTF-8） |
+| 功能          | 路由                            | 方法 | 格式             |
+| ------------- | ------------------------------- | ---- | ---------------- |
+| 撿貨單資料    | `/api/orders/picking-list`      | POST | JSON             |
+| 出貨單資料    | `/api/orders/shipping-list`     | POST | JSON             |
+| 撿貨 CSV 匯出 | `/api/orders/picking-list.csv`  | POST | CSV（BOM UTF-8） |
 | 出貨 CSV 匯出 | `/api/orders/shipping-list.csv` | POST | CSV（BOM UTF-8） |
 
 **Request 格式**：`{ orderIds: string[] }`
 
 **撿貨單回應欄位**（按商品 + 規格合計）：
+
 - `productId`、`productName`、`specLabel`、`skuCode`
 - `storageTemp`（room_temp / refrigerated / frozen）
 - `shelfLife`
@@ -59,6 +60,7 @@ d4f8ff5 fix-order-step5f-dialog-close-focus-style
 - `excludedOrderIds`（已取消訂單，自動排除）
 
 **出貨單回應欄位**（每筆訂單一筆）：
+
 - `orderId`、`orderNumber`、`status`
 - `buyerName`、`buyerPhone`
 - `productName`、`specValues`、`quantity`
@@ -75,15 +77,15 @@ d4f8ff5 fix-order-step5f-dialog-close-focus-style
 
 ### Orders 前端功能
 
-| 功能 | 操作 |
-|------|------|
-| 查看撿貨單 | 勾選訂單 → 點「查看撿貨單」→ 底部 Sheet 展開 |
-| 查看出貨單 | 勾選訂單 → 點「查看出貨單」→ 底部 Sheet 展開 |
-| 下載撿貨 CSV | 勾選訂單 → 點「↓撿貨CSV」→ 自動下載 .csv |
-| 下載出貨 CSV | 勾選訂單 → 點「↓出貨CSV」→ 自動下載 .csv |
-| 撿貨單列印 | 撿貨單 Sheet → 點「列印」→ 系統列印對話框 |
-| 出貨單列印 | 出貨單 Sheet → 點「列印」→ 系統列印對話框 |
-| 關閉 Sheet | Sheet 右上角 X → 正常關閉 |
+| 功能         | 操作                                         |
+| ------------ | -------------------------------------------- |
+| 查看撿貨單   | 勾選訂單 → 點「查看撿貨單」→ 底部 Sheet 展開 |
+| 查看出貨單   | 勾選訂單 → 點「查看出貨單」→ 底部 Sheet 展開 |
+| 下載撿貨 CSV | 勾選訂單 → 點「↓撿貨CSV」→ 自動下載 .csv     |
+| 下載出貨 CSV | 勾選訂單 → 點「↓出貨CSV」→ 自動下載 .csv     |
+| 撿貨單列印   | 撿貨單 Sheet → 點「列印」→ 系統列印對話框    |
+| 出貨單列印   | 出貨單 Sheet → 點「列印」→ 系統列印對話框    |
+| 關閉 Sheet   | Sheet 右上角 X → 正常關閉                    |
 
 **列印實作方式**：hidden iframe（`document.createElement('iframe')`），不開新分頁。
 **CSV 編碼**：BOM UTF-8（Excel / Numbers 相容）。
@@ -92,20 +94,20 @@ d4f8ff5 fix-order-step5f-dialog-close-focus-style
 
 ## 3. QA 結果
 
-| 項目 | 結果 | 備註 |
-|------|------|------|
-| API tests | ✅ 91 / 91 通過 | 含 picking-list / shipping-list / CSV 路由測試 |
-| Typecheck（全專案）| ✅ 通過 | `pnpm --filter @workspace/shop-app typecheck` |
-| shop-app build | ✅ 通過 | Replit Workflow 環境（PORT=22696） |
-| 查看撿貨單 | ✅ 瀏覽器 QA 通過 | Sheet 展開、資料正確 |
-| 查看出貨單 | ✅ 瀏覽器 QA 通過 | Sheet 展開、資料正確 |
-| 下載撿貨 CSV | ✅ 瀏覽器 QA 通過 | 自動下載、BOM 編碼正常 |
-| 下載出貨 CSV | ✅ 瀏覽器 QA 通過 | 自動下載、BOM 編碼正常 |
-| 撿貨單列印 | ✅ 瀏覽器 QA 通過 | 系統列印對話框正常彈出 |
-| 出貨單列印 | ✅ 瀏覽器 QA 通過 | 系統列印對話框正常彈出 |
-| 重複列印不黑畫面 | ✅ 瀏覽器 QA 通過 | hidden iframe 修正後解決 |
-| X 按鈕 UI | ✅ 瀏覽器 QA 通過 | 無紅色外圈，灰色中性關閉按鈕 |
-| 批次付款 / 出貨操作 | ✅ 迴歸測試通過 | Step 5F 修改未影響原有批次操作 |
+| 項目                | 結果              | 備註                                           |
+| ------------------- | ----------------- | ---------------------------------------------- |
+| API tests           | ✅ 91 / 91 通過   | 含 picking-list / shipping-list / CSV 路由測試 |
+| Typecheck（全專案） | ✅ 通過           | `pnpm --filter @workspace/shop-app typecheck`  |
+| shop-app build      | ✅ 通過           | Replit Workflow 環境（PORT=22696）             |
+| 查看撿貨單          | ✅ 瀏覽器 QA 通過 | Sheet 展開、資料正確                           |
+| 查看出貨單          | ✅ 瀏覽器 QA 通過 | Sheet 展開、資料正確                           |
+| 下載撿貨 CSV        | ✅ 瀏覽器 QA 通過 | 自動下載、BOM 編碼正常                         |
+| 下載出貨 CSV        | ✅ 瀏覽器 QA 通過 | 自動下載、BOM 編碼正常                         |
+| 撿貨單列印          | ✅ 瀏覽器 QA 通過 | 系統列印對話框正常彈出                         |
+| 出貨單列印          | ✅ 瀏覽器 QA 通過 | 系統列印對話框正常彈出                         |
+| 重複列印不黑畫面    | ✅ 瀏覽器 QA 通過 | hidden iframe 修正後解決                       |
+| X 按鈕 UI           | ✅ 瀏覽器 QA 通過 | 無紅色外圈，灰色中性關閉按鈕                   |
+| 批次付款 / 出貨操作 | ✅ 迴歸測試通過   | Step 5F 修改未影響原有批次操作                 |
 
 > **QA 過程記錄**：
 >
@@ -117,15 +119,15 @@ d4f8ff5 fix-order-step5f-dialog-close-focus-style
 
 ## 4. 個資與安全確認
 
-| 欄位 | 後台 JSON | 後台 CSV | 列印 | 公開頁 |
-|------|-----------|----------|------|--------|
-| `internalNote` | ❌ 不回傳 | ❌ 不匯出 | ❌ 不列印 | ❌ 不存在 |
-| `paymentNote` | ❌ 不回傳 | ❌ 不匯出 | ❌ 不列印 | ❌ 不存在 |
-| `publicToken` | ❌ 不回傳 | ❌ 不匯出 | ❌ 不列印 | 用於驗證身份 |
-| `buyerPhone` | ✅ 後台可見 | ✅ 後台 CSV | ✅ 後台列印 | ❌ 不公開 |
-| `recipientPhone` | ✅ 後台可見 | ✅ 後台 CSV | ✅ 後台列印 | ❌ 不公開 |
-| `recipientAddress` | ✅ 後台可見 | ✅ 後台 CSV | ✅ 後台列印 | ❌ 不公開 |
-| `trackingCode` | ✅ 後台可見 | ✅ 後台 CSV | ✅ 後台列印 | 依產品決策 |
+| 欄位               | 後台 JSON   | 後台 CSV    | 列印        | 公開頁       |
+| ------------------ | ----------- | ----------- | ----------- | ------------ |
+| `internalNote`     | ❌ 不回傳   | ❌ 不匯出   | ❌ 不列印   | ❌ 不存在    |
+| `paymentNote`      | ❌ 不回傳   | ❌ 不匯出   | ❌ 不列印   | ❌ 不存在    |
+| `publicToken`      | ❌ 不回傳   | ❌ 不匯出   | ❌ 不列印   | 用於驗證身份 |
+| `buyerPhone`       | ✅ 後台可見 | ✅ 後台 CSV | ✅ 後台列印 | ❌ 不公開    |
+| `recipientPhone`   | ✅ 後台可見 | ✅ 後台 CSV | ✅ 後台列印 | ❌ 不公開    |
+| `recipientAddress` | ✅ 後台可見 | ✅ 後台 CSV | ✅ 後台列印 | ❌ 不公開    |
+| `trackingCode`     | ✅ 後台可見 | ✅ 後台 CSV | ✅ 後台列印 | 依產品決策   |
 
 **重要提醒**：
 
@@ -141,15 +143,15 @@ d4f8ff5 fix-order-step5f-dialog-close-focus-style
 
 ### 本 MVP 明確不做
 
-| 功能 | 說明 |
-|------|------|
+| 功能            | 說明                                        |
+| --------------- | ------------------------------------------- |
 | Server-side PDF | 瀏覽器列印已可輸出 PDF，不再做後端 PDF 生成 |
-| 物流標籤 | 尚未規劃，建議 Step 5G |
-| 模板自訂 | 列印版型固定，不可自訂 |
-| 一品項一列 CSV | 目前 CSV 是按訂單彙整；一品項一列模式未做 |
-| 自動金流串接 | 付款狀態仍為店家手動記錄 |
-| 自動物流串接 | 出貨狀態仍為店家手動記錄 |
-| 買家通知 | 出貨後無自動通知信 / SMS |
+| 物流標籤        | 尚未規劃，建議 Step 5G                      |
+| 模板自訂        | 列印版型固定，不可自訂                      |
+| 一品項一列 CSV  | 目前 CSV 是按訂單彙整；一品項一列模式未做   |
+| 自動金流串接    | 付款狀態仍為店家手動記錄                    |
+| 自動物流串接    | 出貨狀態仍為店家手動記錄                    |
+| 買家通知        | 出貨後無自動通知信 / SMS                    |
 
 ### 環境
 
@@ -173,21 +175,21 @@ lib/db/                 Drizzle ORM + PostgreSQL
 
 ### 前端關鍵檔案
 
-| 檔案 | 說明 |
-|------|------|
-| `artifacts/shop-app/src/pages/Orders.tsx` | 訂單列表頁，含批次選取 + 4 個撿貨 / 出貨按鈕 |
-| `artifacts/shop-app/src/pages/PickingListDialog.tsx` | 撿貨單底部 Sheet |
-| `artifacts/shop-app/src/pages/ShippingListDialog.tsx` | 出貨單底部 Sheet |
-| `artifacts/shop-app/src/lib/printHelpers.ts` | 列印輔助函式（hidden iframe 方式） |
+| 檔案                                                  | 說明                                         |
+| ----------------------------------------------------- | -------------------------------------------- |
+| `artifacts/shop-app/src/pages/Orders.tsx`             | 訂單列表頁，含批次選取 + 4 個撿貨 / 出貨按鈕 |
+| `artifacts/shop-app/src/pages/PickingListDialog.tsx`  | 撿貨單底部 Sheet                             |
+| `artifacts/shop-app/src/pages/ShippingListDialog.tsx` | 出貨單底部 Sheet                             |
+| `artifacts/shop-app/src/lib/printHelpers.ts`          | 列印輔助函式（hidden iframe 方式）           |
 
 ### API 關鍵檔案
 
-| 檔案 | 說明 |
-|------|------|
+| 檔案                                        | 說明                                               |
+| ------------------------------------------- | -------------------------------------------------- |
 | `artifacts/api-server/src/routes/orders.ts` | 訂單 routes，含 picking-list / shipping-list / CSV |
-| `lib/api-spec/openapi.yaml` | OpenAPI 規格，picking-list / shipping-list 端點 |
-| `lib/api-zod/`（generated）| Zod validators，由 YAML 生成 |
-| `lib/api-client-react/`（generated）| React Query hooks，由 orval 生成 |
+| `lib/api-spec/openapi.yaml`                 | OpenAPI 規格，picking-list / shipping-list 端點    |
+| `lib/api-zod/`（generated）                 | Zod validators，由 YAML 生成                       |
+| `lib/api-client-react/`（generated）        | React Query hooks，由 orval 生成                   |
 
 ### 列印實作說明
 
@@ -288,13 +290,13 @@ function openPrint(html: string): void {
 
 ## 9. Release 判斷規則
 
-| 狀態 | 定義 |
-|------|------|
-| **READY** | 所有 critical 項目通過，沒有 blocking bug。 |
-| **READY WITH NOTES** | 可出貨 / 試跑，但仍有非阻斷性待確認事項。 |
-| **NEEDS WORK** | 功能大致可用，但有 UI / 文案 / 小流程問題需修。 |
-| **NOT READY** | 任一 critical 項失敗。 |
-| **BLOCKED** | 缺環境、缺登入、缺測試資料，無法判斷。 |
+| 狀態                 | 定義                                            |
+| -------------------- | ----------------------------------------------- |
+| **READY**            | 所有 critical 項目通過，沒有 blocking bug。     |
+| **READY WITH NOTES** | 可出貨 / 試跑，但仍有非阻斷性待確認事項。       |
+| **NEEDS WORK**       | 功能大致可用，但有 UI / 文案 / 小流程問題需修。 |
+| **NOT READY**        | 任一 critical 項失敗。                          |
+| **BLOCKED**          | 缺環境、缺登入、缺測試資料，無法判斷。          |
 
 **Critical 項目定義**（以下任一失敗 → NOT READY）：
 
@@ -309,13 +311,13 @@ function openPrint(html: string): void {
 
 ## 10. 下一階段建議
 
-| 選項 | 說明 | 建議時機 |
-|------|------|----------|
-| **Merge Step 5F 回 main** | 將本分支合併，正式 release | 完成本 checklist 人工驗收後 |
-| **Step 5G：物流標籤** | 超商物流標籤列印 / PDF | Step 5F merge 後另開任務 |
-| **Step 5G：PDF 匯出** | Server-side PDF（puppeteer 等）| 建議延後，不要混入 5F |
-| **Step 5G：模板自訂** | 自訂列印版型 | 建議延後，不要混入 5F |
-| **Step 5G：買家通知** | 出貨後自動通知信 / SMS | 建議延後，不要混入 5F |
+| 選項                      | 說明                            | 建議時機                    |
+| ------------------------- | ------------------------------- | --------------------------- |
+| **Merge Step 5F 回 main** | 將本分支合併，正式 release      | 完成本 checklist 人工驗收後 |
+| **Step 5G：物流標籤**     | 超商物流標籤列印 / PDF          | Step 5F merge 後另開任務    |
+| **Step 5G：PDF 匯出**     | Server-side PDF（puppeteer 等） | 建議延後，不要混入 5F       |
+| **Step 5G：模板自訂**     | 自訂列印版型                    | 建議延後，不要混入 5F       |
+| **Step 5G：買家通知**     | 出貨後自動通知信 / SMS          | 建議延後，不要混入 5F       |
 
 > **建議**：先 merge Step 5F 回 main，穩定後再另開 Step 5G 工作分支，避免範圍蔓延。
 

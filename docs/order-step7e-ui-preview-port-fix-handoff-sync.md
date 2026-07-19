@@ -6,32 +6,32 @@
 
 ## 2. UI Worktree / Branch
 
-| 項目 | 值 |
-|------|-----|
+| 項目     | 值                                            |
+| -------- | --------------------------------------------- |
 | Worktree | `/home/runner/workspace/.worktrees/step7e-ui` |
-| Branch | `qa/step7e-seller-agent-settings-ui` |
+| Branch   | `qa/step7e-seller-agent-settings-ui`          |
 
 ## 3. Preview Port Fix Commit
 
-| commit | message |
-|--------|---------|
+| commit    | message                                                 |
+| --------- | ------------------------------------------------------- |
 | `3e82926` | `docs-step7e-seller-agent-settings-ui-preview-port-fix` |
 
 ## 4. 最終服務 Port
 
-| 服務 | port（local） | externalPort（.replit） |
-|------|------|------|
-| Worktree API server | 19080 | 8000 |
-| Worktree shop-app | **22696** | **3000** |
+| 服務                | port（local） | externalPort（.replit） |
+| ------------------- | ------------- | ----------------------- |
+| Worktree API server | 19080         | 8000                    |
+| Worktree shop-app   | **22696**     | **3000**                |
 
 ## 5. 驗證結果
 
-| 項目 | 結果 |
-|------|------|
-| `/settings/agent` | HTTP 200 OK ✅ |
-| `AgentSettings.tsx` 來自 worktree | ✅ |
-| `Settings.tsx` 含 AI 代查設定入口 | ✅ |
-| `/api/stores/1/agent/settings` | HTTP 401（非 404）✅ |
+| 項目                              | 結果                 |
+| --------------------------------- | -------------------- |
+| `/settings/agent`                 | HTTP 200 OK ✅       |
+| `AgentSettings.tsx` 來自 worktree | ✅                   |
+| `Settings.tsx` 含 AI 代查設定入口 | ✅                   |
+| `/api/stores/1/agent/settings`    | HTTP 401（非 404）✅ |
 
 ## 6. 使用者下一步操作
 

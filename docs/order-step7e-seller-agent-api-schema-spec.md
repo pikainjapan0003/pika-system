@@ -33,11 +33,11 @@ Step 7E-1 完成了施工前盤點，整理了 10 項待決策問題並給出 MV
 
 根據現有 `stores` 表與 `orders` 表：
 
-| 欄位 | 型別 | 說明 |
-|---|---|---|
-| `stores.id` | serial (integer) | store 主鍵 |
-| `stores.merchantId` | text | 賣家 / 店主識別碼（Clerk userId 或同等識別）|
-| `orders.storeId` | integer | FK → stores.id |
+| 欄位                | 型別             | 說明                                         |
+| ------------------- | ---------------- | -------------------------------------------- |
+| `stores.id`         | serial (integer) | store 主鍵                                   |
+| `stores.merchantId` | text             | 賣家 / 店主識別碼（Clerk userId 或同等識別） |
+| `orders.storeId`    | integer          | FK → stores.id                               |
 
 `seller_agent_settings` 應採用相同命名：`storeId`（integer FK）。
 
@@ -47,18 +47,18 @@ Step 7E-1 完成了施工前盤點，整理了 10 項待決策問題並給出 MV
 
 以下決策為 Step 7E-2 規格的基礎，不再重新討論：
 
-| # | 決策項目 | 定案 |
-|---|---|---|
-| 1 | schema 名稱 | 使用 `seller_agent_settings`，不建 `seller_agents` 獨立實體 |
-| 2 | 多 Agent per store | 不支援，一個 store 只能有一列 `seller_agent_settings` |
-| 3 | 查詢頻率 | 只允許白名單 enum，不開放自由 cron 輸入 |
-| 4 | 物流來源 | 白名單 enum，不開放自由 provider code 輸入 |
-| 5 | test-run | MVP 為 dry-run validation，不觸發外部 Agent / 物流查詢 |
-| 6 | webhook_secret | schema 預留 nullable 欄位，MVP 不施工簽名驗證邏輯 |
-| 7 | BYOK | 不進 MVP |
-| 8 | 平台代管 Agent | 不進 MVP 第一階段 |
-| 9 | token UX | 建立後 Modal 顯示原文一次，有「我已複製」確認機制 |
-| 10 | run logs 範圍 | 只回摘要欄位，後端 whitelist 強制排除個資 / rawPayload |
+| #   | 決策項目           | 定案                                                        |
+| --- | ------------------ | ----------------------------------------------------------- |
+| 1   | schema 名稱        | 使用 `seller_agent_settings`，不建 `seller_agents` 獨立實體 |
+| 2   | 多 Agent per store | 不支援，一個 store 只能有一列 `seller_agent_settings`       |
+| 3   | 查詢頻率           | 只允許白名單 enum，不開放自由 cron 輸入                     |
+| 4   | 物流來源           | 白名單 enum，不開放自由 provider code 輸入                  |
+| 5   | test-run           | MVP 為 dry-run validation，不觸發外部 Agent / 物流查詢      |
+| 6   | webhook_secret     | schema 預留 nullable 欄位，MVP 不施工簽名驗證邏輯           |
+| 7   | BYOK               | 不進 MVP                                                    |
+| 8   | 平台代管 Agent     | 不進 MVP 第一階段                                           |
+| 9   | token UX           | 建立後 Modal 顯示原文一次，有「我已複製」確認機制           |
+| 10  | run logs 範圍      | 只回摘要欄位，後端 whitelist 強制排除個資 / rawPayload      |
 
 ---
 
@@ -74,28 +74,28 @@ Step 7E-1 完成了施工前盤點，整理了 10 項待決策問題並給出 MV
 
 ### 3.2 欄位規格
 
-| 欄位名稱 | 型別 | Nullable | Default | 說明 |
-|---|---|---|---|---|
-| `id` | serial (integer) | NOT NULL | AUTO | 主鍵 |
-| `storeId` | integer | NOT NULL | — | FK → stores.id，UNIQUE，一個 store 一列 |
-| `merchantId` | text | NOT NULL | — | 對應 stores.merchantId，冗餘保存供稽核使用 |
-| `agentStatus` | text (enum) | NOT NULL | `'disabled'` | Agent 啟用狀態 |
-| `agentMode` | text (enum) | NOT NULL | `'external_agent'` | Agent 工作模式 |
-| `enabledLogistics` | text[] (enum array) | NOT NULL | `'{}'` | 啟用的物流來源白名單 |
-| `queryMethods` | text[] (enum array) | NOT NULL | `'{manual}'` | 查詢方式白名單 |
-| `queryFrequency` | text (enum) | NOT NULL | `'manual'` | 查詢頻率 |
-| `notifyOnUnknown` | boolean | NOT NULL | `false` | 貨態未知時是否通知賣家 |
-| `requireConfirmOnException` | boolean | NOT NULL | `true` | 例外狀況是否需要賣家確認 |
-| `requireConfirmOnReturned` | boolean | NOT NULL | `true` | 退件時是否需要賣家確認 |
-| `requireConfirmOnDelivered` | boolean | NOT NULL | `false` | 到達時是否需要賣家確認 |
-| `hideErrorDetailsFromBuyer` | boolean | NOT NULL | `true` | 是否隱藏錯誤詳情不顯示給買家 |
-| `webhookEnabled` | boolean | NOT NULL | `false` | 是否啟用 webhook 接收 |
-| `webhookUrl` | text | NULL | — | Webhook 接收端 URL（賣家填入） |
-| `webhookSecretHash` | text | NULL | — | Webhook secret 的雜湊值（不儲存明文；後續 webhook 驗證 Step 才施工邏輯）|
-| `lastTestRunAt` | timestamp with timezone | NULL | — | 上次 test-run 時間 |
-| `lastRunAt` | timestamp with timezone | NULL | — | 上次 Agent 實際執行時間（由 run-log 同步）|
-| `createdAt` | timestamp with timezone | NOT NULL | NOW() | 建立時間 |
-| `updatedAt` | timestamp with timezone | NOT NULL | NOW() | 最後更新時間（$onUpdate）|
+| 欄位名稱                    | 型別                    | Nullable | Default            | 說明                                                                     |
+| --------------------------- | ----------------------- | -------- | ------------------ | ------------------------------------------------------------------------ |
+| `id`                        | serial (integer)        | NOT NULL | AUTO               | 主鍵                                                                     |
+| `storeId`                   | integer                 | NOT NULL | —                  | FK → stores.id，UNIQUE，一個 store 一列                                  |
+| `merchantId`                | text                    | NOT NULL | —                  | 對應 stores.merchantId，冗餘保存供稽核使用                               |
+| `agentStatus`               | text (enum)             | NOT NULL | `'disabled'`       | Agent 啟用狀態                                                           |
+| `agentMode`                 | text (enum)             | NOT NULL | `'external_agent'` | Agent 工作模式                                                           |
+| `enabledLogistics`          | text[] (enum array)     | NOT NULL | `'{}'`             | 啟用的物流來源白名單                                                     |
+| `queryMethods`              | text[] (enum array)     | NOT NULL | `'{manual}'`       | 查詢方式白名單                                                           |
+| `queryFrequency`            | text (enum)             | NOT NULL | `'manual'`         | 查詢頻率                                                                 |
+| `notifyOnUnknown`           | boolean                 | NOT NULL | `false`            | 貨態未知時是否通知賣家                                                   |
+| `requireConfirmOnException` | boolean                 | NOT NULL | `true`             | 例外狀況是否需要賣家確認                                                 |
+| `requireConfirmOnReturned`  | boolean                 | NOT NULL | `true`             | 退件時是否需要賣家確認                                                   |
+| `requireConfirmOnDelivered` | boolean                 | NOT NULL | `false`            | 到達時是否需要賣家確認                                                   |
+| `hideErrorDetailsFromBuyer` | boolean                 | NOT NULL | `true`             | 是否隱藏錯誤詳情不顯示給買家                                             |
+| `webhookEnabled`            | boolean                 | NOT NULL | `false`            | 是否啟用 webhook 接收                                                    |
+| `webhookUrl`                | text                    | NULL     | —                  | Webhook 接收端 URL（賣家填入）                                           |
+| `webhookSecretHash`         | text                    | NULL     | —                  | Webhook secret 的雜湊值（不儲存明文；後續 webhook 驗證 Step 才施工邏輯） |
+| `lastTestRunAt`             | timestamp with timezone | NULL     | —                  | 上次 test-run 時間                                                       |
+| `lastRunAt`                 | timestamp with timezone | NULL     | —                  | 上次 Agent 實際執行時間（由 run-log 同步）                               |
+| `createdAt`                 | timestamp with timezone | NOT NULL | NOW()              | 建立時間                                                                 |
+| `updatedAt`                 | timestamp with timezone | NOT NULL | NOW()              | 最後更新時間（$onUpdate）                                                |
 
 ### 3.3 Enum 規格
 
@@ -165,16 +165,16 @@ scheduled          ← 排程自動查詢
 
 ### 4.2 Token 安全規則
 
-| 規則 | 說明 |
-|---|---|
-| token 原文只顯示一次 | 建立成功後的 `POST /api/seller/agent/tokens` response 才回傳 token 原文；之後不可再取得 |
-| DB 只保存 hash | 後端儲存 `tokenHash`（bcrypt 或 SHA-256 + salt），不儲存明文 |
-| 保存 tokenPrefix | 儲存前 8 位作為 `tokenPrefix`，供列表顯示識別 |
-| 列表不回完整 token | `GET /api/seller/agent/tokens` 只回 `tokenPrefix / status / createdAt / lastUsedAt / expiresAt / revokedAt` |
-| 不回 tokenHash | `tokenHash` 僅內部比對用，任何 API 回應不得包含此欄位 |
-| revoke 不物理刪除 | 停用操作設定 `revokedAt` 與 `status = revoked`，保留記錄供稽核 |
-| token scope | 每個 token 綁定 `storeId`，只可呼叫對應 store 的 Agent API |
-| 使用範圍 | token 只可用於 `/api/internal/agent/*` 或 `/api/agent/*`，不可用於 Seller UI API |
+| 規則                 | 說明                                                                                                        |
+| -------------------- | ----------------------------------------------------------------------------------------------------------- |
+| token 原文只顯示一次 | 建立成功後的 `POST /api/seller/agent/tokens` response 才回傳 token 原文；之後不可再取得                     |
+| DB 只保存 hash       | 後端儲存 `tokenHash`（bcrypt 或 SHA-256 + salt），不儲存明文                                                |
+| 保存 tokenPrefix     | 儲存前 8 位作為 `tokenPrefix`，供列表顯示識別                                                               |
+| 列表不回完整 token   | `GET /api/seller/agent/tokens` 只回 `tokenPrefix / status / createdAt / lastUsedAt / expiresAt / revokedAt` |
+| 不回 tokenHash       | `tokenHash` 僅內部比對用，任何 API 回應不得包含此欄位                                                       |
+| revoke 不物理刪除    | 停用操作設定 `revokedAt` 與 `status = revoked`，保留記錄供稽核                                              |
+| token scope          | 每個 token 綁定 `storeId`，只可呼叫對應 store 的 Agent API                                                  |
+| 使用範圍             | token 只可用於 `/api/internal/agent/*` 或 `/api/agent/*`，不可用於 Seller UI API                            |
 
 ### 4.3 Token 前端 UX 規格
 
@@ -189,11 +189,11 @@ scheduled          ← 排程自動查詢
 
 ### 4.4 Token API 規格摘要
 
-| API | 說明 |
-|---|---|
-| `POST /api/seller/agent/tokens` | 建立 token，回傳一次性 token 原文 |
-| `GET /api/seller/agent/tokens` | 取得列表（不含原文 / hash）|
-| `PATCH /api/seller/agent/tokens/:id/revoke` | 撤銷 token（設 revokedAt，不物理刪除）|
+| API                                         | 說明                                   |
+| ------------------------------------------- | -------------------------------------- |
+| `POST /api/seller/agent/tokens`             | 建立 token，回傳一次性 token 原文      |
+| `GET /api/seller/agent/tokens`              | 取得列表（不含原文 / hash）            |
+| `PATCH /api/seller/agent/tokens/:id/revoke` | 撤銷 token（設 revokedAt，不物理刪除） |
 
 > **選用說明**：選用 `PATCH /revoke` 而非 `DELETE`，因為 DELETE 語意為物理刪除，但 revoke 是邏輯停用。若採 DELETE，必須在文件與程式碼中明確標示「實際為 revoke，不物理刪除」。
 
@@ -209,33 +209,33 @@ scheduled          ← 排程自動查詢
 
 以下欄位允許在 `GET /api/seller/agent/run-logs` 回傳：
 
-| 欄位 | 說明 |
-|---|---|
-| `id` | 執行紀錄 ID |
-| `startedAt` | 執行開始時間 |
-| `finishedAt` | 執行結束時間 |
-| `status` | 執行狀態。**底層 `agent_run_logs.status` 實際 enum 為 `running / completed / failed / partial`**（非 success / failure），Seller UI 顯示時可映射為：`running`→「執行中」、`completed`→「完成」、`failed`→「失敗」、`partial`→「部分成功」|
-| `jobCount` | 本次查詢的訂單數。**`agent_run_logs` 底層沒有 `jobCount` 欄位**，此為 API response 顯示別名，實際資料來源為 DB 欄位 `checkedCount`，實作時不可假設 DB 存在 `jobCount` 欄位 |
-| `successCount` | 成功更新數量（對應 DB `success_count`）|
-| `failedCount` | 失敗數量（對應 DB `failed_count`）|
-| `errorSummary` | 錯誤摘要。**`agent_run_logs` 底層沒有單一 `errorSummary` 欄位**，此為 API response 組合而成的顯示欄位，來源為 DB 的 `errorCode`（≤120字）與 `errorMessage`（≤500字，僅安全摘要，不含 token / stack trace）兩個獨立欄位，實作時需明確定義組合規則（例如僅顯示 `errorCode`，或 `errorCode` + `errorMessage` 摘要併陳）|
-| `tokenPrefix` | 觸發此次執行的 token 前綴（識別用）。**`agent_run_logs` 本身沒有 `tokenPrefix` 欄位**，僅有 `tokenId`（FK → `seller_agent_tokens.id`）；若要顯示 `tokenPrefix` 需要 JOIN `seller_agent_tokens` 表取得。MVP 階段若不做 JOIN，可先不顯示 token 識別資訊，或僅顯示 `tokenId` 的安全別名 |
-| `createdAt` | 記錄建立時間 |
+| 欄位           | 說明                                                                                                                                                                                                                                                                                                                 |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`           | 執行紀錄 ID                                                                                                                                                                                                                                                                                                          |
+| `startedAt`    | 執行開始時間                                                                                                                                                                                                                                                                                                         |
+| `finishedAt`   | 執行結束時間                                                                                                                                                                                                                                                                                                         |
+| `status`       | 執行狀態。**底層 `agent_run_logs.status` 實際 enum 為 `running / completed / failed / partial`**（非 success / failure），Seller UI 顯示時可映射為：`running`→「執行中」、`completed`→「完成」、`failed`→「失敗」、`partial`→「部分成功」                                                                            |
+| `jobCount`     | 本次查詢的訂單數。**`agent_run_logs` 底層沒有 `jobCount` 欄位**，此為 API response 顯示別名，實際資料來源為 DB 欄位 `checkedCount`，實作時不可假設 DB 存在 `jobCount` 欄位                                                                                                                                           |
+| `successCount` | 成功更新數量（對應 DB `success_count`）                                                                                                                                                                                                                                                                              |
+| `failedCount`  | 失敗數量（對應 DB `failed_count`）                                                                                                                                                                                                                                                                                   |
+| `errorSummary` | 錯誤摘要。**`agent_run_logs` 底層沒有單一 `errorSummary` 欄位**，此為 API response 組合而成的顯示欄位，來源為 DB 的 `errorCode`（≤120字）與 `errorMessage`（≤500字，僅安全摘要，不含 token / stack trace）兩個獨立欄位，實作時需明確定義組合規則（例如僅顯示 `errorCode`，或 `errorCode` + `errorMessage` 摘要併陳） |
+| `tokenPrefix`  | 觸發此次執行的 token 前綴（識別用）。**`agent_run_logs` 本身沒有 `tokenPrefix` 欄位**，僅有 `tokenId`（FK → `seller_agent_tokens.id`）；若要顯示 `tokenPrefix` 需要 JOIN `seller_agent_tokens` 表取得。MVP 階段若不做 JOIN，可先不顯示 token 識別資訊，或僅顯示 `tokenId` 的安全別名                                 |
+| `createdAt`    | 記錄建立時間                                                                                                                                                                                                                                                                                                         |
 
 ### 5.3 嚴格禁止回傳欄位
 
 以下欄位**任何情況下都不可**出現在 Seller UI API 回應中：
 
-| 禁止欄位 | 原因 |
-|---|---|
-| `rawPayload` / `rawData` | **`agent_run_logs` 本身沒有此欄位**——run logs API 不應回傳任何 raw external response / 完整 stack trace / secret；此規則真正的適用對象是 `shipment_tracking_events.rawData`（外部物流 API 原始回應），列在此處是提醒「run logs 顯示邏輯若未來需要關聯查詢物流事件，也不可外洩這類欄位」|
-| `rawExternalResponse` | 外部 API 原始回應（同上，屬 `shipment_tracking_events` 等關聯表的欄位，非 `agent_run_logs` 自身欄位）|
-| `buyerPhone` | 買家個資 |
-| `buyerAddress` | 買家個資 |
-| `tokenHash` | 內部安全欄位 |
-| `fullToken` / 完整 token | 不可再取得 |
-| `internalStackTrace` | 內部錯誤資訊 |
-| `DATABASE_URL` / 任何 secrets | 嚴格禁止 |
+| 禁止欄位                      | 原因                                                                                                                                                                                                                                                                                    |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `rawPayload` / `rawData`      | **`agent_run_logs` 本身沒有此欄位**——run logs API 不應回傳任何 raw external response / 完整 stack trace / secret；此規則真正的適用對象是 `shipment_tracking_events.rawData`（外部物流 API 原始回應），列在此處是提醒「run logs 顯示邏輯若未來需要關聯查詢物流事件，也不可外洩這類欄位」 |
+| `rawExternalResponse`         | 外部 API 原始回應（同上，屬 `shipment_tracking_events` 等關聯表的欄位，非 `agent_run_logs` 自身欄位）                                                                                                                                                                                   |
+| `buyerPhone`                  | 買家個資                                                                                                                                                                                                                                                                                |
+| `buyerAddress`                | 買家個資                                                                                                                                                                                                                                                                                |
+| `tokenHash`                   | 內部安全欄位                                                                                                                                                                                                                                                                            |
+| `fullToken` / 完整 token      | 不可再取得                                                                                                                                                                                                                                                                              |
+| `internalStackTrace`          | 內部錯誤資訊                                                                                                                                                                                                                                                                            |
+| `DATABASE_URL` / 任何 secrets | 嚴格禁止                                                                                                                                                                                                                                                                                |
 
 ### 5.4 API 規格摘要
 
@@ -247,11 +247,11 @@ GET /api/seller/agent/run-logs
     - status (enum: running | completed | failed | partial，可選 — 對應 agent_run_logs.status 底層實際 enum，Seller UI 顯示文案另見 5.2 映射規則)
     - startDate (ISO 8601 date string，可選)
     - endDate (ISO 8601 date string，可選)
-  
+
   回應：
     - data: RunLogSummary[] (whitelist 欄位)
     - pagination: { page, limit, total, totalPages }
-  
+
   限制：
     - limit 上限為 100
     - 每個請求必須 verifyStoreOwner
@@ -340,14 +340,14 @@ GET /api/seller/agent/run-logs
 
 **驗證規則**：
 
-| 欄位 | 驗證 |
-|---|---|
-| `agentMode` | 必須是白名單 enum；`platform_managed_reserved` 回 400 |
-| `queryFrequency` | 必須是白名單 enum；不接受任意 cron string |
-| `enabledLogistics` | 每個元素必須是白名單 enum；不接受自由 provider code |
-| `queryMethods` | 每個元素必須是白名單 enum |
-| `webhookUrl` | 若提供，必須是有效 HTTPS URL（不接受 http:// 避免 SSRF）|
-| 所有欄位 | 不接受 prompt 字串 / 自由文字 AI 指令 |
+| 欄位               | 驗證                                                     |
+| ------------------ | -------------------------------------------------------- |
+| `agentMode`        | 必須是白名單 enum；`platform_managed_reserved` 回 400    |
+| `queryFrequency`   | 必須是白名單 enum；不接受任意 cron string                |
+| `enabledLogistics` | 每個元素必須是白名單 enum；不接受自由 provider code      |
+| `queryMethods`     | 每個元素必須是白名單 enum                                |
+| `webhookUrl`       | 若提供，必須是有效 HTTPS URL（不接受 http:// 避免 SSRF） |
+| 所有欄位           | 不接受 prompt 字串 / 自由文字 AI 指令                    |
 
 **不接受**：
 
@@ -393,8 +393,8 @@ GET /api/seller/agent/run-logs
 {
   id: number;
   name: string;
-  tokenPrefix: string;   // 前 8 位，供識別
-  token: string;         // 完整 token 原文，只在此回傳一次
+  tokenPrefix: string; // 前 8 位，供識別
+  token: string; // 完整 token 原文，只在此回傳一次
   createdAt: string;
   expiresAt: string | null;
   status: "active";
@@ -486,13 +486,13 @@ GET /api/seller/agent/run-logs
 
 **查詢參數**：
 
-| 參數 | 型別 | 說明 |
-|---|---|---|
-| `page` | integer | 頁碼，預設 1 |
-| `limit` | integer | 每頁筆數，預設 20，最大 100 |
-| `status` | string | 過濾：`running` / `completed` / `failed` / `partial`（對應 `agent_run_logs.status` 底層實際 enum；**不是** `success` / `failure`，Seller UI 顯示文案請參考 5.2 映射規則）|
-| `startDate` | ISO 8601 | 開始時間過濾 |
-| `endDate` | ISO 8601 | 結束時間過濾 |
+| 參數        | 型別     | 說明                                                                                                                                                                      |
+| ----------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `page`      | integer  | 頁碼，預設 1                                                                                                                                                              |
+| `limit`     | integer  | 每頁筆數，預設 20，最大 100                                                                                                                                               |
+| `status`    | string   | 過濾：`running` / `completed` / `failed` / `partial`（對應 `agent_run_logs.status` 底層實際 enum；**不是** `success` / `failure`，Seller UI 顯示文案請參考 5.2 映射規則） |
+| `startDate` | ISO 8601 | 開始時間過濾                                                                                                                                                              |
+| `endDate`   | ISO 8601 | 結束時間過濾                                                                                                                                                              |
 
 **回應格式**：
 
@@ -502,12 +502,12 @@ GET /api/seller/agent/run-logs
     id: number;
     startedAt: string;
     finishedAt: string | null;
-    status: "running" | "completed" | "failed" | "partial";  // 底層 enum 原值；前端顯示文案另行映射（見 5.2）
-    jobCount: number;               // 顯示別名，後端對應 DB 欄位 checkedCount（agent_run_logs 無 jobCount 欄位）
+    status: "running" | "completed" | "failed" | "partial"; // 底層 enum 原值；前端顯示文案另行映射（見 5.2）
+    jobCount: number; // 顯示別名，後端對應 DB 欄位 checkedCount（agent_run_logs 無 jobCount 欄位）
     successCount: number;
     failedCount: number;
-    errorSummary: string | null;    // 後端組合欄位，來源為 errorCode + errorMessage（agent_run_logs 無單一 errorSummary 欄位，組合規則需另行明定）
-    tokenPrefix: string | null;     // 需 JOIN seller_agent_tokens 取得（agent_run_logs 本身僅有 tokenId）；MVP 不 JOIN 時可省略此欄位
+    errorSummary: string | null; // 後端組合欄位，來源為 errorCode + errorMessage（agent_run_logs 無單一 errorSummary 欄位，組合規則需另行明定）
+    tokenPrefix: string | null; // 需 JOIN seller_agent_tokens 取得（agent_run_logs 本身僅有 tokenId）；MVP 不 JOIN 時可省略此欄位
     createdAt: string;
   }>;
   pagination: {
@@ -515,7 +515,7 @@ GET /api/seller/agent/run-logs
     limit: number;
     total: number;
     totalPages: number;
-  };
+  }
 }
 ```
 
@@ -648,25 +648,25 @@ Agent API（/api/internal/agent/* 或 /api/agent/*）
 
 ### 8.1 Token 安全要求
 
-| 要求 | 說明 |
-|---|---|
-| token 只顯示一次 | POST 建立時回傳原文，之後永不回傳 |
-| DB 不存明文 | 只存 `tokenHash`（bcrypt rounds ≥ 10 或 SHA-256 + random salt）|
-| tokenPrefix 識別 | 保存前 8 位供 UI 識別 |
-| revoke 不刪除 | 保留 `revokedAt` 供稽核 |
-| token 格式建議 | 前綴 `sagt_` + 32 位隨機字元（crypto.randomBytes）|
-| scope 限制 | 每個 token 只能用於對應 storeId 的 Agent API |
+| 要求             | 說明                                                            |
+| ---------------- | --------------------------------------------------------------- |
+| token 只顯示一次 | POST 建立時回傳原文，之後永不回傳                               |
+| DB 不存明文      | 只存 `tokenHash`（bcrypt rounds ≥ 10 或 SHA-256 + random salt） |
+| tokenPrefix 識別 | 保存前 8 位供 UI 識別                                           |
+| revoke 不刪除    | 保留 `revokedAt` 供稽核                                         |
+| token 格式建議   | 前綴 `sagt_` + 32 位隨機字元（crypto.randomBytes）              |
+| scope 限制       | 每個 token 只能用於對應 storeId 的 Agent API                    |
 
 ### 8.2 Webhook Secret 安全要求
 
 > **MVP 注意**：webhook secret 只規劃 schema 欄位，MVP 不施工驗證邏輯。
 
-| 要求 | 說明 |
-|---|---|
-| 不儲存明文 | `webhookSecretHash` 欄位存 hash / encrypted，不存明文 |
-| API 不回傳完整 secret | 任何 API 只可回傳 `webhookSecretConfigured: boolean` |
-| 前端只顯示「已設定 / 未設定」| 不顯示 secret 值 |
-| 後續施工要求 | webhook 驗證邏輯需實作 HMAC-SHA256 簽名驗證 |
+| 要求                          | 說明                                                  |
+| ----------------------------- | ----------------------------------------------------- |
+| 不儲存明文                    | `webhookSecretHash` 欄位存 hash / encrypted，不存明文 |
+| API 不回傳完整 secret         | 任何 API 只可回傳 `webhookSecretConfigured: boolean`  |
+| 前端只顯示「已設定 / 未設定」 | 不顯示 secret 值                                      |
+| 後續施工要求                  | webhook 驗證邏輯需實作 HMAC-SHA256 簽名驗證           |
 
 ### 8.3 API 回應安全要求
 
@@ -700,18 +700,18 @@ secrets / credentials / API keys
 
 ### 9.2 常用錯誤碼
 
-| HTTP Status | error.code | 情境 |
-|---|---|---|
-| 400 | `INVALID_ENUM_VALUE` | enum 欄位值不在白名單 |
-| 400 | `INVALID_WEBHOOK_URL` | webhookUrl 非合法 HTTPS URL |
-| 400 | `PLATFORM_MANAGED_NOT_AVAILABLE` | agentMode = platform_managed_reserved（方案限制）|
-| 400 | `ARBITRARY_CRON_NOT_ALLOWED` | queryFrequency 非白名單值 |
-| 401 | `UNAUTHORIZED` | 未登入 / session 過期 |
-| 403 | `STORE_OWNERSHIP_REQUIRED` | 操作的 store 不屬於目前 session |
-| 404 | `SETTINGS_NOT_FOUND` | seller_agent_settings 不存在 |
-| 404 | `TOKEN_NOT_FOUND` | token 不存在或不屬於該 store |
-| 409 | `TOKEN_ALREADY_REVOKED` | 嘗試 revoke 已是 revoked 的 token |
-| 500 | `INTERNAL_ERROR` | 內部錯誤（不回 stack trace）|
+| HTTP Status | error.code                       | 情境                                              |
+| ----------- | -------------------------------- | ------------------------------------------------- |
+| 400         | `INVALID_ENUM_VALUE`             | enum 欄位值不在白名單                             |
+| 400         | `INVALID_WEBHOOK_URL`            | webhookUrl 非合法 HTTPS URL                       |
+| 400         | `PLATFORM_MANAGED_NOT_AVAILABLE` | agentMode = platform_managed_reserved（方案限制） |
+| 400         | `ARBITRARY_CRON_NOT_ALLOWED`     | queryFrequency 非白名單值                         |
+| 401         | `UNAUTHORIZED`                   | 未登入 / session 過期                             |
+| 403         | `STORE_OWNERSHIP_REQUIRED`       | 操作的 store 不屬於目前 session                   |
+| 404         | `SETTINGS_NOT_FOUND`             | seller_agent_settings 不存在                      |
+| 404         | `TOKEN_NOT_FOUND`                | token 不存在或不屬於該 store                      |
+| 409         | `TOKEN_ALREADY_REVOKED`          | 嘗試 revoke 已是 revoked 的 token                 |
+| 500         | `INTERNAL_ERROR`                 | 內部錯誤（不回 stack trace）                      |
 
 ### 9.3 錯誤顯示規則
 
@@ -840,4 +840,4 @@ Step 7E-1e（UI）
 
 ---
 
-*此文件為 Step 7E-2 規格文件，非施工文件。所有 API 規格為設計稿，後續施工需遵照本文件定義，若有出入應更新本文件並說明原因。*
+_此文件為 Step 7E-2 規格文件，非施工文件。所有 API 規格為設計稿，後續施工需遵照本文件定義，若有出入應更新本文件並說明原因。_

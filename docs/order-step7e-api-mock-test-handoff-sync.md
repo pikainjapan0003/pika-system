@@ -9,36 +9,36 @@
 
 ## 2. API Worktree / Branch
 
-| 項目 | 值 |
-|------|-----|
+| 項目     | 值                                             |
+| -------- | ---------------------------------------------- |
 | worktree | `/home/runner/workspace/.worktrees/step7e-api` |
-| branch | `qa/step7e-seller-agent-settings-api` |
+| branch   | `qa/step7e-seller-agent-settings-api`          |
 
 ## 3. Commits
 
-| commit | message | 角色 |
-|--------|---------|------|
-| `dc75672` | `feat-api-step7e-seller-agent-settings` | API 實作 |
+| commit    | message                                                | 角色               |
+| --------- | ------------------------------------------------------ | ------------------ |
+| `dc75672` | `feat-api-step7e-seller-agent-settings`                | API 實作           |
 | `251216d` | `docs-step7e-seller-agent-settings-api-implementation` | implementation doc |
-| `8bdcdb4` | `docs-step7e-seller-agent-settings-api-review` | review doc |
-| `c73a68f` | `test-api-step7e-seller-agent-settings` | mock tests |
-| `cbb7c34` | `docs-step7e-seller-agent-settings-api-mock-test` | test doc |
+| `8bdcdb4` | `docs-step7e-seller-agent-settings-api-review`         | review doc         |
+| `c73a68f` | `test-api-step7e-seller-agent-settings`                | mock tests         |
+| `cbb7c34` | `docs-step7e-seller-agent-settings-api-mock-test`      | test doc           |
 
 ## 4. 測試結果
 
 **45 tests, 0 fail, 0 skip — 全部通過**
 
-| 測試組 | Tests |
-|--------|-------|
-| Auth — GET | 4 |
-| Auth — PATCH | 3 |
-| GET no-row → default | 9 |
-| GET row exists → safe response | 6 |
-| PATCH forbidden/unknown keys | 7 |
-| PATCH agentMode validation | 4 |
-| PATCH webhookSecret hashing | 7 |
-| PATCH upsert success | 5 |
-| **Total** | **45** |
+| 測試組                         | Tests  |
+| ------------------------------ | ------ |
+| Auth — GET                     | 4      |
+| Auth — PATCH                   | 3      |
+| GET no-row → default           | 9      |
+| GET row exists → safe response | 6      |
+| PATCH forbidden/unknown keys   | 7      |
+| PATCH agentMode validation     | 4      |
+| PATCH webhookSecret hashing    | 7      |
+| PATCH upsert success           | 5      |
+| **Total**                      | **45** |
 
 ## 5. 關鍵安全測試通過
 

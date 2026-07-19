@@ -17,12 +17,12 @@ Step 7P-PROVIDER-WRITE-CANDIDATE-DECISION = COMPLETED / PASS
 
 決策結果：
 
-| Provider | 目前層級 | Published UI | previewHash | duplicate-only | 建議 | 下一步 |
-|---|---|---|---|---|---|---|
-| familymart | Level 4 — Formal Auto Sync | PASS | 不適用 | 不適用 | 不參與 | 維持正式自動同步 |
-| postoffice | Level 1 — Manual Preview-Only | PASS | hash-present | PASS | **第一順位 one-shot write candidate** | 另開 one-shot authorization |
-| tcat | Level 1 — Manual Preview-Only | PASS | hash-present | PASS | **第二順位 one-shot write candidate** | 另開 one-shot authorization |
-| 711 | Level 1 — Manual Preview-Only | PASS | hash-null | 未驗證寫入候選 | **暫不列入第一批** | 維持 preview-only |
+| Provider   | 目前層級                      | Published UI | previewHash  | duplicate-only | 建議                                  | 下一步                      |
+| ---------- | ----------------------------- | ------------ | ------------ | -------------- | ------------------------------------- | --------------------------- |
+| familymart | Level 4 — Formal Auto Sync    | PASS         | 不適用       | 不適用         | 不參與                                | 維持正式自動同步            |
+| postoffice | Level 1 — Manual Preview-Only | PASS         | hash-present | PASS           | **第一順位 one-shot write candidate** | 另開 one-shot authorization |
+| tcat       | Level 1 — Manual Preview-Only | PASS         | hash-present | PASS           | **第二順位 one-shot write candidate** | 另開 one-shot authorization |
+| 711        | Level 1 — Manual Preview-Only | PASS         | hash-null    | 未驗證寫入候選 | **暫不列入第一批**                    | 維持 preview-only           |
 
 ---
 
@@ -30,12 +30,12 @@ Step 7P-PROVIDER-WRITE-CANDIDATE-DECISION = COMPLETED / PASS
 
 ### 截圖驗收結果（Step 7P-SCREENSHOT-EVIDENCE-CLOSEOUT）
 
-| Provider | 訂單 | 外部事件 | DB 事件 | 可新增 | previewHash | 有無寫入按鈕 |
-|----------|------|---------|---------|-------|-------------|------------|
-| familymart | #41 | 不適用（Level 4 auto-sync） | 不適用 | 不適用 | 不適用 | 不適用 |
-| postoffice | #39（tracking ****0005） | 5 筆 | 5 筆 | 0 筆（duplicate-only） | hash-present | 無 |
-| tcat | #40（tracking ****7146） | 4 筆 | 4 筆 | 0 筆（duplicate-only） | hash-present | 無 |
-| 711 | #42（tracking ****0295） | 8 筆 | 不查（preview-only） | 不計算 | hash-null | 無 |
+| Provider   | 訂單                         | 外部事件                    | DB 事件              | 可新增                 | previewHash  | 有無寫入按鈕 |
+| ---------- | ---------------------------- | --------------------------- | -------------------- | ---------------------- | ------------ | ------------ |
+| familymart | #41                          | 不適用（Level 4 auto-sync） | 不適用               | 不適用                 | 不適用       | 不適用       |
+| postoffice | #39（tracking \*\*\*\*0005） | 5 筆                        | 5 筆                 | 0 筆（duplicate-only） | hash-present | 無           |
+| tcat       | #40（tracking \*\*\*\*7146） | 4 筆                        | 4 筆                 | 0 筆（duplicate-only） | hash-present | 無           |
+| 711        | #42（tracking \*\*\*\*0295） | 8 筆                        | 不查（preview-only） | 不計算                 | hash-null    | 無           |
 
 ### 安全邊界確認
 
@@ -54,18 +54,18 @@ DB write：未執行
 
 每個 provider 以下列十項條件評估：
 
-| 條件 | postoffice | tcat | 711 |
-|------|-----------|------|-----|
-| 1. Published UI 已 PASS | ✅ | ✅ | ✅ |
-| 2. previewHash 狀態可靠（hash-present） | ✅ | ✅ | ❌（hash-null） |
-| 3. 外部事件數穩定 | ✅（5 筆） | ✅（4 筆） | ✅（8 筆） |
-| 4. DB 既有事件可判斷 | ✅（5 筆 DB 事件） | ✅（4 筆 DB 事件） | ⚠️（不查 DB，preview-only） |
-| 5. 可清楚計算可新增事件 | ✅（0 筆，duplicate-only） | ✅（0 筆，duplicate-only） | ⚠️（不計算，preview-only） |
-| 6. no write button 安全證據 | ✅（截圖確認） | ✅（截圖確認） | ✅（截圖確認） |
-| 7. 無 provider-specific 風險阻礙 | ✅ | ✅ | ⚠️（hash-null；OCR 依賴） |
-| 8. 適合 one-shot write candidate | ✅ | ✅ | ❌（暫不列入） |
-| 9. 應停在 Level 1 | ✅（Level 不升；僅列候選） | ✅（Level 不升；僅列候選） | ✅ |
-| 10. 需要更多樣本才進一步評估 | 否（可進入授權評估） | 否（可進入授權評估） | 是（建議補 hash-present 樣本） |
+| 條件                                    | postoffice                 | tcat                       | 711                            |
+| --------------------------------------- | -------------------------- | -------------------------- | ------------------------------ |
+| 1. Published UI 已 PASS                 | ✅                         | ✅                         | ✅                             |
+| 2. previewHash 狀態可靠（hash-present） | ✅                         | ✅                         | ❌（hash-null）                |
+| 3. 外部事件數穩定                       | ✅（5 筆）                 | ✅（4 筆）                 | ✅（8 筆）                     |
+| 4. DB 既有事件可判斷                    | ✅（5 筆 DB 事件）         | ✅（4 筆 DB 事件）         | ⚠️（不查 DB，preview-only）    |
+| 5. 可清楚計算可新增事件                 | ✅（0 筆，duplicate-only） | ✅（0 筆，duplicate-only） | ⚠️（不計算，preview-only）     |
+| 6. no write button 安全證據             | ✅（截圖確認）             | ✅（截圖確認）             | ✅（截圖確認）                 |
+| 7. 無 provider-specific 風險阻礙        | ✅                         | ✅                         | ⚠️（hash-null；OCR 依賴）      |
+| 8. 適合 one-shot write candidate        | ✅                         | ✅                         | ❌（暫不列入）                 |
+| 9. 應停在 Level 1                       | ✅（Level 不升；僅列候選） | ✅（Level 不升；僅列候選） | ✅                             |
+| 10. 需要更多樣本才進一步評估            | 否（可進入授權評估）       | 否（可進入授權評估）       | 是（建議補 hash-present 樣本） |
 
 ---
 
@@ -100,6 +100,7 @@ DB write：未執行
 **建議：第一順位 one-shot write candidate**
 
 **理由**：
+
 - Published UI Screenshot Evidence PASS（Step 7P-SCREENSHOT-EVIDENCE-CLOSEOUT）
 - previewHash = hash-present（可驗證 commit 一致性）
 - 外部 5 筆 / DB 5 筆 / 可新增 0 筆（duplicate-only 成立，資料穩定）
@@ -107,6 +108,7 @@ DB write：未執行
 - adapter / production E2E 已驗證（J5A～J5E，order #39）
 
 **限制**：
+
 - 目前仍為 Level 1 — Manual Preview-Only，層級**不升**
 - 進入候選不等於已授權寫入
 - 下一步仍需另開 one-shot authorization task，填妥完整授權欄位
@@ -117,6 +119,7 @@ DB write：未執行
 **建議：第二順位 one-shot write candidate**
 
 **理由**：
+
 - Published UI Screenshot Evidence PASS（Step 7P-SCREENSHOT-EVIDENCE-CLOSEOUT）
 - previewHash = hash-present（可驗證 commit 一致性）
 - 外部 4 筆 / DB 4 筆 / 可新增 0 筆（duplicate-only 成立，資料穩定）
@@ -124,6 +127,7 @@ DB write：未執行
 - 已有 #36 one-shot production commit 成功先例（J5F-7H-B，外部 5 / DB 0 → 寫入 5 筆，最新貨態「順利送達」，gate 已關回）
 
 **限制**：
+
 - 目前仍為 Level 1 — Manual Preview-Only，層級**不升**
 - 進入候選不等於已授權寫入
 - #36 成功不代表 tcat 常態寫入可開放，僅代表單一 one-shot 路徑可行
@@ -134,12 +138,14 @@ DB write：未執行
 **建議：暫不列入第一批 one-shot write candidate**
 
 **理由**：
+
 - Published UI Screenshot Evidence PASS（Step 7P-SCREENSHOT-EVIDENCE-CLOSEOUT）
 - 但 previewHash = hash-null（無法驗證 commit 一致性，不符合 one-shot 前置條件）
 - 目前 UI 設計不查 DB / 不計算 duplicate-only（preview-only 模式）
 - 未達 one-shot write 前置條件
 
 **後續評估方向**：
+
 - 確認 711 adapter 是否能產出 hash-present
 - 補充 DB duplicate-only 驗證流程
 - 達到 hash-present + duplicate-only 計算後，才可重新評估進入候選
@@ -263,12 +269,12 @@ Step 7P-POSTOFFICE-ONE-SHOT-AUTHORIZATION
 
 ## 參考文件
 
-| 文件 | 內容 |
-|------|------|
-| `docs/step7/step7p-published-ui-screenshot-evidence-closeout.md` | Published UI 截圖驗收結果 |
-| `docs/step7/manual-preview-all-providers-qa.md` | Step 7P 統一 QA closeout |
-| `docs/step7/provider-rollout-decision-matrix.md` | 各 provider Support Level 決策表 |
-| `docs/step7/provider-rollout-policy.md` | Provider rollout 政策 |
-| `docs/step7/manual-provider-commit-release-gate-decision.md` | one-shot authorization 格式、Rollback Plan |
-| `docs/step7/manual-provider-production-can-write-candidates.md` | postoffice #38 / tcat #36 can-write candidate 詳情 |
-| `docs/step7/manual-provider-production-one-shot-final-closeout.md` | tcat #36 one-shot commit 收尾 |
+| 文件                                                               | 內容                                               |
+| ------------------------------------------------------------------ | -------------------------------------------------- |
+| `docs/step7/step7p-published-ui-screenshot-evidence-closeout.md`   | Published UI 截圖驗收結果                          |
+| `docs/step7/manual-preview-all-providers-qa.md`                    | Step 7P 統一 QA closeout                           |
+| `docs/step7/provider-rollout-decision-matrix.md`                   | 各 provider Support Level 決策表                   |
+| `docs/step7/provider-rollout-policy.md`                            | Provider rollout 政策                              |
+| `docs/step7/manual-provider-commit-release-gate-decision.md`       | one-shot authorization 格式、Rollback Plan         |
+| `docs/step7/manual-provider-production-can-write-candidates.md`    | postoffice #38 / tcat #36 can-write candidate 詳情 |
+| `docs/step7/manual-provider-production-one-shot-final-closeout.md` | tcat #36 one-shot commit 收尾                      |

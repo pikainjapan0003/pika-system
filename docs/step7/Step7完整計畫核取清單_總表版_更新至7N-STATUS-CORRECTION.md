@@ -59,15 +59,15 @@ Step 7 整體狀態：IN PROGRESS / PARTIAL PASS
 
 ## 4. 已完成
 
-| 項目 | 狀態 | 備註 / commit |
-|------|------|------|
-| familymart formal auto sync | ✅ Completed | `supportsAutoSync: true`，僅 familymart；正式自動同步運作中 |
-| postoffice adapter / preview / controlled production E2E | ✅ Verified | J5A～J5E，order #39 / trackingId=2，insertedEventCount=5，delivered |
-| tcat adapter / preview / controlled production E2E | ✅ Verified | J6A～J6E，order #40 / trackingId=3，insertedEventCount=4，delivered |
-| tcat #36 one-shot owner UI production commit | ✅ Verified | J5F-7H-B，外部5 / DB0 → 寫入5筆，最新貨態「順利送達」 |
-| one-shot gate closed | ✅ Done | J5F-7H-C，`COMMIT_ENABLED` 恢復 `false`，one-shot 相關程式碼已移除 |
-| production safe-preview-only restored | ✅ Done | `ManualTrackingSyncPanel.tsx:141` `COMMIT_ENABLED: boolean = false`；safe-preview-only footer 顯示中 |
-| brand / mobile QA | ✅ Completed | Step 7N-BRAND-COPY-UI-RENAME-DRAWDREAM（commit `2a1a2f4`）＋ Step 7N-MOBILE-BRAND-QA-CLOSEOUT（commit `800ee68`） |
+| 項目                                                     | 狀態         | 備註 / commit                                                                                                     |
+| -------------------------------------------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------- |
+| familymart formal auto sync                              | ✅ Completed | `supportsAutoSync: true`，僅 familymart；正式自動同步運作中                                                       |
+| postoffice adapter / preview / controlled production E2E | ✅ Verified  | J5A～J5E，order #39 / trackingId=2，insertedEventCount=5，delivered                                               |
+| tcat adapter / preview / controlled production E2E       | ✅ Verified  | J6A～J6E，order #40 / trackingId=3，insertedEventCount=4，delivered                                               |
+| tcat #36 one-shot owner UI production commit             | ✅ Verified  | J5F-7H-B，外部5 / DB0 → 寫入5筆，最新貨態「順利送達」                                                             |
+| one-shot gate closed                                     | ✅ Done      | J5F-7H-C，`COMMIT_ENABLED` 恢復 `false`，one-shot 相關程式碼已移除                                                |
+| production safe-preview-only restored                    | ✅ Done      | `ManualTrackingSyncPanel.tsx:141` `COMMIT_ENABLED: boolean = false`；safe-preview-only footer 顯示中              |
+| brand / mobile QA                                        | ✅ Completed | Step 7N-BRAND-COPY-UI-RENAME-DRAWDREAM（commit `2a1a2f4`）＋ Step 7N-MOBILE-BRAND-QA-CLOSEOUT（commit `800ee68`） |
 
 **注意**：以上「Verified / Completed」均指 controlled verification（preview / one-shot / 小規模 E2E），**不等於 formal provider launch**。
 
@@ -75,14 +75,14 @@ Step 7 整體狀態：IN PROGRESS / PARTIAL PASS
 
 ## 5. 未完成 / blocked
 
-| 項目 | 狀態 | 備註 |
-|------|------|------|
-| postoffice formal rollout decision | ⏸️ Not decided | 是否、何時正式上線、正式上線標準均未訂定 |
-| tcat formal rollout decision | ⏸️ Not decided | 是否、何時正式上線、正式上線標準均未訂定 |
-| postoffice #38 | ⏸️ Blocked（未授權，不可動） | can-write candidate（外部6 / DB0 / 可寫6，最新貨態「投遞成功」），須使用者另行提供完整 Authorization Text 才可操作 |
-| 7-11 | ⛔ Blocked / research | 尚未施工；`MANUAL_SYNC_PROVIDERS` / `supportsAutoSync` 均未包含，不得新增正式支援 |
-| 多物流商正式上線策略 | ⏸️ Not decided | postoffice / tcat 是否、何時、依何標準轉為 formal launch 尚未決定 |
-| Step 7 總收尾 | ⛔ 不可進行 | 上述未完成項目存在期間，Step 7 不可標記為 complete / final closeout |
+| 項目                               | 狀態                         | 備註                                                                                                               |
+| ---------------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| postoffice formal rollout decision | ⏸️ Not decided               | 是否、何時正式上線、正式上線標準均未訂定                                                                           |
+| tcat formal rollout decision       | ⏸️ Not decided               | 是否、何時正式上線、正式上線標準均未訂定                                                                           |
+| postoffice #38                     | ⏸️ Blocked（未授權，不可動） | can-write candidate（外部6 / DB0 / 可寫6，最新貨態「投遞成功」），須使用者另行提供完整 Authorization Text 才可操作 |
+| 7-11                               | ⛔ Blocked / research        | 尚未施工；`MANUAL_SYNC_PROVIDERS` / `supportsAutoSync` 均未包含，不得新增正式支援                                  |
+| 多物流商正式上線策略               | ⏸️ Not decided               | postoffice / tcat 是否、何時、依何標準轉為 formal launch 尚未決定                                                  |
+| Step 7 總收尾                      | ⛔ 不可進行                  | 上述未完成項目存在期間，Step 7 不可標記為 complete / final closeout                                                |
 
 ---
 
@@ -122,17 +122,17 @@ Step 7N-PROVIDER-ROLLOUT-DECISION-MATRIX
 
 ## 8. 參考文件
 
-| 文件 | 內容 |
-|------|------|
-| `docs/step7/Step7完整計畫核取清單_總表版_更新至7N-MOBILE-BRAND-QA.md` | 上一版總表（其「整體狀態」與「下一步建議」已由本檔修正取代，其餘逐項紀錄仍可參照） |
-| `docs/step7/postoffice-manual-commit-flow.md` | postoffice J5A～E production E2E 記錄 |
-| `docs/step7/tcat-manual-commit-gate-plan.md` | tcat J6A～E production E2E 記錄 |
-| `docs/step7/manual-provider-commit-ui-spec.md` | owner UI commit 規格 |
-| `docs/step7/manual-provider-commit-ui-commit-integration-plan.md` | commit 整合計畫 |
-| `docs/step7/manual-provider-commit-release-gate-decision.md` | release gate 決策、Authorization Text 格式、Rollback Plan |
-| `docs/step7/manual-provider-production-can-write-candidates.md` | postoffice #38 / tcat #36 can-write candidate 詳情 |
-| `docs/step7/manual-provider-safe-preview-only-closeout.md` | J5F-8 safe-preview-only 收尾 |
-| `docs/step7/manual-provider-production-one-shot-final-closeout.md` | J5F 全系列最終收尾（tcat #36） |
-| `docs/step7/brand-copy-ui-rename-drawdream.md` | 品牌文案更名（畫夢代購 / DrawDream），commit `2a1a2f4` |
-| `docs/step7/mobile-brand-qa-closeout.md` | mobile / brand / logistics UI QA closeout，commit `800ee68` |
-| `docs/step7/owner-order-detail-manual-provider-implementation-plan.md` | owner UI 實作步驟切分（J5F-2A～12） |
+| 文件                                                                   | 內容                                                                               |
+| ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `docs/step7/Step7完整計畫核取清單_總表版_更新至7N-MOBILE-BRAND-QA.md`  | 上一版總表（其「整體狀態」與「下一步建議」已由本檔修正取代，其餘逐項紀錄仍可參照） |
+| `docs/step7/postoffice-manual-commit-flow.md`                          | postoffice J5A～E production E2E 記錄                                              |
+| `docs/step7/tcat-manual-commit-gate-plan.md`                           | tcat J6A～E production E2E 記錄                                                    |
+| `docs/step7/manual-provider-commit-ui-spec.md`                         | owner UI commit 規格                                                               |
+| `docs/step7/manual-provider-commit-ui-commit-integration-plan.md`      | commit 整合計畫                                                                    |
+| `docs/step7/manual-provider-commit-release-gate-decision.md`           | release gate 決策、Authorization Text 格式、Rollback Plan                          |
+| `docs/step7/manual-provider-production-can-write-candidates.md`        | postoffice #38 / tcat #36 can-write candidate 詳情                                 |
+| `docs/step7/manual-provider-safe-preview-only-closeout.md`             | J5F-8 safe-preview-only 收尾                                                       |
+| `docs/step7/manual-provider-production-one-shot-final-closeout.md`     | J5F 全系列最終收尾（tcat #36）                                                     |
+| `docs/step7/brand-copy-ui-rename-drawdream.md`                         | 品牌文案更名（畫夢代購 / DrawDream），commit `2a1a2f4`                             |
+| `docs/step7/mobile-brand-qa-closeout.md`                               | mobile / brand / logistics UI QA closeout，commit `800ee68`                        |
+| `docs/step7/owner-order-detail-manual-provider-implementation-plan.md` | owner UI 實作步驟切分（J5F-2A～12）                                                |

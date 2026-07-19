@@ -53,14 +53,14 @@ Deployment container 不含 `/nix/store/*-tesseract-*` 路徑。
 
 ### Resolver 行為（workspace 對比 Published）
 
-| 步驟 | Workspace | Published |
-|------|-----------|-----------|
-| TESSERACT_BIN env | 未設定 | 未設定 |
-| 已知 nix path 44vcjbc... | EXISTS → return ✓ | MISSING |
-| 已知 nix path nprhbha... | EXISTS | MISSING |
-| 已知 nix path 89jwgij... | EXISTS | MISSING |
-| `which tesseract` | not in PATH | not in PATH |
-| fallback `"tesseract"` | N/A（已提前 return） | 走到這裡 → ENOENT |
+| 步驟                     | Workspace            | Published         |
+| ------------------------ | -------------------- | ----------------- |
+| TESSERACT_BIN env        | 未設定               | 未設定            |
+| 已知 nix path 44vcjbc... | EXISTS → return ✓    | MISSING           |
+| 已知 nix path nprhbha... | EXISTS               | MISSING           |
+| 已知 nix path 89jwgij... | EXISTS               | MISSING           |
+| `which tesseract`        | not in PATH          | not in PATH       |
+| fallback `"tesseract"`   | N/A（已提前 return） | 走到這裡 → ENOENT |
 
 ### Resolver test（workspace）
 
@@ -101,7 +101,9 @@ try {
   const found = execSync("which tesseract", {
     stdio: ["pipe", "pipe", "pipe"],
     timeout: 2000,
-  }).toString().trim();
+  })
+    .toString()
+    .trim();
   if (found) return found;
 } catch {
   // tesseract not in PATH
@@ -150,9 +152,11 @@ set TESSERACT_BIN env var or add tesseract to replit.nix. (spawn tesseract ENOEN
 ### 選項 B：設定 Replit 部署環境變數
 
 1. 在 Replit → Secrets（或 Deployment ENV）新增：
+
    ```
    TESSERACT_BIN=/nix/store/44vcjbcy1p2yhc974bcw250k2r5x5cpa-tesseract-5.3.4/bin/tesseract
    ```
+
    （但此路徑在 Published deployment 中也不存在，需先確認 deployment container 內的實際 path）
 
 2. 這個選項只在 deployment container 確實有 tesseract 時才有效。

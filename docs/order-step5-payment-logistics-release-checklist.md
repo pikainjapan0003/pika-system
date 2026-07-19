@@ -8,13 +8,13 @@
 
 ## 1. Step 5 總覽
 
-| 階段 | 說明 | Commit | 狀態 |
-|------|------|--------|------|
-| **5A** | 付款 / 物流欄位規格文件 | `b6204de` | ✅ 完成 |
-| **5B** | DB schema 付款 / 物流欄位 migration | `04e0e49` | ✅ 完成 |
+| 階段   | 說明                                         | Commit    | 狀態    |
+| ------ | -------------------------------------------- | --------- | ------- |
+| **5A** | 付款 / 物流欄位規格文件                      | `b6204de` | ✅ 完成 |
+| **5B** | DB schema 付款 / 物流欄位 migration          | `04e0e49` | ✅ 完成 |
 | **5C** | API / OpenAPI / generated client / API tests | `f81eeb7` | ✅ 完成 |
-| **5D** | 後台 Orders UI 顯示與編輯付款 / 物流欄位 | `1144924` | ✅ 完成 |
-| **5E** | 批次付款狀態更新 / 批次出貨狀態更新 | `28629eb` | ✅ 完成 |
+| **5D** | 後台 Orders UI 顯示與編輯付款 / 物流欄位     | `1144924` | ✅ 完成 |
+| **5E** | 批次付款狀態更新 / 批次出貨狀態更新          | `28629eb` | ✅ 完成 |
 
 ---
 
@@ -76,16 +76,16 @@
 
 ## 3. QA 結果
 
-| 項目 | 結果 |
-|------|------|
-| API tests | ✅ 55 / 55 通過 |
-| Typecheck（全專案） | ✅ 通過 |
-| shop-app build | ✅ 通過 |
-| Step 5D 金額 QA | ✅ 通過（商品小計 / 運費 / 訂單總額 / 待收金額計算正確） |
-| Step 5D 付款欄位儲存 QA | ✅ 通過 |
-| Step 5D 物流欄位儲存 QA | ✅ 通過 |
-| Step 5E 批次付款 QA | ✅ 通過（重測後正常，Invalid orderId 已確認為 api-server 舊 dist 問題，rebuild + restart 後解決） |
-| Step 5E 批次出貨 QA | ✅ 通過 |
+| 項目                    | 結果                                                                                              |
+| ----------------------- | ------------------------------------------------------------------------------------------------- |
+| API tests               | ✅ 55 / 55 通過                                                                                   |
+| Typecheck（全專案）     | ✅ 通過                                                                                           |
+| shop-app build          | ✅ 通過                                                                                           |
+| Step 5D 金額 QA         | ✅ 通過（商品小計 / 運費 / 訂單總額 / 待收金額計算正確）                                          |
+| Step 5D 付款欄位儲存 QA | ✅ 通過                                                                                           |
+| Step 5D 物流欄位儲存 QA | ✅ 通過                                                                                           |
+| Step 5E 批次付款 QA     | ✅ 通過（重測後正常，Invalid orderId 已確認為 api-server 舊 dist 問題，rebuild + restart 後解決） |
+| Step 5E 批次出貨 QA     | ✅ 通過                                                                                           |
 
 > **備注**：Step 5E QA 過程中發現 Invalid orderId 錯誤，根因為 api-server 仍在運行舊的 dist。
 > 解決方式：rebuild api-server → restart → 重測功能正常。
@@ -117,15 +117,15 @@
 
 ## 5. 個資與客服注意事項
 
-| 欄位 | 後台可見 | 公開查詢頁 | 說明 |
-|------|----------|------------|------|
-| `internalNote` | ✅ | ❌ 不公開 | 內部備註，不可洩露給買家 |
-| `paymentNote` | ✅ | ❌ 不公開 | 付款備註，不可洩露給買家 |
-| `paidAmount` | ✅ | ❌ 不公開 | 實際付款金額，屬財務資訊 |
-| `recipientPhone` | ✅ | ❌ 不公開（或遮罩） | 收件人電話 |
-| `recipientAddress` | ✅ | ❌ 不公開（或遮罩） | 收件人地址 |
-| `trackingCode` | ✅ | 可選（依產品決策） | 物流追蹤碼，可讓買家查詢 |
-| `publicToken` | ✅ | 用於驗證身份 | 訂單查詢 token，**不是**追蹤碼 |
+| 欄位               | 後台可見 | 公開查詢頁          | 說明                           |
+| ------------------ | -------- | ------------------- | ------------------------------ |
+| `internalNote`     | ✅       | ❌ 不公開           | 內部備註，不可洩露給買家       |
+| `paymentNote`      | ✅       | ❌ 不公開           | 付款備註，不可洩露給買家       |
+| `paidAmount`       | ✅       | ❌ 不公開           | 實際付款金額，屬財務資訊       |
+| `recipientPhone`   | ✅       | ❌ 不公開（或遮罩） | 收件人電話                     |
+| `recipientAddress` | ✅       | ❌ 不公開（或遮罩） | 收件人地址                     |
+| `trackingCode`     | ✅       | 可選（依產品決策）  | 物流追蹤碼，可讓買家查詢       |
+| `publicToken`      | ✅       | 用於驗證身份        | 訂單查詢 token，**不是**追蹤碼 |
 
 **重要提醒**：
 
@@ -167,11 +167,11 @@ f81eeb7 api-order-step5c-payment-logistics-fields
 
 ## 7. 下一階段建議
 
-| 選項 | 說明 | 建議時機 |
-|------|------|----------|
-| **Step 5F** | 撿貨單 / 出貨單 / 匯出 / 列印 / PDF / CSV | 本 Step 5 穩定後，另開任務 |
-| **Merge / Release Step 5** | 將 Step 5 合併回主線並部署 | 完成 release checklist 後 |
-| **整理 FamilyMart 工作線** | 將 FamilyMart 相關 commits / files 整理到獨立分支 | 依排程決定 |
+| 選項                       | 說明                                              | 建議時機                   |
+| -------------------------- | ------------------------------------------------- | -------------------------- |
+| **Step 5F**                | 撿貨單 / 出貨單 / 匯出 / 列印 / PDF / CSV         | 本 Step 5 穩定後，另開任務 |
+| **Merge / Release Step 5** | 將 Step 5 合併回主線並部署                        | 完成 release checklist 後  |
+| **整理 FamilyMart 工作線** | 將 FamilyMart 相關 commits / files 整理到獨立分支 | 依排程決定                 |
 
 > **Step 5F 建議另開任務**，不要直接在本分支擴大範圍，避免影響 Step 5 release 時程。
 
@@ -240,13 +240,13 @@ f81eeb7 api-order-step5c-payment-logistics-fields
 
 ## 9. Release 判斷規則
 
-| 狀態 | 定義 |
-|------|------|
-| **READY** | 所有 critical 項目通過，沒有 blocking bug。 |
-| **READY WITH NOTES** | 可出貨 / 試跑，但仍有非阻斷性待確認事項。 |
-| **NEEDS WORK** | 功能大致可用，但有 UI / 文案 / 小流程問題需修。 |
-| **NOT READY** | 任一 critical 項失敗。 |
-| **BLOCKED** | 缺環境、缺登入、缺測試資料，無法判斷。 |
+| 狀態                 | 定義                                            |
+| -------------------- | ----------------------------------------------- |
+| **READY**            | 所有 critical 項目通過，沒有 blocking bug。     |
+| **READY WITH NOTES** | 可出貨 / 試跑，但仍有非阻斷性待確認事項。       |
+| **NEEDS WORK**       | 功能大致可用，但有 UI / 文案 / 小流程問題需修。 |
+| **NOT READY**        | 任一 critical 項失敗。                          |
+| **BLOCKED**          | 缺環境、缺登入、缺測試資料，無法判斷。          |
 
 **Critical 項目定義**（以下任一失敗 → NOT READY）：
 

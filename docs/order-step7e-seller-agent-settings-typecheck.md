@@ -10,13 +10,13 @@
 
 ## 2. 檢查 Branch / Commit
 
-| 項目 | 狀態 |
-|------|------|
+| 項目          | 狀態                                                    |
+| ------------- | ------------------------------------------------------- |
 | worktree 路徑 | `/home/runner/workspace/.worktrees/step7e-code-restore` |
-| branch | `qa/step7e-seller-agent-settings-code-restore` ✓ |
-| HEAD | `626b399b245877b0e7ceac55893dc885a7b2ec0c` ✓ |
-| working tree | 乾淨（無 staged / modified files）✓ |
-| 包含 d441fd9 | ✓ |
+| branch        | `qa/step7e-seller-agent-settings-code-restore` ✓        |
+| HEAD          | `626b399b245877b0e7ceac55893dc885a7b2ec0c` ✓            |
+| working tree  | 乾淨（無 staged / modified files）✓                     |
+| 包含 d441fd9  | ✓                                                       |
 
 ## 3. 執行的 Typecheck 指令
 
@@ -55,12 +55,12 @@ rm lib/db/node_modules
 
 **結果：PASS（通過）**
 
-| 項目 | 結果 |
-|------|------|
-| exit code | `0` ✓ |
-| 錯誤輸出 | 無 ✓ |
-| `sellerAgentSettings.ts` 被 tsc 處理 | ✓（`--listFiles` 確認）|
-| 所有相關 schema 檔案 | 全部通過 ✓ |
+| 項目                                 | 結果                    |
+| ------------------------------------ | ----------------------- |
+| exit code                            | `0` ✓                   |
+| 錯誤輸出                             | 無 ✓                    |
+| `sellerAgentSettings.ts` 被 tsc 處理 | ✓（`--listFiles` 確認） |
+| 所有相關 schema 檔案                 | 全部通過 ✓              |
 
 ### 已確認 tsc 處理的 worktree 檔案
 

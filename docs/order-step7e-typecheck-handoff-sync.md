@@ -10,12 +10,12 @@
 
 ## 2. Typecheck Worktree / Branch
 
-| 項目 | 狀態 |
-|------|------|
-| worktree 路徑 | `/home/runner/workspace/.worktrees/step7e-code-restore` |
-| branch | `qa/step7e-seller-agent-settings-code-restore` |
-| 起始 commit | `626b399` (`feat-db-step7e-seller-agent-settings-schema`) |
-| 最新 commit | `437d7e9` (`docs-step7e-seller-agent-settings-typecheck`) |
+| 項目          | 狀態                                                      |
+| ------------- | --------------------------------------------------------- |
+| worktree 路徑 | `/home/runner/workspace/.worktrees/step7e-code-restore`   |
+| branch        | `qa/step7e-seller-agent-settings-code-restore`            |
+| 起始 commit   | `626b399` (`feat-db-step7e-seller-agent-settings-schema`) |
+| 最新 commit   | `437d7e9` (`docs-step7e-seller-agent-settings-typecheck`) |
 
 ## 3. 執行指令
 
@@ -34,12 +34,12 @@ rm lib/db/node_modules
 
 ## 4. 結果
 
-| 項目 | 結果 |
-|------|------|
-| typecheck exit code | `0` ✓ |
-| 錯誤輸出 | 無 ✓ |
-| `sellerAgentSettings.ts` 被 tsc 處理 | ✓（--listFiles 確認）|
-| tsc 版本 | 5.9.3 |
+| 項目                                 | 結果                  |
+| ------------------------------------ | --------------------- |
+| typecheck exit code                  | `0` ✓                 |
+| 錯誤輸出                             | 無 ✓                  |
+| `sellerAgentSettings.ts` 被 tsc 處理 | ✓（--listFiles 確認） |
+| tsc 版本                             | 5.9.3                 |
 
 **結論：TypeScript typecheck 有效通過。**
 
@@ -47,17 +47,18 @@ rm lib/db/node_modules
 
 是。
 
-| 項目 | 內容 |
-|------|------|
-| commit hash | `437d7e9` |
-| commit message | `docs-step7e-seller-agent-settings-typecheck` |
-| staged 檔案 | `docs/order-step7e-seller-agent-settings-typecheck.md` |
-| schema 是否修改 | 否 |
-| 是否 push | 否 |
+| 項目            | 內容                                                   |
+| --------------- | ------------------------------------------------------ |
+| commit hash     | `437d7e9`                                              |
+| commit message  | `docs-step7e-seller-agent-settings-typecheck`          |
+| staged 檔案     | `docs/order-step7e-seller-agent-settings-typecheck.md` |
+| schema 是否修改 | 否                                                     |
+| 是否 push       | 否                                                     |
 
 ## 6. 同步到 dev-handoff 的內容
 
 已更新主 workspace：
+
 - `dev-handoff/latest-B.json`：taskTitle = `Step 7E-1a-TYPECHECK：seller_agent_settings schema TypeScript 檢查`
 - `dev-handoff/latest-B.md`
 - `dev-handoff/latest.json`（relay copy）

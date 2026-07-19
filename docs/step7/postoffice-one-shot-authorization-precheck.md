@@ -40,20 +40,20 @@ Tracking last4: ****3004
 
 ## Preview 結果
 
-| 欄位 | 數值 |
-|------|------|
-| provider | postoffice / 中華郵政 |
-| order | #38 |
-| tracking last4 | ****3004 |
-| previewHash | hash-present |
-| external events | 6 |
-| DB existing events | 0 |
-| writable events | 6 |
-| latest status | 投遞成功 |
-| latest status time | 2026/06/11 10:32:48 |
-| preview 剩餘時間 | 599 秒（截圖當下） |
-| UI 訊息 | 目前有 6 筆新貨態事件可寫入 |
-| 寫入按鈕狀態 | 寫入事件（尚未啟用）— COMMIT_ENABLED=false 安全鎖定 |
+| 欄位               | 數值                                                |
+| ------------------ | --------------------------------------------------- |
+| provider           | postoffice / 中華郵政                               |
+| order              | #38                                                 |
+| tracking last4     | \*\*\*\*3004                                        |
+| previewHash        | hash-present                                        |
+| external events    | 6                                                   |
+| DB existing events | 0                                                   |
+| writable events    | 6                                                   |
+| latest status      | 投遞成功                                            |
+| latest status time | 2026/06/11 10:32:48                                 |
+| preview 剩餘時間   | 599 秒（截圖當下）                                  |
+| UI 訊息            | 目前有 6 筆新貨態事件可寫入                         |
+| 寫入按鈕狀態       | 寫入事件（尚未啟用）— COMMIT_ENABLED=false 安全鎖定 |
 
 ---
 
@@ -165,9 +165,9 @@ Step 7P-POSTOFFICE-ONE-SHOT-WRITE
 
 ## 參考文件
 
-| 文件 | 內容 |
-|------|------|
-| `docs/step7/one-shot-write-safety-gate.md` | one-shot write 安全門規格（授權格式、寫入前後步驟） |
-| `docs/step7/provider-write-candidate-decision.md` | postoffice 第一順位 candidate 決策依據 |
-| `docs/step7/step7p-published-ui-screenshot-evidence-closeout.md` | 上一輪 Published UI 截圖驗收結果 |
-| `docs/step7/manual-provider-production-can-write-candidates.md` | postoffice #38 can-write candidate 歷史詳情 |
+| 文件                                                             | 內容                                                |
+| ---------------------------------------------------------------- | --------------------------------------------------- |
+| `docs/step7/one-shot-write-safety-gate.md`                       | one-shot write 安全門規格（授權格式、寫入前後步驟） |
+| `docs/step7/provider-write-candidate-decision.md`                | postoffice 第一順位 candidate 決策依據              |
+| `docs/step7/step7p-published-ui-screenshot-evidence-closeout.md` | 上一輪 Published UI 截圖驗收結果                    |
+| `docs/step7/manual-provider-production-can-write-candidates.md`  | postoffice #38 can-write candidate 歷史詳情         |

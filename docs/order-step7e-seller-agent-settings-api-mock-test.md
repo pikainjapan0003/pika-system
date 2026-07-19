@@ -10,21 +10,21 @@
 
 ## 2. API Worktree / Branch
 
-| 項目 | 值 |
-|------|-----|
+| 項目     | 值                                             |
+| -------- | ---------------------------------------------- |
 | worktree | `/home/runner/workspace/.worktrees/step7e-api` |
-| branch | `qa/step7e-seller-agent-settings-api` |
+| branch   | `qa/step7e-seller-agent-settings-api`          |
 
 ## 3. Test Environment
 
-| 項目 | 值 |
-|------|-----|
-| Runtime | Node.js v24 built-in `node:test` |
-| TypeScript Loader | tsx ESM (`tsx/dist/esm/index.cjs`) |
-| Flag | `--experimental-test-module-mocks` |
-| DB mock | `mock.module('@workspace/db', ...)` |
-| Auth mock | `mock.module('@clerk/express', ...)` |
-| Real DB | 不需要（全部 mock） |
+| 項目              | 值                                   |
+| ----------------- | ------------------------------------ |
+| Runtime           | Node.js v24 built-in `node:test`     |
+| TypeScript Loader | tsx ESM (`tsx/dist/esm/index.cjs`)   |
+| Flag              | `--experimental-test-module-mocks`   |
+| DB mock           | `mock.module('@workspace/db', ...)`  |
+| Auth mock         | `mock.module('@clerk/express', ...)` |
+| Real DB           | 不需要（全部 mock）                  |
 
 ## 4. Test Run 指令
 
@@ -54,99 +54,102 @@ tests 45  |  pass 45  |  fail 0  |  skip 0
 
 ### Auth — GET（4 tests）
 
-| 測試 | 狀態 |
-|------|------|
-| no auth header → 401 | ✓ |
-| store not found → 404 | ✓ |
-| wrong store owner → 403 | ✓ |
-| invalid storeId (non-numeric) → 400 | ✓ |
+| 測試                                | 狀態 |
+| ----------------------------------- | ---- |
+| no auth header → 401                | ✓    |
+| store not found → 404               | ✓    |
+| wrong store owner → 403             | ✓    |
+| invalid storeId (non-numeric) → 400 | ✓    |
 
 ### Auth — PATCH（3 tests）
 
-| 測試 | 狀態 |
-|------|------|
-| no auth header → 401 | ✓ |
-| wrong store owner → 403, upsert NOT called | ✓ |
-| invalid storeId (non-numeric) → 400 | ✓ |
+| 測試                                       | 狀態 |
+| ------------------------------------------ | ---- |
+| no auth header → 401                       | ✓    |
+| wrong store owner → 403, upsert NOT called | ✓    |
+| invalid storeId (non-numeric) → 400        | ✓    |
 
 ### GET no-row → default response（9 tests）
 
-| 測試 | 狀態 |
-|------|------|
-| returns 200 with data wrapper | ✓ |
-| default agentStatus = disabled | ✓ |
-| default agentMode = rule_worker | ✓ |
-| default queryFrequency = manual | ✓ |
-| default webhookEnabled = false | ✓ |
-| default hasWebhookSecret = false | ✓ |
-| response does NOT contain webhookSecretHash | ✓ |
-| response does NOT contain webhookSecret key | ✓ |
-| GET no-row does NOT call upsert (no DB write) | ✓ |
+| 測試                                          | 狀態 |
+| --------------------------------------------- | ---- |
+| returns 200 with data wrapper                 | ✓    |
+| default agentStatus = disabled                | ✓    |
+| default agentMode = rule_worker               | ✓    |
+| default queryFrequency = manual               | ✓    |
+| default webhookEnabled = false                | ✓    |
+| default hasWebhookSecret = false              | ✓    |
+| response does NOT contain webhookSecretHash   | ✓    |
+| response does NOT contain webhookSecret key   | ✓    |
+| GET no-row does NOT call upsert (no DB write) | ✓    |
 
 ### GET row exists → safe response（6 tests）
 
-| 測試 | 狀態 |
-|------|------|
-| returns 200 | ✓ |
-| hasWebhookSecret = true when hash is present in DB | ✓ |
-| webhookSecretHash field and value NOT in response body | ✓ |
-| webhookSecret key NOT in response | ✓ |
-| enabledLogistics array returned correctly from DB row | ✓ |
-| hasWebhookSecret = false when row has null hash | ✓ |
+| 測試                                                   | 狀態 |
+| ------------------------------------------------------ | ---- |
+| returns 200                                            | ✓    |
+| hasWebhookSecret = true when hash is present in DB     | ✓    |
+| webhookSecretHash field and value NOT in response body | ✓    |
+| webhookSecret key NOT in response                      | ✓    |
+| enabledLogistics array returned correctly from DB row  | ✓    |
+| hasWebhookSecret = false when row has null hash        | ✓    |
 
 ### PATCH forbidden/unknown keys → 400（7 tests）
 
-| 測試 | 狀態 |
-|------|------|
-| unknown key → 400 | ✓ |
-| forbidden key storeId → 400 | ✓ |
-| forbidden key merchantId → 400 | ✓ |
-| forbidden key id → 400 | ✓ |
-| forbidden key webhookSecretHash → 400 | ✓ |
-| forbidden key lastRunAt → 400 | ✓ |
-| empty body → 400 | ✓ |
+| 測試                                  | 狀態 |
+| ------------------------------------- | ---- |
+| unknown key → 400                     | ✓    |
+| forbidden key storeId → 400           | ✓    |
+| forbidden key merchantId → 400        | ✓    |
+| forbidden key id → 400                | ✓    |
+| forbidden key webhookSecretHash → 400 | ✓    |
+| forbidden key lastRunAt → 400         | ✓    |
+| empty body → 400                      | ✓    |
 
 ### PATCH agentMode validation（4 tests）
 
-| 測試 | 狀態 |
-|------|------|
-| agentMode = platform_managed_reserved → 400 | ✓ |
-| agentMode = unknown_mode → 400 | ✓ |
-| agentMode = rule_worker → 200 | ✓ |
-| agentMode = self_hosted_webhook → 200 | ✓ |
+| 測試                                        | 狀態 |
+| ------------------------------------------- | ---- |
+| agentMode = platform_managed_reserved → 400 | ✓    |
+| agentMode = unknown_mode → 400              | ✓    |
+| agentMode = rule_worker → 200               | ✓    |
+| agentMode = self_hosted_webhook → 200       | ✓    |
 
 ### PATCH webhookSecret hashing（7 tests）— 安全性關鍵
 
-| 測試 | 狀態 |
-|------|------|
-| upsert 收到 SHA-256 hash，不含明文 | ✓ |
-| upsert 不儲存 webhookSecret 明文 | ✓ |
-| response 不含 webhookSecretHash 欄位或值 | ✓ |
-| response 不含 webhookSecret 明文 | ✓ |
-| hasWebhookSecret = true after setting secret | ✓ |
-| webhookSecret too short (< 16 chars) → 400 | ✓ |
-| webhookSecret = null → clears secret (hash: null) | ✓ |
+| 測試                                              | 狀態 |
+| ------------------------------------------------- | ---- |
+| upsert 收到 SHA-256 hash，不含明文                | ✓    |
+| upsert 不儲存 webhookSecret 明文                  | ✓    |
+| response 不含 webhookSecretHash 欄位或值          | ✓    |
+| response 不含 webhookSecret 明文                  | ✓    |
+| hasWebhookSecret = true after setting secret      | ✓    |
+| webhookSecret too short (< 16 chars) → 400        | ✓    |
+| webhookSecret = null → clears secret (hash: null) | ✓    |
 
 ### PATCH upsert success（5 tests）
 
-| 測試 | 狀態 |
-|------|------|
-| 200, upsert storeId 來自 URL params | ✓ |
-| upsert merchantId 來自 Clerk session（不信任 body）| ✓ |
-| response data wrapper with correct agentStatus | ✓ |
-| agentStatus = invalid_value → 400 | ✓ |
-| DB error → 500 | ✓ |
+| 測試                                                | 狀態 |
+| --------------------------------------------------- | ---- |
+| 200, upsert storeId 來自 URL params                 | ✓    |
+| upsert merchantId 來自 Clerk session（不信任 body） | ✓    |
+| response data wrapper with correct agentStatus      | ✓    |
+| agentStatus = invalid_value → 400                   | ✓    |
+| DB error → 500                                      | ✓    |
 
 ## 7. Mock 設計
 
 ### @clerk/express mock
 
 ```javascript
-mock.module('@clerk/express', {
+mock.module("@clerk/express", {
   namedExports: {
     getAuth: (req) => {
-      const userId = req.headers?.['x-test-user-id'] ?? null;
-      return { userId: userId || null, sessionClaims: userId ? { userId } : undefined };
+      const userId = req.headers?.["x-test-user-id"] ?? null;
+      return {
+        userId: userId || null,
+        sessionClaims: userId ? { userId } : undefined,
+      };
     },
     clerkMiddleware: () => (_req, _res, next) => next(),
   },
@@ -156,7 +159,7 @@ mock.module('@clerk/express', {
 ### @workspace/db mock
 
 ```javascript
-mock.module('@workspace/db', {
+mock.module("@workspace/db", {
   namedExports: {
     db: {
       select: () => ({
@@ -164,7 +167,7 @@ mock.module('@workspace/db', {
           where: () => ({
             limit: async () => {
               if (table === mockStoresTable) return [...mockStoreCheckResult]; // verifyStoreOwner
-              return [...mockSettingsResult];                                  // GET settings
+              return [...mockSettingsResult]; // GET settings
             },
           }),
         }),
@@ -209,14 +212,15 @@ mock.module('@workspace/db', {
 ## 9. logger.error 注意事項
 
 測試輸出中有一行 `seller_agent_settings_patch_failed` error log，這是 `DB error → 500` 測試案例的**預期行為**：
+
 - mock 強制拋出 `Error('DB connection lost')`
 - API catch block 呼叫 `logger.error()`
 - 此為正常 test output，非測試失敗
 
 ## 10. Commit 結果
 
-| commit | message | 角色 |
-|--------|---------|------|
+| commit    | message                                 | 角色       |
+| --------- | --------------------------------------- | ---------- |
 | `c73a68f` | `test-api-step7e-seller-agent-settings` | mock tests |
 
 ## 11. 未執行項目
@@ -229,10 +233,10 @@ mock.module('@workspace/db', {
 
 ## 12. 風險與待確認
 
-| 風險 | 嚴重度 | 說明 |
-|------|--------|------|
-| `seller_agent_settings` table 未建立 | 中 | integration test 需 DB push 後才可執行 |
-| mock 的 `.from()` 依賴 table identity | 低 | mock 設計按 table 物件識別路由，測試邏輯清晰 |
+| 風險                                  | 嚴重度 | 說明                                         |
+| ------------------------------------- | ------ | -------------------------------------------- |
+| `seller_agent_settings` table 未建立  | 中     | integration test 需 DB push 後才可執行       |
+| mock 的 `.from()` 依賴 table identity | 低     | mock 設計按 table 物件識別路由，測試邏輯清晰 |
 
 ## 13. 下一步建議
 

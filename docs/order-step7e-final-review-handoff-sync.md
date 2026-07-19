@@ -6,6 +6,7 @@
 Step 7E Final Review 的 handoff 同步記錄。
 
 Final Review 實際執行於 worktree：
+
 ```
 /home/runner/workspace/.worktrees/step7e-final-review
 branch: qa/step7e-seller-agent-settings-final-review
@@ -50,16 +51,16 @@ remaining_rows = 0（store_id = 1 smoke test row 已刪除）
 
 ## 8. Test Evidence
 
-| 項目 | 結果 |
-|------|------|
-| DB schema typecheck | ✅ PASS |
-| API mock tests | ✅ 45 pass / 0 fail |
-| API integration tests | ✅ 25 pass / 0 fail |
-| typecheck:libs (pnpm -w) | ✅ 0 errors |
-| UI typecheck | ✅ 0 errors |
-| vite build | ✅ success (2.75s) |
-| UI review | ✅ PASS |
-| Browser smoke test | ✅ PASS |
+| 項目                     | 結果                |
+| ------------------------ | ------------------- |
+| DB schema typecheck      | ✅ PASS             |
+| API mock tests           | ✅ 45 pass / 0 fail |
+| API integration tests    | ✅ 25 pass / 0 fail |
+| typecheck:libs (pnpm -w) | ✅ 0 errors         |
+| UI typecheck             | ✅ 0 errors         |
+| vite build               | ✅ success (2.75s)  |
+| UI review                | ✅ PASS             |
+| Browser smoke test       | ✅ PASS             |
 
 ## 9. 下一步建議
 

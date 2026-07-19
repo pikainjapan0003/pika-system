@@ -10,38 +10,38 @@
 
 ## 2. API Worktree / Branch
 
-| 項目 | 值 |
-|------|-----|
+| 項目     | 值                                             |
+| -------- | ---------------------------------------------- |
 | worktree | `/home/runner/workspace/.worktrees/step7e-api` |
-| branch | `qa/step7e-seller-agent-settings-api` |
+| branch   | `qa/step7e-seller-agent-settings-api`          |
 
 ## 3. Reviewed Commit
 
-| commit | message |
-|--------|---------|
+| commit    | message                                               |
+| --------- | ----------------------------------------------------- |
 | `27bc580` | `docs-step7e-seller-agent-settings-db-push-preflight` |
 
 ## 4. Env Key Existence（不含 secret value）
 
-| Key | 狀態 |
-|-----|------|
+| Key            | 狀態    |
+| -------------- | ------- |
 | `DATABASE_URL` | **SET** |
-| `PGHOST` | **SET** |
-| `PGDATABASE` | **SET** |
-| `PGUSER` | **SET** |
-| `PGPASSWORD` | **SET** |
-| `PGPORT` | **SET** |
+| `PGHOST`       | **SET** |
+| `PGDATABASE`   | **SET** |
+| `PGUSER`       | **SET** |
+| `PGPASSWORD`   | **SET** |
+| `PGPORT`       | **SET** |
 
 ### DATABASE_URL 解析（不含 password）
 
-| 欄位 | 值 |
-|------|-----|
-| protocol | `postgresql:` |
-| host | `helium` |
-| port | (default — 5432) |
-| database | `heliumdb` |
-| username | SET |
-| password | SET（不輸出）|
+| 欄位     | 值               |
+| -------- | ---------------- |
+| protocol | `postgresql:`    |
+| host     | `helium`         |
+| port     | (default — 5432) |
+| database | `heliumdb`       |
+| username | SET              |
+| password | SET（不輸出）    |
 
 ## 5. DB Identity 檢查（唯讀）
 
@@ -58,10 +58,11 @@ SELECT
 結果：
 
 | database | schema | user_name | has_server_addr |
-|----------|--------|-----------|-----------------|
+| -------- | ------ | --------- | --------------- |
 | heliumdb | public | postgres  | f               |
 
 **判斷**：
+
 - `database = heliumdb`，`host = helium` → **Replit 本機開發 PostgreSQL**
 - `inet_server_addr() IS NOT NULL = f` → 本機 socket 連線（非遠端）
 - 非雲端 DB / production DB
@@ -77,12 +78,12 @@ SELECT
 結果：
 
 | stores_table | seller_agent_settings_table |
-|---|---|
-| stores | *(NULL)* |
+| ------------ | --------------------------- |
+| stores       | _(NULL)_                    |
 
-| 表名 | 存在 | 說明 |
-|------|------|------|
-| `stores` | **✓ 存在** | FK 依賴已就緒 |
+| 表名                    | 存在         | 說明             |
+| ----------------------- | ------------ | ---------------- |
+| `stores`                | **✓ 存在**   | FK 依賴已就緒    |
 | `seller_agent_settings` | **✗ 不存在** | DB push 後將建立 |
 
 ## 7. Public Tables 盤點
@@ -97,32 +98,32 @@ ORDER BY table_name;
 
 結果（9 tables）：
 
-| table_name |
-|------------|
-| agent_run_logs |
-| cvs_stores |
-| orders |
-| product_categories |
-| products |
-| seller_agent_tokens |
+| table_name               |
+| ------------------------ |
+| agent_run_logs           |
+| cvs_stores               |
+| orders                   |
+| product_categories       |
+| products                 |
+| seller_agent_tokens      |
 | shipment_tracking_events |
-| shipment_trackings |
-| stores |
+| shipment_trackings       |
+| stores                   |
 
 與專案 `lib/db/src/schema/index.ts` exports 對照：
 
-| Schema Export | DB 存在 |
-|--------------|---------|
-| stores | ✓ |
-| productCategories | ✓（products + product_categories）|
-| products | ✓ |
-| orders | ✓ |
-| cvsStores | ✓ |
-| shipmentTrackings | ✓ |
-| shipmentTrackingEvents | ✓ |
-| sellerAgentTokens | ✓ |
-| agentRunLogs | ✓ |
-| **sellerAgentSettings** | **✗（待建立）** |
+| Schema Export           | DB 存在                            |
+| ----------------------- | ---------------------------------- |
+| stores                  | ✓                                  |
+| productCategories       | ✓（products + product_categories） |
+| products                | ✓                                  |
+| orders                  | ✓                                  |
+| cvsStores               | ✓                                  |
+| shipmentTrackings       | ✓                                  |
+| shipmentTrackingEvents  | ✓                                  |
+| sellerAgentTokens       | ✓                                  |
+| agentRunLogs            | ✓                                  |
+| **sellerAgentSettings** | **✗（待建立）**                    |
 
 ## 8. Stores Count 確認
 
@@ -131,8 +132,8 @@ SELECT COUNT(*) AS stores_count FROM public.stores;
 ```
 
 | stores_count |
-|--------------|
-| 2 |
+| ------------ |
+| 2            |
 
 `stores` 表有 2 筆資料，FK 依賴可以正常運作。
 
@@ -140,14 +141,14 @@ SELECT COUNT(*) AS stores_count FROM public.stores;
 
 **結論：A — Ready for DB push**
 
-| 條件 | 狀態 |
-|------|------|
-| `DATABASE_URL` 存在 | ✓ |
-| DB 可連線 | ✓ |
-| 確認非 production DB | ✓（host=helium，Replit 本機 dev）|
-| `stores` 表存在 | ✓（2 rows，FK 就緒）|
-| `seller_agent_settings` 表不存在 | ✓（push 後將建立）|
-| public tables 符合開發環境預期 | ✓（9 個 tables，全為專案已知表）|
+| 條件                             | 狀態                              |
+| -------------------------------- | --------------------------------- |
+| `DATABASE_URL` 存在              | ✓                                 |
+| DB 可連線                        | ✓                                 |
+| 確認非 production DB             | ✓（host=helium，Replit 本機 dev） |
+| `stores` 表存在                  | ✓（2 rows，FK 就緒）              |
+| `seller_agent_settings` 表不存在 | ✓（push 後將建立）                |
+| public tables 符合開發環境預期   | ✓（9 個 tables，全為專案已知表）  |
 
 無 Blocked 或 Needs-user-confirmation 情況。
 
@@ -164,6 +165,7 @@ pnpm run push
 ```
 
 預期 push 結果：
+
 - 建立 `seller_agent_settings` table
 - 建立 3 個 indexes
 - 建立 UNIQUE constraint `seller_agent_settings_store_id_unique`
@@ -185,11 +187,11 @@ pnpm run push
 
 ## 12. 風險與待確認
 
-| 風險 | 嚴重度 | 說明 |
-|------|--------|------|
-| drizzle-kit push 可能對其他表提出 ALTER | 中 | 須確認互動式 diff 只有 seller_agent_settings |
-| worktree node_modules 是否有 drizzle-kit | 中 | 需確認 pnpm run push 可在 worktree 執行 |
-| `0001_seller_agent_settings.sql` 未來編號衝突 | 低 | 維持 push-only 則無影響 |
+| 風險                                          | 嚴重度 | 說明                                         |
+| --------------------------------------------- | ------ | -------------------------------------------- |
+| drizzle-kit push 可能對其他表提出 ALTER       | 中     | 須確認互動式 diff 只有 seller_agent_settings |
+| worktree node_modules 是否有 drizzle-kit      | 中     | 需確認 pnpm run push 可在 worktree 執行      |
+| `0001_seller_agent_settings.sql` 未來編號衝突 | 低     | 維持 push-only 則無影響                      |
 
 ## 13. 下一步建議
 

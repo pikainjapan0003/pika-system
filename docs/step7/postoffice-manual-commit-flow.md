@@ -1,4 +1,5 @@
 # Postoffice Manual Preview / Commit Flow
+
 # 郵局手動貨態 preview / commit 正式流程
 
 > **文件狀態**：已通過 production E2E（2026-06-13）  
@@ -8,12 +9,12 @@
 
 ## 目前支援邊界
 
-| Provider | 狀態 |
-|----------|------|
-| **familymart** | ✅ 唯一正式 auto sync provider；scheduled sync 僅允許此 provider |
-| **postoffice** | ✅ manual preview / commit gate 已通過 production E2E |
-| **tcat（黑貓）** | ⚠️ 可複製同流程，但尚未完成 production E2E（見後續擴充）|
-| **7-11** | ❌ 尚未支援，不得宣稱正式整合；route 已硬拒 |
+| Provider         | 狀態                                                             |
+| ---------------- | ---------------------------------------------------------------- |
+| **familymart**   | ✅ 唯一正式 auto sync provider；scheduled sync 僅允許此 provider |
+| **postoffice**   | ✅ manual preview / commit gate 已通過 production E2E            |
+| **tcat（黑貓）** | ⚠️ 可複製同流程，但尚未完成 production E2E（見後續擴充）         |
+| **7-11**         | ❌ 尚未支援，不得宣稱正式整合；route 已硬拒                      |
 
 **重要限制**：
 
@@ -25,20 +26,20 @@
 
 ## 正式站成功案例（production E2E 記錄）
 
-| 欄位 | 值 |
-|------|---|
-| production URL | `https://drawdream.replit.app` |
-| storeId | 2 |
-| storeName | 我的代購店 |
-| orderId | 39 |
-| trackingId | 2 |
-| provider | postoffice |
-| /preview 結果 | ok=true, dryRun=true, wouldWriteEvents=5, duplicateEvents=0 |
-| /commit 結果 | committed=true, insertedEventCount=5, idempotentNoop=false |
-| latestStatusText | 投遞成功 |
-| latestEventAt | 2026/06/08 11:21:53 |
-| trackingStatus after commit | **delivered** |
-| post-commit /preview | wouldWriteEvents=5, **duplicateEvents=5**（5 筆全部已存在，不應再次 commit）|
+| 欄位                        | 值                                                                           |
+| --------------------------- | ---------------------------------------------------------------------------- |
+| production URL              | `https://drawdream.replit.app`                                               |
+| storeId                     | 2                                                                            |
+| storeName                   | 我的代購店                                                                   |
+| orderId                     | 39                                                                           |
+| trackingId                  | 2                                                                            |
+| provider                    | postoffice                                                                   |
+| /preview 結果               | ok=true, dryRun=true, wouldWriteEvents=5, duplicateEvents=0                  |
+| /commit 結果                | committed=true, insertedEventCount=5, idempotentNoop=false                   |
+| latestStatusText            | 投遞成功                                                                     |
+| latestEventAt               | 2026/06/08 11:21:53                                                          |
+| trackingStatus after commit | **delivered**                                                                |
+| post-commit /preview        | wouldWriteEvents=5, **duplicateEvents=5**（5 筆全部已存在，不應再次 commit） |
 
 **duplicateEvents=5 語義**：代表 5 筆事件已寫入 DB，idempotency key 全部命中。再次 /commit 將回 idempotentNoop=true，insertedEventCount=0。
 
@@ -81,20 +82,20 @@
 
 ### 重點回傳欄位
 
-| 欄位 | 說明 |
-|------|------|
-| `ok` | 必須為 `true` |
-| `dryRun` | 必須為 `true`（永遠 dryRun，不寫入）|
-| `previewHashAvailable` | `true` = SESSION_SECRET 有效，可簽發 previewHash |
-| `jobs[0].previewHash` | HMAC token，TTL 10 分鐘；**不可貼出完整值** |
-| `jobs[0].trackingId` | 對應的 trackingId |
-| `jobs[0].trackingCode` | 物流單號（/commit 需帶回）|
-| `jobs[0].wouldWriteEvents` | 外部 API 查到的總事件數 |
-| `jobs[0].duplicateEvents` | 其中已存在於 DB 的事件數（idempotency key 比對）|
-| `jobs[0].latestStatusText` | 最新貨態文字（/commit 需帶回作 drift check）|
-| `jobs[0].latestEventAt` | 最新事件時間（/commit 需帶回作 drift check）|
-| `jobs[0].status` | `"success"` 才可繼續 commit；`"empty"` 代表無新事件 |
-| `jobs[0].errorCode` | 必須為 `null` / `undefined` |
+| 欄位                       | 說明                                                |
+| -------------------------- | --------------------------------------------------- |
+| `ok`                       | 必須為 `true`                                       |
+| `dryRun`                   | 必須為 `true`（永遠 dryRun，不寫入）                |
+| `previewHashAvailable`     | `true` = SESSION_SECRET 有效，可簽發 previewHash    |
+| `jobs[0].previewHash`      | HMAC token，TTL 10 分鐘；**不可貼出完整值**         |
+| `jobs[0].trackingId`       | 對應的 trackingId                                   |
+| `jobs[0].trackingCode`     | 物流單號（/commit 需帶回）                          |
+| `jobs[0].wouldWriteEvents` | 外部 API 查到的總事件數                             |
+| `jobs[0].duplicateEvents`  | 其中已存在於 DB 的事件數（idempotency key 比對）    |
+| `jobs[0].latestStatusText` | 最新貨態文字（/commit 需帶回作 drift check）        |
+| `jobs[0].latestEventAt`    | 最新事件時間（/commit 需帶回作 drift check）        |
+| `jobs[0].status`           | `"success"` 才可繼續 commit；`"empty"` 代表無新事件 |
+| `jobs[0].errorCode`        | 必須為 `null` / `undefined`                         |
 
 ### previewHash 安全規則
 
@@ -109,16 +110,16 @@
 
 ### Request body（全部必填）
 
-| 欄位 | 型別 | 來源 |
-|------|------|------|
-| `provider` | string | `"postoffice"` 或 `"tcat"` |
-| `trackingId` | number | `jobs[0].trackingId` |
-| `trackingCode` | string | `jobs[0].trackingCode` |
-| `previewHash` | string | `jobs[0].previewHash` |
-| `confirmText` | string | 固定值 `"WRITE_TRACKING_EVENTS"` |
-| `expectedEventCount` | number | `jobs[0].wouldWriteEvents` |
+| 欄位                       | 型別           | 來源                               |
+| -------------------------- | -------------- | ---------------------------------- |
+| `provider`                 | string         | `"postoffice"` 或 `"tcat"`         |
+| `trackingId`               | number         | `jobs[0].trackingId`               |
+| `trackingCode`             | string         | `jobs[0].trackingCode`             |
+| `previewHash`              | string         | `jobs[0].previewHash`              |
+| `confirmText`              | string         | 固定值 `"WRITE_TRACKING_EVENTS"`   |
+| `expectedEventCount`       | number         | `jobs[0].wouldWriteEvents`         |
 | `expectedLatestStatusText` | string \| null | `jobs[0].latestStatusText ?? null` |
-| `expectedLatestEventAt` | string \| null | `jobs[0].latestEventAt ?? null` |
+| `expectedLatestEventAt`    | string \| null | `jobs[0].latestEventAt ?? null`    |
 
 **重要**：所有 `expected*` 欄位必須來自**同一次** /preview response。不可混用不同次 preview 的值。
 
@@ -176,19 +177,19 @@ writeMode="write" 正式寫入
 
 ## 禁止事項
 
-| 禁止 | 說明 |
-|------|------|
+| 禁止                                   | 說明                                      |
+| -------------------------------------- | ----------------------------------------- |
 | 不可對 storeId=1 / trackingId=153 操作 | workspace dev DB artifacts，非 production |
-| 不可 7-11 | route 已硬拒，尚未實作 |
-| 不可 familymart 走 manual commit | familymart 請用批次同步；route 已硬拒 |
-| 不可未授權 commit | 每次 commit 需獨立授權 |
-| 不可使用過期 previewHash | TTL 10 分鐘 |
-| 不可多筆 tracking 同時 commit | 一次一筆，避免 drift 混淆 |
-| 不可在 PREVIEW_DRIFTED 時硬寫 | 必須重新 /preview |
-| 不可貼 cookie / token / secret | 安全規範 |
-| 不可貼完整 previewHash | 安全規範 |
-| 不可改 cron | 與 manual commit 流程無關 |
-| 不可改 supportsAutoSync | familymart 專屬 |
+| 不可 7-11                              | route 已硬拒，尚未實作                    |
+| 不可 familymart 走 manual commit       | familymart 請用批次同步；route 已硬拒     |
+| 不可未授權 commit                      | 每次 commit 需獨立授權                    |
+| 不可使用過期 previewHash               | TTL 10 分鐘                               |
+| 不可多筆 tracking 同時 commit          | 一次一筆，避免 drift 混淆                 |
+| 不可在 PREVIEW_DRIFTED 時硬寫          | 必須重新 /preview                         |
+| 不可貼 cookie / token / secret         | 安全規範                                  |
+| 不可貼完整 previewHash                 | 安全規範                                  |
+| 不可改 cron                            | 與 manual commit 流程無關                 |
+| 不可改 supportsAutoSync                | familymart 專屬                           |
 
 ---
 
@@ -197,6 +198,7 @@ writeMode="write" 正式寫入
 **J5F — UI 正式寫入按鈕設計 spec（不施工）**
 
 前端 owner 介面規劃：
+
 - 「查詢」→ 呼叫 /preview dryRun → 顯示 wouldWriteEvents + previewHash 狀態
 - 「確認寫入」按鈕（僅 wouldWriteEvents > 0 且 duplicateEvents = 0 時啟用）→ 呼叫 /commit
 - 結果顯示：insertedEventCount / trackingStatus / latestStatusText

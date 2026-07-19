@@ -63,12 +63,12 @@ scheduled sync = 不適用，此安全門不開排程
 
 ## 3. Candidate 狀態
 
-| Provider | 目前層級 | Candidate 狀態 | 安全門狀態 |
-|----------|---------|---------------|-----------|
-| familymart | Level 4 — Formal Auto Sync | 不參與 | 不適用 |
+| Provider   | 目前層級                      | Candidate 狀態                         | 安全門狀態         |
+| ---------- | ----------------------------- | -------------------------------------- | ------------------ |
+| familymart | Level 4 — Formal Auto Sync    | 不參與                                 | 不適用             |
 | postoffice | Level 1 — Manual Preview-Only | **第一順位 candidate（尚未授權寫入）** | 規格已建立；待授權 |
-| tcat | Level 1 — Manual Preview-Only | **第二順位 candidate（尚未授權寫入）** | 規格已建立；待授權 |
-| 711 | Level 1 — Manual Preview-Only | 不列入第一批 | 不適用 |
+| tcat       | Level 1 — Manual Preview-Only | **第二順位 candidate（尚未授權寫入）** | 規格已建立；待授權 |
+| 711        | Level 1 — Manual Preview-Only | 不列入第一批                           | 不適用             |
 
 **重要**：candidate 狀態不等於已授權寫入。進入寫入流程前必須取得使用者明確授權。
 
@@ -120,18 +120,18 @@ Expected latest status: （使用者填入）
 
 執行 one-shot write 前，以下十項必須全部通過：
 
-| # | 檢查項目 | 確認方式 |
-|---|---------|---------|
-| 1 | Provider 必須是已決策 candidate（postoffice 或 tcat） | 確認 provider 欄位 |
-| 2 | 使用者必須明確授權（提供完整授權文字） | 確認授權文字齊備 |
-| 3 | 僅能單一 provider / 單一 order / 單一 tracking | 確認無多 provider / 多 order 混入 |
-| 4 | previewHash 必須為 hash-present | 確認 preview 結果 hash 狀態 |
-| 5 | preview 未過期（previewExpiresAt 未到期） | 確認 preview 剩餘秒數 > 0 |
-| 6 | 外部事件數、DB 既有事件數、可新增事件數必須與授權一致 | 對比授權文字與 preview job 欄位 |
-| 7 | latest status 必須與授權一致 | 對比授權文字與 preview job.latestStatusText |
-| 8 | COMMIT_ENABLED 不得長期開啟；寫入後立即關回 | 確認關門計畫 |
-| 9 | 寫入前必須確認無 unrelated runtime diff（`git diff -- .replit replit.nix artifacts/`） | 執行 diff 指令，確認空 |
-| 10 | 寫入前必須確認不會動 scheduled sync（cron / 排程相關檔案無異動） | 確認 diff 空 |
+| #   | 檢查項目                                                                               | 確認方式                                    |
+| --- | -------------------------------------------------------------------------------------- | ------------------------------------------- |
+| 1   | Provider 必須是已決策 candidate（postoffice 或 tcat）                                  | 確認 provider 欄位                          |
+| 2   | 使用者必須明確授權（提供完整授權文字）                                                 | 確認授權文字齊備                            |
+| 3   | 僅能單一 provider / 單一 order / 單一 tracking                                         | 確認無多 provider / 多 order 混入           |
+| 4   | previewHash 必須為 hash-present                                                        | 確認 preview 結果 hash 狀態                 |
+| 5   | preview 未過期（previewExpiresAt 未到期）                                              | 確認 preview 剩餘秒數 > 0                   |
+| 6   | 外部事件數、DB 既有事件數、可新增事件數必須與授權一致                                  | 對比授權文字與 preview job 欄位             |
+| 7   | latest status 必須與授權一致                                                           | 對比授權文字與 preview job.latestStatusText |
+| 8   | COMMIT_ENABLED 不得長期開啟；寫入後立即關回                                            | 確認關門計畫                                |
+| 9   | 寫入前必須確認無 unrelated runtime diff（`git diff -- .replit replit.nix artifacts/`） | 執行 diff 指令，確認空                      |
+| 10  | 寫入前必須確認不會動 scheduled sync（cron / 排程相關檔案無異動）                       | 確認 diff 空                                |
 
 ---
 
@@ -139,16 +139,16 @@ Expected latest status: （使用者填入）
 
 one-shot write 執行期間必須嚴格遵守：
 
-| # | 限制 | 說明 |
-|---|------|------|
-| 1 | 只能執行一次 | 不可重複呼叫 /manual-provider/commit |
-| 2 | 只能打指定 commit route | 不可呼叫其他寫入 API |
-| 3 | 不能批次寫入 | trackingIds 只含一筆 |
-| 4 | 不能寫其他 provider | 只允許授權 provider |
-| 5 | 不能寫其他 order | 只允許授權 orderId |
-| 6 | 不能修改主訂單狀態 | commit route 只寫 tracking events |
-| 7 | 不能新增 scheduled sync | cron / 排程相關設定保持不動 |
-| 8 | 不能開 UI 常態寫入按鈕 | COMMIT_ENABLED 只在 one-shot 授權期間設為 true |
+| #   | 限制                    | 說明                                           |
+| --- | ----------------------- | ---------------------------------------------- |
+| 1   | 只能執行一次            | 不可重複呼叫 /manual-provider/commit           |
+| 2   | 只能打指定 commit route | 不可呼叫其他寫入 API                           |
+| 3   | 不能批次寫入            | trackingIds 只含一筆                           |
+| 4   | 不能寫其他 provider     | 只允許授權 provider                            |
+| 5   | 不能寫其他 order        | 只允許授權 orderId                             |
+| 6   | 不能修改主訂單狀態      | commit route 只寫 tracking events              |
+| 7   | 不能新增 scheduled sync | cron / 排程相關設定保持不動                    |
+| 8   | 不能開 UI 常態寫入按鈕  | COMMIT_ENABLED 只在 one-shot 授權期間設為 true |
 
 ---
 
@@ -156,17 +156,17 @@ one-shot write 執行期間必須嚴格遵守：
 
 one-shot write 完成後，以下步驟必須**按順序全部執行**：
 
-| # | 步驟 | 確認方式 |
-|---|------|---------|
-| 1 | 立刻關閉 one-shot gate（COMMIT_ENABLED=false） | 確認 code 已恢復 false |
-| 2 | 確認 provider whitelist 沒擴張（MANUAL_SYNC_PROVIDERS 未變動） | grep 確認 |
-| 3 | 確認 supportsAutoSync 沒改（各 provider 維持原值） | grep 確認 |
-| 4 | 重新查詢同一筆 tracking（呼叫 preview，不呼叫 commit） | 執行 preview 查詢 |
-| 5 | 預期結果應變成 duplicate-only（可新增事件數 = 0） | 確認 preview 結果 |
-| 6 | 可新增事件數應為 0 | 確認 netNew = 0 |
-| 7 | 不應再顯示寫入按鈕（duplicate-only 不顯示 commit 按鈕） | 確認 UI 狀態 |
-| 8 | 文件記錄 inserted count / duplicate count / latest status | 更新 closeout 文件 |
-| 9 | commit docs-only closeout（close gate 確認文件） | git commit |
+| #   | 步驟                                                           | 確認方式               |
+| --- | -------------------------------------------------------------- | ---------------------- |
+| 1   | 立刻關閉 one-shot gate（COMMIT_ENABLED=false）                 | 確認 code 已恢復 false |
+| 2   | 確認 provider whitelist 沒擴張（MANUAL_SYNC_PROVIDERS 未變動） | grep 確認              |
+| 3   | 確認 supportsAutoSync 沒改（各 provider 維持原值）             | grep 確認              |
+| 4   | 重新查詢同一筆 tracking（呼叫 preview，不呼叫 commit）         | 執行 preview 查詢      |
+| 5   | 預期結果應變成 duplicate-only（可新增事件數 = 0）              | 確認 preview 結果      |
+| 6   | 可新增事件數應為 0                                             | 確認 netNew = 0        |
+| 7   | 不應再顯示寫入按鈕（duplicate-only 不顯示 commit 按鈕）        | 確認 UI 狀態           |
+| 8   | 文件記錄 inserted count / duplicate count / latest status      | 更新 closeout 文件     |
+| 9   | commit docs-only closeout（close gate 確認文件）               | git commit             |
 
 ---
 
@@ -268,12 +268,12 @@ Step 7P-POSTOFFICE-ONE-SHOT-AUTHORIZATION
 
 ## 參考文件
 
-| 文件 | 內容 |
-|------|------|
-| `docs/step7/provider-write-candidate-decision.md` | write candidate 決策結果 |
-| `docs/step7/step7p-published-ui-screenshot-evidence-closeout.md` | Published UI 截圖驗收結果 |
-| `docs/step7/manual-provider-commit-release-gate-decision.md` | one-shot authorization 歷史記錄（tcat #36） |
-| `docs/step7/manual-provider-production-can-write-candidates.md` | postoffice #38 / tcat #36 can-write candidate 詳情 |
-| `docs/step7/manual-provider-production-one-shot-final-closeout.md` | tcat #36 one-shot commit 收尾流程記錄 |
-| `docs/step7/provider-rollout-decision-matrix.md` | 各 provider Support Level 決策表 |
-| `docs/step7/provider-rollout-policy.md` | Provider rollout 政策 |
+| 文件                                                               | 內容                                               |
+| ------------------------------------------------------------------ | -------------------------------------------------- |
+| `docs/step7/provider-write-candidate-decision.md`                  | write candidate 決策結果                           |
+| `docs/step7/step7p-published-ui-screenshot-evidence-closeout.md`   | Published UI 截圖驗收結果                          |
+| `docs/step7/manual-provider-commit-release-gate-decision.md`       | one-shot authorization 歷史記錄（tcat #36）        |
+| `docs/step7/manual-provider-production-can-write-candidates.md`    | postoffice #38 / tcat #36 can-write candidate 詳情 |
+| `docs/step7/manual-provider-production-one-shot-final-closeout.md` | tcat #36 one-shot commit 收尾流程記錄              |
+| `docs/step7/provider-rollout-decision-matrix.md`                   | 各 provider Support Level 決策表                   |
+| `docs/step7/provider-rollout-policy.md`                            | Provider rollout 政策                              |

@@ -6,15 +6,15 @@ Step 7E-1b-DB-PUSH（commit 793a17f）完成後，本次執行真實 DB integrat
 
 ## API Worktree / Branch
 
-| 項目 | 值 |
-|------|-----|
+| 項目     | 值                                             |
+| -------- | ---------------------------------------------- |
 | Worktree | `/home/runner/workspace/.worktrees/step7e-api` |
-| Branch | `qa/step7e-seller-agent-settings-api` |
+| Branch   | `qa/step7e-seller-agent-settings-api`          |
 
 ## Integration Test Commit
 
-| commit | message |
-|--------|---------|
+| commit    | message                                             |
+| --------- | --------------------------------------------------- |
 | `5a62b9b` | `test-api-step7e-seller-agent-settings-integration` |
 
 **新增檔案**：
@@ -24,13 +24,13 @@ Step 7E-1b-DB-PUSH（commit 793a17f）完成後，本次執行真實 DB integrat
 
 ## DB Summary（不含 secret）
 
-| 欄位 | 值 |
-|------|-----|
-| Host | `helium` |
-| Database | `heliumdb` |
-| 環境 | Replit 本機 dev DB（非 production）|
-| Test Store | store_id=1（小軒代購）|
-| 測試前 row 狀態 | 無既有 row（0 rows）|
+| 欄位            | 值                                  |
+| --------------- | ----------------------------------- |
+| Host            | `helium`                            |
+| Database        | `heliumdb`                          |
+| 環境            | Replit 本機 dev DB（非 production） |
+| Test Store      | store_id=1（小軒代購）              |
+| 測試前 row 狀態 | 無既有 row（0 rows）                |
 
 ## 測試結果（2026-06-09 重新驗證）
 
@@ -45,16 +45,16 @@ todo  0
 duration_ms 2132.583267
 ```
 
-| Flow | 案例數 | 結果 |
-|------|--------|------|
-| A: GET no row → default config | 6 | ✅ 全 pass |
-| B: PATCH valid payload → 建立 DB row | 4 | ✅ 全 pass |
-| C: GET row exists → safe response | 3 | ✅ 全 pass |
-| D: PATCH webhookSecret → hash in DB | 4 | ✅ 全 pass |
-| E: PATCH forbidden keys → 400 | 3 | ✅ 全 pass |
-| F: PATCH platform_managed_reserved → 400 | 2 | ✅ 全 pass |
-| G: Ownership failure → 403 | 2 | ✅ 全 pass |
-| H: Cleanup 結構驗證 | 1 | ✅ 全 pass |
+| Flow                                     | 案例數 | 結果       |
+| ---------------------------------------- | ------ | ---------- |
+| A: GET no row → default config           | 6      | ✅ 全 pass |
+| B: PATCH valid payload → 建立 DB row     | 4      | ✅ 全 pass |
+| C: GET row exists → safe response        | 3      | ✅ 全 pass |
+| D: PATCH webhookSecret → hash in DB      | 4      | ✅ 全 pass |
+| E: PATCH forbidden keys → 400            | 3      | ✅ 全 pass |
+| F: PATCH platform_managed_reserved → 400 | 2      | ✅ 全 pass |
+| G: Ownership failure → 403               | 2      | ✅ 全 pass |
+| H: Cleanup 結構驗證                      | 1      | ✅ 全 pass |
 
 ## Cleanup / Restore 結果
 
@@ -73,16 +73,16 @@ duration_ms 2132.583267
 
 ## 未執行項目
 
-| 項目 | 狀態 |
-|------|------|
-| DB push | 未執行（上一步 793a17f 已完成）|
-| migrate | 未執行 |
-| seed | 未執行 |
-| 施工 UI | 未執行 |
-| push GitHub | 未執行 |
-| 輸出 secret value | 未執行 |
-| 修改 API / schema / migration | 未執行 |
-| 修改其他表資料 | 未執行 |
+| 項目                          | 狀態                            |
+| ----------------------------- | ------------------------------- |
+| DB push                       | 未執行（上一步 793a17f 已完成） |
+| migrate                       | 未執行                          |
+| seed                          | 未執行                          |
+| 施工 UI                       | 未執行                          |
+| push GitHub                   | 未執行                          |
+| 輸出 secret value             | 未執行                          |
+| 修改 API / schema / migration | 未執行                          |
+| 修改其他表資料                | 未執行                          |
 
 ## 風險與待確認
 

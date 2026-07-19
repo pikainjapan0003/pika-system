@@ -10,13 +10,13 @@
 
 ## 2. API Worktree / Branch / Commit 狀態
 
-| 項目 | 狀態 |
-|------|------|
-| worktree | `/home/runner/workspace/.worktrees/step7e-api` |
-| branch | `qa/step7e-seller-agent-settings-api` |
-| 起始 commit | `c71616a`（`docs-step7e-seller-agent-settings-api-preflight`）|
-| 本次 API commit | `dc75672`（`feat-api-step7e-seller-agent-settings`）|
-| branch 乾淨 | ✓（無 staged / modified files）|
+| 項目            | 狀態                                                           |
+| --------------- | -------------------------------------------------------------- |
+| worktree        | `/home/runner/workspace/.worktrees/step7e-api`                 |
+| branch          | `qa/step7e-seller-agent-settings-api`                          |
+| 起始 commit     | `c71616a`（`docs-step7e-seller-agent-settings-api-preflight`） |
+| 本次 API commit | `dc75672`（`feat-api-step7e-seller-agent-settings`）           |
+| branch 乾淨     | ✓（無 staged / modified files）                                |
 
 ## 3. 實作 Route
 
@@ -30,20 +30,20 @@
 
 ### API 端點
 
-| 方法 | URL |
-|------|-----|
-| GET | `/stores/:storeId/agent/settings` |
+| 方法  | URL                               |
+| ----- | --------------------------------- |
+| GET   | `/stores/:storeId/agent/settings` |
 | PATCH | `/stores/:storeId/agent/settings` |
 
 ## 4. Auth / Ownership
 
-| 項目 | 決策 |
-|------|------|
-| Auth middleware | `requireAuth`（Clerk session）|
-| req.userId | Clerk user ID = merchantId |
-| Store ownership | `verifyStoreOwner(req, res, storeId)`（現有 helper）|
-| merchantId 來源 | `req.userId`（ownership 通過後即等同 merchantId）|
-| Agent Bearer token | **禁止混用**（agentTokenAuth 不可用於此 API）|
+| 項目               | 決策                                                 |
+| ------------------ | ---------------------------------------------------- |
+| Auth middleware    | `requireAuth`（Clerk session）                       |
+| req.userId         | Clerk user ID = merchantId                           |
+| Store ownership    | `verifyStoreOwner(req, res, storeId)`（現有 helper） |
+| merchantId 來源    | `req.userId`（ownership 通過後即等同 merchantId）    |
+| Agent Bearer token | **禁止混用**（agentTokenAuth 不可用於此 API）        |
 
 ## 5. GET /stores/:storeId/agent/settings 行為
 
@@ -81,15 +81,15 @@
 
 採用 **Set 白名單模式**（與 `agent.ts` 現有模式一致）：
 
-| 驗證層級 | 策略 |
-|--------|------|
-| 未知 key | 一律 400 |
-| 禁止 key（id, storeId, merchantId, webhookSecretHash, 等）| 一律 400 |
-| enum 欄位 | Set.has() 白名單驗證 |
-| boolean 欄位 | typeof === 'boolean' |
-| webhookUrl | new URL() 驗證 |
-| webhookSecret | string, 長度 16~256 |
-| 陣列欄位（enabledLogistics, queryMethods）| Array.isArray() + 逐項 Set 驗證 |
+| 驗證層級                                                   | 策略                            |
+| ---------------------------------------------------------- | ------------------------------- |
+| 未知 key                                                   | 一律 400                        |
+| 禁止 key（id, storeId, merchantId, webhookSecretHash, 等） | 一律 400                        |
+| enum 欄位                                                  | Set.has() 白名單驗證            |
+| boolean 欄位                                               | typeof === 'boolean'            |
+| webhookUrl                                                 | new URL() 驗證                  |
+| webhookSecret                                              | string, 長度 16~256             |
+| 陣列欄位（enabledLogistics, queryMethods）                 | Array.isArray() + 逐項 Set 驗證 |
 
 ## 8. Response Safety — webhookSecretHash 安全策略
 
@@ -99,13 +99,13 @@
 
 ## 9. webhookSecret / webhookSecretHash 處理
 
-| 動作 | 機制 |
-|------|------|
-| 接受輸入 | PATCH body 傳入 `webhookSecret`（明文，16~256 字元）|
+| 動作     | 機制                                                                                   |
+| -------- | -------------------------------------------------------------------------------------- |
+| 接受輸入 | PATCH body 傳入 `webhookSecret`（明文，16~256 字元）                                   |
 | 儲存方式 | SHA-256（`createHash("sha256").update(secret).digest("hex")`）存入 `webhookSecretHash` |
-| 清除 | `webhookSecret: null` → `webhookSecretHash: null` |
-| 不記錄 | 明文 secret 不寫 log，不存 DB |
-| 不回傳 | `webhookSecretHash` 永不出現在 API response |
+| 清除     | `webhookSecret: null` → `webhookSecretHash: null`                                      |
+| 不記錄   | 明文 secret 不寫 log，不存 DB                                                          |
+| 不回傳   | `webhookSecretHash` 永不出現在 API response                                            |
 
 ## 10. platform_managed_reserved 決策
 
@@ -130,10 +130,10 @@ message: "agentMode must be one of: self_hosted_webhook, external_agent, rule_wo
 
 ### 結果
 
-| 檔案 | 錯誤數 |
-|------|--------|
-| `sellerAgent.ts`（本次新增）| **0 errors** |
-| `cvs.ts:163` | `TS18047 'geoMatch' is possibly 'null'` ← **pre-existing，不在本次修復範圍** |
+| 檔案                         | 錯誤數                                                                       |
+| ---------------------------- | ---------------------------------------------------------------------------- |
+| `sellerAgent.ts`（本次新增） | **0 errors**                                                                 |
+| `cvs.ts:163`                 | `TS18047 'geoMatch' is possibly 'null'` ← **pre-existing，不在本次修復範圍** |
 
 **說明**：`cvs.ts:163` 的 `TS18047` 錯誤在 main workspace typecheck 不存在，僅在 worktree typecheck 環境出現，原因與 project reference build cache 差異有關。不影響本次施工。
 
@@ -149,12 +149,12 @@ message: "agentMode must be one of: self_hosted_webhook, external_agent, rule_wo
 
 ## 13. 已知風險
 
-| 風險 | 說明 |
-|------|------|
-| DB table 尚未建立 | `seller_agent_settings` table 需 DB push 後才可使用 |
-| Drizzle journal 衝突 | `0001_seller_agent_settings.sql` 為手寫 DDL，可能與 drizzle-kit 編號衝突 |
-| `as any` cast | upsert 的 insert values 和 onConflictDoUpdate set 使用 `as any`，與 agent.ts 模式一致 |
-| worktree dist/ | lib/db dist/ 和 lib/api-zod dist/ 是本次手動 build，不在 git 中（.gitignore）|
+| 風險                 | 說明                                                                                  |
+| -------------------- | ------------------------------------------------------------------------------------- |
+| DB table 尚未建立    | `seller_agent_settings` table 需 DB push 後才可使用                                   |
+| Drizzle journal 衝突 | `0001_seller_agent_settings.sql` 為手寫 DDL，可能與 drizzle-kit 編號衝突              |
+| `as any` cast        | upsert 的 insert values 和 onConflictDoUpdate set 使用 `as any`，與 agent.ts 模式一致 |
+| worktree dist/       | lib/db dist/ 和 lib/api-zod dist/ 是本次手動 build，不在 git 中（.gitignore）         |
 
 ## 14. 下一步建議
 

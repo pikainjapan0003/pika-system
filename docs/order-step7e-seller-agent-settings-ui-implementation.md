@@ -6,17 +6,19 @@
 
 ## Worktree / Branch
 
-| 項目 | 值 |
-|------|-----|
+| 項目     | 值                                            |
+| -------- | --------------------------------------------- |
 | Worktree | `/home/runner/workspace/.worktrees/step7e-ui` |
-| Branch | `qa/step7e-seller-agent-settings-ui` |
+| Branch   | `qa/step7e-seller-agent-settings-ui`          |
 
 ## 新增 / 修改檔案
 
 ### 新增
+
 - `artifacts/shop-app/src/pages/AgentSettings.tsx`
 
 ### 修改
+
 - `artifacts/shop-app/src/App.tsx`
 - `artifacts/shop-app/src/pages/Settings.tsx`
 
@@ -24,8 +26,8 @@
 
 ### 路由
 
-| 路由 | 元件 |
-|------|------|
+| 路由              | 元件                |
+| ----------------- | ------------------- |
 | `/settings/agent` | `AgentSettingsPage` |
 
 App.tsx 新增兩處：AppRouter 和 MerchantPortal Switch。
@@ -36,13 +38,13 @@ App.tsx 新增兩處：AppRouter 和 MerchantPortal Switch。
 
 ### AgentSettings.tsx 功能區塊
 
-| 區塊 | 欄位 |
-|------|------|
-| A. AI 狀態 | agentStatus（Switch）、agentMode（Select） |
-| B. 查詢設定 | queryFrequency（Select）、queryMethods（Checkbox 列表） |
-| C. 物流來源 | enabledLogistics（Checkbox 列表） |
+| 區塊            | 欄位                                                                                                                                     |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| A. AI 狀態      | agentStatus（Switch）、agentMode（Select）                                                                                               |
+| B. 查詢設定     | queryFrequency（Select）、queryMethods（Checkbox 列表）                                                                                  |
+| C. 物流來源     | enabledLogistics（Checkbox 列表）                                                                                                        |
 | D. 例外確認設定 | 5 × Switch（notifyOnUnknown, requireConfirmOnException, requireConfirmOnReturned, requireConfirmOnDelivered, hideErrorDetailsFromBuyer） |
-| E. Webhook | webhookEnabled（Switch）、webhookUrl（text input）、webhookSecret（UX：顯示已設/未設狀態，可更換/清除） |
+| E. Webhook      | webhookEnabled（Switch）、webhookUrl（text input）、webhookSecret（UX：顯示已設/未設狀態，可更換/清除）                                  |
 
 ### Webhook Secret 安全處理
 
@@ -59,35 +61,39 @@ PATCH payload 不包含：`id, storeId, merchantId, createdAt, updatedAt, lastRu
 ### API Hooks 使用
 
 ```tsx
-const { data: settingsResp } = useGetSellerAgentSettings(storeId, { query: { enabled: !!storeId } });
+const { data: settingsResp } = useGetSellerAgentSettings(storeId, {
+  query: { enabled: !!storeId },
+});
 const settings = settingsResp?.data; // data?.data 雙層存取
 ```
 
 ```tsx
 await updateMutation.mutateAsync({ storeId, data: payload });
-await qc.invalidateQueries({ queryKey: getGetSellerAgentSettingsQueryKey(storeId) });
+await qc.invalidateQueries({
+  queryKey: getGetSellerAgentSettingsQueryKey(storeId),
+});
 ```
 
 ## Enum 對照
 
-| 欄位 | 值 | 顯示 |
-|------|-----|------|
-| agentMode | rule_worker | 規則工作器 |
-| agentMode | external_agent | 外部 Agent |
-| agentMode | self_hosted_webhook | 自架 Webhook |
-| queryFrequency | manual | 手動 |
-| queryFrequency | daily | 每日 |
-| queryFrequency | every_6_hours | 每 6 小時 |
-| queryFrequency | every_2_hours_high_tier | 每 2 小時，高頻方案 |
-| enabledLogistics | seven_eleven | 7-11 |
-| enabledLogistics | family_mart | 全家 |
-| enabledLogistics | home_delivery | 宅配 |
-| enabledLogistics | other | 其他 |
-| enabledLogistics | webhook | Webhook |
-| queryMethods | manual | 手動查詢 |
-| queryMethods | csv_import | CSV 匯入 |
-| queryMethods | webhook | Webhook |
-| queryMethods | scheduled | 排程查詢 |
+| 欄位             | 值                      | 顯示                |
+| ---------------- | ----------------------- | ------------------- |
+| agentMode        | rule_worker             | 規則工作器          |
+| agentMode        | external_agent          | 外部 Agent          |
+| agentMode        | self_hosted_webhook     | 自架 Webhook        |
+| queryFrequency   | manual                  | 手動                |
+| queryFrequency   | daily                   | 每日                |
+| queryFrequency   | every_6_hours           | 每 6 小時           |
+| queryFrequency   | every_2_hours_high_tier | 每 2 小時，高頻方案 |
+| enabledLogistics | seven_eleven            | 7-11                |
+| enabledLogistics | family_mart             | 全家                |
+| enabledLogistics | home_delivery           | 宅配                |
+| enabledLogistics | other                   | 其他                |
+| enabledLogistics | webhook                 | Webhook             |
+| queryMethods     | manual                  | 手動查詢            |
+| queryMethods     | csv_import              | CSV 匯入            |
+| queryMethods     | webhook                 | Webhook             |
+| queryMethods     | scheduled               | 排程查詢            |
 
 注意：`platform_managed_reserved` 不出現在 UI Select 選項中。
 
@@ -100,9 +106,9 @@ vite build → ✓ built in 2.75s
 
 ## 未執行項目
 
-| 項目 | 原因 |
-|------|------|
-| 手動 UI 功能測試（E2E） | 無 dev server / browser 環境 |
-| 修改 backend API | 禁止 |
-| DB push / migrate / seed | 禁止 |
-| push GitHub | 禁止 |
+| 項目                     | 原因                         |
+| ------------------------ | ---------------------------- |
+| 手動 UI 功能測試（E2E）  | 無 dev server / browser 環境 |
+| 修改 backend API         | 禁止                         |
+| DB push / migrate / seed | 禁止                         |
+| push GitHub              | 禁止                         |

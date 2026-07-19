@@ -9,15 +9,15 @@
 
 ## 一、現況摘要
 
-| 功能項目 | 現況 |
-|---------|------|
-| 金額調整區（折讓 / 折數 / 購物金） | **不存在** — DB schema、API、UI 均無此欄位 |
-| 金額顯示（小計 / 運費 / 合計） | **已存在**（Orders.tsx 展開面板） |
-| 訂單狀態按鈕（VALID_NEXT_STATUSES） | **已存在**，dynamically rendered |
-| 已取消可恢復 | **不可恢復** — UI + API + 後端三層限制 |
-| 刪除訂單 API | **不存在** |
-| 刪除訂單 UI | **不存在** |
-| Soft delete（deletedAt / archivedAt） | **不存在** — DB schema 未定義 |
+| 功能項目                              | 現況                                       |
+| ------------------------------------- | ------------------------------------------ |
+| 金額調整區（折讓 / 折數 / 購物金）    | **不存在** — DB schema、API、UI 均無此欄位 |
+| 金額顯示（小計 / 運費 / 合計）        | **已存在**（Orders.tsx 展開面板）          |
+| 訂單狀態按鈕（VALID_NEXT_STATUSES）   | **已存在**，dynamically rendered           |
+| 已取消可恢復                          | **不可恢復** — UI + API + 後端三層限制     |
+| 刪除訂單 API                          | **不存在**                                 |
+| 刪除訂單 UI                           | **不存在**                                 |
+| Soft delete（deletedAt / archivedAt） | **不存在** — DB schema 未定義              |
 
 ---
 
@@ -25,21 +25,22 @@
 
 ### 2.1 DB schema（`lib/db/src/schema/orders.ts`）
 
-| 欄位 | 有無 |
-|-----|------|
-| `unitPrice` | ✅ 存在 |
-| `shippingFee` | ✅ 存在（預設 0） |
-| `totalPrice` | ✅ 存在（= unitPrice × quantity，由後端計算） |
-| `paidAmount` | ✅ 存在（手動記錄已收） |
-| 折讓 / discount | ❌ 不存在 |
-| 折數 / discountRate | ❌ 不存在 |
-| 購物金折抵 / creditAmount / voucherAmount | ❌ 不存在 |
+| 欄位                                      | 有無                                          |
+| ----------------------------------------- | --------------------------------------------- |
+| `unitPrice`                               | ✅ 存在                                       |
+| `shippingFee`                             | ✅ 存在（預設 0）                             |
+| `totalPrice`                              | ✅ 存在（= unitPrice × quantity，由後端計算） |
+| `paidAmount`                              | ✅ 存在（手動記錄已收）                       |
+| 折讓 / discount                           | ❌ 不存在                                     |
+| 折數 / discountRate                       | ❌ 不存在                                     |
+| 購物金折抵 / creditAmount / voucherAmount | ❌ 不存在                                     |
 
 DB schema 中沒有任何折扣欄位。`totalPrice` 是 `unitPrice × quantity`，未包含折扣計算。
 
 ### 2.2 API 回傳（`lib/api-zod/src/generated/types/order.ts`）
 
 API 在後端動態計算並加入兩個虛擬欄位：
+
 - `orderTotal`：`totalPrice + shippingFee`（`orders.ts` line 697）
 - `remainingAmount`：`max(orderTotal - paidAmount, 0)`（`orders.ts` line 698）
 
@@ -48,6 +49,7 @@ API 在後端動態計算並加入兩個虛擬欄位：
 ### 2.3 EditOrderDialog（`artifacts/shop-app/src/pages/EditOrderDialog.tsx`）
 
 金額相關欄位：
+
 - **運費輸入框**（`shippingFeeStr`）：位於「物流資訊」區段（line 421-431）
 - **金額預覽**區段（line 599-611）：只顯示 `unitPrice × quantity = 預估總額`，為唯讀參考值
 - 沒有折讓、折數、購物金折抵的輸入欄位
@@ -58,6 +60,7 @@ API 在後端動態計算並加入兩個虛擬欄位：
 ### 2.4 Orders.tsx 展開面板（`artifacts/shop-app/src/pages/Orders.tsx`，line 507-542）
 
 展開後「付款資訊」區塊顯示：
+
 - 付款狀態（badge）
 - 付款方式
 - **運費**（shippingFee）
@@ -67,6 +70,7 @@ API 在後端動態計算並加入兩個虛擬欄位：
 - 付款備註（paymentNote）
 
 「商品明細」區塊（line 494-504）顯示：
+
 - 商品名稱
 - 數量
 - 單價
@@ -81,6 +85,7 @@ API 在後端動態計算並加入兩個虛擬欄位：
 ### 3.1 前端狀態定義（`artifacts/shop-app/src/lib/orderStatus.ts`）
 
 訂單狀態列表：
+
 ```
 pending       → 待確認
 awaiting_payment → 待付款
@@ -91,6 +96,7 @@ cancelled     → 已取消
 ```
 
 有效狀態轉換（`VALID_NEXT_STATUSES`，line 31-38）：
+
 ```
 pending           → [awaiting_payment, cancelled]
 awaiting_payment  → [preparing, cancelled]
@@ -148,6 +154,7 @@ export function isValidTransition(from: OrderStatus, to: OrderStatus): boolean {
 ### 第三層：後端明確拒絕
 
 `getTransitionError("cancelled", ...)` 回傳（`orderStatusMachine.ts` line 19）：
+
 ```
 "Cannot change status of a cancelled order"
 ```
@@ -158,6 +165,7 @@ export function isValidTransition(from: OrderStatus, to: OrderStatus): boolean {
 
 「已取消不可恢復」是前後端共同設計的有意行為，並非技術疏失。  
 要讓已取消訂單可以恢復，需要同時修改：
+
 1. `orderStatus.ts`（前端 VALID_NEXT_STATUSES）
 2. `orderStatusMachine.ts`（後端 TRANSITIONS）
 3. `Orders.tsx`（UI 渲染邏輯）
@@ -169,6 +177,7 @@ export function isValidTransition(from: OrderStatus, to: OrderStatus): boolean {
 ### 5.1 DB schema
 
 `lib/db/src/schema/orders.ts` 掃描結果：
+
 - **無 `deletedAt` 欄位**
 - **無 `archivedAt` 欄位**
 - **無 `isDeleted` / `archived` / `hidden` 欄位**
@@ -179,6 +188,7 @@ export function isValidTransition(from: OrderStatus, to: OrderStatus): boolean {
 ### 5.2 API routes（`artifacts/api-server/src/routes/orders.ts`）
 
 目前存在的 route：
+
 ```
 GET    /stores/:storeId/orders          ← 列表
 POST   /stores/:storeId/orders          ← 建立
@@ -197,6 +207,7 @@ PATCH  /orders/:orderId/status          ← 狀態更新
 ### 5.3 UI
 
 Orders.tsx 展開面板掃描：
+
 - 沒有任何刪除按鈕
 - 沒有任何「移至垃圾桶」或「封存」操作
 
@@ -206,14 +217,14 @@ Orders.tsx 展開面板掃描：
 
 ## 六、風險
 
-| 風險項目 | 說明 | 嚴重程度 |
-|---------|------|---------|
-| 取消後誤操作無法恢復 | 老闆誤按「已取消」後，目前無法恢復，需客服人工處理 | 高 |
-| 取消無二次確認 | 直接點擊即生效，沒有確認對話框 | 高 |
-| 刪除訂單若實作為永久刪除 | 影響訂單查帳、客訴追蹤、財務記錄 | 極高 |
-| 無 soft delete 機制 | 若直接新增 DELETE API，刪除即永久消失，無法復原 | 高 |
-| 金額調整區缺折扣欄位 | 目前折讓 / 折數 / 購物金等功能完全未實作，DB schema 也無對應欄位，若要新增需大範圍修改 | 中 |
-| 批次操作無保護 | 批次更新 paymentStatus / shippingStatus 沒有對已取消訂單的過濾保護（前端層面） | 低 |
+| 風險項目                 | 說明                                                                                   | 嚴重程度 |
+| ------------------------ | -------------------------------------------------------------------------------------- | -------- |
+| 取消後誤操作無法恢復     | 老闆誤按「已取消」後，目前無法恢復，需客服人工處理                                     | 高       |
+| 取消無二次確認           | 直接點擊即生效，沒有確認對話框                                                         | 高       |
+| 刪除訂單若實作為永久刪除 | 影響訂單查帳、客訴追蹤、財務記錄                                                       | 極高     |
+| 無 soft delete 機制      | 若直接新增 DELETE API，刪除即永久消失，無法復原                                        | 高       |
+| 金額調整區缺折扣欄位     | 目前折讓 / 折數 / 購物金等功能完全未實作，DB schema 也無對應欄位，若要新增需大範圍修改 | 中       |
+| 批次操作無保護           | 批次更新 paymentStatus / shippingStatus 沒有對已取消訂單的過濾保護（前端層面）         | 低       |
 
 ---
 
@@ -255,37 +266,39 @@ Orders.tsx 展開面板掃描：
 
 ## 八、不建議本階段做的事項
 
-| 項目 | 原因 |
-|-----|------|
-| 直接新增 DELETE（永久刪除）API | 無法復原，影響查帳與客訴，需有 soft delete 保護 |
-| 金額調整折扣欄位（折讓 / 折數 / 購物金） | DB schema 需大幅修改，影響 totalPrice 計算邏輯，建議獨立為 Step 9 |
-| 購物金折抵系統 | 需要完整的會員購物金帳戶設計，超出本階段範圍 |
-| 訂單取消退款自動化 | 需串接金流，目前付款記錄為手動模式 |
-| 批次刪除訂單 | 在無 soft delete 機制前，批次刪除風險過高 |
-| 修改 orderTotal / remainingAmount 計算邏輯 | 目前是後端動態計算，若要加入折扣需同時修改 DB + API + UI |
+| 項目                                       | 原因                                                              |
+| ------------------------------------------ | ----------------------------------------------------------------- |
+| 直接新增 DELETE（永久刪除）API             | 無法復原，影響查帳與客訴，需有 soft delete 保護                   |
+| 金額調整折扣欄位（折讓 / 折數 / 購物金）   | DB schema 需大幅修改，影響 totalPrice 計算邏輯，建議獨立為 Step 9 |
+| 購物金折抵系統                             | 需要完整的會員購物金帳戶設計，超出本階段範圍                      |
+| 訂單取消退款自動化                         | 需串接金流，目前付款記錄為手動模式                                |
+| 批次刪除訂單                               | 在無 soft delete 機制前，批次刪除風險過高                         |
+| 修改 orderTotal / remainingAmount 計算邏輯 | 目前是後端動態計算，若要加入折扣需同時修改 DB + API + UI          |
 
 ---
 
 ## 九、後續施工拆分建議
 
-| 步驟 | 名稱 | 範圍 | 前置條件 |
-|-----|------|------|---------|
-| Step 8B | 取消前二次確認 | 只改 Orders.tsx UI | 無 |
-| Step 8C | 已取消可恢復至待確認 | orderStatus.ts + orderStatusMachine.ts + Orders.tsx | Step 8B 完成 |
-| Step 8D | 狀態操作區 UI 分區（正常操作 vs 危險操作） | Orders.tsx | Step 8B 完成 |
-| Step 8E | Soft Delete（封存訂單） | DB migration + API + Orders.tsx | Step 8B/8C 完成後確認需求 |
-| Step 9 | 金額調整（折讓 / 折數） | DB schema + API + EditOrderDialog | 獨立討論，不屬 Step 8 範圍 |
+| 步驟    | 名稱                                       | 範圍                                                | 前置條件                   |
+| ------- | ------------------------------------------ | --------------------------------------------------- | -------------------------- |
+| Step 8B | 取消前二次確認                             | 只改 Orders.tsx UI                                  | 無                         |
+| Step 8C | 已取消可恢復至待確認                       | orderStatus.ts + orderStatusMachine.ts + Orders.tsx | Step 8B 完成               |
+| Step 8D | 狀態操作區 UI 分區（正常操作 vs 危險操作） | Orders.tsx                                          | Step 8B 完成               |
+| Step 8E | Soft Delete（封存訂單）                    | DB migration + API + Orders.tsx                     | Step 8B/8C 完成後確認需求  |
+| Step 9  | 金額調整（折讓 / 折數）                    | DB schema + API + EditOrderDialog                   | 獨立討論，不屬 Step 8 範圍 |
 
 ---
 
 ## 十、測試與驗收建議
 
 ### Step 8B 驗收
+
 - [ ] 點擊「已取消」按鈕後出現確認對話框
 - [ ] 確認後才更新狀態
 - [ ] 取消操作後訂單狀態不變
 
 ### Step 8C 驗收
+
 - [ ] 已取消訂單展開後，出現「恢復至待確認」按鈕
 - [ ] 點擊後訂單回到 `pending` 狀態
 - [ ] API `PATCH /orders/:orderId/status` 接受 `cancelled → pending` 轉換
@@ -293,6 +306,7 @@ Orders.tsx 展開面板掃描：
 - [ ] `completed` 仍為終態，不可恢復
 
 ### Step 8E 驗收
+
 - [ ] 訂單封存後在列表中不顯示（預設）
 - [ ] 可切換「顯示已封存」查看
 - [ ] 封存訂單無法繼續操作（狀態凍結）
@@ -303,12 +317,12 @@ Orders.tsx 展開面板掃描：
 
 ## 十一、附錄：相關檔案對照
 
-| 檔案 | 用途 |
-|-----|------|
-| `artifacts/shop-app/src/lib/orderStatus.ts` | 前端狀態定義、VALID_NEXT_STATUSES（line 31-38） |
-| `artifacts/shop-app/src/pages/Orders.tsx` | 狀態按鈕渲染（line 739-766）、展開面板金額顯示（line 494-542） |
-| `artifacts/shop-app/src/pages/EditOrderDialog.tsx` | 訂單編輯表單、金額預覽（line 599-611） |
-| `artifacts/api-server/src/lib/orderStatusMachine.ts` | 後端狀態機、isValidTransition、getTransitionError |
-| `artifacts/api-server/src/routes/orders.ts` | API routes（無 DELETE endpoint） |
-| `lib/db/src/schema/orders.ts` | DB schema（無 deletedAt / discount 欄位） |
-| `lib/api-zod/src/generated/types/order.ts` | API 回傳型別（orderTotal、remainingAmount 為虛擬欄位） |
+| 檔案                                                 | 用途                                                           |
+| ---------------------------------------------------- | -------------------------------------------------------------- |
+| `artifacts/shop-app/src/lib/orderStatus.ts`          | 前端狀態定義、VALID_NEXT_STATUSES（line 31-38）                |
+| `artifacts/shop-app/src/pages/Orders.tsx`            | 狀態按鈕渲染（line 739-766）、展開面板金額顯示（line 494-542） |
+| `artifacts/shop-app/src/pages/EditOrderDialog.tsx`   | 訂單編輯表單、金額預覽（line 599-611）                         |
+| `artifacts/api-server/src/lib/orderStatusMachine.ts` | 後端狀態機、isValidTransition、getTransitionError              |
+| `artifacts/api-server/src/routes/orders.ts`          | API routes（無 DELETE endpoint）                               |
+| `lib/db/src/schema/orders.ts`                        | DB schema（無 deletedAt / discount 欄位）                      |
+| `lib/api-zod/src/generated/types/order.ts`           | API 回傳型別（orderTotal、remainingAmount 為虛擬欄位）         |

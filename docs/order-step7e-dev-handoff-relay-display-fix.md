@@ -43,7 +43,7 @@ artifacts/api-server/src/routes/devHandoff.ts
 ```typescript
 const HANDOFF_PATH_B = path.resolve(
   path.dirname(process.argv[1]),
-  "../../../dev-handoff/latest-B.json"
+  "../../../dev-handoff/latest-B.json",
 );
 ```
 
@@ -61,11 +61,11 @@ const HANDOFF_PATH_B = path.resolve(
 
 ### API 端點對應
 
-| 端點 | 讀取檔案 |
-|------|---------|
-| `GET /api/dev/handoff/data/b` | `/home/runner/workspace/dev-handoff/latest-B.json` |
-| `GET /api/dev/handoff/data/a` | `/home/runner/workspace/dev-handoff/latest-A.json` |
-| `GET /api/dev/handoff/data` | `/home/runner/workspace/dev-handoff/latest.json`（legacy）|
+| 端點                          | 讀取檔案                                                   |
+| ----------------------------- | ---------------------------------------------------------- |
+| `GET /api/dev/handoff/data/b` | `/home/runner/workspace/dev-handoff/latest-B.json`         |
+| `GET /api/dev/handoff/data/a` | `/home/runner/workspace/dev-handoff/latest-A.json`         |
+| `GET /api/dev/handoff/data`   | `/home/runner/workspace/dev-handoff/latest.json`（legacy） |
 
 ### Relay 讀取結論
 

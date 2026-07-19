@@ -47,17 +47,17 @@ Step 7E-1a-REBUILD-R 是針對 Step 7E-1a-REBUILD（重建 `seller_agent_setting
 
 **可讀來源檢查結果**：
 
-| 檔案 | 是否存在於主 workspace |
-|---|---|
-| `dev-handoff/latest-B.json` / `latest-B.md` | ✅ 存在（內容為 REBUILD，非 REBUILD-R） |
-| `dev-handoff/latest.json` | ✅ 存在（REBUILD 的 relay copy） |
-| `docs/order-step7e-rebuild-handoff-sync.md` | ✅ 存在（記錄 REBUILD-H 同步過程） |
-| `docs/order-step7e-dev-handoff-relay-display-fix.md` | ✅ 存在（記錄 Step 7E-1a-R handoff 遺失調查） |
-| `docs/order-step7e-rebuild-r-persist-handoff-sync.md` | ❌ 不存在 |
-| `docs/order-step7e-seller-agent-settings-schema-implementation-audit.md` | ❌ 不存在 |
-| `docs/order-step7e-seller-agent-settings-schema-review.md` | ❌ 不存在 |
-| `lib/db/src/schema/sellerAgentSettings.ts` | ❌ 不存在 |
-| `lib/db/migrations/0001_seller_agent_settings.sql` | ❌ 不存在 |
+| 檔案                                                                     | 是否存在於主 workspace                        |
+| ------------------------------------------------------------------------ | --------------------------------------------- |
+| `dev-handoff/latest-B.json` / `latest-B.md`                              | ✅ 存在（內容為 REBUILD，非 REBUILD-R）       |
+| `dev-handoff/latest.json`                                                | ✅ 存在（REBUILD 的 relay copy）              |
+| `docs/order-step7e-rebuild-handoff-sync.md`                              | ✅ 存在（記錄 REBUILD-H 同步過程）            |
+| `docs/order-step7e-dev-handoff-relay-display-fix.md`                     | ✅ 存在（記錄 Step 7E-1a-R handoff 遺失調查） |
+| `docs/order-step7e-rebuild-r-persist-handoff-sync.md`                    | ❌ 不存在                                     |
+| `docs/order-step7e-seller-agent-settings-schema-implementation-audit.md` | ❌ 不存在                                     |
+| `docs/order-step7e-seller-agent-settings-schema-review.md`               | ❌ 不存在                                     |
+| `lib/db/src/schema/sellerAgentSettings.ts`                               | ❌ 不存在                                     |
+| `lib/db/migrations/0001_seller_agent_settings.sql`                       | ❌ 不存在                                     |
 
 由於 schema / migration 實體檔案與多份審查 / 實作紀錄文件在主 workspace 都不存在（這也合理，因為主 workspace 目前並非 Step 7E rebuild branch），本次內容**完全基於既有 REBUILD handoff 的轉述與保守推論**，不宣稱：
 
@@ -69,12 +69,12 @@ Step 7E-1a-REBUILD-R 是針對 Step 7E-1a-REBUILD（重建 `seller_agent_setting
 
 ## 5. 修改了哪些 handoff 檔案
 
-| 操作 | 檔案 | 說明 |
-|---|---|---|
-| 更新 | `dev-handoff/latest-B.json` | `taskTitle` 改為「Step 7E-1a-REBUILD-R-MAIN：主 workspace 重建 REBUILD-R review handoff」，`status = completed`，`rawReply` 為本次 final reply 的 exact copy |
-| 更新 | `dev-handoff/latest-B.md` | 內容與 `latest-B.json` 一致，含完整 `rawReply`（最終回覆全文） |
-| 更新 | `dev-handoff/latest.json` | 以更新後的 `latest-B.json` 重新產生 `relay-v1` relay copy |
-| 新增 | `docs/order-step7e-rebuild-r-main-handoff-repair.md` | 本文件，記錄本次 repair 全過程 |
+| 操作 | 檔案                                                 | 說明                                                                                                                                                         |
+| ---- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 更新 | `dev-handoff/latest-B.json`                          | `taskTitle` 改為「Step 7E-1a-REBUILD-R-MAIN：主 workspace 重建 REBUILD-R review handoff」，`status = completed`，`rawReply` 為本次 final reply 的 exact copy |
+| 更新 | `dev-handoff/latest-B.md`                            | 內容與 `latest-B.json` 一致，含完整 `rawReply`（最終回覆全文）                                                                                               |
+| 更新 | `dev-handoff/latest.json`                            | 以更新後的 `latest-B.json` 重新產生 `relay-v1` relay copy                                                                                                    |
+| 新增 | `docs/order-step7e-rebuild-r-main-handoff-repair.md` | 本文件，記錄本次 repair 全過程                                                                                                                               |
 
 ---
 

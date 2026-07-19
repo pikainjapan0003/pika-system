@@ -20,40 +20,40 @@ Production write: NO
 
 ## What Is Complete
 
-| Item | Status | Step Completed |
-|------|--------|---------------|
-| postoffice / tcat manual preview UI | ✅ Done | J5F-3 / J5F-4 |
-| preview endpoint integration（/manual-provider/preview） | ✅ Done | J5F-4 |
-| preview countdown / expired state | ✅ Done | J5F-6 |
-| duplicate-only state UI | ✅ Done | J5F-4 |
-| confirm modal skeleton（AlertDialog） | ✅ Done | J5F-6 |
-| commit request type + body builder（buildCommitBody） | ✅ Done | J5F-7A |
-| guarded handleCommit skeleton（COMMIT_ENABLED=false） | ✅ Done | J5F-7B |
-| commit result UI states（commitSuccess / commitIdempotentNoop / commitError / drifted / commitLoading） | ✅ Done | J5F-7D |
-| post-commit refresh / invalidation wiring（refreshOrderAfterCommit） | ✅ Done | J5F-7E |
-| local browser QA（static analysis + dev server 疎通） | ✅ Done | J5F-7F（環境限制，使用者人工補測） |
-| production preview smoke（#39/#40/#41） | ✅ Done | J5F-7G（使用者人工確認） |
-| release gate decision 文件 | ✅ Done | J5F-7H |
-| production commit 決策：NO-GO | ✅ Done | J5F-7H |
-| safe-preview-only closeout 文件（本文件） | ✅ Done | J5F-8 |
-| UI footer 文案更新（安全預覽模式） | ✅ Done | J5F-8 |
+| Item                                                                                                    | Status  | Step Completed                     |
+| ------------------------------------------------------------------------------------------------------- | ------- | ---------------------------------- |
+| postoffice / tcat manual preview UI                                                                     | ✅ Done | J5F-3 / J5F-4                      |
+| preview endpoint integration（/manual-provider/preview）                                                | ✅ Done | J5F-4                              |
+| preview countdown / expired state                                                                       | ✅ Done | J5F-6                              |
+| duplicate-only state UI                                                                                 | ✅ Done | J5F-4                              |
+| confirm modal skeleton（AlertDialog）                                                                   | ✅ Done | J5F-6                              |
+| commit request type + body builder（buildCommitBody）                                                   | ✅ Done | J5F-7A                             |
+| guarded handleCommit skeleton（COMMIT_ENABLED=false）                                                   | ✅ Done | J5F-7B                             |
+| commit result UI states（commitSuccess / commitIdempotentNoop / commitError / drifted / commitLoading） | ✅ Done | J5F-7D                             |
+| post-commit refresh / invalidation wiring（refreshOrderAfterCommit）                                    | ✅ Done | J5F-7E                             |
+| local browser QA（static analysis + dev server 疎通）                                                   | ✅ Done | J5F-7F（環境限制，使用者人工補測） |
+| production preview smoke（#39/#40/#41）                                                                 | ✅ Done | J5F-7G（使用者人工確認）           |
+| release gate decision 文件                                                                              | ✅ Done | J5F-7H                             |
+| production commit 決策：NO-GO                                                                           | ✅ Done | J5F-7H                             |
+| safe-preview-only closeout 文件（本文件）                                                               | ✅ Done | J5F-8                              |
+| UI footer 文案更新（安全預覽模式）                                                                      | ✅ Done | J5F-8                              |
 
 ---
 
 ## Current Safe Behavior
 
-| Behavior | Status |
-|----------|--------|
-| postoffice 可查詢 preview | ✅ 可以 |
-| tcat 可查詢 preview | ✅ 可以 |
-| duplicate-only 不顯示寫入按鈕 | ✅ 確認（previewReadyDuplicateOnly branch 無 commit button） |
-| can-write 狀態點確認 → COMMIT_DISABLED 擋下 | ✅ 確認（COMMIT_ENABLED=false guard，line 132） |
-| modal 點「確認寫入（尚未啟用）」→ modal 關閉 + COMMIT_DISABLED 錯誤 | ✅ 確認 |
-| familymart 不顯示 manual UI | ✅ 確認（MANUAL_SYNC_PROVIDERS 排除，returns null） |
-| 7-11 不顯示 manual UI | ✅ 確認（同上） |
-| previewHash 不顯示完整值 | ✅ 確認（只顯示 hash-present / hash-null） |
-| /commit 不執行 | ✅ 確認（COMMIT_ENABLED=false guard 在 fetch 前 early return） |
-| localStorage / sessionStorage | ✅ CLEAN（safety grep 無輸出） |
+| Behavior                                                            | Status                                                         |
+| ------------------------------------------------------------------- | -------------------------------------------------------------- |
+| postoffice 可查詢 preview                                           | ✅ 可以                                                        |
+| tcat 可查詢 preview                                                 | ✅ 可以                                                        |
+| duplicate-only 不顯示寫入按鈕                                       | ✅ 確認（previewReadyDuplicateOnly branch 無 commit button）   |
+| can-write 狀態點確認 → COMMIT_DISABLED 擋下                         | ✅ 確認（COMMIT_ENABLED=false guard，line 132）                |
+| modal 點「確認寫入（尚未啟用）」→ modal 關閉 + COMMIT_DISABLED 錯誤 | ✅ 確認                                                        |
+| familymart 不顯示 manual UI                                         | ✅ 確認（MANUAL_SYNC_PROVIDERS 排除，returns null）            |
+| 7-11 不顯示 manual UI                                               | ✅ 確認（同上）                                                |
+| previewHash 不顯示完整值                                            | ✅ 確認（只顯示 hash-present / hash-null）                     |
+| /commit 不執行                                                      | ✅ 確認（COMMIT_ENABLED=false guard 在 fetch 前 early return） |
+| localStorage / sessionStorage                                       | ✅ CLEAN（safety grep 無輸出）                                 |
 
 ---
 
@@ -94,12 +94,12 @@ Production write: NO
 
 ## Related Documents
 
-| Document | Purpose |
-|----------|---------|
-| `manual-provider-commit-ui-commit-integration-plan.md` | 原始 J5F-7 commit endpoint 串接計畫 |
-| `manual-provider-commit-ui-spec.md` | UI spec |
-| `manual-provider-commit-release-gate-decision.md` | J5F-7H release gate 決策（NO-GO 理由 + GO criteria + Authorization Text + Rollback Plan） |
-| `manual-provider-safe-preview-only-closeout.md` | 本文件；J5F-8 safe-preview-only 收尾 |
+| Document                                               | Purpose                                                                                   |
+| ------------------------------------------------------ | ----------------------------------------------------------------------------------------- |
+| `manual-provider-commit-ui-commit-integration-plan.md` | 原始 J5F-7 commit endpoint 串接計畫                                                       |
+| `manual-provider-commit-ui-spec.md`                    | UI spec                                                                                   |
+| `manual-provider-commit-release-gate-decision.md`      | J5F-7H release gate 決策（NO-GO 理由 + GO criteria + Authorization Text + Rollback Plan） |
+| `manual-provider-safe-preview-only-closeout.md`        | 本文件；J5F-8 safe-preview-only 收尾                                                      |
 
 ---
 

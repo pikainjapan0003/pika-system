@@ -4,13 +4,13 @@
 
 Step 7E Seller Agent Settings 已完成以下所有子任務：
 
-| 子任務 | 結論 |
-|--------|------|
-| MERGE-EXECUTE | PASS |
-| POST-MERGE-VERIFY | PASS |
-| SAFEPOINT-RESTORE-DRYRUN | SKIP RECOMMENDED（WIP 已在 target）|
-| APP-SMOKE | READY FOR USER BROWSER CHECK |
-| PREVIEW-EXPOSE-FIX | READY — 22696 → 3000 |
+| 子任務                   | 結論                                |
+| ------------------------ | ----------------------------------- |
+| MERGE-EXECUTE            | PASS                                |
+| POST-MERGE-VERIFY        | PASS                                |
+| SAFEPOINT-RESTORE-DRYRUN | SKIP RECOMMENDED（WIP 已在 target） |
+| APP-SMOKE                | READY FOR USER BROWSER CHECK        |
+| PREVIEW-EXPOSE-FIX       | READY — 22696 → 3000                |
 
 使用者已在 Replit Preview 人工確認 Step 7E UI，本文記錄確認結果。
 
@@ -23,39 +23,39 @@ HEAD: 061af2f docs-step7e-preview-expose-fix
 
 ## 3. Preview Port
 
-| 項目 | 值 |
-|------|----|
-| Replit Preview port | `22696 → 3000` |
-| API port | 8080（Replit-managed，proxy 目標）|
-| Shop-app | Replit-managed Vite dev，PORT=22696 |
+| 項目                | 值                                  |
+| ------------------- | ----------------------------------- |
+| Replit Preview port | `22696 → 3000`                      |
+| API port            | 8080（Replit-managed，proxy 目標）  |
+| Shop-app            | Replit-managed Vite dev，PORT=22696 |
 
 ## 4. 使用者確認結果
 
 使用者在 Replit Preview 選 `22696 → 3000` 後人工確認：
 
-| 確認項目 | 結果 |
-|----------|------|
-| `/settings` 有「AI 代查設定」入口 | ✓ 確認 |
-| `/settings/agent` 可進入 | ✓ 確認 |
-| 頁面標題顯示「AI 代查設定」 | ✓ 確認 |
-| 頁面顯示 AI 狀態設定 | ✓ 確認 |
-| 頁面顯示查詢設定 | ✓ 確認 |
-| 頁面顯示物流來源設定 | ✓ 確認 |
-| 頁面顯示例外確認設定 | ✓ 確認 |
-| 頁面顯示 Webhook 區塊 | ✓ 確認 |
-| 本次未按「儲存設定」 | 是（無新增 DB row）|
+| 確認項目                          | 結果                |
+| --------------------------------- | ------------------- |
+| `/settings` 有「AI 代查設定」入口 | ✓ 確認              |
+| `/settings/agent` 可進入          | ✓ 確認              |
+| 頁面標題顯示「AI 代查設定」       | ✓ 確認              |
+| 頁面顯示 AI 狀態設定              | ✓ 確認              |
+| 頁面顯示查詢設定                  | ✓ 確認              |
+| 頁面顯示物流來源設定              | ✓ 確認              |
+| 頁面顯示例外確認設定              | ✓ 確認              |
+| 頁面顯示 Webhook 區塊             | ✓ 確認              |
+| 本次未按「儲存設定」              | 是（無新增 DB row） |
 
 ## 5. Curl 只讀確認結果
 
-| 項目 | HTTP | 結果 |
-|------|------|------|
-| `GET /settings` | 200 | ✓ SPA |
-| `GET /settings/agent` | 200 | ✓ SPA fallback |
-| `Settings.tsx` source 含「AI 代查設定」 | 200 | ✓ grep line 486 |
-| `AgentSettings.tsx` 含 `useGetSellerAgentSettings` | 200 | ✓ line 9 |
-| `AgentSettings.tsx` 含 `AgentSettingsPage` | 200 | ✓ line 51 |
-| `AgentSettings.tsx` 含「AI 代查設定」頁標題 | 200 | ✓ line 253 |
-| `AgentSettings.tsx` 含 Webhook Secret 區塊 | 200 | ✓ lines 588, 593 |
+| 項目                                               | HTTP | 結果             |
+| -------------------------------------------------- | ---- | ---------------- |
+| `GET /settings`                                    | 200  | ✓ SPA            |
+| `GET /settings/agent`                              | 200  | ✓ SPA fallback   |
+| `Settings.tsx` source 含「AI 代查設定」            | 200  | ✓ grep line 486  |
+| `AgentSettings.tsx` 含 `useGetSellerAgentSettings` | 200  | ✓ line 9         |
+| `AgentSettings.tsx` 含 `AgentSettingsPage`         | 200  | ✓ line 51        |
+| `AgentSettings.tsx` 含「AI 代查設定」頁標題        | 200  | ✓ line 253       |
+| `AgentSettings.tsx` 含 Webhook Secret 區塊         | 200  | ✓ lines 588, 593 |
 
 ## 6. API Route Result
 
@@ -64,7 +64,7 @@ GET /api/stores/1/agent/settings → 401 Unauthorized
 ```
 
 ```json
-{"error":"Unauthorized"}
+{ "error": "Unauthorized" }
 ```
 
 **結果：✓（非 404）**
@@ -74,12 +74,12 @@ GET /api/stores/1/agent/settings → 401 Unauthorized
 
 ## 7. DB Readonly Result
 
-| 項目 | 結果 |
-|------|------|
-| `seller_agent_settings` table 存在 | ✓ |
-| `remaining_rows` (store_id=1) | 0 ✓ |
-| 原因 | 使用者本次未按「儲存設定」，未新增 DB row |
-| DB push / migrate / seed | 未執行 |
+| 項目                               | 結果                                      |
+| ---------------------------------- | ----------------------------------------- |
+| `seller_agent_settings` table 存在 | ✓                                         |
+| `remaining_rows` (store_id=1)      | 0 ✓                                       |
+| 原因                               | 使用者本次未按「儲存設定」，未新增 DB row |
+| DB push / migrate / seed           | 未執行                                    |
 
 ## 8. `.replit` Stash 狀態
 
@@ -91,10 +91,10 @@ stash@{0}: On qa/step6f-pre-step7e-merge-safepoint: pre-step7e-merge-local-repli
 
 ## 9. Working Tree 狀態
 
-| 檔案 | 狀態 | 說明 |
-|------|------|------|
-| `.replit` | unstaged M | Replit 系統自動修改，非本次任務所為 |
-| `artifacts/shop-app/src/pages/EditOrderDialog.tsx` | unstaged M | Step 6F CVS 門市選擇 WIP（使用者主動開發中，預存在 branch）|
+| 檔案                                               | 狀態       | 說明                                                        |
+| -------------------------------------------------- | ---------- | ----------------------------------------------------------- |
+| `.replit`                                          | unstaged M | Replit 系統自動修改，非本次任務所為                         |
+| `artifacts/shop-app/src/pages/EditOrderDialog.tsx` | unstaged M | Step 6F CVS 門市選擇 WIP（使用者主動開發中，預存在 branch） |
 
 以上修改均未 stage，不影響 Step 7E 驗證結果。
 
@@ -130,4 +130,4 @@ USER-BROWSER-CHECK conclusion: PASS — 22696 Preview 可供使用者驗證 Step
 
 ---
 
-*Generated by Claude B — Step 7E-2-USER-BROWSER-CHECK-CLOSEOUT — 2026-06-09*
+_Generated by Claude B — Step 7E-2-USER-BROWSER-CHECK-CLOSEOUT — 2026-06-09_

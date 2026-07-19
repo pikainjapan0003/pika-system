@@ -8,16 +8,17 @@
 
 ## 1. 執行基準
 
-| 項目 | 值 |
-|------|-----|
-| main commit | `5d6198b test-api-step7d-agent-integration-skeleton` |
-| gitsafe-backup/main | `5d6198b`（與 main 一致）|
-| worktree path | `/home/runner/worktree-step7d-4b3-integration-run` |
-| backup file | `/home/runner/backups/backup-pre-step7d-4b3-integration-20260608140957.sql` |
-| backup 大小 | 3.6M |
-| DATABASE_URL | 已設定（值不輸出）|
+| 項目                | 值                                                                          |
+| ------------------- | --------------------------------------------------------------------------- |
+| main commit         | `5d6198b test-api-step7d-agent-integration-skeleton`                        |
+| gitsafe-backup/main | `5d6198b`（與 main 一致）                                                   |
+| worktree path       | `/home/runner/worktree-step7d-4b3-integration-run`                          |
+| backup file         | `/home/runner/backups/backup-pre-step7d-4b3-integration-20260608140957.sql` |
+| backup 大小         | 3.6M                                                                        |
+| DATABASE_URL        | 已設定（值不輸出）                                                          |
 
 **注意（執行環境調整）**：
+
 - worktree 的 `artifacts/api-server/node_modules/@workspace/db` 必須指向 worktree 的 `lib/db`（而非 workspace 的 qa 分支 lib/db），因為 workspace 目前在 `qa/step6f-cvs-store-selection-browser-mobile` 分支，缺少 agent schema 檔案。
 - 重建 api-server node_modules 目錄結構，將 `@workspace/db` symlink 指向 worktree 的 `/home/runner/worktree-step7d-4b3-integration-run/lib/db`。
 - `tsx/esm` 使用絕對路徑：`/home/runner/workspace/scripts/node_modules/tsx/dist/esm/index.mjs`（tsx 只安裝於 scripts 子套件）。
@@ -26,27 +27,27 @@
 
 ## 2. 測試前 DB 物件確認
 
-| 表 / 欄位 | 存在 |
-|---|---|
-| public.stores | ✓ |
-| public.products | ✓ |
-| public.orders | ✓ |
-| public.shipment_trackings | ✓ |
-| public.shipment_tracking_events | ✓ |
-| public.seller_agent_tokens | ✓ |
-| public.agent_run_logs | ✓ |
-| shipment_tracking_events.idempotency_key 欄位 | ✓ |
+| 表 / 欄位                                     | 存在 |
+| --------------------------------------------- | ---- |
+| public.stores                                 | ✓    |
+| public.products                               | ✓    |
+| public.orders                                 | ✓    |
+| public.shipment_trackings                     | ✓    |
+| public.shipment_tracking_events               | ✓    |
+| public.seller_agent_tokens                    | ✓    |
+| public.agent_run_logs                         | ✓    |
+| shipment_tracking_events.idempotency_key 欄位 | ✓    |
 
-**測試前殘留資料確認（STEP7D_E2E_ prefix count 全為 0）**：
+**測試前殘留資料確認（STEP7D*E2E* prefix count 全為 0）**：
 
-| 表 | count |
-|---|---|
-| stores (slug like STEP7D_E2E_%) | 0 |
-| orders (public_token like STEP7D_E2E_%) | 0 |
-| products (name like STEP7D_E2E_%) | 0 |
-| seller_agent_tokens (name/token_prefix like STEP7D_E2E_%) | 0 |
-| shipment_trackings (tracking_code like STEP7D_E2E_%) | 0 |
-| agent_run_logs (merchant_id like STEP7D_E2E_%) | 0 |
+| 表                                                        | count |
+| --------------------------------------------------------- | ----- |
+| stores (slug like STEP7D*E2E*%)                           | 0     |
+| orders (public*token like STEP7D_E2E*%)                   | 0     |
+| products (name like STEP7D*E2E*%)                         | 0     |
+| seller*agent_tokens (name/token_prefix like STEP7D_E2E*%) | 0     |
+| shipment*trackings (tracking_code like STEP7D_E2E*%)      | 0     |
+| agent*run_logs (merchant_id like STEP7D_E2E*%)            | 0     |
 
 ---
 
@@ -136,15 +137,15 @@
 
 ## 4. E2E 覆蓋流程
 
-| Flow | 案例 | 結果 |
-|---|---|---|
-| A — Full happy path | A-1 GET /tracking-jobs, A-2 POST /shipment-events, A-3 PATCH /shipment-status, A-4 POST /run-log | 全通過 ✓ |
-| B — Cross-store isolation | B-1 token A 不見 store B tracking, B-2 B-3 token A 存取 store B 的 tracking → 404 | 全通過 ✓ |
-| C — Idempotency | C-1 第一次 → 201 idempotent=false，C-2 同 key 重複 → 200 idempotent=true | 全通過 ✓ |
-| D — rawPayload sanitization | D-1 phone/address/name/email 送進 rawPayload，DB raw_data 不存這些 key | 通過 ✓ |
-| E — Validation & auth | E-1 invalid token → 401, E-2 missing header → 401, E-3~E-6 各種 validation error | 全通過 ✓ |
-| F — DB field verification | F-1 agent_run_logs.token_id = 正確 seeded token id, F-2 storeId isolation | 全通過 ✓ |
-| G — Cleanup guard | G-1 cleanupAll() 函數存在且 storeMain 已 seed | 通過 ✓ |
+| Flow                        | 案例                                                                                             | 結果     |
+| --------------------------- | ------------------------------------------------------------------------------------------------ | -------- |
+| A — Full happy path         | A-1 GET /tracking-jobs, A-2 POST /shipment-events, A-3 PATCH /shipment-status, A-4 POST /run-log | 全通過 ✓ |
+| B — Cross-store isolation   | B-1 token A 不見 store B tracking, B-2 B-3 token A 存取 store B 的 tracking → 404                | 全通過 ✓ |
+| C — Idempotency             | C-1 第一次 → 201 idempotent=false，C-2 同 key 重複 → 200 idempotent=true                         | 全通過 ✓ |
+| D — rawPayload sanitization | D-1 phone/address/name/email 送進 rawPayload，DB raw_data 不存這些 key                           | 通過 ✓   |
+| E — Validation & auth       | E-1 invalid token → 401, E-2 missing header → 401, E-3~E-6 各種 validation error                 | 全通過 ✓ |
+| F — DB field verification   | F-1 agent_run_logs.token_id = 正確 seeded token id, F-2 storeId isolation                        | 全通過 ✓ |
+| G — Cleanup guard           | G-1 cleanupAll() 函數存在且 storeMain 已 seed                                                    | 通過 ✓   |
 
 ---
 
@@ -154,15 +155,15 @@ integration test 的 `after()` 鉤子執行 `cleanupAll()`，按 FK 依賴反向
 
 測試後查 count：
 
-| 表 | count |
-|---|---|
-| shipment_tracking_events (raw_data contains STEP7D_E2E_) | **0** ✓ |
-| agent_run_logs (error_message/error_code like STEP7D_E2E_) | **0** ✓ |
-| shipment_trackings (tracking_code like STEP7D_E2E_%) | **0** ✓ |
-| seller_agent_tokens (name/token_prefix like STEP7D_E2E_%) | **0** ✓ |
-| orders (public_token like STEP7D_E2E_%) | **0** ✓ |
-| products (name like STEP7D_E2E_%) | **0** ✓ |
-| stores (slug like STEP7D_E2E_%) | **0** ✓ |
+| 表                                                         | count   |
+| ---------------------------------------------------------- | ------- |
+| shipment*tracking_events (raw_data contains STEP7D_E2E*)   | **0** ✓ |
+| agent*run_logs (error_message/error_code like STEP7D_E2E*) | **0** ✓ |
+| shipment*trackings (tracking_code like STEP7D_E2E*%)       | **0** ✓ |
+| seller*agent_tokens (name/token_prefix like STEP7D_E2E*%)  | **0** ✓ |
+| orders (public*token like STEP7D_E2E*%)                    | **0** ✓ |
+| products (name like STEP7D*E2E*%)                          | **0** ✓ |
+| stores (slug like STEP7D*E2E*%)                            | **0** ✓ |
 
 **全部為 0，cleanup 完整。**
 
@@ -170,24 +171,24 @@ integration test 的 `after()` 鉤子執行 `cleanupAll()`，按 FK 依賴反向
 
 ## 6. 風險與待確認
 
-| 風險 | 說明 |
-|---|---|
-| 共享 DB 測試資料 | Integration test 寫入共享 DB，但用 STEP7D_E2E_ prefix + after() cleanupAll() 控制，本次 cleanup 全部成功 |
-| Cleanup 失敗需人工處理 | 若 cleanup 失敗（DB error 或 FK 順序錯誤），需手動 DELETE WHERE slug/name/token like 'STEP7D_E2E_%' |
-| orders 無 merchantId 欄位 | orders 表沒有 merchant_id，目前以 storeId 做租戶隔離，符合現有 API 設計 |
-| lib/db/dist 未重建 | typecheck TS6305 既有問題，runtime 不受影響（tsx 直接 import TypeScript source）|
+| 風險                                | 說明                                                                                                                             |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| 共享 DB 測試資料                    | Integration test 寫入共享 DB，但用 STEP7D*E2E* prefix + after() cleanupAll() 控制，本次 cleanup 全部成功                         |
+| Cleanup 失敗需人工處理              | 若 cleanup 失敗（DB error 或 FK 順序錯誤），需手動 DELETE WHERE slug/name/token like 'STEP7D*E2E*%'                              |
+| orders 無 merchantId 欄位           | orders 表沒有 merchant_id，目前以 storeId 做租戶隔離，符合現有 API 設計                                                          |
+| lib/db/dist 未重建                  | typecheck TS6305 既有問題，runtime 不受影響（tsx 直接 import TypeScript source）                                                 |
 | worktree @workspace/db symlink 問題 | 若 workspace 的 qa 分支缺少 agent schema，worktree 測試必須手動修正 @workspace/db 指向。本次已處理，但未來 worktree 建立時需注意 |
-| tsx 路徑依賴 | tsx 只安裝於 scripts 套件，需使用絕對路徑 /home/runner/workspace/scripts/node_modules/tsx/dist/esm/index.mjs |
+| tsx 路徑依賴                        | tsx 只安裝於 scripts 套件，需使用絕對路徑 /home/runner/workspace/scripts/node_modules/tsx/dist/esm/index.mjs                     |
 
 ---
 
 ## 7. 下一步建議
 
-| 優先序 | Step | 說明 |
-|--------|------|------|
-| 1 | **Step 7E** | Seller Agent Workspace UI 規劃，E2E 全通過可進入 |
-| 2 | **Step 7F** | Agent 安全防護補強（rate limit / kill switch / scope enforcement）|
-| 3 | lib/db dist 重建 | 解決 typecheck TS6305，但不阻擋 runtime |
+| 優先序 | Step             | 說明                                                               |
+| ------ | ---------------- | ------------------------------------------------------------------ |
+| 1      | **Step 7E**      | Seller Agent Workspace UI 規劃，E2E 全通過可進入                   |
+| 2      | **Step 7F**      | Agent 安全防護補強（rate limit / kill switch / scope enforcement） |
+| 3      | lib/db dist 重建 | 解決 typecheck TS6305，但不阻擋 runtime                            |
 
 ---
 
