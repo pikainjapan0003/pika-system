@@ -35,3 +35,11 @@ TypeError [ERR_UNKNOWN_FILE_EXTENSION]: Unknown file extension ".png"
 3. 待可用的 Linux E2E harness 恢復後，以真 Vite loader 驗證整個對話框。
 
 既有 `moneyPreview.test.mjs` 已釘住 `0.1 × 3 = 0.3` 的純函式語意；本報告不把該純測試冒充為本包要求的元件接線測試。
+
+## BATCH-15 解鎖結果（2026-07-20）
+
+狀態：`closed`。
+
+- `40bd9e4 add-test-asset-loader` 新增測試專用 ESM asset loader，支援 `.png`、`.svg`、`.jpg`、`.jpeg`，並以真實 PNG import 煙霧測試證明可載入；非資產 import 仍交回既有 loader。
+- `a866e72 test-edit-order-dialog-money-preview` 已用 jsdom 渲染真實 `EditOrderDialog`，2/2 通過：`0.1 × 3` 顯示 `NT$0.3`，且折讓超過商品小計加運費時顯示既有錯誤文案。
+- asset loader 只存在於測試目錄，不進 production bundle，也未改 `EditOrderDialog` 或金額公式。
