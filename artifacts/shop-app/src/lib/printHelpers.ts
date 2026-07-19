@@ -333,7 +333,7 @@ ${ordersHtml}`;
 }
 
 export function getOrderReceiptStatusLabel(status: OrderStatus): string {
-  return STATUS_LABELS[status];
+  return STATUS_LABELS[status] ?? status;
 }
 
 function formatCurrency(value: number): string {

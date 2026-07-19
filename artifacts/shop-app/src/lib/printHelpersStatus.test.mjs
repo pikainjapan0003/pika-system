@@ -31,3 +31,7 @@ test("receipt labels contain no confirmed or arrived ghost order states", () => 
   assert.equal(Object.hasOwn(STATUS_LABELS, "confirmed"), false);
   assert.equal(Object.hasOwn(STATUS_LABELS, "arrived"), false);
 });
+
+test("an unknown receipt status falls back to its original value", () => {
+  assert.equal(getOrderReceiptStatusLabel("future_status"), "future_status");
+});
