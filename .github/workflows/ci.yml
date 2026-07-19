@@ -88,7 +88,8 @@ jobs:
             find ../shop-app/src/lib -type f -name '*.test.mjs' -print
             find src/lib -type f -name '*.test.mjs' -print
           )
-          node \
+          TSX_TSCONFIG_PATH=../shop-app/tsconfig.json node \
+            --experimental-test-module-mocks \
             --import tsx/esm \
             --experimental-test-coverage \
             --test-reporter=spec \
