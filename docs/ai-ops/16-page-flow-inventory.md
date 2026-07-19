@@ -1,5 +1,7 @@
 # T-19 頁面流程盤點
 
+> 行號基準：文中 `file:line` 以 `663c21d`（包 15／16 全域格式化前）的歷史版本為準；格式化後行號已位移。
+
 - 盤點日期：2026-07-18
 - 路由權威來源：`artifacts/shop-app/src/App.tsx:448-485`
 - 技能顯示規則：`artifacts/shop-app/src/lib/dailySkillVisibility.ts:8-67`
