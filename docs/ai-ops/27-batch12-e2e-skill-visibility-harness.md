@@ -54,3 +54,16 @@ HARNESS_EXIT=1
 ```
 
 本機的 `bash` 實際進入 WSL 路徑語意，且在建立拋棄式 Docker network 時即失敗；尚未進入 PostgreSQL、依賴安裝、Vite 或 Playwright。依同包兩輪停止規則，包 1 標記 skipped，刪除未驗證 harness；以包 1 為前置的包 2–5 同步 skipped，沒有留下未實跑的 spec 或 `testMatch` 變更。
+
+## BATCH-15 改走手動 Linux workflow（2026-07-20）
+
+Windows→Docker harness 不再追加猜測。本批新增 `.github/workflows/e2e-pending.yml`，只接受 `workflow_dispatch` 手動觸發，在 GitHub Actions Linux runner 安裝 Chromium，並以 `e2e/playwright.pending.config.mjs` 探索 `e2e/pending/*.spec.mjs`。
+
+目前四條 pending spec 均已可被 Playwright `--list` 探索：
+
+1. 技能開啟後入口即時顯示。
+2. 月報整數毛利與 pending／尚無快照計數。
+3. 客戶匯出遮罩與明文二次確認 header。
+4. 訂單編輯精確預覽與超額折讓錯誤。
+
+主 CI 與既有 `e2e/playwright.config.mjs` 未改。`--list` 只證明測試可探索，四條 spec 仍維持 pending；必須由手動 workflow 真正產生 Playwright pass 原文後才可改列已驗證。失敗時 workflow 會上傳 trace／screenshot artifact，保留 7 天。
