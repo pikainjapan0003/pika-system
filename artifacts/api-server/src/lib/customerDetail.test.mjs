@@ -56,3 +56,55 @@ test("cart history uses the existing order aggregate snapshot", () => {
     },
   );
 });
+
+test("mixed customer history keeps single, cart, exempt, pending, and missing states distinct", () => {
+  const displays = [
+    {
+      profitSnapshotStatus: "captured",
+      profitSnapshotUnitProfitTwd: "10.4",
+    },
+    {
+      cartProfitSnapshotStatus: "captured",
+      cartProfitSnapshotTotalTwd: "20.5",
+    },
+    {
+      profitSnapshotStatus: "exempt",
+      profitSnapshotUnitProfitTwd: "30",
+    },
+    { cartProfitSnapshotStatus: "pending" },
+    { profitSnapshotStatus: null },
+  ].map(formatCustomerOrderProfit);
+
+  assert.deepEqual(displays, [
+    {
+      status: "captured",
+      label: "定格單件毛利",
+      amountTwd: "10",
+      scope: "unit",
+    },
+    {
+      status: "captured",
+      label: "定格整單毛利",
+      amountTwd: "21",
+      scope: "order",
+    },
+    {
+      status: "exempt",
+      label: "免攤單件毛利",
+      amountTwd: "30",
+      scope: "unit",
+    },
+    {
+      status: "pending",
+      label: "待確認",
+      amountTwd: null,
+      scope: "order",
+    },
+    {
+      status: "missing",
+      label: "尚無快照",
+      amountTwd: null,
+      scope: "unit",
+    },
+  ]);
+});
