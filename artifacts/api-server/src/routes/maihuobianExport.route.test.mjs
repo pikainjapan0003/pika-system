@@ -225,7 +225,13 @@ if (!process.env.DATABASE_URL) {
     const missingBoth = await request(
       "POST",
       `/stores/${storeId}/orders/maihuobian-export`,
-      { body: { from: "2026-07-19", to: "2026-07-19" } },
+      {
+        body: {
+          from: "2026-07-19",
+          to: "2026-07-19",
+          orderIds: [eligibleOrderId],
+        },
+      },
     );
     assert.equal(missingBoth.status, 400);
     assert.equal(missingBoth.data.code, "CLEAR_TEXT_CONFIRMATION_REQUIRED");
@@ -234,7 +240,11 @@ if (!process.env.DATABASE_URL) {
       "POST",
       `/stores/${storeId}/orders/maihuobian-export`,
       {
-        body: { from: "2026-07-19", to: "2026-07-19" },
+        body: {
+          from: "2026-07-19",
+          to: "2026-07-19",
+          orderIds: [eligibleOrderId],
+        },
         headers: { "x-confirm-cleartext-export": "true" },
       },
     );
@@ -246,7 +256,11 @@ if (!process.env.DATABASE_URL) {
       "POST",
       `/stores/${storeId}/orders/maihuobian-export`,
       {
-        body: { from: "2026-07-19", to: "2026-07-19" },
+        body: {
+          from: "2026-07-19",
+          to: "2026-07-19",
+          orderIds: [eligibleOrderId],
+        },
         headers: {
           "x-confirm-cleartext-export": "true",
           "x-confirm-maihuobian-export": "true",

@@ -311,6 +311,7 @@ import { toast } from "@/hooks/use-toast";
 import { printOrderReceipt } from "../lib/printHelpers";
 import { recordServerAuditEvent } from "@/lib/serverAudit";
 import { useDailySkillVisibility } from "@/lib/dailySkillVisibilityContext";
+import { MaihuobianExportPanel } from "@/lib/MaihuobianExportPanel";
 
 export default function OrdersPage() {
   const qc = useQueryClient();
@@ -360,6 +361,7 @@ export default function OrdersPage() {
   );
   const [exportCleartext, setExportCleartext] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [showMaihuobianExport, setShowMaihuobianExport] = useState(false);
 
   // Bulk selection state
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
@@ -840,6 +842,13 @@ export default function OrdersPage() {
             >
               {exporting ? "匯出中…" : "匯出 CSV"}
             </button>
+            <button
+              onClick={() => setShowMaihuobianExport((current) => !current)}
+              disabled={!storeId}
+              className="min-h-11 w-full px-3 text-xs font-medium text-primary bg-primary/10 rounded-xl disabled:opacity-50"
+            >
+              賣貨便匯出
+            </button>
             {skillVisibility.isVisible("logistics") && (
               <>
                 <button
@@ -927,6 +936,13 @@ export default function OrdersPage() {
       </header>
 
       <div className="px-5 py-4">
+        {showMaihuobianExport && storeId && (
+          <MaihuobianExportPanel
+            storeId={storeId}
+            getToken={getToken}
+            onClose={() => setShowMaihuobianExport(false)}
+          />
+        )}
         {isLoading ? (
           <div className="flex justify-center py-12">
             <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
