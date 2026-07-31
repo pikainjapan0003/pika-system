@@ -28,6 +28,19 @@ export const PARTIAL_PICKING_DEMO_FIXTURE = Object.freeze({
   checkedItemCount: 1,
 });
 
+export const MAIHUOBIAN_DEMO_FIXTURE = Object.freeze({
+  eligiblePublicTokenPrefixes: Object.freeze([
+    "demo-order-maihuobian-eligible-normal-",
+    "demo-order-maihuobian-eligible-frozen-",
+    "demo-order-maihuobian-eligible-third-",
+  ]),
+  ineligiblePublicTokenPrefixes: Object.freeze([
+    "demo-order-maihuobian-ineligible-status-",
+    "demo-order-maihuobian-ineligible-shipping-",
+    "demo-order-maihuobian-ineligible-pickup-",
+  ]),
+});
+
 function snapshotInput({ product, route, trip, store, unitPriceTwd }) {
   return {
     unitPriceTwd,
@@ -159,6 +172,7 @@ export async function seedDemoData(databaseUrl, { append = false } = {}) {
             price: "800.00",
             costJpy: "2970",
             tripRouteId: route.id,
+            storageTempClass: "normal",
             inventory: 100,
             shareToken: `demo-allocated-${runId}`,
           },
@@ -168,6 +182,7 @@ export async function seedDemoData(databaseUrl, { append = false } = {}) {
             price: "800.00",
             costJpy: null,
             tripRouteId: null,
+            storageTempClass: "normal",
             inventory: 100,
             shareToken: `demo-pending-${runId}`,
           },
@@ -178,6 +193,7 @@ export async function seedDemoData(databaseUrl, { append = false } = {}) {
             costJpy: "8000",
             isTransportCostExempt: true,
             tripRouteId: null,
+            storageTempClass: "frozen",
             inventory: 100,
             shareToken: `demo-exempt-${runId}`,
           },
@@ -330,6 +346,88 @@ export async function seedDemoData(databaseUrl, { append = false } = {}) {
           items: ordersTable.items,
           orderStatus: ordersTable.status,
           shippingStatus: ordersTable.shippingStatus,
+        });
+
+      const maihuobianSharedOrderValues = {
+        storeId: store.id,
+        customerId: customer.id,
+        buyerName: "示範顧客",
+        buyerPhone: "0900000000",
+        pickupMethod: "7-11 取貨",
+        shippingFee: "60.00",
+        status: "preparing",
+        shippingStatus: "not_shipped",
+        recipientName: "示範顧客",
+        recipientPhone: "0900000000",
+        cvsStoreId: "123456",
+      };
+      const maihuobianOrders = await tx
+        .insert(ordersTable)
+        .values([
+          {
+            ...maihuobianSharedOrderValues,
+            productId: allocatedProduct.id,
+            productName: allocatedProduct.name,
+            publicToken: `${MAIHUOBIAN_DEMO_FIXTURE.eligiblePublicTokenPrefixes[0]}${runId}`,
+            quantity: 1,
+            unitPrice: allocatedProduct.price,
+            totalPrice: multiplyMoneyByQuantity(allocatedProduct.price, 1),
+          },
+          {
+            ...maihuobianSharedOrderValues,
+            productId: exemptProduct.id,
+            productName: exemptProduct.name,
+            publicToken: `${MAIHUOBIAN_DEMO_FIXTURE.eligiblePublicTokenPrefixes[1]}${runId}`,
+            quantity: 1,
+            unitPrice: exemptProduct.price,
+            totalPrice: multiplyMoneyByQuantity(exemptProduct.price, 1),
+          },
+          {
+            ...maihuobianSharedOrderValues,
+            productId: pendingProduct.id,
+            productName: pendingProduct.name,
+            publicToken: `${MAIHUOBIAN_DEMO_FIXTURE.eligiblePublicTokenPrefixes[2]}${runId}`,
+            quantity: 2,
+            unitPrice: pendingProduct.price,
+            totalPrice: multiplyMoneyByQuantity(pendingProduct.price, 2),
+          },
+          {
+            ...maihuobianSharedOrderValues,
+            productId: allocatedProduct.id,
+            productName: allocatedProduct.name,
+            publicToken: `${MAIHUOBIAN_DEMO_FIXTURE.ineligiblePublicTokenPrefixes[0]}${runId}`,
+            quantity: 1,
+            unitPrice: allocatedProduct.price,
+            totalPrice: multiplyMoneyByQuantity(allocatedProduct.price, 1),
+            status: "pending",
+          },
+          {
+            ...maihuobianSharedOrderValues,
+            productId: allocatedProduct.id,
+            productName: allocatedProduct.name,
+            publicToken: `${MAIHUOBIAN_DEMO_FIXTURE.ineligiblePublicTokenPrefixes[1]}${runId}`,
+            quantity: 1,
+            unitPrice: allocatedProduct.price,
+            totalPrice: multiplyMoneyByQuantity(allocatedProduct.price, 1),
+            shippingStatus: "shipped",
+          },
+          {
+            ...maihuobianSharedOrderValues,
+            productId: allocatedProduct.id,
+            productName: allocatedProduct.name,
+            publicToken: `${MAIHUOBIAN_DEMO_FIXTURE.ineligiblePublicTokenPrefixes[2]}${runId}`,
+            quantity: 1,
+            unitPrice: allocatedProduct.price,
+            totalPrice: multiplyMoneyByQuantity(allocatedProduct.price, 1),
+            pickupMethod: "self_pickup",
+          },
+        ])
+        .returning({
+          id: ordersTable.id,
+          publicToken: ordersTable.publicToken,
+          orderStatus: ordersTable.status,
+          shippingStatus: ordersTable.shippingStatus,
+          pickupMethod: ordersTable.pickupMethod,
         });
 
       const creditOrder = insertedSingleOrders.find((order) =>
@@ -486,6 +584,7 @@ export async function seedDemoData(databaseUrl, { append = false } = {}) {
         tripRouteId: route.id,
         productIds: [allocatedProduct.id, pendingProduct.id, exemptProduct.id],
         singleOrders: insertedSingleOrders,
+        maihuobianOrders,
         cartOrder,
         storeCredit: {
           orderId: creditOrder.id,
