@@ -84,6 +84,7 @@ jobs:
               src/routes/maihuobianExport.route.test.mjs \
               src/routes/storeCreditOrder.route.test.mjs \
               src/routes/customerStoreCredit.route.test.mjs \
+              src/routes/storeCreditLifecycle.route.test.mjs \
               src/routes/orderPicking.route.test.mjs \
               src/routes/devHandoffProductionGuard.route.test.mjs
 
