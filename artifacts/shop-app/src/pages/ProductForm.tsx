@@ -12,6 +12,10 @@ import {
   Product,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
+import {
+  ProductShippingTemperatureField,
+  ProductShippingTemperatureClass,
+} from "../lib/ProductShippingTemperatureField";
 
 interface Spec {
   name: string;
@@ -73,6 +77,8 @@ export default function ProductFormPage({ productId }: Props) {
 
   const [skuCode, setSkuCode] = useState("");
   const [storageTemp, setStorageTemp] = useState<StorageTemp | null>(null);
+  const [storageTempClass, setStorageTempClass] =
+    useState<ProductShippingTemperatureClass>(null);
   const [shelfLife, setShelfLife] = useState("");
   const [weightKg, setWeightKg] = useState("");
   const [categoryId, setCategoryId] = useState<number | null>(null);
@@ -149,6 +155,7 @@ export default function ProductFormPage({ productId }: Props) {
         vipPrice?: number | string | null;
         wholesalePrice?: number | string | null;
         partnerPrice?: number | string | null;
+        storageTempClass?: ProductShippingTemperatureClass;
       };
       setName(existingProduct.name);
       setDescription(existingProduct.description ?? "");
@@ -176,6 +183,7 @@ export default function ProductFormPage({ productId }: Props) {
       setInternalNote(existingProduct.internalNote ?? "");
       setSkuCode(existingProduct.skuCode ?? "");
       setStorageTemp((existingProduct.storageTemp as StorageTemp) ?? null);
+      setStorageTempClass(tierProduct.storageTempClass ?? null);
       setShelfLife(existingProduct.shelfLife ?? "");
       setWeightKg(
         existingProduct.weightKg != null
@@ -422,6 +430,7 @@ export default function ProductFormPage({ productId }: Props) {
           internalNote: internalNote.trim() || null,
           skuCode: skuCode.trim() || null,
           storageTemp: storageTemp,
+          storageTempClass,
           shelfLife: shelfLife.trim() || null,
           weightKg: weightKgNum,
           categoryId: categoryId,
@@ -445,6 +454,7 @@ export default function ProductFormPage({ productId }: Props) {
           ...(internalNote.trim() ? { internalNote: internalNote.trim() } : {}),
           ...(skuCode.trim() ? { skuCode: skuCode.trim() } : {}),
           ...(storageTemp ? { storageTemp } : {}),
+          ...(storageTempClass ? { storageTempClass } : {}),
           ...(shelfLife.trim() ? { shelfLife: shelfLife.trim() } : {}),
           ...(weightKgNum != null ? { weightKg: weightKgNum } : {}),
           ...(categoryId != null ? { categoryId } : {}),
@@ -902,6 +912,10 @@ export default function ProductFormPage({ productId }: Props) {
                   })}
                 </div>
               </div>
+              <ProductShippingTemperatureField
+                value={storageTempClass}
+                onChange={setStorageTempClass}
+              />
               {/* 保存期限 */}
               <div>
                 <label className="block text-xs text-muted-foreground mb-1.5">

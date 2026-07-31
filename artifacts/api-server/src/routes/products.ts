@@ -23,6 +23,15 @@ function parseOptionalTierPrice(value: unknown): string | null | undefined {
   return value.trim();
 }
 
+function parseStorageTempClass(
+  value: unknown,
+): "normal" | "frozen" | null | undefined {
+  if (value === undefined) return undefined;
+  if (value === null || value === "") return null;
+  if (value === "normal" || value === "frozen") return value;
+  throw new TypeError("Shipping temperature must be normal, frozen, or empty");
+}
+
 async function assertCategoryBelongsToStore(
   storeId: number,
   categoryId: number,
@@ -92,12 +101,15 @@ router.post("/stores/:storeId/products", requireAuth, async (req: any, res) => {
     wholesalePrice: string | null;
     partnerPrice: string | null;
   };
+  let storageTempClass: "normal" | "frozen" | null;
   try {
     tierPrices = {
       vipPrice: parseOptionalTierPrice(req.body?.vipPrice) ?? null,
       wholesalePrice: parseOptionalTierPrice(req.body?.wholesalePrice) ?? null,
       partnerPrice: parseOptionalTierPrice(req.body?.partnerPrice) ?? null,
     };
+    storageTempClass =
+      parseStorageTempClass(req.body?.storageTempClass) ?? null;
   } catch (error) {
     return res.status(422).json({ error: (error as Error).message });
   }
@@ -120,6 +132,7 @@ router.post("/stores/:storeId/products", requireAuth, async (req: any, res) => {
         internalNote: parsed.data.internalNote ?? null,
         skuCode: parsed.data.skuCode ?? null,
         storageTemp: parsed.data.storageTemp ?? null,
+        storageTempClass,
         shelfLife: parsed.data.shelfLife ?? null,
         weightKg:
           parsed.data.weightKg != null ? String(parsed.data.weightKg) : null,
@@ -206,6 +219,11 @@ router.patch(
         const parsedTierPrice = parseOptionalTierPrice(req.body?.[field]);
         if (parsedTierPrice !== undefined) updateData[field] = parsedTierPrice;
       }
+      const storageTempClass = parseStorageTempClass(
+        req.body?.storageTempClass,
+      );
+      if (storageTempClass !== undefined)
+        updateData.storageTempClass = storageTempClass;
     } catch (error) {
       return res.status(422).json({ error: (error as Error).message });
     }
