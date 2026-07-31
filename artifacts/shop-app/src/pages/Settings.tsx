@@ -491,7 +491,7 @@ export default function SettingsPage() {
             <button
               type="button"
               onClick={() => setActiveSection("main")}
-              className="text-primary text-sm font-medium shrink-0 w-16"
+              className="min-h-11 text-primary text-sm font-medium shrink-0 w-16"
             >
               ‹ 返回
             </button>
@@ -505,7 +505,7 @@ export default function SettingsPage() {
                 disabled={
                   updateStore.isPending || logoUploadStatus === "uploading"
                 }
-                className="h-8 px-4 bg-primary text-white text-sm font-semibold rounded-full disabled:opacity-60 whitespace-nowrap"
+                className="min-h-11 px-4 bg-primary text-white text-sm font-semibold rounded-full disabled:opacity-60 whitespace-nowrap"
               >
                 {saved
                   ? "已儲存！"
@@ -720,7 +720,7 @@ export default function SettingsPage() {
                           key={hex}
                           type="button"
                           onClick={() => handleBrandColorChange(hex)}
-                          className="w-8 h-8 rounded-full flex items-center justify-center transition-transform hover:scale-110 shrink-0"
+                          className="min-h-11 w-8 rounded-full flex items-center justify-center transition-transform hover:scale-110 shrink-0"
                           style={{
                             backgroundColor: hex,
                             boxShadow:
@@ -1239,7 +1239,7 @@ function ProfileLinkRow() {
       <button
         type="button"
         onClick={handleCopy}
-        className="ml-2 w-9 h-9 rounded-full bg-secondary flex items-center justify-center shrink-0 transition-all duration-200 hover:bg-secondary/80 hover:scale-105"
+        className="ml-2 min-h-11 w-9 rounded-full bg-secondary flex items-center justify-center shrink-0 transition-all duration-200 hover:bg-secondary/80 hover:scale-105"
         title="複製連結"
       >
         {copied ? (
@@ -1350,7 +1350,7 @@ function SettingsPreviewPanel({
             <button
               type="button"
               onClick={onClose}
-              className="w-8 h-8 rounded-full bg-muted/60 flex items-center justify-center shrink-0 hover:bg-muted transition-colors active:scale-95"
+              className="min-h-11 w-8 rounded-full bg-muted/60 flex items-center justify-center shrink-0 hover:bg-muted transition-colors active:scale-95"
             >
               <ArrowLeft size={16} className="text-foreground/70" />
             </button>

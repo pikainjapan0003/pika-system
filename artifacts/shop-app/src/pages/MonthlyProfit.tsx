@@ -75,7 +75,7 @@ export default function MonthlyProfitPage() {
         <button
           type="button"
           onClick={() => setLocation("/dashboard")}
-          className="text-xs text-muted-foreground mb-2"
+          className="mb-2 min-h-11 text-xs text-muted-foreground"
         >
           ‹ 返回首頁
         </button>
