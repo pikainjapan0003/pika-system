@@ -130,9 +130,9 @@ CONTAINER_RESIDUE=0
 
 ## 風險
 
-1. 賣貨便 preview GET 在二次確認前會回傳明文匯出列；owner-only 與跨店防線仍在，但 `41-maihuobian-privacy-audit.md` 建議改成先回資格摘要、確認後才產明文。
+1. 賣貨便 preview GET 的明文問題已由 BATCH-19 `e231afe` 解決：GET 只回資格摘要，確認後 POST 才產明文；opaque audit ID 與 CSV 公式注入測試亦分別由 `a49700d`、`40da9b0` 補齊。
 2. 有購物金流水的客戶受 FK restrict 保護，現階段不可硬刪；正式個資刪除需由老闆在軟刪遮蔽與匿名化間拍板。
-3. Orders／Dashboard component tests 的 Node/tsx harness 仍未解；既有純函式、route、E2E 防線未因此弱化。
+3. Orders／Dashboard component tests 的 Node/tsx harness 仍未解。BATCH-19 包 3 再試兩輪：第一輪因子元件匯入鏈缺 `ShippingMethod`，第二輪補 mock 後卡在 Node 環境的 `import.meta.env.BASE_URL`；變更均撤回，包 4／5 依前置規則跳過。既有純函式、route、E2E 防線未因此弱化。
 4. `store_credit_transactions` 的客戶餘額查詢索引目前可用；資料量顯著增長後，應依 `44-new-tables-index-review.md` 觀察 query plan。
 
 ## 未解問題
