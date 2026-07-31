@@ -26,6 +26,7 @@ if (!process.env.DATABASE_URL) {
 
   const { default: express } = await import("express");
   const {
+    auditLogsTable,
     customersTable,
     db,
     ordersTable,
@@ -201,6 +202,30 @@ if (!process.env.DATABASE_URL) {
     );
     assert.equal(reversals.length, 1);
     assert.equal(reversals[0].amount, "100.000000000000");
+
+    const creditAuditRows = (
+      await db
+        .select()
+        .from(auditLogsTable)
+        .where(eq(auditLogsTable.storeId, storeId))
+    ).filter((row) => row.action.startsWith("store_credit_"));
+    assert.deepEqual(creditAuditRows.map((row) => row.action).sort(), [
+      "store_credit_reversal",
+      "store_credit_spend",
+    ]);
+    for (const row of creditAuditRows) {
+      assert.equal(row.actor, MERCHANT_ID);
+      assert.match(
+        row.target,
+        new RegExp(
+          `^customer-${customerId}:ledger-\\d+:order-${created.data.id}:amount-100\\.000000000000$`,
+        ),
+      );
+      assert.doesNotMatch(
+        row.target,
+        /0900000000|batch17-credit-product|publicToken/i,
+      );
+    }
 
     const linkedDelete = await deleteOrder(created.data.id);
     assert.equal(linkedDelete.status, 409);

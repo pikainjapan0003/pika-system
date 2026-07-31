@@ -2,6 +2,7 @@ import { Router } from "express";
 import { and, eq, gte, inArray, isNull, lt, or, sql } from "drizzle-orm";
 import { randomBytes } from "crypto";
 import {
+  auditLogsTable,
   backfillPendingCartOrderProfitSnapshot,
   backfillPendingOrderProfitSnapshot,
   createInitialOrderProfitSnapshot,
@@ -54,7 +55,10 @@ import {
 import { parsePaymentLast5 } from "../lib/paymentLast5.ts";
 import { parseCustomerExportMode } from "../lib/customerExport.ts";
 import { formatOrderExportCsv } from "../lib/orderExport.ts";
-import { recordAuditLog } from "../lib/auditLog.ts";
+import {
+  buildStoreCreditAuditTarget,
+  recordAuditLog,
+} from "../lib/auditLog.ts";
 import {
   parseOptionalCustomerId,
   resolveCustomerCvsDefaults,
@@ -579,15 +583,32 @@ router.post("/stores/:storeId/orders", requireAuth, async (req: any, res) => {
             availableBalance: availableCredit.toDecimalPlaces(12),
             relatedOrderId: newOrder.id,
           });
-          await tx.insert(storeCreditTransactionsTable).values({
+          const [spendTransaction] = await tx
+            .insert(storeCreditTransactionsTable)
+            .values({
+              storeId,
+              customerId,
+              direction: spend.direction,
+              type: spend.type,
+              amount: spend.amount.toDecimalPlaces(12),
+              relatedOrderId: spend.relatedOrderId,
+              note: null,
+              createdBy: req.userId,
+            })
+            .returning({ id: storeCreditTransactionsTable.id });
+          if (!spendTransaction) {
+            throw new Error("Store credit spend insert returned no row");
+          }
+          await tx.insert(auditLogsTable).values({
             storeId,
-            customerId,
-            direction: spend.direction,
-            type: spend.type,
-            amount: spend.amount.toDecimalPlaces(12),
-            relatedOrderId: spend.relatedOrderId,
-            note: null,
-            createdBy: req.userId,
+            actor: req.userId,
+            action: "store_credit_spend",
+            target: buildStoreCreditAuditTarget({
+              customerId,
+              transactionId: spendTransaction.id,
+              amount: spend.amount.toDecimalPlaces(12),
+              relatedOrderId: spend.relatedOrderId,
+            }),
           });
         }
         return newOrder;
@@ -2007,15 +2028,32 @@ router.patch("/orders/:orderId/status", requireAuth, async (req: any, res) => {
             entries: ledgerEntries,
             relatedOrderId: lockedOrder.id,
           });
-          await tx.insert(storeCreditTransactionsTable).values({
+          const [reversalTransaction] = await tx
+            .insert(storeCreditTransactionsTable)
+            .values({
+              storeId: lockedOrder.storeId,
+              customerId: lockedOrder.customerId,
+              direction: reversal.direction,
+              type: reversal.type,
+              amount: reversal.amount.toDecimalPlaces(12),
+              relatedOrderId: reversal.relatedOrderId,
+              note: null,
+              createdBy: req.userId,
+            })
+            .returning({ id: storeCreditTransactionsTable.id });
+          if (!reversalTransaction) {
+            throw new Error("Store credit reversal insert returned no row");
+          }
+          await tx.insert(auditLogsTable).values({
             storeId: lockedOrder.storeId,
-            customerId: lockedOrder.customerId,
-            direction: reversal.direction,
-            type: reversal.type,
-            amount: reversal.amount.toDecimalPlaces(12),
-            relatedOrderId: reversal.relatedOrderId,
-            note: null,
-            createdBy: req.userId,
+            actor: req.userId,
+            action: "store_credit_reversal",
+            target: buildStoreCreditAuditTarget({
+              customerId: lockedOrder.customerId,
+              transactionId: reversalTransaction.id,
+              amount: reversal.amount.toDecimalPlaces(12),
+              relatedOrderId: reversal.relatedOrderId,
+            }),
           });
         }
       }
