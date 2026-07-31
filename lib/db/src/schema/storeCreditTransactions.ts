@@ -65,6 +65,8 @@ export const storeCreditTransactionsTable = pgTable(
       t.customerId,
       t.createdAt,
     ),
+    // Serves PostgreSQL's customer_id-only FK lookup when a customer changes.
+    index("store_credit_transactions_customer_id_idx").on(t.customerId),
     index("store_credit_transactions_related_order_idx").on(t.relatedOrderId),
     uniqueIndex("store_credit_transactions_order_spend_unique")
       .on(t.relatedOrderId)
