@@ -3,6 +3,16 @@ import test from "node:test";
 
 import { resolveOrderDisplayTotal } from "./orderDisplayTotal.ts";
 
+test("display total prefers the frozen payable after store credit", () => {
+  assert.equal(
+    resolveOrderDisplayTotal({
+      payableAfterCredit: "0.000000000000",
+      orderTotal: "100",
+    }),
+    0,
+  );
+});
+
 test("display total prefers the backend orderTotal when it is present", () => {
   assert.equal(
     resolveOrderDisplayTotal({

@@ -6,6 +6,7 @@ import {
   integer,
   numeric,
   index,
+  uniqueIndex,
   check,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
@@ -62,6 +63,12 @@ export const storeCreditTransactionsTable = pgTable(
       t.createdAt,
     ),
     index("store_credit_transactions_related_order_idx").on(t.relatedOrderId),
+    uniqueIndex("store_credit_transactions_order_spend_unique")
+      .on(t.relatedOrderId)
+      .where(sql`${t.type} = 'spend'`),
+    uniqueIndex("store_credit_transactions_order_reversal_unique")
+      .on(t.relatedOrderId)
+      .where(sql`${t.type} = 'reversal'`),
     check(
       "store_credit_transactions_direction_valid",
       sql`${t.direction} IN ('credit', 'debit')`,

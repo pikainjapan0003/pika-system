@@ -20,6 +20,8 @@ interface PrintOrderItem {
 type PrintableOrder = Order & {
   discountAmount?: number | null;
   discountNote?: string | null;
+  creditSpent?: number | string | null;
+  payableAfterCredit?: number | string | null;
   items?: PrintOrderItem[] | null;
 };
 
@@ -598,9 +600,14 @@ export function printOrderReceipt(
   const shippingFee = Number(order.shippingFee ?? 0);
   const discountAmount = Number(order.discountAmount ?? 0);
   const orderTotal = order.orderTotal ?? productSubtotal + shippingFee;
+  const creditSpent = Number(order.creditSpent ?? 0);
+  const payableAfterCredit =
+    order.payableAfterCredit == null
+      ? Math.max(orderTotal - creditSpent, 0)
+      : Number(order.payableAfterCredit);
   const paidAmount = Number(order.paidAmount ?? 0);
   const remainingAmount =
-    order.remainingAmount ?? Math.max(orderTotal - paidAmount, 0);
+    order.remainingAmount ?? Math.max(payableAfterCredit - paidAmount, 0);
 
   const paymentStatusText = order.paymentStatus
     ? (PAYMENT_STATUS_LABELS[order.paymentStatus] ?? order.paymentStatus)
@@ -621,6 +628,11 @@ export function printOrderReceipt(
   const discountNoteRow = (order.discountNote ?? "").trim()
     ? `<tr><td class="sl" style="padding-left:10px;font-size:11px;color:#888">折讓備註</td><td class="sr" style="font-size:11px;color:#888">${esc((order.discountNote ?? "").trim())}</td></tr>`
     : "";
+
+  const storeCreditRow =
+    creditSpent > 0
+      ? `<tr><td class="sl">購物金折抵</td><td class="sr" style="color:#e11d48">-${formatCurrency(creditSpent)}</td></tr>`
+      : "";
 
   const remainingBlock =
     remainingAmount <= 0
@@ -783,9 +795,10 @@ export function printOrderReceipt(
     <tr><td class="sl">運費</td><td class="sr">${formatCurrency(shippingFee)}</td></tr>
     ${discountRow}
     ${discountNoteRow}
+    ${storeCreditRow}
     <tr class="total-row">
-      <td class="sl">訂單總額</td>
-      <td class="sr total-amount">${formatCurrency(orderTotal)}</td>
+      <td class="sl">應付金額</td>
+      <td class="sr total-amount">${formatCurrency(payableAfterCredit)}</td>
     </tr>
     <tr>
       <td class="sl" style="padding-top:6px">已收金額</td>

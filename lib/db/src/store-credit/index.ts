@@ -17,6 +17,11 @@ export interface PreparedStoreCreditTransaction {
   relatedOrderId: number | null;
 }
 
+export interface PreparedOrderStoreCreditApplication {
+  creditSpent: ExactDecimal;
+  payableAfterCredit: ExactDecimal;
+}
+
 function compare(left: ExactDecimal, right: ExactDecimal): number {
   const difference =
     left.numerator * right.denominator - right.numerator * left.denominator;
@@ -38,6 +43,19 @@ function requirePositiveOrderId(orderId: number): number {
     throw new RangeError("Related order id must be a positive safe integer");
   }
   return orderId;
+}
+
+function ensureSpendWithinBalance(
+  amount: ExactDecimal,
+  availableBalanceInput: Exclude<DecimalInput, null | undefined>,
+): void {
+  const availableBalance = ExactDecimal.from(availableBalanceInput);
+  if (compare(availableBalance, ExactDecimal.zero()) < 0) {
+    throw new RangeError("Available store credit balance cannot be negative");
+  }
+  if (compare(amount, availableBalance) > 0) {
+    throw new RangeError("Store credit spend exceeds available balance");
+  }
 }
 
 /** C1-C8: ledger balance is the exact sum of credits minus debits. */
@@ -71,21 +89,62 @@ export function prepareStoreCreditSpend(input: {
   relatedOrderId: number;
 }): PreparedStoreCreditTransaction {
   const amount = requirePositiveAmount(input.amount);
-  const availableBalance = ExactDecimal.from(input.availableBalance);
   const relatedOrderId = requirePositiveOrderId(input.relatedOrderId);
 
-  if (compare(availableBalance, ExactDecimal.zero()) < 0) {
-    throw new RangeError("Available store credit balance cannot be negative");
-  }
-  if (compare(amount, availableBalance) > 0) {
-    throw new RangeError("Store credit spend exceeds available balance");
-  }
+  ensureSpendWithinBalance(amount, input.availableBalance);
 
   return {
     direction: "debit",
     type: "spend",
     amount,
     relatedOrderId,
+  };
+}
+
+/**
+ * C2/C5/C7: apply an explicitly requested amount to an order's terminal
+ * payable value. Missing or zero means no application; a positive request
+ * requires a linked customer and may reach, but never cross, exact zero.
+ */
+export function prepareOrderStoreCreditApplication(input: {
+  orderPayable: Exclude<DecimalInput, null | undefined>;
+  requestedAmount?: DecimalInput;
+  availableBalance: Exclude<DecimalInput, null | undefined>;
+  customerId: number | null;
+}): PreparedOrderStoreCreditApplication {
+  const orderPayable = ExactDecimal.from(input.orderPayable);
+  if (compare(orderPayable, ExactDecimal.zero()) < 0) {
+    throw new RangeError("Order payable cannot be negative");
+  }
+
+  const requested =
+    input.requestedAmount == null ||
+    (typeof input.requestedAmount === "string" &&
+      input.requestedAmount.trim() === "")
+      ? ExactDecimal.zero()
+      : ExactDecimal.from(input.requestedAmount);
+  if (requested.isNegative()) {
+    throw new RangeError("Store credit amount cannot be negative");
+  }
+  if (requested.equals(ExactDecimal.zero())) {
+    return {
+      creditSpent: ExactDecimal.zero(),
+      payableAfterCredit: orderPayable,
+    };
+  }
+  if (input.customerId === null) {
+    throw new RangeError("Store credit requires a linked customer");
+  }
+  if (compare(requested, orderPayable) > 0) {
+    throw new RangeError("Store credit cannot exceed order payable");
+  }
+
+  ensureSpendWithinBalance(requested, input.availableBalance);
+  return {
+    creditSpent: requested,
+    payableAfterCredit: orderPayable.add(
+      requested.multiply(ExactDecimal.from("-1")),
+    ),
   };
 }
 
