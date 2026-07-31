@@ -229,8 +229,10 @@ if (!process.env.DATABASE_URL) {
 
     const linkedDelete = await deleteOrder(created.data.id);
     assert.equal(linkedDelete.status, 409);
-    assert.equal(typeof linkedDelete.data.error, "string");
-    assert.ok(linkedDelete.data.error.length > 0);
+    assert.equal(
+      linkedDelete.data.error,
+      "這筆訂單已有物流或完成紀錄，為避免帳務與物流資料不一致，請保留紀錄或改用取消訂單。",
+    );
 
     const unusedPendingOrder = await createOrder({});
     assert.equal(unusedPendingOrder.status, 201);

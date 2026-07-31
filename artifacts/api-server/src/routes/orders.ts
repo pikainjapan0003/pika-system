@@ -1701,11 +1701,20 @@ router.delete(
       return res.status(409).json({ error: BLOCKED_DELETE_MESSAGE });
     }
 
-    await db
-      .delete(ordersTable)
-      .where(
-        and(eq(ordersTable.id, orderId), eq(ordersTable.storeId, storeId)),
-      );
+    try {
+      await db
+        .delete(ordersTable)
+        .where(
+          and(eq(ordersTable.id, orderId), eq(ordersTable.storeId, storeId)),
+        );
+    } catch (error: any) {
+      // A related ledger row can appear after the pre-check. Preserve the same
+      // friendly response instead of leaking a PostgreSQL FK error as a 500.
+      if (error?.code === "23503") {
+        return res.status(409).json({ error: BLOCKED_DELETE_MESSAGE });
+      }
+      throw error;
+    }
 
     return res.json({ ok: true });
   },
