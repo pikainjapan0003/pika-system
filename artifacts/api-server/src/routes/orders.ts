@@ -10,6 +10,7 @@ import {
   db,
   displayOrderProfitSnapshotAmount,
   multiplyMoneyByQuantity,
+  orderPickingChecksTable,
   ordersTable,
   productsTable,
   resolveTierPrice,
@@ -62,6 +63,7 @@ import {
   buildMaihuobianExportPreview,
   parseMaihuobianDateRange,
 } from "../lib/maihuobianExport.ts";
+import { buildOrderPickingItems } from "../lib/orderPicking.ts";
 
 const router = Router();
 
@@ -719,13 +721,118 @@ router.post("/orders/picking-list", requireAuth, async (req: any, res) => {
     };
   });
 
+  const orderPickingItems = activeOrders.flatMap((order) =>
+    buildOrderPickingItems(order),
+  );
+  const pickingChecks =
+    activeOrders.length === 0
+      ? []
+      : await db
+          .select()
+          .from(orderPickingChecksTable)
+          .where(
+            inArray(
+              orderPickingChecksTable.orderId,
+              activeOrders.map((order) => order.id),
+            ),
+          );
+  const checkByOrderItem = new Map(
+    pickingChecks.map((check) => [`${check.orderId}:${check.itemKey}`, check]),
+  );
+
   return res.json({
     generatedAt: new Date().toISOString(),
     orderCount: activeOrders.length,
     excludedOrderIds,
     items,
+    orderItems: orderPickingItems.map((item) => {
+      const check = checkByOrderItem.get(`${item.orderId}:${item.itemKey}`);
+      return {
+        ...item,
+        checked: Boolean(check),
+        checkedAt: check?.checkedAt.toISOString() ?? null,
+      };
+    }),
   });
 });
+
+router.post(
+  "/orders/:orderId/picking-check",
+  requireAuth,
+  async (req: any, res) => {
+    const orderId = Number(req.params.orderId);
+    if (!Number.isSafeInteger(orderId) || orderId <= 0) {
+      return res.status(400).json({ error: "Invalid orderId" });
+    }
+    const itemKey =
+      typeof req.body?.itemKey === "string" ? req.body.itemKey.trim() : "";
+    const checked = req.body?.checked;
+    if (!itemKey || itemKey.length > 500 || typeof checked !== "boolean") {
+      return res
+        .status(422)
+        .json({ error: "itemKey and checked are required" });
+    }
+
+    const [order] = await db
+      .select()
+      .from(ordersTable)
+      .where(eq(ordersTable.id, orderId))
+      .limit(1);
+    if (!order) return res.status(404).json({ error: "Order not found" });
+    if (!(await verifyStoreOwner(req, res, order.storeId))) return;
+
+    const validItems = buildOrderPickingItems(order);
+    const targetItem = validItems.find((item) => item.itemKey === itemKey);
+    if (!targetItem) {
+      return res.status(422).json({ error: "Unknown order item key" });
+    }
+    if (targetItem.readOnly) {
+      return res.status(409).json({
+        error: "已出貨訂單的包貨勾選紀錄僅供查看，不能再修改",
+      });
+    }
+
+    if (checked) {
+      await db
+        .insert(orderPickingChecksTable)
+        .values({
+          orderId,
+          itemKey,
+          checkedBy: req.userId,
+        })
+        .onConflictDoNothing();
+    } else {
+      await db
+        .delete(orderPickingChecksTable)
+        .where(
+          and(
+            eq(orderPickingChecksTable.orderId, orderId),
+            eq(orderPickingChecksTable.itemKey, itemKey),
+          ),
+        );
+    }
+
+    const [storedCheck] = checked
+      ? await db
+          .select()
+          .from(orderPickingChecksTable)
+          .where(
+            and(
+              eq(orderPickingChecksTable.orderId, orderId),
+              eq(orderPickingChecksTable.itemKey, itemKey),
+            ),
+          )
+          .limit(1)
+      : [];
+    return res.json({
+      orderId,
+      itemKey,
+      checked: Boolean(storedCheck),
+      checkedAt: storedCheck?.checkedAt.toISOString() ?? null,
+      readOnly: false,
+    });
+  },
+);
 
 router.post("/orders/picking-list.csv", requireAuth, async (req: any, res) => {
   const parsed = GetPickingListBody.safeParse(req.body);
