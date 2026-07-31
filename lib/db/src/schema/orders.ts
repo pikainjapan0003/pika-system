@@ -96,6 +96,15 @@ export const ordersTable = pgTable(
       .notNull()
       .default("0"),
     totalPrice: numeric("total_price", { precision: 10, scale: 2 }).notNull(),
+    // C2/C7: terminal store-credit application values. Legacy orders keep
+    // payableAfterCredit null and display through the pre-credit fallback.
+    creditSpent: numeric("credit_spent", { precision: 30, scale: 12 })
+      .notNull()
+      .default("0"),
+    payableAfterCredit: numeric("payable_after_credit", {
+      precision: 30,
+      scale: 12,
+    }),
     status: text("status").notNull().default("pending"),
     // Payment fields (store-side manual tracking, not automated payment gateway)
     paymentMethod: text("payment_method"),
@@ -183,6 +192,11 @@ export const ordersTable = pgTable(
     check(
       "orders_payment_last5_length",
       sql`${t.paymentLast5} IS NULL OR char_length(${t.paymentLast5}) = 5`,
+    ),
+    check("orders_credit_spent_non_negative", sql`${t.creditSpent} >= 0`),
+    check(
+      "orders_payable_after_credit_non_negative",
+      sql`${t.payableAfterCredit} IS NULL OR ${t.payableAfterCredit} >= 0`,
     ),
     check(
       "orders_profit_snapshot_status_valid",

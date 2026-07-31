@@ -171,6 +171,8 @@ interface OrderProfitSummary {
   missingSnapshotOrderCount: number;
 }
 type OrderWithTracking = Order & {
+  creditSpent?: number | string | null;
+  payableAfterCredit?: number | string | null;
   shipmentTracking?: OrderShipmentTrackingSummary | null;
   profitSnapshotCostJpy?: string | null;
   profitSnapshotExchangeRate?: string | null;

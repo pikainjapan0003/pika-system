@@ -120,6 +120,7 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
   const [buyerName, setBuyerName] = useState("");
   const [buyerPhone, setBuyerPhone] = useState("");
   const [quantity, setQuantity] = useState(1);
+  const [creditSpent, setCreditSpent] = useState("");
   const [pickupMethod, setPickupMethod] = useState("");
   const [notes, setNotes] = useState("");
 
@@ -210,6 +211,7 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
     setBuyerName("");
     setBuyerPhone("");
     setQuantity(1);
+    setCreditSpent("");
     setPickupMethod("");
     setNotes("");
     setSameAsBuyer(true);
@@ -342,6 +344,7 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
           buyerName: buyerName.trim(),
           buyerPhone: buyerPhone.trim(),
           quantity,
+          creditSpent: creditSpent.trim() || null,
           pickupMethod: pickupMethod.trim(),
           notes: notes.trim() || null,
           specValues: {},
@@ -423,6 +426,7 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
                     ? Number(event.target.value)
                     : "";
                   setCustomerId(nextId);
+                  if (nextId === "") setCreditSpent("");
                   const customer = customers.find((item) => item.id === nextId);
                   if (!customer) {
                     if (cvsSelectionSource === "customer") {
@@ -453,6 +457,23 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
                   </option>
                 ))}
               </select>
+              {customerId !== "" && (
+                <div>
+                  <FieldLabel icon={Hash}>購物金折抵</FieldLabel>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    className={INPUT}
+                    value={creditSpent}
+                    onChange={(event) => setCreditSpent(event.target.value)}
+                    placeholder="0"
+                    aria-label="購物金折抵金額"
+                  />
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    可折抵到應付 0 元；超過餘額或訂單金額會拒絕建立。
+                  </p>
+                </div>
+              )}
               {customerSearch.trim() &&
                 matchingCustomers.length === 0 &&
                 !selectedCustomer && (

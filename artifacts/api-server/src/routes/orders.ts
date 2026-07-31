@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { and, eq, gte, inArray, isNull, lt, or } from "drizzle-orm";
+import { and, eq, gte, inArray, isNull, lt, or, sql } from "drizzle-orm";
 import { randomBytes } from "crypto";
 import {
   backfillPendingCartOrderProfitSnapshot,
@@ -14,8 +14,16 @@ import {
   productsTable,
   resolveTierPrice,
   shipmentTrackingsTable,
+  storeCreditTransactionsTable,
 } from "@workspace/db";
 import type { CustomerTier, OrderStatus } from "@workspace/db";
+import { ExactDecimal } from "@workspace/db/transport-cost";
+import {
+  calculateStoreCreditBalance,
+  prepareOrderStoreCreditApplication,
+  prepareStoreCreditSpend,
+  type StoreCreditLedgerEntry,
+} from "@workspace/db/store-credit";
 import {
   CreateMerchantOrderBody,
   UpdateOrderBody,
@@ -55,6 +63,43 @@ import {
 } from "../lib/maihuobianExport.ts";
 
 const router = Router();
+
+function parseRequestedCredit(value: unknown): string | null {
+  if (value === undefined || value === null || value === "") return null;
+  if (typeof value !== "string") {
+    throw new TypeError("creditSpent must be a decimal string");
+  }
+  const normalized = value.trim();
+  if (!normalized) return null;
+  ExactDecimal.from(normalized);
+  return normalized;
+}
+
+function toStoreCreditLedgerEntries(
+  rows: readonly {
+    direction: string;
+    type: string;
+    amount: string;
+    relatedOrderId: number | null;
+  }[],
+): StoreCreditLedgerEntry[] {
+  return rows.map((row) => {
+    const direction = row.direction;
+    const type = row.type;
+    if (direction !== "credit" && direction !== "debit") {
+      throw new Error("Invalid store credit direction in ledger");
+    }
+    if (type !== "grant" && type !== "spend" && type !== "reversal") {
+      throw new Error("Invalid store credit transaction type in ledger");
+    }
+    return {
+      direction,
+      type,
+      amount: row.amount,
+      relatedOrderId: row.relatedOrderId,
+    };
+  });
+}
 
 router.get(
   "/stores/:storeId/orders/profit-summary",
@@ -346,6 +391,15 @@ router.post("/stores/:storeId/orders", requireAuth, async (req: any, res) => {
   } catch (error) {
     return res.status(422).json({ error: (error as Error).message });
   }
+  let requestedCredit: string | null;
+  try {
+    requestedCredit = parseRequestedCredit(req.body?.creditSpent);
+  } catch (error) {
+    return res.status(422).json({ error: (error as Error).message });
+  }
+  const hasRequestedCredit =
+    requestedCredit !== null &&
+    !ExactDecimal.from(requestedCredit).equals(ExactDecimal.zero());
 
   let retries = 0;
   while (retries <= 3) {
@@ -421,6 +475,44 @@ router.post("/stores/:storeId/orders", requireAuth, async (req: any, res) => {
         const totalPrice = multiplyMoneyByQuantity(unitPrice, quantity);
         // Step 7H-3: 與買家端同一套運費規則（黑貓 100 / 郵局 80 / 超商 60 / 自取 0）
         const shippingFee = getShippingFee(pickupMethod);
+        let availableCredit = ExactDecimal.zero();
+        if (hasRequestedCredit) {
+          if (customerId === null) {
+            const err = new Error(
+              "Store credit requires a linked customer",
+            ) as any;
+            err.status = 422;
+            throw err;
+          }
+          await tx.execute(
+            sql`SELECT pg_advisory_xact_lock(${storeId}, ${customerId})`,
+          );
+          const ledgerRows = await tx
+            .select({
+              direction: storeCreditTransactionsTable.direction,
+              type: storeCreditTransactionsTable.type,
+              amount: storeCreditTransactionsTable.amount,
+              relatedOrderId: storeCreditTransactionsTable.relatedOrderId,
+            })
+            .from(storeCreditTransactionsTable)
+            .where(
+              and(
+                eq(storeCreditTransactionsTable.storeId, storeId),
+                eq(storeCreditTransactionsTable.customerId, customerId),
+              ),
+            );
+          availableCredit = calculateStoreCreditBalance(
+            toStoreCreditLedgerEntries(ledgerRows),
+          );
+        }
+        const creditApplication = prepareOrderStoreCreditApplication({
+          orderPayable: ExactDecimal.from(totalPrice)
+            .add(ExactDecimal.from(String(shippingFee)))
+            .toDecimalPlaces(12),
+          requestedAmount: requestedCredit,
+          availableBalance: availableCredit.toDecimalPlaces(12),
+          customerId,
+        });
         // Snapshot sale price is the resolved order-time tier price.
         // If discounts later change the actual unit price, pass that final order unitPrice here instead.
         const profitSnapshotInput = await loadOrderProfitSnapshotInput(
@@ -450,6 +542,9 @@ router.post("/stores/:storeId/orders", requireAuth, async (req: any, res) => {
             unitPrice,
             totalPrice,
             shippingFee: String(shippingFee),
+            creditSpent: creditApplication.creditSpent.toDecimalPlaces(12),
+            payableAfterCredit:
+              creditApplication.payableAfterCredit.toDecimalPlaces(12),
             paymentLast5,
             ...profitSnapshot,
             status: "pending",
@@ -472,13 +567,36 @@ router.post("/stores/:storeId/orders", requireAuth, async (req: any, res) => {
           .returning();
 
         if (!newOrder) throw new Error("Insert returned no row");
+        if (!creditApplication.creditSpent.equals(ExactDecimal.zero())) {
+          if (customerId === null) {
+            throw new Error("Linked customer disappeared during credit spend");
+          }
+          const spend = prepareStoreCreditSpend({
+            amount: creditApplication.creditSpent.toDecimalPlaces(12),
+            availableBalance: availableCredit.toDecimalPlaces(12),
+            relatedOrderId: newOrder.id,
+          });
+          await tx.insert(storeCreditTransactionsTable).values({
+            storeId,
+            customerId,
+            direction: spend.direction,
+            type: spend.type,
+            amount: spend.amount.toDecimalPlaces(12),
+            relatedOrderId: spend.relatedOrderId,
+            note: null,
+            createdBy: req.userId,
+          });
+        }
         return newOrder;
       });
 
       return res.status(201).json(formatOrder(order));
     } catch (err: any) {
-      if (err.status === 404)
-        return res.status(404).json({ error: err.message });
+      if (err.status === 404 || err.status === 422)
+        return res.status(err.status).json({ error: err.message });
+      if (err instanceof TypeError || err instanceof RangeError) {
+        return res.status(422).json({ error: err.message });
+      }
       if (err.code === "23505" && retries < 3) {
         retries++;
         continue;
@@ -1795,11 +1913,16 @@ function formatShipmentTracking(t: any) {
 function formatOrder(o: any) {
   const shippingFee = parseFloat(o.shippingFee ?? "0");
   const totalPrice = parseFloat(o.totalPrice);
+  const creditSpent = parseFloat(o.creditSpent ?? "0");
   const paidAmount =
     o.paidAmount != null ? parseFloat(o.paidAmount as string) : null;
   const discountAmount = o.discountAmount ?? 0;
   const orderTotal = Math.max(totalPrice + shippingFee - discountAmount, 0);
-  const remainingAmount = Math.max(orderTotal - (paidAmount ?? 0), 0);
+  const payableAfterCredit =
+    o.payableAfterCredit == null
+      ? orderTotal
+      : parseFloat(o.payableAfterCredit as string);
+  const remainingAmount = Math.max(payableAfterCredit - (paidAmount ?? 0), 0);
   const profitSnapshotDisplay =
     o.profitSnapshotStatus === "captured" || o.profitSnapshotStatus === "exempt"
       ? {
@@ -1822,6 +1945,8 @@ function formatOrder(o: any) {
     unitPrice: parseFloat(o.unitPrice),
     shippingFee,
     totalPrice,
+    creditSpent,
+    payableAfterCredit,
     paidAmount,
     discountAmount,
     discountNote: o.discountNote ?? null,
