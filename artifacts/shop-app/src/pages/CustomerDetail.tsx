@@ -149,7 +149,7 @@ export default function CustomerDetailPage({
         <button
           type="button"
           onClick={() => setLocation("/customers")}
-          className="text-sm font-medium text-primary"
+          className="min-h-11 text-sm font-medium text-primary"
         >
           ‹ 返回客戶列表
         </button>

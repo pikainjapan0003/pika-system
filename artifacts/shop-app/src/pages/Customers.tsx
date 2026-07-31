@@ -35,7 +35,7 @@ const blankDraft: CustomerDraft = {
 };
 
 const inputClass =
-  "w-full h-10 px-3 rounded-xl border border-input bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30";
+  "w-full h-11 px-3 rounded-xl border border-input bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30";
 
 export default function CustomersPage() {
   const [, setLocation] = useLocation();
@@ -196,7 +196,7 @@ export default function CustomersPage() {
               預設匯出遮罩版；匯出前會再次顯示筆數。
             </p>
           </div>
-          <label className="flex items-start gap-2 text-sm">
+          <label className="flex min-h-11 items-start gap-2 text-sm">
             <input
               type="checkbox"
               checked={exportCleartext}
@@ -359,14 +359,14 @@ export default function CustomersPage() {
                     <button
                       type="button"
                       onClick={() => setLocation(`/customers/${customer.id}`)}
-                      className="text-sm font-medium text-primary"
+                      className="min-h-11 text-sm font-medium text-primary"
                     >
                       詳情
                     </button>
                     <button
                       type="button"
                       onClick={() => edit(customer)}
-                      className="text-sm text-primary"
+                      className="min-h-11 text-sm text-primary"
                     >
                       編輯
                     </button>

@@ -194,7 +194,7 @@ export default function SkillMapPage() {
           <button
             type="button"
             onClick={() => setLocation("/settings")}
-            className="w-16 text-left text-sm font-medium text-primary"
+            className="min-h-11 w-16 text-left text-sm font-medium text-primary"
           >
             ‹ 返回
           </button>
