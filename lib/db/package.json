@@ -8,6 +8,7 @@
     "./schema": "./src/schema/index.ts",
     "./transport-cost": "./src/transport-cost/index.ts",
     "./order-profit-snapshot": "./src/transport-cost/orderProfitSnapshot.ts",
+    "./maihuobian": "./src/maihuobian/validateMaihuobianRow.ts",
     "./skill-map": "./src/skills/skillState.ts"
   },
   "scripts": {

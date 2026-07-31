@@ -49,6 +49,10 @@ import {
   parseOptionalCustomerId,
   resolveCustomerCvsDefaults,
 } from "../lib/customerOrderDefaults.ts";
+import {
+  buildMaihuobianExportPreview,
+  parseMaihuobianDateRange,
+} from "../lib/maihuobianExport.ts";
 
 const router = Router();
 
@@ -97,6 +101,139 @@ router.get(
         ),
       );
     return res.json(summarizeMonthlyOrderProfits(month, orders));
+  },
+);
+
+async function loadMaihuobianExportPreview(
+  storeId: number,
+  from: unknown,
+  to: unknown,
+) {
+  const range = parseMaihuobianDateRange(from, to);
+  const conditions = [eq(ordersTable.storeId, storeId)];
+  if (range.start) conditions.push(gte(ordersTable.createdAt, range.start));
+  if (range.end) conditions.push(lt(ordersTable.createdAt, range.end));
+
+  const orders = await db
+    .select()
+    .from(ordersTable)
+    .where(and(...conditions))
+    .orderBy(ordersTable.createdAt);
+  const productIds = [
+    ...new Set(
+      orders.flatMap((order) => {
+        const itemIds = Array.isArray(order.items)
+          ? order.items
+              .map((item) =>
+                typeof item === "object" && item !== null
+                  ? Number((item as Record<string, unknown>).productId)
+                  : Number.NaN,
+              )
+              .filter(Number.isSafeInteger)
+          : [];
+        return [order.productId, ...itemIds];
+      }),
+    ),
+  ];
+  const products =
+    productIds.length === 0
+      ? []
+      : await db
+          .select({
+            id: productsTable.id,
+            name: productsTable.name,
+            storageTempClass: productsTable.storageTempClass,
+          })
+          .from(productsTable)
+          .where(
+            and(
+              eq(productsTable.storeId, storeId),
+              inArray(productsTable.id, productIds),
+            ),
+          );
+  return buildMaihuobianExportPreview(orders, products);
+}
+
+router.get(
+  "/stores/:storeId/orders/maihuobian-export",
+  requireAuth,
+  async (req: any, res) => {
+    const storeId = parseInt(req.params.storeId);
+    if (isNaN(storeId))
+      return res.status(400).json({ error: "Invalid storeId" });
+    if (!(await verifyStoreOwner(req, res, storeId))) return;
+
+    try {
+      return res.json(
+        await loadMaihuobianExportPreview(
+          storeId,
+          req.query.from,
+          req.query.to,
+        ),
+      );
+    } catch (error) {
+      if (error instanceof RangeError) {
+        return res.status(422).json({ error: error.message });
+      }
+      throw error;
+    }
+  },
+);
+
+router.post(
+  "/stores/:storeId/orders/maihuobian-export",
+  requireAuth,
+  async (req: any, res) => {
+    const storeId = parseInt(req.params.storeId);
+    if (isNaN(storeId))
+      return res.status(400).json({ error: "Invalid storeId" });
+    if (!(await verifyStoreOwner(req, res, storeId))) return;
+
+    if (
+      req.get("x-confirm-cleartext-export") !== "true" ||
+      req.get("x-confirm-maihuobian-export") !== "true"
+    ) {
+      return res.status(400).json({
+        error: "匯出含明文個資，請完成兩次確認",
+        code: "CLEAR_TEXT_CONFIRMATION_REQUIRED",
+      });
+    }
+
+    try {
+      const preview = await loadMaihuobianExportPreview(
+        storeId,
+        req.body?.from,
+        req.body?.to,
+      );
+      if (preview.eligibleCount === 0) {
+        return res.status(422).json({
+          error: "沒有符合賣貨便匯出資格的訂單",
+          code: "NO_ELIGIBLE_ORDERS",
+          ...preview,
+        });
+      }
+      await recordAuditLog({
+        storeId,
+        actor: req.userId,
+        action: "export_maihuobian_cleartext",
+        target: `maihuobian-export:orders-${preview.eligibleCount}`,
+      });
+      req.log.info(
+        {
+          action: "maihuobian_export",
+          storeId,
+          eligibleCount: preview.eligibleCount,
+          ineligibleCount: preview.ineligibleCount,
+        },
+        "Maihuobian cleartext export prepared",
+      );
+      return res.json(preview);
+    } catch (error) {
+      if (error instanceof RangeError) {
+        return res.status(422).json({ error: error.message });
+      }
+      throw error;
+    }
   },
 );
 
