@@ -27,7 +27,7 @@ if (!process.env.DATABASE_URL) {
   });
 
   const { default: express } = await import("express");
-  const { db, ordersTable, pool, productsTable, storesTable } =
+  const { auditLogsTable, db, ordersTable, pool, productsTable, storesTable } =
     await import("@workspace/db");
   const { eq } = await import("drizzle-orm");
   const { default: auditLogsRouter } = await import("./auditLogs.ts");
@@ -228,6 +228,34 @@ if (!process.env.DATABASE_URL) {
 
     assert.equal(unauthenticated.status, 401);
     assert.equal(crossStore.status, 403);
+  });
+
+  test("audit log reads are newest-first, capped, and contain no plaintext secrets", async () => {
+    const secretMarkers = [
+      "0900000000",
+      "batch10-profit-a-",
+      "batch10-order-a-",
+    ];
+    await db.insert(auditLogsTable).values(
+      Array.from({ length: 102 }, (_, index) => ({
+        storeId: storeAId,
+        actor: "batch16-owner",
+        action: "batch16_audit_test",
+        target: `batch16-target-${index}`,
+        at: new Date(Date.UTC(2099, 0, 1, 0, 0, index)),
+      })),
+    );
+
+    const response = await request("GET", `/stores/${storeAId}/audit-logs`);
+
+    assert.equal(response.status, 200);
+    assert.equal(response.data.length, 100);
+    assert.equal(response.data[0].target, "batch16-target-101");
+    assert.equal(response.data[99].target, "batch16-target-2");
+    const serialized = JSON.stringify(response.data);
+    for (const marker of secretMarkers) {
+      assert.equal(serialized.includes(marker), false);
+    }
   });
 
   test("customer cleartext export needs its header and CSV formulas stay neutralized", async () => {
