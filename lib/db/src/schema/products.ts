@@ -46,6 +46,7 @@ export const productsTable = pgTable(
     internalNote: text("internal_note"),
     skuCode: text("sku_code"),
     storageTemp: text("storage_temp"),
+    storageTempClass: text("storage_temp_class"),
     shelfLife: text("shelf_life"),
     weightKg: numeric("weight_kg", { precision: 8, scale: 3 }),
     costJpy: numeric("cost_jpy"),
@@ -85,6 +86,10 @@ export const productsTable = pgTable(
     check(
       "storage_temp_valid",
       sql`${t.storageTemp} IS NULL OR ${t.storageTemp} IN ('ambient','chilled','frozen')`,
+    ),
+    check(
+      "products_storage_temp_class_valid",
+      sql`${t.storageTempClass} IS NULL OR ${t.storageTempClass} IN ('normal','frozen')`,
     ),
   ],
 );
