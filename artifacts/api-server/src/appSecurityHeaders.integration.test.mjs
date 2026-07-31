@@ -77,3 +77,28 @@ test("the assembled app retains headers on its global 500 response", async () =>
   assert.deepEqual(await response.json(), { error: "Internal server error" });
   assertSecurityHeaders(response);
 });
+
+test("new owner endpoints retain headers on authentication rejection", async () => {
+  const requests = [
+    fetch(`${baseUrl}/api/stores/1/customers/1/store-credit`),
+    fetch(`${baseUrl}/api/stores/1/orders/maihuobian-export`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        from: "2026-07-31",
+        to: "2026-07-31",
+        orderIds: [1],
+      }),
+    }),
+    fetch(`${baseUrl}/api/orders/1/picking-check`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ itemKey: "line-1", checked: true }),
+    }),
+  ];
+
+  for (const response of await Promise.all(requests)) {
+    assert.equal(response.status, 401);
+    assertSecurityHeaders(response);
+  }
+});
