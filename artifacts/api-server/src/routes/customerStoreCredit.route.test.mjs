@@ -36,6 +36,8 @@ if (!process.env.DATABASE_URL) {
   } = await import("@workspace/db");
   const { and, eq } = await import("drizzle-orm");
   const { default: customersRouter } = await import("./customers.ts");
+  const { ownerStoreMutationLimiter } =
+    await import("../lib/ownerStoreRateLimit.ts");
 
   const app = express();
   app.use(express.json());
@@ -261,5 +263,27 @@ if (!process.env.DATABASE_URL) {
       assert.doesNotMatch(row.target, /Fake Credit Customer|synthetic grant/);
       assert.doesNotMatch(row.target, /grant-1|adjust-1|grant-2/);
     }
+  });
+
+  test("store-credit mutation is rate limited by verified store with a minimal 429 body", async () => {
+    ownerStoreMutationLimiter.resetKey(String(storeAId));
+    const body = {
+      type: "grant",
+      amount: "1",
+      reasonCode: "rate_limit_probe",
+      idempotencyKey: "rate-limit-probe",
+    };
+    for (let index = 0; index < 60; index += 1) {
+      const allowed = await request("POST", creditPath(), { body });
+      assert.equal(allowed.status, 428);
+    }
+    const limited = await request("POST", creditPath(), { body });
+    assert.equal(limited.status, 429);
+    assert.deepEqual(Object.keys(limited.data), ["error"]);
+    assert.doesNotMatch(
+      JSON.stringify(limited.data),
+      /token|phone|name|Fake Credit Customer/i,
+    );
+    ownerStoreMutationLimiter.resetKey(String(storeAId));
   });
 }
