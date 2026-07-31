@@ -1668,6 +1668,15 @@ router.delete(
       return res.status(409).json({ error: BLOCKED_DELETE_MESSAGE });
     }
 
+    const [storeCreditTransaction] = await db
+      .select({ id: storeCreditTransactionsTable.id })
+      .from(storeCreditTransactionsTable)
+      .where(eq(storeCreditTransactionsTable.relatedOrderId, orderId))
+      .limit(1);
+    if (storeCreditTransaction) {
+      return res.status(409).json({ error: BLOCKED_DELETE_MESSAGE });
+    }
+
     await db
       .delete(ordersTable)
       .where(
