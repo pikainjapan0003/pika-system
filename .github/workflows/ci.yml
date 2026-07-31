@@ -81,6 +81,7 @@ jobs:
             src/routes/public.route.test.mjs \
             src/routes/publicRateLimit.route.test.mjs \
             src/routes/skills.route.test.mjs \
+            src/routes/maihuobianExport.route.test.mjs \
             src/routes/devHandoffProductionGuard.route.test.mjs
 
       - name: Test pure function suites
