@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { and, desc, eq, sql } from "drizzle-orm";
 import {
+  auditLogsTable,
   customersTable,
   db,
   ordersTable,
@@ -20,7 +21,10 @@ import {
   parseCustomerExportMode,
 } from "../lib/customerExport.ts";
 import { formatCustomerOrderProfit } from "../lib/customerDetail.ts";
-import { recordAuditLog } from "../lib/auditLog.ts";
+import {
+  buildStoreCreditAuditTarget,
+  recordAuditLog,
+} from "../lib/auditLog.ts";
 
 const router = Router();
 
@@ -324,6 +328,20 @@ router.post(
           })
           .returning();
         if (!inserted) throw new Error("Insert returned no row");
+
+        await tx.insert(auditLogsTable).values({
+          storeId,
+          actor: req.userId,
+          action:
+            inserted.type === "grant"
+              ? "store_credit_grant"
+              : "store_credit_adjust",
+          target: buildStoreCreditAuditTarget({
+            customerId,
+            transactionId: inserted.id,
+            amount: normalizedAmount,
+          }),
+        });
 
         const updatedBalance = calculateStoreCreditBalance([
           ...ledgerRows.map(toStoreCreditLedgerEntry),

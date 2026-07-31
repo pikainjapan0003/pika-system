@@ -27,6 +27,7 @@ if (!process.env.DATABASE_URL) {
 
   const { default: express } = await import("express");
   const {
+    auditLogsTable,
     customersTable,
     db,
     pool,
@@ -221,5 +222,32 @@ if (!process.env.DATABASE_URL) {
     assert.equal(response.data.transactions.length, 2);
     assert.equal(response.data.transactions[0].idempotencyKey, "grant-2");
     assert.equal(response.data.transactions[1].idempotencyKey, "adjust-1");
+  });
+
+  test("owner credit mutations create anonymous audit records exactly once", async () => {
+    const rows = await db
+      .select()
+      .from(auditLogsTable)
+      .where(eq(auditLogsTable.storeId, storeAId));
+    const creditRows = rows.filter((row) =>
+      row.action.startsWith("store_credit_"),
+    );
+
+    assert.deepEqual(creditRows.map((row) => row.action).sort(), [
+      "store_credit_adjust",
+      "store_credit_grant",
+      "store_credit_grant",
+    ]);
+    for (const row of creditRows) {
+      assert.equal(row.actor, MERCHANT_A);
+      assert.match(
+        row.target,
+        new RegExp(
+          `^customer-${customerAId}:ledger-\\d+:amount-\\d+\\.\\d{12}$`,
+        ),
+      );
+      assert.doesNotMatch(row.target, /Fake Credit Customer|synthetic grant/);
+      assert.doesNotMatch(row.target, /grant-1|adjust-1|grant-2/);
+    }
   });
 }
