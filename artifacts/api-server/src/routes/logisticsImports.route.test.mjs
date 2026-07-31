@@ -36,16 +36,21 @@ mock.module("@clerk/express", {
 
 const { default: express } = await import("express");
 const { pool } = await import("@workspace/db");
-const { default: logisticsRouter } = await import(
-  path.join(ROOT, "artifacts/api-server/src/routes/logisticsImports.ts")
-);
+const { default: logisticsRouter } = await import("./logisticsImports.ts");
 
 const app = express();
 app.use(express.json());
 app.use("/api", logisticsRouter);
 
 const TEST_USER = "logistics-import-test-user";
-let server, baseUrl, storeId, productId, orderMatchId, orderOtherId;
+const OTHER_USER = "logistics-import-test-user-b";
+let server,
+  baseUrl,
+  storeId,
+  otherStoreId,
+  productId,
+  orderMatchId,
+  orderOtherId;
 
 const fixtures = readdirSync(FIXTURES);
 const sevenFile = fixtures.find(
@@ -66,6 +71,11 @@ before(async () => {
     [TEST_USER],
   );
   storeId = store.rows[0].id;
+  const otherStore = await pool.query(
+    `INSERT INTO stores (merchant_id, name, slug) VALUES ($1, 'logistics-test-b', 'logistics-test-b-' || floor(random()*1e9)) RETURNING id`,
+    [OTHER_USER],
+  );
+  otherStoreId = otherStore.rows[0].id;
   const product = await pool.query(
     `INSERT INTO products (store_id, name, price, share_token) VALUES ($1, 'test-product', 100, 'lt-' || floor(random()*1e9)) RETURNING id`,
     [storeId],
@@ -91,6 +101,7 @@ after(async () => {
     [storeId],
   );
   await pool.query(`DELETE FROM stores WHERE id = $1`, [storeId]); // cascades orders/batches/rows/exceptions/trackings
+  await pool.query(`DELETE FROM stores WHERE id = $1`, [otherStoreId]);
   server?.close();
   await pool.end();
 });
@@ -101,6 +112,8 @@ function upload({
   fileName,
   contentType,
   auth = true,
+  userId = auth ? TEST_USER : null,
+  targetStoreId = storeId,
   omitFile = false,
 }) {
   const form = new FormData();
@@ -116,16 +129,16 @@ function upload({
       fileName,
     );
   }
-  return fetch(`${baseUrl}/stores/${storeId}/logistics/imports/dry-run`, {
+  return fetch(`${baseUrl}/stores/${targetStoreId}/logistics/imports/dry-run`, {
     method: "POST",
-    headers: auth ? { "x-test-user-id": TEST_USER } : {},
+    headers: userId ? { "x-test-user-id": userId } : {},
     body: form,
   });
 }
 
-function confirm(batchId, body, userId = TEST_USER) {
+function confirm(batchId, body, userId = TEST_USER, targetStoreId = storeId) {
   return fetch(
-    `${baseUrl}/stores/${storeId}/logistics/imports/${batchId}/confirm`,
+    `${baseUrl}/stores/${targetStoreId}/logistics/imports/${batchId}/confirm`,
     {
       method: "POST",
       headers: {
@@ -153,6 +166,16 @@ describe("logistics import dry-run persistence + confirm", () => {
       auth: false,
     });
     assert.equal(res.status, 401);
+  });
+
+  test("dry-run rejects a user from another store", async () => {
+    const res = await upload({
+      provider: "711",
+      filePath: path.join(FIXTURES, sevenFile),
+      fileName: sevenFile,
+      userId: OTHER_USER,
+    });
+    assert.equal(res.status, 403);
   });
 
   test("7-11 dry-run still parses (regression)", async () => {
@@ -210,6 +233,21 @@ describe("logistics import dry-run persistence + confirm", () => {
         ).json()
       ).errorCode,
       "REQUIRED_COLUMNS_MISSING",
+    );
+  });
+
+  test("invalid spreadsheet responses are 4xx and expose no internal paths", async () => {
+    const res = await upload({
+      provider: "familymart",
+      filePath: path.join(FIXTURES, sevenFile),
+      fileName: sevenFile,
+    });
+    const body = await res.text();
+
+    assert.equal(res.status, 422);
+    assert.doesNotMatch(
+      body,
+      /(?:[A-Za-z]:\\|\/home\/|\/tmp\/|node_modules|stack)/i,
     );
   });
 
@@ -490,5 +528,19 @@ describe("logistics import dry-run persistence + confirm", () => {
       "someone-else",
     );
     assert.equal(res.status, 403);
+  });
+
+  test("a store cannot read or confirm another store's import batch", async () => {
+    const { batchId } = await (await famiUpload()).json();
+    const res = await confirm(
+      batchId,
+      { confirmAllMatched: true },
+      OTHER_USER,
+      otherStoreId,
+    );
+    const body = await res.json();
+
+    assert.equal(res.status, 404);
+    assert.equal(body.errorCode, "BATCH_NOT_FOUND");
   });
 });
