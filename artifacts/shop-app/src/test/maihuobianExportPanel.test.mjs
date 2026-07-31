@@ -20,18 +20,7 @@ const preview = {
   eligible: [
     {
       orderId: 101,
-      row: {
-        recipientName: "王小明",
-        recipientPhone: "0912345678",
-        cvsStoreId: "123456",
-        temperature: "常溫",
-        productSummary: "BATCH-17 假商品 × 1",
-        totalPrice: "100.00",
-        shippingFee: "60.00",
-        orderDate: "2026/7/19",
-        notes: "",
-        socialAccount: "",
-      },
+      productSummary: "BATCH-17 假商品 × 1",
     },
   ],
   ineligible: [
@@ -47,9 +36,30 @@ const preview = {
   ],
 };
 
+const exportResult = {
+  ...preview,
+  eligible: [
+    {
+      orderId: 101,
+      row: {
+        recipientName: "王小明",
+        recipientPhone: "0912345678",
+        cvsStoreId: "123456",
+        temperature: "常溫",
+        productSummary: "BATCH-17 假商品 × 1",
+        totalPrice: "100.00",
+        shippingFee: "60.00",
+        orderDate: "2026/7/19",
+        notes: "",
+        socialAccount: "",
+      },
+    },
+  ],
+};
+
 const { cleanup, fireEvent, render, waitFor } =
   await import("@testing-library/react");
-const { MaihuobianExportPanel } =
+const { formatMaihuobianCsv, MaihuobianExportPanel } =
   await import("../lib/MaihuobianExportPanel.tsx");
 
 afterEach(() => {
@@ -75,10 +85,34 @@ function installFetch() {
     requests.push({ url: String(url), options });
     return {
       ok: true,
-      json: async () => preview,
+      json: async () => (options.method === "POST" ? exportResult : preview),
     };
   };
 }
+
+test("Maihuobian CSV neutralizes spreadsheet formulas and quotes CSV syntax", () => {
+  const csv = formatMaihuobianCsv([
+    {
+      recipientName: '=HYPERLINK("http://x")',
+      recipientPhone: "+cmd",
+      cvsStoreId: "-2+3",
+      temperature: "@SUM(A1)",
+      productSummary: "商品,含逗號",
+      totalPrice: "100",
+      shippingFee: "60",
+      orderDate: "2026/7/19",
+      notes: '第一行\n第二行"引號"',
+      socialAccount: "safe",
+    },
+  ]);
+
+  assert.match(csv, /"'=HYPERLINK\(""http:\/\/x""\)"/u);
+  assert.match(csv, /"'\+cmd"/u);
+  assert.match(csv, /"'-2\+3"/u);
+  assert.match(csv, /"'@SUM\(A1\)"/u);
+  assert.match(csv, /"商品,含逗號"/u);
+  assert.match(csv, /"第一行\n第二行""引號"""/u);
+});
 
 async function renderCheckedPanel() {
   installFetch();
