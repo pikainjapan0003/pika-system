@@ -296,7 +296,7 @@ router.post(
         storeId,
         actor: req.userId,
         action: "export_maihuobian_cleartext",
-        target: `maihuobian-export:orders-${preview.eligibleCount}`,
+        target: `maihuobian-export:${randomBytes(8).toString("hex")}`,
       });
       req.log.info(
         {

@@ -317,7 +317,24 @@ if (!process.env.DATABASE_URL) {
     assert.equal(response.data.eligible[0].row.recipientName, "王小明");
     assert.equal(response.data.eligible[0].row.recipientPhone, "0912345678");
 
-    const [audit] = await db
+    const secondResponse = await request(
+      "POST",
+      `/stores/${storeId}/orders/maihuobian-export`,
+      {
+        body: {
+          from: "2026-07-19",
+          to: "2026-07-19",
+          orderIds: [eligibleOrderId],
+        },
+        headers: {
+          "x-confirm-cleartext-export": "true",
+          "x-confirm-maihuobian-export": "true",
+        },
+      },
+    );
+    assert.equal(secondResponse.status, 200);
+
+    const audits = await db
       .select()
       .from(auditLogsTable)
       .where(
@@ -325,12 +342,16 @@ if (!process.env.DATABASE_URL) {
           eq(auditLogsTable.storeId, storeId),
           eq(auditLogsTable.action, "export_maihuobian_cleartext"),
         ),
-      )
-      .limit(1);
-    assert.equal(audit.actor, OWNER_ID);
-    assert.equal(audit.target, "maihuobian-export:orders-1");
-    assert.equal(audit.target.includes("0912345678"), false);
-    assert.equal(audit.target.includes("假客人"), false);
+      );
+    assert.equal(audits.length, 2);
+    assert.equal(audits[0].actor, OWNER_ID);
+    assert.match(audits[0].target, /^maihuobian-export:[0-9a-f]{16}$/u);
+    assert.match(audits[1].target, /^maihuobian-export:[0-9a-f]{16}$/u);
+    assert.notEqual(audits[0].target, audits[1].target);
+    for (const audit of audits) {
+      assert.equal(audit.target.includes("0912345678"), false);
+      assert.equal(audit.target.includes("假客人"), false);
+    }
   });
 
   function fakeOrder({
