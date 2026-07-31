@@ -1,7 +1,11 @@
 import { ExactDecimal, type DecimalInput } from "../transport-cost/index.ts";
 
 export type StoreCreditDirection = "credit" | "debit";
-export type StoreCreditTransactionType = "grant" | "spend" | "reversal";
+export type StoreCreditTransactionType =
+  | "grant"
+  | "adjust"
+  | "spend"
+  | "reversal";
 
 export interface StoreCreditLedgerEntry {
   direction: StoreCreditDirection;
@@ -78,6 +82,37 @@ export function prepareStoreCreditGrant(
     direction: "credit",
     type: "grant",
     amount: requirePositiveAmount(amount),
+    relatedOrderId: null,
+  };
+}
+
+/**
+ * C5: an owner adjustment stores a positive magnitude and uses direction for
+ * its sign. A debit adjustment may reach exactly zero but never cross it.
+ */
+export function prepareStoreCreditAdjustment(input: {
+  amount: Exclude<DecimalInput, null | undefined>;
+  availableBalance: Exclude<DecimalInput, null | undefined>;
+}): PreparedStoreCreditTransaction {
+  const signedAmount = ExactDecimal.from(input.amount);
+  if (signedAmount.equals(ExactDecimal.zero())) {
+    throw new RangeError("Store credit adjustment must not be zero");
+  }
+  if (!signedAmount.isNegative()) {
+    return {
+      direction: "credit",
+      type: "adjust",
+      amount: signedAmount,
+      relatedOrderId: null,
+    };
+  }
+
+  const magnitude = signedAmount.multiply(ExactDecimal.from("-1"));
+  ensureSpendWithinBalance(magnitude, input.availableBalance);
+  return {
+    direction: "debit",
+    type: "adjust",
+    amount: magnitude,
     relatedOrderId: null,
   };
 }

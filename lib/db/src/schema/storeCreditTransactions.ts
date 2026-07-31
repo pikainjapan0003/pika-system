@@ -21,6 +21,7 @@ export type StoreCreditDirection = (typeof storeCreditDirectionEnum)[number];
 
 export const storeCreditTransactionTypeEnum = [
   "grant",
+  "adjust",
   "spend",
   "reversal",
 ] as const;
@@ -50,6 +51,8 @@ export const storeCreditTransactionsTable = pgTable(
       () => ordersTable.id,
       { onDelete: "restrict" },
     ),
+    reasonCode: text("reason_code"),
+    idempotencyKey: text("idempotency_key"),
     note: text("note"),
     createdBy: text("created_by").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -69,19 +72,31 @@ export const storeCreditTransactionsTable = pgTable(
     uniqueIndex("store_credit_transactions_order_reversal_unique")
       .on(t.relatedOrderId)
       .where(sql`${t.type} = 'reversal'`),
+    uniqueIndex("store_credit_transactions_store_idempotency_unique")
+      .on(t.storeId, t.idempotencyKey)
+      .where(sql`${t.idempotencyKey} IS NOT NULL`),
     check(
       "store_credit_transactions_direction_valid",
       sql`${t.direction} IN ('credit', 'debit')`,
     ),
     check(
       "store_credit_transactions_type_valid",
-      sql`${t.type} IN ('grant', 'spend', 'reversal')`,
+      sql`${t.type} IN ('grant', 'adjust', 'spend', 'reversal')`,
     ),
     check("store_credit_transactions_amount_positive", sql`${t.amount} > 0`),
     check(
       "store_credit_transactions_direction_type_valid",
       sql`(${t.type} = 'spend' AND ${t.direction} = 'debit')
-      OR (${t.type} IN ('grant', 'reversal') AND ${t.direction} = 'credit')`,
+      OR (${t.type} IN ('grant', 'reversal') AND ${t.direction} = 'credit')
+      OR (${t.type} = 'adjust' AND ${t.direction} IN ('credit', 'debit'))`,
+    ),
+    check(
+      "store_credit_transactions_reason_code_length",
+      sql`${t.reasonCode} IS NULL OR char_length(${t.reasonCode}) BETWEEN 1 AND 100`,
+    ),
+    check(
+      "store_credit_transactions_idempotency_key_length",
+      sql`${t.idempotencyKey} IS NULL OR char_length(${t.idempotencyKey}) BETWEEN 1 AND 200`,
     ),
   ],
 );
