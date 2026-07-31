@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, type NextFunction, type Response } from "express";
 import { and, desc, eq, sql } from "drizzle-orm";
 import {
   auditLogsTable,
@@ -25,6 +25,7 @@ import {
   buildStoreCreditAuditTarget,
   recordAuditLog,
 } from "../lib/auditLog.ts";
+import { ownerStoreMutationLimiter } from "../lib/ownerStoreRateLimit.ts";
 
 const router = Router();
 
@@ -120,6 +121,21 @@ function parseStoreCreditMutationInput(
 
 class StoreCreditIdempotencyConflictError extends Error {}
 
+async function requireStoreOwnerBeforeSensitiveAction(
+  req: any,
+  res: Response,
+  next: NextFunction,
+) {
+  let storeId: number;
+  try {
+    storeId = parseId(req.params.storeId, "storeId");
+  } catch (error) {
+    return res.status(400).json({ error: (error as Error).message });
+  }
+  if (!(await verifyStoreOwner(req, res, storeId))) return;
+  return next();
+}
+
 router.get("/stores/:storeId/customers", requireAuth, async (req: any, res) => {
   let storeId: number;
   try {
@@ -211,6 +227,8 @@ router.get(
 router.post(
   "/stores/:storeId/customers/:customerId/store-credit",
   requireAuth,
+  requireStoreOwnerBeforeSensitiveAction,
+  ownerStoreMutationLimiter,
   async (req: any, res) => {
     let storeId: number;
     let customerId: number;
@@ -222,7 +240,6 @@ router.post(
     } catch (error) {
       return res.status(400).json({ error: (error as Error).message });
     }
-    if (!(await verifyStoreOwner(req, res, storeId))) return;
     if (req.get("x-confirm-store-credit") !== "true") {
       return res.status(428).json({
         error: "Store credit mutation requires explicit confirmation",

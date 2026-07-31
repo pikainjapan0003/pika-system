@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, type NextFunction, type Response } from "express";
 import { and, eq, gte, inArray, isNull, lt, or, sql } from "drizzle-orm";
 import { randomBytes } from "crypto";
 import {
@@ -69,6 +69,7 @@ import {
   toMaihuobianExportPreviewDto,
 } from "../lib/maihuobianExport.ts";
 import { buildOrderPickingItems } from "../lib/orderPicking.ts";
+import { ownerStoreMutationLimiter } from "../lib/ownerStoreRateLimit.ts";
 
 const router = Router();
 
@@ -211,6 +212,19 @@ async function loadMaihuobianExportPreview(
   return buildMaihuobianExportPreview(orders, products);
 }
 
+async function requireStoreOwnerBeforeSensitiveAction(
+  req: any,
+  res: Response,
+  next: NextFunction,
+) {
+  const storeId = parseInt(req.params.storeId);
+  if (isNaN(storeId)) {
+    return res.status(400).json({ error: "Invalid storeId" });
+  }
+  if (!(await verifyStoreOwner(req, res, storeId))) return;
+  return next();
+}
+
 router.get(
   "/stores/:storeId/orders/maihuobian-export",
   requireAuth,
@@ -242,12 +256,12 @@ router.get(
 router.post(
   "/stores/:storeId/orders/maihuobian-export",
   requireAuth,
+  requireStoreOwnerBeforeSensitiveAction,
+  ownerStoreMutationLimiter,
   async (req: any, res) => {
     const storeId = parseInt(req.params.storeId);
     if (isNaN(storeId))
       return res.status(400).json({ error: "Invalid storeId" });
-    if (!(await verifyStoreOwner(req, res, storeId))) return;
-
     if (
       req.get("x-confirm-cleartext-export") !== "true" ||
       req.get("x-confirm-maihuobian-export") !== "true"
