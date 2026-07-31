@@ -5,6 +5,7 @@ import { maskAddress, maskName, maskPhone } from "@workspace/privacy";
 import { useLocation } from "wouter";
 import { BottomNav } from "./Dashboard";
 import { recordServerAuditEvent } from "@/lib/serverAudit";
+import { CustomerStoreCreditPanel } from "@/lib/CustomerStoreCreditPanel";
 
 interface CustomerRecord {
   id: number;
@@ -201,6 +202,12 @@ export default function CustomerDetailPage({
                 </button>
               )}
             </section>
+
+            <CustomerStoreCreditPanel
+              storeId={customer.storeId}
+              customerId={customer.id}
+              getToken={getToken}
+            />
 
             <section className="space-y-3 rounded-2xl border border-border bg-white p-4">
               <div>
