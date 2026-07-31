@@ -57,3 +57,9 @@
 ## BATCH-12 修復結果（2026-07-19）
 
 commit `84263dc` 已關閉上述兩項缺口：列印收據改用與老闆端相同的六態共用字典，`awaiting_payment` 現在顯示「待付款」，`confirmed` 與 `arrived` 舊制分支已移除。完整性測試逐一鎖住六個合法資料庫狀態，因此日後漏字典或新增非資料庫狀態都會失敗。
+
+## BATCH-18 購物金與撿貨補充（2026-07-31）
+
+- 訂單改為 `cancelled` 時，如果該單曾折抵購物金，系統會在同一交易內新增唯一的 `reversal` 回沖流水；重複送出取消不會重複回沖。這是購物金帳本事件，不是第七種訂單狀態（`orders.ts:1976-2055`）。
+- `pending`、`awaiting_payment`、`preparing`、`shipped`、`completed`、`cancelled` 六態集合沒有因購物金而改變；購物金 `grant`／`adjust`／`spend`／`reversal` 是另一套流水類型。
+- 撿貨勾選儲存在 `order_picking_checks`，只表示某一訂單品項是否已撿取；它不改寫訂單六態，也不冒充「已出貨」。取消單仍會被撿貨清單排除（`orders.ts:634-781`）。
