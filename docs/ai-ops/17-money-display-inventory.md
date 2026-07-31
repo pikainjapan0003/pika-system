@@ -45,6 +45,11 @@
 | 已定格毛利小計                       | 單品單件毛利×數量＋cart 整單快照                    | 後端 ExactDecimal 加總，顯示層 half-up 取整；負毛利保留；另列 pending 與 missing 筆數                  | `orderProfitSummary.ts:19-70`；`Orders.tsx:773-785`；`Dashboard.tsx:162-173` |
 | 每月毛利                             | 月內定格快照聚合                                    | `NT$` 整數；pending 與尚無快照只計數、不當 0                                                           | `MonthlyProfit.tsx:82-126`；`monthlyProfitReport.ts:45`                      |
 | 客戶訂單歷史毛利                     | 單品或 cart 的已定格快照                            | `NT$` 整數；單品標 `/件`；免攤、待確認、尚無快照各自明示                                               | `customerDetail.ts:10-48`；`CustomerDetail.tsx:150-158`                      |
+| 購物金餘額                           | 購物金流水以 ExactDecimal 加總的 `balance`          | 顯示層 half-up 取整為 `NT$`；沒有流水時餘額是已知的 0，不是成本 pending                                | `CustomerStoreCreditPanel.tsx:29-31,153-156`                                 |
+| 購物金最近流水                       | `transactions[].direction/amount`                   | 發放／調整／訂單折抵／取消回沖明示種類；credit 顯示 `+NT$`、debit 顯示 `-NT$`，顯示層才取整            | `CustomerStoreCreditPanel.tsx:33-41,248-274`                                 |
+| 購物金發放／調整預覽                 | `previewStoreCreditBalance` 的 before／after        | ExactDecimal 預覽，顯示層 half-up 取整；負調整超過餘額直接顯示錯誤，不會顯示負餘額                     | `CustomerStoreCreditPanel.tsx:78-99,194-223`                                 |
+| 訂單購物金折抵                       | `orders.credit_spent`                               | 建單欄位只在已綁客戶時顯示；可折抵至應付 0，超過餘額或訂單金額時拒絕建單                               | `CreateOrderDialog.tsx:460-474`                                              |
+| 購物金折抵後應付                     | `orders.payable_after_credit`                       | 訂單列表與首頁金額優先顯示此定格欄；舊單欄位為 null 時才回退既有 `orderTotal` 口徑，不把 null 當 0     | `orderDisplayTotal.ts:1-15`                                                  |
 
 ## 行程／交通成本
 
@@ -58,6 +63,7 @@
 | 顯示欄位              | 來源欄位                                    | 顯示規則                                                                           | 證據                                      |
 | --------------------- | ------------------------------------------- | ---------------------------------------------------------------------------------- | ----------------------------------------- |
 | 銷貨單交易金額        | 單價、小計、運費、折讓、總額、已收、待收    | 全部用 `NT$`＋千分位；折讓加負號                                                   | `printHelpers.ts:342-343,489-517,628-656` |
+| 銷貨單購物金折抵      | `creditSpent`、`payableAfterCredit`         | 折抵大於 0 才顯示 `-NT$` 購物金列；應付與待收以折抵後金額為準                      | `printHelpers.ts:599-610,632-640,801`     |
 | 訂單 CSV 交易金額     | `unitPrice`、`totalPrice`、`discountAmount` | 保留資料欄值，欄名標明成交單價／商品總額／折讓金額                                 | `orderExport.ts:83-125`                   |
 | 訂單 CSV 成本毛利快照 | 四個單品快照與 cart 整單快照                | captured/exempt 輸出 12 位定格值；pending 輸出「待確認」；單品／購物車不適用會明示 | `orderExport.ts:45-76,98-125`             |
 
@@ -75,3 +81,9 @@
 - commit `ab2d268` 將首頁最近訂單金額改為 `NT$`，並把顯示口徑改用與訂單列表相同的既有 fallback（`orderTotal`，缺值時 `totalPrice+shippingFee`），抽出共用 `resolveOrderDisplayTotal` helper；未發明新計算。畫面未加文字標籤。
 - commit `dabee42` 將公開單品、公開購物車與後台訂單編輯的「畫面預覽」乘加運算改為共用 `ExactDecimal` helper，涵蓋 `0.1 × 3` 等浮點判別案例。
 - 上述變更只影響顯示預覽；送出、資料庫寫入、訂單快照與成本毛利公式均未變更。顯示層仍依既有規則定格到兩位小數。
+
+## BATCH-18 購物金補充（2026-07-31）
+
+- 客戶詳情頁的餘額、流水、變動前後預覽均以 `ExactDecimal` 保留內部精度，只有畫面顯示時才 half-up 取整。
+- 訂單折抵使用定格欄 `credit_spent` 與 `payable_after_credit`；成本／毛利的 captured／pending／exempt 三態不受購物金影響，也不會因折抵而重算。
+- 購物金餘額為帳本加總結果，因此 0 是已知餘額；這與成本資料缺失的「待確認」不同。
