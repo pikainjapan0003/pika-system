@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+import { useAuth } from "@clerk/react";
 import {
   Sheet,
   SheetContent,
@@ -6,6 +8,10 @@ import {
 } from "@/components/ui/sheet";
 import type { PickingListResponse } from "@workspace/api-client-react";
 import { printPickingList } from "../lib/printHelpers";
+import {
+  PickingCheckSections,
+  type PickingCheckItem,
+} from "../lib/PickingCheckSections";
 
 interface Props {
   open: boolean;
@@ -20,7 +26,64 @@ const STORAGE_TEMP_LABELS: Record<string, string> = {
 };
 
 export function PickingListDialog({ open, onClose, data }: Props) {
+  const { getToken } = useAuth();
+  const responseWithChecks = data as
+    | (PickingListResponse & { orderItems?: PickingCheckItem[] })
+    | null;
+  const [orderItems, setOrderItems] = useState<PickingCheckItem[]>([]);
+  const [pendingKey, setPendingKey] = useState<string | null>(null);
+  const [toggleError, setToggleError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setOrderItems(responseWithChecks?.orderItems ?? []);
+    setPendingKey(null);
+    setToggleError(null);
+  }, [responseWithChecks]);
+
   if (!data) return null;
+
+  async function handleToggle(item: PickingCheckItem) {
+    const key = `${item.orderId}:${item.itemKey}`;
+    setPendingKey(key);
+    setToggleError(null);
+    try {
+      const token = await getToken();
+      const response = await fetch(
+        `/api/orders/${item.orderId}/picking-check`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            itemKey: item.itemKey,
+            checked: !item.checked,
+          }),
+        },
+      );
+      const body = await response.json();
+      if (!response.ok) {
+        throw new Error(body.error ?? "更新包貨進度失敗");
+      }
+      setOrderItems((current) =>
+        current.map((candidate) =>
+          candidate.orderId === item.orderId &&
+          candidate.itemKey === item.itemKey
+            ? {
+                ...candidate,
+                checked: body.checked,
+                checkedAt: body.checkedAt,
+              }
+            : candidate,
+        ),
+      );
+    } catch (error) {
+      setToggleError((error as Error).message);
+    } finally {
+      setPendingKey(null);
+    }
+  }
 
   return (
     <Sheet
@@ -85,65 +148,78 @@ export function PickingListDialog({ open, onClose, data }: Props) {
 
         {/* Item list */}
         <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2.5">
-          {data.items.length === 0 ? (
-            <div className="flex items-center justify-center h-24">
-              <p className="text-sm text-muted-foreground">無商品資料</p>
-            </div>
-          ) : (
-            data.items.map((item, i) => (
-              <div
-                key={`${item.productId}-${item.skuCode ?? i}`}
-                className="bg-white rounded-xl border border-border/60 p-3.5"
-              >
-                <div className="flex items-start justify-between gap-2 mb-1.5">
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-semibold text-foreground leading-tight">
-                      {item.productName}
-                    </div>
-                    {item.specLabel && (
-                      <div className="text-xs text-muted-foreground mt-0.5">
-                        {item.specLabel}
-                      </div>
-                    )}
-                    {item.skuCode && (
-                      <div className="text-[11px] text-muted-foreground/60 mt-0.5">
-                        SKU: {item.skuCode}
-                      </div>
-                    )}
-                  </div>
-                  <div className="text-2xl font-bold text-primary shrink-0">
-                    ×{item.quantityTotal}
-                  </div>
-                </div>
-
-                {(item.storageTemp || item.shelfLife) && (
-                  <div className="flex gap-3 mb-1.5">
-                    {item.storageTemp && (
-                      <span className="text-[11px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-medium">
-                        {STORAGE_TEMP_LABELS[item.storageTemp] ??
-                          item.storageTemp}
-                      </span>
-                    )}
-                    {item.shelfLife && (
-                      <span className="text-[11px] text-muted-foreground">
-                        效期: {item.shelfLife}
-                      </span>
-                    )}
-                  </div>
-                )}
-
-                <div className="text-[11px] text-muted-foreground/70 border-t border-border/40 pt-1.5 mt-1.5">
-                  訂單: {item.orderNumbers.join("、")}
-                </div>
-
-                {item.notes && (
-                  <div className="text-xs text-muted-foreground mt-1 italic">
-                    備註: {item.notes}
-                  </div>
-                )}
-              </div>
-            ))
+          {toggleError && (
+            <p role="alert" className="text-xs text-destructive">
+              {toggleError}
+            </p>
           )}
+          {orderItems.length > 0 ? (
+            <PickingCheckSections
+              items={orderItems}
+              pendingKey={pendingKey}
+              onToggle={(item) => void handleToggle(item)}
+            />
+          ) : null}
+          {orderItems.length === 0 &&
+            (data.items.length === 0 ? (
+              <div className="flex items-center justify-center h-24">
+                <p className="text-sm text-muted-foreground">無商品資料</p>
+              </div>
+            ) : (
+              data.items.map((item, i) => (
+                <div
+                  key={`${item.productId}-${item.skuCode ?? i}`}
+                  className="bg-white rounded-xl border border-border/60 p-3.5"
+                >
+                  <div className="flex items-start justify-between gap-2 mb-1.5">
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-semibold text-foreground leading-tight">
+                        {item.productName}
+                      </div>
+                      {item.specLabel && (
+                        <div className="text-xs text-muted-foreground mt-0.5">
+                          {item.specLabel}
+                        </div>
+                      )}
+                      {item.skuCode && (
+                        <div className="text-[11px] text-muted-foreground/60 mt-0.5">
+                          SKU: {item.skuCode}
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-2xl font-bold text-primary shrink-0">
+                      ×{item.quantityTotal}
+                    </div>
+                  </div>
+
+                  {(item.storageTemp || item.shelfLife) && (
+                    <div className="flex gap-3 mb-1.5">
+                      {item.storageTemp && (
+                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-medium">
+                          {STORAGE_TEMP_LABELS[item.storageTemp] ??
+                            item.storageTemp}
+                        </span>
+                      )}
+                      {item.shelfLife && (
+                        <span className="text-[11px] text-muted-foreground">
+                          效期: {item.shelfLife}
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="text-[11px] text-muted-foreground/70 border-t border-border/40 pt-1.5 mt-1.5">
+                    訂單: {item.orderNumbers.join("、")}
+                  </div>
+
+                  {item.notes && (
+                    <div className="text-xs text-muted-foreground mt-1 italic">
+                      備註: {item.notes}
+                    </div>
+                  )}
+                </div>
+              ))
+            ))}
         </div>
 
         {/* Footer */}
