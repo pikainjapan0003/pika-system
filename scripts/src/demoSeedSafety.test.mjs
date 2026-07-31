@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   AWAITING_PAYMENT_DEMO_ORDER,
+  MAIHUOBIAN_DEMO_FIXTURE,
   PARTIAL_PICKING_DEMO_FIXTURE,
   STORE_CREDIT_DEMO_FIXTURE,
 } from "../demo-seed.mjs";
@@ -128,5 +129,20 @@ test("the demo fixture documents exact store-credit and partial-picking states",
   assert.deepEqual(PARTIAL_PICKING_DEMO_FIXTURE, {
     checkedBy: "demo-seed",
     checkedItemCount: 1,
+  });
+});
+
+test("the demo fixture exposes three eligible and three distinctly ineligible Maihuobian orders", () => {
+  assert.deepEqual(MAIHUOBIAN_DEMO_FIXTURE, {
+    eligiblePublicTokenPrefixes: [
+      "demo-order-maihuobian-eligible-normal-",
+      "demo-order-maihuobian-eligible-frozen-",
+      "demo-order-maihuobian-eligible-third-",
+    ],
+    ineligiblePublicTokenPrefixes: [
+      "demo-order-maihuobian-ineligible-status-",
+      "demo-order-maihuobian-ineligible-shipping-",
+      "demo-order-maihuobian-ineligible-pickup-",
+    ],
   });
 });
