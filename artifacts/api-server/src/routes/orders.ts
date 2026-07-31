@@ -21,6 +21,7 @@ import { ExactDecimal } from "@workspace/db/transport-cost";
 import {
   calculateStoreCreditBalance,
   prepareOrderStoreCreditApplication,
+  prepareStoreCreditReversal,
   prepareStoreCreditSpend,
   type StoreCreditLedgerEntry,
 } from "@workspace/db/store-credit";
@@ -1816,21 +1817,110 @@ router.patch("/orders/:orderId/status", requireAuth, async (req: any, res) => {
 
   if (!(await verifyStoreOwner(req, res, order.storeId))) return;
 
-  const currentStatus = order.status as OrderStatus;
   const nextStatus = parsed.data.status as OrderStatus;
-  if (!isValidTransition(currentStatus, nextStatus)) {
-    return res
-      .status(422)
-      .json({ error: getTransitionError(currentStatus, nextStatus) });
+  try {
+    const updated = await db.transaction(async (tx) => {
+      const [lockedOrder] = await tx
+        .select()
+        .from(ordersTable)
+        .where(eq(ordersTable.id, orderId))
+        .limit(1)
+        .for("update");
+      if (!lockedOrder) {
+        const error = new Error("Order not found") as Error & {
+          status?: number;
+        };
+        error.status = 404;
+        throw error;
+      }
+
+      const currentStatus = lockedOrder.status as OrderStatus;
+      // A repeated or concurrent cancellation is a successful no-op. The row
+      // lock and the unique reversal index jointly prevent a second refund.
+      if (currentStatus === "cancelled" && nextStatus === "cancelled") {
+        return lockedOrder;
+      }
+      if (!isValidTransition(currentStatus, nextStatus)) {
+        const error = new Error(
+          getTransitionError(currentStatus, nextStatus),
+        ) as Error & { status?: number };
+        error.status = 422;
+        throw error;
+      }
+
+      if (
+        nextStatus === "cancelled" &&
+        !ExactDecimal.from(lockedOrder.creditSpent ?? "0").equals(
+          ExactDecimal.zero(),
+        )
+      ) {
+        if (lockedOrder.customerId === null) {
+          throw new Error(
+            "Order with applied store credit has no linked customer",
+          );
+        }
+        await tx.execute(
+          sql`SELECT pg_advisory_xact_lock(${lockedOrder.storeId}, ${lockedOrder.customerId})`,
+        );
+        const ledgerRows = await tx
+          .select({
+            direction: storeCreditTransactionsTable.direction,
+            type: storeCreditTransactionsTable.type,
+            amount: storeCreditTransactionsTable.amount,
+            relatedOrderId: storeCreditTransactionsTable.relatedOrderId,
+          })
+          .from(storeCreditTransactionsTable)
+          .where(
+            and(
+              eq(storeCreditTransactionsTable.storeId, lockedOrder.storeId),
+              eq(
+                storeCreditTransactionsTable.customerId,
+                lockedOrder.customerId,
+              ),
+            ),
+          );
+        const ledgerEntries = toStoreCreditLedgerEntries(ledgerRows);
+        const alreadyReversed = ledgerEntries.some(
+          (entry) =>
+            entry.relatedOrderId === lockedOrder.id &&
+            entry.type === "reversal" &&
+            entry.direction === "credit",
+        );
+        if (!alreadyReversed) {
+          const reversal = prepareStoreCreditReversal({
+            entries: ledgerEntries,
+            relatedOrderId: lockedOrder.id,
+          });
+          await tx.insert(storeCreditTransactionsTable).values({
+            storeId: lockedOrder.storeId,
+            customerId: lockedOrder.customerId,
+            direction: reversal.direction,
+            type: reversal.type,
+            amount: reversal.amount.toDecimalPlaces(12),
+            relatedOrderId: reversal.relatedOrderId,
+            note: null,
+            createdBy: req.userId,
+          });
+        }
+      }
+
+      const [changedOrder] = await tx
+        .update(ordersTable)
+        .set({ status: nextStatus })
+        .where(eq(ordersTable.id, orderId))
+        .returning();
+      if (!changedOrder) throw new Error("Order status update returned no row");
+      return changedOrder;
+    });
+
+    return res.json(formatOrder(updated));
+  } catch (error) {
+    const status = (error as { status?: number }).status;
+    if (status === 404 || status === 422) {
+      return res.status(status).json({ error: (error as Error).message });
+    }
+    throw error;
   }
-
-  const [updated] = await db
-    .update(ordersTable)
-    .set({ status: parsed.data.status })
-    .where(eq(ordersTable.id, orderId))
-    .returning();
-
-  return res.json(formatOrder(updated));
 });
 
 function csvRow(cells: unknown[]): string {

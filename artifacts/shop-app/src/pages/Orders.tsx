@@ -343,6 +343,7 @@ export default function OrdersPage() {
     fromStatus: string;
     toStatus: string;
     kind: "cancel" | "restore";
+    creditSpent: number | string | null;
   } | null>(null);
   const [showAddOrder, setShowAddOrder] = useState(false);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
@@ -2093,6 +2094,7 @@ export default function OrdersPage() {
                                 fromStatus: o.status,
                                 toStatus: s,
                                 kind: "restore",
+                                creditSpent: o.creditSpent ?? null,
                               });
                               return;
                             }
@@ -2165,6 +2167,8 @@ export default function OrdersPage() {
                                               fromStatus: o.status,
                                               toStatus: "cancelled",
                                               kind: "cancel",
+                                              creditSpent:
+                                                o.creditSpent ?? null,
                                             })
                                           }
                                           className="min-h-11 px-4 rounded-xl text-sm font-medium border border-red-300 bg-white text-red-600 hover:bg-red-50 transition-colors disabled:opacity-60"
@@ -2393,7 +2397,9 @@ export default function OrdersPage() {
             </AlertDialogTitle>
             <AlertDialogDescription>
               {statusConfirm?.kind === "cancel"
-                ? "確定要取消這筆訂單嗎？取消後仍可由後台重新改回其他狀態，但此操作可能影響後續處理。"
+                ? Number(statusConfirm.creditSpent ?? 0) > 0
+                  ? `確定要取消這筆訂單嗎？本單將自動退回 ${Number(statusConfirm.creditSpent).toLocaleString("zh-TW", { maximumFractionDigits: 12 })} 元購物金。取消後仍可由後台重新改回其他狀態。`
+                  : "確定要取消這筆訂單嗎？取消後仍可由後台重新改回其他狀態，但此操作可能影響後續處理。"
                 : statusConfirm
                   ? `此訂單目前為「${STATUS_LABELS[statusConfirm.fromStatus] ?? statusConfirm.fromStatus}」，確定要改回「${STATUS_LABELS[statusConfirm.toStatus] ?? statusConfirm.toStatus}」嗎？這會復原一筆已結束的訂單。`
                   : ""}
