@@ -251,6 +251,45 @@ if (!process.env.DATABASE_URL) {
     assert.equal(missingPurpose.status, 400);
   });
 
+  test("Maihuobian write rejects unauthenticated, cross-store, and oversized selections", async () => {
+    const body = {
+      from: "2026-07-19",
+      to: "2026-07-19",
+      orderIds: [eligibleOrderId],
+    };
+    const confirmationHeaders = {
+      "x-confirm-cleartext-export": "true",
+      "x-confirm-maihuobian-export": "true",
+    };
+    const unauthenticated = await request(
+      "POST",
+      `/stores/${storeId}/orders/maihuobian-export`,
+      { body, userId: null, headers: confirmationHeaders },
+    );
+    assert.equal(unauthenticated.status, 401);
+
+    const crossStore = await request(
+      "POST",
+      `/stores/${otherStoreId}/orders/maihuobian-export`,
+      { body, headers: confirmationHeaders },
+    );
+    assert.equal(crossStore.status, 403);
+
+    const oversized = await request(
+      "POST",
+      `/stores/${storeId}/orders/maihuobian-export`,
+      {
+        body: {
+          ...body,
+          orderIds: Array.from({ length: 501 }, (_, index) => index + 1),
+        },
+        headers: confirmationHeaders,
+      },
+    );
+    assert.equal(oversized.status, 422);
+    assert.equal(oversized.data.code, "ORDER_SELECTION_TOO_LARGE");
+  });
+
   test("Maihuobian cleartext export returns only eligible rows and writes an anonymous audit", async () => {
     const response = await request(
       "POST",
