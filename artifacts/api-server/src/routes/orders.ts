@@ -108,11 +108,15 @@ async function loadMaihuobianExportPreview(
   storeId: number,
   from: unknown,
   to: unknown,
+  requestedOrderIds?: readonly number[],
 ) {
   const range = parseMaihuobianDateRange(from, to);
   const conditions = [eq(ordersTable.storeId, storeId)];
   if (range.start) conditions.push(gte(ordersTable.createdAt, range.start));
   if (range.end) conditions.push(lt(ordersTable.createdAt, range.end));
+  if (requestedOrderIds) {
+    conditions.push(inArray(ordersTable.id, requestedOrderIds));
+  }
 
   const orders = await db
     .select()
@@ -200,10 +204,31 @@ router.post(
     }
 
     try {
+      const rawOrderIds = req.body?.orderIds;
+      if (
+        !Array.isArray(rawOrderIds) ||
+        rawOrderIds.length === 0 ||
+        rawOrderIds.some(
+          (value) => !Number.isSafeInteger(value) || Number(value) < 1,
+        )
+      ) {
+        return res.status(422).json({
+          error: "請選擇至少一筆有效訂單",
+          code: "ORDER_SELECTION_REQUIRED",
+        });
+      }
+      const orderIds = [...new Set(rawOrderIds as number[])];
+      if (orderIds.length > 500) {
+        return res.status(422).json({
+          error: "單次最多匯出 500 筆訂單",
+          code: "ORDER_SELECTION_TOO_LARGE",
+        });
+      }
       const preview = await loadMaihuobianExportPreview(
         storeId,
         req.body?.from,
         req.body?.to,
+        orderIds,
       );
       if (preview.eligibleCount === 0) {
         return res.status(422).json({
