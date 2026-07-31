@@ -32,6 +32,8 @@ if (!process.env.DATABASE_URL) {
     await import("@workspace/db");
   const { and, eq } = await import("drizzle-orm");
   const { default: ordersRouter } = await import("./orders.ts");
+  const { ownerStoreMutationLimiter } =
+    await import("../lib/ownerStoreRateLimit.ts");
 
   const app = express();
   app.use(express.json());
@@ -352,6 +354,28 @@ if (!process.env.DATABASE_URL) {
       assert.equal(audit.target.includes("0912345678"), false);
       assert.equal(audit.target.includes("假客人"), false);
     }
+  });
+
+  test("Maihuobian export is rate limited after owner verification without leaking cleartext", async () => {
+    ownerStoreMutationLimiter.resetKey(String(storeId));
+    const path = `/stores/${storeId}/orders/maihuobian-export`;
+    const body = {
+      from: "2026-07-19",
+      to: "2026-07-19",
+      orderIds: [eligibleOrderId],
+    };
+    for (let index = 0; index < 60; index += 1) {
+      const allowed = await request("POST", path, { body });
+      assert.equal(allowed.status, 400);
+    }
+    const limited = await request("POST", path, { body });
+    assert.equal(limited.status, 429);
+    assert.deepEqual(Object.keys(limited.data), ["error"]);
+    assert.doesNotMatch(
+      JSON.stringify(limited.data),
+      /0912345678|王小明|publicToken|shareToken/i,
+    );
+    ownerStoreMutationLimiter.resetKey(String(storeId));
   });
 
   function fakeOrder({
