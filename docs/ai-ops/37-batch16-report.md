@@ -102,6 +102,12 @@ docker ps --filter label=batch16.routes=true
 
 先交 Fable 5 終審。若 accepted，再一次推送本批 commits 並觀察 current-HEAD `CI/verify`；另外手動觸發 `Pending E2E`，依 `docs/ai-ops/36-pending-e2e-runbook.md` 決定是否把四條 pending spec 升入主 CI。Orders／Dashboard component harness 與 monthlyProfitReport 缺測建議各自另開極小測試包，不與功能修改混做。
 
+## BATCH-18 後續處理狀態
+
+- 原第 3 項 monthlyProfitReport 缺測已由 BATCH-18 commit `5e587bb` 補齊：包含僅 pending、僅 missing、混合負毛利與 Asia/Taipei 閏年跨月邊界。
+- 原第 2 項 Orders／Dashboard component harness 仍未解。BATCH-18 包 5 依規再試兩輪：第一輪卡在 React 載入，第二輪卡在 Testing Library `screen` 綁定全域 document 的時點；已完整還原嘗試內容，未留下以修改 production code 規避測試環境的變更。
+- Pending E2E 仍未有 GitHub Actions 執行紀錄；BATCH-18 唯讀查詢結果為 0 runs，因此沒有將 pending specs 搬入主 CI。
+
 ## Git 與未 push 聲明
 
 本批從 `3301cb7` 開始，所有完成包各自獨立 commit；本檔提交後工作樹應為乾淨。本批未執行 `git push`，未修改 origin。
@@ -110,4 +116,4 @@ docker ps --filter label=batch16.routes=true
 
 重算方式：以本檔 UTF-8 bytes 為準，刪除整行 `SELF_SHA256:`（含該行換行）後計算 SHA-256。
 
-SELF_SHA256: d601c716d116e5056479395c3962f34fe07fa682f999ff50ff2f60e69e96aa7d
+SELF_SHA256: 9dc2ac35f73af5c3c8935447a480310eac46582a4eeb33bfc926228a74a72d48

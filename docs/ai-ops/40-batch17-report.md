@@ -139,4 +139,11 @@ exit 0
 2. 審查通過後再決定是否推送；不得把本報告視為 push 授權。
 3. 另開極小包處理 owner grant API/UI；測試基建的 alias 問題獨立研究，避免再與功能包混在一起。
 
-SELF_SHA256: 5a8eef12b5b65bc44101736c50162a9a392e47396e7e7da323538bc7e024f717
+## BATCH-18 後續處理狀態
+
+- 原第 1 項 migration `0022` 已由 Fable 5 在 BATCH-17 終審補做拋棄式 PostgreSQL 演練並 accepted；BATCH-18 未連 production 或既有 DB。
+- 原第 2 項 owner grant/adjust API 與 UI 已補完：owner-only API 為 commit `b6ce2f6`，CustomerDetail 管理介面為 commit `a389855`，audit 記錄為 commit `2c73544`，完整生命週期 route 測試為 commit `dbf7e2a`。
+- 原第 3 項 monthlyProfitReport 缺測已由 commit `5e587bb` 補齊。
+- Orders／Dashboard component tests 仍未解。BATCH-18 包 5 的兩輪 harness 嘗試均失敗並已還原，未改 production code；因此依批次紀律，依賴該 shim 的包 6、7 也維持 skipped。
+
+SELF_SHA256: 490e4f05b9023277decd864109751914f1132f5516b753063fe0d67956498c3f
