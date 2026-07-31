@@ -13,7 +13,12 @@ interface MaihuobianRow {
   socialAccount: string;
 }
 
-interface EligibleOrder {
+interface PreviewEligibleOrder {
+  orderId: number;
+  productSummary: string;
+}
+
+interface ExportEligibleOrder {
   orderId: number;
   row: MaihuobianRow;
 }
@@ -26,7 +31,14 @@ interface IneligibleOrder {
 interface MaihuobianPreview {
   eligibleCount: number;
   ineligibleCount: number;
-  eligible: EligibleOrder[];
+  eligible: PreviewEligibleOrder[];
+  ineligible: IneligibleOrder[];
+}
+
+interface MaihuobianExportResult {
+  eligibleCount: number;
+  ineligibleCount: number;
+  eligible: ExportEligibleOrder[];
   ineligible: IneligibleOrder[];
 }
 
@@ -165,7 +177,7 @@ export function MaihuobianExportPanel({
         },
       );
       if (!response.ok) throw new Error(await responseError(response));
-      const result = (await response.json()) as MaihuobianPreview;
+      const result = (await response.json()) as MaihuobianExportResult;
       const csv = `\uFEFF${formatMaihuobianCsv(
         result.eligible.map((candidate) => candidate.row),
       )}`;
@@ -282,7 +294,7 @@ export function MaihuobianExportPanel({
                         className="h-4 w-4"
                       />
                       <span>
-                        #{candidate.orderId} · {candidate.row.productSummary}
+                        #{candidate.orderId} · {candidate.productSummary}
                       </span>
                     </label>
                   </li>
