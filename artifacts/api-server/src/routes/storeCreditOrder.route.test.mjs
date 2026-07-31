@@ -118,6 +118,19 @@ if (!process.env.DATABASE_URL) {
     return { status: response.status, data: await response.json() };
   }
 
+  async function deleteOrder(orderId) {
+    const response = await fetch(
+      `${baseUrl}/stores/${storeId}/orders/${orderId}`,
+      {
+        method: "DELETE",
+        headers: {
+          "x-test-user-id": MERCHANT_ID,
+        },
+      },
+    );
+    return { status: response.status, data: await response.json() };
+  }
+
   test("linked customer spends exact credit to zero in the same order transaction", async () => {
     const missingCustomer = await createOrder({ creditSpent: "1" });
     assert.equal(missingCustomer.status, 422);
@@ -188,5 +201,16 @@ if (!process.env.DATABASE_URL) {
     );
     assert.equal(reversals.length, 1);
     assert.equal(reversals[0].amount, "100.000000000000");
+
+    const linkedDelete = await deleteOrder(created.data.id);
+    assert.equal(linkedDelete.status, 409);
+    assert.equal(typeof linkedDelete.data.error, "string");
+    assert.ok(linkedDelete.data.error.length > 0);
+
+    const unusedPendingOrder = await createOrder({});
+    assert.equal(unusedPendingOrder.status, 201);
+    const unusedDelete = await deleteOrder(unusedPendingOrder.data.id);
+    assert.equal(unusedDelete.status, 200);
+    assert.deepEqual(unusedDelete.data, { ok: true });
   });
 }
