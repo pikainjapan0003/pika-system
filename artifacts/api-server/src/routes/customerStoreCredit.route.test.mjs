@@ -126,6 +126,18 @@ if (!process.env.DATABASE_URL) {
       userId: MERCHANT_B,
     });
     assert.equal(response.status, 403);
+
+    const write = await request("POST", creditPath(), {
+      userId: MERCHANT_B,
+      confirmed: true,
+      body: {
+        type: "grant",
+        amount: "1",
+        reasonCode: "cross_store_test",
+        idempotencyKey: "cross-store-write",
+      },
+    });
+    assert.equal(write.status, 403);
   });
 
   test("store-credit mutation requires the explicit confirmation header", async () => {

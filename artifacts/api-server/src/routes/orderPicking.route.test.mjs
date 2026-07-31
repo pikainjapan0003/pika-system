@@ -152,6 +152,20 @@ if (!process.env.DATABASE_URL) {
     assert.equal(crossStore.status, 403);
   });
 
+  test("oversized item keys fail closed before any write", async () => {
+    const response = await request(`/orders/${orderId}/picking-check`, {
+      method: "POST",
+      body: JSON.stringify({ itemKey: "x".repeat(501), checked: true }),
+    });
+    assert.equal(response.status, 422);
+
+    const rows = await db
+      .select()
+      .from(orderPickingChecksTable)
+      .where(eq(orderPickingChecksTable.orderId, orderId));
+    assert.equal(rows.length, 0);
+  });
+
   test("checking and unchecking writes and removes exactly one row", async () => {
     const checked = await request(`/orders/${orderId}/picking-check`, {
       method: "POST",
