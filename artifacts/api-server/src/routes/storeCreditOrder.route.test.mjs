@@ -154,5 +154,39 @@ if (!process.env.DATABASE_URL) {
     });
     assert.equal(overdraw.status, 422);
     assert.match(overdraw.data.error, /exceeds available balance/);
+
+    const cancel = () =>
+      fetch(`${baseUrl}/orders/${created.data.id}/status`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "x-test-user-id": MERCHANT_ID,
+        },
+        body: JSON.stringify({ status: "cancelled" }),
+      });
+    const concurrentCancellations = await Promise.all([cancel(), cancel()]);
+    assert.deepEqual(
+      concurrentCancellations.map((response) => response.status),
+      [200, 200],
+    );
+    const cancellationBodies = await Promise.all(
+      concurrentCancellations.map((response) => response.json()),
+    );
+    assert.ok(cancellationBodies.every((body) => body.status === "cancelled"));
+
+    const repeatedCancellation = await cancel();
+    assert.equal(repeatedCancellation.status, 200);
+    assert.equal((await repeatedCancellation.json()).status, "cancelled");
+
+    const ledgerAfterCancellation = await db
+      .select()
+      .from(storeCreditTransactionsTable)
+      .where(eq(storeCreditTransactionsTable.customerId, customerId));
+    const reversals = ledgerAfterCancellation.filter(
+      (entry) =>
+        entry.type === "reversal" && entry.relatedOrderId === created.data.id,
+    );
+    assert.equal(reversals.length, 1);
+    assert.equal(reversals[0].amount, "100.000000000000");
   });
 }
