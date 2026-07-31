@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { AWAITING_PAYMENT_DEMO_ORDER } from "../demo-seed.mjs";
+import {
+  AWAITING_PAYMENT_DEMO_ORDER,
+  PARTIAL_PICKING_DEMO_FIXTURE,
+  STORE_CREDIT_DEMO_FIXTURE,
+} from "../demo-seed.mjs";
 
 import {
   assertDemoAppendAllowed,
@@ -110,5 +114,19 @@ test("the demo fixture includes an explicit awaiting-payment receipt state", () 
   assert.deepEqual(AWAITING_PAYMENT_DEMO_ORDER, {
     publicTokenPrefix: "demo-order-awaiting-payment-",
     status: "awaiting_payment",
+  });
+});
+
+test("the demo fixture documents exact store-credit and partial-picking states", () => {
+  assert.deepEqual(STORE_CREDIT_DEMO_FIXTURE, {
+    orderPublicTokenPrefix: "demo-order-credit-reversed-",
+    grant: "5000.000000000000",
+    spend: "220.000000000000",
+    reversal: "220.000000000000",
+    payableAfterCredit: "580.000000000000",
+  });
+  assert.deepEqual(PARTIAL_PICKING_DEMO_FIXTURE, {
+    checkedBy: "demo-seed",
+    checkedItemCount: 1,
   });
 });
