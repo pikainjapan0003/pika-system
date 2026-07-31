@@ -86,6 +86,7 @@ jobs:
               src/routes/customerStoreCredit.route.test.mjs \
               src/routes/storeCreditLifecycle.route.test.mjs \
               src/routes/orderPicking.route.test.mjs \
+              src/routes/coreMutationAuthorization.route.test.mjs \
               src/routes/devHandoffProductionGuard.route.test.mjs
 
       - name: Test pure function suites
