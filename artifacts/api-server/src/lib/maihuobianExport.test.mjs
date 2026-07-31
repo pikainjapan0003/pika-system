@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   buildMaihuobianExportPreview,
   parseMaihuobianDateRange,
+  toMaihuobianExportPreviewDto,
 } from "./maihuobianExport.ts";
 
 const product = {
@@ -41,6 +42,20 @@ test("Maihuobian export accepts exactly 500 eligible rows", () => {
   );
   assert.equal(preview.eligibleCount, 500);
   assert.equal(preview.ineligibleCount, 0);
+});
+
+test("Maihuobian preview DTO exposes product summary without cleartext row fields", () => {
+  const fullPreview = buildMaihuobianExportPreview(
+    [fakeEligibleOrder(1)],
+    [product],
+  );
+  const preview = toMaihuobianExportPreviewDto(fullPreview);
+
+  assert.deepEqual(Object.keys(preview.eligible[0]).sort(), [
+    "orderId",
+    "productSummary",
+  ]);
+  assert.equal(JSON.stringify(preview).includes("0912345678"), false);
 });
 
 test("Maihuobian export rejects 501 eligible rows instead of truncating", () => {

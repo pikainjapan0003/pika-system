@@ -66,6 +66,7 @@ import {
 import {
   buildMaihuobianExportPreview,
   parseMaihuobianDateRange,
+  toMaihuobianExportPreviewDto,
 } from "../lib/maihuobianExport.ts";
 import { buildOrderPickingItems } from "../lib/orderPicking.ts";
 
@@ -221,10 +222,12 @@ router.get(
 
     try {
       return res.json(
-        await loadMaihuobianExportPreview(
-          storeId,
-          req.query.from,
-          req.query.to,
+        toMaihuobianExportPreviewDto(
+          await loadMaihuobianExportPreview(
+            storeId,
+            req.query.from,
+            req.query.to,
+          ),
         ),
       );
     } catch (error) {

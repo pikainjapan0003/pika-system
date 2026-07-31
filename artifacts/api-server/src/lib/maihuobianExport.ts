@@ -53,6 +53,22 @@ export interface MaihuobianExportPreview {
   ineligible: MaihuobianExportIneligibleOrder[];
 }
 
+export interface MaihuobianExportPreviewEligibleOrder {
+  orderId: number;
+  productSummary: string;
+}
+
+/**
+ * Owner preview DTO. Cleartext recipient and store fields stay server-side
+ * until the owner explicitly confirms the export POST request.
+ */
+export interface MaihuobianExportPreviewDto {
+  eligibleCount: number;
+  ineligibleCount: number;
+  eligible: MaihuobianExportPreviewEligibleOrder[];
+  ineligible: MaihuobianExportIneligibleOrder[];
+}
+
 export interface MaihuobianDateRange {
   start?: Date;
   end?: Date;
@@ -255,5 +271,19 @@ export function buildMaihuobianExportPreview(
     ineligibleCount: ineligible.length,
     eligible,
     ineligible,
+  };
+}
+
+export function toMaihuobianExportPreviewDto(
+  preview: MaihuobianExportPreview,
+): MaihuobianExportPreviewDto {
+  return {
+    eligibleCount: preview.eligibleCount,
+    ineligibleCount: preview.ineligibleCount,
+    eligible: preview.eligible.map(({ orderId, row }) => ({
+      orderId,
+      productSummary: row.productSummary,
+    })),
+    ineligible: preview.ineligible,
   };
 }

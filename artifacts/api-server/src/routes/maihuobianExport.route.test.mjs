@@ -192,8 +192,13 @@ if (!process.env.DATABASE_URL) {
     assert.equal(response.data.eligibleCount, 1);
     assert.equal(response.data.ineligibleCount, 2);
     assert.equal(response.data.eligible[0].orderId, eligibleOrderId);
-    assert.equal(response.data.eligible[0].row.totalPrice, "300.00");
-    assert.equal(response.data.eligible[0].row.shippingFee, "60.00");
+    assert.equal(typeof response.data.eligible[0].productSummary, "string");
+
+    const serializedPreview = JSON.stringify(response.data);
+    assert.equal(serializedPreview.includes("recipientName"), false);
+    assert.equal(serializedPreview.includes("recipientPhone"), false);
+    assert.equal(serializedPreview.includes("cvsStoreId"), false);
+    assert.doesNotMatch(serializedPreview, /09\d{8}/u);
 
     const pending = response.data.ineligible.find(
       (entry) => entry.orderId === pendingOrderId,
@@ -309,6 +314,7 @@ if (!process.env.DATABASE_URL) {
     assert.equal(response.status, 200);
     assert.equal(response.data.eligibleCount, 1);
     assert.equal(response.data.eligible[0].orderId, eligibleOrderId);
+    assert.equal(response.data.eligible[0].row.recipientName, "王小明");
     assert.equal(response.data.eligible[0].row.recipientPhone, "0912345678");
 
     const [audit] = await db
