@@ -62,13 +62,19 @@ GET 預覽與確認後 POST 共用 `loadMaihuobianExportPreview()`；其中 `eli
 
 最小修法：新增不含 `row` 的 preview DTO；GET 只回 orderId、合格狀態與原因，確認後 POST 才回明文 row。補遞迴回應測試，斷言 GET 不含 `recipientName`、`recipientPhone`。
 
+**BATCH-19 狀態：已解。** `e231afe` 將 GET preview 改為資格摘要 DTO，POST export 才保留明文列；測試會遞迴拒絕明文鍵。
+
 ### P3：audit target 不是唯一批次 ID
 
 `maihuobian-export:orders-1` 只代表筆數；不同時間兩次匯出同樣筆數時無法區分。最小修法是加入 server 產生的隨機 opaque export ID，仍不可放姓名、手機或 order token。
 
+**BATCH-19 狀態：已解。** `a49700d` 改用 server 產生的隨機 opaque export ID；回歸測試確認兩次匯出的 ID 不同且不含個資或 token。
+
 ### P3：CSV 公式中和缺專門回歸測試
 
 實作已有 `csvCell()` 中和，但現有 panel tests 沒直接以 `=HYPERLINK(...)`、`+cmd` 等假資料驗輸出。建議補純函式測試。
+
+**BATCH-19 狀態：已解。** `40da9b0` 加入 `=HYPERLINK(...)`、`+cmd`、`-cmd`、`@SUM(...)` 與 CSV 引號／換行回歸測試。
 
 ### P3：文件互相矛盾
 
