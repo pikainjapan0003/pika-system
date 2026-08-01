@@ -15,6 +15,7 @@ const originalRevokeObjectUrl = globalThis.URL.revokeObjectURL;
 globalThis.React = React;
 
 const requests = [];
+const navigations = [];
 
 mock.module("@clerk/react", {
   namedExports: {
@@ -25,7 +26,7 @@ mock.module("@clerk/react", {
 
 mock.module("wouter", {
   namedExports: {
-    useLocation: () => ["/customers", () => undefined],
+    useLocation: () => ["/customers", (path) => navigations.push(path)],
   },
 });
 
@@ -63,6 +64,7 @@ const { default: CustomersPage } = await import("../pages/Customers.tsx");
 afterEach(() => {
   cleanup();
   requests.length = 0;
+  navigations.length = 0;
   globalThis.fetch = originalFetch;
   globalThis.window.confirm = originalConfirm;
   globalThis.URL.createObjectURL = originalCreateObjectUrl;
@@ -153,4 +155,14 @@ test("cleartext export only sends its header after the second confirmation", asy
     requests[0].options.headers["X-Confirm-Cleartext-Export"],
     "true",
   );
+});
+
+test("customer details action navigates to the selected customer", async () => {
+  const view = await renderLoadedCustomers();
+
+  const detailButton = view.container.querySelector("article button");
+  assert.ok(detailButton);
+  fireEvent.click(detailButton);
+
+  assert.deepEqual(navigations, ["/customers/1"]);
 });
