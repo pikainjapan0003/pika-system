@@ -98,3 +98,7 @@
 | 訂單應付現金   | 優先讀定格 `payable_after_credit`；舊單 null 才走既有 fallback | `NT$`；null 不會被靜默轉成 0               |
 
 `formatOrder` 目前仍把既有交易金額轉成 JavaScript number 回應；影響面與收斂方案見 `47-order-response-decimal-options.md`。保守建議是在相容期間新增平行的 exact 字串欄，再逐步切換；本批沒有改 API 契約，也沒有把 number 回灌金額計算鏈。
+
+## BATCH-20 文件同步（2026-08-01）
+
+`47-order-response-decimal-options.md` 的保守建議仍為 B，但 BATCH-20 包19 的派工文字同時要求把既有三個回應欄位直接改成 decimal 字串；兩者對 API 相容性與金額顯示語意不一致。本批未改 `formatOrder` 或前端金額讀取，待明確拍板後另開包。
