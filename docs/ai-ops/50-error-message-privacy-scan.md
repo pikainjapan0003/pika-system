@@ -92,3 +92,11 @@
 
 - P1 的集中 logger sanitizer 已解（`c53783b`、`3709700`）；本批 package 15 的複驗由 `f064c93` 完成。
 - `logisticsSync`／`internalLogisticsSync`／`orders` 等 raw `console.error` 與全域 4xx `err.message` 仍待另案處理；本批沒有把它們誤標為已解。
+
+### BATCH-21 regression disposition (2026-08-01)
+
+- The 13 logistics/order error paths now pass caught errors through `sanitizeError` (commit `874cf2f`). The `console.error` calls remain intentional logging calls, but their payloads no longer contain raw Drizzle query text, params, stack paths, request bodies, or headers.
+- The global 4xx handler now uses `PublicSafeError`/explicit `expose` semantics (commit `f70af28`). Unknown client errors receive fixed public-safe text; intentionally exposed errors retain only their controlled message; 5xx responses remain generic.
+- Regression evidence: the pure suite exited 0; the disposable PostgreSQL route suite passed 77/77; all four package typechecks and the repository Prettier gate exited 0.
+
+The trips/trip_routes ownership gap remains an open decision item; no schema or route change was made. Remaining dependency advisories and the Pending E2E workflow are still follow-up items.
