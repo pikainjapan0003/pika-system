@@ -20,6 +20,7 @@ import {
 } from "@workspace/db";
 import type { CustomerTier, OrderStatus } from "@workspace/db";
 import { ExactDecimal } from "@workspace/db/transport-cost";
+import { sanitizeError } from "../lib/sanitizeError.ts";
 import {
   calculateStoreCreditBalance,
   prepareOrderStoreCreditApplication,
@@ -1656,7 +1657,10 @@ router.patch("/orders/:orderId", requireAuth, async (req: any, res) => {
       });
     } catch (err) {
       // seed 失敗不應讓訂單編輯整體失敗；訂單欄位已更新成功
-      console.error("[orders] manual tracking seed failed:", err);
+      console.error(
+        "[orders] manual tracking seed failed:",
+        sanitizeError(err),
+      );
     }
   }
 

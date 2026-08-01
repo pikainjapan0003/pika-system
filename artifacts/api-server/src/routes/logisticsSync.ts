@@ -8,6 +8,7 @@ import {
   shipmentTrackingRunLogsTable,
 } from "@workspace/db";
 import { requireAuth, verifyStoreOwner } from "../middlewares/auth.ts";
+import { sanitizeError } from "../lib/sanitizeError.ts";
 import { runFamilyMartTrackingWorker } from "../lib/logistics/workers/familyMartTrackingWorker.ts";
 import { runControlledDbWrite } from "../lib/logistics/workers/multiProviderControlledWriteWorker.ts";
 import {
@@ -66,7 +67,7 @@ async function saveManualQuerySnapshot(
   } catch (err) {
     console.error(
       `[logistics-sync] saveManualQuerySnapshot trackingId=${trackingId}:`,
-      err,
+      sanitizeError(err),
     );
   }
 }
@@ -121,7 +122,7 @@ router.post(
             : `已同步全家物流：成功 ${result.successCount} 筆、失敗 ${result.failedCount} 筆、略過 ${result.skippedCount} 筆。`,
       });
     } catch (err) {
-      console.error("[logistics-sync] manual sync failed:", err);
+      console.error("[logistics-sync] manual sync failed:", sanitizeError(err));
       return fail(res, 500, "SYNC_FAILED", "物流同步執行失敗，請稍後再試。");
     }
   },
@@ -337,7 +338,10 @@ router.post(
       ) {
         return fail(res, 400, "TOO_MANY_TRACKING_IDS", "一次最多查詢 5 筆。");
       }
-      console.error("[logistics-sync] manual-provider sync failed:", err);
+      console.error(
+        "[logistics-sync] manual-provider sync failed:",
+        sanitizeError(err),
+      );
       return fail(
         res,
         500,
@@ -413,7 +417,10 @@ async function handle711Preview(req: any, res: any): Promise<void> {
       )
       .where(inArray(shipmentTrackingsTable.id, trackingIds));
   } catch (err) {
-    console.error("[logistics-sync] 711-preview DB lookup failed:", err);
+    console.error(
+      "[logistics-sync] 711-preview DB lookup failed:",
+      sanitizeError(err),
+    );
     fail(
       res,
       500,
@@ -702,7 +709,10 @@ router.post(
       ) {
         return fail(res, 400, "TOO_MANY_TRACKING_IDS", "一次最多查詢 5 筆。");
       }
-      console.error("[logistics-sync] manual-provider preview failed:", err);
+      console.error(
+        "[logistics-sync] manual-provider preview failed:",
+        sanitizeError(err),
+      );
       return fail(
         res,
         500,
@@ -900,7 +910,10 @@ router.post(
       }
       trackingRow = row;
     } catch (err) {
-      console.error("[logistics-sync/commit] DB lookup failed:", err);
+      console.error(
+        "[logistics-sync/commit] DB lookup failed:",
+        sanitizeError(err),
+      );
       return fail(res, 500, "WRITE_FAILED", "寫入失敗，請稍後再試。");
     }
 
@@ -929,7 +942,10 @@ router.post(
         { storeId, createdBy },
       );
     } catch (err) {
-      console.error("[logistics-sync/commit] re-dryRun failed:", err);
+      console.error(
+        "[logistics-sync/commit] re-dryRun failed:",
+        sanitizeError(err),
+      );
       return fail(res, 502, "WRITE_FAILED", "寫入失敗，請稍後再試。");
     }
 
@@ -967,7 +983,10 @@ router.post(
         { storeId, createdBy },
       );
     } catch (err) {
-      console.error("[logistics-sync/commit] write failed:", err);
+      console.error(
+        "[logistics-sync/commit] write failed:",
+        sanitizeError(err),
+      );
       return fail(res, 500, "WRITE_FAILED", "寫入失敗，請稍後再試。");
     }
 
@@ -1068,7 +1087,7 @@ router.get(
           : "目前自動同步尚未啟用，可手動同步已支援的物流商。",
       });
     } catch (err) {
-      console.error("[logistics-sync] status failed:", err);
+      console.error("[logistics-sync] status failed:", sanitizeError(err));
       return fail(
         res,
         500,

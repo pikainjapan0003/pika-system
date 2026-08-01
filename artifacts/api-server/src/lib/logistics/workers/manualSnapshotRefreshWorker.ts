@@ -13,6 +13,7 @@
 
 import { and, eq, inArray, isNull, lt, or, sql } from "drizzle-orm";
 import { db, shipmentTrackingsTable } from "@workspace/db";
+import { sanitizeError } from "../../sanitizeError.ts";
 import { queryPostOfficeTracking } from "../adapters/postOfficeAdapter.ts";
 import { queryTcatTracking } from "../adapters/tcatAdapter.ts";
 
@@ -149,7 +150,7 @@ export async function runManualSnapshotRefresh(
     } catch (err) {
       console.error(
         `[manual-snapshot-refresh] trackingId=${row.id} error:`,
-        err,
+        sanitizeError(err),
       );
       results.push({
         trackingId: row.id,
