@@ -87,3 +87,8 @@
 - `agentAuth.ts:59-64` 的 token hash 前 8 碼仍屬可接受 P3，不是明文 token；是否改 correlation id 留待威脅模型決定。
 
 複驗結論：**公開 5xx 回應與已接 sanitizer 的 logger 通過；raw `console.error` 與未知 4xx message 仍列待辦。** 本結果與包1／包2 的程式修正範圍一致，沒有把「已處理」誇大為全庫清零。
+
+### BATCH-20 回歸標記（2026-08-01）
+
+- P1 的集中 logger sanitizer 已解（`c53783b`、`3709700`）；本批 package 15 的複驗由 `f064c93` 完成。
+- `logisticsSync`／`internalLogisticsSync`／`orders` 等 raw `console.error` 與全域 4xx `err.message` 仍待另案處理；本批沒有把它們誤標為已解。
