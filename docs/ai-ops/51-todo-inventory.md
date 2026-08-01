@@ -63,3 +63,19 @@ BATCH-20 包17（2026-08-01）已處理兩個真正待辦：未具備可執行�
 ## BATCH-20 收尾標記（2026-08-01）
 
 package 17 已以 `093400f` 將兩項無法安全自行決定的 TODO 轉成正式 backlog；它們仍是待產品／老闆決策，不是已完成的功能。package 18 的雜項掃描沒有找到可安全修改的真正死碼，因此 no-op，未製造無意義變更。
+
+## BATCH-21 third-tier review (2026-08-01)
+
+The scan was repeated with `generated/`, `dist/`, `node_modules/`, and build state files
+excluded. No new production-code `TODO`, `FIXME`, `XXX`, or `HACK` marker was found.
+The two genuine existing documentation items remain open and are intentionally kept as
+backlog rather than guessed into code:
+
+1. Agent frequency entitlement (`every_2_hours_high_tier`) still needs an owner decision
+   about whether a paid plan and entitlement source exist.
+2. Step 7F's historical requirement for a complete audit comparison still needs a
+   read-only specification-to-implementation reconciliation.
+
+The remaining matches are test summaries (`todo 0`), synthetic placeholders, or examples.
+They are not implementation work. BATCH-21's third-tier pass therefore adds no new item
+and does not claim either open backlog item is complete.
