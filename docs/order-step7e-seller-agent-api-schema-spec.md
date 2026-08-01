@@ -126,7 +126,7 @@ every_6_hours          ← 每 6 小時
 every_2_hours_high_tier ← 每 2 小時（高方案限定，MVP 可保留 enum 但需方案確認後才開放）
 ```
 
-> **注意**：`every_2_hours_high_tier` 保留語意為高方案限定，MVP 是否開放須另行確認；API PATCH 可暫接受此值但應記錄 plan check TODO。
+> **注意**：`every_2_hours_high_tier` 保留語意為高方案限定，MVP 是否開放須另行確認；API PATCH 可暫接受此值。**BACKLOG-AGENT-ENTITLEMENT（BATCH-20 包17）**：待老闆拍板付費方案與 entitlement 來源後，另開 Agent 頻率權益 gate；在資料源確定前不自行限制或放行高頻方案。
 
 #### enabledLogistics（陣列，每個元素為以下其中一個）
 

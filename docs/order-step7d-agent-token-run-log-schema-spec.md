@@ -213,7 +213,7 @@
 
 - `agent_run_logs`（第 5 章）先以最小版本記錄「每輪執行的基本執行紀錄」，提供 MVP 階段所需的最低限度可觀測性
 - 完整稽核軌跡（記錄每一次 API 呼叫的詳細資訊：來源 IP、請求/回應內容、操作前後差異等）屬於「高風險寫入需要完整追溯」的進階需求，留待 **Step 7F** 依 [[order-step7d-agent-auth-token-decision|Step 7D-1B 第 6.3 章]] 規劃的草案欄位再行設計
-- Step 7D 階段，可在 API 測試計畫（第 13 章）中保留 **TODO 標記**，註明「完整 audit log 待 Step 7F 補上」，避免 Step 7D 的測試規劃誤以為此功能已涵蓋
+- Step 7D 階段，可在 API 測試計畫（第 13 章）中保留 **BACKLOG-STEP7F-AUDIT-ACCEPTANCE（BATCH-20 包17）**，註明「完整 audit log 待 Step 7F 依驗收定義對照」，避免 Step 7D 的測試規劃誤以為此功能已涵蓋；在完成唯讀對照前，不宣稱完整 audit 已驗收。
 
 ---
 

@@ -6,6 +6,8 @@
 
 ## 結論
 
+BATCH-20 包17（2026-08-01）已處理兩個真正待辦：未具備可執行方案的項目不改程式，而是在原規格處改為正式 backlog 參照 `BACKLOG-AGENT-ENTITLEMENT` 與 `BACKLOG-STEP7F-AUDIT-ACCEPTANCE`；兩項仍需老闆／產品決策或唯讀對照，未宣稱完成。
+
 共命中 19 行；只有 2 行是真正的待辦語意，其餘 17 行是測試輸出中的 `todo 0`、範例網址／金額／電話的 `xxx`，或表單 placeholder。Production TypeScript 程式碼內沒有 `TODO`、`FIXME`、`XXX` 或 `HACK` 註解。
 
 ## 真正待辦
