@@ -4,6 +4,7 @@ import express, {
   type Response,
   type NextFunction,
 } from "express";
+import { randomUUID } from "node:crypto";
 import cors from "cors";
 import pinoHttp from "pino-http";
 import { clerkMiddleware } from "@clerk/express";
@@ -19,6 +20,7 @@ import { sanitizeError } from "./lib/sanitizeError.ts";
 import { configureTrustProxy } from "./lib/trustProxy.ts";
 import { configureSecurityHeaders } from "./lib/securityHeaders.ts";
 import { sendPublicError } from "./lib/publicError.ts";
+import { resolveRequestId, setRequestIdHeader } from "./lib/requestId.ts";
 
 const app: Express = express();
 configureTrustProxy(app);
@@ -27,6 +29,7 @@ configureSecurityHeaders(app);
 app.use(
   pinoHttp({
     logger,
+    genReqId: (req) => resolveRequestId(req.headers),
     serializers: {
       req(req) {
         return {
@@ -46,6 +49,7 @@ app.use(
     },
   }),
 );
+app.use(setRequestIdHeader);
 
 app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
 
@@ -87,9 +91,19 @@ app.use((_req: Request, res: Response) => {
 });
 
 // Global error handler — must be defined after all routes
-app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-  logger.error({ err: sanitizeError(err) }, "Unhandled error");
-  sendPublicError(err, res);
-});
+app.use(
+  (
+    err: any,
+    req: Request & { id?: string },
+    res: Response,
+    _next: NextFunction,
+  ) => {
+    logger.error(
+      { requestId: req.id ?? randomUUID(), err: sanitizeError(err) },
+      "Unhandled error",
+    );
+    sendPublicError(err, res);
+  },
+);
 
 export default app;
