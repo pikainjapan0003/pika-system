@@ -106,3 +106,18 @@
 10. PATCH `/orders/bulk` 跨店 403。
 
 其餘待補：物流 exceptions 三路、shipping-list 兩路、tracking-import、monthly-profit、audit logs、exchange-rate 401、internal cron secret。行程 P1 不列入「補測即可」清單，需先補 schema ownership 才能定義正確測試。
+
+## BATCH-21 third-tier authorization review (2026-08-01)
+
+This review covers owner-only surfaces outside the earlier core-mutation matrix. It intentionally excludes `trips` and `trip_routes`: their missing store ownership is a product/data-model decision documented in `54-trip-ownership-options.md`, not a test gap.
+
+| Surface                                     | Required chain                                                               | Existing evidence                                                               | Result                                                                                             |
+| ------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Customers list/detail/export                | `requireAuth` + `verifyStoreOwner` + store/customer binding                  | `customersAndProfitIsolation.route.test.mjs`                                    | Covered; unauthenticated and cross-store requests are rejected.                                    |
+| Customer store-credit read/write            | `requireAuth` + owner check + customer store binding + mutation guards       | `customerStoreCredit.route.test.mjs`, `storeCreditLifecycle.route.test.mjs`     | Covered; lifecycle and cross-store cases are isolated.                                             |
+| Skills catalog/preview/enable/package apply | `requireAuth` + `verifyStoreOwner` + catalog/prerequisite/high-risk guards   | `skills.route.test.mjs`                                                         | Covered; invalid catalog, prerequisite, confirmation, and cross-store paths remain negative tests. |
+| Audit log read/event write                  | `requireAuth` + `verifyStoreOwner` + action allowlist                        | `authzGapSecondTier.route.test.mjs`                                             | Covered; unauthenticated and cross-store requests are rejected.                                    |
+| Customer/order and Maichuobian exports      | `requireAuth` + `verifyStoreOwner` + cleartext confirmation where applicable | `customersAndProfitIsolation.route.test.mjs`, `maihuobianExport.route.test.mjs` | Covered; export gates and store scope are preserved.                                               |
+| Logistics import/exception surfaces         | `requireAuth` + `verifyStoreOwner` + batch/store binding                     | `logisticsImports.route.test.mjs`, `authzGapSecondTier.route.test.mjs`          | Covered; malformed, unauthenticated, and cross-store paths are tested.                             |
+
+No new authorization rule is introduced by this review. The matrix records existing middleware and test evidence only; the trips ownership P1 remains open until the owner selects a data-ownership option.
