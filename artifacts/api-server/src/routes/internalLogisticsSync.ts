@@ -8,6 +8,7 @@ import { createHash, timingSafeEqual } from "node:crypto";
 import { Router } from "express";
 import { and, desc, eq, gte } from "drizzle-orm";
 import { db, shipmentTrackingRunLogsTable } from "@workspace/db";
+import { sanitizeError } from "../lib/sanitizeError.ts";
 import { runFamilyMartTrackingWorker } from "../lib/logistics/workers/familyMartTrackingWorker.ts";
 import { runManualSnapshotRefresh } from "../lib/logistics/workers/manualSnapshotRefreshWorker.ts";
 
@@ -105,7 +106,10 @@ router.post(
             : `排程同步完成：成功 ${result.successCount} 筆、失敗 ${result.failedCount} 筆、略過 ${result.skippedCount} 筆。`,
       });
     } catch (err) {
-      console.error("[internal-logistics-sync] scheduled sync failed:", err);
+      console.error(
+        "[internal-logistics-sync] scheduled sync failed:",
+        sanitizeError(err),
+      );
       return res.status(500).json({
         ok: false,
         errorCode: "SCHEDULED_SYNC_FAILED",
@@ -169,7 +173,7 @@ router.post(
     } catch (err) {
       console.error(
         "[internal-logistics-sync] manual snapshot refresh failed:",
-        err,
+        sanitizeError(err),
       );
       return res.status(500).json({
         ok: false,
