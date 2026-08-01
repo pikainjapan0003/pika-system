@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1100.0",
-    "@clerk/express": "^2.1.22",
+    "@clerk/express": "^2.1.48",
     "@clerk/shared": "^4.14.0",
     "@workspace/api-zod": "workspace:*",
     "@workspace/db": "workspace:*",

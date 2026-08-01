@@ -173,8 +173,8 @@ importers:
         specifier: ^3.1100.0
         version: 3.1100.0
       '@clerk/express':
-        specifier: ^2.1.22
-        version: 2.1.22(express@5.2.1)
+        specifier: ^2.1.48
+        version: 2.1.48(express@5.2.1)
       '@clerk/shared':
         specifier: ^4.14.0
         version: 4.14.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -875,12 +875,12 @@ packages:
     resolution: {integrity: sha512-LwdZHpScM4Qz8Xw2iKSzS+cfglZzJGvofQICy7W7v4caru4EaAmyUuO6BGrbyQ2mYV11W0U8j5mBhd14dd3B0A==}
     engines: {node: '>=6.9.0'}
 
-  '@clerk/backend@3.4.14':
-    resolution: {integrity: sha512-0iaMT7k4wDk31QVC3HMaoeVFttblwsCECTHKNQpbRzIyD8j2gHdKEw/FNjffoyqyBqPw869IQlk1YokUlwVAqQ==}
+  '@clerk/backend@3.14.0':
+    resolution: {integrity: sha512-WsphTvDFHDuQilKI7dyVE5qmt7USu8qSrujAq6SqpEHbVFfNBfINDNuzxlF9M2skOTfHFfgiTE8Jjb1egIBGLg==}
     engines: {node: '>=20.9.0'}
 
-  '@clerk/express@2.1.22':
-    resolution: {integrity: sha512-3hYbn3NjGp/BoMUEh/9WlQf3D9oUGm3WqtQZN/IBHM2NluNcEYfGK+IHX3fGsSPdrZQFyG7lBQqvyLQszCkbYw==}
+  '@clerk/express@2.1.48':
+    resolution: {integrity: sha512-edF/ETJdJrjltkGlhgKHSLQ2yk1K6zurRjWn0gIdzydWd988JumeLheUCNSPAs8Az2eOoMfr3UwfFEXuzAsuJw==}
     engines: {node: '>=20.9.0'}
     peerDependencies:
       express: ^4.17.0 || ^5.0.0
@@ -906,6 +906,18 @@ packages:
 
   '@clerk/shared@4.14.0':
     resolution: {integrity: sha512-StZCFJ2rg0ITE3fYjIN9CKuKq8ZACW6l2+5qGCFPPYd4hZphA+VDselmh/lHPsF1ex/WRVUSHvquykAHR8cQbQ==}
+    engines: {node: '>=20.9.0'}
+    peerDependencies:
+      react: ^18.0.0 || ~19.0.3 || ~19.1.4 || ~19.2.3 || ~19.3.0-0
+      react-dom: ^18.0.0 || ~19.0.3 || ~19.1.4 || ~19.2.3 || ~19.3.0-0
+    peerDependenciesMeta:
+      react:
+        optional: true
+      react-dom:
+        optional: true
+
+  '@clerk/shared@4.25.9':
+    resolution: {integrity: sha512-nw3maGzqPrwmUKjGffOM9Zvw24IyOllq0TkQGzsTfQX312WLu2u5CNvjKntMb6Ok6kXa1Zdc77zmPLn1/EAIFA==}
     engines: {node: '>=20.9.0'}
     peerDependencies:
       react: ^18.0.0 || ~19.0.3 || ~19.1.4 || ~19.2.3 || ~19.3.0-0
@@ -4241,19 +4253,19 @@ snapshots:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.28.5
 
-  '@clerk/backend@3.4.14':
+  '@clerk/backend@3.14.0':
     dependencies:
-      '@clerk/shared': 4.14.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@clerk/shared': 4.25.9
       standardwebhooks: 1.0.0
       tslib: 2.8.1
     transitivePeerDependencies:
       - react
       - react-dom
 
-  '@clerk/express@2.1.22(express@5.2.1)':
+  '@clerk/express@2.1.48(express@5.2.1)':
     dependencies:
-      '@clerk/backend': 3.4.14
-      '@clerk/shared': 4.14.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@clerk/backend': 3.14.0
+      '@clerk/shared': 4.25.9
       express: 5.2.1
       tslib: 2.8.1
     transitivePeerDependencies:
@@ -4289,6 +4301,13 @@ snapshots:
     optionalDependencies:
       react: 19.1.0
       react-dom: 19.1.0(react@19.1.0)
+
+  '@clerk/shared@4.25.9':
+    dependencies:
+      '@tanstack/query-core': 5.100.9
+      dequal: 2.0.3
+      glob-to-regexp: 0.4.1
+      js-cookie: 3.0.7
 
   '@clerk/themes@2.4.57(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
     dependencies:
