@@ -25,6 +25,7 @@ mock.module("@clerk/shared/keys", {
 const { default: app } = await import("./app.ts");
 const { PUBLIC_RESPONSE_SECURITY_HEADERS } =
   await import("./lib/securityHeaders.ts");
+const { logger } = await import("./lib/logger.ts");
 const { pool } = await import("@workspace/db");
 
 let server;
@@ -76,6 +77,26 @@ test("the assembled app retains headers on its global 500 response", async () =>
   assert.equal(response.status, 500);
   assert.deepEqual(await response.json(), { error: "Internal server error" });
   assertSecurityHeaders(response);
+});
+
+test("the assembled app logs a sanitized error for a global 500", async () => {
+  const errorMock = mock.method(logger, "error");
+  try {
+    const response = await fetch(`${baseUrl}/api/p/batch15-forced-db-error`);
+    assert.equal(response.status, 500);
+    assert.equal(errorMock.mock.calls.length, 1);
+    const [payload] = errorMock.mock.calls[0].arguments;
+    assert.ok(payload && typeof payload === "object");
+    assert.ok(payload.err && typeof payload.err === "object");
+    assert.doesNotMatch(
+      JSON.stringify(payload),
+      /select|params|postgresql|password|node_modules|[A-Za-z]:\\\\|\/home\//i,
+    );
+    assert.equal(payload.err.name, "Error");
+    assert.equal(payload.err.message, "query: [redacted]");
+  } finally {
+    errorMock.mock.restore();
+  }
 });
 
 test("new owner endpoints retain headers on authentication rejection", async () => {

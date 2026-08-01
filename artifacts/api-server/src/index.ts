@@ -1,5 +1,6 @@
 import app from "./app.ts";
 import { logger } from "./lib/logger.ts";
+import { sanitizeError } from "./lib/sanitizeError.ts";
 
 const rawPort = process.env["PORT"];
 
@@ -17,7 +18,7 @@ if (Number.isNaN(port) || port <= 0) {
 
 app.listen(port, (err) => {
   if (err) {
-    logger.error({ err }, "Error listening on port");
+    logger.error({ err: sanitizeError(err) }, "Error listening on port");
     process.exit(1);
   }
 

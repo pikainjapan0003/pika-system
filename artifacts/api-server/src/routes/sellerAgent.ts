@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { db, sellerAgentSettingsTable } from "@workspace/db";
 import { requireAuth, verifyStoreOwner } from "../middlewares/auth.ts";
 import { logger } from "../lib/logger.ts";
+import { sanitizeError } from "../lib/sanitizeError.ts";
 
 const router = Router();
 
@@ -160,7 +161,10 @@ router.get(
 
       return res.json({ data: toSafeSettings(row) });
     } catch (err) {
-      logger.error({ err }, "seller_agent_settings_get_failed");
+      logger.error(
+        { err: sanitizeError(err) },
+        "seller_agent_settings_get_failed",
+      );
       return res.status(500).json({ error: "Internal server error" });
     }
   },
@@ -381,7 +385,10 @@ router.patch(
 
       return res.json({ data: toSafeSettings(upserted) });
     } catch (err) {
-      logger.error({ err }, "seller_agent_settings_patch_failed");
+      logger.error(
+        { err: sanitizeError(err) },
+        "seller_agent_settings_patch_failed",
+      );
       return res.status(500).json({ error: "Internal server error" });
     }
   },

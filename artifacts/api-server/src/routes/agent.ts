@@ -12,6 +12,7 @@ import {
   type AgentTokenLocals,
 } from "../middlewares/agentAuth.ts";
 import { logger } from "../lib/logger.ts";
+import { sanitizeError } from "../lib/sanitizeError.ts";
 
 const router = Router();
 
@@ -173,7 +174,7 @@ router.get(
 
       return res.json({ jobs, nextCursor: null });
     } catch (err) {
-      logger.error({ err }, "agent_tracking_jobs_failed");
+      logger.error({ err: sanitizeError(err) }, "agent_tracking_jobs_failed");
       return res.status(500).json({
         error: "agent_tracking_jobs_failed",
         message: "Failed to fetch tracking jobs",
@@ -362,14 +363,17 @@ router.post("/shipment-events", agentTokenAuth, async (req: any, res: any) => {
           });
         }
       }
-      logger.error({ err: insertErr }, "agent_shipment_event_failed");
+      logger.error(
+        { err: sanitizeError(insertErr) },
+        "agent_shipment_event_failed",
+      );
       return res.status(500).json({
         error: "agent_shipment_event_failed",
         message: "Failed to insert shipment event",
       });
     }
   } catch (err) {
-    logger.error({ err }, "agent_shipment_event_failed");
+    logger.error({ err: sanitizeError(err) }, "agent_shipment_event_failed");
     return res.status(500).json({
       error: "agent_shipment_event_failed",
       message: "Failed to insert shipment event",
@@ -533,7 +537,7 @@ router.patch("/shipment-status", agentTokenAuth, async (req: any, res: any) => {
       },
     });
   } catch (err) {
-    logger.error({ err }, "agent_shipment_status_failed");
+    logger.error({ err: sanitizeError(err) }, "agent_shipment_status_failed");
     return res.status(500).json({
       error: "agent_shipment_status_failed",
       message: "Failed to update shipment status",
@@ -673,7 +677,7 @@ router.post("/run-log", agentTokenAuth, async (req: any, res: any) => {
       },
     });
   } catch (err) {
-    logger.error({ err }, "agent_run_log_failed");
+    logger.error({ err: sanitizeError(err) }, "agent_run_log_failed");
     return res.status(500).json({
       error: "agent_run_log_failed",
       message: "Failed to insert run log",
