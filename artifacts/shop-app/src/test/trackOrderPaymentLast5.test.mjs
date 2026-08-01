@@ -10,7 +10,7 @@ const originalFetch = globalThis.fetch;
 const originalReact = globalThis.React;
 globalThis.React = React;
 
-const order = {
+let order = {
   publicToken: "fake-public-token",
   productName: "假商品",
   quantity: 1,
@@ -24,6 +24,7 @@ const order = {
   createdAt: "2026-07-19T09:00:00.000Z",
   paymentLast5: null,
 };
+const initialOrder = { ...order };
 
 mock.module("@workspace/api-client-react", {
   namedExports: {
@@ -43,6 +44,7 @@ const { default: TrackOrderPage } = await import("../pages/TrackOrder.tsx");
 
 afterEach(() => {
   cleanup();
+  order = { ...initialOrder };
   globalThis.fetch = originalFetch;
 });
 after(() => {
@@ -98,4 +100,30 @@ test("a successful update displays the returned last-five value", async () => {
   fireEvent.click(save);
 
   await waitFor(() => assert.equal(input.value, "54321"));
+});
+
+test("a legacy single-product order displays its item and total", () => {
+  order = {
+    ...order,
+    productName: "Demo Item",
+    statusLabel: "Awaiting payment",
+  };
+  const view = renderPage();
+
+  assert.match(view.container.textContent, /Demo Item/);
+  assert.match(view.container.textContent, /NT\$\s*100/);
+});
+
+test("a cancelled order shows its status without payment editing", () => {
+  order = {
+    ...order,
+    productName: "Cancelled Item",
+    status: "cancelled",
+    statusLabel: "Cancelled",
+    paymentLast5: null,
+  };
+  const view = renderPage();
+
+  assert.match(view.container.textContent, /Cancelled/);
+  assert.equal(view.container.querySelector('input[pattern="[0-9]{5}"]'), null);
 });
