@@ -285,6 +285,16 @@ if (!process.env.DATABASE_URL) {
       { headers: { "x-confirm-cleartext-export": "true" } },
     );
     assert.equal(cleartext.status, 200);
+    const audits = await db
+      .select()
+      .from(auditLogsTable)
+      .where(eq(auditLogsTable.storeId, storeAId));
+    const exportAudit = audits.find(
+      (row) => row.action === "export_customers_cleartext",
+    );
+    assert.ok(exportAudit);
+    assert.match(exportAudit.target, /^customers:\d+$/u);
+    assert.doesNotMatch(exportAudit.target, /0900000000/u);
     assert.equal(cleartext.data.includes("假客戶乙"), true);
   });
 

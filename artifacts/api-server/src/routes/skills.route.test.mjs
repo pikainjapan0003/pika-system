@@ -26,8 +26,15 @@ if (!process.env.DATABASE_URL) {
   });
 
   const { default: express } = await import("express");
-  const { db, pool, productsTable, storesTable, tripRoutesTable, tripsTable } =
-    await import("@workspace/db");
+  const {
+    auditLogsTable,
+    db,
+    pool,
+    productsTable,
+    storesTable,
+    tripRoutesTable,
+    tripsTable,
+  } = await import("@workspace/db");
   const { eq } = await import("drizzle-orm");
   const { resolveDailySkillSurfaceVisibility } =
     await import("../../../shop-app/src/lib/dailySkillVisibility.ts");
@@ -187,6 +194,31 @@ if (!process.env.DATABASE_URL) {
     );
     assert.equal(status, 409);
     assert.equal(data.error, "High-risk skill requires two confirmations");
+  });
+
+  test("successful high-risk enable writes an anonymous audit record", async () => {
+    const { status, data } = await request(
+      "POST",
+      `/stores/${storeId}/skills/S-19/enable`,
+      {
+        enabled: true,
+        catalogVersion: 1,
+        confirmImpact: true,
+        confirmRisk: true,
+      },
+    );
+    assert.equal(status, 200);
+    assert.deepEqual(data, { skillKey: "S-19", enabled: true });
+
+    const rows = await db
+      .select()
+      .from(auditLogsTable)
+      .where(eq(auditLogsTable.storeId, storeId));
+    const audit = rows.find(
+      (row) => row.action === "skill_enabled" && row.target === "skill:S-19",
+    );
+    assert.ok(audit);
+    assert.equal(audit.actor, TEST_MERCHANT_ID);
   });
 
   test("package apply rejects stale catalogs and unknown package keys", async () => {
