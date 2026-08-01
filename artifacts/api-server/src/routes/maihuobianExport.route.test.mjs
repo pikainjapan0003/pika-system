@@ -32,6 +32,7 @@ if (!process.env.DATABASE_URL) {
     await import("@workspace/db");
   const { and, eq } = await import("drizzle-orm");
   const { default: ordersRouter } = await import("./orders.ts");
+  const { inspectMaihuobianXlsm } = await import("../lib/maihuobianXlsm.ts");
   const { ownerStoreMutationLimiter } =
     await import("../lib/ownerStoreRateLimit.ts");
 
@@ -166,6 +167,27 @@ if (!process.env.DATABASE_URL) {
       body: body === undefined ? undefined : JSON.stringify(body),
     });
     return { status: response.status, data: await response.json() };
+  }
+
+  async function requestBinary(
+    method,
+    path,
+    { body, userId = OWNER_ID, headers = {} } = {},
+  ) {
+    const response = await fetch(`${baseUrl}${path}`, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+        ...(userId ? { "x-test-user-id": userId } : {}),
+        ...headers,
+      },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+    return {
+      status: response.status,
+      headers: Object.fromEntries(response.headers.entries()),
+      data: Buffer.from(await response.arrayBuffer()),
+    };
   }
 
   test("Maihuobian preview requires authentication", async () => {
@@ -354,6 +376,108 @@ if (!process.env.DATABASE_URL) {
       assert.equal(audit.target.includes("0912345678"), false);
       assert.equal(audit.target.includes("假客人"), false);
     }
+  });
+
+  test("Maihuobian export rejects an unsupported format", async () => {
+    const response = await request(
+      "POST",
+      `/stores/${storeId}/orders/maihuobian-export?format=pdf`,
+      { body: { orderIds: [eligibleOrderId] } },
+    );
+    assert.equal(response.status, 422);
+    assert.equal(response.data.code, "EXPORT_FORMAT_UNSUPPORTED");
+  });
+
+  test("Maihuobian CSV export returns the official MIME type and filename", async () => {
+    const response = await requestBinary(
+      "POST",
+      `/stores/${storeId}/orders/maihuobian-export?format=csv`,
+      {
+        body: {
+          from: "2026-07-19",
+          to: "2026-07-19",
+          orderIds: [eligibleOrderId],
+        },
+        headers: {
+          "x-confirm-cleartext-export": "true",
+          "x-confirm-maihuobian-export": "true",
+        },
+      },
+    );
+    assert.equal(response.status, 200);
+    assert.match(response.headers["content-type"], /text\/csv/u);
+    assert.match(response.headers["content-disposition"], /\.csv"/u);
+    const csv = response.data.toString("utf8");
+    assert.equal(csv.codePointAt(0), 0xfeff);
+    assert.match(csv, /0912345678/u);
+  });
+
+  test("Maihuobian CSV export contains only eligible selected rows", async () => {
+    const response = await requestBinary(
+      "POST",
+      `/stores/${storeId}/orders/maihuobian-export?format=csv`,
+      {
+        body: {
+          from: "2026-07-19",
+          to: "2026-07-19",
+          orderIds: [eligibleOrderId, pendingOrderId],
+        },
+        headers: {
+          "x-confirm-cleartext-export": "true",
+          "x-confirm-maihuobian-export": "true",
+        },
+      },
+    );
+    assert.equal(response.status, 200);
+    const csv = response.data.toString("utf8");
+    assert.equal((csv.match(/0912345678/gu) ?? []).length, 1);
+  });
+
+  test("Maihuobian XLSM export returns the macro-enabled MIME type and filename", async () => {
+    const response = await requestBinary(
+      "POST",
+      `/stores/${storeId}/orders/maihuobian-export?format=xlsm`,
+      {
+        body: {
+          from: "2026-07-19",
+          to: "2026-07-19",
+          orderIds: [eligibleOrderId],
+        },
+        headers: {
+          "x-confirm-cleartext-export": "true",
+          "x-confirm-maihuobian-export": "true",
+        },
+      },
+    );
+    assert.equal(response.status, 200);
+    assert.match(
+      response.headers["content-type"],
+      /application\/vnd\.ms-excel\.sheet\.macroEnabled\.12/u,
+    );
+    assert.match(response.headers["content-disposition"], /\.xlsm"/u);
+    assert.equal(response.data.subarray(0, 2).toString("hex"), "504b");
+  });
+
+  test("Maihuobian XLSM export preserves the official template contract", async () => {
+    const response = await requestBinary(
+      "POST",
+      `/stores/${storeId}/orders/maihuobian-export?format=xlsm`,
+      {
+        body: {
+          from: "2026-07-19",
+          to: "2026-07-19",
+          orderIds: [eligibleOrderId],
+        },
+        headers: {
+          "x-confirm-cleartext-export": "true",
+          "x-confirm-maihuobian-export": "true",
+        },
+      },
+    );
+    const inspection = await inspectMaihuobianXlsm(response.data);
+    assert.equal(inspection.templateVersion, "1.4");
+    assert.equal(inspection.hasMacroEnabledContentType, true);
+    assert.equal(inspection.hasVbaRelationship, true);
   });
 
   test("Maihuobian export is rate limited after owner verification without leaking cleartext", async () => {
