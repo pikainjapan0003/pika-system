@@ -68,3 +68,22 @@
 1. 先解 P1：共用安全 error logger，替換 raw-error log 呼叫，補反洩漏測試。
 2. 再解 P2：建立 public-safe error 類型，收緊全域 4xx message。
 3. 最後視威脅模型決定是否移除 token hash 前綴。
+
+## BATCH-20 複驗（2026-08-01）
+
+本節是 sanitizer 上線後的唯讀複驗；本包不修改 API 回應或日誌程式碼。
+
+### 已處理
+
+- `sanitizeError()` 目前只輸出受控的 `name`、截斷後 `message` 與可選 `code`，不會複製 `query`、`params` 或 `stack`（`artifacts/api-server/src/lib/sanitizeError.ts:1-51`）。
+- API 的集中錯誤記錄與已盤點的 `logger.error({ err })` 呼叫已改走 sanitizer：`app.ts`、`index.ts`、`routes/agent.ts`、`routes/sellerAgent.ts`、`routes/stores.ts`（各檔現行 `sanitizeError` 呼叫）。
+- HTTP 5xx 的全域回應仍固定為 `Internal server error`；本次複驗沒有找到把 SQL、stack、姓名、手機、地址或 token 直接放入 5xx body 的路徑。
+- request serializer 仍不記 request body、query string、headers 或 IP；公開 CSV／audit 也只記受控的 action、storeId、count 等摘要。
+
+### 仍待辦（沒有在本包偷偷修正）
+
+- 仍有原始錯誤物件進入 `console.error`：`routes/logisticsSync.ts:67,124,340,416,705,903,932,970,1071`、`routes/internalLogisticsSync.ts:108,170`、`routes/orders.ts:1659`、`lib/logistics/workers/manualSnapshotRefreshWorker.ts:150`。這些位置仍可能攜帶 SQL、params 或部署路徑，維持原 P1，需另開安全包統一改用 sanitizer。
+- 全域 error handler 對帶有 4xx status 的未知錯誤仍可能回傳原始 `err.message`（`app.ts:85-94`）；維持原 P2，應另以 public-safe error 類型收斂，不能在本複驗包自行改語意。
+- `agentAuth.ts:59-64` 的 token hash 前 8 碼仍屬可接受 P3，不是明文 token；是否改 correlation id 留待威脅模型決定。
+
+複驗結論：**公開 5xx 回應與已接 sanitizer 的 logger 通過；raw `console.error` 與未知 4xx message 仍列待辦。** 本結果與包1／包2 的程式修正範圍一致，沒有把「已處理」誇大為全庫清零。
