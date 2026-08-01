@@ -85,6 +85,26 @@ DA870376C505685A497ECC6F7081FEFCD339F3AE73E43E51840EC45CB4C05147
 
 因此本包只讀，未改 package manifest 或 lockfile。
 
+## BATCH-20 依賴升級回歸（2026-08-01）
+
+以下三支直接依賴已由本批逐支升級並完成 frozen install、typecheck、純測試與格式驗證：
+
+| 套件                    | 升級結果        | commit    |
+| ----------------------- | --------------- | --------- |
+| `@playwright/test`      | 1.55.0 → 1.55.1 | `cf4348f` |
+| `multer`                | 2.1.1 → 2.2.0   | `684f8a1` |
+| `http-proxy-middleware` | 4.0.0 → 4.1.1   | `43a2f84` |
+
+`esbuild` package 6 依規跳過：目前被 `pnpm-workspace.yaml` 的既有 override 固定，且本批禁止修改 overrides；因此仍是未解的直接依賴風險，不宣稱已升級。
+
+升級後重跑 `corepack pnpm audit --json`（exit 1，因仍有 advisory）：`metadata.vulnerabilities={"info":0,"low":3,"moderate":5,"high":13,"critical":0}`、advisory records=21、totalDependencies=703。此次相較原盤點的 0/3/7/16、24 筆 advisory 已下降，但剩餘傳遞依賴仍需另案處理。
+
+本次 lockfile SHA-256：
+
+```text
+710A70D5F104FFE89E54547984173BAB1D7C286D2BB1269F9355B17F198394FE
+```
+
 ## 建議施工順序
 
 1. 先做直接依賴安全 patch：Playwright、Multer、http-proxy-middleware、esbuild、Vite。
