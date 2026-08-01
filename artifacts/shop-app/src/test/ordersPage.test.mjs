@@ -190,3 +190,16 @@ test("order card amount uses totalPrice plus shipping when orderTotal is missing
   );
   assert.equal(getAllByRole(view.container, "button").length > 0, true);
 });
+
+test("order card amount uses the frozen payable after store credit", async () => {
+  const view = renderOrders([
+    makeOrder({
+      orderTotal: "120.000000000000",
+      creditSpent: "20.000000000000",
+      payableAfterCredit: "100.000000000000",
+    }),
+  ]);
+  await waitFor(() =>
+    assert.ok(getAllByText(view.container, "NT$100").length >= 2),
+  );
+});
