@@ -15,6 +15,7 @@ import {
 } from "./middlewares/clerkProxyMiddleware.ts";
 import router from "./routes/index.ts";
 import { logger } from "./lib/logger.ts";
+import { sanitizeError } from "./lib/sanitizeError.ts";
 import { configureTrustProxy } from "./lib/trustProxy.ts";
 import { configureSecurityHeaders } from "./lib/securityHeaders.ts";
 
@@ -37,6 +38,9 @@ app.use(
         return {
           statusCode: res.statusCode,
         };
+      },
+      err(err) {
+        return sanitizeError(err);
       },
     },
   }),
@@ -83,7 +87,7 @@ app.use((_req: Request, res: Response) => {
 
 // Global error handler — must be defined after all routes
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-  logger.error({ err }, "Unhandled error");
+  logger.error({ err: sanitizeError(err) }, "Unhandled error");
   const status = err.status ?? err.statusCode ?? 500;
   const message =
     status < 500 ? (err.message ?? "Bad request") : "Internal server error";

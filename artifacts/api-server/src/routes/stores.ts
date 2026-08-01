@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { db, storesTable, ordersTable } from "@workspace/db";
 import { CreateStoreBody, UpdateStoreBody } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/auth.ts";
+import { sanitizeError } from "../lib/sanitizeError.ts";
 
 const router = Router();
 
@@ -19,7 +20,7 @@ router.get("/me/store", requireAuth, async (req: any, res) => {
     }
     return res.json(formatStore(store[0]));
   } catch (err) {
-    req.log.error({ err }, "Failed to get store");
+    req.log.error({ err: sanitizeError(err) }, "Failed to get store");
     return res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -62,7 +63,7 @@ router.post("/stores", requireAuth, async (req: any, res) => {
     if (err?.code === "23505") {
       return res.status(409).json({ error: "Slug already taken" });
     }
-    req.log.error({ err }, "Failed to create store");
+    req.log.error({ err: sanitizeError(err) }, "Failed to create store");
     return res.status(500).json({ error: "Internal server error" });
   }
 });
