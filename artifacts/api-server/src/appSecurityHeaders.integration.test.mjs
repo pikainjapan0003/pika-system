@@ -62,7 +62,8 @@ function assertSecurityHeaders(response) {
 
 test("the assembled app applies headers to the health response", async () => {
   const response = await fetch(`${baseUrl}/api/healthz`);
-  assert.equal(response.status, 200);
+  assert.equal(response.status, 503);
+  assert.equal((await response.json()).database, "unavailable");
   assertSecurityHeaders(response);
 });
 
