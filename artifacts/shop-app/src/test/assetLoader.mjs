@@ -13,5 +13,15 @@ export async function load(url, context, nextLoad) {
     };
   }
 
-  return nextLoad(url, context);
+  const loaded = await nextLoad(url, context);
+  if (loaded.format !== "module" || loaded.source == null) return loaded;
+
+  const source = String(loaded.source);
+  const transformed = source
+    .replaceAll("import.meta.env.BASE_URL", '"/"')
+    .replaceAll("import.meta.env.PROD", "false")
+    .replaceAll("import.meta.env.DEV", "true")
+    .replaceAll("import.meta.env.MODE", '"test"');
+
+  return transformed === source ? loaded : { ...loaded, source: transformed };
 }
