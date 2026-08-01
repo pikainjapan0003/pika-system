@@ -14,6 +14,7 @@ globalThis.React = React;
 const enableBodies = [];
 const packageApplyBodies = [];
 let refreshDailyVisibilityCalls = 0;
+let prerequisiteReady = true;
 
 function jsonResponse(payload) {
   return {
@@ -34,7 +35,10 @@ globalThis.fetch = async (input, init = {}) => {
           skillKey: "S-19",
           enabled: false,
           highRisk: false,
-          prerequisite: { ready: true, missing: [] },
+          prerequisite: {
+            ready: prerequisiteReady,
+            missing: prerequisiteReady ? [] : ["S-01"],
+          },
         },
       ],
     });
@@ -110,6 +114,7 @@ afterEach(() => {
   enableBodies.length = 0;
   packageApplyBodies.length = 0;
   refreshDailyVisibilityCalls = 0;
+  prerequisiteReady = true;
 });
 
 after(() => {
@@ -155,4 +160,16 @@ test("applying a package refreshes daily skill visibility", async () => {
   await waitFor(() => assert.equal(packageApplyBodies.length, 1));
   assert.deepEqual(packageApplyBodies[0], { catalogVersion: 11 });
   assert.equal(refreshDailyVisibilityCalls, 1);
+});
+
+test("a missing prerequisite disables the skill toggle and explains the lock", async () => {
+  prerequisiteReady = false;
+  const view = render(React.createElement(SkillMapPage));
+  const skillKey = await view.findByText("S-19");
+  const skillCard = skillKey.closest("article");
+  assert.ok(skillCard);
+
+  const toggle = within(skillCard).getByRole("button");
+  assert.equal(toggle.disabled, true);
+  assert.match(skillCard.textContent, /S-01/);
 });
