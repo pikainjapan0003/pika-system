@@ -182,3 +182,23 @@
 - 訂單編輯不等於已通知客人；訊息模板也只會複製，不會自動發送。
 - 取消訂單會保留紀錄；有物流或完成紀錄的訂單不要隨意刪除。
 - 首登問卷與賣貨便 CSV／XLSM 下載已可操作；Excel 開檔與賣貨便官方匯入仍須由老闆用假資料親自驗收。
+
+## BATCH-21 incident response quick chapter
+
+### If the app reports a database outage
+
+1. Open `/api/healthz` and record the HTTP status and the fields `status`, `database`, `latestMigration`, `schemaVersion`, and `buildTime`.
+2. If the response is 503, do not retry migrations against the live database. Save the response and deployment log for review.
+3. Check the deployment database connection in the hosting dashboard without copying its secret into chat or a report.
+
+### If a backup or integrity check is requested
+
+Use the read-only scripts in the owner acceptance checklist. They require an explicit disposable database or dump path and reject Replit/production-looking URLs. A non-zero integrity result is an incident signal; do not repair rows from the verifier.
+
+### If a public-data or privacy incident is suspected
+
+Stop publishing changes, preserve the request ID from the response header, and record the endpoint and time without copying tokens or personal data. Reproduce only with synthetic data, then escalate with the raw status and sanitized server log. Never paste a bearer link, database URL, or cleartext export into the incident report.
+
+### Recovery closeout
+
+After the owner approves a fix, run the relevant disposable-database tests and CI checks, publish once, and verify `/api/healthz` plus the affected public endpoint. Record the commit, CI run URL, publish time, and remaining risk in the batch report.
