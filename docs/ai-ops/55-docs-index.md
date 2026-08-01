@@ -55,3 +55,11 @@
 - `54-customer-soft-delete-spec.md`：客戶軟刪規格。
 - `54-trip-ownership-options.md`：行程資料歸屬選項。
 - `99-review-report.md`：總體審查報告。
+
+## BATCH-21 references
+
+- `59-backup-restore-runbook.md` — backup verification and restore boundaries.
+- `60-endpoint-latency-baseline.md` — endpoint latency measurement method and baseline.
+- `61-bundle-size-review.md` — build bundle size baseline.
+- `62-error-path-coverage.md` — error-path coverage inventory.
+- `63-batch21-report.md` — BATCH-21 completion and verification record.

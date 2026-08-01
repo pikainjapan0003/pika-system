@@ -58,3 +58,17 @@ corepack pnpm --filter ./scripts run demo-seed -- --database-url postgresql://de
 ```
 
 不要從 repo root 直接執行 `node --import tsx/esm scripts/demo-seed.mjs`，因為 `tsx` 安裝在 `scripts` workspace 套件，root 直呼不保證能解析。若目標庫已有 `demo-` 示範資料，腳本預設拒絕再次寫入；確定要刻意追加時才在命令末尾加上 `--append`。
+
+## BATCH-21 operational references
+
+The BATCH-21 read-only safety tools and owner procedures are documented in:
+
+- `docs/ai-ops/59-backup-restore-runbook.md` — backup verification and restore boundaries.
+- `docs/ai-ops/60-endpoint-latency-baseline.md` — reproducible latency baseline method.
+- `docs/ai-ops/61-bundle-size-review.md` — build bundle size baseline.
+- `docs/ai-ops/62-error-path-coverage.md` — error-path coverage inventory.
+- `docs/ai-ops/63-batch21-report.md` — package-by-package completion record.
+
+The read-only scripts require explicit disposable inputs: `scripts/verify-backup.mjs` requires
+`--dump-file`, while `scripts/audit-data-integrity.mjs` requires `--database-url`. Neither
+script falls back to a production environment variable.
