@@ -65,9 +65,11 @@ import {
 } from "../lib/customerOrderDefaults.ts";
 import {
   buildMaihuobianExportPreview,
+  formatMaihuobianCsv,
   parseMaihuobianDateRange,
   toMaihuobianExportPreviewDto,
 } from "../lib/maihuobianExport.ts";
+import { generateMaihuobianXlsm } from "../lib/maihuobianXlsm.ts";
 import { buildOrderPickingItems } from "../lib/orderPicking.ts";
 import { ownerStoreMutationLimiter } from "../lib/ownerStoreRateLimit.ts";
 
@@ -262,6 +264,18 @@ router.post(
     const storeId = parseInt(req.params.storeId);
     if (isNaN(storeId))
       return res.status(400).json({ error: "Invalid storeId" });
+    const requestedFormat =
+      typeof req.query.format === "string" ? req.query.format : null;
+    if (
+      req.query.format !== undefined &&
+      (requestedFormat === null ||
+        (requestedFormat !== "csv" && requestedFormat !== "xlsm"))
+    ) {
+      return res.status(422).json({
+        error: "format must be csv or xlsm",
+        code: "EXPORT_FORMAT_UNSUPPORTED",
+      });
+    }
     if (
       req.get("x-confirm-cleartext-export") !== "true" ||
       req.get("x-confirm-maihuobian-export") !== "true"
@@ -321,6 +335,34 @@ router.post(
         },
         "Maihuobian cleartext export prepared",
       );
+
+      if (requestedFormat === "csv") {
+        const csv = `\uFEFF${formatMaihuobianCsv(
+          preview.eligible.map((candidate) => candidate.row),
+        )}`;
+        res.setHeader("Content-Type", "text/csv; charset=utf-8");
+        res.setHeader(
+          "Content-Disposition",
+          'attachment; filename="maihuobian-orders.csv"',
+        );
+        return res.send(csv);
+      }
+
+      if (requestedFormat === "xlsm") {
+        const workbook = await generateMaihuobianXlsm(
+          preview.eligible.map((candidate) => candidate.row),
+        );
+        res.setHeader(
+          "Content-Type",
+          "application/vnd.ms-excel.sheet.macroEnabled.12",
+        );
+        res.setHeader(
+          "Content-Disposition",
+          'attachment; filename="maihuobian-orders.xlsm"',
+        );
+        return res.send(workbook);
+      }
+
       return res.json(preview);
     } catch (error) {
       if (error instanceof RangeError) {

@@ -3,6 +3,7 @@ import {
   type MaihuobianValidatedRow,
   type MaihuobianValidationError,
 } from "@workspace/db/maihuobian";
+import { MAIHUOBIAN_IMPORT_HEADERS } from "./maihuobianXlsm.ts";
 
 const MAX_MAIHUOBIAN_EXPORT_ROWS = 500;
 
@@ -286,4 +287,35 @@ export function toMaihuobianExportPreviewDto(
     })),
     ineligible: preview.ineligible,
   };
+}
+
+function csvCell(value: string): string {
+  const protectedValue = /^[=+\-@]/u.test(value) ? `'${value}` : value;
+  return `"${protectedValue.replaceAll('"', '""')}"`;
+}
+
+/**
+ * Serializes validated rows using the official v1.4 column order. The rows
+ * have already passed the shared validator, so this helper only performs
+ * quoting and formula-injection neutralization; it does not recalculate any
+ * order values.
+ */
+export function formatMaihuobianCsv(
+  rows: readonly MaihuobianValidatedRow[],
+): string {
+  const records = rows.map((row) => [
+    row.recipientName,
+    row.recipientPhone,
+    row.cvsStoreId,
+    row.temperature,
+    row.productSummary,
+    row.totalPrice,
+    row.shippingFee,
+    row.orderDate,
+    row.notes,
+    row.socialAccount,
+  ]);
+  return [MAIHUOBIAN_IMPORT_HEADERS, ...records]
+    .map((record) => record.map(csvCell).join(","))
+    .join("\r\n");
 }
