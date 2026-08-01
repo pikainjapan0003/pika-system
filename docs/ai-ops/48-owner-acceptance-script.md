@@ -75,3 +75,31 @@
    - 成功：匯入預覽的筆數與欄位內容和 Excel 一致，沒有格式錯誤。
    - 不對時回報：後台錯誤碼、錯誤訊息、匯入筆數與哪一欄被拒絕。
 6. 驗收完成後關閉 Excel 並立即刪除本機 XLSM；不要把含姓名、手機或門市資料的檔案寄出、上傳聊天或留在共用資料夾。
+
+## BATCH-21 owner acceptance: backup, integrity, and health checks
+
+These commands are read-only and must use a newly created disposable database. Do not paste a production or Replit connection string.
+
+### 1. Verify a backup artifact
+
+```text
+pnpm --filter ./scripts run verify-backup -- --dump-file C:\path\to\backup.dump
+```
+
+The command requires an explicit dump path and prints the archive listing. A restore target is optional, but if supplied it must be a disposable PostgreSQL URL.
+
+### 2. Audit data integrity
+
+```text
+pnpm --filter ./scripts run audit-data-integrity -- --database-url postgresql://user:pass@127.0.0.1:55447/testdb
+```
+
+The report counts five anomaly classes (foreign-key orphans, invalid statuses, non-positive amounts, token/code shape, and duplicate business keys). A non-zero exit means anomalies were found; it is not permission to repair production data from this script.
+
+### 3. Check health diagnostics
+
+```text
+curl -i https://your-disposable-host/api/healthz
+```
+
+Expected healthy fields are `status: "ok"`, `database: "ok"`, `latestMigration`, `schemaVersion`, and `buildTime`. A database outage must return HTTP 503 with `database: "unavailable"`; the response must not contain secrets or connection details.
