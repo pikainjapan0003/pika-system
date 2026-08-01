@@ -111,3 +111,19 @@ DA870376C505685A497ECC6F7081FEFCD339F3AE73E43E51840EC45CB4C05147
 2. 再做 Express 傳遞鏈與 ExcelJS 傳遞鏈；ExcelJS 包必跑 XLSM 範本 hash、VBA 與非目標 ZIP entry 位元不變測試。
 3. 最後處理 Orval/codegen 工具鏈，重生 generated 後只能由專門 codegen 包驗證，不得在一般修補包手改 generated。
 4. 每組更新後重新執行 `pnpm audit --json`，以 vulnerability 實際歸零或明確留下受控風險為驗收。
+
+# BATCH-21 dependency refresh (2026-08-01)
+
+This section records the independently verified backend dependency refresh. No major-version upgrade or workspace override was introduced.
+
+| Package              | Before   | After    | Commit    | Verification                                              |
+| -------------------- | -------- | -------- | --------- | --------------------------------------------------------- |
+| `@aws-sdk/client-s3` | 3.1057.0 | 3.1100.0 | `b753644` | frozen install, four package typechecks, pure tests green |
+| `@clerk/express`     | 2.1.22   | 2.1.48   | `9d61615` | frozen install, API tests 78/78, typechecks green         |
+| `express-rate-limit` | 8.5.2    | 8.6.1    | `1b8e326` | frozen install, API tests 78/78, typechecks green         |
+| `pg`                 | 8.20.0   | 8.22.0   | `13ca15d` | frozen install, lib tests 86/86, typechecks green         |
+| `tsx`                | 4.21.0   | 4.23.1   | `ed2a43f` | frozen install, lib tests 86/86, typechecks green         |
+
+Post-refresh `corepack pnpm audit --json` reports `0 critical / 13 high / 5 moderate / 3 low` across 684 dependencies (exit 1 is expected because advisories remain). The remaining advisories are primarily the existing toolchain/transitive set; no claim is made that the audit is clean.
+
+The Orval 8.x candidate was intentionally skipped: code generation was not byte-identical and touched generated files, so the package rule required restoration and no commit.
