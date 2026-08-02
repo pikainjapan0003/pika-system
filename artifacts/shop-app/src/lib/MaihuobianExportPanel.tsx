@@ -42,6 +42,11 @@ interface MaihuobianExportResult {
   ineligible: IneligibleOrder[];
 }
 
+type ExportFormat = "csv" | "xlsm";
+
+const XLSM_CONTENT_TYPE = "application/vnd.ms-excel.sheet.macroEnabled.12";
+const XLSM_FALLBACK_FILENAME = "maihuobian-orders.xlsm";
+
 export interface MaihuobianExportPanelProps {
   storeId: number;
   getToken: () => Promise<string | null>;
@@ -93,6 +98,24 @@ async function responseError(response: Response): Promise<string> {
     : "請稍後再試";
 }
 
+function getSafeXlsmFilename(contentDisposition: string | null): string {
+  const candidate = contentDisposition
+    ?.match(/filename\s*=\s*"?([^";]+)"?/iu)?.[1]
+    ?.trim();
+  return candidate && /^[^<>:"/\\|?*\u0000-\u001f]+\.xlsm$/iu.test(candidate)
+    ? candidate
+    : XLSM_FALLBACK_FILENAME;
+}
+
+function downloadBlob(blob: Blob, filename: string): void {
+  const objectUrl = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = objectUrl;
+  anchor.download = filename;
+  anchor.click();
+  URL.revokeObjectURL(objectUrl);
+}
+
 export function MaihuobianExportPanel({
   storeId,
   getToken,
@@ -107,7 +130,9 @@ export function MaihuobianExportPanel({
   const [error, setError] = useState<string | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [cleartextConfirmed, setCleartextConfirmed] = useState(false);
-  const [downloadedCount, setDownloadedCount] = useState<number | null>(null);
+  const [downloaded, setDownloaded] = useState<
+    { count: number; format: "CSV" } | { format: "XLSM" } | null
+  >(null);
 
   const checkOrders = async () => {
     if (!from || !to) {
@@ -117,7 +142,7 @@ export function MaihuobianExportPanel({
     setChecking(true);
     setError(null);
     setShowConfirmation(false);
-    setDownloadedCount(null);
+    setDownloaded(null);
     try {
       const token = await getToken();
       const response = await fetch(
@@ -152,14 +177,16 @@ export function MaihuobianExportPanel({
     setShowConfirmation(true);
   };
 
-  const downloadExport = async () => {
+  const downloadExport = async (format: ExportFormat) => {
     if (!cleartextConfirmed || selectedIds.size === 0) return;
     setExporting(true);
     setError(null);
     try {
       const token = await getToken();
       const response = await fetch(
-        `/api/stores/${storeId}/orders/maihuobian-export`,
+        `/api/stores/${storeId}/orders/maihuobian-export${
+          format === "xlsm" ? "?format=xlsm" : ""
+        }`,
         {
           method: "POST",
           credentials: "include",
@@ -177,19 +204,33 @@ export function MaihuobianExportPanel({
         },
       );
       if (!response.ok) throw new Error(await responseError(response));
+
+      if (format === "xlsm") {
+        const contentType = response.headers
+          .get("content-type")
+          ?.split(";", 1)[0]
+          ?.trim();
+        if (contentType?.toLowerCase() !== XLSM_CONTENT_TYPE.toLowerCase()) {
+          throw new Error("下載格式不正確，請稍後再試");
+        }
+        const filename = getSafeXlsmFilename(
+          response.headers.get("content-disposition"),
+        );
+        downloadBlob(await response.blob(), filename);
+        setDownloaded({ format: "XLSM" });
+        setShowConfirmation(false);
+        return;
+      }
+
       const result = (await response.json()) as MaihuobianExportResult;
       const csv = `\uFEFF${formatMaihuobianCsv(
         result.eligible.map((candidate) => candidate.row),
       )}`;
-      const objectUrl = URL.createObjectURL(
+      downloadBlob(
         new Blob([csv], { type: "text/csv;charset=utf-8" }),
+        `maihuobian-orders-${from}-${to}.csv`,
       );
-      const anchor = document.createElement("a");
-      anchor.href = objectUrl;
-      anchor.download = `maihuobian-orders-${from}-${to}.csv`;
-      anchor.click();
-      URL.revokeObjectURL(objectUrl);
-      setDownloadedCount(result.eligibleCount);
+      setDownloaded({ count: result.eligibleCount, format: "CSV" });
       setShowConfirmation(false);
     } catch (caught) {
       setError((caught as Error).message);
@@ -265,9 +306,11 @@ export function MaihuobianExportPanel({
           {error}
         </p>
       )}
-      {downloadedCount !== null && (
+      {downloaded !== null && (
         <p className="mt-3 text-sm text-green-700">
-          已下載 {downloadedCount} 筆 CSV 資料。
+          {downloaded.format === "CSV"
+            ? `已下載 ${downloaded.count} 筆 CSV 資料。`
+            : "已下載 XLSM 檔案。"}
         </p>
       )}
 
@@ -364,16 +407,26 @@ export function MaihuobianExportPanel({
             />
             我確認本檔僅用於賣貨便出貨
           </label>
-          <button
-            type="button"
-            onClick={downloadExport}
-            disabled={!cleartextConfirmed || exporting}
-            className="mt-2 min-h-11 w-full rounded-xl bg-red-600 px-3 text-sm font-semibold text-white disabled:opacity-50"
-          >
-            {exporting ? "產生中…" : "確認並下載 CSV"}
-          </button>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => downloadExport("csv")}
+              disabled={!cleartextConfirmed || exporting}
+              className="min-h-11 w-full rounded-xl bg-red-600 px-3 text-sm font-semibold text-white disabled:opacity-50"
+            >
+              {exporting ? "產生中…" : "確認並下載 CSV"}
+            </button>
+            <button
+              type="button"
+              onClick={() => downloadExport("xlsm")}
+              disabled={!cleartextConfirmed || exporting}
+              className="min-h-11 w-full rounded-xl bg-red-600 px-3 text-sm font-semibold text-white disabled:opacity-50"
+            >
+              {exporting ? "產生中…" : "確認並下載 XLSM"}
+            </button>
+          </div>
           <p className="mt-2 text-xs text-muted-foreground">
-            目前輸出 CSV 資料列；官方 XLSM 巨集範本套用尚未實作。
+            可下載 CSV 資料列或官方 XLSM 巨集範本；下載不會自動變更訂單狀態。
           </p>
         </div>
       )}

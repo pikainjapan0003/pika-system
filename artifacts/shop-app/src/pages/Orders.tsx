@@ -824,7 +824,7 @@ export default function OrdersPage() {
 
   return (
     <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-28">
-      <header className="bg-white border-b border-border px-5 pt-10 pb-3 sticky top-0 z-10">
+      <header className="bg-white border-b border-border px-5 pt-10 pb-3">
         <div className="mb-3">
           <h1 className="text-lg font-bold text-foreground">訂單管理</h1>
           <div
@@ -1609,7 +1609,22 @@ export default function OrdersPage() {
                             )}
                             <DetailRow
                               label="訂單總額"
-                              value={`NT$ ${resolveOrderDisplayTotal(o).toLocaleString()}`}
+                              value={`NT$ ${Number(
+                                o.orderTotal ??
+                                  Number(o.totalPrice ?? 0) +
+                                    Number(o.shippingFee ?? 0),
+                              ).toLocaleString()}`}
+                              bold
+                            />
+                            {Number(o.creditSpent ?? 0) > 0 && (
+                              <DetailRow
+                                label="購物金折抵"
+                                value={`-NT$${Number(o.creditSpent).toLocaleString()}`}
+                              />
+                            )}
+                            <DetailRow
+                              label="應付現金"
+                              value={`NT$${resolveOrderDisplayTotal(o).toLocaleString()}`}
                               bold
                             />
                             <DetailRow
@@ -1622,7 +1637,14 @@ export default function OrdersPage() {
                             />
                             <DetailRow
                               label="待收金額"
-                              value={`NT$ ${Number(o.remainingAmount ?? Number(o.orderTotal ?? o.totalPrice) - (o.paidAmount ?? 0)).toLocaleString()}`}
+                              value={`NT$ ${Number(
+                                o.remainingAmount ??
+                                  Math.max(
+                                    resolveOrderDisplayTotal(o) -
+                                      Number(o.paidAmount ?? 0),
+                                    0,
+                                  ),
+                              ).toLocaleString()}`}
                             />
                             {o.paymentNote && (
                               <DetailRow

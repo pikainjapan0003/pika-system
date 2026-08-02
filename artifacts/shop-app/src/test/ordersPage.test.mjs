@@ -202,4 +202,23 @@ test("order card amount uses the frozen payable after store credit", async () =>
   await waitFor(() =>
     assert.ok(getAllByText(view.container, "NT$100").length >= 2),
   );
+
+  fireEvent.click(getByText(view.container, "#1"));
+  assert.ok(
+    getAllByText(view.container, "訂單總額").some(
+      (label) => label.parentElement?.textContent === "訂單總額NT$ 120",
+    ),
+  );
+  assert.equal(
+    getByText(view.container, "購物金折抵").parentElement?.textContent,
+    "購物金折抵-NT$20",
+  );
+  assert.equal(
+    getByText(view.container, "應付現金").parentElement?.textContent,
+    "應付現金NT$100",
+  );
+  assert.equal(
+    getByText(view.container, "待收金額").parentElement?.textContent,
+    "待收金額NT$ 100",
+  );
 });

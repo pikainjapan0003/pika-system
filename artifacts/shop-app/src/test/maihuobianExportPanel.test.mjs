@@ -14,6 +14,8 @@ const originalAnchorClick = globalThis.window.HTMLAnchorElement.prototype.click;
 globalThis.React = React;
 
 const requests = [];
+const downloadedFiles = [];
+const createdBlobs = [];
 const preview = {
   eligibleCount: 1,
   ineligibleCount: 1,
@@ -65,6 +67,8 @@ const { formatMaihuobianCsv, MaihuobianExportPanel } =
 afterEach(() => {
   cleanup();
   requests.length = 0;
+  downloadedFiles.length = 0;
+  createdBlobs.length = 0;
   globalThis.fetch = originalFetch;
   globalThis.URL.createObjectURL = originalCreateObjectUrl;
   globalThis.URL.revokeObjectURL = originalRevokeObjectUrl;
@@ -77,14 +81,36 @@ after(() => {
   restoreDom();
 });
 
-function installFetch() {
-  globalThis.URL.createObjectURL = () => "blob:batch17-fake";
+function installFetch({
+  xlsmContentType = "application/vnd.ms-excel.sheet.macroEnabled.12",
+  xlsmContentDisposition = 'attachment; filename="maihuobian-orders.xlsm"',
+} = {}) {
+  globalThis.URL.createObjectURL = (blob) => {
+    createdBlobs.push(blob);
+    return "blob:batch17-fake";
+  };
   globalThis.URL.revokeObjectURL = () => undefined;
-  globalThis.window.HTMLAnchorElement.prototype.click = () => undefined;
+  globalThis.window.HTMLAnchorElement.prototype.click = function () {
+    downloadedFiles.push({ download: this.download, href: this.href });
+  };
   globalThis.fetch = async (url, options = {}) => {
     requests.push({ url: String(url), options });
+    if (options.method === "POST" && String(url).includes("?format=xlsm")) {
+      const blob = new Blob(["fake-xlsm"], {
+        type: xlsmContentType,
+      });
+      return {
+        ok: true,
+        headers: new Headers({
+          "Content-Type": xlsmContentType,
+          "Content-Disposition": xlsmContentDisposition,
+        }),
+        blob: async () => blob,
+      };
+    }
     return {
       ok: true,
+      headers: new Headers({ "Content-Type": "application/json" }),
       json: async () => (options.method === "POST" ? exportResult : preview),
     };
   };
@@ -114,8 +140,8 @@ test("Maihuobian CSV neutralizes spreadsheet formulas and quotes CSV syntax", ()
   assert.match(csv, /"第一行\n第二行""引號"""/u);
 });
 
-async function renderCheckedPanel() {
-  installFetch();
+async function renderCheckedPanel(fetchOptions) {
+  installFetch(fetchOptions);
   const view = render(
     React.createElement(MaihuobianExportPanel, {
       storeId: 1,
@@ -157,6 +183,10 @@ test("Maihuobian panel shows count and privacy warning before any POST", async (
     view.getByRole("button", { name: "確認並下載 CSV" }).disabled,
     true,
   );
+  assert.equal(
+    view.getByRole("button", { name: "確認並下載 XLSM" }).disabled,
+    true,
+  );
 });
 
 test("Maihuobian panel sends both headers only after explicit confirmation", async () => {
@@ -174,8 +204,86 @@ test("Maihuobian panel sends both headers only after explicit confirmation", asy
   const post = requests.find((request) => request.options.method === "POST");
   assert.equal(post.options.headers["X-Confirm-Cleartext-Export"], "true");
   assert.equal(post.options.headers["X-Confirm-Maihuobian-Export"], "true");
-  assert.deepEqual(JSON.parse(post.options.body).orderIds, [101]);
+  assert.deepEqual(JSON.parse(post.options.body), {
+    from: "2026-07-19",
+    to: "2026-07-19",
+    orderIds: [101],
+  });
+  assert.equal(post.url.endsWith("/maihuobian-export"), true);
+  assert.equal(
+    downloadedFiles[0]?.download,
+    "maihuobian-orders-2026-07-19-2026-07-19.csv",
+  );
   await waitFor(() =>
     assert.match(view.container.textContent, /已下載 1 筆 CSV 資料/u),
   );
+});
+
+test("Maihuobian panel downloads XLSM only after confirmation with the exact contract", async () => {
+  const view = await renderCheckedPanel();
+  fireEvent.click(view.getByRole("button", { name: "準備匯出 1 筆" }));
+
+  const xlsmButton = view.getByRole("button", {
+    name: "確認並下載 XLSM",
+  });
+  assert.equal(xlsmButton.disabled, true);
+  assert.equal(
+    requests.filter((request) => request.options.method === "POST").length,
+    0,
+  );
+
+  fireEvent.click(view.getByLabelText("我確認本檔僅用於賣貨便出貨"));
+  fireEvent.click(xlsmButton);
+
+  await waitFor(() =>
+    assert.equal(
+      requests.filter((request) => request.options.method === "POST").length,
+      1,
+    ),
+  );
+  const post = requests.find((request) => request.options.method === "POST");
+  assert.equal(post.url, "/api/stores/1/orders/maihuobian-export?format=xlsm");
+  assert.equal(post.options.headers["X-Confirm-Cleartext-Export"], "true");
+  assert.equal(post.options.headers["X-Confirm-Maihuobian-Export"], "true");
+  assert.deepEqual(JSON.parse(post.options.body), {
+    from: "2026-07-19",
+    to: "2026-07-19",
+    orderIds: [101],
+  });
+  await waitFor(() => assert.equal(downloadedFiles.length, 1));
+  assert.equal(downloadedFiles[0].download, "maihuobian-orders.xlsm");
+  assert.equal(
+    createdBlobs[0].type.toLowerCase(),
+    "application/vnd.ms-excel.sheet.macroEnabled.12".toLowerCase(),
+  );
+  await waitFor(() =>
+    assert.match(view.container.textContent, /已下載 XLSM 檔案/u),
+  );
+});
+
+test("Maihuobian panel rejects an XLSM response with the wrong MIME type", async () => {
+  const view = await renderCheckedPanel({
+    xlsmContentType: "application/json",
+  });
+  fireEvent.click(view.getByRole("button", { name: "準備匯出 1 筆" }));
+  fireEvent.click(view.getByLabelText("我確認本檔僅用於賣貨便出貨"));
+  fireEvent.click(view.getByRole("button", { name: "確認並下載 XLSM" }));
+
+  await waitFor(() =>
+    assert.match(view.container.textContent, /下載格式不正確/u),
+  );
+  assert.equal(downloadedFiles.length, 0);
+  assert.equal(createdBlobs.length, 0);
+});
+
+test("Maihuobian panel replaces an unsafe XLSM filename with the safe fallback", async () => {
+  const view = await renderCheckedPanel({
+    xlsmContentDisposition: 'attachment; filename="../private.xlsm"',
+  });
+  fireEvent.click(view.getByRole("button", { name: "準備匯出 1 筆" }));
+  fireEvent.click(view.getByLabelText("我確認本檔僅用於賣貨便出貨"));
+  fireEvent.click(view.getByRole("button", { name: "確認並下載 XLSM" }));
+
+  await waitFor(() => assert.equal(downloadedFiles.length, 1));
+  assert.equal(downloadedFiles[0].download, "maihuobian-orders.xlsm");
 });
