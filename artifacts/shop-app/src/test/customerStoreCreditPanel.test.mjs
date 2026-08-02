@@ -93,7 +93,7 @@ after(() => {
 
 resetData();
 
-async function renderLoaded() {
+async function renderLoaded(expectedBalance = /NT\$100/) {
   const view = render(
     React.createElement(CustomerStoreCreditPanel, {
       storeId: 1,
@@ -101,7 +101,9 @@ async function renderLoaded() {
       getToken,
     }),
   );
-  await waitFor(() => assert.match(view.container.textContent, /NT\$100/));
+  await waitFor(() =>
+    assert.match(view.container.textContent, expectedBalance),
+  );
   return view;
 }
 
@@ -124,6 +126,40 @@ test("shows the exact ledger as an owner-facing balance and transaction list", a
   assert.match(view.container.textContent, /發放/);
   assert.match(view.container.textContent, /\+NT\$100/);
   assert.match(view.container.textContent, /welcome/);
+});
+
+test("formats 5000 TWD with a thousands separator", async () => {
+  currentData = {
+    balance: "5000.000000000000",
+    transactions: [
+      {
+        ...currentData.transactions[0],
+        amount: "5000.000000000000",
+      },
+    ],
+    total: 1,
+  };
+  const view = await renderLoaded(/NT\$5,000/);
+
+  assert.match(view.container.textContent, /NT\$5,000/);
+  assert.match(view.container.textContent, /\+NT\$5,000/);
+});
+
+test("keeps large exact TWD strings precise while adding separators", async () => {
+  currentData = {
+    balance: "9007199254740993.000000000000",
+    transactions: [
+      {
+        ...currentData.transactions[0],
+        amount: "9007199254740993.000000000000",
+      },
+    ],
+    total: 1,
+  };
+  const view = await renderLoaded(/NT\$9,007,199,254,740,993/);
+
+  assert.match(view.container.textContent, /NT\$9,007,199,254,740,993/);
+  assert.match(view.container.textContent, /\+NT\$9,007,199,254,740,993/);
 });
 
 test("preview opens the second confirmation without sending a mutation header", async () => {

@@ -164,9 +164,18 @@ test("grant credit, spend it on an order, then restore it on cancellation", asyn
     .locator("select")
     .filter({ hasText: "E2E 測試商品" })
     .selectOption("10");
+  await page.getByRole("button", { name: /面交 \/ 自取.*免運/u }).click();
   await page.getByLabel("購物金折抵金額").fill("220");
   await page.getByRole("button", { name: "建立訂單" }).click();
-  await expect(page.getByText("應付現金 NT$0", { exact: false })).toBeVisible();
+  await page.getByText("#101", { exact: true }).click();
+  const creditRow = page.getByText("購物金折抵", { exact: true }).locator("..");
+  await expect(creditRow).toContainText("-NT$220");
+  const payableRow = page.getByText("應付現金", { exact: true }).locator("..");
+  await expect(payableRow).toContainText("NT$0");
+  const remainingRow = page
+    .getByText("待收金額", { exact: true })
+    .locator("..");
+  await expect(remainingRow).toContainText("NT$ 0");
 
   await page.getByRole("button", { name: "取消訂單" }).click();
   await page.getByRole("button", { name: "確認取消" }).click();

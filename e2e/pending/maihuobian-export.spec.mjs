@@ -128,8 +128,12 @@ test("Maihuobian preview separates eligibility and cleartext export requires con
   await page.getByLabel("結束日期").fill("2026-07-31");
   await page.getByRole("button", { name: "檢查可匯出訂單" }).click();
 
-  await expect(page.getByText("可匯出（1）")).toBeVisible();
-  await expect(page.getByText("不可匯出（1）")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "可匯出（1）", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "不可匯出（1）", exact: true }),
+  ).toBeVisible();
   await expect(page.getByText("訂單狀態尚不可出貨")).toBeVisible();
 
   await page.getByRole("button", { name: "準備匯出 1 筆" }).click();

@@ -28,6 +28,13 @@ const fakeOrder = {
   createdAt: "2026-07-31T00:00:00.000Z",
 };
 
+async function selectOnlyFixtureOrder(page) {
+  const checkbox = page.locator('[role="checkbox"]');
+  await expect(checkbox).toHaveCount(1);
+  await checkbox.click();
+  await expect(checkbox).toHaveAttribute("aria-checked", "true");
+}
+
 test("a picking check survives reload and becomes read-only after shipment", async ({
   page,
 }) => {
@@ -127,6 +134,7 @@ test("a picking check survives reload and becomes read-only after shipment", asy
   });
 
   await page.goto("/orders");
+  await selectOnlyFixtureOrder(page);
   await page.getByRole("button", { name: "查看撿貨單" }).click();
   const markPacked = page.getByRole("button", {
     name: "標記已包：E2E 假商品",
@@ -137,6 +145,7 @@ test("a picking check survives reload and becomes read-only after shipment", asy
   ).toBeVisible();
 
   await page.reload();
+  await selectOnlyFixtureOrder(page);
   await page.getByRole("button", { name: "查看撿貨單" }).click();
   const persisted = page.getByRole("button", {
     name: "取消已包：E2E 假商品",

@@ -27,7 +27,10 @@ const inputClass =
   "h-11 w-full rounded-xl border border-input bg-white px-3 text-sm";
 
 function displayTwd(value: string): string {
-  return ExactDecimal.from(value).toDecimalPlaces(0);
+  const rounded = ExactDecimal.from(value).toDecimalPlaces(0);
+  const sign = rounded.startsWith("-") ? "-" : "";
+  const digits = sign ? rounded.slice(1) : rounded;
+  return `${sign}${digits.replace(/\B(?=(\d{3})+(?!\d))/gu, ",")}`;
 }
 
 function transactionLabel(type: StoreCreditTransaction["type"]): string {

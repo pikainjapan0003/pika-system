@@ -45,6 +45,6 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: pending-e2e-failure-${{ github.run_attempt }}
-          path: e2e/test-results/
-          if-no-files-found: warn
+          path: test-results/
+          if-no-files-found: error
           retention-days: 7
