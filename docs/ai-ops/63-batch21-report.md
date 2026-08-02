@@ -71,4 +71,6 @@ All matched files use Prettier code style!
 - `origin/main` 仍為 `290feb6c9ac1e62c385971af274fb2d2fad8c730`；本批所有 commit 均未 push。
 - 完工報告提交後應再次確認 `git status --short` 零輸出。
 
-SELF_SHA256: b402297def3e5502978092d0ea6eda57c09f4dc04bf9cc3be5449b9339db7e95
+重算規則：讀取本檔 UTF-8 原始 bytes，刪除整行 `SELF_SHA256:`（含換行）後計算 SHA-256。
+
+SELF_SHA256: b0bc5502588ed88d05f26050697cbc585bdfe9c22e8d45558030db57872c4111
