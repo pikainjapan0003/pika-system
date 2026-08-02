@@ -54,6 +54,17 @@ test("customer list detail link reaches the customer detail page", async ({
     if (path === "/api/stores/1/customers/1") {
       return route.fulfill({ json: { customer: fakeCustomer, orders: [] } });
     }
+    if (path === "/api/stores/1/customers/1/store-credit") {
+      return route.fulfill({
+        json: {
+          balance: "0",
+          transactions: [],
+          page: 1,
+          limit: 50,
+          total: 0,
+        },
+      });
+    }
     return route.fulfill({
       status: 404,
       json: { error: "E2E API mock missing" },
