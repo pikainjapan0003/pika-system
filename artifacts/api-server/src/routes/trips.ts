@@ -1,24 +1,28 @@
 import { Router } from "express";
-import { eq } from "drizzle-orm";
-import { db, tripsTable, tripRoutesTable } from "@workspace/db";
+import { and, eq, isNull, or } from "drizzle-orm";
+import { db, storesTable, tripsTable, tripRoutesTable } from "@workspace/db";
 import {
   CreateTripBody,
   UpdateTripBody,
   CreateTripRouteBody,
   UpdateTripRouteBody,
 } from "@workspace/api-zod";
-import { requireAuth } from "../middlewares/auth.ts";
+import { requireAuth, verifyStoreOwner } from "../middlewares/auth.ts";
 
 const router = Router();
 
-// NOTE: trips/trip_routes have no store or merchant ownership column in the
-// current schema (lib/db/src/schema/trips.ts) — any authenticated merchant
-// can see and manage all trips. Scoping this to a single store/merchant would
-// require a schema change, which is out of scope here.
+router.get("/trips", requireAuth, async (req: any, res) => {
+  const storeId = await resolveOwnedStoreId(req, res);
+  if (storeId === null) return;
 
-router.get("/trips", requireAuth, async (_req: any, res) => {
-  const trips = await db.select().from(tripsTable);
-  const routes = await db.select().from(tripRoutesTable);
+  const trips = await db
+    .select()
+    .from(tripsTable)
+    .where(ownedOrAwaitingBackfill(tripsTable.storeId, storeId));
+  const routes = await db
+    .select()
+    .from(tripRoutesTable)
+    .where(ownedOrAwaitingBackfill(tripRoutesTable.storeId, storeId));
   const routesByTrip = new Map<number, typeof routes>();
   for (const route of routes) {
     const list = routesByTrip.get(route.tripId) ?? [];
@@ -34,6 +38,9 @@ router.get("/trips", requireAuth, async (_req: any, res) => {
 });
 
 router.post("/trips", requireAuth, async (req: any, res) => {
+  const storeId = await resolveOwnedStoreId(req, res);
+  if (storeId === null) return;
+
   const parsed = CreateTripBody.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: parsed.error.message });
@@ -41,6 +48,7 @@ router.post("/trips", requireAuth, async (req: any, res) => {
   const [trip] = await db
     .insert(tripsTable)
     .values({
+      storeId,
       name: parsed.data.name,
       exchangeRate:
         parsed.data.exchangeRate != null
@@ -53,6 +61,9 @@ router.post("/trips", requireAuth, async (req: any, res) => {
 });
 
 router.patch("/trips/:tripId", requireAuth, async (req: any, res) => {
+  const storeId = await resolveOwnedStoreId(req, res);
+  if (storeId === null) return;
+
   const tripId = parseInt(req.params.tripId);
   if (isNaN(tripId)) return res.status(400).json({ error: "Invalid tripId" });
 
@@ -71,10 +82,25 @@ router.patch("/trips/:tripId", requireAuth, async (req: any, res) => {
   }
   if (parsed.data.notes !== undefined) updateData.notes = parsed.data.notes;
 
+  const [existing] = await db
+    .select({ storeId: tripsTable.storeId })
+    .from(tripsTable)
+    .where(eq(tripsTable.id, tripId))
+    .limit(1);
+  if (!existing) return res.status(404).json({ error: "Trip not found" });
+  if (existing.storeId !== null && existing.storeId !== storeId) {
+    return res.status(403).json({ error: "Forbidden" });
+  }
+
   const [updated] = await db
     .update(tripsTable)
-    .set(updateData)
-    .where(eq(tripsTable.id, tripId))
+    .set({ ...updateData, storeId })
+    .where(
+      and(
+        eq(tripsTable.id, tripId),
+        ownedOrAwaitingBackfill(tripsTable.storeId, storeId),
+      ),
+    )
     .returning();
 
   if (!updated) return res.status(404).json({ error: "Trip not found" });
@@ -82,6 +108,9 @@ router.patch("/trips/:tripId", requireAuth, async (req: any, res) => {
 });
 
 router.post("/trips/:tripId/routes", requireAuth, async (req: any, res) => {
+  const storeId = await resolveOwnedStoreId(req, res);
+  if (storeId === null) return;
+
   const tripId = parseInt(req.params.tripId);
   if (isNaN(tripId)) return res.status(400).json({ error: "Invalid tripId" });
 
@@ -91,16 +120,20 @@ router.post("/trips/:tripId/routes", requireAuth, async (req: any, res) => {
   }
 
   const [trip] = await db
-    .select({ id: tripsTable.id })
+    .select({ id: tripsTable.id, storeId: tripsTable.storeId })
     .from(tripsTable)
     .where(eq(tripsTable.id, tripId))
     .limit(1);
   if (!trip) return res.status(404).json({ error: "Trip not found" });
+  if (trip.storeId !== null && trip.storeId !== storeId) {
+    return res.status(403).json({ error: "Forbidden" });
+  }
 
   try {
     const [route] = await db
       .insert(tripRoutesTable)
       .values({
+        storeId,
         tripId,
         areaTitle: parsed.data.areaTitle,
         startPlace: parsed.data.startPlace,
@@ -141,6 +174,9 @@ router.patch(
   "/trips/:tripId/routes/:routeId",
   requireAuth,
   async (req: any, res) => {
+    const storeId = await resolveOwnedStoreId(req, res);
+    if (storeId === null) return;
+
     const tripId = parseInt(req.params.tripId);
     const routeId = parseInt(req.params.routeId);
     if (isNaN(tripId) || isNaN(routeId))
@@ -177,15 +213,35 @@ router.patch(
     if (parsed.data.parcelCount !== undefined)
       updateData.parcelCount = parsed.data.parcelCount;
 
+    const [existing] = await db
+      .select({
+        tripId: tripRoutesTable.tripId,
+        storeId: tripRoutesTable.storeId,
+      })
+      .from(tripRoutesTable)
+      .where(eq(tripRoutesTable.id, routeId))
+      .limit(1);
+    if (!existing || existing.tripId !== tripId) {
+      return res.status(404).json({ error: "Route not found" });
+    }
+    if (existing.storeId !== null && existing.storeId !== storeId) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
     try {
       const [updated] = await db
         .update(tripRoutesTable)
-        .set(updateData)
-        .where(eq(tripRoutesTable.id, routeId))
+        .set({ ...updateData, storeId })
+        .where(
+          and(
+            eq(tripRoutesTable.id, routeId),
+            eq(tripRoutesTable.tripId, tripId),
+            ownedOrAwaitingBackfill(tripRoutesTable.storeId, storeId),
+          ),
+        )
         .returning();
 
-      if (!updated || updated.tripId !== tripId)
-        return res.status(404).json({ error: "Route not found" });
+      if (!updated) return res.status(404).json({ error: "Route not found" });
       return res.json(formatTripRoute(updated));
     } catch (err: any) {
       if (err?.code === "23505") {
@@ -198,9 +254,33 @@ router.patch(
 
 function formatTrip(t: any) {
   return {
-    ...t,
+    id: t.id,
+    name: t.name,
     exchangeRate: t.exchangeRate != null ? parseFloat(t.exchangeRate) : null,
+    notes: t.notes,
+    createdAt: t.createdAt,
+    updatedAt: t.updatedAt,
   };
+}
+
+function ownedOrAwaitingBackfill(column: any, storeId: number) {
+  // Nullable rows are transitional and remain visible until the production
+  // backfill has been applied and reviewed.
+  return or(eq(column, storeId), isNull(column))!;
+}
+
+async function resolveOwnedStoreId(req: any, res: any): Promise<number | null> {
+  const [store] = await db
+    .select({ id: storesTable.id })
+    .from(storesTable)
+    .where(eq(storesTable.merchantId, req.userId))
+    .limit(1);
+  if (!store) {
+    res.status(404).json({ error: "No store found" });
+    return null;
+  }
+  if (!(await verifyStoreOwner(req, res, store.id))) return null;
+  return store.id;
 }
 
 function formatTripRoute(r: any) {
