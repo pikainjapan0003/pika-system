@@ -121,3 +121,10 @@ This review covers owner-only surfaces outside the earlier core-mutation matrix.
 | Logistics import/exception surfaces         | `requireAuth` + `verifyStoreOwner` + batch/store binding                     | `logisticsImports.route.test.mjs`, `authzGapSecondTier.route.test.mjs`          | Covered; malformed, unauthenticated, and cross-store paths are tested.                             |
 
 No new authorization rule is introduced by this review. The matrix records existing middleware and test evidence only; the trips ownership P1 remains open until the owner selects a data-ownership option.
+
+## BATCH-22 trips 店鋪隔離更新（2026-08-03）
+
+- 老闆已拍板：行程與路線採「每家店自己的」。
+- `86ba0ae` 新增兩表 nullable `store_id` 與安全回填演練工具；`0f1c6b4` 讓五條 trips API 全數執行 `requireAuth`、解析登入 merchant 的唯一店鋪、呼叫 `verifyStoreOwner`，並將查詢與寫入綁定店鋪。
+- 新建 trips/routes 一律寫入本店；API 回應不公開 `storeId`；跨店讀寫與 route/trip 錯配由 `tripsStoreIsolation.route.test.mjs` 6 條實庫測試鎖住。
+- 原「任何登入 merchant 可讀寫全部行程」P1 已解。正式回填完成前，`store_id IS NULL` 舊資料仍依核准過渡規則可見；這是明列的部署待辦，不得把它誤寫成已完成 NOT NULL/FK。
