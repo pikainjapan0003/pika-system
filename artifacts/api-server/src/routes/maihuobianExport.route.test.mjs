@@ -518,7 +518,7 @@ if (!process.env.DATABASE_URL) {
       buyerPhone: "0912345678",
       recipientName: "王小明",
       recipientPhone: "0912345678",
-      pickupMethod: "7-11 取貨",
+      pickupMethod: "7-11 賣貨便",
       cvsStoreId: "123456",
       quantity: 3,
       unitPrice: "100.00",

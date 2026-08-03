@@ -13,7 +13,7 @@ const product = {
   storageTempClass: "normal",
 };
 
-function fakeEligibleOrder(id) {
+function fakeEligibleOrder(id, pickupMethod = "7-11 賣貨便") {
   return {
     id,
     productId: product.id,
@@ -23,7 +23,7 @@ function fakeEligibleOrder(id) {
     recipientName: "王小明",
     recipientPhone: "0912345678",
     cvsStoreId: "123456",
-    pickupMethod: "7-11 取貨",
+    pickupMethod,
     status: "preparing",
     shippingStatus: "not_shipped",
     quantity: 1,
@@ -56,6 +56,32 @@ test("Maihuobian preview DTO exposes product summary without cleartext row field
     "productSummary",
   ]);
   assert.equal(JSON.stringify(preview).includes("0912345678"), false);
+});
+
+test("Maihuobian eligibility accepts only the exact sell便 pickup method", () => {
+  const cases = [
+    { pickupMethod: "7-11 賣貨便", eligible: true },
+    { pickupMethod: "7-11 取貨（先付款）", eligible: false },
+    { pickupMethod: "7-11 貨到付款", eligible: false },
+    { pickupMethod: "全家取貨（先付款）", eligible: false },
+  ];
+
+  for (const [index, { pickupMethod, eligible }] of cases.entries()) {
+    const preview = buildMaihuobianExportPreview(
+      [fakeEligibleOrder(index + 1, pickupMethod)],
+      [product],
+    );
+    assert.equal(preview.eligibleCount, eligible ? 1 : 0, pickupMethod);
+    assert.equal(preview.ineligibleCount, eligible ? 0 : 1, pickupMethod);
+    if (!eligible) {
+      assert.equal(
+        preview.ineligible[0].reasons.find(
+          (reason) => reason.code === "PICKUP_METHOD_INELIGIBLE",
+        )?.message,
+        "僅 7-11 賣貨便訂單可匯出",
+      );
+    }
+  }
 });
 
 test("Maihuobian export rejects 501 eligible rows instead of truncating", () => {
