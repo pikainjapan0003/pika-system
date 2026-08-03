@@ -1,9 +1,3 @@
-/**
- * UNVERIFIED-PENDING-CI
- *
- * This spec stays outside the main Playwright testMatch until the Pending E2E
- * workflow proves the complete owner flow green on Linux.
- */
 import { expect, test } from "@playwright/test";
 
 import { installClerkStub } from "../clerkStub.mjs";
