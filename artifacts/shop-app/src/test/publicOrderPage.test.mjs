@@ -102,6 +102,34 @@ test("zero shipping is labelled free instead of an unmarked zero", () => {
   assert.match(view.container.textContent, /運費免費/);
 });
 
+test("賣貨便 is the first 7-11 pickup option and shows its 38 fee", () => {
+  product = makeProduct();
+  const view = renderPage();
+  const sevenElevenButtons = [
+    ...view.container.querySelectorAll("button"),
+  ].filter((button) => button.textContent?.includes("7-11"));
+
+  assert.match(sevenElevenButtons[0]?.textContent ?? "", /賣貨便/);
+  assert.match(sevenElevenButtons[0]?.textContent ?? "", /NT\$38/);
+  assert.equal(sevenElevenButtons.length, 3);
+});
+
+test("賣貨便 selection still requires a 7-11 store", () => {
+  product = makeProduct();
+  const view = renderPage();
+  const pickupButton = view.getByRole("button", { name: /賣貨便/ });
+  fireEvent.click(pickupButton);
+  fireEvent.change(view.getByPlaceholderText("請輸入您的姓名"), {
+    target: { value: "測試客人" },
+  });
+  fireEvent.change(view.getAllByPlaceholderText("09xx-xxx-xxx")[0], {
+    target: { value: "0912345678" },
+  });
+  fireEvent.click(view.getByRole("button", { name: /確認下單/ }));
+
+  assert.match(view.container.textContent, /請先選擇7-11 門市/);
+});
+
 test("closed product disables submission and shows the closed label", () => {
   product = makeProduct({ orderDeadlineAt: "2020-01-01T00:00:00.000Z" });
   const view = renderPage();

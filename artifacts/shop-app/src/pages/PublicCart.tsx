@@ -52,6 +52,7 @@ const CART_CVS_KEY = "buyer-cart";
 const CART_CVS_METHOD_KEY = "buyer-cart-cvs-method";
 
 type PickupMethod =
+  | "7-11 賣貨便"
   | "7-11 取貨（先付款）"
   | "7-11 貨到付款"
   | "全家取貨（先付款）"
@@ -61,6 +62,7 @@ type PickupMethod =
   | "面交";
 
 const ALL_PICKUP_METHODS: PickupMethod[] = [
+  "7-11 賣貨便",
   "7-11 取貨（先付款）",
   "7-11 貨到付款",
   "全家取貨（先付款）",
@@ -757,7 +759,16 @@ export default function PublicCartPage() {
                     <span
                       className={`text-sm font-semibold flex-1 ${isSelected ? "text-primary" : "text-foreground"}`}
                     >
-                      {m}
+                      {m === "7-11 賣貨便" ? (
+                        <>
+                          <span className="block">7-11</span>
+                          <span className="block text-xs font-normal">
+                            賣貨便
+                          </span>
+                        </>
+                      ) : (
+                        m
+                      )}
                     </span>
                     <span
                       className={`text-sm font-semibold shrink-0 ${isSelected ? "text-primary" : "text-muted-foreground"}`}

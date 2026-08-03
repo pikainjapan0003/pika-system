@@ -42,6 +42,7 @@ function formatDate(iso: string): string {
 }
 
 type PickupMethod =
+  | "7-11 賣貨便"
   | "7-11 取貨（先付款）"
   | "7-11 貨到付款"
   | "全家取貨（先付款）"
@@ -64,6 +65,7 @@ function getShippingFeeLabel(m: string): string {
 }
 
 const ALL_PICKUP_METHODS: PickupMethod[] = [
+  "7-11 賣貨便",
   "7-11 取貨（先付款）",
   "7-11 貨到付款",
   "全家取貨（先付款）",
@@ -84,7 +86,7 @@ function isPickupMethodEnabled(method: string, settings: any): boolean {
 }
 
 function PickupMethodLogo({ method }: { method: string }) {
-  if (method === "7-11 取貨（先付款）" || method === "7-11 貨到付款") {
+  if (isSevenElevenMethod(method)) {
     return (
       <div className="w-28 h-12 flex items-center justify-center shrink-0">
         <img
@@ -901,7 +903,16 @@ export default function PublicOrderPage({ shareToken }: Props) {
                     <span
                       className={`text-sm sm:text-base font-semibold leading-snug sm:flex-1 sm:px-3 ${isSelected ? "text-primary" : "text-foreground"}`}
                     >
-                      {m}
+                      {m === "7-11 賣貨便" ? (
+                        <>
+                          <span className="block">7-11</span>
+                          <span className="block text-xs font-normal">
+                            賣貨便
+                          </span>
+                        </>
+                      ) : (
+                        m
+                      )}
                     </span>
                     {/* Fee — desktop only */}
                     <span
