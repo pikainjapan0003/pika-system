@@ -28,7 +28,7 @@ function fakeEligibleOrder(id, pickupMethod = "7-11 賣貨便") {
     shippingStatus: "not_shipped",
     quantity: 1,
     totalPrice: "100.00",
-    shippingFee: "60.00",
+    shippingFee: "38.00",
     createdAt: new Date("2026-07-19T04:00:00.000Z"),
     notes: null,
     items: null,

@@ -127,3 +127,7 @@ This section records the independently verified backend dependency refresh. No m
 Post-refresh `corepack pnpm audit --json` reports `0 critical / 13 high / 5 moderate / 3 low` across 684 dependencies (exit 1 is expected because advisories remain). The remaining advisories are primarily the existing toolchain/transitive set; no claim is made that the audit is clean.
 
 The Orval 8.x candidate was intentionally skipped: code generation was not byte-identical and touched generated files, so the package rule required restoration and no commit.
+
+## BATCH-22 Orval 複查（2026-08-03）
+
+同 major 的 Orval 8.x 候選版本再次產生非位元等價的 generated diff，並牽動 Zod 4 相容性。依批次禁動 generated 的規則，整包已完整撤回；package manifests、lockfile、workspace 設定與 generated 目錄均未留下變更，既有 advisory 維持待辦。
