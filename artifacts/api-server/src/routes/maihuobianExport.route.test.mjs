@@ -522,7 +522,7 @@ if (!process.env.DATABASE_URL) {
       cvsStoreId: "123456",
       quantity: 3,
       unitPrice: "100.00",
-      shippingFee: "60.00",
+      shippingFee: "38.00",
       totalPrice: "300.00",
       status,
       shippingStatus: "not_shipped",

@@ -19,6 +19,9 @@ export const PICKUP_METHOD_SHIPPING_FEE: Readonly<Record<string, number>> = {
   萊爾富物流: 60,
 };
 
+export const MAIHUOBIAN_SHIPPING_FEE =
+  PICKUP_METHOD_SHIPPING_FEE[MAIHUOBIAN_PICKUP_METHOD];
+
 export function getShippingFee(pickupMethod: string): number {
   return PICKUP_METHOD_SHIPPING_FEE[pickupMethod] ?? 0;
 }
