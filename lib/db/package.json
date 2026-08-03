@@ -18,6 +18,7 @@
     "seed": "tsx src/seed.ts"
   },
   "dependencies": {
+    "@workspace/shipping": "workspace:*",
     "drizzle-orm": "catalog:",
     "drizzle-zod": "^0.8.3",
     "pg": "^8.22.0",

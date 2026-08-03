@@ -1,4 +1,5 @@
 import { ExactDecimal } from "../transport-cost/index.ts";
+import { MAIHUOBIAN_SHIPPING_FEE } from "@workspace/shipping";
 
 export type MaihuobianTemperatureClass = "normal" | "frozen";
 
@@ -147,7 +148,11 @@ export function validateMaihuobianRow(
   const temperature = resolveTemperature(order);
   const productSummary = text(order.productSummary);
   const totalPrice = decimalInRange(order.totalPrice, "0", "20000");
-  const shippingFee = decimalInRange(order.shippingFee, "0", "100");
+  const shippingFee = decimalInRange(
+    order.shippingFee,
+    "0",
+    String(MAIHUOBIAN_SHIPPING_FEE),
+  );
   const orderDate = formatTaipeiDate(order.createdAt);
   const notes = text(order.notes);
 
@@ -206,7 +211,7 @@ export function validateMaihuobianRow(
     errors.push({
       field: "shippingFee",
       code: "SHIPPING_FEE_OUT_OF_RANGE",
-      message: "運費金額必須介於 0 到 100",
+      message: `運費金額不可大於賣貨便活動運費 ${MAIHUOBIAN_SHIPPING_FEE} 元`,
     });
   }
   if (!orderDate) {
