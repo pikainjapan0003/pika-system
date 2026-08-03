@@ -142,9 +142,12 @@ if (!process.env.DATABASE_URL) {
       creditSpent: "100.000000000000",
     });
     assert.equal(created.status, 201);
-    assert.equal(created.data.creditSpent, 100);
-    assert.equal(created.data.payableAfterCredit, 0);
-    assert.equal(created.data.remainingAmount, 0);
+    assert.equal(typeof created.data.creditSpent, "string");
+    assert.equal(typeof created.data.payableAfterCredit, "string");
+    assert.equal(typeof created.data.remainingAmount, "string");
+    assert.equal(created.data.creditSpent, "100.000000000000");
+    assert.equal(created.data.payableAfterCredit, "0.000000000000");
+    assert.equal(created.data.remainingAmount, "0.000000000000");
 
     const [storedOrder] = await db
       .select()

@@ -1,7 +1,22 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { calculateMoneyPreview } from "./moneyPreview.ts";
+import {
+  calculateMoneyPreview,
+  formatMoneyForDisplay,
+  hasPositiveMoney,
+} from "./moneyPreview.ts";
+
+test("API decimal strings are formatted for display without number coercion", () => {
+  assert.equal(formatMoneyForDisplay("5000.000000000000"), "5,000");
+  assert.equal(formatMoneyForDisplay("0.100000000000"), "0.1");
+  assert.equal(
+    formatMoneyForDisplay("999999999999.990000000000"),
+    "999,999,999,999.99",
+  );
+  assert.equal(hasPositiveMoney("0.000000000000"), false);
+  assert.equal(hasPositiveMoney("0.000000000001"), true);
+});
 
 test("decimal multiplication does not accumulate IEEE-754 preview error", () => {
   const result = calculateMoneyPreview({

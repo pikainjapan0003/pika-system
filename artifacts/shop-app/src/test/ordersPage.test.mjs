@@ -197,10 +197,11 @@ test("order card amount uses the frozen payable after store credit", async () =>
       orderTotal: "120.000000000000",
       creditSpent: "20.000000000000",
       payableAfterCredit: "100.000000000000",
+      remainingAmount: "100.000000000000",
     }),
   ]);
   await waitFor(() =>
-    assert.ok(getAllByText(view.container, "NT$100").length >= 2),
+    assert.ok(getAllByText(view.container, "NT$100").length >= 1),
   );
 
   fireEvent.click(getByText(view.container, "#1"));

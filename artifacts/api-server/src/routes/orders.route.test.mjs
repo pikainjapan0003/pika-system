@@ -467,7 +467,7 @@ describe("Step 5C: payment / logistics fields", () => {
     );
     assert.strictEqual(
       order.remainingAmount,
-      260,
+      "260.000000000000",
       "remainingAmount = orderTotal when paidAmount is null",
     );
     assert.strictEqual(
@@ -507,7 +507,7 @@ describe("Step 5C: payment / logistics fields", () => {
     assert.strictEqual(data.orderTotal, 260);
     assert.strictEqual(
       data.remainingAmount,
-      110,
+      "110.000000000000",
       "remainingAmount = 260 - 150",
     );
   });
@@ -520,7 +520,7 @@ describe("Step 5C: payment / logistics fields", () => {
     assert.strictEqual(data.paidAmount, null);
     assert.strictEqual(
       data.remainingAmount,
-      data.orderTotal,
+      "260.000000000000",
       "remainingAmount = orderTotal when paidAmount is null",
     );
   });
@@ -2504,7 +2504,7 @@ describe("Step 8J: discountAmount + discountNote", () => {
     assert.strictEqual(data.orderTotal, 300, "orderTotal = 300 + 100 - 100");
     assert.strictEqual(
       data.remainingAmount,
-      100,
+      "100.000000000000",
       "remainingAmount = 300 - 200",
     );
   });

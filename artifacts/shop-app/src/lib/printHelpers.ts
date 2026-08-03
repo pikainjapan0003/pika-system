@@ -6,6 +6,7 @@ import type {
 } from "@workspace/api-client-react";
 import type { OrderStatus } from "@workspace/db";
 
+import { formatMoneyForDisplay, hasPositiveMoney } from "./moneyPreview";
 import { STATUS_LABELS } from "./orderStatus";
 
 // Local augmentation: generated Order may lag behind DB schema on these fields.
@@ -600,14 +601,10 @@ export function printOrderReceipt(
   const shippingFee = Number(order.shippingFee ?? 0);
   const discountAmount = Number(order.discountAmount ?? 0);
   const orderTotal = order.orderTotal ?? productSubtotal + shippingFee;
-  const creditSpent = Number(order.creditSpent ?? 0);
-  const payableAfterCredit =
-    order.payableAfterCredit == null
-      ? Math.max(orderTotal - creditSpent, 0)
-      : Number(order.payableAfterCredit);
+  const creditSpent = order.creditSpent ?? "0";
+  const payableAfterCredit = order.payableAfterCredit ?? "0";
   const paidAmount = Number(order.paidAmount ?? 0);
-  const remainingAmount =
-    order.remainingAmount ?? Math.max(payableAfterCredit - paidAmount, 0);
+  const remainingAmount = order.remainingAmount ?? "0";
 
   const paymentStatusText = order.paymentStatus
     ? (PAYMENT_STATUS_LABELS[order.paymentStatus] ?? order.paymentStatus)
@@ -629,15 +626,13 @@ export function printOrderReceipt(
     ? `<tr><td class="sl" style="padding-left:10px;font-size:11px;color:#888">折讓備註</td><td class="sr" style="font-size:11px;color:#888">${esc((order.discountNote ?? "").trim())}</td></tr>`
     : "";
 
-  const storeCreditRow =
-    creditSpent > 0
-      ? `<tr><td class="sl">購物金折抵</td><td class="sr" style="color:#e11d48">-${formatCurrency(creditSpent)}</td></tr>`
-      : "";
+  const storeCreditRow = hasPositiveMoney(creditSpent)
+    ? `<tr><td class="sl">購物金折抵</td><td class="sr" style="color:#e11d48">-NT$ ${formatMoneyForDisplay(creditSpent)}</td></tr>`
+    : "";
 
-  const remainingBlock =
-    remainingAmount <= 0
-      ? `<div class="paid-clear">&#x2713; 已付清</div>`
-      : `<div class="remaining-due">待收金額<span class="remaining-amount">${formatCurrency(remainingAmount)}</span></div>`;
+  const remainingBlock = !hasPositiveMoney(remainingAmount)
+    ? `<div class="paid-clear">&#x2713; 已付清</div>`
+    : `<div class="remaining-due">待收金額<span class="remaining-amount">NT$ ${formatMoneyForDisplay(remainingAmount)}</span></div>`;
 
   const orderNotesHtml = (order.notes ?? "").trim()
     ? `<div class="section-card notes-section">
@@ -798,7 +793,7 @@ export function printOrderReceipt(
     ${storeCreditRow}
     <tr class="total-row">
       <td class="sl">應付金額</td>
-      <td class="sr total-amount">${formatCurrency(payableAfterCredit)}</td>
+      <td class="sr total-amount">NT$ ${formatMoneyForDisplay(payableAfterCredit)}</td>
     </tr>
     <tr>
       <td class="sl" style="padding-top:6px">已收金額</td>

@@ -2229,16 +2229,23 @@ function formatShipmentTracking(t: any) {
 function formatOrder(o: any) {
   const shippingFee = parseFloat(o.shippingFee ?? "0");
   const totalPrice = parseFloat(o.totalPrice);
-  const creditSpent = parseFloat(o.creditSpent ?? "0");
+  const creditSpent = ExactDecimal.from(o.creditSpent ?? "0").toDecimalPlaces(
+    12,
+  );
   const paidAmount =
     o.paidAmount != null ? parseFloat(o.paidAmount as string) : null;
   const discountAmount = o.discountAmount ?? 0;
   const orderTotal = Math.max(totalPrice + shippingFee - discountAmount, 0);
-  const payableAfterCredit =
-    o.payableAfterCredit == null
-      ? orderTotal
-      : parseFloat(o.payableAfterCredit as string);
-  const remainingAmount = Math.max(payableAfterCredit - (paidAmount ?? 0), 0);
+  const payableAfterCreditExact = ExactDecimal.from(
+    o.payableAfterCredit == null ? String(orderTotal) : o.payableAfterCredit,
+  );
+  const payableAfterCredit = payableAfterCreditExact.toDecimalPlaces(12);
+  const remainingExact = payableAfterCreditExact.add(
+    ExactDecimal.from(o.paidAmount ?? "0").multiply(ExactDecimal.from("-1")),
+  );
+  const remainingAmount = (
+    remainingExact.isNegative() ? ExactDecimal.zero() : remainingExact
+  ).toDecimalPlaces(12);
   const profitSnapshotDisplay =
     o.profitSnapshotStatus === "captured" || o.profitSnapshotStatus === "exempt"
       ? {

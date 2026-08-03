@@ -461,7 +461,7 @@ export default function DashboardPage() {
                       x{o.quantity}
                     </span>
                     <span className="text-sm font-semibold text-foreground">
-                      NT${resolveOrderDisplayTotal(o).toLocaleString()}
+                      NT${resolveOrderDisplayTotal(o)}
                     </span>
                   </div>
                 </div>
