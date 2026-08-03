@@ -1,8 +1,11 @@
 // Canonical pickup-method fees in TWD. Both the API write path and UI previews import this table.
+export const MAIHUOBIAN_PICKUP_METHOD = "7-11 賣貨便" as const;
+
 export const PICKUP_METHOD_SHIPPING_FEE: Readonly<Record<string, number>> = {
   面交: 0,
   自取: 0,
   其他: 0,
+  [MAIHUOBIAN_PICKUP_METHOD]: 38,
   "7-11 貨到付款": 60,
   "7-11 取貨（先付款）": 60,
   全家貨到付款: 60,
