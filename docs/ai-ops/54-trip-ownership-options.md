@@ -66,3 +66,12 @@
 ### BATCH-20 收尾標記（2026-08-01）
 
 本設計包由 `b6ff7d4` 完成；仍等待 Q-TRIP-OWN-1 的歸屬拍板，未改 schema、migration 或路由，也未宣稱 trips 的 P1 已修復。
+
+## BATCH-22 實作結果（2026-08-03）
+
+老闆已選方案 A：每家店擁有自己的行程與路線。
+
+- `86ba0ae`：兩表新增 nullable `store_id` 與索引；提供只接受明確拋棄庫 URL／store ID、dry-run 預設、`--apply` 才寫入的演練工具。拋棄庫驗證 captured 交通成本快照在回填前後維持 count=2、sum=20.000000000000。
+- `0f1c6b4`：保留既有 `/trips` URL 與 generated client，後端由登入 merchant 解析唯一店鋪；五條路由全數套 owner 驗證與 store scope，新建與更新會補上本店 `store_id`。
+- 前端 Trips 頁無自行過濾公式，完全使用後端已隔離的回應，因此只顯示本店資料與核准過渡期的未回填舊資料。
+- 尚未執行正式資料庫回填；NOT NULL 與 FK 必須等正式回填證據完成後另開 migration。操作順序與停止條件見 `68-trip-store-backfill-guide.md`。
