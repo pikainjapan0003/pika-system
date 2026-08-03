@@ -23,7 +23,10 @@ import {
   STATUS_STEPS,
   VALID_NEXT_STATUSES,
 } from "../lib/orderStatus";
-import { resolveOrderDisplayTotal } from "../lib/orderDisplayTotal";
+import {
+  resolveOrderDisplayTotal,
+  resolveOrderGrossTotal,
+} from "../lib/orderDisplayTotal";
 import {
   isSevenElevenMethod,
   isFamilyMartMethod,
@@ -314,6 +317,7 @@ import { printOrderReceipt } from "../lib/printHelpers";
 import { recordServerAuditEvent } from "@/lib/serverAudit";
 import { useDailySkillVisibility } from "@/lib/dailySkillVisibilityContext";
 import { MaihuobianExportPanel } from "@/lib/MaihuobianExportPanel";
+import { formatMoneyForDisplay, hasPositiveMoney } from "@/lib/moneyPreview";
 
 export default function OrdersPage() {
   const qc = useQueryClient();
@@ -461,7 +465,7 @@ export default function OrdersPage() {
       (o.productName ?? "").toLowerCase().includes(q);
     const paymentMatches =
       !paymentLast5Q || ((o as any).paymentLast5 ?? "").includes(paymentLast5Q);
-    const orderTotal = resolveOrderDisplayTotal(o);
+    const orderTotal = resolveOrderGrossTotal(o);
     const amountMatches =
       !amountQ || String(Math.round(Number(orderTotal))).includes(amountQ);
     return textMatches && paymentMatches && amountMatches;
@@ -471,7 +475,7 @@ export default function OrdersPage() {
 
   // Stats (computed from all orders, ignoring current filter)
   const totalRevenue = allOrders.reduce(
-    (sum, o) => sum + resolveOrderDisplayTotal(o),
+    (sum, o) => sum + resolveOrderGrossTotal(o),
     0,
   );
   const pendingCount = allOrders.filter((o) => o.status === "pending").length;
@@ -1060,7 +1064,7 @@ export default function OrdersPage() {
                           </span>
                         </div>
                         <span className="text-xl font-bold text-primary">
-                          NT${resolveOrderDisplayTotal(o).toLocaleString()}
+                          NT${resolveOrderDisplayTotal(o)}
                         </span>
                       </div>
                       {/* Row 2: Buyer name (left) + date (right) */}
@@ -1616,15 +1620,15 @@ export default function OrdersPage() {
                               ).toLocaleString()}`}
                               bold
                             />
-                            {Number(o.creditSpent ?? 0) > 0 && (
+                            {hasPositiveMoney(o.creditSpent) && (
                               <DetailRow
                                 label="購物金折抵"
-                                value={`-NT$${Number(o.creditSpent).toLocaleString()}`}
+                                value={`-NT$${formatMoneyForDisplay(o.creditSpent)}`}
                               />
                             )}
                             <DetailRow
                               label="應付現金"
-                              value={`NT$${resolveOrderDisplayTotal(o).toLocaleString()}`}
+                              value={`NT$${formatMoneyForDisplay(o.payableAfterCredit)}`}
                               bold
                             />
                             <DetailRow
@@ -1637,14 +1641,7 @@ export default function OrdersPage() {
                             />
                             <DetailRow
                               label="待收金額"
-                              value={`NT$ ${Number(
-                                o.remainingAmount ??
-                                  Math.max(
-                                    resolveOrderDisplayTotal(o) -
-                                      Number(o.paidAmount ?? 0),
-                                    0,
-                                  ),
-                              ).toLocaleString()}`}
+                              value={`NT$ ${formatMoneyForDisplay(o.remainingAmount)}`}
                             />
                             {o.paymentNote && (
                               <DetailRow
@@ -2025,8 +2022,7 @@ export default function OrdersPage() {
                                       `${item.productName} × ${item.quantity}`,
                                   )
                                   .join("、");
-                                const amount =
-                                  resolveOrderDisplayTotal(o).toLocaleString();
+                                const amount = resolveOrderDisplayTotal(o);
                                 const copyKey = `${o.id}-message-${templateType}`;
                                 return (
                                   <button
@@ -2419,8 +2415,8 @@ export default function OrdersPage() {
             </AlertDialogTitle>
             <AlertDialogDescription>
               {statusConfirm?.kind === "cancel"
-                ? Number(statusConfirm.creditSpent ?? 0) > 0
-                  ? `確定要取消這筆訂單嗎？本單將自動退回 ${Number(statusConfirm.creditSpent).toLocaleString("zh-TW", { maximumFractionDigits: 12 })} 元購物金。取消後仍可由後台重新改回其他狀態。`
+                ? hasPositiveMoney(statusConfirm.creditSpent)
+                  ? `確定要取消這筆訂單嗎？本單將自動退回 ${formatMoneyForDisplay(statusConfirm.creditSpent)} 元購物金。取消後仍可由後台重新改回其他狀態。`
                   : "確定要取消這筆訂單嗎？取消後仍可由後台重新改回其他狀態，但此操作可能影響後續處理。"
                 : statusConfirm
                   ? `此訂單目前為「${STATUS_LABELS[statusConfirm.fromStatus] ?? statusConfirm.fromStatus}」，確定要改回「${STATUS_LABELS[statusConfirm.toStatus] ?? statusConfirm.toStatus}」嗎？這會復原一筆已結束的訂單。`

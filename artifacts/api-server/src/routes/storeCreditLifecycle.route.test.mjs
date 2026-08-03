@@ -136,8 +136,8 @@ if (!process.env.DATABASE_URL) {
       creditSpent: "220",
     });
     assert.equal(created.status, 201);
-    assert.equal(created.data.creditSpent, 220);
-    assert.equal(created.data.payableAfterCredit, 0);
+    assert.equal(created.data.creditSpent, "220.000000000000");
+    assert.equal(created.data.payableAfterCredit, "0.000000000000");
 
     const [beforeCancellation] = await db
       .select()

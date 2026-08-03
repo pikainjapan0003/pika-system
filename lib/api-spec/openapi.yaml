@@ -1338,7 +1338,10 @@ components:
           pickupMethod,
           quantity,
           totalPrice,
+          creditSpent,
+          payableAfterCredit,
           status,
+          remainingAmount,
           createdAt,
         ]
       properties:
@@ -1372,8 +1375,15 @@ components:
           type: number
         orderTotal:
           type: number
+        creditSpent:
+          type: string
+          pattern: "^-?\\d+(?:\\.\\d+)?$"
+        payableAfterCredit:
+          type: string
+          pattern: "^-?\\d+(?:\\.\\d+)?$"
         remainingAmount:
-          type: number
+          type: string
+          pattern: "^-?\\d+(?:\\.\\d+)?$"
         discountAmount:
           type: integer
         discountNote:

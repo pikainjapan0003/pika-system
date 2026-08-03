@@ -1,3 +1,5 @@
+import { formatMoneyForDisplay } from "./moneyPreview";
+
 interface DisplayOrderAmount {
   payableAfterCredit?: number | string | null;
   orderTotal?: number | string | null;
@@ -5,12 +7,17 @@ interface DisplayOrderAmount {
   shippingFee?: number | string | null;
 }
 
-/** Existing order-list display fallback, shared without changing write-time totals. */
-export function resolveOrderDisplayTotal(order: DisplayOrderAmount): number {
-  if (order.payableAfterCredit != null) {
-    return Number(order.payableAfterCredit);
-  }
+/** Gross total used by existing list statistics without reading exact credit fields. */
+export function resolveOrderGrossTotal(order: DisplayOrderAmount): number {
   return order.orderTotal == null
     ? Number(order.totalPrice ?? 0) + Number(order.shippingFee ?? 0)
     : Number(order.orderTotal);
+}
+
+/** Formats the frozen payable at the final display boundary without number coercion. */
+export function resolveOrderDisplayTotal(order: DisplayOrderAmount): string {
+  if (order.payableAfterCredit != null) {
+    return formatMoneyForDisplay(order.payableAfterCredit);
+  }
+  return formatMoneyForDisplay(resolveOrderGrossTotal(order));
 }

@@ -58,6 +58,16 @@ function formatExactTwd(value: ExactDecimal): string {
   return `${sign}${groupedInteger}${trimmedFraction ? `.${trimmedFraction}` : ""}`;
 }
 
+/** Formats an API decimal string for display without converting it to number. */
+export function formatMoneyForDisplay(value: MoneyPreviewInput): string {
+  return formatExactTwd(parseNonNegativeMoney(value));
+}
+
+/** Checks a non-negative API decimal without number coercion or arithmetic. */
+export function hasPositiveMoney(value: MoneyPreviewInput): boolean {
+  return !parseNonNegativeMoney(value).equals(ExactDecimal.zero());
+}
+
 /**
  * Display-only money preview. All accumulation stays in ExactDecimal and is
  * rounded half-up only at the final two-decimal display boundary.
