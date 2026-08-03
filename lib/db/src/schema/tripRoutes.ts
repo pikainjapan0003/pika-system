@@ -19,6 +19,8 @@ export const tripRoutesTable = pgTable(
   "trip_routes",
   {
     id: serial("id").primaryKey(),
+    // Nullable until the production backfill has been reviewed and applied.
+    storeId: integer("store_id"),
     tripId: integer("trip_id")
       .notNull()
       .references(() => tripsTable.id, { onDelete: "cascade" }),
@@ -71,6 +73,7 @@ export const tripRoutesTable = pgTable(
       .$onUpdate(() => new Date()),
   },
   (t) => [
+    index("trip_routes_store_id_idx").on(t.storeId),
     index("trip_routes_trip_id_idx").on(t.tripId),
     unique("trip_routes_trip_id_area_title_unique").on(t.tripId, t.areaTitle),
     check("trip_routes_est_qty_positive", sql`${t.estQty} > 0`),
