@@ -7,6 +7,7 @@ export interface CvsStore {
 }
 
 export const SEVEN_ELEVEN_PICKUP_METHODS = [
+  "7-11 賣貨便",
   "7-11 貨到付款",
   "7-11 取貨（先付款）",
 ] as const;
@@ -18,7 +19,7 @@ export const FAMILY_MART_PICKUP_METHODS = [
 ] as const;
 export type FamilyMartMethod = (typeof FAMILY_MART_PICKUP_METHODS)[number];
 
-export { PICKUP_METHOD_SHIPPING_FEE };
+export { MAIHUOBIAN_PICKUP_METHOD, PICKUP_METHOD_SHIPPING_FEE };
 
 export function isSevenElevenMethod(method: string): boolean {
   return SEVEN_ELEVEN_PICKUP_METHODS.includes(method as SevenElevenMethod);
@@ -166,5 +167,6 @@ export function openOfficialEmap(): void {
 }
 import {
   getShippingFee,
+  MAIHUOBIAN_PICKUP_METHOD,
   PICKUP_METHOD_SHIPPING_FEE,
 } from "@workspace/shipping";

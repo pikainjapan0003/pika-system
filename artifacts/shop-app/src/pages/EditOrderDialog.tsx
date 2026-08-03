@@ -31,6 +31,7 @@ import { calculateMoneyPreview } from "@/lib/moneyPreview";
 
 const PICKUP_METHOD_OPTIONS = [
   { value: "自取", label: "自取" },
+  { value: "7-11 賣貨便", label: "7-11 賣貨便" },
   { value: "7-11 取貨（先付款）", label: "7-11 取貨（先付款）" },
   { value: "7-11 貨到付款", label: "7-11 貨到付款" },
   { value: "全家取貨（先付款）", label: "全家取貨（先付款）" },
@@ -108,6 +109,7 @@ const SHIPPING_CARD_OPTIONS: Array<{
   sub?: string;
 }> = [
   { value: "自取", label: "面交 / 自取" },
+  { value: "7-11 賣貨便", label: "7-11", sub: "賣貨便" },
   { value: "7-11 取貨（先付款）", label: "7-11", sub: "取貨（先付款）" },
   { value: "7-11 貨到付款", label: "7-11", sub: "貨到付款" },
   { value: "全家取貨（先付款）", label: "全家", sub: "取貨（先付款）" },
