@@ -121,3 +121,9 @@ controlled writer 可能把 `shipment_trackings.tracking_status`、`latest_event
 6. 對上述每項補反證測試：舊 payload 漂移、跨店 id、inactive row、job 中途 DB error、51 events、同時兩請求。
 
 在六項全部完成且測試／拋棄式 DB 演練通過前，`TRACKING_WORKER_WRITE_ENABLED` 必須保持未設或非 `true`，不得建立 Phase 2 Replit 排程。
+
+## BATCH-22 包11補強結果（2026-08-03）
+
+Commit `1cc6947` 已完成核心寫入鏈補強：preview token 綁定訂單 id 與 payload digest、commit 前不再第三次抓取、交易內以店鋪／訂單／provider／貨態碼／啟用狀態精確鎖定、snapshot／events／audit 原子寫入、以實際事件數執行 50 筆閘門，並加入 PostgreSQL process lease 與 partial audit。相關 14 條測試全綠，其中 5 條為拋棄式 PostgreSQL 整合測試。
+
+排程入口仍未接上 Phase 2：現有 `/internal/logistics/sync/scheduled` 是 FamilyMart 流程，不能冒充本鏈。包12已把安全啟用步驟寫成操作指南；包13因此依規 skipped。在另包完成專用 route 接線、route 測試與終審前，禁止設定 `TRACKING_WORKER_WRITE_ENABLED=true` 或建立排程。

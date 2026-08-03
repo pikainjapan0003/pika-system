@@ -76,3 +76,7 @@
 - API route 測試逐鍵確認精確欄是字串，且不得由 `Number()`／`parseFloat()` 再轉回。
 - OpenAPI 先改來源檔，再依既有產生流程更新 client；禁止手改 generated。
 - 前端只在最終顯示邊界轉換格式，排序與加總使用 decimal 字串純函式。
+
+## BATCH-22 實作結果（2026-08-03）
+
+Commit `2024ce5` 依核准的最小範圍選項 B，只把 `creditSpent`、`payableAfterCredit`、`remainingAmount` 收斂為 decimal 字串。其他既有金額欄位與計算公式均未變更；route 與 component 測試已覆蓋一般值、`null` 與精確小數字串。
