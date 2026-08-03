@@ -3,6 +3,7 @@ import {
   type MaihuobianValidatedRow,
   type MaihuobianValidationError,
 } from "@workspace/db/maihuobian";
+import { MAIHUOBIAN_PICKUP_METHOD } from "@workspace/shipping";
 import { MAIHUOBIAN_IMPORT_HEADERS } from "./maihuobianXlsm.ts";
 
 const MAX_MAIHUOBIAN_EXPORT_ROWS = 500;
@@ -135,12 +136,7 @@ function formatProductPart(item: {
 }
 
 function isSevenElevenPickup(value: string): boolean {
-  const normalized = value.trim().toLowerCase();
-  return (
-    normalized.startsWith("7-11") ||
-    normalized.includes("711") ||
-    normalized.includes("統一超商")
-  );
+  return value.trim() === MAIHUOBIAN_PICKUP_METHOD;
 }
 
 function parseTaipeiBoundary(value: string, nextDay: boolean): Date {
@@ -213,7 +209,7 @@ export function buildMaihuobianExportPreview(
     if (!isSevenElevenPickup(order.pickupMethod)) {
       reasons.push({
         code: "PICKUP_METHOD_INELIGIBLE",
-        message: "僅 7-11 取貨訂單可匯出",
+        message: "僅 7-11 賣貨便訂單可匯出",
       });
     }
 
