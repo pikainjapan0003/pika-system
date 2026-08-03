@@ -28,7 +28,7 @@ export default defineConfig({
   testMatch: [
     "smoke.spec.mjs",
     "customer-navigation.spec.mjs",
-    "pending/*.spec.mjs",
+    "suite/*.spec.mjs",
   ],
   timeout: 30_000,
   fullyParallel: false,

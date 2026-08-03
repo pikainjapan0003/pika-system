@@ -13,7 +13,7 @@ const ciOnlyWebServer = process.env.CI
   : undefined;
 
 export default defineConfig({
-  testDir: "./pending",
+  testDir: "./suite",
   testMatch: ["*.spec.mjs"],
   timeout: 30_000,
   fullyParallel: false,
