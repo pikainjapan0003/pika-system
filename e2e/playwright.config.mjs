@@ -25,7 +25,11 @@ const ciOnlyWebServers = process.env.CI
 
 export default defineConfig({
   testDir: ".",
-  testMatch: ["smoke.spec.mjs", "customer-navigation.spec.mjs"],
+  testMatch: [
+    "smoke.spec.mjs",
+    "customer-navigation.spec.mjs",
+    "pending/*.spec.mjs",
+  ],
   timeout: 30_000,
   fullyParallel: false,
   retries: 0,

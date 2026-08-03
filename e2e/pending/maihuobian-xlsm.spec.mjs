@@ -1,10 +1,3 @@
-/**
- * UNVERIFIED-PENDING-CI
- *
- * This pending contract test stays outside the main Playwright testMatch until
- * the owner runs the Pending E2E workflow on Linux. It protects the XLSM
- * download contract without changing the production route or CI selection.
- */
 import { expect, test } from "@playwright/test";
 
 import { installClerkStub } from "../clerkStub.mjs";
