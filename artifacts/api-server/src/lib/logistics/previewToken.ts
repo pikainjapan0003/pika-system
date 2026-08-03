@@ -19,6 +19,8 @@ export interface PreviewTokenPayload {
   v: 1;
   purpose: "manual-provider-commit";
   storeId: number;
+  /** Phase 2 only: binds the preview to the owner-scoped order. */
+  orderId?: number;
   trackingId: number;
   provider: string;
   trackingCode: string;
@@ -26,6 +28,8 @@ export interface PreviewTokenPayload {
   latestEventAt: string | null;
   expectedEventCount: number;
   normalizedStatus: string | null;
+  /** Phase 2 only: digest of the immutable, verified write payload. */
+  payloadDigest?: string;
   expiresAt: string;
 }
 

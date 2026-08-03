@@ -9,6 +9,7 @@ import {
 
 const job = (overrides = {}) => ({
   storeId: 7,
+  orderId: 21,
   trackingId: 11,
   provider: "postoffice",
   trackingCode: "FAKE-CODE-DO-NOT-LOG",
@@ -21,6 +22,30 @@ const preview = (overrides = {}) => ({
   latestStatusText: "in transit",
   latestEventAt: "2026-07-17T00:00:00.000Z",
   normalizedStatus: "in_transit",
+  payloadDigest: "payload-digest",
+  payload: {
+    normalizedStatus: "in_transit",
+    latestStatusText: "in transit",
+    latestEventAt: "2026-07-17T00:00:00.000Z",
+    events: [
+      {
+        eventStatus: "in_transit",
+        eventDescription: "in transit",
+        eventLocation: null,
+        occurredAt: "2026-07-17T00:00:00.000Z",
+        rawData: {},
+        idempotencyKey: "opaque-event-key-1",
+      },
+      {
+        eventStatus: "in_transit",
+        eventDescription: "in transit",
+        eventLocation: null,
+        occurredAt: "2026-07-17T00:01:00.000Z",
+        rawData: {},
+        idempotencyKey: "opaque-event-key-2",
+      },
+    ],
+  },
   ...overrides,
 });
 
@@ -76,7 +101,10 @@ test("preview drift aborts the full batch before any commit", async () => {
     reason: "PREVIEW_DRIFT",
   });
   assert.equal(commits, 0);
-  assert.equal(audits[0].action, "tracking_write_aborted");
+  assert.deepEqual(
+    audits.map((row) => row.action),
+    ["tracking_write_started", "tracking_write_aborted"],
+  );
   assert.equal(JSON.stringify(audits).includes("FAKE-CODE-DO-NOT-LOG"), false);
   assert.equal(JSON.stringify(audits).includes("opaque-preview-token"), false);
 });
@@ -142,8 +170,13 @@ test("all hashes and re-previews are validated before single-job commits", async
     insertedEventCount: 4,
   });
   assert.deepEqual(
-    audits.map((row) => row.storeId),
-    [7, 8],
+    audits.map((row) => row.action),
+    [
+      "tracking_write_started",
+      "tracking_write_started",
+      "tracking_write_finished",
+      "tracking_write_finished",
+    ],
   );
 });
 
@@ -172,8 +205,8 @@ test("a later commit failure preserves completed job audit and marks the run par
     {
       storeId: 7,
       actor: "tracking-worker",
-      action: "tracking_write_completed",
-      target: "tracking-run:opaque-run-id:job-1-of-2:inserted-2",
+      action: "tracking_write_started",
+      target: "tracking-run:opaque-run-id:status-started:jobs-2",
     },
     {
       storeId: 7,
@@ -185,4 +218,29 @@ test("a later commit failure preserves completed job audit and marks the run par
   ]);
   assert.equal(JSON.stringify(audits).includes("FAKE-CODE-DO-NOT-LOG"), false);
   assert.equal(JSON.stringify(audits).includes("opaque-preview-token"), false);
+});
+
+test("a provider preview failure leaves a run-level partial audit", async () => {
+  const audits = [];
+
+  await assert.rejects(
+    runTrackingWorkerPhase2(
+      [job()],
+      baseDeps({
+        preview: async () => {
+          throw new Error("synthetic provider failure");
+        },
+        recordAudit: async (row) => audits.push(row),
+      }),
+      "true",
+    ),
+    /synthetic provider failure/,
+  );
+
+  assert.deepEqual(
+    audits.map((row) => row.action),
+    ["tracking_write_started", "tracking_write_partial"],
+  );
+  assert.equal(audits[1].target.includes("completed-0"), true);
+  assert.equal(JSON.stringify(audits).includes("FAKE-CODE-DO-NOT-LOG"), false);
 });
