@@ -11,7 +11,8 @@
     "./maihuobian": "./src/maihuobian/validateMaihuobianRow.ts",
     "./skill-map": "./src/skills/skillState.ts",
     "./store-credit": "./src/store-credit/index.ts",
-    "./operating-settings": "./src/operating-settings/index.ts"
+    "./operating-settings": "./src/operating-settings/index.ts",
+    "./operating-cost": "./src/operating-cost/index.ts"
   },
   "scripts": {
     "push": "drizzle-kit push --config ./drizzle.config.ts",
