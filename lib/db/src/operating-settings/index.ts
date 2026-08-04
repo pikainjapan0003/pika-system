@@ -4,6 +4,12 @@ import {
 } from "../schema/operatingSettings.ts";
 import { ExactDecimal } from "../transport-cost/index.ts";
 
+export {
+  DEFAULT_REFERENCE_DAILY_WAGE,
+  OPERATING_SETTINGS_SINGLETON_ID,
+  PAYMENT_FEE_RATE,
+} from "../schema/operatingSettings.ts";
+
 export interface OperatingSettingsRecord {
   id: number;
   reference_daily_wage: string;
