@@ -6,3 +6,4 @@ export * from "./hepCost.ts";
 export * from "./hepRates.ts";
 export * from "./routeCost.ts";
 export * from "./tripProfit.ts";
+export * from "./variance.ts";
