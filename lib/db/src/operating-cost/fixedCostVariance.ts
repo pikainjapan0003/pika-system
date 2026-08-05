@@ -1,4 +1,9 @@
 import { ExactDecimal, type DecimalInput } from "../transport-cost/index.ts";
+import {
+  isMissingDecimal,
+  pendingOperatingCost,
+  type PendingOperatingCost,
+} from "./exact.ts";
 import { calculateVariance, type ReadyVariance } from "./variance.ts";
 
 export interface FixedCostVarianceEntry {
@@ -24,6 +29,15 @@ export interface FixedCostVarianceRow {
   variance: ReadyVariance | null;
 }
 
+export interface ReadyFixedCostVariance {
+  status: "ready";
+  rows: FixedCostVarianceRow[];
+}
+
+export type FixedCostVarianceResult =
+  | ReadyFixedCostVariance
+  | PendingOperatingCost;
+
 function entryKey(entry: FixedCostVarianceEntry): string {
   return entry.categoryId !== null && entry.categoryId !== undefined
     ? `category:${entry.categoryId}`
@@ -36,53 +50,65 @@ function entryLabel(entry: FixedCostVarianceEntry): string {
 
 function amountTwd(
   entry: FixedCostVarianceEntry,
-  exchangeRates: FixedCostExchangeRates,
+  exchangeRate: DecimalInput,
 ): ExactDecimal {
   const amount = ExactDecimal.from(entry.originalAmount as Exclude<DecimalInput, null | undefined>);
-  const splitExchangeRates =
-    typeof exchangeRates === "object" && exchangeRates !== null
-      ? exchangeRates
-      : null;
-  const exchangeRate =
-    splitExchangeRates !== null
-      ? entry.mode === "ESTIMATE"
-        ? splitExchangeRates.estimated
-        : splitExchangeRates.actual
-      : exchangeRates;
-  return entry.currency === "JPY"
-    ? amount.multiply(ExactDecimal.from(exchangeRate as Exclude<DecimalInput, null | undefined>))
-    : amount;
+  if (entry.currency === "TWD") return amount;
+  if (isMissingDecimal(exchangeRate)) {
+    throw new Error("fixed-cost exchange-rate invariant failed");
+  }
+  return amount.multiply(ExactDecimal.from(exchangeRate));
 }
 
 export function compareFixedCostEntries(
   estimated: readonly FixedCostVarianceEntry[],
   actual: readonly FixedCostVarianceEntry[],
   exchangeRates: FixedCostExchangeRates,
-): FixedCostVarianceRow[] {
+): FixedCostVarianceResult {
+  let estimatedExchangeRate: DecimalInput;
+  let actualExchangeRate: DecimalInput;
+  if (typeof exchangeRates === "object" && exchangeRates !== null) {
+    estimatedExchangeRate = exchangeRates.estimated;
+    actualExchangeRate = exchangeRates.actual;
+  } else {
+    estimatedExchangeRate = exchangeRates;
+    actualExchangeRate = exchangeRates;
+  }
+  const activeEstimated = estimated.filter((entry) => entry.status !== "VOID");
+  const activeActual = actual.filter((entry) => entry.status !== "VOID");
+  if (
+    (activeEstimated.some((entry) => entry.currency === "JPY") &&
+      isMissingDecimal(estimatedExchangeRate)) ||
+    (activeActual.some((entry) => entry.currency === "JPY") &&
+      isMissingDecimal(actualExchangeRate))
+  ) {
+    return pendingOperatingCost("缺少匯率");
+  }
+
   const estimatedMap = new Map<string, { label: string; amount: ExactDecimal }>();
   const actualMap = new Map<string, { label: string; amount: ExactDecimal }>();
-  for (const entry of estimated) {
-    if (entry.status === "VOID") continue;
+  for (const entry of activeEstimated) {
     const key = entryKey(entry);
     const existing = estimatedMap.get(key);
-    const amount = amountTwd(entry, exchangeRates);
+    const amount = amountTwd(entry, estimatedExchangeRate);
     estimatedMap.set(key, {
       label: existing?.label ?? entryLabel(entry),
       amount: (existing?.amount ?? ExactDecimal.zero()).add(amount),
     });
   }
-  for (const entry of actual) {
-    if (entry.status === "VOID") continue;
+  for (const entry of activeActual) {
     const key = entryKey(entry);
     const existing = actualMap.get(key);
-    const amount = amountTwd(entry, exchangeRates);
+    const amount = amountTwd(entry, actualExchangeRate);
     actualMap.set(key, {
       label: existing?.label ?? entryLabel(entry),
       amount: (existing?.amount ?? ExactDecimal.zero()).add(amount),
     });
   }
   const keys = new Set([...estimatedMap.keys(), ...actualMap.keys()]);
-  return [...keys].map((key) => {
+  return {
+    status: "ready",
+    rows: [...keys].map((key) => {
     const estimate = estimatedMap.get(key);
     const actualValue = actualMap.get(key);
     if (!estimate) {
@@ -121,5 +147,6 @@ export function compareFixedCostEntries(
       state: "matched",
       variance: variance.status === "ready" ? variance : null,
     };
-  });
+    }),
+  };
 }
