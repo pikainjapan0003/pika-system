@@ -67,12 +67,16 @@ export function calculateBreakeven(input: BreakevenInput): BreakevenResult {
     costBase.add(paymentFeeTwd),
     rebate,
   );
-  const breakevenQuantity = ceilDecimal(
+  const rawBreakevenQuantity = ceilDecimal(
     netCostToRecoverTwd.divide(unitGrossProfit),
   );
-  const salaryTargetQuantity = ceilDecimal(
+  const rawSalaryTargetQuantity = ceilDecimal(
     netCostToRecoverTwd.add(salaryTarget).divide(unitGrossProfit),
   );
+  const breakevenQuantity =
+    rawBreakevenQuantity < 0n ? 0n : rawBreakevenQuantity;
+  const salaryTargetQuantity =
+    rawSalaryTargetQuantity < 0n ? 0n : rawSalaryTargetQuantity;
 
   return {
     status: "ready",
@@ -80,6 +84,6 @@ export function calculateBreakeven(input: BreakevenInput): BreakevenResult {
     netCostToRecoverTwd,
     breakevenQuantity,
     salaryTargetQuantity,
-    conclusion: `以單件毛利 ${unitGrossProfit.toDecimalPlaces(0)} 元計，至少需賣 ${breakevenQuantity} 件回本；達日薪目標需 ${salaryTargetQuantity} 件。`,
+    conclusion: `以單件毛利 ${unitGrossProfit.toDecimalPlaces(2)} 元計，至少需賣 ${breakevenQuantity} 件回本；達日薪目標需 ${salaryTargetQuantity} 件。`,
   };
 }
