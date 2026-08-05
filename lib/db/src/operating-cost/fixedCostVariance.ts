@@ -52,7 +52,9 @@ function amountTwd(
   entry: FixedCostVarianceEntry,
   exchangeRate: DecimalInput,
 ): ExactDecimal {
-  const amount = ExactDecimal.from(entry.originalAmount as Exclude<DecimalInput, null | undefined>);
+  const amount = ExactDecimal.from(
+    entry.originalAmount as Exclude<DecimalInput, null | undefined>,
+  );
   if (entry.currency === "TWD") return amount;
   if (isMissingDecimal(exchangeRate)) {
     throw new Error("fixed-cost exchange-rate invariant failed");
@@ -85,7 +87,10 @@ export function compareFixedCostEntries(
     return pendingOperatingCost("缺少匯率");
   }
 
-  const estimatedMap = new Map<string, { label: string; amount: ExactDecimal }>();
+  const estimatedMap = new Map<
+    string,
+    { label: string; amount: ExactDecimal }
+  >();
   const actualMap = new Map<string, { label: string; amount: ExactDecimal }>();
   for (const entry of activeEstimated) {
     const key = entryKey(entry);
@@ -109,44 +114,44 @@ export function compareFixedCostEntries(
   return {
     status: "ready",
     rows: [...keys].map((key) => {
-    const estimate = estimatedMap.get(key);
-    const actualValue = actualMap.get(key);
-    if (!estimate) {
-      if (!actualValue) {
-        throw new Error(`fixed-cost variance invariant failed for ${key}`);
+      const estimate = estimatedMap.get(key);
+      const actualValue = actualMap.get(key);
+      if (!estimate) {
+        if (!actualValue) {
+          throw new Error(`fixed-cost variance invariant failed for ${key}`);
+        }
+        return {
+          key,
+          label: actualValue.label,
+          estimatedTwd: null,
+          actualTwd: actualValue.amount,
+          state: "預算外",
+          variance: null,
+        };
       }
-      return {
-        key,
-        label: actualValue.label,
-        estimatedTwd: null,
-        actualTwd: actualValue.amount,
-        state: "預算外",
-        variance: null,
-      };
-    }
-    if (!actualValue) {
+      if (!actualValue) {
+        return {
+          key,
+          label: estimate.label,
+          estimatedTwd: estimate.amount,
+          actualTwd: null,
+          state: "未發生",
+          variance: null,
+        };
+      }
+      const variance = calculateVariance({
+        estimated: estimate.amount.toDecimalPlaces(12),
+        actual: actualValue.amount.toDecimalPlaces(12),
+        metricKind: "cost",
+      });
       return {
         key,
         label: estimate.label,
         estimatedTwd: estimate.amount,
-        actualTwd: null,
-        state: "未發生",
-        variance: null,
+        actualTwd: actualValue.amount,
+        state: "matched",
+        variance: variance.status === "ready" ? variance : null,
       };
-    }
-    const variance = calculateVariance({
-      estimated: estimate.amount.toDecimalPlaces(12),
-      actual: actualValue.amount.toDecimalPlaces(12),
-      metricKind: "cost",
-    });
-    return {
-      key,
-      label: estimate.label,
-      estimatedTwd: estimate.amount,
-      actualTwd: actualValue.amount,
-      state: "matched",
-      variance: variance.status === "ready" ? variance : null,
-    };
     }),
   };
 }

@@ -35,9 +35,12 @@ export const costEntriesTable = pgTable(
       .notNull()
       .references(() => tripsTable.id, { onDelete: "cascade" }),
     mode: text("mode").$type<CostEntryMode>().notNull(),
-    categoryId: integer("category_id").references(() => costCategoriesTable.id, {
-      onDelete: "restrict",
-    }),
+    categoryId: integer("category_id").references(
+      () => costCategoriesTable.id,
+      {
+        onDelete: "restrict",
+      },
+    ),
     customLabel: text("custom_label"),
     currency: text("currency").$type<CostEntryCurrency>().notNull(),
     originalAmount: numeric("original_amount", {
@@ -64,18 +67,9 @@ export const costEntriesTable = pgTable(
       .where(
         sql`${t.mode} = 'ESTIMATE' AND ${t.status} = 'ACTIVE' AND ${t.categoryId} IS NOT NULL`,
       ),
-    check(
-      "cost_entries_mode_valid",
-      sql`${t.mode} IN ('ESTIMATE', 'ACTUAL')`,
-    ),
-    check(
-      "cost_entries_currency_valid",
-      sql`${t.currency} IN ('JPY', 'TWD')`,
-    ),
-    check(
-      "cost_entries_status_valid",
-      sql`${t.status} IN ('ACTIVE', 'VOID')`,
-    ),
+    check("cost_entries_mode_valid", sql`${t.mode} IN ('ESTIMATE', 'ACTUAL')`),
+    check("cost_entries_currency_valid", sql`${t.currency} IN ('JPY', 'TWD')`),
+    check("cost_entries_status_valid", sql`${t.status} IN ('ACTIVE', 'VOID')`),
     check("cost_entries_amount_non_negative", sql`${t.originalAmount} >= 0`),
     check(
       "cost_entries_category_or_custom_label",

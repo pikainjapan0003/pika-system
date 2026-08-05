@@ -23,7 +23,8 @@ function parseDate(value: unknown): string | null | undefined {
 function parsePositiveInteger(value: unknown): number | null | undefined {
   if (value === undefined) return undefined;
   if (value === null || value === "") return null;
-  if (typeof value === "number" && Number.isSafeInteger(value) && value > 0) return value;
+  if (typeof value === "number" && Number.isSafeInteger(value) && value > 0)
+    return value;
   if (typeof value === "string" && /^\d+$/.test(value)) {
     const parsed = Number(value);
     return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : undefined;
@@ -56,7 +57,9 @@ router.patch(
     const hepDays = parseHepDays(body.hepDays);
     const hepTotalJpy = nullableDecimal(body.hepTotalJpy);
     const creditCardRebateTwd = nullableDecimal(body.creditCardRebateTwd);
-    const freeShippingDiscountTwd = nullableDecimal(body.freeShippingDiscountTwd);
+    const freeShippingDiscountTwd = nullableDecimal(
+      body.freeShippingDiscountTwd,
+    );
     const bulkDiscountTwd = nullableDecimal(body.bulkDiscountTwd);
     const cardDiscountTwd = nullableDecimal(body.cardDiscountTwd);
 
@@ -64,12 +67,15 @@ router.patch(
       (body.startDate !== undefined && startDate === undefined) ||
       (body.endDate !== undefined && endDate === undefined) ||
       (body.workingDays !== undefined && workingDays === undefined) ||
-      (body.actualExchangeRate !== undefined && actualExchangeRate === undefined) ||
+      (body.actualExchangeRate !== undefined &&
+        actualExchangeRate === undefined) ||
       (body.exchangeRate !== undefined && exchangeRate === undefined) ||
       (body.hepDays !== undefined && hepDays === undefined) ||
       (body.hepTotalJpy !== undefined && hepTotalJpy === undefined) ||
-      (body.creditCardRebateTwd !== undefined && creditCardRebateTwd === undefined) ||
-      (body.freeShippingDiscountTwd !== undefined && freeShippingDiscountTwd === undefined) ||
+      (body.creditCardRebateTwd !== undefined &&
+        creditCardRebateTwd === undefined) ||
+      (body.freeShippingDiscountTwd !== undefined &&
+        freeShippingDiscountTwd === undefined) ||
       (body.bulkDiscountTwd !== undefined && bulkDiscountTwd === undefined) ||
       (body.cardDiscountTwd !== undefined && cardDiscountTwd === undefined)
     ) {
@@ -92,12 +98,18 @@ router.patch(
     ] as const) {
       if (body[key] !== undefined) update[key] = value;
     }
-    if (Object.keys(update).length === 0) return res.status(400).json({ error: "No operating input provided" });
+    if (Object.keys(update).length === 0)
+      return res.status(400).json({ error: "No operating input provided" });
 
     const [updated] = await db
       .update(tripsTable)
       .set(update)
-      .where(and(eq(tripsTable.id, access.tripId), eq(tripsTable.storeId, access.storeId)))
+      .where(
+        and(
+          eq(tripsTable.id, access.tripId),
+          eq(tripsTable.storeId, access.storeId),
+        ),
+      )
       .returning();
     return res.json(updated);
   },
@@ -113,7 +125,12 @@ router.post(
     const [updated] = await db
       .update(tripsTable)
       .set({ status: "CLOSED", estimateLocked: true })
-      .where(and(eq(tripsTable.id, access.tripId), eq(tripsTable.storeId, access.storeId)))
+      .where(
+        and(
+          eq(tripsTable.id, access.tripId),
+          eq(tripsTable.storeId, access.storeId),
+        ),
+      )
       .returning();
     return res.json(updated);
   },
@@ -129,7 +146,12 @@ router.post(
     const [updated] = await db
       .update(tripsTable)
       .set({ estimateLocked: false, estimateModifiedAfterLock: true })
-      .where(and(eq(tripsTable.id, access.tripId), eq(tripsTable.storeId, access.storeId)))
+      .where(
+        and(
+          eq(tripsTable.id, access.tripId),
+          eq(tripsTable.storeId, access.storeId),
+        ),
+      )
       .returning();
     return res.json(updated);
   },
