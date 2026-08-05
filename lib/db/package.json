@@ -17,6 +17,7 @@
   "scripts": {
     "push": "drizzle-kit push --config ./drizzle.config.ts",
     "push-force": "drizzle-kit push --force --config ./drizzle.config.ts",
+    "seed-fixed-cost-defaults": "node src/seedFixedCostDefaults.ts",
     "seed": "tsx src/seed.ts"
   },
   "dependencies": {
