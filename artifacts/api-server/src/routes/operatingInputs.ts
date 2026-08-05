@@ -121,10 +121,16 @@ router.post(
   async (req: any, res) => {
     const access = await loadTrip(req, res);
     if (!access) return;
-    if (access.trip.status === "CLOSED") return res.json(access.trip);
+    if (access.trip.status === "CLOSED" && access.trip.estimateLocked) {
+      return res.json(access.trip);
+    }
+    const update =
+      access.trip.status === "CLOSED"
+        ? { estimateLocked: true }
+        : { status: "CLOSED" as const, estimateLocked: true };
     const [updated] = await db
       .update(tripsTable)
-      .set({ status: "CLOSED", estimateLocked: true })
+      .set(update)
       .where(
         and(
           eq(tripsTable.id, access.tripId),

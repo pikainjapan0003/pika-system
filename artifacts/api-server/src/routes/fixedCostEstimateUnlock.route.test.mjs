@@ -176,9 +176,25 @@ if (!process.env.DATABASE_URL) {
       .where(and(eq(tripsTable.id, tripId), eq(tripsTable.storeId, storeId)));
     assert.equal(storedTrip.estimateLocked, false);
     assert.equal(storedTrip.estimateModifiedAfterLock, true);
+
+    const relock = await request(
+      "POST",
+      `/stores/${storeId}/trips/${tripId}/close`,
+    );
+    assert.equal(relock.status, 200);
+    assert.equal(relock.data.estimateLocked, true);
+    assert.equal(relock.data.estimateModifiedAfterLock, true);
   });
 
   test("PATCH cannot change an existing cost entry mode", async () => {
+    const unlock = await request(
+      "POST",
+      `/stores/${storeId}/trips/${tripId}/unlock-estimate`,
+    );
+    assert.equal(unlock.status, 200);
+    assert.equal(unlock.data.estimateLocked, false);
+    assert.equal(unlock.data.estimateModifiedAfterLock, true);
+
     const response = await request(
       "PATCH",
       `/stores/${storeId}/trips/${tripId}/cost-entries/${entryId}`,
