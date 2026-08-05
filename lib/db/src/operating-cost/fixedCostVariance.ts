@@ -11,6 +11,10 @@ export interface FixedCostVarianceEntry {
   status?: "ACTIVE" | "VOID";
 }
 
+export type FixedCostExchangeRates =
+  | DecimalInput
+  | { estimated?: DecimalInput; actual?: DecimalInput };
+
 export interface FixedCostVarianceRow {
   key: string;
   label: string;
@@ -30,8 +34,17 @@ function entryLabel(entry: FixedCostVarianceEntry): string {
   return entry.categoryName ?? entry.customLabel ?? "其他成本";
 }
 
-function amountTwd(entry: FixedCostVarianceEntry, exchangeRate: DecimalInput): ExactDecimal {
+function amountTwd(
+  entry: FixedCostVarianceEntry,
+  exchangeRates: FixedCostExchangeRates,
+): ExactDecimal {
   const amount = ExactDecimal.from(entry.originalAmount as Exclude<DecimalInput, null | undefined>);
+  const exchangeRate =
+    typeof exchangeRates === "object"
+      ? entry.mode === "ESTIMATE"
+        ? exchangeRates.estimated
+        : exchangeRates.actual
+      : exchangeRates;
   return entry.currency === "JPY"
     ? amount.multiply(ExactDecimal.from(exchangeRate as Exclude<DecimalInput, null | undefined>))
     : amount;
@@ -40,7 +53,7 @@ function amountTwd(entry: FixedCostVarianceEntry, exchangeRate: DecimalInput): E
 export function compareFixedCostEntries(
   estimated: readonly FixedCostVarianceEntry[],
   actual: readonly FixedCostVarianceEntry[],
-  exchangeRate: DecimalInput,
+  exchangeRates: FixedCostExchangeRates,
 ): FixedCostVarianceRow[] {
   const estimatedMap = new Map<string, { label: string; amount: ExactDecimal }>();
   const actualMap = new Map<string, { label: string; amount: ExactDecimal }>();
@@ -48,7 +61,7 @@ export function compareFixedCostEntries(
     if (entry.status === "VOID") continue;
     const key = entryKey(entry);
     const existing = estimatedMap.get(key);
-    const amount = amountTwd(entry, exchangeRate);
+    const amount = amountTwd(entry, exchangeRates);
     estimatedMap.set(key, {
       label: existing?.label ?? entryLabel(entry),
       amount: (existing?.amount ?? ExactDecimal.zero()).add(amount),
@@ -58,7 +71,7 @@ export function compareFixedCostEntries(
     if (entry.status === "VOID") continue;
     const key = entryKey(entry);
     const existing = actualMap.get(key);
-    const amount = amountTwd(entry, exchangeRate);
+    const amount = amountTwd(entry, exchangeRates);
     actualMap.set(key, {
       label: existing?.label ?? entryLabel(entry),
       amount: (existing?.amount ?? ExactDecimal.zero()).add(amount),
