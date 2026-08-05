@@ -57,6 +57,7 @@ import TripsPage from "@/pages/Trips";
 import GuidePage from "@/pages/Guide";
 import TripEstimatePage from "@/pages/TripEstimate";
 import TripActualPage from "@/pages/TripActual";
+import TripComparisonPage from "@/pages/TripComparison";
 import DevHandoffPage from "@/pages/DevHandoff";
 import ProductCategoriesPage from "@/pages/ProductCategories";
 import Cvs711ReturnPage from "@/pages/Cvs711Return";
@@ -427,6 +428,13 @@ function MerchantPortal() {
             </DailySkillPageGate>
           )}
         </Route>
+        <Route path="/trips/:tripId/comparison">
+          {(params) => (
+            <DailySkillPageGate surface="trips">
+              <TripComparisonPage tripId={Number(params.tripId)} />
+            </DailySkillPageGate>
+          )}
+        </Route>
         <Route path="/guide">
           {() => (
             <DailySkillPageGate surface="guide">
@@ -499,6 +507,7 @@ function AppRouter() {
       <Route path="/trips" component={MerchantPortal} />
       <Route path="/trips/:tripId/estimate" component={MerchantPortal} />
       <Route path="/trips/:tripId/actual" component={MerchantPortal} />
+      <Route path="/trips/:tripId/comparison" component={MerchantPortal} />
       <Route path="/guide" component={MerchantPortal} />
       <Route component={NotFoundPage} />
     </Switch>
