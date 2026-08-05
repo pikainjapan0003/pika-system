@@ -26,6 +26,9 @@ export interface TripProfitInput {
   cardDiscountTwd?: DecimalInput;
   purchaseCostTwd?: DecimalInput;
   fixedCostTotalTwd?: DecimalInput;
+  /** New V1 split: JPY-origin costs are the only fixed costs subject to the fee. */
+  fixedCostJpyOriginTwd?: DecimalInput;
+  fixedCostTwdDirectTwd?: DecimalInput;
   variableCostBaseTotalTwd?: DecimalInput;
   creditCardRebateTwd?: DecimalInput;
   workingDays?: QuantityInput;
@@ -44,6 +47,8 @@ export interface ReadyTripProfit {
   operatingProfitBeforeAdjustmentsTwd: ExactDecimal;
   finalOperatingProfitTwd: ExactDecimal;
   salaryTargetTwd: ExactDecimal;
+  fixedCostJpyOriginTwd: ExactDecimal;
+  fixedCostTwdDirectTwd: ExactDecimal;
 }
 
 export type TripProfitResult = ReadyTripProfit | PendingOperatingCost;
@@ -54,23 +59,34 @@ export function calculateTripProfit(input: TripProfitInput): TripProfitResult {
     return pendingOperatingCost("缺少工作天數");
   }
 
+  const splitFixedCost =
+    input.fixedCostJpyOriginTwd !== undefined ||
+    input.fixedCostTwdDirectTwd !== undefined;
+  const fixedCostInputs: Array<[string, DecimalInput]> = splitFixedCost
+    ? [
+        ["fixedCostJpyOriginTwd", input.fixedCostJpyOriginTwd],
+        ["fixedCostTwdDirectTwd", input.fixedCostTwdDirectTwd],
+      ]
+    : [["fixedCostTotalTwd", input.fixedCostTotalTwd]];
   const moneyInputs: Array<[string, DecimalInput]> = [
     ["grossSalesRevenueTwd", input.grossSalesRevenueTwd],
     ["freeShippingDiscountTwd", input.freeShippingDiscountTwd],
     ["bulkDiscountTwd", input.bulkDiscountTwd],
     ["cardDiscountTwd", input.cardDiscountTwd],
     ["purchaseCostTwd", input.purchaseCostTwd],
-    ["fixedCostTotalTwd", input.fixedCostTotalTwd],
     ["variableCostBaseTotalTwd", input.variableCostBaseTotalTwd],
     ["creditCardRebateTwd", input.creditCardRebateTwd],
     ["referenceDailyWageTwd", input.referenceDailyWageTwd],
   ];
-  if (moneyInputs.some(([, value]) => isMissingDecimal(value))) {
+  if (
+    moneyInputs.some(([, value]) => isMissingDecimal(value)) ||
+    fixedCostInputs.some(([, value]) => isMissingDecimal(value))
+  ) {
     return pendingOperatingCost("缺少營運損益資料");
   }
 
   const parsed = Object.fromEntries(
-    moneyInputs.map(([name, value]) => [
+    [...moneyInputs, ...fixedCostInputs].map(([name, value]) => [
       name,
       parseNonNegativeDecimal(
         value as Exclude<DecimalInput, null | undefined>,
@@ -78,6 +94,16 @@ export function calculateTripProfit(input: TripProfitInput): TripProfitResult {
       ),
     ]),
   ) as Record<string, ExactDecimal>;
+
+  const fixedCostJpyOriginTwd = splitFixedCost
+    ? parsed.fixedCostJpyOriginTwd
+    : ExactDecimal.zero();
+  const fixedCostTwdDirectTwd = splitFixedCost
+    ? parsed.fixedCostTwdDirectTwd
+    : parsed.fixedCostTotalTwd;
+  const legacyFixedCostForFee = splitFixedCost
+    ? fixedCostJpyOriginTwd
+    : parsed.fixedCostTotalTwd;
 
   const customerDiscountTotalTwd = parsed.freeShippingDiscountTwd
     .add(parsed.bulkDiscountTwd)
@@ -90,13 +116,16 @@ export function calculateTripProfit(input: TripProfitInput): TripProfitResult {
     adjustedRevenueTwd,
     parsed.purchaseCostTwd,
   );
-  const costBaseTwd = parsed.fixedCostTotalTwd.add(
+  const costBaseTwd = legacyFixedCostForFee.add(
     parsed.variableCostBaseTotalTwd,
   );
   const paymentFeeTwd = costBaseTwd.multiply(
     ExactDecimal.from(PAYMENT_FEE_RATE),
   );
-  const operatingExpenseTwd = costBaseTwd.add(paymentFeeTwd);
+  const operatingExpenseTwd = legacyFixedCostForFee
+    .add(fixedCostTwdDirectTwd)
+    .add(parsed.variableCostBaseTotalTwd)
+    .add(paymentFeeTwd);
   const operatingProfitBeforeAdjustmentsTwd = subtractDecimal(
     grossProfitTwd,
     operatingExpenseTwd,
@@ -127,5 +156,7 @@ export function calculateTripProfit(input: TripProfitInput): TripProfitResult {
     operatingProfitBeforeAdjustmentsTwd,
     finalOperatingProfitTwd,
     salaryTargetTwd,
+    fixedCostJpyOriginTwd,
+    fixedCostTwdDirectTwd,
   };
 }
