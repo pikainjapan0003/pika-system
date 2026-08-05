@@ -54,6 +54,17 @@ test("advanced surfaces fail closed without an enabled state", () => {
   assert.equal(resolveDailySkillSurfaceVisibility("audit-logs", []), false);
 });
 
+test("fixed-cost trip pages stay behind the S-09 gate", () => {
+  assert.equal(DAILY_SKILL_SURFACE_RULES.trips.skillKey, "S-09");
+  assert.equal(
+    resolveDailySkillSurfaceVisibility("trips", [
+      { skillKey: "S-09", enabled: true, configured: true },
+    ]),
+    true,
+  );
+  assert.equal(resolveDailySkillSurfaceVisibility("trips", []), false);
+});
+
 test("an explicit state overrides the rollout default while the map stays visible", () => {
   assert.equal(
     resolveDailySkillSurfaceVisibility("products", [

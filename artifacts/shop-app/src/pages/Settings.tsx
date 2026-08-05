@@ -472,7 +472,7 @@ export default function SettingsPage() {
           <div className="pt-4">
             <ExchangeRateReferenceEntry />
             {skillVisibility.isVisible("customers") && <CustomersEntry />}
-            <TripsEntry />
+            {skillVisibility.isVisible("trips") && <TripsEntry />}
             <SkillMapEntry />
             {skillVisibility.isVisible("audit-logs") && <AuditLogsEntry />}
             {skillVisibility.isVisible("agent-settings") && (

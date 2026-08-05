@@ -29,6 +29,16 @@ export const tripRoutesTable = pgTable(
     endPlace: text("end_place").notNull(),
     trainJpy: numeric("train_jpy").notNull().default("0"),
     fuelJpy: numeric("fuel_jpy").notNull().default("0"),
+    tripCount: integer("trip_count").notNull().default(1),
+    distanceKm: numeric("distance_km", { precision: 30, scale: 12 }),
+    fuelPriceJpyPerLiter: numeric("fuel_price_jpy_per_liter", {
+      precision: 30,
+      scale: 12,
+    }),
+    fuelEfficiencyKmPerLiter: numeric("fuel_efficiency_km_per_liter", {
+      precision: 30,
+      scale: 12,
+    }),
     parkingJpy: numeric("parking_jpy").notNull().default("0"),
     estQty: integer("est_qty").notNull(),
     etcJpy: numeric("etc_jpy"),
@@ -77,6 +87,7 @@ export const tripRoutesTable = pgTable(
     index("trip_routes_trip_id_idx").on(t.tripId),
     unique("trip_routes_trip_id_area_title_unique").on(t.tripId, t.areaTitle),
     check("trip_routes_est_qty_positive", sql`${t.estQty} > 0`),
+    check("trip_routes_trip_count_positive", sql`${t.tripCount} > 0`),
     check("trip_routes_parcel_count_non_negative", sql`${t.parcelCount} >= 0`),
     check(
       "trip_routes_jpy_inputs_non_negative",
@@ -85,6 +96,12 @@ export const tripRoutesTable = pgTable(
     check(
       "trip_routes_etc_jpy_non_negative",
       sql`${t.etcJpy} IS NULL OR ${t.etcJpy} >= 0`,
+    ),
+    check(
+      "trip_routes_fuel_estimate_inputs_non_negative",
+      sql`(${t.distanceKm} IS NULL OR ${t.distanceKm} >= 0)
+      AND (${t.fuelPriceJpyPerLiter} IS NULL OR ${t.fuelPriceJpyPerLiter} >= 0)
+      AND (${t.fuelEfficiencyKmPerLiter} IS NULL OR ${t.fuelEfficiencyKmPerLiter} >= 0)`,
     ),
     check(
       "trip_routes_overrides_valid",
