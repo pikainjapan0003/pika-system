@@ -42,7 +42,7 @@ export function calculateBreakeven(input: BreakevenInput): BreakevenResult {
     const jpyOriginInput = input.fixedCostJpyOriginTwd;
     const twdDirectInput = input.fixedCostTwdDirectTwd;
     if (isMissingDecimal(jpyOriginInput) || isMissingDecimal(twdDirectInput)) {
-      return pendingOperatingCost("蝻箏???撟唾﹛鞈?");
+      return pendingOperatingCost("缺少損益平衡資料");
     }
     fixedCostJpyOriginTwd = parseNonNegativeDecimal(
       jpyOriginInput,
@@ -55,7 +55,7 @@ export function calculateBreakeven(input: BreakevenInput): BreakevenResult {
   } else {
     const legacyTotalInput = input.fixedCostTotalTwd;
     if (isMissingDecimal(legacyTotalInput)) {
-      return pendingOperatingCost("蝻箏???撟唾﹛鞈?");
+      return pendingOperatingCost("缺少損益平衡資料");
     }
     fixedCostJpyOriginTwd = ExactDecimal.zero();
     fixedCostTwdDirectTwd = parseNonNegativeDecimal(
