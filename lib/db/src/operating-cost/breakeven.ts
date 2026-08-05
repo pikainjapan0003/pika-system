@@ -35,11 +35,36 @@ export function calculateBreakeven(input: BreakevenInput): BreakevenResult {
   const splitFixedCost =
     input.fixedCostJpyOriginTwd !== undefined ||
     input.fixedCostTwdDirectTwd !== undefined;
+  let fixedCostJpyOriginTwd: ExactDecimal;
+  let fixedCostTwdDirectTwd: ExactDecimal;
+
+  if (splitFixedCost) {
+    const jpyOriginInput = input.fixedCostJpyOriginTwd;
+    const twdDirectInput = input.fixedCostTwdDirectTwd;
+    if (isMissingDecimal(jpyOriginInput) || isMissingDecimal(twdDirectInput)) {
+      return pendingOperatingCost("蝻箏???撟唾﹛鞈?");
+    }
+    fixedCostJpyOriginTwd = parseNonNegativeDecimal(
+      jpyOriginInput,
+      "fixedCostJpyOriginTwd",
+    );
+    fixedCostTwdDirectTwd = parseNonNegativeDecimal(
+      twdDirectInput,
+      "fixedCostTwdDirectTwd",
+    );
+  } else {
+    const legacyTotalInput = input.fixedCostTotalTwd;
+    if (isMissingDecimal(legacyTotalInput)) {
+      return pendingOperatingCost("蝻箏???撟唾﹛鞈?");
+    }
+    fixedCostJpyOriginTwd = ExactDecimal.zero();
+    fixedCostTwdDirectTwd = parseNonNegativeDecimal(
+      legacyTotalInput,
+      "fixedCostTotalTwd",
+    );
+  }
+
   if (
-    (splitFixedCost
-      ? isMissingDecimal(input.fixedCostJpyOriginTwd) ||
-        isMissingDecimal(input.fixedCostTwdDirectTwd)
-      : isMissingDecimal(input.fixedCostTotalTwd)) ||
     isMissingDecimal(input.variableCostBaseTotalTwd) ||
     isMissingDecimal(input.creditCardRebateTwd) ||
     isMissingDecimal(input.unitGrossProfitTwd) ||
@@ -48,12 +73,6 @@ export function calculateBreakeven(input: BreakevenInput): BreakevenResult {
     return pendingOperatingCost("缺少損益平衡資料");
   }
 
-  const fixedCostJpyOriginTwd = splitFixedCost
-    ? parseNonNegativeDecimal(input.fixedCostJpyOriginTwd, "fixedCostJpyOriginTwd")
-    : ExactDecimal.zero();
-  const fixedCostTwdDirectTwd = splitFixedCost
-    ? parseNonNegativeDecimal(input.fixedCostTwdDirectTwd, "fixedCostTwdDirectTwd")
-    : parseNonNegativeDecimal(input.fixedCostTotalTwd, "fixedCostTotalTwd");
   const legacyFixedCostForFee = splitFixedCost
     ? fixedCostJpyOriginTwd
     : fixedCostTwdDirectTwd;

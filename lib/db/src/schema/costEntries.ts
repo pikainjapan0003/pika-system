@@ -34,12 +34,12 @@ export const costEntriesTable = pgTable(
     tripId: integer("trip_id")
       .notNull()
       .references(() => tripsTable.id, { onDelete: "cascade" }),
-    mode: text("mode").notNull(),
+    mode: text("mode").$type<CostEntryMode>().notNull(),
     categoryId: integer("category_id").references(() => costCategoriesTable.id, {
       onDelete: "restrict",
     }),
     customLabel: text("custom_label"),
-    currency: text("currency").notNull(),
+    currency: text("currency").$type<CostEntryCurrency>().notNull(),
     originalAmount: numeric("original_amount", {
       precision: 30,
       scale: 12,
@@ -47,7 +47,7 @@ export const costEntriesTable = pgTable(
     occurredOn: date("occurred_on", { mode: "string" }),
     description: text("description"),
     photoUrl: text("photo_url"),
-    status: text("status").notNull().default("ACTIVE"),
+    status: text("status").$type<CostEntryStatus>().notNull().default("ACTIVE"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
