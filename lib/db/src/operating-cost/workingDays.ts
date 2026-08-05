@@ -32,11 +32,19 @@ function parseDate(value: string): number | null {
 }
 
 export function resolveWorkingDays(input: WorkingDaysInput): WorkingDaysResult {
-  if (input.override !== undefined && input.override !== null && input.override !== "") {
+  if (
+    input.override !== undefined &&
+    input.override !== null &&
+    input.override !== ""
+  ) {
     const override = parsePositiveQuantity(input.override);
     return override === null
       ? pendingOperatingCost("工作天數必須是正整數")
-      : { status: "ready", workingDays: BigInt(override.toDecimalPlaces(0)), source: "override" };
+      : {
+          status: "ready",
+          workingDays: BigInt(override.toDecimalPlaces(0)),
+          source: "override",
+        };
   }
   if (!input.startDate || !input.endDate) {
     return pendingOperatingCost("缺少行程日期");

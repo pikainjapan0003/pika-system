@@ -459,9 +459,27 @@ function TripCard({ trip }: { trip: TripWithRoutes }) {
 
       <div className="px-4 py-3">
         <div className="mb-3 grid grid-cols-3 gap-2">
-          <button type="button" onClick={() => setLocation(`/trips/${trip.id}/estimate`)} className="min-h-11 rounded-xl border border-primary/30 px-2 text-xs font-medium text-primary">預估成本</button>
-          <button type="button" onClick={() => setLocation(`/trips/${trip.id}/actual`)} className="min-h-11 rounded-xl border border-primary/30 px-2 text-xs font-medium text-primary">實際成本</button>
-          <button type="button" onClick={() => setLocation(`/trips/${trip.id}/comparison`)} className="min-h-11 rounded-xl border border-primary/30 px-2 text-xs font-medium text-primary">預估比較</button>
+          <button
+            type="button"
+            onClick={() => setLocation(`/trips/${trip.id}/estimate`)}
+            className="min-h-11 rounded-xl border border-primary/30 px-2 text-xs font-medium text-primary"
+          >
+            預估成本
+          </button>
+          <button
+            type="button"
+            onClick={() => setLocation(`/trips/${trip.id}/actual`)}
+            className="min-h-11 rounded-xl border border-primary/30 px-2 text-xs font-medium text-primary"
+          >
+            實際成本
+          </button>
+          <button
+            type="button"
+            onClick={() => setLocation(`/trips/${trip.id}/comparison`)}
+            className="min-h-11 rounded-xl border border-primary/30 px-2 text-xs font-medium text-primary"
+          >
+            預估比較
+          </button>
         </div>
         {addingRoute ? (
           <RouteForm
