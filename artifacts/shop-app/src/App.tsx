@@ -55,6 +55,7 @@ import AuditLogsPage from "@/pages/AuditLogs";
 import AgentSettingsPage from "@/pages/AgentSettings";
 import TripsPage from "@/pages/Trips";
 import GuidePage from "@/pages/Guide";
+import TripEstimatePage from "@/pages/TripEstimate";
 import DevHandoffPage from "@/pages/DevHandoff";
 import ProductCategoriesPage from "@/pages/ProductCategories";
 import Cvs711ReturnPage from "@/pages/Cvs711Return";
@@ -411,6 +412,13 @@ function MerchantPortal() {
         </Route>
         <Route path="/settings" component={SettingsPage} />
         <Route path="/trips" component={TripsPage} />
+        <Route path="/trips/:tripId/estimate">
+          {(params) => (
+            <DailySkillPageGate surface="trips">
+              <TripEstimatePage tripId={Number(params.tripId)} />
+            </DailySkillPageGate>
+          )}
+        </Route>
         <Route path="/guide">
           {() => (
             <DailySkillPageGate surface="guide">
@@ -481,6 +489,7 @@ function AppRouter() {
       <Route path="/audit-logs" component={MerchantPortal} />
       <Route path="/settings" component={MerchantPortal} />
       <Route path="/trips" component={MerchantPortal} />
+      <Route path="/trips/:tripId/estimate" component={MerchantPortal} />
       <Route path="/guide" component={MerchantPortal} />
       <Route component={NotFoundPage} />
     </Switch>
