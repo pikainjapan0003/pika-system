@@ -62,6 +62,9 @@ jobs:
       - name: Create disposable test schema
         run: pnpm --filter @workspace/db run push-force
 
+      - name: Seed V1 fixed-cost defaults
+        run: pnpm --filter @workspace/db run seed-fixed-cost-defaults
+
       - name: Verify V1 fixed-cost schema
         working-directory: lib/db
         run: |
