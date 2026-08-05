@@ -21,7 +21,10 @@ async function loadEntries(access: any, mode: CostEntryMode) {
   return db
     .select({ entry: costEntriesTable, categoryName: costCategoriesTable.name })
     .from(costEntriesTable)
-    .leftJoin(costCategoriesTable, eq(costEntriesTable.categoryId, costCategoriesTable.id))
+    .leftJoin(
+      costCategoriesTable,
+      eq(costEntriesTable.categoryId, costCategoriesTable.id),
+    )
     .where(
       and(
         eq(costEntriesTable.storeId, access.storeId),
@@ -56,16 +59,28 @@ router.get(
   async (req: any, res) => {
     const access = await loadTrip(req, res);
     if (!access) return;
-    const mode = req.query.mode === "ACTUAL" ? "ACTUAL" : req.query.mode === "ESTIMATE" ? "ESTIMATE" : null;
-    if (!mode) return res.status(400).json({ error: "mode must be ESTIMATE or ACTUAL" });
+    const mode =
+      req.query.mode === "ACTUAL"
+        ? "ACTUAL"
+        : req.query.mode === "ESTIMATE"
+          ? "ESTIMATE"
+          : null;
+    if (!mode)
+      return res.status(400).json({ error: "mode must be ESTIMATE or ACTUAL" });
     const rows = await loadEntries(access, mode);
     const categories = await db
       .select()
       .from(costCategoriesTable)
       .orderBy(asc(costCategoriesTable.sortOrder));
-    const exchangeRate = mode === "ESTIMATE" ? access.trip.exchangeRate : access.trip.actualExchangeRate;
+    const exchangeRate =
+      mode === "ESTIMATE"
+        ? access.trip.exchangeRate
+        : access.trip.actualExchangeRate;
     const totals = calculateFixedCostTotals({
-      entries: rows.map((row) => ({ ...row.entry, originalAmount: String(row.entry.originalAmount) })),
+      entries: rows.map((row) => ({
+        ...row.entry,
+        originalAmount: String(row.entry.originalAmount),
+      })),
       exchangeRate,
     });
     return res.json({

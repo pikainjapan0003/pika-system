@@ -16,10 +16,14 @@ mock.module("wouter", {
   namedExports: { useLocation: () => ["/trips/1/estimate", () => undefined] },
 });
 mock.module("@workspace/api-client-react", {
-  namedExports: { useGetMyStore: () => ({ data: { id: 1, name: "Test store" } }) },
+  namedExports: {
+    useGetMyStore: () => ({ data: { id: 1, name: "Test store" } }),
+  },
 });
 mock.module("../pages/Dashboard.tsx", {
-  namedExports: { BottomNav: () => React.createElement("nav", null, "bottom-nav") },
+  namedExports: {
+    BottomNav: () => React.createElement("nav", null, "bottom-nav"),
+  },
 });
 
 const { default: TripEstimatePage } = await import("../pages/TripEstimate.tsx");
@@ -55,7 +59,9 @@ function setInputValue(input, value) {
 }
 
 function findButtonByText(container, text) {
-  return [...container.querySelectorAll("button")].find((button) => button.textContent === text);
+  return [...container.querySelectorAll("button")].find(
+    (button) => button.textContent === text,
+  );
 }
 
 async function waitForCall(calls, predicate, timeoutMs = 1_000) {
@@ -74,7 +80,11 @@ async function renderPage() {
   document.body.append(container);
   const root = createRoot(container);
   root.render(React.createElement(TripEstimatePage, { tripId: 1 }));
-  for (let attempt = 0; attempt < 20 && !container.textContent?.includes("類別11"); attempt++) {
+  for (
+    let attempt = 0;
+    attempt < 20 && !container.textContent?.includes("類別11");
+    attempt++
+  ) {
     await new Promise((resolve) => setTimeout(resolve, 0));
   }
   return { container, root };
@@ -89,7 +99,10 @@ test("estimate page renders all eleven categories", async () => {
   globalThis.fetch = async () => response(summary);
   const { container, root } = await renderPage();
   assert.match(container.textContent, /11/);
-  assert.equal(container.querySelectorAll("input[aria-label^='類別']").length, 11);
+  assert.equal(
+    container.querySelectorAll("input[aria-label^='類別']").length,
+    11,
+  );
   root.unmount();
 });
 
@@ -113,7 +126,9 @@ test("saving estimate sends decimal strings and selected currency", async () => 
   const saveButton = findButtonByText(container, "儲存估算");
   assert.ok(saveButton);
   saveButton.click();
-  const entryCall = await waitForCall(calls, (call) => String(call.url).endsWith("/cost-entries"));
+  const entryCall = await waitForCall(calls, (call) =>
+    String(call.url).endsWith("/cost-entries"),
+  );
   assert.ok(entryCall);
   assert.equal(entryCall.init.method, "POST");
   assert.deepEqual(JSON.parse(entryCall.init.body), {
@@ -126,11 +141,19 @@ test("saving estimate sends decimal strings and selected currency", async () => 
 });
 
 test("locked estimate exposes unlock action and modified warning", async () => {
-  const locked = { ...summary, estimateLocked: true, estimateModifiedAfterLock: true };
+  const locked = {
+    ...summary,
+    estimateLocked: true,
+    estimateModifiedAfterLock: true,
+  };
   globalThis.fetch = async () => response(locked);
   const { container, root } = await renderPage();
   assert.match(container.textContent, /曾在鎖定後被人工解鎖修改/);
-  assert.ok([...container.querySelectorAll("button")].some((button) => button.textContent === "解鎖估算"));
+  assert.ok(
+    [...container.querySelectorAll("button")].some(
+      (button) => button.textContent === "解鎖估算",
+    ),
+  );
   root.unmount();
 });
 
