@@ -413,7 +413,13 @@ function MerchantPortal() {
           )}
         </Route>
         <Route path="/settings" component={SettingsPage} />
-        <Route path="/trips" component={TripsPage} />
+        <Route path="/trips">
+          {() => (
+            <DailySkillPageGate surface="trips">
+              <TripsPage />
+            </DailySkillPageGate>
+          )}
+        </Route>
         <Route path="/trips/:tripId/estimate">
           {(params) => (
             <DailySkillPageGate surface="trips">
