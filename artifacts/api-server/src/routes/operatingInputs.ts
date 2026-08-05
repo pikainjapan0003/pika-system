@@ -43,7 +43,7 @@ router.patch(
   async (req: any, res) => {
     const access = await loadTrip(req, res);
     if (!access) return;
-    if (access.trip.status === "CLOSED") {
+    if (access.trip.status === "CLOSED" && access.trip.estimateLocked) {
       return res.status(409).json({ error: "Trip is closed" });
     }
 
@@ -125,7 +125,6 @@ router.post(
   async (req: any, res) => {
     const access = await loadTrip(req, res);
     if (!access) return;
-    if (access.trip.status === "CLOSED") return res.status(409).json({ error: "Trip is closed" });
     if (!access.trip.estimateLocked) return res.json(access.trip);
     const [updated] = await db
       .update(tripsTable)
