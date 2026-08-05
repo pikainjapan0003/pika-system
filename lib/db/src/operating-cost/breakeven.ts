@@ -12,6 +12,8 @@ import {
 
 export interface BreakevenInput {
   fixedCostTotalTwd?: DecimalInput;
+  fixedCostJpyOriginTwd?: DecimalInput;
+  fixedCostTwdDirectTwd?: DecimalInput;
   variableCostBaseTotalTwd?: DecimalInput;
   creditCardRebateTwd?: DecimalInput;
   unitGrossProfitTwd?: DecimalInput;
@@ -30,8 +32,14 @@ export interface ReadyBreakeven {
 export type BreakevenResult = ReadyBreakeven | PendingOperatingCost;
 
 export function calculateBreakeven(input: BreakevenInput): BreakevenResult {
+  const splitFixedCost =
+    input.fixedCostJpyOriginTwd !== undefined ||
+    input.fixedCostTwdDirectTwd !== undefined;
   if (
-    isMissingDecimal(input.fixedCostTotalTwd) ||
+    (splitFixedCost
+      ? isMissingDecimal(input.fixedCostJpyOriginTwd) ||
+        isMissingDecimal(input.fixedCostTwdDirectTwd)
+      : isMissingDecimal(input.fixedCostTotalTwd)) ||
     isMissingDecimal(input.variableCostBaseTotalTwd) ||
     isMissingDecimal(input.creditCardRebateTwd) ||
     isMissingDecimal(input.unitGrossProfitTwd) ||
@@ -40,10 +48,15 @@ export function calculateBreakeven(input: BreakevenInput): BreakevenResult {
     return pendingOperatingCost("缺少損益平衡資料");
   }
 
-  const fixedCost = parseNonNegativeDecimal(
-    input.fixedCostTotalTwd,
-    "fixedCostTotalTwd",
-  );
+  const fixedCostJpyOriginTwd = splitFixedCost
+    ? parseNonNegativeDecimal(input.fixedCostJpyOriginTwd, "fixedCostJpyOriginTwd")
+    : ExactDecimal.zero();
+  const fixedCostTwdDirectTwd = splitFixedCost
+    ? parseNonNegativeDecimal(input.fixedCostTwdDirectTwd, "fixedCostTwdDirectTwd")
+    : parseNonNegativeDecimal(input.fixedCostTotalTwd, "fixedCostTotalTwd");
+  const legacyFixedCostForFee = splitFixedCost
+    ? fixedCostJpyOriginTwd
+    : fixedCostTwdDirectTwd;
   const variableCost = parseNonNegativeDecimal(
     input.variableCostBaseTotalTwd,
     "variableCostBaseTotalTwd",
@@ -61,8 +74,11 @@ export function calculateBreakeven(input: BreakevenInput): BreakevenResult {
     return pendingOperatingCost("單件毛利必須大於 0");
   }
 
-  const costBase = fixedCost.add(variableCost);
-  const paymentFeeTwd = costBase.multiply(ExactDecimal.from(PAYMENT_FEE_RATE));
+  const feeBase = legacyFixedCostForFee.add(variableCost);
+  const costBase = feeBase.add(
+    splitFixedCost ? fixedCostTwdDirectTwd : ExactDecimal.zero(),
+  );
+  const paymentFeeTwd = feeBase.multiply(ExactDecimal.from(PAYMENT_FEE_RATE));
   const netCostToRecoverTwd = subtractDecimal(
     costBase.add(paymentFeeTwd),
     rebate,
