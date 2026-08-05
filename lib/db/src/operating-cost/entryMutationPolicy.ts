@@ -28,9 +28,7 @@ export interface EstimateLockState {
   estimateModifiedAfterLock: boolean;
 }
 
-export function unlockEstimate(
-  state: EstimateLockState,
-): EstimateLockState {
+export function unlockEstimate(state: EstimateLockState): EstimateLockState {
   if (!state.estimateLocked) return state;
   return {
     estimateLocked: false,

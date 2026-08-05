@@ -25,9 +25,7 @@ export interface ReadyFixedCostTotals {
   fixedCostTotalTwd: ExactDecimal;
 }
 
-export type FixedCostTotalsResult =
-  | ReadyFixedCostTotals
-  | PendingOperatingCost;
+export type FixedCostTotalsResult = ReadyFixedCostTotals | PendingOperatingCost;
 
 export function calculateFixedCostTotals(
   input: FixedCostTotalsInput,
@@ -60,7 +58,10 @@ export function calculateFixedCostTotals(
       ExactDecimal.zero(),
     );
 
-  if (!jpyOrigin.equals(ExactDecimal.zero()) && isMissingDecimal(input.exchangeRate)) {
+  if (
+    !jpyOrigin.equals(ExactDecimal.zero()) &&
+    isMissingDecimal(input.exchangeRate)
+  ) {
     return pendingOperatingCost("缺少匯率");
   }
   const exchangeRate = isMissingDecimal(input.exchangeRate)
