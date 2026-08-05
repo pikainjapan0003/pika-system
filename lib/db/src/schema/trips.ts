@@ -1,5 +1,7 @@
 import {
+  boolean,
   check,
+  date,
   index,
   integer,
   numeric,
@@ -19,8 +21,20 @@ export const tripsTable = pgTable(
     // Nullable until the production backfill has been reviewed and applied.
     storeId: integer("store_id"),
     name: text("name").notNull(),
+    status: text("status").notNull().default("PLANNING"),
+    startDate: date("start_date", { mode: "string" }),
+    endDate: date("end_date", { mode: "string" }),
+    workingDays: integer("working_days"),
     // Nullable so an incomplete draft can remain visibly pending confirmation.
     exchangeRate: numeric("exchange_rate"),
+    actualExchangeRate: numeric("actual_exchange_rate", {
+      precision: 30,
+      scale: 12,
+    }),
+    estimateLocked: boolean("estimate_locked").notNull().default(false),
+    estimateModifiedAfterLock: boolean("estimate_modified_after_lock")
+      .notNull()
+      .default(false),
     hepDays: integer("hep_days"),
     hepTotalJpy: numeric("hep_total_jpy", { precision: 30, scale: 12 }),
     creditCardRebateTwd: numeric("credit_card_rebate_twd", {
@@ -62,6 +76,22 @@ export const tripsTable = pgTable(
     check(
       "trips_hep_days_valid",
       sql`${t.hepDays} IS NULL OR ${t.hepDays} IN (4, 5, 10)`,
+    ),
+    check(
+      "trips_status_valid",
+      sql`${t.status} IN ('PLANNING', 'ACTIVE', 'CLOSED')`,
+    ),
+    check(
+      "trips_date_range_valid",
+      sql`${t.startDate} IS NULL OR ${t.endDate} IS NULL OR ${t.endDate} >= ${t.startDate}`,
+    ),
+    check(
+      "trips_working_days_positive",
+      sql`${t.workingDays} IS NULL OR ${t.workingDays} > 0`,
+    ),
+    check(
+      "trips_actual_exchange_rate_non_negative",
+      sql`${t.actualExchangeRate} IS NULL OR ${t.actualExchangeRate} >= 0`,
     ),
     check(
       "trips_hep_total_jpy_non_negative",
