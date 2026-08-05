@@ -42,6 +42,32 @@ function response(body, ok = true) {
   return { ok, json: async () => body };
 }
 
+const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+  window.HTMLInputElement.prototype,
+  "value",
+)?.set;
+
+function setInputValue(input, value) {
+  assert.ok(input);
+  assert.ok(nativeInputValueSetter);
+  nativeInputValueSetter.call(input, value);
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+function findButtonByText(container, text) {
+  return [...container.querySelectorAll("button")].find((button) => button.textContent === text);
+}
+
+async function waitForCall(calls, predicate, timeoutMs = 1_000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const call = calls.find(predicate);
+    if (call) return call;
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+  return undefined;
+}
+
 async function renderPage() {
   const { createRoot } = await import("react-dom/client");
   const container = document.createElement("div");
@@ -83,12 +109,19 @@ test("saving estimate sends decimal strings and selected currency", async () => 
     return response({ ok: true });
   };
   const { container, root } = await renderPage();
-  container.querySelector("button").click();
-  await new Promise((resolve) => setTimeout(resolve, 0));
-  const entryCall = calls.find((call) => String(call.url).endsWith("/cost-entries"));
+  setInputValue(container.querySelector("input[aria-label='類別1']"), "12.50");
+  const saveButton = findButtonByText(container, "儲存估算");
+  assert.ok(saveButton);
+  saveButton.click();
+  const entryCall = await waitForCall(calls, (call) => String(call.url).endsWith("/cost-entries"));
   assert.ok(entryCall);
-  assert.match(entryCall.init.body, /\"originalAmount\":\"0\"/);
-  assert.match(entryCall.init.body, /\"currency\":\"TWD\"/);
+  assert.equal(entryCall.init.method, "POST");
+  assert.deepEqual(JSON.parse(entryCall.init.body), {
+    mode: "ESTIMATE",
+    categoryId: 1,
+    originalAmount: "12.50",
+    currency: "TWD",
+  });
   root.unmount();
 });
 
