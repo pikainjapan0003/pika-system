@@ -9,7 +9,7 @@ import {
   db,
 } from "@workspace/db";
 import { requireAuth } from "../middlewares/auth.ts";
-import { decimalString, loadTrip } from "./fixedCosts.ts";
+import { loadTrip } from "./fixedCosts.ts";
 
 const router = Router();
 
@@ -38,10 +38,6 @@ function serializeEntry(row: any) {
     categoryName: row.categoryName,
     originalAmount: String(row.entry.originalAmount),
   };
-}
-
-function hasJpy(entries: readonly any[]) {
-  return entries.some((row) => row.entry.currency === "JPY" && row.entry.status !== "VOID");
 }
 
 function serializeTotals(result: any) {
@@ -97,20 +93,29 @@ router.get(
     ]);
     const estimateRate = access.trip.exchangeRate;
     const actualRate = access.trip.actualExchangeRate;
-    if ((hasJpy(estimateRows) && !decimalString(estimateRate)) || (hasJpy(actualRows) && !decimalString(actualRate))) {
+    const comparison = compareFixedCostEntries(
+      estimateRows.map((row) => ({
+        ...row.entry,
+        categoryName: row.categoryName,
+        originalAmount: String(row.entry.originalAmount),
+      })),
+      actualRows.map((row) => ({
+        ...row.entry,
+        categoryName: row.categoryName,
+        originalAmount: String(row.entry.originalAmount),
+      })),
+      { estimated: estimateRate, actual: actualRate },
+    );
+    if (comparison.status !== "ready") {
       return res.json({
-        status: "pending_confirmation",
-        label: "匯率尚未確認",
-        estimateExchangeRate: estimateRate == null ? null : String(estimateRate),
+        ...comparison,
+        estimateExchangeRate:
+          estimateRate == null ? null : String(estimateRate),
         actualExchangeRate: actualRate == null ? null : String(actualRate),
         rows: [],
       });
     }
-    const rows = compareFixedCostEntries(
-      estimateRows.map((row) => ({ ...row.entry, categoryName: row.categoryName, originalAmount: String(row.entry.originalAmount) })),
-      actualRows.map((row) => ({ ...row.entry, categoryName: row.categoryName, originalAmount: String(row.entry.originalAmount) })),
-      { estimated: estimateRate ?? "0", actual: actualRate ?? "0" },
-    );
+    const rows = comparison.rows;
     return res.json({
       status: "ready",
       estimateExchangeRate: estimateRate == null ? null : String(estimateRate),
