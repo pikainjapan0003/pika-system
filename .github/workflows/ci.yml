@@ -62,6 +62,118 @@ jobs:
       - name: Create disposable test schema
         run: pnpm --filter @workspace/db run push-force
 
+      - name: Verify V1 fixed-cost schema
+        working-directory: lib/db
+        run: |
+          node --input-type=module <<'NODE'
+          import pg from "pg";
+
+          const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+          const requiredTables = [
+            "operating_settings",
+            "cost_categories",
+            "cost_entries",
+          ];
+          const tableResult = await pool.query(
+            `SELECT table_name
+             FROM information_schema.tables
+             WHERE table_schema = 'public' AND table_name = ANY($1::text[])`,
+            [requiredTables],
+          );
+          const actualTables = new Set(tableResult.rows.map((row) => row.table_name));
+          for (const table of requiredTables) {
+            if (!actualTables.has(table)) {
+              throw new Error(`missing required table: ${table}`);
+            }
+          }
+
+          const tripColumns = [
+            "store_id",
+            "status",
+            "start_date",
+            "end_date",
+            "working_days",
+            "actual_exchange_rate",
+            "estimate_locked",
+            "estimate_modified_after_lock",
+          ];
+          const columnResult = await pool.query(
+            `SELECT table_name, column_name
+             FROM information_schema.columns
+             WHERE table_schema = 'public'
+               AND ((table_name = 'trips' AND column_name = ANY($1::text[]))
+                 OR (table_name = 'cost_entries' AND column_name = ANY($2::text[])))`,
+            [
+              tripColumns,
+              [
+                "store_id",
+                "trip_id",
+                "mode",
+                "category_id",
+                "currency",
+                "original_amount",
+                "status",
+              ],
+            ],
+          );
+          const actualColumns = new Set(
+            columnResult.rows.map((row) => `${row.table_name}.${row.column_name}`),
+          );
+          for (const column of tripColumns) {
+            if (!actualColumns.has(`trips.${column}`)) {
+              throw new Error(`missing trips column: ${column}`);
+            }
+          }
+          for (const column of [
+            "store_id",
+            "trip_id",
+            "mode",
+            "category_id",
+            "currency",
+            "original_amount",
+            "status",
+          ]) {
+            if (!actualColumns.has(`cost_entries.${column}`)) {
+              throw new Error(`missing cost_entries column: ${column}`);
+            }
+          }
+
+          const categoryResult = await pool.query(
+            `SELECT count(*)::int AS count,
+                    count(*) FILTER (WHERE code = ANY($1::text[]))::int AS expected_count
+             FROM cost_categories`,
+            [[
+              "PERSONNEL",
+              "MARKETING",
+              "MEALS",
+              "FLIGHT",
+              "LODGING",
+              "LOCKER",
+              "CAR_RENTAL",
+              "SIM",
+              "THEME_PARK",
+              "AIRPORT_TRANSFER",
+              "OTHER",
+            ]],
+          );
+          const categoryRow = categoryResult.rows[0];
+          if (categoryRow.count !== 11 || categoryRow.expected_count !== 11) {
+            throw new Error(
+              `fixed-cost category seed mismatch: total=${categoryRow.count} expected=${categoryRow.expected_count}`,
+            );
+          }
+
+          const singletonResult = await pool.query(
+            "SELECT count(*)::int AS count FROM operating_settings WHERE id = 1",
+          );
+          if (singletonResult.rows[0].count !== 1) {
+            throw new Error("operating_settings singleton row is missing");
+          }
+
+          await pool.end();
+          console.log("V1_FIXED_COST_SCHEMA_GUARD=PASS");
+          NODE
+
       - name: Test database routes
         id: database-route-tests
         working-directory: artifacts/api-server
