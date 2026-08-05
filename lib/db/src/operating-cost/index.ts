@@ -10,3 +10,4 @@ export * from "./variance.ts";
 export * from "./fixedCostTotals.ts";
 export * from "./workingDays.ts";
 export * from "./entryMutationPolicy.ts";
+export * from "./fixedCostVariance.ts";
