@@ -31,7 +31,7 @@ export const operatingSettingsTable = pgTable(
   (t) => [
     check(
       "operating_settings_singleton_id",
-      sql`${t.id} = ${OPERATING_SETTINGS_SINGLETON_ID}`,
+      sql`${t.id} = ${sql.raw(String(OPERATING_SETTINGS_SINGLETON_ID))}`,
     ),
     check(
       "operating_settings_daily_wage_non_negative",
