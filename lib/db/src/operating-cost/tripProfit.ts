@@ -122,7 +122,7 @@ export function calculateTripProfit(input: TripProfitInput): TripProfitResult {
   const paymentFeeTwd = costBaseTwd.multiply(
     ExactDecimal.from(PAYMENT_FEE_RATE),
   );
-  const operatingExpenseTwd = legacyFixedCostForFee
+  const operatingExpenseTwd = fixedCostJpyOriginTwd
     .add(fixedCostTwdDirectTwd)
     .add(parsed.variableCostBaseTotalTwd)
     .add(paymentFeeTwd);
