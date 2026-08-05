@@ -8,3 +8,4 @@ export * from "./routeCost.ts";
 export * from "./tripProfit.ts";
 export * from "./variance.ts";
 export * from "./fixedCostTotals.ts";
+export * from "./workingDays.ts";
