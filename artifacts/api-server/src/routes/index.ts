@@ -21,6 +21,7 @@ import auditLogsRouter from "./auditLogs.ts";
 import skillsRouter from "./skills.ts";
 import fixedCostsRouter from "./fixedCosts.ts";
 import operatingInputsRouter from "./operatingInputs.ts";
+import fixedCostSummaryRouter from "./fixedCostSummary.ts";
 
 const router: IRouter = Router();
 
@@ -45,6 +46,7 @@ router.use(auditLogsRouter);
 router.use(skillsRouter);
 router.use(fixedCostsRouter);
 router.use(operatingInputsRouter);
+router.use(fixedCostSummaryRouter);
 if (process.env.NODE_ENV !== "production") {
   router.use(devHandoffRouter);
 }
