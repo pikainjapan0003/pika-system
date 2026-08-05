@@ -112,8 +112,14 @@ router.post(
     if (!access) return;
     const parsed = parseEntryBody(req.body);
     if ("error" in parsed) return res.status(400).json({ error: parsed.error });
-    if (access.trip.status === "CLOSED") {
+    if (access.trip.status === "CLOSED" && access.trip.estimateLocked) {
       return res.status(409).json({ error: "Trip is closed" });
+    }
+    if (
+      parsed.value.mode === "ESTIMATE" &&
+      access.trip.estimateLocked
+    ) {
+      return res.status(409).json({ error: "Cost entry is locked" });
     }
     try {
       const [entry] = await db
@@ -142,8 +148,14 @@ router.patch(
       .where(and(eq(costEntriesTable.id, entryId), eq(costEntriesTable.tripId, access.tripId), eq(costEntriesTable.storeId, access.storeId)))
       .limit(1);
     if (!entry) return res.status(404).json({ error: "Cost entry not found" });
-    if (access.trip.status === "CLOSED" || (entry.mode === "ESTIMATE" && access.trip.estimateLocked)) {
+    if (
+      (access.trip.status === "CLOSED" && access.trip.estimateLocked) ||
+      (entry.mode === "ESTIMATE" && access.trip.estimateLocked)
+    ) {
       return res.status(409).json({ error: "Cost entry is locked" });
+    }
+    if (req.body?.mode !== undefined) {
+      return res.status(400).json({ error: "Cost entry mode cannot be changed" });
     }
     const parsed = parseEntryBody(req.body, true);
     if ("error" in parsed) return res.status(400).json({ error: parsed.error });
