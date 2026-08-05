@@ -39,11 +39,15 @@ function amountTwd(
   exchangeRates: FixedCostExchangeRates,
 ): ExactDecimal {
   const amount = ExactDecimal.from(entry.originalAmount as Exclude<DecimalInput, null | undefined>);
+  const splitExchangeRates =
+    typeof exchangeRates === "object" && exchangeRates !== null
+      ? exchangeRates
+      : null;
   const exchangeRate =
-    typeof exchangeRates === "object"
+    splitExchangeRates !== null
       ? entry.mode === "ESTIMATE"
-        ? exchangeRates.estimated
-        : exchangeRates.actual
+        ? splitExchangeRates.estimated
+        : splitExchangeRates.actual
       : exchangeRates;
   return entry.currency === "JPY"
     ? amount.multiply(ExactDecimal.from(exchangeRate as Exclude<DecimalInput, null | undefined>))
@@ -82,6 +86,9 @@ export function compareFixedCostEntries(
     const estimate = estimatedMap.get(key);
     const actualValue = actualMap.get(key);
     if (!estimate) {
+      if (!actualValue) {
+        throw new Error(`fixed-cost variance invariant failed for ${key}`);
+      }
       return {
         key,
         label: actualValue.label,

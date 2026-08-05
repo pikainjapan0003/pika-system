@@ -178,7 +178,7 @@ export default function TripActualPage({ tripId }: { tripId: number }) {
           </section>
         </>}
       </main>
-      <BottomNav />
+      <BottomNav active="settings" />
     </div>
   );
 }

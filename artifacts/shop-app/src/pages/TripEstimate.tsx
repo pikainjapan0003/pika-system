@@ -189,7 +189,7 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
           </>
         )}
       </main>
-      <BottomNav />
+      <BottomNav active="settings" />
     </div>
   );
 }

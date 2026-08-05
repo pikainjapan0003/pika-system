@@ -70,7 +70,7 @@ export default function TripComparisonPage({ tripId }: { tripId: number }) {
           {rows.length === 0 && <p className="py-8 text-center text-sm text-muted-foreground">尚無可比較的成本</p>}
         </section>}
       </main>
-      <BottomNav />
+      <BottomNav active="settings" />
     </div>
   );
 }
