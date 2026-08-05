@@ -20,6 +20,7 @@ import exchangeRateReferenceRouter from "./exchangeRateReference.ts";
 import auditLogsRouter from "./auditLogs.ts";
 import skillsRouter from "./skills.ts";
 import fixedCostsRouter from "./fixedCosts.ts";
+import operatingInputsRouter from "./operatingInputs.ts";
 
 const router: IRouter = Router();
 
@@ -43,6 +44,7 @@ router.use(exchangeRateReferenceRouter);
 router.use(auditLogsRouter);
 router.use(skillsRouter);
 router.use(fixedCostsRouter);
+router.use(operatingInputsRouter);
 if (process.env.NODE_ENV !== "production") {
   router.use(devHandoffRouter);
 }
