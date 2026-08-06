@@ -228,6 +228,11 @@ router.get(
       status: tripProfit.status,
       mode,
       exchangeRate: exchangeRate == null ? null : String(exchangeRate),
+      totalItemQuantity: access.trip.totalItemQuantity,
+      unitGrossProfitTwd:
+        access.trip.unitGrossProfitTwd == null
+          ? null
+          : String(access.trip.unitGrossProfitTwd),
       entries: rows.map(serializeEntry),
       categories,
       totals: serializeTotals(totalsByKind.FIXED),
