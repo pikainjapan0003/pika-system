@@ -28,6 +28,20 @@ export const FIXED_COST_CATEGORY_SEEDS = [
   ["OTHER", "其他"],
 ] as const;
 
+export const VARIABLE_COST_CATEGORY_SEEDS = [
+  ["FUEL", "油錢費用"],
+  ["PARKING", "停車費用"],
+  ["TRAIN", "電車費用"],
+  ["ETC", "ETC費用"],
+  ["DOMESTIC_SHIPPING", "日本黑貓物流費用"],
+  ["CONSOLIDATION", "日本集運物流費用"],
+  ["PACKAGING", "包材費用"],
+] as const;
+
+export const PURCHASE_COST_CATEGORY_SEEDS = [
+  ["PURCHASE", "商品進貨成本"],
+] as const;
+
 export const costCategoriesTable = pgTable(
   "cost_categories",
   {
