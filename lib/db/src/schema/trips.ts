@@ -62,6 +62,10 @@ export const tripsTable = pgTable(
       .notNull()
       .default("0"),
     totalItemQuantity: integer("total_item_quantity"),
+    unitGrossProfitTwd: numeric("unit_gross_profit_twd", {
+      precision: 30,
+      scale: 12,
+    }),
     notes: text("notes"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()

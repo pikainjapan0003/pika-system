@@ -1,4 +1,5 @@
 import {
+  check,
   integer,
   pgTable,
   serial,
@@ -6,8 +7,12 @@ import {
   timestamp,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
+
+export const costCategoryKinds = ["FIXED", "VARIABLE", "PURCHASE"] as const;
+export type CostCategoryKind = (typeof costCategoryKinds)[number];
 
 export const FIXED_COST_CATEGORY_SEEDS = [
   ["PERSONNEL", "人事費用"],
@@ -29,12 +34,19 @@ export const costCategoriesTable = pgTable(
     id: serial("id").primaryKey(),
     code: text("code").notNull(),
     name: text("name").notNull(),
+    kind: text("kind").$type<CostCategoryKind>().notNull().default("FIXED"),
     sortOrder: integer("sort_order").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
   },
-  (t) => [uniqueIndex("cost_categories_code_unique").on(t.code)],
+  (t) => [
+    uniqueIndex("cost_categories_code_unique").on(t.code),
+    check(
+      "cost_categories_kind_valid",
+      sql`${t.kind} IN ('FIXED', 'VARIABLE', 'PURCHASE')`,
+    ),
+  ],
 );
 
 export const insertCostCategorySchema = createInsertSchema(
