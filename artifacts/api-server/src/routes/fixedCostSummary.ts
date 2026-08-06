@@ -2,11 +2,17 @@ import { and, asc, eq } from "drizzle-orm";
 import { Router } from "express";
 import {
   calculateFixedCostTotals,
+  calculateSectionPaymentFeeTwd,
+  calculateTripProfit,
   compareFixedCostEntries,
   costCategoriesTable,
   costEntriesTable,
+  type CostCategoryKind,
   type CostEntryMode,
   db,
+  DEFAULT_REFERENCE_DAILY_WAGE,
+  operatingSettingsTable,
+  pendingOperatingCost,
 } from "@workspace/db";
 import { requireAuth } from "../middlewares/auth.ts";
 import { loadTrip } from "./fixedCosts.ts";
@@ -19,7 +25,11 @@ function serializeDecimal(value: any): string | null {
 
 async function loadEntries(access: any, mode: CostEntryMode) {
   return db
-    .select({ entry: costEntriesTable, categoryName: costCategoriesTable.name })
+    .select({
+      entry: costEntriesTable,
+      categoryName: costCategoriesTable.name,
+      categoryKind: costCategoriesTable.kind,
+    })
     .from(costEntriesTable)
     .leftJoin(
       costCategoriesTable,
@@ -35,10 +45,15 @@ async function loadEntries(access: any, mode: CostEntryMode) {
     .orderBy(asc(costEntriesTable.id));
 }
 
+function entryKind(row: any): CostCategoryKind {
+  return row.categoryKind ?? "FIXED";
+}
+
 function serializeEntry(row: any) {
   return {
     ...row.entry,
-    categoryName: row.categoryName,
+    categoryName: row.categoryName ?? row.entry.customLabel,
+    categoryKind: entryKind(row),
     originalAmount: String(row.entry.originalAmount),
   };
 }
@@ -50,6 +65,63 @@ function serializeTotals(result: any) {
     fixedCostJpyOriginTwd: serializeDecimal(result.fixedCostJpyOriginTwd),
     fixedCostTwdDirectTwd: serializeDecimal(result.fixedCostTwdDirectTwd),
     fixedCostTotalTwd: serializeDecimal(result.fixedCostTotalTwd),
+  };
+}
+
+function serializeSection(rows: any[], categories: any[], totals: any) {
+  if (totals.status !== "ready") {
+    return {
+      ...totals,
+      entries: rows.map(serializeEntry),
+      categories,
+      jpyOriginTwd: null,
+      twdDirectTwd: null,
+      totalTwd: null,
+      paymentFeeTwd: null,
+    };
+  }
+  return {
+    status: "ready",
+    entries: rows.map(serializeEntry),
+    categories,
+    jpyOriginTwd: serializeDecimal(totals.fixedCostJpyOriginTwd),
+    twdDirectTwd: serializeDecimal(totals.fixedCostTwdDirectTwd),
+    totalTwd: serializeDecimal(totals.fixedCostTotalTwd),
+    paymentFeeTwd: serializeDecimal(
+      calculateSectionPaymentFeeTwd(totals.fixedCostJpyOriginTwd),
+    ),
+  };
+}
+
+function serializeTripProfit(result: any) {
+  if (result.status !== "ready") return result;
+  return {
+    status: "ready",
+    outcome: result.outcome,
+    grossProfitSource: result.grossProfitSource,
+    customerDiscountTotalTwd: serializeDecimal(result.customerDiscountTotalTwd),
+    adjustedRevenueTwd: serializeDecimal(result.adjustedRevenueTwd),
+    grossProfitTwd: serializeDecimal(result.grossProfitTwd),
+    grossMarginRate: serializeDecimal(result.grossMarginRate),
+    fixedPaymentFeeTwd: serializeDecimal(result.fixedPaymentFeeTwd),
+    variablePaymentFeeTwd: serializeDecimal(result.variablePaymentFeeTwd),
+    purchasePaymentFeeTwd: serializeDecimal(result.purchasePaymentFeeTwd),
+    paymentFeeTwd: serializeDecimal(result.paymentFeeTwd),
+    operatingExpenseTwd: serializeDecimal(result.operatingExpenseTwd),
+    operatingProfitBeforeAdjustmentsTwd: serializeDecimal(
+      result.operatingProfitBeforeAdjustmentsTwd,
+    ),
+    finalOperatingProfitTwd: serializeDecimal(result.finalOperatingProfitTwd),
+    salaryTargetTwd: serializeDecimal(result.salaryTargetTwd),
+    fixedCostJpyOriginTwd: serializeDecimal(result.fixedCostJpyOriginTwd),
+    fixedCostTwdDirectTwd: serializeDecimal(result.fixedCostTwdDirectTwd),
+    fixedCostTotalTwd: serializeDecimal(result.fixedCostTotalTwd),
+    variableCostJpyOriginTwd: serializeDecimal(result.variableCostJpyOriginTwd),
+    variableCostTwdDirectTwd: serializeDecimal(result.variableCostTwdDirectTwd),
+    variableCostTotalTwd: serializeDecimal(result.variableCostTotalTwd),
+    purchaseCostJpyOriginTwd: serializeDecimal(result.purchaseCostJpyOriginTwd),
+    purchaseCostTwdDirectTwd: serializeDecimal(result.purchaseCostTwdDirectTwd),
+    purchaseCostPrincipalTwd: serializeDecimal(result.purchaseCostPrincipalTwd),
   };
 }
 
@@ -76,20 +148,107 @@ router.get(
       mode === "ESTIMATE"
         ? access.trip.exchangeRate
         : access.trip.actualExchangeRate;
-    const totals = calculateFixedCostTotals({
-      entries: rows.map((row) => ({
-        ...row.entry,
-        originalAmount: String(row.entry.originalAmount),
-      })),
-      exchangeRate,
-    });
+    const rowsByKind = Object.fromEntries(
+      (["FIXED", "VARIABLE", "PURCHASE"] as const).map((kind) => [
+        kind,
+        rows.filter((row) => entryKind(row) === kind),
+      ]),
+    ) as Record<CostCategoryKind, any[]>;
+    const categoriesByKind = Object.fromEntries(
+      (["FIXED", "VARIABLE", "PURCHASE"] as const).map((kind) => [
+        kind,
+        categories.filter((category) => category.kind === kind),
+      ]),
+    ) as Record<CostCategoryKind, any[]>;
+    const totalsByKind = Object.fromEntries(
+      (["FIXED", "VARIABLE", "PURCHASE"] as const).map((kind) => [
+        kind,
+        calculateFixedCostTotals({
+          entries: rowsByKind[kind].map((row) => ({
+            ...row.entry,
+            originalAmount: String(row.entry.originalAmount),
+          })),
+          exchangeRate,
+        }),
+      ]),
+    ) as Record<CostCategoryKind, ReturnType<typeof calculateFixedCostTotals>>;
+
+    const [settings] = await db
+      .select({ referenceDailyWage: operatingSettingsTable.referenceDailyWage })
+      .from(operatingSettingsTable)
+      .where(eq(operatingSettingsTable.id, 1))
+      .limit(1);
+    const allSectionsReady = Object.values(totalsByKind).every(
+      (totals) => totals.status === "ready",
+    );
+    let tripProfit: ReturnType<typeof calculateTripProfit>;
+    if (
+      access.trip.unitGrossProfitTwd == null ||
+      access.trip.totalItemQuantity == null
+    ) {
+      tripProfit = pendingOperatingCost("缺少單件毛利或預估件數");
+    } else if (!allSectionsReady) {
+      tripProfit = Object.values(totalsByKind).find(
+        (totals) => totals.status !== "ready",
+      ) as ReturnType<typeof calculateTripProfit>;
+    } else {
+      const fixed = totalsByKind.FIXED as Extract<
+        (typeof totalsByKind)["FIXED"],
+        { status: "ready" }
+      >;
+      const variable = totalsByKind.VARIABLE as Extract<
+        (typeof totalsByKind)["VARIABLE"],
+        { status: "ready" }
+      >;
+      const purchase = totalsByKind.PURCHASE as Extract<
+        (typeof totalsByKind)["PURCHASE"],
+        { status: "ready" }
+      >;
+      tripProfit = calculateTripProfit({
+        fixedCostJpyOriginTwd: fixed.fixedCostJpyOriginTwd.toDecimalPlaces(12),
+        fixedCostTwdDirectTwd: fixed.fixedCostTwdDirectTwd.toDecimalPlaces(12),
+        variableCostJpyOriginTwd:
+          variable.fixedCostJpyOriginTwd.toDecimalPlaces(12),
+        variableCostTwdDirectTwd:
+          variable.fixedCostTwdDirectTwd.toDecimalPlaces(12),
+        purchaseCostJpyOriginTwd:
+          purchase.fixedCostJpyOriginTwd.toDecimalPlaces(12),
+        purchaseCostTwdDirectTwd:
+          purchase.fixedCostTwdDirectTwd.toDecimalPlaces(12),
+        unitGrossProfitTwd: String(access.trip.unitGrossProfitTwd),
+        estimatedItemQuantity: access.trip.totalItemQuantity,
+        creditCardRebateTwd: String(access.trip.creditCardRebateTwd),
+        workingDays: access.trip.workingDays,
+        referenceDailyWageTwd:
+          settings?.referenceDailyWage ?? DEFAULT_REFERENCE_DAILY_WAGE,
+      });
+    }
+
     return res.json({
-      status: totals.status,
+      status: tripProfit.status,
       mode,
       exchangeRate: exchangeRate == null ? null : String(exchangeRate),
       entries: rows.map(serializeEntry),
       categories,
-      totals: serializeTotals(totals),
+      totals: serializeTotals(totalsByKind.FIXED),
+      sections: {
+        fixed: serializeSection(
+          rowsByKind.FIXED,
+          categoriesByKind.FIXED,
+          totalsByKind.FIXED,
+        ),
+        variable: serializeSection(
+          rowsByKind.VARIABLE,
+          categoriesByKind.VARIABLE,
+          totalsByKind.VARIABLE,
+        ),
+        purchase: serializeSection(
+          rowsByKind.PURCHASE,
+          categoriesByKind.PURCHASE,
+          totalsByKind.PURCHASE,
+        ),
+      },
+      tripProfit: serializeTripProfit(tripProfit),
       estimateLocked: Boolean(access.trip.estimateLocked),
       estimateModifiedAfterLock: Boolean(access.trip.estimateModifiedAfterLock),
     });
@@ -111,12 +270,12 @@ router.get(
     const comparison = compareFixedCostEntries(
       estimateRows.map((row) => ({
         ...row.entry,
-        categoryName: row.categoryName,
+        categoryName: row.categoryName ?? row.entry.customLabel,
         originalAmount: String(row.entry.originalAmount),
       })),
       actualRows.map((row) => ({
         ...row.entry,
-        categoryName: row.categoryName,
+        categoryName: row.categoryName ?? row.entry.customLabel,
         originalAmount: String(row.entry.originalAmount),
       })),
       { estimated: estimateRate, actual: actualRate },

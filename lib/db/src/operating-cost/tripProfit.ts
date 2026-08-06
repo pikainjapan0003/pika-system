@@ -122,6 +122,15 @@ function parseCostSection(input: {
   };
 }
 
+export function calculateSectionPaymentFeeTwd(
+  jpyOriginTwd: ExactDecimal,
+): ExactDecimal {
+  if (jpyOriginTwd.isNegative()) {
+    throw new RangeError("jpyOriginTwd cannot be negative");
+  }
+  return jpyOriginTwd.multiply(ExactDecimal.from(PAYMENT_FEE_RATE));
+}
+
 export function calculateTripProfit(input: TripProfitInput): TripProfitResult {
   const workingDays = parsePositiveQuantity(input.workingDays);
   if (workingDays === null) {
@@ -209,10 +218,13 @@ export function calculateTripProfit(input: TripProfitInput): TripProfitResult {
     ? unitGrossProfitTwd.multiply(estimatedItemQuantity)
     : subtractDecimal(adjustedRevenueTwd as ExactDecimal, purchase.totalTwd);
 
-  const paymentFeeRate = ExactDecimal.from(PAYMENT_FEE_RATE);
-  const fixedPaymentFeeTwd = fixed.feeBaseTwd.multiply(paymentFeeRate);
-  const variablePaymentFeeTwd = variable.feeBaseTwd.multiply(paymentFeeRate);
-  const purchasePaymentFeeTwd = purchase.feeBaseTwd.multiply(paymentFeeRate);
+  const fixedPaymentFeeTwd = calculateSectionPaymentFeeTwd(fixed.feeBaseTwd);
+  const variablePaymentFeeTwd = calculateSectionPaymentFeeTwd(
+    variable.feeBaseTwd,
+  );
+  const purchasePaymentFeeTwd = calculateSectionPaymentFeeTwd(
+    purchase.feeBaseTwd,
+  );
   const paymentFeeTwd = fixedPaymentFeeTwd
     .add(variablePaymentFeeTwd)
     .add(purchasePaymentFeeTwd);
