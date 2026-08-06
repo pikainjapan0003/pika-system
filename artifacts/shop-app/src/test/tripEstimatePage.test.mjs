@@ -50,12 +50,23 @@ const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
   window.HTMLInputElement.prototype,
   "value",
 )?.set;
+const nativeSelectValueSetter = Object.getOwnPropertyDescriptor(
+  window.HTMLSelectElement.prototype,
+  "value",
+)?.set;
 
 function setInputValue(input, value) {
   assert.ok(input);
   assert.ok(nativeInputValueSetter);
   nativeInputValueSetter.call(input, value);
   input.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+function setSelectValue(select, value) {
+  assert.ok(select);
+  assert.ok(nativeSelectValueSetter);
+  nativeSelectValueSetter.call(select, value);
+  select.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
 function findButtonByText(container, text) {
@@ -72,6 +83,15 @@ async function waitForCall(calls, predicate, timeoutMs = 1_000) {
     await new Promise((resolve) => setTimeout(resolve, 10));
   }
   return undefined;
+}
+
+async function waitForCondition(predicate, timeoutMs = 1_000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (predicate()) return true;
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+  return false;
 }
 
 async function renderPage() {
@@ -137,6 +157,69 @@ test("saving estimate sends decimal strings and selected currency", async () => 
     originalAmount: "12.50",
     currency: "TWD",
   });
+  root.unmount();
+});
+
+test("each category sends its own currency", async () => {
+  const calls = [];
+  globalThis.fetch = async (url, init = {}) => {
+    calls.push({ url, init });
+    if (String(url).includes("operating-summary")) return response(summary);
+    return response({ ok: true });
+  };
+  const { container, root } = await renderPage();
+  setInputValue(container.querySelector("input[aria-label='類別1']"), "5400");
+  setInputValue(container.querySelector("input[aria-label='類別7']"), "63943");
+  setSelectValue(
+    container.querySelector("select[aria-label='類別7幣別']"),
+    "JPY",
+  );
+  await new Promise((resolve) => setTimeout(resolve, 0));
+
+  const saveButton = findButtonByText(container, "儲存估算");
+  assert.ok(saveButton);
+  saveButton.click();
+
+  const firstCategoryCall = await waitForCall(calls, (call) => {
+    if (!String(call.url).endsWith("/cost-entries")) return false;
+    return JSON.parse(call.init.body).categoryId === 1;
+  });
+  const seventhCategoryCall = await waitForCall(calls, (call) => {
+    if (!String(call.url).endsWith("/cost-entries")) return false;
+    return JSON.parse(call.init.body).categoryId === 7;
+  });
+  assert.ok(firstCategoryCall);
+  assert.ok(seventhCategoryCall);
+  assert.deepEqual(JSON.parse(firstCategoryCall.init.body), {
+    mode: "ESTIMATE",
+    categoryId: 1,
+    originalAmount: "5400",
+    currency: "TWD",
+  });
+  assert.deepEqual(JSON.parse(seventhCategoryCall.init.body), {
+    mode: "ESTIMATE",
+    categoryId: 7,
+    originalAmount: "63943",
+    currency: "JPY",
+  });
+  root.unmount();
+});
+
+test("JPY rows without an exchange rate show 待確認 instead of 0", async () => {
+  globalThis.fetch = async () => response(summary);
+  const { container, root } = await renderPage();
+  setInputValue(container.querySelector("input[aria-label='估算匯率']"), "");
+  const currencySelect = container.querySelector(
+    "select[aria-label='類別7幣別']",
+  );
+  setSelectValue(currencySelect, "JPY");
+
+  const updated = await waitForCondition(() =>
+    currencySelect?.parentElement?.textContent?.includes("待確認"),
+  );
+  assert.equal(updated, true);
+  assert.match(currencySelect.parentElement.textContent, /待確認/);
+  assert.doesNotMatch(currencySelect.parentElement.textContent, /NT\$0/);
   root.unmount();
 });
 
