@@ -230,6 +230,7 @@ jobs:
               src/routes/coreMutationAuthorization.route.test.mjs \
               src/routes/tripsStoreIsolation.route.test.mjs \
               src/routes/fixedCostEstimateUnlock.route.test.mjs \
+              src/routes/fixedCostSummary.route.test.mjs \
               src/routes/devHandoffProductionGuard.route.test.mjs
 
       - name: Test pure function suites

@@ -44,6 +44,7 @@ if (!process.env.DATABASE_URL) {
   let storeId;
   let otherStoreId;
   let tripId;
+  let customEntryId;
   const categoryIds = [];
 
   before(async () => {
@@ -106,37 +107,47 @@ if (!process.env.DATABASE_URL) {
           kind: "PURCHASE",
           sortOrder: 999,
         },
+        {
+          code: `V1_PHASE17_VARIABLE_COMPARISON_${nonce}`,
+          name: "V1 variable comparison",
+          kind: "VARIABLE",
+          sortOrder: 1000,
+        },
       ])
       .returning();
     categoryIds.push(...categories.map((category) => category.id));
 
-    await db.insert(costEntriesTable).values([
-      {
-        storeId,
-        tripId,
-        mode: "ESTIMATE",
-        categoryId: null,
-        customLabel: "自訂支出",
-        currency: "JPY",
-        originalAmount: "100",
-      },
-      {
-        storeId,
-        tripId,
-        mode: "ESTIMATE",
-        categoryId: categories[1].id,
-        currency: "JPY",
-        originalAmount: "50",
-      },
-      {
-        storeId,
-        tripId,
-        mode: "ESTIMATE",
-        categoryId: categories[2].id,
-        currency: "TWD",
-        originalAmount: "1000",
-      },
-    ]);
+    const insertedEntries = await db
+      .insert(costEntriesTable)
+      .values([
+        {
+          storeId,
+          tripId,
+          mode: "ESTIMATE",
+          categoryId: null,
+          customLabel: "自訂支出",
+          currency: "JPY",
+          originalAmount: "100",
+        },
+        {
+          storeId,
+          tripId,
+          mode: "ESTIMATE",
+          categoryId: categories[1].id,
+          currency: "JPY",
+          originalAmount: "50",
+        },
+        {
+          storeId,
+          tripId,
+          mode: "ESTIMATE",
+          categoryId: categories[2].id,
+          currency: "TWD",
+          originalAmount: "1000",
+        },
+      ])
+      .returning({ id: costEntriesTable.id });
+    customEntryId = insertedEntries[0].id;
 
     await db
       .insert(operatingSettingsTable)
@@ -215,6 +226,45 @@ if (!process.env.DATABASE_URL) {
       "90969.550000000000",
     );
     assert.equal(response.data.tripProfit.outcome, "SALARY_TARGET_MET");
+  });
+
+  test("a custom JPY entry costs the same in its FIXED default and a VARIABLE comparison", async () => {
+    const fixedResponse = await request();
+    assert.equal(fixedResponse.status, 200, JSON.stringify(fixedResponse.data));
+
+    await db
+      .update(costEntriesTable)
+      .set({ categoryId: categoryIds[3], customLabel: null })
+      .where(eq(costEntriesTable.id, customEntryId));
+    try {
+      const variableResponse = await request();
+      assert.equal(
+        variableResponse.status,
+        200,
+        JSON.stringify(variableResponse.data),
+      );
+      assert.equal(fixedResponse.data.sections.fixed.entries.length, 1);
+      assert.equal(variableResponse.data.sections.fixed.entries.length, 0);
+      assert.equal(fixedResponse.data.sections.variable.entries.length, 1);
+      assert.equal(variableResponse.data.sections.variable.entries.length, 2);
+      assert.equal(
+        fixedResponse.data.tripProfit.operatingExpenseTwd,
+        variableResponse.data.tripProfit.operatingExpenseTwd,
+      );
+      assert.equal(
+        fixedResponse.data.tripProfit.paymentFeeTwd,
+        "0.450000000000",
+      );
+      assert.equal(
+        variableResponse.data.tripProfit.paymentFeeTwd,
+        "0.450000000000",
+      );
+    } finally {
+      await db
+        .update(costEntriesTable)
+        .set({ categoryId: null, customLabel: "自訂支出" })
+        .where(eq(costEntriesTable.id, customEntryId));
+    }
   });
 
   test("missing unit gross or item quantity stays pending without synthesizing revenue", async () => {
