@@ -178,6 +178,8 @@ if (!process.env.DATABASE_URL) {
 
     assert.equal(response.status, 200, JSON.stringify(response.data));
     assert.equal(response.data.status, "ready");
+    assert.equal(response.data.totalItemQuantity, 700);
+    assert.equal(response.data.unitGrossProfitTwd, "130.000000000000");
     assert.equal(response.data.sections.fixed.entries.length, 1);
     assert.equal(
       response.data.sections.fixed.entries[0].categoryName,
