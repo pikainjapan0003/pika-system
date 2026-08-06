@@ -162,9 +162,15 @@ if (!process.env.DATABASE_URL) {
     const operatingInput = await request(
       "PATCH",
       `/stores/${storeId}/trips/${tripId}/operating-inputs`,
-      { exchangeRate: "0.25" },
+      {
+        exchangeRate: "0.25",
+        totalItemQuantity: "700",
+        unitGrossProfitTwd: "130",
+      },
     );
     assert.equal(operatingInput.status, 200);
+    assert.equal(operatingInput.data.totalItemQuantity, 700);
+    assert.equal(operatingInput.data.unitGrossProfitTwd, "130.000000000000");
     assert.equal(operatingInput.data.estimateModifiedAfterLock, true);
 
     const [storedTrip] = await db
