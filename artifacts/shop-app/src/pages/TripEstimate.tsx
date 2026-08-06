@@ -2,6 +2,7 @@ import { useAuth } from "@clerk/react";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { useGetMyStore } from "@workspace/api-client-react";
+import { ExactDecimal } from "@workspace/db/transport-cost";
 import { BottomNav } from "./Dashboard";
 
 const inputClass =
@@ -24,13 +25,35 @@ type Summary = {
   estimateModifiedAfterLock: boolean;
 };
 
+function formatConvertedAmount(
+  originalAmount: string,
+  currency: "JPY" | "TWD",
+  exchangeRate: string,
+): string {
+  const amount = originalAmount.trim() || "0";
+  if (currency === "TWD") return `NT$${amount}`;
+
+  const rate = exchangeRate.trim();
+  if (!rate) return "待確認";
+
+  try {
+    return `≈ NT$${ExactDecimal.from(amount)
+      .multiply(ExactDecimal.from(rate))
+      .toDecimalPlaces(2)}`;
+  } catch {
+    return "待確認";
+  }
+}
+
 export default function TripEstimatePage({ tripId }: { tripId: number }) {
   const [, setLocation] = useLocation();
   const { getToken } = useAuth();
   const { data: store } = useGetMyStore();
   const [summary, setSummary] = useState<Summary | null>(null);
   const [values, setValues] = useState<Record<number, string>>({});
-  const [currency, setCurrency] = useState<"JPY" | "TWD">("TWD");
+  const [currencies, setCurrencies] = useState<Record<number, "JPY" | "TWD">>(
+    {},
+  );
   const [exchangeRate, setExchangeRate] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -75,11 +98,18 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
             ]),
         ),
       );
-      const firstCurrency = payload.entries.find(
-        (entry) => entry.currency,
-      )?.currency;
-      if (firstCurrency === "JPY" || firstCurrency === "TWD")
-        setCurrency(firstCurrency);
+      const loadedCurrencies = Object.fromEntries(
+        payload.categories.map((category) => [category.id, "TWD"]),
+      ) as Record<number, "JPY" | "TWD">;
+      for (const entry of payload.entries) {
+        if (
+          entry.categoryId != null &&
+          (entry.currency === "JPY" || entry.currency === "TWD")
+        ) {
+          loadedCurrencies[entry.categoryId] = entry.currency;
+        }
+      }
+      setCurrencies(loadedCurrencies);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "無法載入估算");
     } finally {
@@ -113,13 +143,17 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
       );
       for (const category of categories) {
         const originalAmount = (values[category.id] ?? "0").trim() || "0";
+        const entryCurrency = currencies[category.id] ?? "TWD";
         const existing = existingByCategory.get(category.id);
         if (existing) {
           await request(
             `/api/stores/${store.id}/trips/${tripId}/cost-entries/${existing.id}`,
             {
               method: "PATCH",
-              body: JSON.stringify({ originalAmount, currency }),
+              body: JSON.stringify({
+                originalAmount,
+                currency: entryCurrency,
+              }),
             },
           );
         } else {
@@ -131,7 +165,7 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
                 mode: "ESTIMATE",
                 categoryId: category.id,
                 originalAmount,
-                currency,
+                currency: entryCurrency,
               }),
             },
           );
@@ -206,32 +240,16 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
         {summary && (
           <>
             <section className="rounded-2xl border border-border bg-white p-4">
-              <div className="flex items-center justify-between gap-3">
-                <label className="flex-1 text-sm font-semibold">
-                  估算匯率（JPY → TWD）
-                  <input
-                    aria-label="估算匯率"
-                    className={`${inputClass} mt-2`}
-                    value={exchangeRate}
-                    onChange={(event) => setExchangeRate(event.target.value)}
-                    inputMode="decimal"
-                  />
-                </label>
-                <label className="w-28 text-sm font-semibold">
-                  幣別
-                  <select
-                    aria-label="估算幣別"
-                    className={`${inputClass} mt-2`}
-                    value={currency}
-                    onChange={(event) =>
-                      setCurrency(event.target.value as "JPY" | "TWD")
-                    }
-                  >
-                    <option value="TWD">TWD</option>
-                    <option value="JPY">JPY</option>
-                  </select>
-                </label>
-              </div>
+              <label className="block text-sm font-semibold">
+                估算匯率（JPY → TWD）
+                <input
+                  aria-label="估算匯率"
+                  className={`${inputClass} mt-2`}
+                  value={exchangeRate}
+                  onChange={(event) => setExchangeRate(event.target.value)}
+                  inputMode="decimal"
+                />
+              </label>
               <p className="mt-3 text-sm text-muted-foreground">
                 目前預估合計 NT${summary.totals?.fixedCostTotalTwd ?? "0"}
               </p>
@@ -243,25 +261,54 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
             </section>
             <section className="space-y-2 rounded-2xl border border-border bg-white p-4">
               <h2 className="font-bold">11 項固定成本</h2>
-              {categories.map((category) => (
-                <label key={category.id} className="block text-sm">
-                  <span className="mb-1 block text-muted-foreground">
-                    {category.name}
-                  </span>
-                  <input
-                    aria-label={category.name}
-                    className={inputClass}
-                    value={values[category.id] ?? "0"}
-                    onChange={(event) =>
-                      setValues((current) => ({
-                        ...current,
-                        [category.id]: event.target.value,
-                      }))
-                    }
-                    inputMode="decimal"
-                  />
-                </label>
-              ))}
+              {categories.map((category) => {
+                const entryCurrency = currencies[category.id] ?? "TWD";
+                return (
+                  <div
+                    key={category.id}
+                    className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_5.5rem] items-start gap-2 text-sm"
+                  >
+                    <span className="pt-3 text-muted-foreground">
+                      {category.name}
+                    </span>
+                    <input
+                      aria-label={category.name}
+                      className={inputClass}
+                      value={values[category.id] ?? "0"}
+                      onChange={(event) =>
+                        setValues((current) => ({
+                          ...current,
+                          [category.id]: event.target.value,
+                        }))
+                      }
+                      inputMode="decimal"
+                    />
+                    <div className="min-w-0">
+                      <select
+                        aria-label={`${category.name}幣別`}
+                        className="h-11 w-full rounded-xl border border-input bg-white px-2 text-sm text-foreground"
+                        value={entryCurrency}
+                        onChange={(event) =>
+                          setCurrencies((current) => ({
+                            ...current,
+                            [category.id]: event.target.value as "JPY" | "TWD",
+                          }))
+                        }
+                      >
+                        <option value="TWD">TWD</option>
+                        <option value="JPY">JPY</option>
+                      </select>
+                      <span className="mt-1 block break-words text-right text-xs text-muted-foreground">
+                        {formatConvertedAmount(
+                          values[category.id] ?? "0",
+                          entryCurrency,
+                          exchangeRate,
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
               <label className="block text-sm">
                 <span className="mb-1 block text-muted-foreground">
                   自訂項目
