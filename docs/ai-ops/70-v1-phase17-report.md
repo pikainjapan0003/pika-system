@@ -95,7 +95,7 @@ finalOperatingProfitTwd 33791.489400000000
 outcome SALARY_TARGET_MET
 ```
 
-Sheet C32 為 `572.215725`，系統固定成本手續費為 `228.235725`，差額 `343.98`。差額來自 Sheet 對台幣直接支出（行銷 5,400、機票 14,532、網卡 485.85）也收取 1.5%；依老闆拍板，TWD 直接支出不收刷卡手續費，因此系統結果為本批採用值。
+Sheet C32 為 `572.215725`，系統固定成本手續費為 `228.235725`，差額 `343.98`。差額來自 Sheet 對台幣直接支出（行銷 5,400、伙食 3,000、機票 14,532，合計 22,932）也收取 1.5%：22,932 × 1.5% = 343.98。接機 1,000 老闆原本就刻意未收，故不在 Sheet 費基內；網卡 2,370 JPY × 0.205 = 485.85 屬日圓段，本來就已計入系統的 228.235725，不是差額來源。依老闆拍板，TWD 直接支出不收刷卡手續費，因此系統結果為本批採用值。
 
 ## PostgreSQL 雙路徑演練
 
@@ -190,4 +190,4 @@ DB_B_LOG_SCAN=0
 
 PowerShell 重算指令：`$text=[IO.File]::ReadAllText($path,[Text.UTF8Encoding]::new($false)); $normalized=[regex]::Replace($text,'(?m)^SELF_SHA256:.*(?:\r?\n)?',''); $sha=[Security.Cryptography.SHA256]::Create(); (($sha.ComputeHash([Text.UTF8Encoding]::new($false).GetBytes($normalized)) | ForEach-Object ToString x2) -join '')`
 
-SELF_SHA256: 49ad67f10d5d5452522036fa0b1499e6857bc19f2c7af1c0aaa76636a88c5054
+SELF_SHA256: ccc000a469b69808db251ed5aef235b770e497c913c5e1611b54faf47d6fa2cd
