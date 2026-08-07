@@ -32,6 +32,18 @@ function parsePositiveInteger(value: unknown): number | null | undefined {
   return undefined;
 }
 
+function parseNonNegativeInteger(value: unknown): number | null | undefined {
+  if (value === undefined) return undefined;
+  if (value === null || value === "") return null;
+  if (typeof value === "number" && Number.isSafeInteger(value) && value >= 0)
+    return value;
+  if (typeof value === "string" && /^\d+$/.test(value)) {
+    const parsed = Number(value);
+    return Number.isSafeInteger(parsed) ? parsed : undefined;
+  }
+  return undefined;
+}
+
 function parseHepDays(value: unknown): number | null | undefined {
   const parsed = parsePositiveInteger(value);
   if (parsed === undefined || parsed === null) return parsed;
@@ -54,6 +66,8 @@ router.patch(
     const workingDays = parsePositiveInteger(body.workingDays);
     const actualExchangeRate = nullableDecimal(body.actualExchangeRate);
     const exchangeRate = nullableDecimal(body.exchangeRate);
+    const totalItemQuantity = parseNonNegativeInteger(body.totalItemQuantity);
+    const unitGrossProfitTwd = nullableDecimal(body.unitGrossProfitTwd);
     const hepDays = parseHepDays(body.hepDays);
     const hepTotalJpy = nullableDecimal(body.hepTotalJpy);
     const creditCardRebateTwd = nullableDecimal(body.creditCardRebateTwd);
@@ -70,6 +84,10 @@ router.patch(
       (body.actualExchangeRate !== undefined &&
         actualExchangeRate === undefined) ||
       (body.exchangeRate !== undefined && exchangeRate === undefined) ||
+      (body.totalItemQuantity !== undefined &&
+        totalItemQuantity === undefined) ||
+      (body.unitGrossProfitTwd !== undefined &&
+        unitGrossProfitTwd === undefined) ||
       (body.hepDays !== undefined && hepDays === undefined) ||
       (body.hepTotalJpy !== undefined && hepTotalJpy === undefined) ||
       (body.creditCardRebateTwd !== undefined &&
@@ -89,6 +107,8 @@ router.patch(
       ["workingDays", workingDays],
       ["actualExchangeRate", actualExchangeRate],
       ["exchangeRate", exchangeRate],
+      ["totalItemQuantity", totalItemQuantity],
+      ["unitGrossProfitTwd", unitGrossProfitTwd],
       ["hepDays", hepDays],
       ["hepTotalJpy", hepTotalJpy],
       ["creditCardRebateTwd", creditCardRebateTwd],

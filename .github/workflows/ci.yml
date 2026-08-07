@@ -99,13 +99,15 @@ jobs:
             "actual_exchange_rate",
             "estimate_locked",
             "estimate_modified_after_lock",
+            "unit_gross_profit_twd",
           ];
           const columnResult = await pool.query(
             `SELECT table_name, column_name
              FROM information_schema.columns
              WHERE table_schema = 'public'
                AND ((table_name = 'trips' AND column_name = ANY($1::text[]))
-                 OR (table_name = 'cost_entries' AND column_name = ANY($2::text[])))`,
+                 OR (table_name = 'cost_entries' AND column_name = ANY($2::text[]))
+                 OR (table_name = 'cost_categories' AND column_name = 'kind'))`,
             [
               tripColumns,
               [
@@ -140,12 +142,12 @@ jobs:
               throw new Error(`missing cost_entries column: ${column}`);
             }
           }
+          if (!actualColumns.has("cost_categories.kind")) {
+            throw new Error("missing cost_categories column: kind");
+          }
 
-          const categoryResult = await pool.query(
-            `SELECT count(*)::int AS count,
-                    count(*) FILTER (WHERE code = ANY($1::text[]))::int AS expected_count
-             FROM cost_categories`,
-            [[
+          const expectedCategories = new Map([
+            ["FIXED", [
               "PERSONNEL",
               "MARKETING",
               "MEALS",
@@ -158,12 +160,36 @@ jobs:
               "AIRPORT_TRANSFER",
               "OTHER",
             ]],
+            ["VARIABLE", [
+              "FUEL",
+              "PARKING",
+              "TRAIN",
+              "ETC",
+              "DOMESTIC_SHIPPING",
+              "CONSOLIDATION",
+              "PACKAGING",
+            ]],
+            ["PURCHASE", ["PURCHASE"]],
+          ]);
+          const categoryResult = await pool.query(
+            `SELECT kind, code
+             FROM cost_categories
+             ORDER BY kind, code`,
           );
-          const categoryRow = categoryResult.rows[0];
-          if (categoryRow.count !== 11 || categoryRow.expected_count !== 11) {
-            throw new Error(
-              `fixed-cost category seed mismatch: total=${categoryRow.count} expected=${categoryRow.expected_count}`,
-            );
+          if (categoryResult.rows.length !== 19) {
+            throw new Error(`cost category seed total mismatch: ${categoryResult.rows.length}`);
+          }
+          for (const [kind, expectedCodes] of expectedCategories) {
+            const actualCodes = categoryResult.rows
+              .filter((row) => row.kind === kind)
+              .map((row) => row.code)
+              .sort();
+            const expectedSorted = [...expectedCodes].sort();
+            if (JSON.stringify(actualCodes) !== JSON.stringify(expectedSorted)) {
+              throw new Error(
+                `${kind} cost category seed mismatch: actual=${actualCodes.join(",")} expected=${expectedSorted.join(",")}`,
+              );
+            }
           }
 
           const singletonResult = await pool.query(
@@ -204,6 +230,7 @@ jobs:
               src/routes/coreMutationAuthorization.route.test.mjs \
               src/routes/tripsStoreIsolation.route.test.mjs \
               src/routes/fixedCostEstimateUnlock.route.test.mjs \
+              src/routes/fixedCostSummary.route.test.mjs \
               src/routes/devHandoffProductionGuard.route.test.mjs
 
       - name: Test pure function suites
