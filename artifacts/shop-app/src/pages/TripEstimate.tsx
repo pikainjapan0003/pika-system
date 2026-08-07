@@ -2,48 +2,107 @@ import { useAuth } from "@clerk/react";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { useGetMyStore } from "@workspace/api-client-react";
-import { ExactDecimal } from "@workspace/db/transport-cost";
+import {
+  formatApiTwd,
+  formatConvertedAmount,
+  OPERATING_COST_PENDING_LABEL,
+  type OperatingCostCurrency,
+} from "../lib/operatingCostDisplay";
 import { BottomNav } from "./Dashboard";
 
 const inputClass =
   "h-11 w-full rounded-xl border border-input bg-white px-3 text-sm text-foreground";
 
-type Category = { id: number; code: string; name: string };
+type CostCategoryKind = "FIXED" | "VARIABLE" | "PURCHASE";
+type Category = {
+  id: number;
+  code: string;
+  name: string;
+  kind: CostCategoryKind;
+};
+type Entry = {
+  id: number;
+  categoryId: number | null;
+  categoryName?: string | null;
+  customLabel?: string | null;
+  originalAmount: string;
+  currency: OperatingCostCurrency;
+  categoryKind: CostCategoryKind;
+};
+type Section = {
+  status: "ready" | "pending_confirmation";
+  reason?: string;
+  entries: Entry[];
+  categories: Category[];
+  jpyOriginTwd: string | null;
+  twdDirectTwd: string | null;
+  totalTwd: string | null;
+  paymentFeeTwd: string | null;
+};
+type ReadyTripProfit = {
+  status: "ready";
+  outcome: "LOSS" | "PROFIT_BELOW_SALARY_TARGET" | "SALARY_TARGET_MET";
+  grossProfitSource: "UNIT" | "REVENUE";
+  grossProfitTwd: string;
+  operatingExpenseTwd: string;
+  finalOperatingProfitTwd: string;
+  fixedPaymentFeeTwd: string;
+  variablePaymentFeeTwd: string;
+  purchasePaymentFeeTwd: string;
+};
+type PendingTripProfit = {
+  status: "pending_confirmation";
+  reason: string;
+};
 type Summary = {
   mode: "ESTIMATE";
-  status: string;
+  status: "ready" | "pending_confirmation";
   exchangeRate: string | null;
-  entries: Array<{
-    id: number;
-    categoryId: number | null;
-    originalAmount: string;
-    currency: string;
-  }>;
+  totalItemQuantity: number | null;
+  unitGrossProfitTwd: string | null;
+  entries: Entry[];
   categories: Category[];
-  totals?: { fixedCostTotalTwd?: string | null };
+  sections: {
+    fixed: Section;
+    variable: Section;
+    purchase: Section;
+  };
+  tripProfit: ReadyTripProfit | PendingTripProfit;
   estimateLocked: boolean;
   estimateModifiedAfterLock: boolean;
 };
 
-function formatConvertedAmount(
-  originalAmount: string,
-  currency: "JPY" | "TWD",
-  exchangeRate: string,
-): string {
-  const amount = originalAmount.trim() || "0";
-  if (currency === "TWD") return `NT$${amount}`;
+const SECTION_CONFIG: Array<{
+  key: keyof Summary["sections"];
+  kind: CostCategoryKind;
+  title: string;
+  feeLabel: string;
+}> = [
+  {
+    key: "fixed",
+    kind: "FIXED",
+    title: "固定費用（11 項）",
+    feeLabel: "固定金流費用",
+  },
+  {
+    key: "variable",
+    kind: "VARIABLE",
+    title: "變動費用（7 項）",
+    feeLabel: "變動金流費用",
+  },
+  {
+    key: "purchase",
+    kind: "PURCHASE",
+    title: "採購成本（1 項）",
+    feeLabel: "採購金流費用",
+  },
+];
 
-  const rate = exchangeRate.trim();
-  if (!rate) return "待確認";
-
-  try {
-    return `≈ NT$${ExactDecimal.from(amount)
-      .multiply(ExactDecimal.from(rate))
-      .toDecimalPlaces(2)}`;
-  } catch {
-    return "待確認";
-  }
-}
+const OUTCOME_LABELS: Record<ReadyTripProfit["outcome"], string> = {
+  SALARY_TARGET_MET: "達成日薪目標",
+  PROFIT_BELOW_SALARY_TARGET: "有利潤但未達日薪目標",
+  LOSS: "虧損",
+};
 
 export default function TripEstimatePage({ tripId }: { tripId: number }) {
   const [, setLocation] = useLocation();
@@ -51,10 +110,12 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
   const { data: store } = useGetMyStore();
   const [summary, setSummary] = useState<Summary | null>(null);
   const [values, setValues] = useState<Record<number, string>>({});
-  const [currencies, setCurrencies] = useState<Record<number, "JPY" | "TWD">>(
-    {},
-  );
+  const [currencies, setCurrencies] = useState<
+    Record<number, OperatingCostCurrency>
+  >({});
   const [exchangeRate, setExchangeRate] = useState("");
+  const [totalItemQuantity, setTotalItemQuantity] = useState("");
+  const [unitGrossProfitTwd, setUnitGrossProfitTwd] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
@@ -85,33 +146,30 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
       )) as Summary;
       setSummary(payload);
       setExchangeRate(payload.exchangeRate ?? "");
+      setTotalItemQuantity(
+        payload.totalItemQuantity == null
+          ? ""
+          : String(payload.totalItemQuantity),
+      );
+      setUnitGrossProfitTwd(payload.unitGrossProfitTwd ?? "");
       setValues(
         Object.fromEntries(
           payload.entries
-            .filter(
-              (entry) =>
-                entry.categoryId != null && entry.originalAmount != null,
-            )
-            .map((entry) => [
-              entry.categoryId as number,
-              String(entry.originalAmount),
-            ]),
+            .filter((entry) => entry.categoryId != null)
+            .map((entry) => [entry.categoryId as number, entry.originalAmount]),
         ),
       );
       const loadedCurrencies = Object.fromEntries(
         payload.categories.map((category) => [category.id, "TWD"]),
-      ) as Record<number, "JPY" | "TWD">;
+      ) as Record<number, OperatingCostCurrency>;
       for (const entry of payload.entries) {
-        if (
-          entry.categoryId != null &&
-          (entry.currency === "JPY" || entry.currency === "TWD")
-        ) {
+        if (entry.categoryId != null) {
           loadedCurrencies[entry.categoryId] = entry.currency;
         }
       }
       setCurrencies(loadedCurrencies);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "無法載入估算");
+      setError(caught instanceof Error ? caught.message : "無法載入預估成本");
     } finally {
       setLoading(false);
     }
@@ -121,7 +179,13 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
     void load();
   }, [store?.id, tripId]);
 
-  const categories = useMemo(() => summary?.categories ?? [], [summary]);
+  const categories = useMemo(
+    () =>
+      SECTION_CONFIG.flatMap(
+        ({ key }) => summary?.sections[key].categories ?? [],
+      ),
+    [summary],
+  );
 
   async function save() {
     if (!store?.id || !summary) return;
@@ -133,7 +197,11 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
         `/api/stores/${store.id}/trips/${tripId}/operating-inputs`,
         {
           method: "PATCH",
-          body: JSON.stringify({ exchangeRate: exchangeRate.trim() || null }),
+          body: JSON.stringify({
+            exchangeRate: exchangeRate.trim() || null,
+            totalItemQuantity: totalItemQuantity.trim() || null,
+            unitGrossProfitTwd: unitGrossProfitTwd.trim() || null,
+          }),
         },
       );
       const existingByCategory = new Map(
@@ -150,10 +218,7 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
             `/api/stores/${store.id}/trips/${tripId}/cost-entries/${existing.id}`,
             {
               method: "PATCH",
-              body: JSON.stringify({
-                originalAmount,
-                currency: entryCurrency,
-              }),
+              body: JSON.stringify({ originalAmount, currency: entryCurrency }),
             },
           );
         } else {
@@ -172,7 +237,7 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
         }
       }
       await load();
-      setMessage("估算已儲存");
+      setMessage("預估成本已儲存");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "儲存失敗");
     } finally {
@@ -187,9 +252,9 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
         method: "POST",
       });
       await load();
-      setMessage("行程已關帳，估算已鎖定");
+      setMessage("行程已結束，預估成本已鎖定");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "關帳失敗");
+      setError(caught instanceof Error ? caught.message : "鎖定失敗");
     }
   }
 
@@ -200,10 +265,98 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
         method: "POST",
       });
       await load();
-      setMessage("已解鎖；後續修改會永久標記為人工修改");
+      setMessage("已解鎖預估；之後的修改會永久留下標記");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "解鎖失敗");
     }
+  }
+
+  function renderSection(config: (typeof SECTION_CONFIG)[number]) {
+    if (!summary) return null;
+    const section = summary.sections[config.key];
+    const customEntries = section.entries.filter(
+      (entry) => entry.categoryId == null,
+    );
+
+    return (
+      <section
+        key={config.key}
+        data-cost-section={config.kind}
+        className="space-y-3 rounded-2xl border border-border bg-white p-4"
+      >
+        <h2 className="font-bold">{config.title}</h2>
+        {section.categories.map((category) => {
+          const entryCurrency = currencies[category.id] ?? "TWD";
+          return (
+            <div
+              key={category.id}
+              className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_5.5rem] items-start gap-2 text-sm"
+            >
+              <span className="pt-3 text-muted-foreground">
+                {category.name}
+              </span>
+              <input
+                aria-label={category.name}
+                className={inputClass}
+                value={values[category.id] ?? "0"}
+                onChange={(event) =>
+                  setValues((current) => ({
+                    ...current,
+                    [category.id]: event.target.value,
+                  }))
+                }
+                inputMode="decimal"
+              />
+              <div className="min-w-0">
+                <select
+                  aria-label={`${category.name}幣別`}
+                  className="h-11 w-full rounded-xl border border-input bg-white px-2 text-sm text-foreground"
+                  value={entryCurrency}
+                  onChange={(event) =>
+                    setCurrencies((current) => ({
+                      ...current,
+                      [category.id]: event.target
+                        .value as OperatingCostCurrency,
+                    }))
+                  }
+                >
+                  <option value="TWD">TWD</option>
+                  <option value="JPY">JPY</option>
+                </select>
+                <span className="mt-1 block break-words text-right text-xs text-muted-foreground">
+                  {formatConvertedAmount(
+                    values[category.id] ?? "0",
+                    entryCurrency,
+                    exchangeRate,
+                  )}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+        {customEntries.map((entry) => (
+          <div
+            key={entry.id}
+            className="flex items-center justify-between gap-3 border-t border-border pt-3 text-sm"
+          >
+            <span>{entry.customLabel ?? entry.categoryName ?? "自訂項目"}</span>
+            <span className="text-right text-muted-foreground">
+              {entry.currency} {entry.originalAmount}
+              <br />
+              {formatConvertedAmount(
+                entry.originalAmount,
+                entry.currency,
+                exchangeRate,
+              )}
+            </span>
+          </div>
+        ))}
+        <div className="flex items-center justify-between border-t border-border pt-3 text-sm font-semibold">
+          <span>{config.title.replace(/（.*$/, "合計")}</span>
+          <span>{formatApiTwd(section.totalTwd)}</span>
+        </div>
+      </section>
+    );
   }
 
   return (
@@ -250,77 +403,94 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
                   inputMode="decimal"
                 />
               </label>
-              <p className="mt-3 text-sm text-muted-foreground">
-                目前預估合計 NT${summary.totals?.fixedCostTotalTwd ?? "0"}
-              </p>
               {summary.estimateModifiedAfterLock && (
                 <p className="mt-2 text-xs text-amber-700">
-                  此估算曾在鎖定後被人工解鎖修改
+                  此預估曾在鎖定後解鎖修改，紀錄會永久保留。
                 </p>
               )}
             </section>
-            <section className="space-y-2 rounded-2xl border border-border bg-white p-4">
-              <h2 className="font-bold">11 項固定成本</h2>
-              {categories.map((category) => {
-                const entryCurrency = currencies[category.id] ?? "TWD";
-                return (
-                  <div
-                    key={category.id}
-                    className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_5.5rem] items-start gap-2 text-sm"
-                  >
-                    <span className="pt-3 text-muted-foreground">
-                      {category.name}
-                    </span>
-                    <input
-                      aria-label={category.name}
-                      className={inputClass}
-                      value={values[category.id] ?? "0"}
-                      onChange={(event) =>
-                        setValues((current) => ({
-                          ...current,
-                          [category.id]: event.target.value,
-                        }))
-                      }
-                      inputMode="decimal"
-                    />
-                    <div className="min-w-0">
-                      <select
-                        aria-label={`${category.name}幣別`}
-                        className="h-11 w-full rounded-xl border border-input bg-white px-2 text-sm text-foreground"
-                        value={entryCurrency}
-                        onChange={(event) =>
-                          setCurrencies((current) => ({
-                            ...current,
-                            [category.id]: event.target.value as "JPY" | "TWD",
-                          }))
-                        }
-                      >
-                        <option value="TWD">TWD</option>
-                        <option value="JPY">JPY</option>
-                      </select>
-                      <span className="mt-1 block break-words text-right text-xs text-muted-foreground">
-                        {formatConvertedAmount(
-                          values[category.id] ?? "0",
-                          entryCurrency,
-                          exchangeRate,
-                        )}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-              <label className="block text-sm">
-                <span className="mb-1 block text-muted-foreground">
-                  自訂項目
+
+            {SECTION_CONFIG.map(renderSection)}
+
+            <section className="space-y-2 rounded-2xl border border-border bg-white p-4 text-sm">
+              <h2 className="font-bold">費用摘要</h2>
+              {SECTION_CONFIG.map((config) => (
+                <div
+                  key={config.key}
+                  className="flex items-center justify-between"
+                >
+                  <span>{config.feeLabel}</span>
+                  <span>
+                    {formatApiTwd(summary.sections[config.key].paymentFeeTwd)}
+                  </span>
+                </div>
+              ))}
+              <div className="flex items-center justify-between border-t border-border pt-2 font-semibold">
+                <span>營業費用合計</span>
+                <span>
+                  {summary.tripProfit.status === "ready"
+                    ? formatApiTwd(summary.tripProfit.operatingExpenseTwd)
+                    : OPERATING_COST_PENDING_LABEL}
                 </span>
-                <input
-                  aria-label="自訂項目"
-                  className={inputClass}
-                  placeholder="請在實際頁新增自訂項目"
-                  disabled
-                />
-              </label>
+              </div>
             </section>
+
+            <section className="space-y-3 rounded-2xl border border-border bg-white p-4">
+              <h2 className="font-bold">整趟損益預估</h2>
+              <div className="grid grid-cols-2 gap-2">
+                <label className="block text-sm">
+                  預估件數
+                  <input
+                    aria-label="預估件數"
+                    className={`${inputClass} mt-1`}
+                    value={totalItemQuantity}
+                    onChange={(event) =>
+                      setTotalItemQuantity(event.target.value)
+                    }
+                    inputMode="numeric"
+                  />
+                </label>
+                <label className="block text-sm">
+                  單件毛利
+                  <input
+                    aria-label="單件毛利"
+                    className={`${inputClass} mt-1`}
+                    value={unitGrossProfitTwd}
+                    onChange={(event) =>
+                      setUnitGrossProfitTwd(event.target.value)
+                    }
+                    inputMode="decimal"
+                  />
+                </label>
+              </div>
+              {summary.tripProfit.status === "ready" ? (
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span>預估營業毛利</span>
+                    <span>
+                      {formatApiTwd(summary.tripProfit.grossProfitTwd)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>預估營業淨利</span>
+                    <span>
+                      {formatApiTwd(summary.tripProfit.finalOperatingProfitTwd)}
+                    </span>
+                  </div>
+                  <p className="rounded-xl bg-muted p-3 font-semibold">
+                    結論：{OUTCOME_LABELS[summary.tripProfit.outcome]}
+                  </p>
+                </div>
+              ) : (
+                <div className="rounded-xl bg-amber-50 p-3 text-sm text-amber-800">
+                  <p className="font-semibold">
+                    {OPERATING_COST_PENDING_LABEL}
+                  </p>
+                  <p>{summary.tripProfit.reason}</p>
+                </div>
+              )}
+            </section>
+
             <div className="flex gap-2">
               <button
                 type="button"
@@ -344,7 +514,7 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
                   className="min-h-11 flex-1 rounded-xl border border-border bg-white"
                   onClick={() => void lockEstimate()}
                 >
-                  關帳並鎖定
+                  結束並鎖定
                 </button>
               )}
             </div>
