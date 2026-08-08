@@ -290,7 +290,13 @@ export function calculateTransportCost(
 
   const fee1_5Pct = applyOverride(
     "fee1_5Pct",
-    cardboardJpy.add(shippingJpy).multiply(ExactDecimal.from("0.015")),
+    etcJpy
+      .add(trainJpy)
+      .add(fuelJpy)
+      .add(parkingJpy)
+      .add(cardboardJpy)
+      .add(shippingJpy)
+      .multiply(ExactDecimal.from("0.015")),
     input.overrides?.fee1_5Pct,
   );
   const totalJpy = applyOverride(
