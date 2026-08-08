@@ -144,7 +144,7 @@ router.post("/trips/:tripId/routes", requireAuth, async (req: any, res) => {
             ? String(parsed.data.trainJpy)
             : undefined,
         fuelJpy:
-          parsed.data.fuelJpy != null ? String(parsed.data.fuelJpy) : undefined,
+          parsed.data.fuelJpy == null ? null : String(parsed.data.fuelJpy),
         parkingJpy:
           parsed.data.parkingJpy != null
             ? String(parsed.data.parkingJpy)
@@ -198,8 +198,10 @@ router.patch(
       updateData.estQty = parsed.data.estQty;
     if (parsed.data.trainJpy !== undefined)
       updateData.trainJpy = String(parsed.data.trainJpy);
-    if (parsed.data.fuelJpy !== undefined)
-      updateData.fuelJpy = String(parsed.data.fuelJpy);
+    if (parsed.data.fuelJpy !== undefined) {
+      updateData.fuelJpy =
+        parsed.data.fuelJpy == null ? null : String(parsed.data.fuelJpy);
+    }
     if (parsed.data.parkingJpy !== undefined)
       updateData.parkingJpy = String(parsed.data.parkingJpy);
     if (parsed.data.etcJpy !== undefined) {
@@ -291,7 +293,7 @@ function formatTripRoute(r: any) {
     startPlace: r.startPlace,
     endPlace: r.endPlace,
     trainJpy: parseFloat(r.trainJpy),
-    fuelJpy: parseFloat(r.fuelJpy),
+    fuelJpy: r.fuelJpy != null ? parseFloat(r.fuelJpy) : null,
     parkingJpy: parseFloat(r.parkingJpy),
     etcJpy: r.etcJpy != null ? parseFloat(r.etcJpy) : null,
     estQty: r.estQty,
