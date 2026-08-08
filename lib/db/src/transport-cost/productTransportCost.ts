@@ -35,6 +35,8 @@ export interface ProductTransportRouteInput {
 export interface ProductTransportTripInput {
   id: number;
   exchangeRate: DecimalInput;
+  hepTotalJpy?: DecimalInput;
+  totalItemQuantity?: QuantityInput;
 }
 
 export interface ResolveProductTransportCostInput {
@@ -92,6 +94,8 @@ export function resolveProductTransportCost(
   return calculateTransportCost({
     estQty: route.estQty,
     exchangeRate: trip.exchangeRate,
+    hepTotalJpy: trip.hepTotalJpy,
+    totalItemQuantity: trip.totalItemQuantity,
     trainJpy: route.trainJpy,
     fuelJpy: route.fuelJpy,
     parkingJpy: route.parkingJpy,

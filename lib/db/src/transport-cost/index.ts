@@ -139,6 +139,8 @@ export interface TransportCostOverrides {
 export interface TransportCostInput {
   estQty: QuantityInput;
   exchangeRate: DecimalInput;
+  hepTotalJpy?: DecimalInput;
+  totalItemQuantity?: QuantityInput;
   trainJpy?: DecimalInput;
   fuelJpy?: DecimalInput;
   parkingJpy?: DecimalInput;
@@ -155,6 +157,7 @@ export interface ReadyTransportCost {
   totalJpy: ExactDecimal;
   domesticPerItem: ExactDecimal;
   transportPerItem: ExactDecimal;
+  hepPerItemTwd: ExactDecimal;
   finalCostPerItem: ExactDecimal;
   displayFinalCostTwd: string;
 }
@@ -166,7 +169,8 @@ export interface PendingTransportCost {
     | "invalid_est_qty"
     | "missing_exchange_rate"
     | "missing_etc_jpy"
-    | "missing_fuel_jpy";
+    | "missing_fuel_jpy"
+    | "missing_hep_item_quantity";
 }
 
 export type TransportCostResult = ReadyTransportCost | PendingTransportCost;
@@ -267,6 +271,18 @@ export function calculateTransportCost(
     };
   }
 
+  const hasHep = !isEmptyDecimal(input.hepTotalJpy);
+  const hepItemQuantity = hasHep
+    ? parsePositiveQuantity(input.totalItemQuantity)
+    : null;
+  if (hasHep && hepItemQuantity === null) {
+    return {
+      status: "pending_confirmation",
+      label: PENDING_CONFIRMATION_LABEL,
+      reason: "missing_hep_item_quantity",
+    };
+  }
+
   const exchangeRate = parseOptionalNonNegativeDecimal(
     input.exchangeRate,
     "exchangeRate",
@@ -287,6 +303,11 @@ export function calculateTransportCost(
     input.shippingJpy,
     "shippingJpy",
   );
+  const hepPerItemTwd = hasHep
+    ? parseOptionalNonNegativeDecimal(input.hepTotalJpy, "hepTotalJpy")
+        .divide(ExactDecimal.from(hepItemQuantity!))
+        .multiply(exchangeRate)
+    : ExactDecimal.zero();
 
   const fee1_5Pct = applyOverride(
     "fee1_5Pct",
@@ -327,7 +348,10 @@ export function calculateTransportCost(
   );
   const finalCostPerItem = applyOverride(
     "finalCostPerItem",
-    domesticPerItem.add(transportPerItem).multiply(exchangeRate),
+    domesticPerItem
+      .add(transportPerItem)
+      .multiply(exchangeRate)
+      .add(hepPerItemTwd),
     input.overrides?.finalCostPerItem,
   );
 
@@ -338,6 +362,7 @@ export function calculateTransportCost(
     totalJpy,
     domesticPerItem,
     transportPerItem,
+    hepPerItemTwd,
     finalCostPerItem,
     displayFinalCostTwd: finalCostPerItem.toDecimalPlaces(0),
   };
