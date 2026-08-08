@@ -162,7 +162,11 @@ export interface ReadyTransportCost {
 export interface PendingTransportCost {
   status: "pending_confirmation";
   label: typeof PENDING_CONFIRMATION_LABEL;
-  reason: "invalid_est_qty" | "missing_exchange_rate" | "missing_etc_jpy";
+  reason:
+    | "invalid_est_qty"
+    | "missing_exchange_rate"
+    | "missing_etc_jpy"
+    | "missing_fuel_jpy";
 }
 
 export type TransportCostResult = ReadyTransportCost | PendingTransportCost;
@@ -252,6 +256,14 @@ export function calculateTransportCost(
       status: "pending_confirmation",
       label: PENDING_CONFIRMATION_LABEL,
       reason: "missing_etc_jpy",
+    };
+  }
+
+  if (isEmptyDecimal(input.fuelJpy)) {
+    return {
+      status: "pending_confirmation",
+      label: PENDING_CONFIRMATION_LABEL,
+      reason: "missing_fuel_jpy",
     };
   }
 

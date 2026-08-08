@@ -28,7 +28,7 @@ export const tripRoutesTable = pgTable(
     startPlace: text("start_place").notNull(),
     endPlace: text("end_place").notNull(),
     trainJpy: numeric("train_jpy").notNull().default("0"),
-    fuelJpy: numeric("fuel_jpy").notNull().default("0"),
+    fuelJpy: numeric("fuel_jpy"),
     tripCount: integer("trip_count").notNull().default(1),
     distanceKm: numeric("distance_km", { precision: 30, scale: 12 }),
     fuelPriceJpyPerLiter: numeric("fuel_price_jpy_per_liter", {
