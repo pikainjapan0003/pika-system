@@ -117,7 +117,16 @@ test("a zero-skill store previews and applies its recommended package before the
   ]);
 
   await page.getByRole("button", { name: "套用推薦" }).click();
-  await expect(page.getByText("推薦套餐已套用")).toBeVisible();
+  // Gate on the intercepted requests, not on rendered state: applyRecommendation
+  // calls setApplied(true) and then awaits onApplied(), and because the mocked
+  // skills route resolves immediately React batches both updates. The card
+  // unmounts in the same commit, so the "已套用" view never reaches the DOM.
+  await expect
+    .poll(
+      () =>
+        packageRequests.filter((request) => request.method === "POST").length,
+    )
+    .toBe(4);
   expect(
     packageRequests.filter((request) => request.method === "POST"),
   ).toEqual([
