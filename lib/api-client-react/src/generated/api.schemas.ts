@@ -404,7 +404,12 @@ export interface Order {
   shippingFee?: number;
   totalPrice: number;
   orderTotal?: number;
-  remainingAmount?: number;
+  /** @pattern ^-?\d+(?:\.\d+)?$ */
+  creditSpent: string;
+  /** @pattern ^-?\d+(?:\.\d+)?$ */
+  payableAfterCredit: string;
+  /** @pattern ^-?\d+(?:\.\d+)?$ */
+  remainingAmount: string;
   discountAmount?: number;
   /** @nullable */
   discountNote?: string | null;
