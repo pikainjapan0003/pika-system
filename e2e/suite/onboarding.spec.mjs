@@ -117,11 +117,7 @@ test("a zero-skill store previews and applies its recommended package before the
   ]);
 
   await page.getByRole("button", { name: "套用推薦" }).click();
-  await expect(
-    page.getByRole("heading", {
-      name: "用 4 題找到適合的技能套餐",
-    }),
-  ).toHaveCount(0);
+  await expect(page.getByText("推薦套餐已套用")).toBeVisible();
   expect(
     packageRequests.filter((request) => request.method === "POST"),
   ).toEqual([
