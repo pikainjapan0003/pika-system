@@ -245,7 +245,9 @@ function RouteForm({
       </div>
       <p className="rounded-xl bg-white px-3 py-2 text-xs leading-relaxed text-muted-foreground">
         請填這條路線實際發生的日圓費用；ETC 必須手動填寫，可填
-        0。儲存後系統才會依已拍板公式分攤，預估件數不正確時不會用 0 冒充成本。
+        0。油資留空＝待確認。系統不會自動填
+        0，也不會自動推估。儲存後系統才會依已拍板公式分攤，預估件數不正確時不會用
+        0 冒充成本。
       </p>
       {error && (
         <p className="text-xs text-destructive whitespace-pre-line">{error}</p>
@@ -406,7 +408,7 @@ function TripCard({ trip }: { trip: TripWithRoutes }) {
                       endPlace: v.endPlace,
                       estQty: parseInt(v.estQty, 10),
                       trainJpy: v.trainJpy ? parseFloat(v.trainJpy) : 0,
-                      fuelJpy: v.fuelJpy ? parseFloat(v.fuelJpy) : 0,
+                      fuelJpy: v.fuelJpy ? parseFloat(v.fuelJpy) : null,
                       parkingJpy: v.parkingJpy ? parseFloat(v.parkingJpy) : 0,
                       etcJpy: parseFloat(v.etcJpy),
                       cardboardJpy: v.cardboardJpy
@@ -438,8 +440,9 @@ function TripCard({ trip }: { trip: TripWithRoutes }) {
                   {route.startPlace} → {route.endPlace} · 預估 {route.estQty} 件
                 </p>
                 <p className="text-[11px] text-muted-foreground/80 mt-0.5">
-                  電車 ¥{route.trainJpy} · 油資 ¥{route.fuelJpy} · 停車 ¥
-                  {route.parkingJpy} · ETC{" "}
+                  電車 ¥{route.trainJpy} · 油資{" "}
+                  {route.fuelJpy == null ? "待確認" : `¥${route.fuelJpy}`} ·
+                  停車 ¥{route.parkingJpy} · ETC{" "}
                   {route.etcJpy == null ? "待確認" : `¥${route.etcJpy}`} · 紙箱
                   ¥{route.cardboardJpy} · 日本境內運費 ¥{route.shippingJpy} ·
                   包裹 {route.parcelCount}
@@ -494,7 +497,7 @@ function TripCard({ trip }: { trip: TripWithRoutes }) {
                   endPlace: v.endPlace,
                   estQty: parseInt(v.estQty, 10),
                   trainJpy: v.trainJpy ? parseFloat(v.trainJpy) : undefined,
-                  fuelJpy: v.fuelJpy ? parseFloat(v.fuelJpy) : undefined,
+                  fuelJpy: v.fuelJpy ? parseFloat(v.fuelJpy) : null,
                   parkingJpy: v.parkingJpy
                     ? parseFloat(v.parkingJpy)
                     : undefined,
