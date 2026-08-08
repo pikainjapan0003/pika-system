@@ -513,6 +513,11 @@ export const ListOrdersParams = zod.object({
   "storeId": zod.coerce.number()
 })
 
+export const listOrdersResponseCreditSpentRegExp = new RegExp('^-?\\d+(?:\\.\\d+)?$');
+export const listOrdersResponsePayableAfterCreditRegExp = new RegExp('^-?\\d+(?:\\.\\d+)?$');
+export const listOrdersResponseRemainingAmountRegExp = new RegExp('^-?\\d+(?:\\.\\d+)?$');
+
+
 export const ListOrdersResponseItem = zod.object({
   "id": zod.number(),
   "productId": zod.number(),
@@ -531,7 +536,9 @@ export const ListOrdersResponseItem = zod.object({
   "shippingFee": zod.number().optional(),
   "totalPrice": zod.number(),
   "orderTotal": zod.number().optional(),
-  "remainingAmount": zod.number().optional(),
+  "creditSpent": zod.string().regex(listOrdersResponseCreditSpentRegExp),
+  "payableAfterCredit": zod.string().regex(listOrdersResponsePayableAfterCreditRegExp),
+  "remainingAmount": zod.string().regex(listOrdersResponseRemainingAmountRegExp),
   "discountAmount": zod.number().optional(),
   "discountNote": zod.string().nullish(),
   "status": zod.enum(['pending', 'awaiting_payment', 'preparing', 'shipped', 'completed', 'cancelled']),
@@ -753,6 +760,11 @@ export const UpdateOrderBody = zod.object({
   "discountNote": zod.string().nullish()
 })
 
+export const updateOrderResponseCreditSpentRegExp = new RegExp('^-?\\d+(?:\\.\\d+)?$');
+export const updateOrderResponsePayableAfterCreditRegExp = new RegExp('^-?\\d+(?:\\.\\d+)?$');
+export const updateOrderResponseRemainingAmountRegExp = new RegExp('^-?\\d+(?:\\.\\d+)?$');
+
+
 export const UpdateOrderResponse = zod.object({
   "id": zod.number(),
   "productId": zod.number(),
@@ -771,7 +783,9 @@ export const UpdateOrderResponse = zod.object({
   "shippingFee": zod.number().optional(),
   "totalPrice": zod.number(),
   "orderTotal": zod.number().optional(),
-  "remainingAmount": zod.number().optional(),
+  "creditSpent": zod.string().regex(updateOrderResponseCreditSpentRegExp),
+  "payableAfterCredit": zod.string().regex(updateOrderResponsePayableAfterCreditRegExp),
+  "remainingAmount": zod.string().regex(updateOrderResponseRemainingAmountRegExp),
   "discountAmount": zod.number().optional(),
   "discountNote": zod.string().nullish(),
   "status": zod.enum(['pending', 'awaiting_payment', 'preparing', 'shipped', 'completed', 'cancelled']),
@@ -809,6 +823,11 @@ export const UpdateOrderStatusBody = zod.object({
   "status": zod.enum(['pending', 'awaiting_payment', 'preparing', 'shipped', 'completed', 'cancelled'])
 })
 
+export const updateOrderStatusResponseCreditSpentRegExp = new RegExp('^-?\\d+(?:\\.\\d+)?$');
+export const updateOrderStatusResponsePayableAfterCreditRegExp = new RegExp('^-?\\d+(?:\\.\\d+)?$');
+export const updateOrderStatusResponseRemainingAmountRegExp = new RegExp('^-?\\d+(?:\\.\\d+)?$');
+
+
 export const UpdateOrderStatusResponse = zod.object({
   "id": zod.number(),
   "productId": zod.number(),
@@ -827,7 +846,9 @@ export const UpdateOrderStatusResponse = zod.object({
   "shippingFee": zod.number().optional(),
   "totalPrice": zod.number(),
   "orderTotal": zod.number().optional(),
-  "remainingAmount": zod.number().optional(),
+  "creditSpent": zod.string().regex(updateOrderStatusResponseCreditSpentRegExp),
+  "payableAfterCredit": zod.string().regex(updateOrderStatusResponsePayableAfterCreditRegExp),
+  "remainingAmount": zod.string().regex(updateOrderStatusResponseRemainingAmountRegExp),
   "discountAmount": zod.number().optional(),
   "discountNote": zod.string().nullish(),
   "status": zod.enum(['pending', 'awaiting_payment', 'preparing', 'shipped', 'completed', 'cancelled']),
