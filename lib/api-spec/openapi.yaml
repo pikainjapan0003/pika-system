@@ -1172,7 +1172,7 @@ components:
         trainJpy:
           type: number
         fuelJpy:
-          type: number
+          type: ["number", "null"]
         parkingJpy:
           type: number
         etcJpy:
@@ -1208,7 +1208,7 @@ components:
           type: number
           minimum: 0
         fuelJpy:
-          type: number
+          type: ["number", "null"]
           minimum: 0
         parkingJpy:
           type: number
@@ -1245,7 +1245,7 @@ components:
           type: number
           minimum: 0
         fuelJpy:
-          type: number
+          type: ["number", "null"]
           minimum: 0
         parkingJpy:
           type: number

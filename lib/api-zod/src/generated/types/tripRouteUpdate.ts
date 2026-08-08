@@ -17,8 +17,11 @@ export interface TripRouteUpdate {
   estQty?: number;
   /** @minimum 0 */
   trainJpy?: number;
-  /** @minimum 0 */
-  fuelJpy?: number;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  fuelJpy?: number | null;
   /** @minimum 0 */
   parkingJpy?: number;
   /**
