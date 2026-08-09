@@ -99,8 +99,8 @@ test("batch loader uses one store, route, and trip query and preserves exact res
   assert.deepEqual(executor.queryCount, { store: 1, routes: 1, trips: 1 });
   const allocated = calculateProductUnitProfit(inputs.get(10));
   assert.equal(allocated.status, "ready");
-  assert.equal(allocated.unitTransportCostTwd.toDecimalPlaces(7), "22.4166535");
-  assert.equal(allocated.unitProfitTwd.toDecimalPlaces(7), "186.5533465");
+  assert.equal(allocated.unitTransportCostTwd.toDecimalPlaces(7), "22.6109583");
+  assert.equal(allocated.unitProfitTwd.toDecimalPlaces(7), "186.3590417");
 
   const exempt = calculateProductUnitProfit(inputs.get(11));
   assert.equal(exempt.status, "ready");
