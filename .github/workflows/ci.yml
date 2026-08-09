@@ -59,6 +59,7 @@ jobs:
       - name: Check codegen drift
         run: |
           pnpm --filter @workspace/api-spec run codegen
+          git add --intent-to-add -- lib/api-client-react/src/generated lib/api-zod/src/generated
           if ! git diff --exit-code -- lib/api-client-react/src/generated lib/api-zod/src/generated; then
             echo "::error::openapi.yaml 已改動但 generated 未同步；請在 Linux 環境執行 pnpm --filter @workspace/api-spec run codegen 後重新提交。"
             exit 1
