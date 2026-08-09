@@ -17,3 +17,14 @@ test("Testing Library renders into the shared jsdom environment", async () => {
     restoreDom();
   }
 });
+
+test("Testing Library shares the configured async timeout", async () => {
+  const restoreDom = installTestDom();
+
+  try {
+    const { getConfig } = await import("@testing-library/react");
+    assert.equal(getConfig().asyncUtilTimeout, 15_000);
+  } finally {
+    restoreDom();
+  }
+});

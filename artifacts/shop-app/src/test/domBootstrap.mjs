@@ -1,7 +1,7 @@
 import { JSDOM } from "jsdom";
-import { configure } from "@testing-library/react";
+import { createRequire } from "node:module";
 
-configure({ asyncUtilTimeout: 15_000 });
+const require = createRequire(import.meta.url);
 
 const GLOBAL_KEYS = [
   "window",
@@ -57,6 +57,9 @@ export function installTestDom() {
       value,
     });
   }
+
+  const { configure } = require("@testing-library/react");
+  configure({ asyncUtilTimeout: 15_000 });
 
   return () => {
     dom.window.close();
