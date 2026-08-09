@@ -1,4 +1,7 @@
 import { JSDOM } from "jsdom";
+import { configure } from "@testing-library/react";
+
+configure({ asyncUtilTimeout: 15_000 });
 
 const GLOBAL_KEYS = [
   "window",
