@@ -79,7 +79,7 @@ export const tripsTable = pgTable(
     index("trips_store_id_idx").on(t.storeId),
     check(
       "trips_hep_days_valid",
-      sql`${t.hepDays} IS NULL OR ${t.hepDays} IN (4, 5, 10)`,
+      sql`${t.hepDays} IS NULL OR (${t.hepDays} >= 4 AND ${t.hepDays} <= 14)`,
     ),
     check(
       "trips_status_valid",
