@@ -27,9 +27,10 @@ if (!process.env.DATABASE_URL) {
     db,
     pool,
     storesTable,
+    tripRoutesTable,
     tripsTable,
   } = await import("@workspace/db");
-  const { and, eq } = await import("drizzle-orm");
+  const { and, eq, inArray } = await import("drizzle-orm");
   const { default: fixedCostsRouter } = await import("./fixedCosts.ts");
   const { default: operatingInputsRouter } =
     await import("./operatingInputs.ts");
@@ -47,6 +48,16 @@ if (!process.env.DATABASE_URL) {
   let entryId;
   let apiHepTripId;
   let dbHepTripId;
+  let sameStoreOtherTripId;
+  let otherStoreId;
+  let otherStoreTripId;
+  let routeAId;
+  let routeBId;
+  let restrictRouteId;
+  let sameStoreOtherRouteId;
+  let otherStoreRouteId;
+  let routeUniqueCategoryId;
+  let tripwideUniqueCategoryId;
 
   before(async () => {
     await new Promise((resolve) => {
@@ -83,6 +94,81 @@ if (!process.env.DATABASE_URL) {
       .returning();
     dbHepTripId = dbHepTrip.id;
 
+    const [sameStoreOtherTrip] = await db
+      .insert(tripsTable)
+      .values({ storeId, name: "V1 phase21 other trip" })
+      .returning();
+    sameStoreOtherTripId = sameStoreOtherTrip.id;
+
+    const [otherStore] = await db
+      .insert(storesTable)
+      .values({
+        merchantId: `${MERCHANT_ID}_other`,
+        name: "V1 phase21 other store",
+        slug: `v1-phase21-other-${nonce}`,
+      })
+      .returning();
+    otherStoreId = otherStore.id;
+
+    const [otherStoreTrip] = await db
+      .insert(tripsTable)
+      .values({ storeId: otherStoreId, name: "V1 phase21 foreign store trip" })
+      .returning();
+    otherStoreTripId = otherStoreTrip.id;
+
+    const routes = await db
+      .insert(tripRoutesTable)
+      .values([
+        {
+          storeId,
+          tripId,
+          areaTitle: "V1 phase21 route A",
+          startPlace: "A",
+          endPlace: "B",
+          estQty: 1,
+        },
+        {
+          storeId,
+          tripId,
+          areaTitle: "V1 phase21 route B",
+          startPlace: "B",
+          endPlace: "C",
+          estQty: 1,
+        },
+        {
+          storeId,
+          tripId,
+          areaTitle: "V1 phase21 restrict route",
+          startPlace: "C",
+          endPlace: "D",
+          estQty: 1,
+        },
+        {
+          storeId,
+          tripId: sameStoreOtherTripId,
+          areaTitle: "V1 phase21 same-store foreign route",
+          startPlace: "D",
+          endPlace: "E",
+          estQty: 1,
+        },
+        {
+          storeId: otherStoreId,
+          tripId: otherStoreTripId,
+          areaTitle: "V1 phase21 other-store route",
+          startPlace: "E",
+          endPlace: "F",
+          estQty: 1,
+        },
+      ])
+      .returning();
+    [
+      routeAId,
+      routeBId,
+      restrictRouteId,
+      sameStoreOtherRouteId,
+      otherStoreRouteId,
+    ] = routes.map((route) => route.id);
+
     const [category] = await db
       .insert(costCategoriesTable)
       .values({
@@ -92,6 +178,25 @@ if (!process.env.DATABASE_URL) {
       })
       .returning();
     categoryId = category.id;
+
+    const uniqueCategories = await db
+      .insert(costCategoriesTable)
+      .values([
+        {
+          code: `V1_ROUTE_UNIQUE_${nonce}`,
+          name: "V1 route unique category",
+          sortOrder: 1000,
+        },
+        {
+          code: `V1_TRIPWIDE_UNIQUE_${nonce}`,
+          name: "V1 trip-wide unique category",
+          sortOrder: 1001,
+        },
+      ])
+      .returning();
+    [routeUniqueCategoryId, tripwideUniqueCategoryId] = uniqueCategories.map(
+      (category) => category.id,
+    );
 
     const [entry] = await db
       .insert(costEntriesTable)
@@ -108,18 +213,35 @@ if (!process.env.DATABASE_URL) {
   });
 
   after(async () => {
-    for (const id of [tripId, apiHepTripId, dbHepTripId]) {
-      if (id) {
-        await db.delete(tripsTable).where(eq(tripsTable.id, id));
-      }
+    const tripIds = [
+      tripId,
+      apiHepTripId,
+      dbHepTripId,
+      sameStoreOtherTripId,
+      otherStoreTripId,
+    ].filter(Boolean);
+    if (tripIds.length > 0) {
+      await db
+        .delete(costEntriesTable)
+        .where(inArray(costEntriesTable.tripId, tripIds));
+      await db
+        .delete(tripRoutesTable)
+        .where(inArray(tripRoutesTable.tripId, tripIds));
+      await db.delete(tripsTable).where(inArray(tripsTable.id, tripIds));
     }
-    if (storeId) {
-      await db.delete(storesTable).where(eq(storesTable.id, storeId));
+    const storeIds = [storeId, otherStoreId].filter(Boolean);
+    if (storeIds.length > 0) {
+      await db.delete(storesTable).where(inArray(storesTable.id, storeIds));
     }
-    if (categoryId) {
+    const categoryIds = [
+      categoryId,
+      routeUniqueCategoryId,
+      tripwideUniqueCategoryId,
+    ].filter(Boolean);
+    if (categoryIds.length > 0) {
       await db
         .delete(costCategoriesTable)
-        .where(eq(costCategoriesTable.id, categoryId));
+        .where(inArray(costCategoriesTable.id, categoryIds));
     }
     await new Promise((resolve) => server.close(resolve));
     await pool.end();
@@ -294,5 +416,222 @@ if (!process.env.DATABASE_URL) {
         },
       );
     }
+  });
+
+  test("cost entries round-trip a route tag and preserve trip-wide null semantics", async () => {
+    const tagged = await request(
+      "POST",
+      `/stores/${storeId}/trips/${tripId}/cost-entries`,
+      {
+        mode: "ACTUAL",
+        customLabel: "V1 phase21 tagged receipt",
+        currency: "JPY",
+        originalAmount: "1200",
+        tripRouteId: routeAId,
+      },
+    );
+    assert.equal(tagged.status, 201, JSON.stringify(tagged.data));
+    assert.equal(tagged.data.tripRouteId, routeAId);
+
+    const tripwide = await request(
+      "POST",
+      `/stores/${storeId}/trips/${tripId}/cost-entries`,
+      {
+        mode: "ACTUAL",
+        customLabel: "V1 phase21 trip-wide receipt",
+        currency: "TWD",
+        originalAmount: "300",
+      },
+    );
+    assert.equal(tripwide.status, 201, JSON.stringify(tripwide.data));
+    assert.equal(tripwide.data.tripRouteId, null);
+
+    const list = await request(
+      "GET",
+      `/stores/${storeId}/trips/${tripId}/cost-entries`,
+    );
+    assert.equal(list.status, 200, JSON.stringify(list.data));
+    assert.equal(
+      list.data.find((entry) => entry.id === tagged.data.id)?.tripRouteId,
+      routeAId,
+    );
+    assert.equal(
+      list.data.find((entry) => entry.id === tripwide.data.id)?.tripRouteId,
+      null,
+    );
+
+    const unchanged = await request(
+      "PATCH",
+      `/stores/${storeId}/trips/${tripId}/cost-entries/${tagged.data.id}`,
+      { description: "route tag stays when omitted" },
+    );
+    assert.equal(unchanged.status, 200, JSON.stringify(unchanged.data));
+    assert.equal(unchanged.data.tripRouteId, routeAId);
+
+    const cleared = await request(
+      "PATCH",
+      `/stores/${storeId}/trips/${tripId}/cost-entries/${tagged.data.id}`,
+      { tripRouteId: null },
+    );
+    assert.equal(cleared.status, 200, JSON.stringify(cleared.data));
+    assert.equal(cleared.data.tripRouteId, null);
+
+    const [storedTripwide, storedCleared] = await Promise.all([
+      db
+        .select({ tripRouteId: costEntriesTable.tripRouteId })
+        .from(costEntriesTable)
+        .where(eq(costEntriesTable.id, tripwide.data.id))
+        .then(([entry]) => entry),
+      db
+        .select({ tripRouteId: costEntriesTable.tripRouteId })
+        .from(costEntriesTable)
+        .where(eq(costEntriesTable.id, tagged.data.id))
+        .then(([entry]) => entry),
+    ]);
+    assert.equal(storedTripwide.tripRouteId, null);
+    assert.equal(storedCleared.tripRouteId, null);
+  });
+
+  test("cost entry route tags reject routes from another trip or store", async () => {
+    for (const tripRouteId of [sameStoreOtherRouteId, otherStoreRouteId]) {
+      const rejected = await request(
+        "POST",
+        `/stores/${storeId}/trips/${tripId}/cost-entries`,
+        {
+          mode: "ACTUAL",
+          customLabel: `V1 phase21 rejected route ${tripRouteId}`,
+          currency: "TWD",
+          originalAmount: "50",
+          tripRouteId,
+        },
+      );
+      assert.equal(rejected.status, 400, JSON.stringify(rejected.data));
+      assert.equal(rejected.data.error, "Invalid tripRouteId");
+    }
+
+    const valid = await request(
+      "POST",
+      `/stores/${storeId}/trips/${tripId}/cost-entries`,
+      {
+        mode: "ACTUAL",
+        customLabel: "V1 phase21 patch guard",
+        currency: "TWD",
+        originalAmount: "75",
+        tripRouteId: routeAId,
+      },
+    );
+    assert.equal(valid.status, 201, JSON.stringify(valid.data));
+
+    const rejectedPatch = await request(
+      "PATCH",
+      `/stores/${storeId}/trips/${tripId}/cost-entries/${valid.data.id}`,
+      { tripRouteId: sameStoreOtherRouteId },
+    );
+    assert.equal(rejectedPatch.status, 400, JSON.stringify(rejectedPatch.data));
+    assert.equal(rejectedPatch.data.error, "Invalid tripRouteId");
+
+    const [stored] = await db
+      .select({ tripRouteId: costEntriesTable.tripRouteId })
+      .from(costEntriesTable)
+      .where(eq(costEntriesTable.id, valid.data.id));
+    assert.equal(stored.tripRouteId, routeAId);
+  });
+
+  test("estimate uniqueness distinguishes route-specific and trip-wide entries", async () => {
+    for (const tripRouteId of [routeAId, routeBId]) {
+      const created = await request(
+        "POST",
+        `/stores/${storeId}/trips/${tripId}/cost-entries`,
+        {
+          mode: "ESTIMATE",
+          categoryId: String(routeUniqueCategoryId),
+          currency: "JPY",
+          originalAmount: "100",
+          tripRouteId,
+        },
+      );
+      assert.equal(created.status, 201, JSON.stringify(created.data));
+      assert.equal(created.data.tripRouteId, tripRouteId);
+    }
+
+    const duplicateRoute = await request(
+      "POST",
+      `/stores/${storeId}/trips/${tripId}/cost-entries`,
+      {
+        mode: "ESTIMATE",
+        categoryId: String(routeUniqueCategoryId),
+        currency: "JPY",
+        originalAmount: "200",
+        tripRouteId: routeAId,
+      },
+    );
+    assert.equal(
+      duplicateRoute.status,
+      409,
+      JSON.stringify(duplicateRoute.data),
+    );
+
+    const tripwideBody = {
+      mode: "ESTIMATE",
+      categoryId: String(tripwideUniqueCategoryId),
+      currency: "TWD",
+      originalAmount: "500",
+    };
+    const firstTripwide = await request(
+      "POST",
+      `/stores/${storeId}/trips/${tripId}/cost-entries`,
+      tripwideBody,
+    );
+    assert.equal(firstTripwide.status, 201, JSON.stringify(firstTripwide.data));
+    assert.equal(firstTripwide.data.tripRouteId, null);
+
+    const duplicateTripwide = await request(
+      "POST",
+      `/stores/${storeId}/trips/${tripId}/cost-entries`,
+      tripwideBody,
+    );
+    assert.equal(
+      duplicateTripwide.status,
+      409,
+      JSON.stringify(duplicateTripwide.data),
+    );
+  });
+
+  test("a route referenced by a cost entry is protected by the restrict foreign key", async () => {
+    const tagged = await request(
+      "POST",
+      `/stores/${storeId}/trips/${tripId}/cost-entries`,
+      {
+        mode: "ACTUAL",
+        customLabel: "V1 phase21 restrict receipt",
+        currency: "JPY",
+        originalAmount: "900",
+        tripRouteId: restrictRouteId,
+      },
+    );
+    assert.equal(tagged.status, 201, JSON.stringify(tagged.data));
+
+    await assert.rejects(
+      async () => {
+        await db
+          .delete(tripRoutesTable)
+          .where(eq(tripRoutesTable.id, restrictRouteId));
+      },
+      (error) => {
+        const databaseError = error.cause ?? error;
+        assert.equal(databaseError.code, "23503");
+        assert.equal(
+          databaseError.constraint,
+          "cost_entries_trip_route_id_trip_routes_id_fk",
+        );
+        return true;
+      },
+    );
+
+    const [storedRoute] = await db
+      .select({ id: tripRoutesTable.id })
+      .from(tripRoutesTable)
+      .where(eq(tripRoutesTable.id, restrictRouteId));
+    assert.equal(storedRoute.id, restrictRouteId);
   });
 }
