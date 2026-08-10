@@ -47,7 +47,7 @@ function parseNonNegativeInteger(value: unknown): number | null | undefined {
 function parseHepDays(value: unknown): number | null | undefined {
   const parsed = parsePositiveInteger(value);
   if (parsed === undefined || parsed === null) return parsed;
-  return parsed === 4 || parsed === 5 || parsed === 10 ? parsed : undefined;
+  return parsed >= 4 && parsed <= 14 ? parsed : undefined;
 }
 
 router.patch(
