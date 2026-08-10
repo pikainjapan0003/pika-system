@@ -81,7 +81,7 @@ const SECTION_CONFIG: Array<{
   {
     key: "fixed",
     kind: "FIXED",
-    title: "固定費用（11 項）",
+    title: "固定費用（12 項）",
     feeLabel: "固定金流費用",
   },
   {
