@@ -15,6 +15,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { storesTable } from "./stores.ts";
 import { tripsTable } from "./trips.ts";
+import { tripRoutesTable } from "./tripRoutes.ts";
 import { costCategoriesTable } from "./costCategories.ts";
 
 export const costEntryModes = ["ESTIMATE", "ACTUAL"] as const;
@@ -34,6 +35,9 @@ export const costEntriesTable = pgTable(
     tripId: integer("trip_id")
       .notNull()
       .references(() => tripsTable.id, { onDelete: "cascade" }),
+    tripRouteId: integer("trip_route_id").references(() => tripRoutesTable.id, {
+      onDelete: "restrict",
+    }),
     mode: text("mode").$type<CostEntryMode>().notNull(),
     categoryId: integer("category_id").references(
       () => costCategoriesTable.id,
@@ -62,10 +66,15 @@ export const costEntriesTable = pgTable(
   (t) => [
     index("cost_entries_store_id_idx").on(t.storeId),
     index("cost_entries_trip_id_mode_idx").on(t.tripId, t.mode),
-    uniqueIndex("cost_entries_estimate_category_active_unique")
+    uniqueIndex("cost_entries_estimate_category_route_active_unique")
+      .on(t.tripId, t.categoryId, t.tripRouteId)
+      .where(
+        sql`${t.mode} = 'ESTIMATE' AND ${t.status} = 'ACTIVE' AND ${t.categoryId} IS NOT NULL AND ${t.tripRouteId} IS NOT NULL`,
+      ),
+    uniqueIndex("cost_entries_estimate_category_tripwide_active_unique")
       .on(t.tripId, t.categoryId)
       .where(
-        sql`${t.mode} = 'ESTIMATE' AND ${t.status} = 'ACTIVE' AND ${t.categoryId} IS NOT NULL`,
+        sql`${t.mode} = 'ESTIMATE' AND ${t.status} = 'ACTIVE' AND ${t.categoryId} IS NOT NULL AND ${t.tripRouteId} IS NULL`,
       ),
     check("cost_entries_mode_valid", sql`${t.mode} IN ('ESTIMATE', 'ACTUAL')`),
     check("cost_entries_currency_valid", sql`${t.currency} IN ('JPY', 'TWD')`),
