@@ -23,7 +23,8 @@ export const FIXED_COST_CATEGORY_SEEDS = [
   ["LOCKER", "置物櫃費用"],
   ["CAR_RENTAL", "租車租金"],
   ["SIM", "網卡費用"],
-  ["THEME_PARK", "樂園門票費用"],
+  ["THEME_PARK_DISNEY", "迪士尼門票費用"],
+  ["THEME_PARK_USJ", "環球影城門票費用"],
   ["AIRPORT_TRANSFER", "接機費用"],
   ["OTHER", "其他"],
 ] as const;

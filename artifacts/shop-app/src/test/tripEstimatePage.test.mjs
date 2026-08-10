@@ -28,21 +28,21 @@ mock.module("../pages/Dashboard.tsx", {
 
 const { default: TripEstimatePage } = await import("../pages/TripEstimate.tsx");
 
-const fixedCategories = Array.from({ length: 11 }, (_, index) => ({
+const fixedCategories = Array.from({ length: 12 }, (_, index) => ({
   id: index + 1,
   code: `FIXED_${index + 1}`,
   name: index === 6 ? "租車費用" : `固定費用${index + 1}`,
   kind: "FIXED",
 }));
 const variableCategories = Array.from({ length: 7 }, (_, index) => ({
-  id: index + 12,
+  id: index + 13,
   code: `VARIABLE_${index + 1}`,
   name: `變動費用${index + 1}`,
   kind: "VARIABLE",
 }));
 const purchaseCategories = [
   {
-    id: 19,
+    id: 20,
     code: "PURCHASE",
     name: "商品進貨成本",
     kind: "PURCHASE",
@@ -178,12 +178,12 @@ test("estimate page renders fixed, variable, and purchase sections", async () =>
   globalThis.fetch = async () => response(makeSummary());
   const { container, root } = await renderPage();
 
-  assert.match(container.textContent, /固定費用（11 項）/);
+  assert.match(container.textContent, /固定費用（12 項）/);
   assert.match(container.textContent, /變動費用（7 項）/);
   assert.match(container.textContent, /採購成本（1 項）/);
   assert.equal(
     container.querySelectorAll("[data-cost-section='FIXED'] input").length,
-    11,
+    12,
   );
   assert.equal(
     container.querySelectorAll("[data-cost-section='VARIABLE'] input").length,

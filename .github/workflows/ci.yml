@@ -165,7 +165,8 @@ jobs:
               "LOCKER",
               "CAR_RENTAL",
               "SIM",
-              "THEME_PARK",
+              "THEME_PARK_DISNEY",
+              "THEME_PARK_USJ",
               "AIRPORT_TRANSFER",
               "OTHER",
             ]],
@@ -185,7 +186,7 @@ jobs:
              FROM cost_categories
              ORDER BY kind, code`,
           );
-          if (categoryResult.rows.length !== 19) {
+          if (categoryResult.rows.length !== 20) {
             throw new Error(`cost category seed total mismatch: ${categoryResult.rows.length}`);
           }
           for (const [kind, expectedCodes] of expectedCategories) {
