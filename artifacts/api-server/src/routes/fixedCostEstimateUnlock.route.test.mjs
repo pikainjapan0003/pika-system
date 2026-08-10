@@ -45,6 +45,8 @@ if (!process.env.DATABASE_URL) {
   let tripId;
   let categoryId;
   let entryId;
+  let apiHepTripId;
+  let dbHepTripId;
 
   before(async () => {
     await new Promise((resolve) => {
@@ -68,6 +70,18 @@ if (!process.env.DATABASE_URL) {
       .values({ storeId, name: "V1 phase15 unlock trip" })
       .returning();
     tripId = trip.id;
+
+    const [apiHepTrip] = await db
+      .insert(tripsTable)
+      .values({ storeId, name: "V1 phase20 API HEP range trip" })
+      .returning();
+    apiHepTripId = apiHepTrip.id;
+
+    const [dbHepTrip] = await db
+      .insert(tripsTable)
+      .values({ storeId, name: "V1 phase20 DB HEP range trip" })
+      .returning();
+    dbHepTripId = dbHepTrip.id;
 
     const [category] = await db
       .insert(costCategoriesTable)
@@ -94,6 +108,11 @@ if (!process.env.DATABASE_URL) {
   });
 
   after(async () => {
+    for (const id of [tripId, apiHepTripId, dbHepTripId]) {
+      if (id) {
+        await db.delete(tripsTable).where(eq(tripsTable.id, id));
+      }
+    }
     if (storeId) {
       await db.delete(storesTable).where(eq(storesTable.id, storeId));
     }
@@ -208,5 +227,72 @@ if (!process.env.DATABASE_URL) {
     );
     assert.equal(response.status, 400);
     assert.equal(response.data.error, "Cost entry mode cannot be changed");
+  });
+
+  test("operating-inputs accepts HEP days 4 through 14 and nullable clearing", async () => {
+    for (const hepDays of [4, 9, 14]) {
+      const response = await request(
+        "PATCH",
+        `/stores/${storeId}/trips/${apiHepTripId}/operating-inputs`,
+        { hepDays },
+      );
+      assert.equal(response.status, 200, JSON.stringify(response.data));
+      assert.equal(response.data.hepDays, hepDays);
+    }
+
+    for (const hepDays of [3, 15]) {
+      const response = await request(
+        "PATCH",
+        `/stores/${storeId}/trips/${apiHepTripId}/operating-inputs`,
+        { hepDays },
+      );
+      assert.equal(response.status, 400, JSON.stringify(response.data));
+      assert.equal(response.data.error, "Invalid operating input");
+    }
+
+    const cleared = await request(
+      "PATCH",
+      `/stores/${storeId}/trips/${apiHepTripId}/operating-inputs`,
+      { hepDays: null },
+    );
+    assert.equal(cleared.status, 200, JSON.stringify(cleared.data));
+    assert.equal(cleared.data.hepDays, null);
+
+    const [storedTrip] = await db
+      .select({ hepDays: tripsTable.hepDays })
+      .from(tripsTable)
+      .where(eq(tripsTable.id, apiHepTripId));
+    assert.equal(storedTrip.hepDays, null);
+  });
+
+  test("trips HEP day CHECK accepts 4 through 14 and rejects outside values", async () => {
+    for (const hepDays of [4, 9, 14, null]) {
+      await db
+        .update(tripsTable)
+        .set({ hepDays })
+        .where(eq(tripsTable.id, dbHepTripId));
+      const [storedTrip] = await db
+        .select({ hepDays: tripsTable.hepDays })
+        .from(tripsTable)
+        .where(eq(tripsTable.id, dbHepTripId));
+      assert.equal(storedTrip.hepDays, hepDays);
+    }
+
+    for (const hepDays of [3, 15]) {
+      await assert.rejects(
+        async () => {
+          await db
+            .update(tripsTable)
+            .set({ hepDays })
+            .where(eq(tripsTable.id, dbHepTripId));
+        },
+        (error) => {
+          const databaseError = error.cause ?? error;
+          assert.equal(databaseError.code, "23514");
+          assert.equal(databaseError.constraint, "trips_hep_days_valid");
+          return true;
+        },
+      );
+    }
   });
 }
