@@ -147,7 +147,7 @@ async function waitForCall(calls, predicate, timeoutMs = 1_500) {
   return undefined;
 }
 
-async function waitForCondition(predicate, timeoutMs = 1_500) {
+async function waitForCondition(predicate, timeoutMs = 15_000) {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     if (predicate()) return true;

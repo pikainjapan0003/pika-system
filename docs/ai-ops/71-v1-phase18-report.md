@@ -166,7 +166,8 @@ PURE_TOTAL tests=430 pass=430 fail=0 skipped=0
 tests 95 / pass 94 / fail 1 / skipped 0
 ```
 
-唯一失敗為既有 `customerStoreCredit.route.test.mjs` 的同毫秒排序案例：期望 `grant-2`、實際 `adjust-1`。本包沒有修改該 route 或測試；不隱藏此次紀錄。單檔原樣重跑：
+唯一失敗為既有 `customerStoreCredit.route.test.mjs`。本包沒有修改該 route 或測試；不隱藏此次紀錄。
+⚠️ 2026-08-10 更正（基建包 F）：本報告原將此失敗歸因為「同毫秒排序」，該歸因已被推翻 —— `artifacts/api-server/src/routes/customers.ts:208-211` 的查詢已有 `ORDER BY created_at DESC, id DESC` 穩定決勝鍵，且測試先建 `adjust-1`、後建 `grant-2`（serial id 必然較大），即使時間戳完全相同也會正確排序。**真因仍未定位**，登記為 F-4。唯一已知線索：17 檔完整批次會出現、單檔重跑 8/8 通過。
 
 ```text
 tests 8 / pass 8 / fail 0 / skipped 0
