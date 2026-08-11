@@ -85,6 +85,7 @@ if (!process.env.DATABASE_URL) {
         workingDays: 10,
         totalItemQuantity: 700,
         unitGrossProfitTwd: "130",
+        dailyGrossProfitTwd: "8000",
         creditCardRebateTwd: "0",
       })
       .returning();
@@ -215,21 +216,42 @@ if (!process.env.DATABASE_URL) {
       response.data.sections.purchase.paymentFeeTwd,
       "0.000000000000",
     );
-    assert.equal(response.data.tripProfit.grossProfitSource, "UNIT");
+    assert.equal(
+      response.data.tripProfit.projections.unit.grossProfitSource,
+      "UNIT",
+    );
+    assert.equal(
+      response.data.tripProfit.projections.daily.grossProfitSource,
+      "DAILY",
+    );
     assert.equal(
       response.data.tripProfit.purchaseCostPrincipalTwd,
       "1000.000000000000",
     );
-    assert.equal(response.data.tripProfit.grossProfitTwd, "91000.000000000000");
+    assert.equal(
+      response.data.tripProfit.projections.unit.grossProfitTwd,
+      "91000.000000000000",
+    );
+    assert.equal(
+      response.data.tripProfit.projections.daily.grossProfitTwd,
+      "80000.000000000000",
+    );
     assert.equal(
       response.data.tripProfit.operatingExpenseTwd,
       "30.450000000000",
     );
     assert.equal(
-      response.data.tripProfit.finalOperatingProfitTwd,
+      response.data.tripProfit.projections.unit.finalOperatingProfitTwd,
       "90969.550000000000",
     );
-    assert.equal(response.data.tripProfit.outcome, "SALARY_TARGET_MET");
+    assert.equal(
+      response.data.tripProfit.projections.daily.finalOperatingProfitTwd,
+      "79969.550000000000",
+    );
+    assert.equal(
+      response.data.tripProfit.projections.unit.outcome,
+      "SALARY_TARGET_MET",
+    );
   });
 
   test("a custom JPY entry costs the same in its FIXED default and a VARIABLE comparison", async () => {
@@ -271,7 +293,7 @@ if (!process.env.DATABASE_URL) {
     }
   });
 
-  test("missing unit gross or item quantity stays pending without synthesizing revenue", async () => {
+  test("missing UNIT inputs leave UNIT pending without blocking DAILY", async () => {
     await db
       .update(tripsTable)
       .set({ unitGrossProfitTwd: null, totalItemQuantity: null })
@@ -280,10 +302,17 @@ if (!process.env.DATABASE_URL) {
     const response = await request();
 
     assert.equal(response.status, 200);
-    assert.equal(response.data.status, "pending_confirmation");
-    assert.equal(response.data.tripProfit.reason, "缺少單件毛利或預估件數");
+    assert.equal(response.data.status, "ready");
+    assert.equal(
+      response.data.tripProfit.projections.unit.reason,
+      "缺少單件毛利或預估件數",
+    );
+    assert.equal(response.data.tripProfit.projections.daily.status, "ready");
     assert.equal(response.data.sections.fixed.totalTwd, "20.000000000000");
-    assert.equal(response.data.tripProfit.grossProfitTwd, undefined);
+    assert.equal(
+      response.data.tripProfit.projections.unit.grossProfitTwd,
+      undefined,
+    );
 
     await db
       .update(tripsTable)

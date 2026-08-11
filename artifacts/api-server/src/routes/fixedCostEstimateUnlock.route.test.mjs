@@ -387,6 +387,60 @@ if (!process.env.DATABASE_URL) {
     assert.equal(storedTrip.hepDays, null);
   });
 
+  test("operating-inputs accepts, rejects, and clears daily gross profit decimals", async () => {
+    const accepted = await request(
+      "PATCH",
+      `/stores/${storeId}/trips/${apiHepTripId}/operating-inputs`,
+      { dailyGrossProfitTwd: "1234.56" },
+    );
+    assert.equal(accepted.status, 200, JSON.stringify(accepted.data));
+    assert.equal(accepted.data.dailyGrossProfitTwd, "1234.560000000000");
+
+    for (const dailyGrossProfitTwd of ["-1", "not-a-decimal", 100]) {
+      const rejected = await request(
+        "PATCH",
+        `/stores/${storeId}/trips/${apiHepTripId}/operating-inputs`,
+        { dailyGrossProfitTwd },
+      );
+      assert.equal(rejected.status, 400, JSON.stringify(rejected.data));
+      assert.equal(rejected.data.error, "Invalid operating input");
+    }
+
+    for (const dailyGrossProfitTwd of [null, ""]) {
+      const cleared = await request(
+        "PATCH",
+        `/stores/${storeId}/trips/${apiHepTripId}/operating-inputs`,
+        { dailyGrossProfitTwd },
+      );
+      assert.equal(cleared.status, 200, JSON.stringify(cleared.data));
+      assert.equal(cleared.data.dailyGrossProfitTwd, null);
+    }
+
+    const [storedTrip] = await db
+      .select({ dailyGrossProfitTwd: tripsTable.dailyGrossProfitTwd })
+      .from(tripsTable)
+      .where(eq(tripsTable.id, apiHepTripId));
+    assert.equal(storedTrip.dailyGrossProfitTwd, null);
+
+    await assert.rejects(
+      async () => {
+        await db
+          .update(tripsTable)
+          .set({ dailyGrossProfitTwd: "-0.01" })
+          .where(eq(tripsTable.id, apiHepTripId));
+      },
+      (error) => {
+        const databaseError = error.cause ?? error;
+        assert.equal(databaseError.code, "23514");
+        assert.equal(
+          databaseError.constraint,
+          "trips_daily_gross_profit_twd_non_negative",
+        );
+        return true;
+      },
+    );
+  });
+
   test("trips HEP day CHECK accepts 4 through 14 and rejects outside values", async () => {
     for (const hepDays of [4, 9, 14, null]) {
       await db
