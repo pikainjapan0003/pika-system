@@ -1,7 +1,9 @@
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, inArray } from "drizzle-orm";
 import { Router } from "express";
 import {
   calculateFixedCostTotals,
+  calculateActualQuantityRollup,
+  calculateActualRouteCostRollup,
   calculateSectionPaymentFeeTwd,
   calculateTripProfit,
   compareFixedCostEntries,
@@ -11,8 +13,13 @@ import {
   type CostEntryMode,
   db,
   DEFAULT_REFERENCE_DAILY_WAGE,
+  emptyActualRouteCostGroup,
+  INCLUDED_ACTUAL_ORDER_STATUSES,
   operatingSettingsTable,
+  ordersTable,
   pendingOperatingCost,
+  productsTable,
+  tripRoutesTable,
 } from "@workspace/db";
 import { requireAuth } from "../middlewares/auth.ts";
 import { loadTrip } from "./fixedCosts.ts";
@@ -65,6 +72,91 @@ function serializeTotals(result: any) {
     fixedCostJpyOriginTwd: serializeDecimal(result.fixedCostJpyOriginTwd),
     fixedCostTwdDirectTwd: serializeDecimal(result.fixedCostTwdDirectTwd),
     fixedCostTotalTwd: serializeDecimal(result.fixedCostTotalTwd),
+  };
+}
+
+function serializeActualCostGroup(result: any) {
+  return {
+    status: result.status,
+    ...(result.status === "pending_confirmation"
+      ? { label: result.label, reason: result.reason }
+      : {}),
+    originalJpyTotal: serializeDecimal(result.originalJpyTotal),
+    originalTwdTotal: serializeDecimal(result.originalTwdTotal),
+    convertedJpyTotalTwd: serializeDecimal(result.convertedJpyTotalTwd),
+    totalTwd: serializeDecimal(result.totalTwd),
+  };
+}
+
+async function loadActualRollup(access: any, rows: any[]) {
+  const [routeRows, quantityRows] = await Promise.all([
+    db
+      .select({
+        tripRouteId: tripRoutesTable.id,
+        areaTitle: tripRoutesTable.areaTitle,
+      })
+      .from(tripRoutesTable)
+      .where(eq(tripRoutesTable.tripId, access.tripId))
+      .orderBy(asc(tripRoutesTable.id)),
+    db
+      .select({
+        tripRouteId: productsTable.tripRouteId,
+        status: ordersTable.status,
+        quantity: ordersTable.quantity,
+      })
+      .from(ordersTable)
+      .innerJoin(productsTable, eq(ordersTable.productId, productsTable.id))
+      .innerJoin(
+        tripRoutesTable,
+        eq(productsTable.tripRouteId, tripRoutesTable.id),
+      )
+      .where(
+        and(
+          eq(ordersTable.storeId, access.storeId),
+          eq(productsTable.storeId, access.storeId),
+          eq(tripRoutesTable.tripId, access.tripId),
+          inArray(ordersTable.status, INCLUDED_ACTUAL_ORDER_STATUSES),
+        ),
+      ),
+  ]);
+  const costRollup = calculateActualRouteCostRollup({
+    entries: rows.map((row) => ({
+      tripRouteId: row.entry.tripRouteId,
+      mode: row.entry.mode,
+      status: row.entry.status,
+      currency: row.entry.currency,
+      originalAmount: String(row.entry.originalAmount),
+    })),
+    actualExchangeRate: access.trip.actualExchangeRate,
+  });
+  const quantityRollup = calculateActualQuantityRollup(quantityRows);
+  const costsByRoute = new Map(
+    costRollup.groups.map((group) => [group.tripRouteId, group]),
+  );
+  const quantitiesByRoute = new Map(
+    quantityRollup.routes.map((route) => [
+      route.tripRouteId,
+      route.actualQuantity,
+    ]),
+  );
+
+  return {
+    status: costRollup.status,
+    totalActualQuantity: quantityRollup.totalActualQuantity.toString(),
+    tripWide: serializeActualCostGroup(
+      costsByRoute.get(null) ?? emptyActualRouteCostGroup(null),
+    ),
+    routes: routeRows.map((route) => ({
+      tripRouteId: route.tripRouteId,
+      areaTitle: route.areaTitle,
+      actualQuantity: (
+        quantitiesByRoute.get(route.tripRouteId) ?? 0n
+      ).toString(),
+      costs: serializeActualCostGroup(
+        costsByRoute.get(route.tripRouteId) ??
+          emptyActualRouteCostGroup(route.tripRouteId),
+      ),
+    })),
   };
 }
 
@@ -224,6 +316,9 @@ router.get(
       });
     }
 
+    const actualRollup =
+      mode === "ACTUAL" ? await loadActualRollup(access, rows) : null;
+
     return res.json({
       status: tripProfit.status,
       mode,
@@ -254,6 +349,7 @@ router.get(
         ),
       },
       tripProfit: serializeTripProfit(tripProfit),
+      actualRollup,
       estimateLocked: Boolean(access.trip.estimateLocked),
       estimateModifiedAfterLock: Boolean(access.trip.estimateModifiedAfterLock),
     });
