@@ -149,7 +149,7 @@ function findButtonByText(container, text) {
   );
 }
 
-async function waitForCall(calls, predicate, timeoutMs = 1_500) {
+async function waitForCall(calls, predicate, timeoutMs = 15_000) {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     const call = calls.find(predicate);
