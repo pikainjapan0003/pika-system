@@ -28,8 +28,11 @@ if (!process.env.DATABASE_URL) {
     costEntriesTable,
     db,
     operatingSettingsTable,
+    ordersTable,
     pool,
+    productsTable,
     storesTable,
+    tripRoutesTable,
     tripsTable,
   } = await import("@workspace/db");
   const { default: fixedCostSummaryRouter } =
@@ -78,6 +81,7 @@ if (!process.env.DATABASE_URL) {
         storeId,
         name: "V1 phase17 summary trip",
         exchangeRate: "0.2",
+        actualExchangeRate: "0.2",
         workingDays: 10,
         totalItemQuantity: 700,
         unitGrossProfitTwd: "130",
@@ -176,9 +180,9 @@ if (!process.env.DATABASE_URL) {
     await pool.end();
   });
 
-  async function request(userId = OWNER_ID) {
+  async function request(userId = OWNER_ID, mode = "ESTIMATE") {
     const response = await fetch(
-      `${baseUrl}/stores/${storeId}/trips/${tripId}/operating-summary?mode=ESTIMATE`,
+      `${baseUrl}/stores/${storeId}/trips/${tripId}/operating-summary?mode=${mode}`,
       { headers: { "x-test-user-id": userId } },
     );
     return { status: response.status, data: await response.json() };
@@ -311,5 +315,168 @@ if (!process.env.DATABASE_URL) {
   test("another merchant cannot read the trip operating summary", async () => {
     const response = await request(OTHER_OWNER_ID);
     assert.equal(response.status, 403);
+  });
+
+  test("ACTUAL summary groups route and trip-wide costs and counts only linked orders in four approved statuses", async () => {
+    const nonce = Date.now();
+    const [routeA, routeB] = await db
+      .insert(tripRoutesTable)
+      .values([
+        {
+          storeId,
+          tripId,
+          areaTitle: `V1 phase22 route A ${nonce}`,
+          startPlace: "A",
+          endPlace: "B",
+          estQty: 10,
+        },
+        {
+          storeId,
+          tripId,
+          areaTitle: `V1 phase22 route B ${nonce}`,
+          startPlace: "B",
+          endPlace: "C",
+          estQty: 10,
+        },
+      ])
+      .returning();
+    const [productA, exemptProduct, productB, unlinkedProduct] = await db
+      .insert(productsTable)
+      .values([
+        {
+          storeId,
+          name: "V1 phase22 product A",
+          price: "600",
+          shareToken: `v1-phase22-product-a-${nonce}`,
+          costJpy: "1000",
+          tripRouteId: routeA.id,
+        },
+        {
+          storeId,
+          name: "V1 phase22 exempt product",
+          price: "500",
+          shareToken: `v1-phase22-exempt-${nonce}`,
+          costJpy: "500",
+          tripRouteId: routeA.id,
+          isTransportCostExempt: true,
+        },
+        {
+          storeId,
+          name: "V1 phase22 product B",
+          price: "700",
+          shareToken: `v1-phase22-product-b-${nonce}`,
+          costJpy: "1500",
+          tripRouteId: routeB.id,
+        },
+        {
+          storeId,
+          name: "V1 phase22 unlinked product",
+          price: "300",
+          shareToken: `v1-phase22-unlinked-${nonce}`,
+          costJpy: "100",
+          tripRouteId: null,
+        },
+      ])
+      .returning();
+    const orderValues = [
+      [productA.id, "awaiting_payment", 2],
+      [productA.id, "preparing", 3],
+      [exemptProduct.id, "shipped", 1],
+      [productB.id, "completed", 4],
+      [productA.id, "pending", 90],
+      [productB.id, "cancelled", 80],
+      [unlinkedProduct.id, "completed", 70],
+    ].map(([productId, status, quantity], index) => ({
+      storeId,
+      productId,
+      publicToken: `v1-phase22-order-${nonce}-${index}`,
+      buyerName: "測試買家",
+      buyerPhone: "0900000000",
+      pickupMethod: "面交",
+      status,
+      quantity,
+      unitPrice: "100",
+      totalPrice: String(quantity * 100),
+    }));
+    await db.insert(ordersTable).values(orderValues);
+    await db.insert(costEntriesTable).values([
+      {
+        storeId,
+        tripId,
+        tripRouteId: routeA.id,
+        mode: "ACTUAL",
+        categoryId: null,
+        customLabel: "A 路線日圓成本",
+        currency: "JPY",
+        originalAmount: "1000",
+      },
+      {
+        storeId,
+        tripId,
+        tripRouteId: routeA.id,
+        mode: "ACTUAL",
+        categoryId: null,
+        customLabel: "A 路線台幣成本",
+        currency: "TWD",
+        originalAmount: "50",
+      },
+      {
+        storeId,
+        tripId,
+        tripRouteId: routeB.id,
+        mode: "ACTUAL",
+        categoryId: null,
+        customLabel: "B 路線台幣成本",
+        currency: "TWD",
+        originalAmount: "300",
+      },
+      {
+        storeId,
+        tripId,
+        tripRouteId: null,
+        mode: "ACTUAL",
+        categoryId: null,
+        customLabel: "整趟共用成本",
+        currency: "JPY",
+        originalAmount: "500",
+      },
+      {
+        storeId,
+        tripId,
+        tripRouteId: routeA.id,
+        mode: "ACTUAL",
+        categoryId: null,
+        customLabel: "已作廢成本",
+        currency: "JPY",
+        originalAmount: "9999",
+        status: "VOID",
+      },
+    ]);
+
+    const response = await request(OWNER_ID, "ACTUAL");
+
+    assert.equal(response.status, 200, JSON.stringify(response.data));
+    assert.equal(response.data.actualRollup.status, "ready");
+    assert.equal(response.data.actualRollup.totalActualQuantity, "10");
+    assert.deepEqual(
+      response.data.actualRollup.routes.map((route) => [
+        route.tripRouteId,
+        route.actualQuantity,
+        route.costs.totalTwd,
+      ]),
+      [
+        [routeA.id, "6", "250.000000000000"],
+        [routeB.id, "4", "300.000000000000"],
+      ],
+    );
+    assert.equal(
+      response.data.actualRollup.tripWide.originalJpyTotal,
+      "500.000000000000",
+    );
+    assert.equal(
+      response.data.actualRollup.tripWide.totalTwd,
+      "100.000000000000",
+    );
+    assert.equal(response.data.totalItemQuantity, 700);
   });
 }
