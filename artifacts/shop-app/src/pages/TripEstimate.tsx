@@ -110,7 +110,7 @@ const SECTION_CONFIG: Array<{
   },
 ];
 
-const OUTCOME_LABELS: Record<ReadyTripProfit["outcome"], string> = {
+const OUTCOME_LABELS: Record<ReadyTripProfitProjection["outcome"], string> = {
   SALARY_TARGET_MET: "達成日薪目標",
   PROFIT_BELOW_SALARY_TARGET: "有利潤但未達日薪目標",
   LOSS: "虧損",
@@ -483,7 +483,9 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
                       ["daily", "DAILY｜每日毛利法"],
                     ] as const
                   ).map(([key, title]) => {
-                    const projection = summary.tripProfit.projections[key];
+                    const tripProfit = summary.tripProfit;
+                    if (tripProfit.status !== "ready") return null;
+                    const projection = tripProfit.projections[key];
                     return (
                       <div
                         key={key}
