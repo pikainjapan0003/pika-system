@@ -4,6 +4,7 @@ import {
   calculateFixedCostTotals,
   calculateActualQuantityRollup,
   calculateActualRouteCostRollup,
+  calculateActualUnitProfit,
   calculateSectionPaymentFeeTwd,
   calculateTripProfit,
   compareFixedCostEntries,
@@ -87,8 +88,23 @@ function serializeActualCostGroup(result: any) {
   };
 }
 
+function serializeActualUnitProfit(result: any) {
+  if (result.status !== "ready") return result;
+  return {
+    status: "ready",
+    routeActualUnitTransportCostTwd: serializeDecimal(
+      result.routeActualUnitTransportCostTwd,
+    ),
+    allocatedActualUnitTransportCostTwd: serializeDecimal(
+      result.allocatedActualUnitTransportCostTwd,
+    ),
+    productCostTwd: serializeDecimal(result.productCostTwd),
+    actualUnitProfitTwd: serializeDecimal(result.actualUnitProfitTwd),
+  };
+}
+
 async function loadActualRollup(access: any, rows: any[]) {
-  const [routeRows, quantityRows] = await Promise.all([
+  const [routeRows, quantityRows, productRows] = await Promise.all([
     db
       .select({
         tripRouteId: tripRoutesTable.id,
@@ -114,9 +130,30 @@ async function loadActualRollup(access: any, rows: any[]) {
           eq(ordersTable.storeId, access.storeId),
           eq(productsTable.storeId, access.storeId),
           eq(tripRoutesTable.tripId, access.tripId),
-          inArray(ordersTable.status, INCLUDED_ACTUAL_ORDER_STATUSES),
+          inArray(ordersTable.status, [...INCLUDED_ACTUAL_ORDER_STATUSES]),
         ),
       ),
+    db
+      .select({
+        productId: productsTable.id,
+        productName: productsTable.name,
+        unitPriceTwd: productsTable.price,
+        costJpy: productsTable.costJpy,
+        isTransportCostExempt: productsTable.isTransportCostExempt,
+        tripRouteId: productsTable.tripRouteId,
+      })
+      .from(productsTable)
+      .innerJoin(
+        tripRoutesTable,
+        eq(productsTable.tripRouteId, tripRoutesTable.id),
+      )
+      .where(
+        and(
+          eq(productsTable.storeId, access.storeId),
+          eq(tripRoutesTable.tripId, access.tripId),
+        ),
+      )
+      .orderBy(asc(productsTable.id)),
   ]);
   const costRollup = calculateActualRouteCostRollup({
     entries: rows.map((row) => ({
@@ -139,23 +176,56 @@ async function loadActualRollup(access: any, rows: any[]) {
     ]),
   );
 
+  const routes = routeRows.map((route) => {
+    const actualQuantity = quantitiesByRoute.get(route.tripRouteId) ?? 0n;
+    const costs =
+      costsByRoute.get(route.tripRouteId) ??
+      emptyActualRouteCostGroup(route.tripRouteId);
+    return {
+      tripRouteId: route.tripRouteId,
+      areaTitle: route.areaTitle,
+      actualQuantity: actualQuantity.toString(),
+      costs: serializeActualCostGroup(costs),
+      products: productRows
+        .filter((product) => product.tripRouteId === route.tripRouteId)
+        .map((product) => ({
+          productId: product.productId,
+          productName: product.productName,
+          unitPriceTwd: String(product.unitPriceTwd),
+          costJpy: product.costJpy == null ? null : String(product.costJpy),
+          isTransportCostExempt: product.isTransportCostExempt,
+          actualUnitProfit: serializeActualUnitProfit(
+            calculateActualUnitProfit({
+              unitPriceTwd: String(product.unitPriceTwd),
+              costJpy: product.costJpy == null ? null : String(product.costJpy),
+              actualExchangeRate: access.trip.actualExchangeRate,
+              routeActualCostTwd:
+                costs.status === "ready"
+                  ? costs.totalTwd.toDecimalPlaces(12)
+                  : null,
+              routeActualQuantity: actualQuantity.toString(),
+              isTransportCostExempt: product.isTransportCostExempt,
+            }),
+          ),
+        })),
+    };
+  });
+  const hasPendingProduct = routes.some((route) =>
+    route.products.some(
+      (product) => product.actualUnitProfit.status !== "ready",
+    ),
+  );
+
   return {
-    status: costRollup.status,
+    status:
+      costRollup.status === "ready" && !hasPendingProduct
+        ? "ready"
+        : "pending_confirmation",
     totalActualQuantity: quantityRollup.totalActualQuantity.toString(),
     tripWide: serializeActualCostGroup(
       costsByRoute.get(null) ?? emptyActualRouteCostGroup(null),
     ),
-    routes: routeRows.map((route) => ({
-      tripRouteId: route.tripRouteId,
-      areaTitle: route.areaTitle,
-      actualQuantity: (
-        quantitiesByRoute.get(route.tripRouteId) ?? 0n
-      ).toString(),
-      costs: serializeActualCostGroup(
-        costsByRoute.get(route.tripRouteId) ??
-          emptyActualRouteCostGroup(route.tripRouteId),
-      ),
-    })),
+    routes,
   };
 }
 

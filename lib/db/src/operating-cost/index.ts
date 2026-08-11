@@ -12,3 +12,4 @@ export * from "./workingDays.ts";
 export * from "./entryMutationPolicy.ts";
 export * from "./fixedCostVariance.ts";
 export * from "./actualRouteRollup.ts";
+export * from "./actualUnitProfit.ts";
