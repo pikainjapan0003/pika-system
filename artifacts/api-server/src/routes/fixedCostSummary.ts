@@ -17,7 +17,6 @@ import {
   INCLUDED_ACTUAL_ORDER_STATUSES,
   operatingSettingsTable,
   ordersTable,
-  pendingOperatingCost,
   productsTable,
   tripRoutesTable,
 } from "@workspace/db";
@@ -185,7 +184,7 @@ function serializeSection(rows: any[], categories: any[], totals: any) {
   };
 }
 
-function serializeTripProfit(result: any) {
+function serializeTripProfitProjection(result: any) {
   if (result.status !== "ready") return result;
   return {
     status: "ready",
@@ -195,16 +194,27 @@ function serializeTripProfit(result: any) {
     adjustedRevenueTwd: serializeDecimal(result.adjustedRevenueTwd),
     grossProfitTwd: serializeDecimal(result.grossProfitTwd),
     grossMarginRate: serializeDecimal(result.grossMarginRate),
-    fixedPaymentFeeTwd: serializeDecimal(result.fixedPaymentFeeTwd),
-    variablePaymentFeeTwd: serializeDecimal(result.variablePaymentFeeTwd),
-    purchasePaymentFeeTwd: serializeDecimal(result.purchasePaymentFeeTwd),
-    paymentFeeTwd: serializeDecimal(result.paymentFeeTwd),
-    operatingExpenseTwd: serializeDecimal(result.operatingExpenseTwd),
     operatingProfitBeforeAdjustmentsTwd: serializeDecimal(
       result.operatingProfitBeforeAdjustmentsTwd,
     ),
     finalOperatingProfitTwd: serializeDecimal(result.finalOperatingProfitTwd),
     salaryTargetTwd: serializeDecimal(result.salaryTargetTwd),
+  };
+}
+
+function serializeTripProfit(result: any) {
+  if (result.status !== "ready") return result;
+  return {
+    status: "ready",
+    projections: {
+      unit: serializeTripProfitProjection(result.projections.unit),
+      daily: serializeTripProfitProjection(result.projections.daily),
+    },
+    fixedPaymentFeeTwd: serializeDecimal(result.fixedPaymentFeeTwd),
+    variablePaymentFeeTwd: serializeDecimal(result.variablePaymentFeeTwd),
+    purchasePaymentFeeTwd: serializeDecimal(result.purchasePaymentFeeTwd),
+    paymentFeeTwd: serializeDecimal(result.paymentFeeTwd),
+    operatingExpenseTwd: serializeDecimal(result.operatingExpenseTwd),
     fixedCostJpyOriginTwd: serializeDecimal(result.fixedCostJpyOriginTwd),
     fixedCostTwdDirectTwd: serializeDecimal(result.fixedCostTwdDirectTwd),
     fixedCostTotalTwd: serializeDecimal(result.fixedCostTotalTwd),
@@ -274,12 +284,7 @@ router.get(
       (totals) => totals.status === "ready",
     );
     let tripProfit: ReturnType<typeof calculateTripProfit>;
-    if (
-      access.trip.unitGrossProfitTwd == null ||
-      access.trip.totalItemQuantity == null
-    ) {
-      tripProfit = pendingOperatingCost("缺少單件毛利或預估件數");
-    } else if (!allSectionsReady) {
+    if (!allSectionsReady) {
       tripProfit = Object.values(totalsByKind).find(
         (totals) => totals.status !== "ready",
       ) as ReturnType<typeof calculateTripProfit>;
@@ -307,7 +312,14 @@ router.get(
           purchase.fixedCostJpyOriginTwd.toDecimalPlaces(12),
         purchaseCostTwdDirectTwd:
           purchase.fixedCostTwdDirectTwd.toDecimalPlaces(12),
-        unitGrossProfitTwd: String(access.trip.unitGrossProfitTwd),
+        unitGrossProfitTwd:
+          access.trip.unitGrossProfitTwd == null
+            ? null
+            : String(access.trip.unitGrossProfitTwd),
+        dailyGrossProfitTwd:
+          access.trip.dailyGrossProfitTwd == null
+            ? null
+            : String(access.trip.dailyGrossProfitTwd),
         estimatedItemQuantity: access.trip.totalItemQuantity,
         creditCardRebateTwd: String(access.trip.creditCardRebateTwd),
         workingDays: access.trip.workingDays,
