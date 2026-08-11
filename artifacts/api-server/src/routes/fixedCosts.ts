@@ -1,10 +1,11 @@
 import { Router } from "express";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull, or } from "drizzle-orm";
 import {
   costCategoriesTable,
   costEntriesTable,
   type CostEntryMode,
   db,
+  tripRoutesTable,
   tripsTable,
 } from "@workspace/db";
 import { requireAuth, verifyStoreOwner } from "../middlewares/auth.ts";
@@ -43,6 +44,28 @@ export async function loadTrip(req: any, res: any) {
   return { storeId, tripId, trip };
 }
 
+async function tripRouteBelongsToTrip(
+  tripRouteId: number,
+  tripId: number,
+  storeId: number,
+) {
+  const [route] = await db
+    .select({ id: tripRoutesTable.id })
+    .from(tripRoutesTable)
+    .where(
+      and(
+        eq(tripRoutesTable.id, tripRouteId),
+        eq(tripRoutesTable.tripId, tripId),
+        or(
+          eq(tripRoutesTable.storeId, storeId),
+          isNull(tripRoutesTable.storeId),
+        ),
+      ),
+    )
+    .limit(1);
+  return route !== undefined;
+}
+
 function parseEntryBody(body: any, partial = false) {
   if (!body || typeof body !== "object")
     return { error: "Invalid body" } as const;
@@ -64,6 +87,20 @@ function parseEntryBody(body: any, partial = false) {
     if (amount === null)
       return { error: "originalAmount must be a decimal string" } as const;
     result.originalAmount = amount;
+  }
+  if (!partial || body.tripRouteId !== undefined) {
+    const tripRouteId =
+      body.tripRouteId == null || body.tripRouteId === ""
+        ? null
+        : positiveId(String(body.tripRouteId));
+    if (
+      tripRouteId === null &&
+      body.tripRouteId != null &&
+      body.tripRouteId !== ""
+    ) {
+      return { error: "tripRouteId must be a positive integer" } as const;
+    }
+    result.tripRouteId = tripRouteId;
   }
   if (
     !partial ||
@@ -138,6 +175,17 @@ router.post(
     if (parsed.value.mode === "ESTIMATE" && access.trip.estimateLocked) {
       return res.status(409).json({ error: "Cost entry is locked" });
     }
+    const tripRouteId = parsed.value.tripRouteId as number | null;
+    if (
+      tripRouteId !== null &&
+      !(await tripRouteBelongsToTrip(
+        tripRouteId,
+        access.tripId,
+        access.storeId,
+      ))
+    ) {
+      return res.status(400).json({ error: "Invalid tripRouteId" });
+    }
     try {
       const [entry] = await db
         .insert(costEntriesTable)
@@ -149,7 +197,7 @@ router.post(
         .returning();
       return res.status(201).json(entry);
     } catch (error: any) {
-      if (error?.code === "23505")
+      if ((error?.cause?.code ?? error?.code) === "23505")
         return res
           .status(409)
           .json({ error: "Estimate category already exists" });
@@ -192,6 +240,18 @@ router.patch(
     }
     const parsed = parseEntryBody(req.body, true);
     if ("error" in parsed) return res.status(400).json({ error: parsed.error });
+    const tripRouteId = parsed.value.tripRouteId as number | null | undefined;
+    if (
+      tripRouteId !== undefined &&
+      tripRouteId !== null &&
+      !(await tripRouteBelongsToTrip(
+        tripRouteId,
+        access.tripId,
+        access.storeId,
+      ))
+    ) {
+      return res.status(400).json({ error: "Invalid tripRouteId" });
+    }
     const [updated] = await db
       .update(costEntriesTable)
       .set(parsed.value as any)
