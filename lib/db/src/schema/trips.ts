@@ -66,6 +66,10 @@ export const tripsTable = pgTable(
       precision: 30,
       scale: 12,
     }),
+    dailyGrossProfitTwd: numeric("daily_gross_profit_twd", {
+      precision: 30,
+      scale: 12,
+    }),
     notes: text("notes"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -111,6 +115,10 @@ export const tripsTable = pgTable(
     check(
       "trips_total_item_quantity_non_negative",
       sql`${t.totalItemQuantity} IS NULL OR ${t.totalItemQuantity} >= 0`,
+    ),
+    check(
+      "trips_daily_gross_profit_twd_non_negative",
+      sql`${t.dailyGrossProfitTwd} IS NULL OR ${t.dailyGrossProfitTwd} >= 0`,
     ),
   ],
 );

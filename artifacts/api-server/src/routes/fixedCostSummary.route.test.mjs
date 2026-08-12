@@ -28,8 +28,11 @@ if (!process.env.DATABASE_URL) {
     costEntriesTable,
     db,
     operatingSettingsTable,
+    ordersTable,
     pool,
+    productsTable,
     storesTable,
+    tripRoutesTable,
     tripsTable,
   } = await import("@workspace/db");
   const { default: fixedCostSummaryRouter } =
@@ -78,9 +81,11 @@ if (!process.env.DATABASE_URL) {
         storeId,
         name: "V1 phase17 summary trip",
         exchangeRate: "0.2",
+        actualExchangeRate: "0.2",
         workingDays: 10,
         totalItemQuantity: 700,
         unitGrossProfitTwd: "130",
+        dailyGrossProfitTwd: "8000",
         creditCardRebateTwd: "0",
       })
       .returning();
@@ -176,9 +181,9 @@ if (!process.env.DATABASE_URL) {
     await pool.end();
   });
 
-  async function request(userId = OWNER_ID) {
+  async function request(userId = OWNER_ID, mode = "ESTIMATE") {
     const response = await fetch(
-      `${baseUrl}/stores/${storeId}/trips/${tripId}/operating-summary?mode=ESTIMATE`,
+      `${baseUrl}/stores/${storeId}/trips/${tripId}/operating-summary?mode=${mode}`,
       { headers: { "x-test-user-id": userId } },
     );
     return { status: response.status, data: await response.json() };
@@ -211,21 +216,42 @@ if (!process.env.DATABASE_URL) {
       response.data.sections.purchase.paymentFeeTwd,
       "0.000000000000",
     );
-    assert.equal(response.data.tripProfit.grossProfitSource, "UNIT");
+    assert.equal(
+      response.data.tripProfit.projections.unit.grossProfitSource,
+      "UNIT",
+    );
+    assert.equal(
+      response.data.tripProfit.projections.daily.grossProfitSource,
+      "DAILY",
+    );
     assert.equal(
       response.data.tripProfit.purchaseCostPrincipalTwd,
       "1000.000000000000",
     );
-    assert.equal(response.data.tripProfit.grossProfitTwd, "91000.000000000000");
+    assert.equal(
+      response.data.tripProfit.projections.unit.grossProfitTwd,
+      "91000.000000000000",
+    );
+    assert.equal(
+      response.data.tripProfit.projections.daily.grossProfitTwd,
+      "80000.000000000000",
+    );
     assert.equal(
       response.data.tripProfit.operatingExpenseTwd,
       "30.450000000000",
     );
     assert.equal(
-      response.data.tripProfit.finalOperatingProfitTwd,
+      response.data.tripProfit.projections.unit.finalOperatingProfitTwd,
       "90969.550000000000",
     );
-    assert.equal(response.data.tripProfit.outcome, "SALARY_TARGET_MET");
+    assert.equal(
+      response.data.tripProfit.projections.daily.finalOperatingProfitTwd,
+      "79969.550000000000",
+    );
+    assert.equal(
+      response.data.tripProfit.projections.unit.outcome,
+      "SALARY_TARGET_MET",
+    );
   });
 
   test("a custom JPY entry costs the same in its FIXED default and a VARIABLE comparison", async () => {
@@ -267,7 +293,7 @@ if (!process.env.DATABASE_URL) {
     }
   });
 
-  test("missing unit gross or item quantity stays pending without synthesizing revenue", async () => {
+  test("missing UNIT inputs leave UNIT pending without blocking DAILY", async () => {
     await db
       .update(tripsTable)
       .set({ unitGrossProfitTwd: null, totalItemQuantity: null })
@@ -276,10 +302,17 @@ if (!process.env.DATABASE_URL) {
     const response = await request();
 
     assert.equal(response.status, 200);
-    assert.equal(response.data.status, "pending_confirmation");
-    assert.equal(response.data.tripProfit.reason, "缺少單件毛利或預估件數");
+    assert.equal(response.data.status, "ready");
+    assert.equal(
+      response.data.tripProfit.projections.unit.reason,
+      "缺少單件毛利或預估件數",
+    );
+    assert.equal(response.data.tripProfit.projections.daily.status, "ready");
     assert.equal(response.data.sections.fixed.totalTwd, "20.000000000000");
-    assert.equal(response.data.tripProfit.grossProfitTwd, undefined);
+    assert.equal(
+      response.data.tripProfit.projections.unit.grossProfitTwd,
+      undefined,
+    );
 
     await db
       .update(tripsTable)
@@ -311,5 +344,229 @@ if (!process.env.DATABASE_URL) {
   test("another merchant cannot read the trip operating summary", async () => {
     const response = await request(OTHER_OWNER_ID);
     assert.equal(response.status, 403);
+  });
+
+  test("ACTUAL summary groups route and trip-wide costs and counts only linked orders in four approved statuses", async () => {
+    const nonce = Date.now();
+    const [routeA, routeB, routeC] = await db
+      .insert(tripRoutesTable)
+      .values([
+        {
+          storeId,
+          tripId,
+          areaTitle: `V1 phase22 route A ${nonce}`,
+          startPlace: "A",
+          endPlace: "B",
+          estQty: 10,
+        },
+        {
+          storeId,
+          tripId,
+          areaTitle: `V1 phase22 route B ${nonce}`,
+          startPlace: "B",
+          endPlace: "C",
+          estQty: 10,
+        },
+        {
+          storeId,
+          tripId,
+          areaTitle: `V1 phase22 route C ${nonce}`,
+          startPlace: "C",
+          endPlace: "D",
+          estQty: 10,
+        },
+      ])
+      .returning();
+    const [productA, exemptProduct, productB, productC, unlinkedProduct] =
+      await db
+        .insert(productsTable)
+        .values([
+          {
+            storeId,
+            name: "V1 phase22 product A",
+            price: "600",
+            shareToken: `v1-phase22-product-a-${nonce}`,
+            costJpy: "1000",
+            tripRouteId: routeA.id,
+          },
+          {
+            storeId,
+            name: "V1 phase22 exempt product",
+            price: "500",
+            shareToken: `v1-phase22-exempt-${nonce}`,
+            costJpy: "500",
+            tripRouteId: routeA.id,
+            isTransportCostExempt: true,
+          },
+          {
+            storeId,
+            name: "V1 phase22 product B",
+            price: "700",
+            shareToken: `v1-phase22-product-b-${nonce}`,
+            costJpy: "1500",
+            tripRouteId: routeB.id,
+          },
+          {
+            storeId,
+            name: "V1 phase22 product C without actual orders",
+            price: "100",
+            shareToken: `v1-phase22-product-c-${nonce}`,
+            costJpy: "0",
+            tripRouteId: routeC.id,
+          },
+          {
+            storeId,
+            name: "V1 phase22 unlinked product",
+            price: "300",
+            shareToken: `v1-phase22-unlinked-${nonce}`,
+            costJpy: "100",
+            tripRouteId: null,
+          },
+        ])
+        .returning();
+    const orderValues = [
+      [productA.id, "awaiting_payment", 2],
+      [productA.id, "preparing", 3],
+      [exemptProduct.id, "shipped", 1],
+      [productB.id, "completed", 4],
+      [productA.id, "pending", 90],
+      [productB.id, "cancelled", 80],
+      [unlinkedProduct.id, "completed", 70],
+    ].map(([productId, status, quantity], index) => ({
+      storeId,
+      productId,
+      publicToken: `v1-phase22-order-${nonce}-${index}`,
+      buyerName: "測試買家",
+      buyerPhone: "0900000000",
+      pickupMethod: "面交",
+      status,
+      quantity,
+      unitPrice: "100",
+      totalPrice: String(quantity * 100),
+    }));
+    await db.insert(ordersTable).values(orderValues);
+    await db.insert(costEntriesTable).values([
+      {
+        storeId,
+        tripId,
+        tripRouteId: routeA.id,
+        mode: "ACTUAL",
+        categoryId: null,
+        customLabel: "A 路線日圓成本",
+        currency: "JPY",
+        originalAmount: "1000",
+      },
+      {
+        storeId,
+        tripId,
+        tripRouteId: routeA.id,
+        mode: "ACTUAL",
+        categoryId: null,
+        customLabel: "A 路線台幣成本",
+        currency: "TWD",
+        originalAmount: "50",
+      },
+      {
+        storeId,
+        tripId,
+        tripRouteId: routeB.id,
+        mode: "ACTUAL",
+        categoryId: null,
+        customLabel: "B 路線台幣成本",
+        currency: "TWD",
+        originalAmount: "300",
+      },
+      {
+        storeId,
+        tripId,
+        tripRouteId: null,
+        mode: "ACTUAL",
+        categoryId: null,
+        customLabel: "整趟共用成本",
+        currency: "JPY",
+        originalAmount: "500",
+      },
+      {
+        storeId,
+        tripId,
+        tripRouteId: routeA.id,
+        mode: "ACTUAL",
+        categoryId: null,
+        customLabel: "已作廢成本",
+        currency: "JPY",
+        originalAmount: "9999",
+        status: "VOID",
+      },
+    ]);
+
+    const response = await request(OWNER_ID, "ACTUAL");
+
+    assert.equal(response.status, 200, JSON.stringify(response.data));
+    assert.equal(response.data.actualRollup.status, "pending_confirmation");
+    assert.equal(response.data.actualRollup.totalActualQuantity, "10");
+    assert.deepEqual(
+      response.data.actualRollup.routes.map((route) => [
+        route.tripRouteId,
+        route.actualQuantity,
+        route.costs.totalTwd,
+      ]),
+      [
+        [routeA.id, "6", "250.000000000000"],
+        [routeB.id, "4", "300.000000000000"],
+        [routeC.id, "0", "0.000000000000"],
+      ],
+    );
+    assert.equal(
+      response.data.actualRollup.tripWide.originalJpyTotal,
+      "500.000000000000",
+    );
+    assert.equal(
+      response.data.actualRollup.tripWide.totalTwd,
+      "100.000000000000",
+    );
+    assert.equal(response.data.totalItemQuantity, 700);
+
+    const responseRouteA = response.data.actualRollup.routes.find(
+      (route) => route.tripRouteId === routeA.id,
+    );
+    const responseProductA = responseRouteA.products.find(
+      (product) => product.productId === productA.id,
+    );
+    const responseExemptProduct = responseRouteA.products.find(
+      (product) => product.productId === exemptProduct.id,
+    );
+    assert.deepEqual(responseProductA.actualUnitProfit, {
+      status: "ready",
+      routeActualUnitTransportCostTwd: "41.666666666667",
+      allocatedActualUnitTransportCostTwd: "41.666666666667",
+      productCostTwd: "200.000000000000",
+      actualUnitProfitTwd: "358.333333333333",
+    });
+    assert.equal(
+      responseExemptProduct.actualUnitProfit.actualUnitProfitTwd,
+      "400.000000000000",
+    );
+    assert.equal(
+      responseExemptProduct.actualUnitProfit
+        .allocatedActualUnitTransportCostTwd,
+      "0.000000000000",
+    );
+
+    const responseRouteC = response.data.actualRollup.routes.find(
+      (route) => route.tripRouteId === routeC.id,
+    );
+    assert.deepEqual(responseRouteC.products[0].actualUnitProfit, {
+      status: "pending_confirmation",
+      label: "待確認",
+      reason: "missing_actual_quantity",
+    });
+    assert.equal(
+      response.data.actualRollup.routes.some((route) =>
+        route.products.some(
+          (product) => product.productId === unlinkedProduct.id,
+        ),
+      ),
+      false,
+    );
   });
 }

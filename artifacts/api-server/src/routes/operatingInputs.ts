@@ -68,6 +68,12 @@ router.patch(
     const exchangeRate = nullableDecimal(body.exchangeRate);
     const totalItemQuantity = parseNonNegativeInteger(body.totalItemQuantity);
     const unitGrossProfitTwd = nullableDecimal(body.unitGrossProfitTwd);
+    const dailyGrossProfitTwd = nullableDecimal(body.dailyGrossProfitTwd);
+    const dailyGrossProfitInvalid =
+      body.dailyGrossProfitTwd !== undefined &&
+      body.dailyGrossProfitTwd !== null &&
+      body.dailyGrossProfitTwd !== "" &&
+      dailyGrossProfitTwd === null;
     const hepDays = parseHepDays(body.hepDays);
     const hepTotalJpy = nullableDecimal(body.hepTotalJpy);
     const creditCardRebateTwd = nullableDecimal(body.creditCardRebateTwd);
@@ -88,6 +94,9 @@ router.patch(
         totalItemQuantity === undefined) ||
       (body.unitGrossProfitTwd !== undefined &&
         unitGrossProfitTwd === undefined) ||
+      (body.dailyGrossProfitTwd !== undefined &&
+        dailyGrossProfitTwd === undefined) ||
+      dailyGrossProfitInvalid ||
       (body.hepDays !== undefined && hepDays === undefined) ||
       (body.hepTotalJpy !== undefined && hepTotalJpy === undefined) ||
       (body.creditCardRebateTwd !== undefined &&
@@ -109,6 +118,7 @@ router.patch(
       ["exchangeRate", exchangeRate],
       ["totalItemQuantity", totalItemQuantity],
       ["unitGrossProfitTwd", unitGrossProfitTwd],
+      ["dailyGrossProfitTwd", dailyGrossProfitTwd],
       ["hepDays", hepDays],
       ["hepTotalJpy", hepTotalJpy],
       ["creditCardRebateTwd", creditCardRebateTwd],

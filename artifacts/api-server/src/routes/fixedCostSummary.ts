@@ -1,7 +1,10 @@
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, inArray } from "drizzle-orm";
 import { Router } from "express";
 import {
   calculateFixedCostTotals,
+  calculateActualQuantityRollup,
+  calculateActualRouteCostRollup,
+  calculateActualUnitProfit,
   calculateSectionPaymentFeeTwd,
   calculateTripProfit,
   compareFixedCostEntries,
@@ -11,8 +14,12 @@ import {
   type CostEntryMode,
   db,
   DEFAULT_REFERENCE_DAILY_WAGE,
+  emptyActualRouteCostGroup,
+  INCLUDED_ACTUAL_ORDER_STATUSES,
   operatingSettingsTable,
-  pendingOperatingCost,
+  ordersTable,
+  productsTable,
+  tripRoutesTable,
 } from "@workspace/db";
 import { requireAuth } from "../middlewares/auth.ts";
 import { loadTrip } from "./fixedCosts.ts";
@@ -68,6 +75,160 @@ function serializeTotals(result: any) {
   };
 }
 
+function serializeActualCostGroup(result: any) {
+  return {
+    status: result.status,
+    ...(result.status === "pending_confirmation"
+      ? { label: result.label, reason: result.reason }
+      : {}),
+    originalJpyTotal: serializeDecimal(result.originalJpyTotal),
+    originalTwdTotal: serializeDecimal(result.originalTwdTotal),
+    convertedJpyTotalTwd: serializeDecimal(result.convertedJpyTotalTwd),
+    totalTwd: serializeDecimal(result.totalTwd),
+  };
+}
+
+function serializeActualUnitProfit(result: any) {
+  if (result.status !== "ready") return result;
+  return {
+    status: "ready",
+    routeActualUnitTransportCostTwd: serializeDecimal(
+      result.routeActualUnitTransportCostTwd,
+    ),
+    allocatedActualUnitTransportCostTwd: serializeDecimal(
+      result.allocatedActualUnitTransportCostTwd,
+    ),
+    productCostTwd: serializeDecimal(result.productCostTwd),
+    actualUnitProfitTwd: serializeDecimal(result.actualUnitProfitTwd),
+  };
+}
+
+async function loadActualRollup(access: any, rows: any[]) {
+  const [routeRows, quantityRows, productRows] = await Promise.all([
+    db
+      .select({
+        tripRouteId: tripRoutesTable.id,
+        areaTitle: tripRoutesTable.areaTitle,
+      })
+      .from(tripRoutesTable)
+      .where(eq(tripRoutesTable.tripId, access.tripId))
+      .orderBy(asc(tripRoutesTable.id)),
+    db
+      .select({
+        tripRouteId: productsTable.tripRouteId,
+        status: ordersTable.status,
+        quantity: ordersTable.quantity,
+      })
+      .from(ordersTable)
+      .innerJoin(productsTable, eq(ordersTable.productId, productsTable.id))
+      .innerJoin(
+        tripRoutesTable,
+        eq(productsTable.tripRouteId, tripRoutesTable.id),
+      )
+      .where(
+        and(
+          eq(ordersTable.storeId, access.storeId),
+          eq(productsTable.storeId, access.storeId),
+          eq(tripRoutesTable.tripId, access.tripId),
+          inArray(ordersTable.status, [...INCLUDED_ACTUAL_ORDER_STATUSES]),
+        ),
+      ),
+    db
+      .select({
+        productId: productsTable.id,
+        productName: productsTable.name,
+        unitPriceTwd: productsTable.price,
+        costJpy: productsTable.costJpy,
+        isTransportCostExempt: productsTable.isTransportCostExempt,
+        tripRouteId: productsTable.tripRouteId,
+      })
+      .from(productsTable)
+      .innerJoin(
+        tripRoutesTable,
+        eq(productsTable.tripRouteId, tripRoutesTable.id),
+      )
+      .where(
+        and(
+          eq(productsTable.storeId, access.storeId),
+          eq(tripRoutesTable.tripId, access.tripId),
+        ),
+      )
+      .orderBy(asc(productsTable.id)),
+  ]);
+  const costRollup = calculateActualRouteCostRollup({
+    entries: rows.map((row) => ({
+      tripRouteId: row.entry.tripRouteId,
+      mode: row.entry.mode,
+      status: row.entry.status,
+      currency: row.entry.currency,
+      originalAmount: String(row.entry.originalAmount),
+    })),
+    actualExchangeRate: access.trip.actualExchangeRate,
+  });
+  const quantityRollup = calculateActualQuantityRollup(quantityRows);
+  const costsByRoute = new Map(
+    costRollup.groups.map((group) => [group.tripRouteId, group]),
+  );
+  const quantitiesByRoute = new Map(
+    quantityRollup.routes.map((route) => [
+      route.tripRouteId,
+      route.actualQuantity,
+    ]),
+  );
+
+  const routes = routeRows.map((route) => {
+    const actualQuantity = quantitiesByRoute.get(route.tripRouteId) ?? 0n;
+    const costs =
+      costsByRoute.get(route.tripRouteId) ??
+      emptyActualRouteCostGroup(route.tripRouteId);
+    return {
+      tripRouteId: route.tripRouteId,
+      areaTitle: route.areaTitle,
+      actualQuantity: actualQuantity.toString(),
+      costs: serializeActualCostGroup(costs),
+      products: productRows
+        .filter((product) => product.tripRouteId === route.tripRouteId)
+        .map((product) => ({
+          productId: product.productId,
+          productName: product.productName,
+          unitPriceTwd: String(product.unitPriceTwd),
+          costJpy: product.costJpy == null ? null : String(product.costJpy),
+          isTransportCostExempt: product.isTransportCostExempt,
+          actualUnitProfit: serializeActualUnitProfit(
+            calculateActualUnitProfit({
+              unitPriceTwd: String(product.unitPriceTwd),
+              costJpy: product.costJpy == null ? null : String(product.costJpy),
+              actualExchangeRate: access.trip.actualExchangeRate,
+              routeActualCostTwd:
+                costs.status === "ready"
+                  ? costs.totalTwd.toDecimalPlaces(12)
+                  : null,
+              routeActualQuantity: actualQuantity.toString(),
+              isTransportCostExempt: product.isTransportCostExempt,
+            }),
+          ),
+        })),
+    };
+  });
+  const hasPendingProduct = routes.some((route) =>
+    route.products.some(
+      (product) => product.actualUnitProfit.status !== "ready",
+    ),
+  );
+
+  return {
+    status:
+      costRollup.status === "ready" && !hasPendingProduct
+        ? "ready"
+        : "pending_confirmation",
+    totalActualQuantity: quantityRollup.totalActualQuantity.toString(),
+    tripWide: serializeActualCostGroup(
+      costsByRoute.get(null) ?? emptyActualRouteCostGroup(null),
+    ),
+    routes,
+  };
+}
+
 function serializeSection(rows: any[], categories: any[], totals: any) {
   if (totals.status !== "ready") {
     return {
@@ -93,7 +254,7 @@ function serializeSection(rows: any[], categories: any[], totals: any) {
   };
 }
 
-function serializeTripProfit(result: any) {
+function serializeTripProfitProjection(result: any) {
   if (result.status !== "ready") return result;
   return {
     status: "ready",
@@ -103,16 +264,27 @@ function serializeTripProfit(result: any) {
     adjustedRevenueTwd: serializeDecimal(result.adjustedRevenueTwd),
     grossProfitTwd: serializeDecimal(result.grossProfitTwd),
     grossMarginRate: serializeDecimal(result.grossMarginRate),
-    fixedPaymentFeeTwd: serializeDecimal(result.fixedPaymentFeeTwd),
-    variablePaymentFeeTwd: serializeDecimal(result.variablePaymentFeeTwd),
-    purchasePaymentFeeTwd: serializeDecimal(result.purchasePaymentFeeTwd),
-    paymentFeeTwd: serializeDecimal(result.paymentFeeTwd),
-    operatingExpenseTwd: serializeDecimal(result.operatingExpenseTwd),
     operatingProfitBeforeAdjustmentsTwd: serializeDecimal(
       result.operatingProfitBeforeAdjustmentsTwd,
     ),
     finalOperatingProfitTwd: serializeDecimal(result.finalOperatingProfitTwd),
     salaryTargetTwd: serializeDecimal(result.salaryTargetTwd),
+  };
+}
+
+function serializeTripProfit(result: any) {
+  if (result.status !== "ready") return result;
+  return {
+    status: "ready",
+    projections: {
+      unit: serializeTripProfitProjection(result.projections.unit),
+      daily: serializeTripProfitProjection(result.projections.daily),
+    },
+    fixedPaymentFeeTwd: serializeDecimal(result.fixedPaymentFeeTwd),
+    variablePaymentFeeTwd: serializeDecimal(result.variablePaymentFeeTwd),
+    purchasePaymentFeeTwd: serializeDecimal(result.purchasePaymentFeeTwd),
+    paymentFeeTwd: serializeDecimal(result.paymentFeeTwd),
+    operatingExpenseTwd: serializeDecimal(result.operatingExpenseTwd),
     fixedCostJpyOriginTwd: serializeDecimal(result.fixedCostJpyOriginTwd),
     fixedCostTwdDirectTwd: serializeDecimal(result.fixedCostTwdDirectTwd),
     fixedCostTotalTwd: serializeDecimal(result.fixedCostTotalTwd),
@@ -182,12 +354,7 @@ router.get(
       (totals) => totals.status === "ready",
     );
     let tripProfit: ReturnType<typeof calculateTripProfit>;
-    if (
-      access.trip.unitGrossProfitTwd == null ||
-      access.trip.totalItemQuantity == null
-    ) {
-      tripProfit = pendingOperatingCost("缺少單件毛利或預估件數");
-    } else if (!allSectionsReady) {
+    if (!allSectionsReady) {
       tripProfit = Object.values(totalsByKind).find(
         (totals) => totals.status !== "ready",
       ) as ReturnType<typeof calculateTripProfit>;
@@ -215,7 +382,14 @@ router.get(
           purchase.fixedCostJpyOriginTwd.toDecimalPlaces(12),
         purchaseCostTwdDirectTwd:
           purchase.fixedCostTwdDirectTwd.toDecimalPlaces(12),
-        unitGrossProfitTwd: String(access.trip.unitGrossProfitTwd),
+        unitGrossProfitTwd:
+          access.trip.unitGrossProfitTwd == null
+            ? null
+            : String(access.trip.unitGrossProfitTwd),
+        dailyGrossProfitTwd:
+          access.trip.dailyGrossProfitTwd == null
+            ? null
+            : String(access.trip.dailyGrossProfitTwd),
         estimatedItemQuantity: access.trip.totalItemQuantity,
         creditCardRebateTwd: String(access.trip.creditCardRebateTwd),
         workingDays: access.trip.workingDays,
@@ -223,6 +397,9 @@ router.get(
           settings?.referenceDailyWage ?? DEFAULT_REFERENCE_DAILY_WAGE,
       });
     }
+
+    const actualRollup =
+      mode === "ACTUAL" ? await loadActualRollup(access, rows) : null;
 
     return res.json({
       status: tripProfit.status,
@@ -254,6 +431,7 @@ router.get(
         ),
       },
       tripProfit: serializeTripProfit(tripProfit),
+      actualRollup,
       estimateLocked: Boolean(access.trip.estimateLocked),
       estimateModifiedAfterLock: Boolean(access.trip.estimateModifiedAfterLock),
     });
