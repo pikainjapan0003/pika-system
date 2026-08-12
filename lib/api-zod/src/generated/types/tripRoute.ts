@@ -9,6 +9,8 @@
 export interface TripRoute {
   id: number;
   tripId: number;
+  /** @nullable */
+  tripAreaId: number | null;
   areaTitle: string;
   startPlace: string;
   endPlace: string;
