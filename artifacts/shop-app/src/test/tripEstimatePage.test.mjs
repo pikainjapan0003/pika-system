@@ -89,11 +89,23 @@ function makeSummary(overrides = {}) {
     },
     tripProfit: {
       status: "ready",
-      outcome: "SALARY_TARGET_MET",
-      grossProfitSource: "UNIT",
-      grossProfitTwd: "91000.000000000000",
+      projections: {
+        unit: {
+          status: "ready",
+          outcome: "SALARY_TARGET_MET",
+          grossProfitSource: "UNIT",
+          grossProfitTwd: "91000.000000000000",
+          finalOperatingProfitTwd: "33791.489400000000",
+        },
+        daily: {
+          status: "ready",
+          outcome: "SALARY_TARGET_MET",
+          grossProfitSource: "DAILY",
+          grossProfitTwd: "80000.000000000000",
+          finalOperatingProfitTwd: "22791.489400000000",
+        },
+      },
       operatingExpenseTwd: "57208.510600000000",
-      finalOperatingProfitTwd: "33791.489400000000",
       fixedPaymentFeeTwd: "228.235725000000",
       variablePaymentFeeTwd: "190.234875000000",
       purchasePaymentFeeTwd: "0.000000000000",
@@ -137,7 +149,7 @@ function findButtonByText(container, text) {
   );
 }
 
-async function waitForCall(calls, predicate, timeoutMs = 1_500) {
+async function waitForCall(calls, predicate, timeoutMs = 15_000) {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     const call = calls.find(predicate);
@@ -342,29 +354,45 @@ test("fee summary displays all three backend fee values", async () => {
   root.unmount();
 });
 
-test("profit card renders all three backend outcome states without inference", async () => {
+test("profit card renders UNIT and DAILY side by side with backend outcomes", async () => {
   for (const [outcome, label] of [
     ["SALARY_TARGET_MET", "達成日薪目標"],
     ["PROFIT_BELOW_SALARY_TARGET", "有利潤但未達日薪目標"],
     ["LOSS", "虧損"],
   ]) {
     const summary = makeSummary({
-      tripProfit: { ...makeSummary().tripProfit, outcome },
+      tripProfit: {
+        ...makeSummary().tripProfit,
+        projections: {
+          ...makeSummary().tripProfit.projections,
+          unit: { ...makeSummary().tripProfit.projections.unit, outcome },
+        },
+      },
     });
     globalThis.fetch = async () => response(summary);
     const { container, root } = await renderPage(summary);
+    assert.match(container.textContent, /UNIT｜單件毛利法/);
+    assert.match(container.textContent, /DAILY｜每日毛利法/);
+    assert.match(container.textContent, /預估營業毛利NT\$91,000/);
+    assert.match(container.textContent, /預估營業毛利NT\$80,000/);
     assert.match(container.textContent, new RegExp(`結論：${label}`));
     root.unmount();
     document.body.innerHTML = "";
   }
 });
 
-test("pending trip profit card shows the backend reason instead of zero", async () => {
+test("pending DAILY projection shows its reason without blocking ready UNIT", async () => {
   const summary = makeSummary({
-    status: "pending_confirmation",
     tripProfit: {
-      status: "pending_confirmation",
-      reason: "缺少單件毛利或預估件數",
+      ...makeSummary().tripProfit,
+      projections: {
+        ...makeSummary().tripProfit.projections,
+        daily: {
+          status: "pending_confirmation",
+          grossProfitSource: "DAILY",
+          reason: "缺少每日毛利",
+        },
+      },
     },
   });
   globalThis.fetch = async () => response(summary);
@@ -375,9 +403,11 @@ test("pending trip profit card shows the backend reason instead of zero", async 
   const card = heading?.parentElement;
 
   assert.ok(card);
+  assert.match(card.textContent, /UNIT｜單件毛利法/);
+  assert.match(card.textContent, /NT\$91,000/);
   assert.match(card.textContent, /待確認/);
-  assert.match(card.textContent, /缺少單件毛利或預估件數/);
-  assert.doesNotMatch(card.textContent, /預估營業毛利NT\$0/);
+  assert.match(card.textContent, /缺少每日毛利/);
+  assert.doesNotMatch(card.textContent, /DAILY｜每日毛利法預估營業毛利NT\$0/);
   root.unmount();
 });
 

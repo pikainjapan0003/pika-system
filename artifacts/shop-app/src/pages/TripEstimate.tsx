@@ -39,13 +39,25 @@ type Section = {
   totalTwd: string | null;
   paymentFeeTwd: string | null;
 };
-type ReadyTripProfit = {
+type ReadyTripProfitProjection = {
   status: "ready";
   outcome: "LOSS" | "PROFIT_BELOW_SALARY_TARGET" | "SALARY_TARGET_MET";
-  grossProfitSource: "UNIT" | "REVENUE";
+  grossProfitSource: "UNIT" | "DAILY" | "REVENUE";
   grossProfitTwd: string;
-  operatingExpenseTwd: string;
   finalOperatingProfitTwd: string;
+};
+type PendingTripProfitProjection = {
+  status: "pending_confirmation";
+  grossProfitSource: "UNIT" | "DAILY" | "REVENUE";
+  reason: string;
+};
+type ReadyTripProfit = {
+  status: "ready";
+  projections: {
+    unit: ReadyTripProfitProjection | PendingTripProfitProjection;
+    daily: ReadyTripProfitProjection | PendingTripProfitProjection;
+  };
+  operatingExpenseTwd: string;
   fixedPaymentFeeTwd: string;
   variablePaymentFeeTwd: string;
   purchasePaymentFeeTwd: string;
@@ -98,7 +110,7 @@ const SECTION_CONFIG: Array<{
   },
 ];
 
-const OUTCOME_LABELS: Record<ReadyTripProfit["outcome"], string> = {
+const OUTCOME_LABELS: Record<ReadyTripProfitProjection["outcome"], string> = {
   SALARY_TARGET_MET: "達成日薪目標",
   PROFIT_BELOW_SALARY_TARGET: "有利潤但未達日薪目標",
   LOSS: "虧損",
@@ -464,22 +476,53 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
                 </label>
               </div>
               {summary.tripProfit.status === "ready" ? (
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center justify-between">
-                    <span>預估營業毛利</span>
-                    <span>
-                      {formatApiTwd(summary.tripProfit.grossProfitTwd)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>預估營業淨利</span>
-                    <span>
-                      {formatApiTwd(summary.tripProfit.finalOperatingProfitTwd)}
-                    </span>
-                  </div>
-                  <p className="rounded-xl bg-muted p-3 font-semibold">
-                    結論：{OUTCOME_LABELS[summary.tripProfit.outcome]}
-                  </p>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  {(
+                    [
+                      ["unit", "UNIT｜單件毛利法"],
+                      ["daily", "DAILY｜每日毛利法"],
+                    ] as const
+                  ).map(([key, title]) => {
+                    const tripProfit = summary.tripProfit;
+                    if (tripProfit.status !== "ready") return null;
+                    const projection = tripProfit.projections[key];
+                    return (
+                      <div
+                        key={key}
+                        className="space-y-2 rounded-xl border p-3"
+                      >
+                        <h3 className="font-semibold">{title}</h3>
+                        {projection.status === "ready" ? (
+                          <>
+                            <div className="flex items-center justify-between gap-2">
+                              <span>預估營業毛利</span>
+                              <span>
+                                {formatApiTwd(projection.grossProfitTwd)}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between gap-2">
+                              <span>預估營業淨利</span>
+                              <span>
+                                {formatApiTwd(
+                                  projection.finalOperatingProfitTwd,
+                                )}
+                              </span>
+                            </div>
+                            <p className="rounded-xl bg-muted p-3 font-semibold">
+                              結論：{OUTCOME_LABELS[projection.outcome]}
+                            </p>
+                          </>
+                        ) : (
+                          <div className="rounded-xl bg-amber-50 p-3 text-amber-800">
+                            <p className="font-semibold">
+                              {OPERATING_COST_PENDING_LABEL}
+                            </p>
+                            <p>{projection.reason}</p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="rounded-xl bg-amber-50 p-3 text-sm text-amber-800">
