@@ -5,6 +5,10 @@ import type {
   QuantityInput,
   ReadyTransportCost,
 } from "./index.ts";
+import {
+  calculateAreaDomesticCost,
+  type PendingAreaDomesticCost,
+} from "./areaDomesticCost.ts";
 
 export interface ProductTransportReference {
   tripRouteId: number | null | undefined;
@@ -13,6 +17,7 @@ export interface ProductTransportReference {
 export interface ProductTransportRouteInput {
   id: number;
   tripId: number;
+  tripAreaId: number | null | undefined;
   estQty: QuantityInput;
   trainJpy?: DecimalInput;
   fuelJpy?: DecimalInput;
@@ -32,6 +37,20 @@ export interface ProductTransportRouteInput {
   finalCostPerItemIsOverridden: boolean;
 }
 
+export interface ProductTransportAreaInput {
+  id: number;
+  tripId: number;
+}
+
+export interface ProductTransportAreaCostInput {
+  tripAreaId: number;
+  mode: "ESTIMATE" | "ACTUAL";
+  cardboardUnitJpy: DecimalInput;
+  shippingUnitJpy: DecimalInput;
+  parcelCount: QuantityInput;
+  estimatedItemQuantity: QuantityInput;
+}
+
 export interface ProductTransportTripInput {
   id: number;
   exchangeRate: DecimalInput;
@@ -43,6 +62,8 @@ export interface ResolveProductTransportCostInput {
   product: ProductTransportReference;
   route: ProductTransportRouteInput | null | undefined;
   trip: ProductTransportTripInput | null | undefined;
+  area?: ProductTransportAreaInput | null;
+  areaCost?: ProductTransportAreaCostInput | null;
 }
 
 export interface PendingProductTransportCost {
@@ -51,12 +72,15 @@ export interface PendingProductTransportCost {
   reason:
     | "missing_trip_route_attachment"
     | "missing_trip_route"
-    | "missing_trip";
+    | "missing_trip"
+    | "missing_trip_area"
+    | "missing_trip_area_cost";
 }
 
 export type ProductTransportCostResult =
   | ReadyTransportCost
   | PendingTransportCost
+  | PendingAreaDomesticCost
   | PendingProductTransportCost;
 
 function pending(
@@ -67,6 +91,46 @@ function pending(
     label: PENDING_CONFIRMATION_LABEL,
     reason,
   };
+}
+
+function calculateRouteTransportCost(
+  route: ProductTransportRouteInput,
+  trip: ProductTransportTripInput,
+  areaUnitDomesticTwd: ReadyTransportCost["areaUnitDomesticTwd"] | null,
+): ReadyTransportCost | PendingTransportCost {
+  return calculateTransportCost({
+    estQty: route.estQty,
+    exchangeRate: trip.exchangeRate,
+    hepTotalJpy: trip.hepTotalJpy,
+    totalItemQuantity: trip.totalItemQuantity,
+    trainJpy: route.trainJpy,
+    fuelJpy: route.fuelJpy,
+    parkingJpy: route.parkingJpy,
+    etcJpy: route.etcJpy,
+    areaUnitDomesticTwd,
+    overrides: {
+      fee1_5Pct: {
+        isOverridden: route.fee1_5PctIsOverridden,
+        value: route.fee1_5PctOverride,
+      },
+      totalJpy: {
+        isOverridden: route.totalJpyIsOverridden,
+        value: route.totalJpyOverride,
+      },
+      domesticPerItem: {
+        isOverridden: route.domesticPerItemIsOverridden,
+        value: route.domesticPerItemOverride,
+      },
+      transportPerItem: {
+        isOverridden: route.transportPerItemIsOverridden,
+        value: route.transportPerItemOverride,
+      },
+      finalCostPerItem: {
+        isOverridden: route.finalCostPerItemIsOverridden,
+        value: route.finalCostPerItemOverride,
+      },
+    },
+  });
 }
 
 /**
@@ -91,38 +155,37 @@ export function resolveProductTransportCost(
     return pending("missing_trip");
   }
 
-  return calculateTransportCost({
-    estQty: route.estQty,
+  const tripAreaId = route.tripAreaId;
+  const area = input.area;
+  if (
+    tripAreaId === null ||
+    tripAreaId === undefined ||
+    !area ||
+    area.id !== tripAreaId ||
+    area.tripId !== route.tripId
+  ) {
+    return calculateRouteTransportCost(route, trip, null);
+  }
+
+  const areaCost = input.areaCost;
+  if (
+    !areaCost ||
+    areaCost.tripAreaId !== area.id ||
+    areaCost.mode !== "ESTIMATE"
+  ) {
+    return pending("missing_trip_area_cost");
+  }
+
+  const domesticCost = calculateAreaDomesticCost({
+    cardboardUnitJpy: areaCost.cardboardUnitJpy,
+    shippingUnitJpy: areaCost.shippingUnitJpy,
+    parcelCount: areaCost.parcelCount,
+    estimatedItemQuantity: areaCost.estimatedItemQuantity,
     exchangeRate: trip.exchangeRate,
-    hepTotalJpy: trip.hepTotalJpy,
-    totalItemQuantity: trip.totalItemQuantity,
-    trainJpy: route.trainJpy,
-    fuelJpy: route.fuelJpy,
-    parkingJpy: route.parkingJpy,
-    etcJpy: route.etcJpy,
-    cardboardJpy: route.cardboardJpy,
-    shippingJpy: route.shippingJpy,
-    overrides: {
-      fee1_5Pct: {
-        isOverridden: route.fee1_5PctIsOverridden,
-        value: route.fee1_5PctOverride,
-      },
-      totalJpy: {
-        isOverridden: route.totalJpyIsOverridden,
-        value: route.totalJpyOverride,
-      },
-      domesticPerItem: {
-        isOverridden: route.domesticPerItemIsOverridden,
-        value: route.domesticPerItemOverride,
-      },
-      transportPerItem: {
-        isOverridden: route.transportPerItemIsOverridden,
-        value: route.transportPerItemOverride,
-      },
-      finalCostPerItem: {
-        isOverridden: route.finalCostPerItemIsOverridden,
-        value: route.finalCostPerItemOverride,
-      },
-    },
   });
+  if (domesticCost.status === "pending_confirmation") {
+    return domesticCost;
+  }
+
+  return calculateRouteTransportCost(route, trip, domesticCost.unitDomesticTwd);
 }
