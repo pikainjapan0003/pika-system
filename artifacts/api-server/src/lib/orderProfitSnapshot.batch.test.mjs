@@ -3,14 +3,21 @@ import test from "node:test";
 
 process.env.DATABASE_URL ??= "postgresql://unused:unused@127.0.0.1:1/unused";
 
-const { calculateProductUnitProfit, tripRoutesTable, tripsTable, storesTable } =
-  await import("@workspace/db");
+const {
+  calculateProductUnitProfit,
+  tripAreaCostsTable,
+  tripAreasTable,
+  tripRoutesTable,
+  tripsTable,
+  storesTable,
+} = await import("@workspace/db");
 const { loadOrderProfitSnapshotInputs } =
   await import("./orderProfitSnapshot.ts");
 
 const route = {
   id: 5,
   tripId: 8,
+  tripAreaId: 12,
   areaTitle: "小樽",
   startPlace: "假起點",
   endPlace: "假終點",
@@ -37,6 +44,31 @@ const route = {
   createdAt: new Date("2026-07-17T00:00:00Z"),
   updatedAt: new Date("2026-07-17T00:00:00Z"),
 };
+const area = {
+  id: 12,
+  storeId: 3,
+  tripId: 8,
+  name: "北海道境內運",
+  createdAt: new Date("2026-07-17T00:00:00Z"),
+  updatedAt: new Date("2026-07-17T00:00:00Z"),
+};
+const estimateAreaCost = {
+  id: 13,
+  tripAreaId: 12,
+  mode: "ESTIMATE",
+  cardboardUnitJpy: "340",
+  shippingUnitJpy: "3068",
+  parcelCount: 3,
+  estimatedItemQuantity: 605,
+  createdAt: new Date("2026-07-17T00:00:00Z"),
+  updatedAt: new Date("2026-07-17T00:00:00Z"),
+};
+const actualAreaCost = {
+  ...estimateAreaCost,
+  id: 14,
+  mode: "ACTUAL",
+  cardboardUnitJpy: "999999",
+};
 const trip = {
   id: 8,
   name: "假行程",
@@ -47,7 +79,7 @@ const trip = {
 };
 
 function fakeExecutor() {
-  const queryCount = { store: 0, routes: 0, trips: 0 };
+  const queryCount = { store: 0, routes: 0, trips: 0, areas: 0, areaCosts: 0 };
   return {
     queryCount,
     select() {
@@ -60,7 +92,12 @@ function fakeExecutor() {
                 ? (queryCount.routes++, [route])
                 : table === tripsTable
                   ? (queryCount.trips++, [trip])
-                  : [];
+                  : table === tripAreasTable
+                    ? (queryCount.areas++, [area])
+                    : table === tripAreaCostsTable
+                      ? (queryCount.areaCosts++,
+                        [estimateAreaCost, actualAreaCost])
+                      : [];
           return {
             where() {
               const promise = Promise.resolve(rows);
@@ -74,7 +111,7 @@ function fakeExecutor() {
   };
 }
 
-test("batch loader uses one store, route, and trip query and preserves exact results", async () => {
+test("batch loader queries ESTIMATE area costs once and preserves exact results", async () => {
   const executor = fakeExecutor();
   const products = [
     {
@@ -96,11 +133,17 @@ test("batch loader uses one store, route, and trip query and preserves exact res
   ];
   const inputs = await loadOrderProfitSnapshotInputs(executor, products);
 
-  assert.deepEqual(executor.queryCount, { store: 1, routes: 1, trips: 1 });
+  assert.deepEqual(executor.queryCount, {
+    store: 1,
+    routes: 1,
+    trips: 1,
+    areas: 1,
+    areaCosts: 1,
+  });
   const allocated = calculateProductUnitProfit(inputs.get(10));
   assert.equal(allocated.status, "ready");
-  assert.equal(allocated.unitTransportCostTwd.toDecimalPlaces(7), "22.6109583");
-  assert.equal(allocated.unitProfitTwd.toDecimalPlaces(7), "186.3590417");
+  assert.equal(allocated.unitTransportCostTwd.toDecimalPlaces(7), "16.5613407");
+  assert.equal(allocated.unitProfitTwd.toDecimalPlaces(7), "192.4086593");
 
   const exempt = calculateProductUnitProfit(inputs.get(11));
   assert.equal(exempt.status, "ready");
