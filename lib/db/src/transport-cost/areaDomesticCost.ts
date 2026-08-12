@@ -63,6 +63,9 @@ function parseInteger(value: QuantityInput): bigint | null {
     return value;
   }
   if (typeof value === "number") {
+    if (!Number.isSafeInteger(value)) {
+      return null;
+    }
     const normalized = value.toString();
     return /^[+-]?\d+$/.test(normalized) ? BigInt(normalized) : null;
   }
