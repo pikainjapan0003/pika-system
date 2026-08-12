@@ -14,6 +14,7 @@ import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { tripsTable } from "./trips.ts";
+import { tripAreasTable } from "./tripAreas.ts";
 
 export const tripRoutesTable = pgTable(
   "trip_routes",
@@ -24,6 +25,9 @@ export const tripRoutesTable = pgTable(
     tripId: integer("trip_id")
       .notNull()
       .references(() => tripsTable.id, { onDelete: "cascade" }),
+    tripAreaId: integer("trip_area_id").references(() => tripAreasTable.id, {
+      onDelete: "set null",
+    }),
     areaTitle: text("area_title").notNull(),
     startPlace: text("start_place").notNull(),
     endPlace: text("end_place").notNull(),
@@ -85,6 +89,7 @@ export const tripRoutesTable = pgTable(
   (t) => [
     index("trip_routes_store_id_idx").on(t.storeId),
     index("trip_routes_trip_id_idx").on(t.tripId),
+    index("trip_routes_trip_area_id_idx").on(t.tripAreaId),
     unique("trip_routes_trip_id_area_title_unique").on(t.tripId, t.areaTitle),
     check("trip_routes_est_qty_positive", sql`${t.estQty} > 0`),
     check("trip_routes_trip_count_positive", sql`${t.tripCount} > 0`),
