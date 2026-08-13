@@ -46,6 +46,9 @@ import type {
   TrackingImportBody,
   TrackingImportResponse,
   Trip,
+  TripArea,
+  TripAreaInput,
+  TripAreaUpdate,
   TripInput,
   TripRoute,
   TripRouteInput,
@@ -1106,6 +1109,312 @@ export const useUpdateTripRoute = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getUpdateTripRouteMutationOptions(options));
+    }
+
+export const getListTripAreasUrl = (storeId: number,
+    tripId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/trips/${tripId}/areas`
+}
+
+/**
+ * @summary List domestic-shipping areas and their estimate/actual costs
+ */
+export const listTripAreas = async (storeId: number,
+    tripId: number, options?: RequestInit): Promise<TripArea[]> => {
+
+  return customFetch<TripArea[]>(getListTripAreasUrl(storeId,tripId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListTripAreasQueryKey = (storeId: number,
+    tripId: number,) => {
+    return [
+    `/api/stores/${storeId}/trips/${tripId}/areas`
+    ] as const;
+    }
+
+
+export const getListTripAreasQueryOptions = <TData = Awaited<ReturnType<typeof listTripAreas>>, TError = ErrorType<void>>(storeId: number,
+    tripId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listTripAreas>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListTripAreasQueryKey(storeId,tripId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listTripAreas>>> = ({ signal }) => listTripAreas(storeId,tripId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(storeId && tripId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listTripAreas>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListTripAreasQueryResult = NonNullable<Awaited<ReturnType<typeof listTripAreas>>>
+export type ListTripAreasQueryError = ErrorType<void>
+
+
+/**
+ * @summary List domestic-shipping areas and their estimate/actual costs
+ */
+
+export function useListTripAreas<TData = Awaited<ReturnType<typeof listTripAreas>>, TError = ErrorType<void>>(
+ storeId: number,
+    tripId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listTripAreas>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListTripAreasQueryOptions(storeId,tripId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCreateTripAreaUrl = (storeId: number,
+    tripId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/trips/${tripId}/areas`
+}
+
+/**
+ * @summary Create a domestic-shipping area with one cost mode
+ */
+export const createTripArea = async (storeId: number,
+    tripId: number,
+    tripAreaInput: TripAreaInput, options?: RequestInit): Promise<TripArea> => {
+
+  return customFetch<TripArea>(getCreateTripAreaUrl(storeId,tripId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      tripAreaInput,)
+  }
+);}
+
+
+
+
+export const getCreateTripAreaMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createTripArea>>, TError,{storeId: number;tripId: number;data: BodyType<TripAreaInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createTripArea>>, TError,{storeId: number;tripId: number;data: BodyType<TripAreaInput>}, TContext> => {
+
+const mutationKey = ['createTripArea'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createTripArea>>, {storeId: number;tripId: number;data: BodyType<TripAreaInput>}> = (props) => {
+          const {storeId,tripId,data} = props ?? {};
+
+          return  createTripArea(storeId,tripId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateTripAreaMutationResult = NonNullable<Awaited<ReturnType<typeof createTripArea>>>
+    export type CreateTripAreaMutationBody = BodyType<TripAreaInput>
+    export type CreateTripAreaMutationError = ErrorType<void>
+
+    /**
+ * @summary Create a domestic-shipping area with one cost mode
+ */
+export const useCreateTripArea = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createTripArea>>, TError,{storeId: number;tripId: number;data: BodyType<TripAreaInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createTripArea>>,
+        TError,
+        {storeId: number;tripId: number;data: BodyType<TripAreaInput>},
+        TContext
+      > => {
+      return useMutation(getCreateTripAreaMutationOptions(options));
+    }
+
+export const getUpdateTripAreaUrl = (storeId: number,
+    tripId: number,
+    areaId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/trips/${tripId}/areas/${areaId}`
+}
+
+/**
+ * @summary Rename an area and upsert one cost mode
+ */
+export const updateTripArea = async (storeId: number,
+    tripId: number,
+    areaId: number,
+    tripAreaUpdate: TripAreaUpdate, options?: RequestInit): Promise<TripArea> => {
+
+  return customFetch<TripArea>(getUpdateTripAreaUrl(storeId,tripId,areaId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      tripAreaUpdate,)
+  }
+);}
+
+
+
+
+export const getUpdateTripAreaMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateTripArea>>, TError,{storeId: number;tripId: number;areaId: number;data: BodyType<TripAreaUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateTripArea>>, TError,{storeId: number;tripId: number;areaId: number;data: BodyType<TripAreaUpdate>}, TContext> => {
+
+const mutationKey = ['updateTripArea'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateTripArea>>, {storeId: number;tripId: number;areaId: number;data: BodyType<TripAreaUpdate>}> = (props) => {
+          const {storeId,tripId,areaId,data} = props ?? {};
+
+          return  updateTripArea(storeId,tripId,areaId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateTripAreaMutationResult = NonNullable<Awaited<ReturnType<typeof updateTripArea>>>
+    export type UpdateTripAreaMutationBody = BodyType<TripAreaUpdate>
+    export type UpdateTripAreaMutationError = ErrorType<void>
+
+    /**
+ * @summary Rename an area and upsert one cost mode
+ */
+export const useUpdateTripArea = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateTripArea>>, TError,{storeId: number;tripId: number;areaId: number;data: BodyType<TripAreaUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateTripArea>>,
+        TError,
+        {storeId: number;tripId: number;areaId: number;data: BodyType<TripAreaUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateTripAreaMutationOptions(options));
+    }
+
+export const getDeleteTripAreaUrl = (storeId: number,
+    tripId: number,
+    areaId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/trips/${tripId}/areas/${areaId}`
+}
+
+/**
+ * @summary Delete a domestic-shipping area and unlink its routes
+ */
+export const deleteTripArea = async (storeId: number,
+    tripId: number,
+    areaId: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteTripAreaUrl(storeId,tripId,areaId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteTripAreaMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteTripArea>>, TError,{storeId: number;tripId: number;areaId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteTripArea>>, TError,{storeId: number;tripId: number;areaId: number}, TContext> => {
+
+const mutationKey = ['deleteTripArea'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteTripArea>>, {storeId: number;tripId: number;areaId: number}> = (props) => {
+          const {storeId,tripId,areaId} = props ?? {};
+
+          return  deleteTripArea(storeId,tripId,areaId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteTripAreaMutationResult = NonNullable<Awaited<ReturnType<typeof deleteTripArea>>>
+
+    export type DeleteTripAreaMutationError = ErrorType<void>
+
+    /**
+ * @summary Delete a domestic-shipping area and unlink its routes
+ */
+export const useDeleteTripArea = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteTripArea>>, TError,{storeId: number;tripId: number;areaId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteTripArea>>,
+        TError,
+        {storeId: number;tripId: number;areaId: number},
+        TContext
+      > => {
+      return useMutation(getDeleteTripAreaMutationOptions(options));
     }
 
 export const getListProductCategoriesUrl = (storeId: number,) => {

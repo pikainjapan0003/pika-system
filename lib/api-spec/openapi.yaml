@@ -331,6 +331,90 @@ paths:
         "409":
           description: Duplicate area title within this trip
 
+  /stores/{storeId}/trips/{tripId}/areas:
+    get:
+      operationId: listTripAreas
+      tags: [trips]
+      summary: List domestic-shipping areas and their estimate/actual costs
+      parameters:
+        - $ref: "#/components/parameters/StoreId"
+        - $ref: "#/components/parameters/TripId"
+      responses:
+        "200":
+          description: Trip area list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TripArea"
+        "403":
+          description: Store is not owned by the authenticated merchant
+        "404":
+          description: Store or trip not found
+    post:
+      operationId: createTripArea
+      tags: [trips]
+      summary: Create a domestic-shipping area with one cost mode
+      parameters:
+        - $ref: "#/components/parameters/StoreId"
+        - $ref: "#/components/parameters/TripId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TripAreaInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TripArea"
+        "409":
+          description: Duplicate area name within this trip
+
+  /stores/{storeId}/trips/{tripId}/areas/{areaId}:
+    patch:
+      operationId: updateTripArea
+      tags: [trips]
+      summary: Rename an area and upsert one cost mode
+      parameters:
+        - $ref: "#/components/parameters/StoreId"
+        - $ref: "#/components/parameters/TripId"
+        - $ref: "#/components/parameters/AreaId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TripAreaUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TripArea"
+        "404":
+          description: Trip area not found
+        "409":
+          description: Duplicate area name within this trip
+    delete:
+      operationId: deleteTripArea
+      tags: [trips]
+      summary: Delete a domestic-shipping area and unlink its routes
+      parameters:
+        - $ref: "#/components/parameters/StoreId"
+        - $ref: "#/components/parameters/TripId"
+        - $ref: "#/components/parameters/AreaId"
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Trip area not found
+
   /stores/{storeId}/categories:
     get:
       operationId: listProductCategories
@@ -871,6 +955,28 @@ paths:
           description: Too many requests
 
 components:
+  parameters:
+    StoreId:
+      name: storeId
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    TripId:
+      name: tripId
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    AreaId:
+      name: areaId
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
   schemas:
     HealthStatus:
       type: object
@@ -1146,6 +1252,7 @@ components:
         [
           id,
           tripId,
+          tripAreaId,
           areaTitle,
           startPlace,
           endPlace,
@@ -1163,6 +1270,8 @@ components:
           type: integer
         tripId:
           type: integer
+        tripAreaId:
+          type: ["integer", "null"]
         areaTitle:
           type: string
         startPlace:
@@ -1192,6 +1301,9 @@ components:
       type: object
       required: [areaTitle, startPlace, endPlace, estQty, etcJpy]
       properties:
+        tripAreaId:
+          type: ["integer", "null"]
+          minimum: 1
         areaTitle:
           type: string
           minLength: 1
@@ -1229,6 +1341,9 @@ components:
     TripRouteUpdate:
       type: object
       properties:
+        tripAreaId:
+          type: ["integer", "null"]
+          minimum: 1
         areaTitle:
           type: string
           minLength: 1
@@ -1262,6 +1377,125 @@ components:
         parcelCount:
           type: integer
           minimum: 0
+
+    TripAreaCost:
+      type: object
+      required:
+        [
+          id,
+          tripAreaId,
+          mode,
+          cardboardUnitJpy,
+          shippingUnitJpy,
+          parcelCount,
+          estimatedItemQuantity,
+          createdAt,
+          updatedAt,
+        ]
+      properties:
+        id:
+          type: integer
+        tripAreaId:
+          type: integer
+        mode:
+          type: string
+          enum: [ESTIMATE, ACTUAL]
+        cardboardUnitJpy:
+          type: number
+          minimum: 0
+        shippingUnitJpy:
+          type: number
+          minimum: 0
+        parcelCount:
+          type: integer
+          minimum: 0
+        estimatedItemQuantity:
+          type: ["integer", "null"]
+          minimum: 1
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    TripArea:
+      type: object
+      required: [id, tripId, name, costs, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        tripId:
+          type: integer
+        name:
+          type: string
+        costs:
+          type: array
+          items:
+            $ref: "#/components/schemas/TripAreaCost"
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    TripAreaInput:
+      type: object
+      required:
+        [
+          name,
+          mode,
+          cardboardUnitJpy,
+          shippingUnitJpy,
+          parcelCount,
+          estimatedItemQuantity,
+        ]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        mode:
+          type: string
+          enum: [ESTIMATE, ACTUAL]
+        cardboardUnitJpy:
+          type: number
+          minimum: 0
+        shippingUnitJpy:
+          type: number
+          minimum: 0
+        parcelCount:
+          type: integer
+          minimum: 0
+        estimatedItemQuantity:
+          type: ["integer", "null"]
+          minimum: 1
+
+    TripAreaUpdate:
+      type: object
+      required:
+        [
+          mode,
+          cardboardUnitJpy,
+          shippingUnitJpy,
+          parcelCount,
+          estimatedItemQuantity,
+        ]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        mode:
+          type: string
+          enum: [ESTIMATE, ACTUAL]
+        cardboardUnitJpy:
+          type: number
+          minimum: 0
+        shippingUnitJpy:
+          type: number
+          minimum: 0
+        parcelCount:
+          type: integer
+          minimum: 0
+        estimatedItemQuantity:
+          type: ["integer", "null"]
+          minimum: 1
 
     PublicProduct:
       type: object

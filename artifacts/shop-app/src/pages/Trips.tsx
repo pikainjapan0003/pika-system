@@ -2,14 +2,21 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
+  useGetMyStore,
   useListTrips,
   useCreateTrip,
   useUpdateTrip,
   useCreateTripRoute,
   useUpdateTripRoute,
+  useListTripAreas,
+  useCreateTripArea,
+  useUpdateTripArea,
   getListTripsQueryKey,
+  getListTripAreasQueryKey,
   type TripWithRoutes,
   type TripRoute,
+  type TripArea,
+  type TripAreaCost,
 } from "@workspace/api-client-react";
 import { BottomNav } from "./Dashboard";
 import { ExchangeRateReferenceHint } from "@/components/ExchangeRateReferenceHint";
@@ -127,12 +134,15 @@ function TripForm({
 
 function RouteForm({
   initial,
+  areas,
   onSubmit,
   onCancel,
   submitting,
 }: {
   initial?: Partial<TripRoute>;
+  areas: TripArea[];
   onSubmit: (v: {
+    tripAreaId: number | null;
     areaTitle: string;
     startPlace: string;
     endPlace: string;
@@ -141,13 +151,13 @@ function RouteForm({
     fuelJpy: string;
     parkingJpy: string;
     etcJpy: string;
-    cardboardJpy: string;
-    shippingJpy: string;
-    parcelCount: string;
   }) => void;
   onCancel: () => void;
   submitting: boolean;
 }) {
+  const [tripAreaId, setTripAreaId] = useState(
+    initial?.tripAreaId != null ? String(initial.tripAreaId) : "",
+  );
   const [areaTitle, setAreaTitle] = useState(initial?.areaTitle ?? "");
   const [startPlace, setStartPlace] = useState(initial?.startPlace ?? "");
   const [endPlace, setEndPlace] = useState(initial?.endPlace ?? "");
@@ -165,15 +175,6 @@ function RouteForm({
   );
   const [etcJpy, setEtcJpy] = useState(
     initial?.etcJpy != null ? String(initial.etcJpy) : "",
-  );
-  const [cardboardJpy, setCardboardJpy] = useState(
-    initial?.cardboardJpy != null ? String(initial.cardboardJpy) : "",
-  );
-  const [shippingJpy, setShippingJpy] = useState(
-    initial?.shippingJpy != null ? String(initial.shippingJpy) : "",
-  );
-  const [parcelCount, setParcelCount] = useState(
-    initial?.parcelCount != null ? String(initial.parcelCount) : "",
   );
   const [error, setError] = useState("");
 
@@ -200,6 +201,24 @@ function RouteForm({
 
   return (
     <div className="bg-secondary/40 rounded-xl p-3 space-y-2.5">
+      <div>
+        <label className="block text-xs text-muted-foreground mb-1">
+          所屬大區
+        </label>
+        <select
+          aria-label="所屬大區"
+          value={tripAreaId}
+          onChange={(e) => setTripAreaId(e.target.value)}
+          className={inputClass}
+        >
+          <option value="">未指定</option>
+          {areas.map((area) => (
+            <option key={area.id} value={area.id}>
+              {area.name}
+            </option>
+          ))}
+        </select>
+      </div>
       <div>
         <label className="block text-xs text-muted-foreground mb-1">
           路線名稱 *
@@ -239,9 +258,6 @@ function RouteForm({
         {numField("油資 (¥)", fuelJpy, setFuelJpy)}
         {numField("停車費 (¥)", parkingJpy, setParkingJpy)}
         {numField("ETC 費用 (¥) *", etcJpy, setEtcJpy)}
-        {numField("紙箱費 (¥)", cardboardJpy, setCardboardJpy)}
-        {numField("日本境內運費 (¥)", shippingJpy, setShippingJpy)}
-        {numField("包裹數", parcelCount, setParcelCount)}
       </div>
       <p className="rounded-xl bg-white px-3 py-2 text-xs leading-relaxed text-muted-foreground">
         請填這條路線實際發生的日圓費用；ETC 必須手動填寫，可填
@@ -295,6 +311,7 @@ function RouteForm({
               return;
             }
             onSubmit({
+              tripAreaId: tripAreaId ? parseInt(tripAreaId, 10) : null,
               areaTitle: areaTitle.trim(),
               startPlace: startPlace.trim(),
               endPlace: endPlace.trim(),
@@ -303,9 +320,6 @@ function RouteForm({
               fuelJpy,
               parkingJpy,
               etcJpy,
-              cardboardJpy,
-              shippingJpy,
-              parcelCount,
             });
           }}
           className="flex-1 h-10 rounded-xl bg-primary text-white text-sm font-semibold disabled:opacity-50"
@@ -324,19 +338,249 @@ function RouteForm({
   );
 }
 
-function TripCard({ trip }: { trip: TripWithRoutes }) {
+type AreaFormValue = {
+  name: string;
+  mode: "ESTIMATE" | "ACTUAL";
+  cardboardUnitJpy: string;
+  shippingUnitJpy: string;
+  parcelCount: string;
+  estimatedItemQuantity: string;
+};
+
+function AreaForm({
+  initial,
+  onSubmit,
+  onCancel,
+  submitting,
+}: {
+  initial?: Partial<AreaFormValue>;
+  onSubmit: (value: AreaFormValue) => void;
+  onCancel: () => void;
+  submitting: boolean;
+}) {
+  const [name, setName] = useState(initial?.name ?? "");
+  const [mode, setMode] = useState<"ESTIMATE" | "ACTUAL">(
+    initial?.mode ?? "ESTIMATE",
+  );
+  const [cardboardUnitJpy, setCardboardUnitJpy] = useState(
+    initial?.cardboardUnitJpy ?? "0",
+  );
+  const [shippingUnitJpy, setShippingUnitJpy] = useState(
+    initial?.shippingUnitJpy ?? "0",
+  );
+  const [parcelCount, setParcelCount] = useState(initial?.parcelCount ?? "0");
+  const [estimatedItemQuantity, setEstimatedItemQuantity] = useState(
+    initial?.estimatedItemQuantity ?? "",
+  );
+  const [error, setError] = useState("");
+
+  const numberField = (
+    label: string,
+    value: string,
+    setValue: (value: string) => void,
+    step: string,
+  ) => (
+    <div>
+      <label className="block text-xs text-muted-foreground mb-1">
+        {label}
+      </label>
+      <input
+        type="number"
+        value={value}
+        onChange={(event) => setValue(event.target.value)}
+        min="0"
+        step={step}
+        className={inputClass}
+      />
+    </div>
+  );
+
+  return (
+    <div className="bg-secondary/40 rounded-xl p-3 space-y-2.5">
+      <div>
+        <label className="block text-xs text-muted-foreground mb-1">
+          大區名稱 *
+        </label>
+        <input
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+          placeholder="例：東京境內運"
+          className={inputClass}
+        />
+      </div>
+      <div>
+        <label className="block text-xs text-muted-foreground mb-1">
+          成本模式
+        </label>
+        <select
+          aria-label="成本模式"
+          value={mode}
+          onChange={(event) =>
+            setMode(event.target.value as "ESTIMATE" | "ACTUAL")
+          }
+          className={inputClass}
+        >
+          <option value="ESTIMATE">預估</option>
+          <option value="ACTUAL">實際</option>
+        </select>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        {numberField(
+          "每箱紙板單價 (¥)",
+          cardboardUnitJpy,
+          setCardboardUnitJpy,
+          "0.01",
+        )}
+        {numberField(
+          "每箱境內運費 (¥)",
+          shippingUnitJpy,
+          setShippingUnitJpy,
+          "0.01",
+        )}
+        {numberField("箱數", parcelCount, setParcelCount, "1")}
+        {numberField(
+          "預計商品數",
+          estimatedItemQuantity,
+          setEstimatedItemQuantity,
+          "1",
+        )}
+      </div>
+      <p className="text-xs text-muted-foreground">
+        預計商品數可留空；缺值時成本計算會顯示待確認，不會以 0 代替。
+      </p>
+      {error && <p className="text-xs text-destructive">{error}</p>}
+      <div className="flex gap-2 pt-1">
+        <button
+          type="button"
+          disabled={submitting}
+          onClick={() => {
+            const nonNegativeDecimal = /^\d+(?:\.\d+)?$/;
+            const nonNegativeInteger = /^\d+$/;
+            const quantityIsValid =
+              estimatedItemQuantity === "" ||
+              (/^\d+$/.test(estimatedItemQuantity) &&
+                parseInt(estimatedItemQuantity, 10) > 0);
+            if (!name.trim()) {
+              setError("請填寫大區名稱。");
+              return;
+            }
+            if (
+              !nonNegativeDecimal.test(cardboardUnitJpy) ||
+              !nonNegativeDecimal.test(shippingUnitJpy) ||
+              !nonNegativeInteger.test(parcelCount) ||
+              !quantityIsValid
+            ) {
+              setError("金額與箱數必須為非負數；預計商品數須留空或大於 0。");
+              return;
+            }
+            onSubmit({
+              name: name.trim(),
+              mode,
+              cardboardUnitJpy,
+              shippingUnitJpy,
+              parcelCount,
+              estimatedItemQuantity,
+            });
+          }}
+          className="flex-1 h-10 rounded-xl bg-primary text-white text-sm font-semibold disabled:opacity-50"
+        >
+          {submitting ? "儲存中…" : "儲存大區"}
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="h-10 px-4 rounded-xl border border-border bg-white text-sm"
+        >
+          取消
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function areaFormInitial(area: TripArea, cost: TripAreaCost): AreaFormValue {
+  return {
+    name: area.name,
+    mode: cost.mode,
+    cardboardUnitJpy: String(cost.cardboardUnitJpy),
+    shippingUnitJpy: String(cost.shippingUnitJpy),
+    parcelCount: String(cost.parcelCount),
+    estimatedItemQuantity:
+      cost.estimatedItemQuantity == null
+        ? ""
+        : String(cost.estimatedItemQuantity),
+  };
+}
+
+function emptyAreaMode(
+  area: TripArea,
+  mode: "ESTIMATE" | "ACTUAL",
+): AreaFormValue {
+  return {
+    name: area.name,
+    mode,
+    cardboardUnitJpy: "0",
+    shippingUnitJpy: "0",
+    parcelCount: "0",
+    estimatedItemQuantity: "",
+  };
+}
+
+function TripCard({
+  trip,
+  storeId,
+}: {
+  trip: TripWithRoutes;
+  storeId: number;
+}) {
   const [, setLocation] = useLocation();
   const qc = useQueryClient();
   const updateTrip = useUpdateTrip();
   const createRoute = useCreateTripRoute();
   const updateRoute = useUpdateTripRoute();
+  const { data: areas = [] } = useListTripAreas(storeId, trip.id);
+  const createArea = useCreateTripArea();
+  const updateArea = useUpdateTripArea();
 
   const [editingTrip, setEditingTrip] = useState(false);
   const [addingRoute, setAddingRoute] = useState(false);
   const [editingRouteId, setEditingRouteId] = useState<number | null>(null);
+  const [areaFormState, setAreaFormState] = useState<{
+    areaId: number | null;
+    initial?: AreaFormValue;
+  } | null>(null);
 
   const invalidate = () =>
     qc.invalidateQueries({ queryKey: getListTripsQueryKey() });
+  const invalidateAreas = () =>
+    qc.invalidateQueries({
+      queryKey: getListTripAreasQueryKey(storeId, trip.id),
+    });
+
+  const saveArea = async (value: AreaFormValue) => {
+    const data = {
+      name: value.name,
+      mode: value.mode,
+      cardboardUnitJpy: parseFloat(value.cardboardUnitJpy),
+      shippingUnitJpy: parseFloat(value.shippingUnitJpy),
+      parcelCount: parseInt(value.parcelCount, 10),
+      estimatedItemQuantity: value.estimatedItemQuantity
+        ? parseInt(value.estimatedItemQuantity, 10)
+        : null,
+    };
+    if (areaFormState?.areaId == null) {
+      await createArea.mutateAsync({ storeId, tripId: trip.id, data });
+    } else {
+      await updateArea.mutateAsync({
+        storeId,
+        tripId: trip.id,
+        areaId: areaFormState.areaId,
+        data,
+      });
+    }
+    invalidateAreas();
+    setAreaFormState(null);
+  };
 
   return (
     <div className="bg-white rounded-2xl border border-border overflow-hidden">
@@ -390,12 +634,91 @@ function TripCard({ trip }: { trip: TripWithRoutes }) {
         )}
       </div>
 
+      <div className="border-b border-border px-4 py-3 space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-sm font-semibold text-foreground">境內運大區</p>
+          <button
+            type="button"
+            onClick={() => setAreaFormState({ areaId: null })}
+            className="text-xs font-medium text-primary border border-primary/30 px-2.5 py-1 rounded-lg"
+          >
+            + 新增大區
+          </button>
+        </div>
+
+        {areas.length === 0 && !areaFormState && (
+          <p className="text-xs text-muted-foreground">尚未建立大區</p>
+        )}
+
+        {areas.map((area) => (
+          <div key={area.id} className="rounded-xl border border-border p-3">
+            <p className="text-sm font-medium text-foreground">{area.name}</p>
+            <div className="mt-2 space-y-2">
+              {area.costs.map((cost) => (
+                <div
+                  key={cost.id}
+                  className="flex items-start justify-between gap-2 text-xs text-muted-foreground"
+                >
+                  <p>
+                    {cost.mode === "ESTIMATE" ? "預估" : "實際"} · 每箱紙板 ¥
+                    {cost.cardboardUnitJpy} · 每箱境內運 ¥{cost.shippingUnitJpy}{" "}
+                    · {cost.parcelCount} 箱 · 預計商品數{" "}
+                    {cost.estimatedItemQuantity ?? "待確認"}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setAreaFormState({
+                        areaId: area.id,
+                        initial: areaFormInitial(area, cost),
+                      })
+                    }
+                    className="shrink-0 font-medium text-primary"
+                  >
+                    編輯{cost.mode === "ESTIMATE" ? "預估" : "實際"}
+                  </button>
+                </div>
+              ))}
+              {(["ESTIMATE", "ACTUAL"] as const)
+                .filter(
+                  (mode) => !area.costs.some((cost) => cost.mode === mode),
+                )
+                .map((mode) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() =>
+                      setAreaFormState({
+                        areaId: area.id,
+                        initial: emptyAreaMode(area, mode),
+                      })
+                    }
+                    className="mr-2 text-xs font-medium text-primary"
+                  >
+                    + {mode === "ESTIMATE" ? "預估" : "實際"}
+                  </button>
+                ))}
+            </div>
+          </div>
+        ))}
+
+        {areaFormState && (
+          <AreaForm
+            initial={areaFormState.initial}
+            submitting={createArea.isPending || updateArea.isPending}
+            onCancel={() => setAreaFormState(null)}
+            onSubmit={saveArea}
+          />
+        )}
+      </div>
+
       <div className="divide-y divide-border/60">
         {(trip.routes ?? []).map((route) =>
           editingRouteId === route.id ? (
             <div key={route.id} className="px-4 py-3">
               <RouteForm
                 initial={route}
+                areas={areas}
                 submitting={updateRoute.isPending}
                 onCancel={() => setEditingRouteId(null)}
                 onSubmit={async (v) => {
@@ -403,6 +726,7 @@ function TripCard({ trip }: { trip: TripWithRoutes }) {
                     tripId: trip.id,
                     routeId: route.id,
                     data: {
+                      tripAreaId: v.tripAreaId,
                       areaTitle: v.areaTitle,
                       startPlace: v.startPlace,
                       endPlace: v.endPlace,
@@ -411,15 +735,6 @@ function TripCard({ trip }: { trip: TripWithRoutes }) {
                       fuelJpy: v.fuelJpy ? parseFloat(v.fuelJpy) : null,
                       parkingJpy: v.parkingJpy ? parseFloat(v.parkingJpy) : 0,
                       etcJpy: parseFloat(v.etcJpy),
-                      cardboardJpy: v.cardboardJpy
-                        ? parseFloat(v.cardboardJpy)
-                        : 0,
-                      shippingJpy: v.shippingJpy
-                        ? parseFloat(v.shippingJpy)
-                        : 0,
-                      parcelCount: v.parcelCount
-                        ? parseInt(v.parcelCount, 10)
-                        : 0,
                     },
                   });
                   invalidate();
@@ -440,12 +755,15 @@ function TripCard({ trip }: { trip: TripWithRoutes }) {
                   {route.startPlace} → {route.endPlace} · 預估 {route.estQty} 件
                 </p>
                 <p className="text-[11px] text-muted-foreground/80 mt-0.5">
+                  所屬大區：
+                  {areas.find((area) => area.id === route.tripAreaId)?.name ??
+                    "未指定"}
+                </p>
+                <p className="text-[11px] text-muted-foreground/80 mt-0.5">
                   電車 ¥{route.trainJpy} · 油資{" "}
                   {route.fuelJpy == null ? "待確認" : `¥${route.fuelJpy}`} ·
                   停車 ¥{route.parkingJpy} · ETC{" "}
-                  {route.etcJpy == null ? "待確認" : `¥${route.etcJpy}`} · 紙箱
-                  ¥{route.cardboardJpy} · 日本境內運費 ¥{route.shippingJpy} ·
-                  包裹 {route.parcelCount}
+                  {route.etcJpy == null ? "待確認" : `¥${route.etcJpy}`}
                 </p>
               </div>
               <button
@@ -486,12 +804,14 @@ function TripCard({ trip }: { trip: TripWithRoutes }) {
         </div>
         {addingRoute ? (
           <RouteForm
+            areas={areas}
             submitting={createRoute.isPending}
             onCancel={() => setAddingRoute(false)}
             onSubmit={async (v) => {
               await createRoute.mutateAsync({
                 tripId: trip.id,
                 data: {
+                  tripAreaId: v.tripAreaId,
                   areaTitle: v.areaTitle,
                   startPlace: v.startPlace,
                   endPlace: v.endPlace,
@@ -502,15 +822,6 @@ function TripCard({ trip }: { trip: TripWithRoutes }) {
                     ? parseFloat(v.parkingJpy)
                     : undefined,
                   etcJpy: parseFloat(v.etcJpy),
-                  cardboardJpy: v.cardboardJpy
-                    ? parseFloat(v.cardboardJpy)
-                    : undefined,
-                  shippingJpy: v.shippingJpy
-                    ? parseFloat(v.shippingJpy)
-                    : undefined,
-                  parcelCount: v.parcelCount
-                    ? parseInt(v.parcelCount, 10)
-                    : undefined,
                 },
               });
               invalidate();
@@ -534,9 +845,11 @@ function TripCard({ trip }: { trip: TripWithRoutes }) {
 export default function TripsPage() {
   const [, setLocation] = useLocation();
   const qc = useQueryClient();
+  const { data: store } = useGetMyStore();
   const { data: trips, isLoading } = useListTrips();
   const createTrip = useCreateTrip();
   const [addingTrip, setAddingTrip] = useState(false);
+  const storeId = store?.id;
 
   return (
     <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-24">
@@ -574,9 +887,11 @@ export default function TripsPage() {
           </div>
         )}
 
-        {(trips ?? []).map((trip) => (
-          <TripCard key={trip.id} trip={trip} />
-        ))}
+        {storeId != null &&
+          storeId > 0 &&
+          (trips ?? []).map((trip) => (
+            <TripCard key={trip.id} trip={trip} storeId={storeId} />
+          ))}
 
         {addingTrip ? (
           <div className="bg-white rounded-2xl border border-border p-4">
