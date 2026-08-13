@@ -1,7 +1,13 @@
-import { db, storesTable, tripRoutesTable, tripsTable } from "@workspace/db";
+import {
+  db,
+  storesTable,
+  tripAreaCostsTable,
+  tripAreasTable,
+  tripRoutesTable,
+  tripsTable,
+} from "@workspace/db";
 import type { CalculateProductUnitProfitInput } from "@workspace/db";
-import { eq } from "drizzle-orm";
-import { inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 
 type SnapshotQueryExecutor = Pick<typeof db, "select">;
 
@@ -19,15 +25,25 @@ export interface BatchSnapshotProduct extends SnapshotProduct {
 
 type SnapshotRoute = typeof tripRoutesTable.$inferSelect;
 type SnapshotTrip = typeof tripsTable.$inferSelect;
+type SnapshotArea = typeof tripAreasTable.$inferSelect;
+type SnapshotAreaCost = typeof tripAreaCostsTable.$inferSelect;
 
 export function assembleOrderProfitSnapshotInputs(
   products: readonly BatchSnapshotProduct[],
   storePurchaseExchangeRate: string | null,
   routes: readonly SnapshotRoute[],
   trips: readonly SnapshotTrip[],
+  areas: readonly SnapshotArea[],
+  areaCosts: readonly SnapshotAreaCost[],
 ): Map<number, CalculateProductUnitProfitInput> {
   const routesById = new Map(routes.map((route) => [route.id, route]));
   const tripsById = new Map(trips.map((trip) => [trip.id, trip]));
+  const areasById = new Map(areas.map((area) => [area.id, area]));
+  const estimateCostsByAreaId = new Map(
+    areaCosts
+      .filter((cost) => cost.mode === "ESTIMATE")
+      .map((cost) => [cost.tripAreaId, cost]),
+  );
   return new Map(
     products.map((product) => {
       const route =
@@ -35,6 +51,13 @@ export function assembleOrderProfitSnapshotInputs(
           ? (routesById.get(product.tripRouteId) ?? null)
           : null;
       const trip = route ? (tripsById.get(route.tripId) ?? null) : null;
+      const area =
+        route?.tripAreaId == null
+          ? null
+          : (areasById.get(route.tripAreaId) ?? null);
+      const areaCost = area
+        ? (estimateCostsByAreaId.get(area.id) ?? null)
+        : null;
       return [
         product.id,
         {
@@ -46,6 +69,8 @@ export function assembleOrderProfitSnapshotInputs(
             product: { tripRouteId: product.tripRouteId },
             route,
             trip,
+            area,
+            areaCost,
           },
         },
       ];
@@ -54,9 +79,10 @@ export function assembleOrderProfitSnapshotInputs(
 }
 
 /**
- * Product-list loader: one store query, one route IN query, and one trip IN
- * query. It assembles the same calculateProductUnitProfit input shape as the
- * single-product loader without caching any calculated money.
+ * Product-list loader: one store query plus one query each for routes, trips,
+ * areas, and ESTIMATE area costs. It assembles the same
+ * calculateProductUnitProfit input shape as the single-product loader without
+ * caching any calculated money.
  */
 export async function loadOrderProfitSnapshotInputs(
   executor: SnapshotQueryExecutor,
@@ -97,12 +123,40 @@ export async function loadOrderProfitSnapshotInputs(
           .from(tripsTable)
           .where(inArray(tripsTable.id, tripIds))
       : [];
+  const areaIds = [
+    ...new Set(
+      routes
+        .map((route) => route.tripAreaId)
+        .filter((id): id is number => id !== null),
+    ),
+  ];
+  const areas =
+    areaIds.length > 0
+      ? await executor
+          .select()
+          .from(tripAreasTable)
+          .where(inArray(tripAreasTable.id, areaIds))
+      : [];
+  const areaCosts =
+    areaIds.length > 0
+      ? await executor
+          .select()
+          .from(tripAreaCostsTable)
+          .where(
+            and(
+              inArray(tripAreaCostsTable.tripAreaId, areaIds),
+              eq(tripAreaCostsTable.mode, "ESTIMATE"),
+            ),
+          )
+      : [];
 
   return assembleOrderProfitSnapshotInputs(
     products,
     store?.purchaseExchangeRate ?? null,
     routes,
     trips,
+    areas,
+    areaCosts,
   );
 }
 

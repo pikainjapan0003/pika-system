@@ -131,6 +131,7 @@ export interface ManualOverride {
 export interface TransportCostOverrides {
   fee1_5Pct?: ManualOverride;
   totalJpy?: ManualOverride;
+  /** Retained for the persisted legacy column; no longer participates in D9. */
   domesticPerItem?: ManualOverride;
   transportPerItem?: ManualOverride;
   finalCostPerItem?: ManualOverride;
@@ -145,8 +146,8 @@ export interface TransportCostInput {
   fuelJpy?: DecimalInput;
   parkingJpy?: DecimalInput;
   etcJpy?: DecimalInput;
-  cardboardJpy?: DecimalInput;
-  shippingJpy?: DecimalInput;
+  /** Already converted to TWD by the ESTIMATE trip-area calculation. */
+  areaUnitDomesticTwd?: ExactDecimal | null;
   overrides?: TransportCostOverrides;
 }
 
@@ -155,7 +156,7 @@ export interface ReadyTransportCost {
   etcJpy: ExactDecimal;
   fee1_5Pct: ExactDecimal;
   totalJpy: ExactDecimal;
-  domesticPerItem: ExactDecimal;
+  areaUnitDomesticTwd: ExactDecimal;
   transportPerItem: ExactDecimal;
   hepPerItemTwd: ExactDecimal;
   finalCostPerItem: ExactDecimal;
@@ -170,6 +171,7 @@ export interface PendingTransportCost {
     | "missing_exchange_rate"
     | "missing_etc_jpy"
     | "missing_fuel_jpy"
+    | "missing_trip_area"
     | "missing_hep_item_quantity";
 }
 
@@ -271,6 +273,17 @@ export function calculateTransportCost(
     };
   }
 
+  if (
+    input.areaUnitDomesticTwd === null ||
+    input.areaUnitDomesticTwd === undefined
+  ) {
+    return {
+      status: "pending_confirmation",
+      label: PENDING_CONFIRMATION_LABEL,
+      reason: "missing_trip_area",
+    };
+  }
+
   const hasHep = !isEmptyDecimal(input.hepTotalJpy);
   const hepItemQuantity = hasHep
     ? parsePositiveQuantity(input.totalItemQuantity)
@@ -295,14 +308,10 @@ export function calculateTransportCost(
     "parkingJpy",
   );
   const etcJpy = parseOptionalNonNegativeDecimal(input.etcJpy, "etcJpy");
-  const cardboardJpy = parseOptionalNonNegativeDecimal(
-    input.cardboardJpy,
-    "cardboardJpy",
-  );
-  const shippingJpy = parseOptionalNonNegativeDecimal(
-    input.shippingJpy,
-    "shippingJpy",
-  );
+  const areaUnitDomesticTwd = input.areaUnitDomesticTwd;
+  if (areaUnitDomesticTwd.isNegative()) {
+    throw new RangeError("areaUnitDomesticTwd cannot be negative");
+  }
   const hepPerItemTwd = hasHep
     ? parseOptionalNonNegativeDecimal(input.hepTotalJpy, "hepTotalJpy")
         .divide(ExactDecimal.from(hepItemQuantity!))
@@ -315,26 +324,13 @@ export function calculateTransportCost(
       .add(trainJpy)
       .add(fuelJpy)
       .add(parkingJpy)
-      .add(cardboardJpy)
-      .add(shippingJpy)
       .multiply(ExactDecimal.from("0.015")),
     input.overrides?.fee1_5Pct,
   );
   const totalJpy = applyOverride(
     "totalJpy",
-    etcJpy
-      .add(trainJpy)
-      .add(fuelJpy)
-      .add(parkingJpy)
-      .add(cardboardJpy)
-      .add(shippingJpy)
-      .add(fee1_5Pct),
+    etcJpy.add(trainJpy).add(fuelJpy).add(parkingJpy).add(fee1_5Pct),
     input.overrides?.totalJpy,
-  );
-  const domesticPerItem = applyOverride(
-    "domesticPerItem",
-    cardboardJpy.add(shippingJpy).divide(quantity),
-    input.overrides?.domesticPerItem,
   );
   const transportPerItem = applyOverride(
     "transportPerItem",
@@ -348,9 +344,9 @@ export function calculateTransportCost(
   );
   const finalCostPerItem = applyOverride(
     "finalCostPerItem",
-    domesticPerItem
-      .add(transportPerItem)
+    transportPerItem
       .multiply(exchangeRate)
+      .add(areaUnitDomesticTwd)
       .add(hepPerItemTwd),
     input.overrides?.finalCostPerItem,
   );
@@ -360,10 +356,12 @@ export function calculateTransportCost(
     etcJpy,
     fee1_5Pct,
     totalJpy,
-    domesticPerItem,
+    areaUnitDomesticTwd,
     transportPerItem,
     hepPerItemTwd,
     finalCostPerItem,
     displayFinalCostTwd: finalCostPerItem.toDecimalPlaces(0),
   };
 }
+
+export * from "./areaDomesticCost.ts";

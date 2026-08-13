@@ -22,8 +22,15 @@ if (!process.env.DATABASE_URL) {
   });
 
   const { default: express } = await import("express");
-  const { db, pool, storesTable, tripsTable, tripRoutesTable } =
-    await import("@workspace/db");
+  const {
+    db,
+    pool,
+    storesTable,
+    tripAreaCostsTable,
+    tripAreasTable,
+    tripsTable,
+    tripRoutesTable,
+  } = await import("@workspace/db");
   const { eq, inArray } = await import("drizzle-orm");
   const { default: tripsRouter } = await import("./trips.ts");
 
@@ -121,7 +128,10 @@ if (!process.env.DATABASE_URL) {
       },
       body: body === undefined ? undefined : JSON.stringify(body),
     });
-    return { status: response.status, data: await response.json() };
+    return {
+      status: response.status,
+      data: response.status === 204 ? null : await response.json(),
+    };
   }
 
   test("all trip routes require authentication", async () => {
@@ -145,6 +155,31 @@ if (!process.env.DATABASE_URL) {
         `/trips/${tripAId}/routes/${routeAId}`,
         { areaTitle: "No auth" },
       ],
+      ["GET", `/stores/${storeAId}/trips/${tripAId}/areas`, undefined],
+      [
+        "POST",
+        `/stores/${storeAId}/trips/${tripAId}/areas`,
+        {
+          name: "No auth area",
+          mode: "ESTIMATE",
+          cardboardUnitJpy: 1,
+          shippingUnitJpy: 2,
+          parcelCount: 1,
+          estimatedItemQuantity: 1,
+        },
+      ],
+      [
+        "PATCH",
+        `/stores/${storeAId}/trips/${tripAId}/areas/1`,
+        {
+          mode: "ESTIMATE",
+          cardboardUnitJpy: 1,
+          shippingUnitJpy: 2,
+          parcelCount: 1,
+          estimatedItemQuantity: 1,
+        },
+      ],
+      ["DELETE", `/stores/${storeAId}/trips/${tripAId}/areas/1`, undefined],
     ]) {
       const response = await request(method, path, { userId: null, body });
       assert.equal(response.status, 401, `${method} ${path}`);
@@ -247,5 +282,369 @@ if (!process.env.DATABASE_URL) {
       .from(tripRoutesTable)
       .where(eq(tripRoutesTable.id, routeAId));
     assert.equal(stored.areaTitle, "BATCH-22 A route");
+  });
+
+  test("trip area CRUD persists ESTIMATE and ACTUAL costs and enforces unique names", async () => {
+    const create = await request(
+      "POST",
+      `/stores/${storeAId}/trips/${tripAId}/areas`,
+      {
+        body: {
+          name: "BATCH-23 Tokyo",
+          mode: "ESTIMATE",
+          cardboardUnitJpy: 39.75,
+          shippingUnitJpy: 120,
+          parcelCount: 10,
+          estimatedItemQuantity: 465,
+        },
+      },
+    );
+    assert.equal(create.status, 201);
+    assert.equal(create.data.name, "BATCH-23 Tokyo");
+    assert.equal(create.data.costs.length, 1);
+    assert.equal(create.data.costs[0].mode, "ESTIMATE");
+    const areaId = create.data.id;
+
+    const [storedArea] = await db
+      .select()
+      .from(tripAreasTable)
+      .where(eq(tripAreasTable.id, areaId));
+    const [storedEstimate] = await db
+      .select()
+      .from(tripAreaCostsTable)
+      .where(eq(tripAreaCostsTable.tripAreaId, areaId));
+    assert.equal(storedArea.storeId, storeAId);
+    assert.equal(storedArea.tripId, tripAId);
+    assert.equal(storedEstimate.cardboardUnitJpy, "39.750000000000");
+    assert.equal(storedEstimate.shippingUnitJpy, "120.000000000000");
+    assert.equal(storedEstimate.parcelCount, 10);
+    assert.equal(storedEstimate.estimatedItemQuantity, 465);
+
+    const duplicate = await request(
+      "POST",
+      `/stores/${storeAId}/trips/${tripAId}/areas`,
+      {
+        body: {
+          name: "BATCH-23 Tokyo",
+          mode: "ACTUAL",
+          cardboardUnitJpy: 1,
+          shippingUnitJpy: 2,
+          parcelCount: 3,
+          estimatedItemQuantity: null,
+        },
+      },
+    );
+    assert.equal(duplicate.status, 409);
+
+    const updateActual = await request(
+      "PATCH",
+      `/stores/${storeAId}/trips/${tripAId}/areas/${areaId}`,
+      {
+        body: {
+          name: "BATCH-23 Tokyo renamed",
+          mode: "ACTUAL",
+          cardboardUnitJpy: 40,
+          shippingUnitJpy: 125,
+          parcelCount: 11,
+          estimatedItemQuantity: null,
+        },
+      },
+    );
+    assert.equal(updateActual.status, 200);
+    assert.equal(updateActual.data.name, "BATCH-23 Tokyo renamed");
+    assert.deepEqual(
+      updateActual.data.costs.map((cost) => cost.mode),
+      ["ESTIMATE", "ACTUAL"],
+    );
+
+    const updateEstimate = await request(
+      "PATCH",
+      `/stores/${storeAId}/trips/${tripAId}/areas/${areaId}`,
+      {
+        body: {
+          mode: "ESTIMATE",
+          cardboardUnitJpy: 41,
+          shippingUnitJpy: 121,
+          parcelCount: 12,
+          estimatedItemQuantity: 500,
+        },
+      },
+    );
+    assert.equal(updateEstimate.status, 200);
+    assert.equal(updateEstimate.data.costs.length, 2);
+    const estimate = updateEstimate.data.costs.find(
+      (cost) => cost.mode === "ESTIMATE",
+    );
+    assert.equal(estimate.cardboardUnitJpy, 41);
+    assert.equal(estimate.estimatedItemQuantity, 500);
+    const storedCosts = await db
+      .select()
+      .from(tripAreaCostsTable)
+      .where(eq(tripAreaCostsTable.tripAreaId, areaId));
+    assert.deepEqual(storedCosts.map((cost) => cost.mode).sort(), [
+      "ACTUAL",
+      "ESTIMATE",
+    ]);
+    const storedActual = storedCosts.find((cost) => cost.mode === "ACTUAL");
+    assert.equal(storedActual.shippingUnitJpy, "125.000000000000");
+    assert.equal(storedActual.estimatedItemQuantity, null);
+
+    const list = await request(
+      "GET",
+      `/stores/${storeAId}/trips/${tripAId}/areas`,
+    );
+    assert.equal(list.status, 200);
+    const listedArea = list.data.find((area) => area.id === areaId);
+    assert.equal(listedArea.name, "BATCH-23 Tokyo renamed");
+    assert.equal(listedArea.costs.length, 2);
+
+    await db.delete(tripAreasTable).where(eq(tripAreasTable.id, areaId));
+  });
+
+  test("trip area endpoints reject cross-store and wrong-trip access", async () => {
+    const crossStore = await request(
+      "GET",
+      `/stores/${storeAId}/trips/${tripAId}/areas`,
+      { userId: MERCHANT_B },
+    );
+    assert.equal(crossStore.status, 403);
+
+    const wrongTrip = await request(
+      "GET",
+      `/stores/${storeAId}/trips/${tripBId}/areas`,
+    );
+    assert.equal(wrongTrip.status, 404);
+
+    const [areaB] = await db
+      .insert(tripAreasTable)
+      .values({ storeId: storeBId, tripId: tripBId, name: "BATCH-23 B area" })
+      .returning();
+    const patch = await request(
+      "PATCH",
+      `/stores/${storeAId}/trips/${tripAId}/areas/${areaB.id}`,
+      {
+        body: {
+          mode: "ESTIMATE",
+          cardboardUnitJpy: 1,
+          shippingUnitJpy: 2,
+          parcelCount: 3,
+          estimatedItemQuantity: 4,
+        },
+      },
+    );
+    assert.equal(patch.status, 404);
+    const remove = await request(
+      "DELETE",
+      `/stores/${storeAId}/trips/${tripAId}/areas/${areaB.id}`,
+    );
+    assert.equal(remove.status, 404);
+    await db.delete(tripAreasTable).where(eq(tripAreasTable.id, areaB.id));
+  });
+
+  test("fractional area and route integer inputs return 400 without database writes", async () => {
+    const invalidCreateNames = [
+      "BATCH-23 fractional parcel create",
+      "BATCH-23 fractional quantity create",
+    ];
+    for (const [name, parcelCount, estimatedItemQuantity] of [
+      [invalidCreateNames[0], 1.5, 10],
+      [invalidCreateNames[1], 1, 10.5],
+    ]) {
+      const response = await request(
+        "POST",
+        `/stores/${storeAId}/trips/${tripAId}/areas`,
+        {
+          body: {
+            name,
+            mode: "ESTIMATE",
+            cardboardUnitJpy: 1,
+            shippingUnitJpy: 2,
+            parcelCount,
+            estimatedItemQuantity,
+          },
+        },
+      );
+      assert.equal(response.status, 400);
+    }
+    const invalidCreates = await db
+      .select({ id: tripAreasTable.id })
+      .from(tripAreasTable)
+      .where(inArray(tripAreasTable.name, invalidCreateNames));
+    assert.equal(invalidCreates.length, 0);
+
+    const [area] = await db
+      .insert(tripAreasTable)
+      .values({
+        storeId: storeAId,
+        tripId: tripAId,
+        name: "BATCH-23 integer validation area",
+      })
+      .returning();
+    await db.insert(tripAreaCostsTable).values({
+      tripAreaId: area.id,
+      mode: "ESTIMATE",
+      cardboardUnitJpy: "3",
+      shippingUnitJpy: "4",
+      parcelCount: 5,
+      estimatedItemQuantity: 6,
+    });
+    for (const [name, parcelCount, estimatedItemQuantity] of [
+      ["BATCH-23 invalid parcel rename", 5.5, 6],
+      ["BATCH-23 invalid quantity rename", 5, 6.5],
+    ]) {
+      const response = await request(
+        "PATCH",
+        `/stores/${storeAId}/trips/${tripAId}/areas/${area.id}`,
+        {
+          body: {
+            name,
+            mode: "ESTIMATE",
+            cardboardUnitJpy: 30,
+            shippingUnitJpy: 40,
+            parcelCount,
+            estimatedItemQuantity,
+          },
+        },
+      );
+      assert.equal(response.status, 400);
+    }
+    const [unchangedArea] = await db
+      .select({ name: tripAreasTable.name })
+      .from(tripAreasTable)
+      .where(eq(tripAreasTable.id, area.id));
+    const [unchangedCost] = await db
+      .select()
+      .from(tripAreaCostsTable)
+      .where(eq(tripAreaCostsTable.tripAreaId, area.id));
+    assert.equal(unchangedArea.name, "BATCH-23 integer validation area");
+    assert.equal(unchangedCost.cardboardUnitJpy, "3.000000000000");
+    assert.equal(unchangedCost.shippingUnitJpy, "4.000000000000");
+    assert.equal(unchangedCost.parcelCount, 5);
+    assert.equal(unchangedCost.estimatedItemQuantity, 6);
+
+    const fractionalRouteTitle = "BATCH-23 fractional route area id";
+    const routeCreate = await request("POST", `/trips/${tripAId}/routes`, {
+      body: {
+        tripAreaId: area.id + 0.5,
+        areaTitle: fractionalRouteTitle,
+        startPlace: "A",
+        endPlace: "B",
+        estQty: 1,
+        etcJpy: 0,
+      },
+    });
+    assert.equal(routeCreate.status, 400);
+    const invalidRoutes = await db
+      .select({ id: tripRoutesTable.id })
+      .from(tripRoutesTable)
+      .where(eq(tripRoutesTable.areaTitle, fractionalRouteTitle));
+    assert.equal(invalidRoutes.length, 0);
+
+    const [routeBefore] = await db
+      .select({ tripAreaId: tripRoutesTable.tripAreaId })
+      .from(tripRoutesTable)
+      .where(eq(tripRoutesTable.id, routeAId));
+    const routePatch = await request(
+      "PATCH",
+      `/trips/${tripAId}/routes/${routeAId}`,
+      { body: { tripAreaId: area.id + 0.5 } },
+    );
+    assert.equal(routePatch.status, 400);
+    const [routeAfter] = await db
+      .select({ tripAreaId: tripRoutesTable.tripAreaId })
+      .from(tripRoutesTable)
+      .where(eq(tripRoutesTable.id, routeAId));
+    assert.equal(routeAfter.tripAreaId, routeBefore.tripAreaId);
+
+    await db.delete(tripAreasTable).where(eq(tripAreasTable.id, area.id));
+  });
+
+  test("route area binding validates the parent trip, supports null, and delete unlinks", async () => {
+    const [otherTripA] = await db
+      .insert(tripsTable)
+      .values({ storeId: storeAId, name: "BATCH-23 other A trip" })
+      .returning();
+    const [areaA, areaB] = await db
+      .insert(tripAreasTable)
+      .values([
+        { storeId: storeAId, tripId: tripAId, name: "BATCH-23 bind A" },
+        { storeId: storeBId, tripId: tripBId, name: "BATCH-23 bind B" },
+      ])
+      .returning();
+    const [otherAreaA] = await db
+      .insert(tripAreasTable)
+      .values({
+        storeId: storeAId,
+        tripId: otherTripA.id,
+        name: "BATCH-23 other A area",
+      })
+      .returning();
+
+    for (const [tripAreaId, areaTitle] of [
+      [otherAreaA.id, "BATCH-23 cross-trip area route"],
+      [areaB.id, "BATCH-23 cross-store area route"],
+    ]) {
+      const wrongCreate = await request("POST", `/trips/${tripAId}/routes`, {
+        body: {
+          tripAreaId,
+          areaTitle,
+          startPlace: "A",
+          endPlace: "B",
+          estQty: 1,
+          etcJpy: 0,
+        },
+      });
+      assert.equal(wrongCreate.status, 400);
+    }
+
+    const create = await request("POST", `/trips/${tripAId}/routes`, {
+      body: {
+        tripAreaId: areaA.id,
+        areaTitle: "BATCH-23 area route",
+        startPlace: "A",
+        endPlace: "B",
+        estQty: 1,
+        etcJpy: 0,
+      },
+    });
+    assert.equal(create.status, 201);
+    assert.equal(create.data.tripAreaId, areaA.id);
+
+    const wrongPatch = await request(
+      "PATCH",
+      `/trips/${tripAId}/routes/${create.data.id}`,
+      { body: { tripAreaId: areaB.id } },
+    );
+    assert.equal(wrongPatch.status, 400);
+
+    const unlink = await request(
+      "PATCH",
+      `/trips/${tripAId}/routes/${create.data.id}`,
+      { body: { tripAreaId: null } },
+    );
+    assert.equal(unlink.status, 200);
+    assert.equal(unlink.data.tripAreaId, null);
+
+    const relink = await request(
+      "PATCH",
+      `/trips/${tripAId}/routes/${create.data.id}`,
+      { body: { tripAreaId: areaA.id } },
+    );
+    assert.equal(relink.status, 200);
+    assert.equal(relink.data.tripAreaId, areaA.id);
+
+    const remove = await request(
+      "DELETE",
+      `/stores/${storeAId}/trips/${tripAId}/areas/${areaA.id}`,
+    );
+    assert.equal(remove.status, 204);
+    const [storedRoute] = await db
+      .select({ tripAreaId: tripRoutesTable.tripAreaId })
+      .from(tripRoutesTable)
+      .where(eq(tripRoutesTable.id, create.data.id));
+    assert.equal(storedRoute.tripAreaId, null);
+
+    await db.delete(tripAreasTable).where(eq(tripAreasTable.id, areaB.id));
+    await db.delete(tripsTable).where(eq(tripsTable.id, otherTripA.id));
   });
 }

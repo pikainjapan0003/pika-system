@@ -1,9 +1,18 @@
 import { Router } from "express";
-import { and, eq, isNull, or } from "drizzle-orm";
-import { db, storesTable, tripsTable, tripRoutesTable } from "@workspace/db";
+import { and, asc, eq, inArray, isNull, or } from "drizzle-orm";
+import {
+  db,
+  storesTable,
+  tripAreaCostsTable,
+  tripAreasTable,
+  tripsTable,
+  tripRoutesTable,
+} from "@workspace/db";
 import {
   CreateTripBody,
+  CreateTripAreaBody,
   UpdateTripBody,
+  UpdateTripAreaBody,
   CreateTripRouteBody,
   UpdateTripRouteBody,
 } from "@workspace/api-zod";
@@ -107,6 +116,194 @@ router.patch("/trips/:tripId", requireAuth, async (req: any, res) => {
   return res.json(formatTrip(updated));
 });
 
+router.get(
+  "/stores/:storeId/trips/:tripId/areas",
+  requireAuth,
+  async (req: any, res) => {
+    const access = await loadStoreScopedTrip(req, res);
+    if (!access) return;
+
+    const areas = await db
+      .select()
+      .from(tripAreasTable)
+      .where(
+        and(
+          eq(tripAreasTable.tripId, access.tripId),
+          ownedOrAwaitingBackfill(tripAreasTable.storeId, access.storeId),
+        ),
+      )
+      .orderBy(asc(tripAreasTable.id));
+    const areaIds = areas.map((area) => area.id);
+    const costs =
+      areaIds.length === 0
+        ? []
+        : await db
+            .select()
+            .from(tripAreaCostsTable)
+            .where(inArray(tripAreaCostsTable.tripAreaId, areaIds))
+            .orderBy(asc(tripAreaCostsTable.id));
+    const costsByArea = new Map<number, typeof costs>();
+    for (const cost of costs) {
+      const list = costsByArea.get(cost.tripAreaId) ?? [];
+      list.push(cost);
+      costsByArea.set(cost.tripAreaId, list);
+    }
+
+    return res.json(
+      areas.map((area) => formatTripArea(area, costsByArea.get(area.id) ?? [])),
+    );
+  },
+);
+
+router.post(
+  "/stores/:storeId/trips/:tripId/areas",
+  requireAuth,
+  async (req: any, res) => {
+    const access = await loadStoreScopedTrip(req, res);
+    if (!access) return;
+    const parsed = CreateTripAreaBody.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.message });
+    }
+    if (!hasSafeTripAreaCostIntegers(parsed.data)) {
+      return res.status(400).json({
+        error: "parcelCount and estimatedItemQuantity must be safe integers",
+      });
+    }
+    const areaName = parsed.data.name.trim();
+    if (areaName === "") {
+      return res.status(400).json({ error: "name must be a non-empty string" });
+    }
+
+    try {
+      const result = await db.transaction(async (tx) => {
+        const [area] = await tx
+          .insert(tripAreasTable)
+          .values({
+            storeId: access.storeId,
+            tripId: access.tripId,
+            name: areaName,
+          })
+          .returning();
+        const [cost] = await tx
+          .insert(tripAreaCostsTable)
+          .values({
+            tripAreaId: area.id,
+            ...tripAreaCostValues(parsed.data),
+          })
+          .returning();
+        return { area, cost };
+      });
+      return res.status(201).json(formatTripArea(result.area, [result.cost]));
+    } catch (error: any) {
+      if ((error?.cause?.code ?? error?.code) === "23505") {
+        return res.status(409).json({ error: "Trip area name already exists" });
+      }
+      throw error;
+    }
+  },
+);
+
+router.patch(
+  "/stores/:storeId/trips/:tripId/areas/:areaId",
+  requireAuth,
+  async (req: any, res) => {
+    const access = await loadStoreScopedTrip(req, res);
+    if (!access) return;
+    const areaId = positiveId(req.params.areaId);
+    if (areaId === null) {
+      return res.status(400).json({ error: "Invalid area id" });
+    }
+    const parsed = UpdateTripAreaBody.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.message });
+    }
+    if (!hasSafeTripAreaCostIntegers(parsed.data)) {
+      return res.status(400).json({
+        error: "parcelCount and estimatedItemQuantity must be safe integers",
+      });
+    }
+    const areaName = parsed.data.name?.trim();
+    if (areaName === "") {
+      return res.status(400).json({ error: "name must be a non-empty string" });
+    }
+
+    const [existing] = await db
+      .select()
+      .from(tripAreasTable)
+      .where(
+        and(
+          eq(tripAreasTable.id, areaId),
+          eq(tripAreasTable.tripId, access.tripId),
+          ownedOrAwaitingBackfill(tripAreasTable.storeId, access.storeId),
+        ),
+      )
+      .limit(1);
+    if (!existing)
+      return res.status(404).json({ error: "Trip area not found" });
+
+    try {
+      const result = await db.transaction(async (tx) => {
+        const [area] = await tx
+          .update(tripAreasTable)
+          .set({
+            storeId: access.storeId,
+            ...(areaName === undefined ? {} : { name: areaName }),
+          })
+          .where(eq(tripAreasTable.id, areaId))
+          .returning();
+        await tx
+          .insert(tripAreaCostsTable)
+          .values({ tripAreaId: areaId, ...tripAreaCostValues(parsed.data) })
+          .onConflictDoUpdate({
+            target: [tripAreaCostsTable.tripAreaId, tripAreaCostsTable.mode],
+            set: { ...tripAreaCostValues(parsed.data), updatedAt: new Date() },
+          })
+          .returning();
+        const costs = await tx
+          .select()
+          .from(tripAreaCostsTable)
+          .where(eq(tripAreaCostsTable.tripAreaId, areaId))
+          .orderBy(asc(tripAreaCostsTable.id));
+        return { area, costs };
+      });
+      return res.json(formatTripArea(result.area, result.costs));
+    } catch (error: any) {
+      if ((error?.cause?.code ?? error?.code) === "23505") {
+        return res.status(409).json({ error: "Trip area name already exists" });
+      }
+      throw error;
+    }
+  },
+);
+
+router.delete(
+  "/stores/:storeId/trips/:tripId/areas/:areaId",
+  requireAuth,
+  async (req: any, res) => {
+    const access = await loadStoreScopedTrip(req, res);
+    if (!access) return;
+    const areaId = positiveId(req.params.areaId);
+    if (areaId === null) {
+      return res.status(400).json({ error: "Invalid area id" });
+    }
+    const deleted = await db
+      .delete(tripAreasTable)
+      .where(
+        and(
+          eq(tripAreasTable.id, areaId),
+          eq(tripAreasTable.tripId, access.tripId),
+          ownedOrAwaitingBackfill(tripAreasTable.storeId, access.storeId),
+        ),
+      )
+      .returning({ id: tripAreasTable.id });
+    if (deleted.length === 0) {
+      return res.status(404).json({ error: "Trip area not found" });
+    }
+    return res.status(204).send();
+  },
+);
+
 router.post("/trips/:tripId/routes", requireAuth, async (req: any, res) => {
   const storeId = await resolveOwnedStoreId(req, res);
   if (storeId === null) return;
@@ -118,6 +315,10 @@ router.post("/trips/:tripId/routes", requireAuth, async (req: any, res) => {
   if (!parsed.success) {
     return res.status(400).json({ error: parsed.error.message });
   }
+  const tripAreaId = parsed.data.tripAreaId ?? null;
+  if (tripAreaId !== null && !Number.isSafeInteger(tripAreaId)) {
+    return res.status(400).json({ error: "tripAreaId must be a safe integer" });
+  }
 
   const [trip] = await db
     .select({ id: tripsTable.id, storeId: tripsTable.storeId })
@@ -128,6 +329,12 @@ router.post("/trips/:tripId/routes", requireAuth, async (req: any, res) => {
   if (trip.storeId !== null && trip.storeId !== storeId) {
     return res.status(403).json({ error: "Forbidden" });
   }
+  if (
+    tripAreaId !== null &&
+    !(await tripAreaBelongsToTrip(tripAreaId, tripId, storeId))
+  ) {
+    return res.status(400).json({ error: "Invalid tripAreaId" });
+  }
 
   try {
     const [route] = await db
@@ -135,6 +342,7 @@ router.post("/trips/:tripId/routes", requireAuth, async (req: any, res) => {
       .values({
         storeId,
         tripId,
+        tripAreaId,
         areaTitle: parsed.data.areaTitle,
         startPlace: parsed.data.startPlace,
         endPlace: parsed.data.endPlace,
@@ -186,6 +394,15 @@ router.patch(
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.message });
     }
+    if (
+      parsed.data.tripAreaId !== undefined &&
+      parsed.data.tripAreaId !== null &&
+      !Number.isSafeInteger(parsed.data.tripAreaId)
+    ) {
+      return res
+        .status(400)
+        .json({ error: "tripAreaId must be a safe integer" });
+    }
 
     const updateData: Record<string, unknown> = {};
     if (parsed.data.areaTitle !== undefined)
@@ -214,6 +431,8 @@ router.patch(
       updateData.shippingJpy = String(parsed.data.shippingJpy);
     if (parsed.data.parcelCount !== undefined)
       updateData.parcelCount = parsed.data.parcelCount;
+    if (parsed.data.tripAreaId !== undefined)
+      updateData.tripAreaId = parsed.data.tripAreaId;
 
     const [existing] = await db
       .select({
@@ -228,6 +447,13 @@ router.patch(
     }
     if (existing.storeId !== null && existing.storeId !== storeId) {
       return res.status(403).json({ error: "Forbidden" });
+    }
+    if (
+      parsed.data.tripAreaId !== undefined &&
+      parsed.data.tripAreaId !== null &&
+      !(await tripAreaBelongsToTrip(parsed.data.tripAreaId, tripId, storeId))
+    ) {
+      return res.status(400).json({ error: "Invalid tripAreaId" });
     }
 
     try {
@@ -254,6 +480,82 @@ router.patch(
   },
 );
 
+function positiveId(value: unknown): number | null {
+  const parsed =
+    typeof value === "number"
+      ? value
+      : typeof value === "string" && /^\d+$/.test(value)
+        ? Number(value)
+        : NaN;
+  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
+function tripAreaCostValues(input: {
+  mode: "ESTIMATE" | "ACTUAL";
+  cardboardUnitJpy: number;
+  shippingUnitJpy: number;
+  parcelCount: number;
+  estimatedItemQuantity: number | null;
+}) {
+  return {
+    mode: input.mode,
+    cardboardUnitJpy: String(input.cardboardUnitJpy),
+    shippingUnitJpy: String(input.shippingUnitJpy),
+    parcelCount: input.parcelCount,
+    estimatedItemQuantity: input.estimatedItemQuantity,
+  };
+}
+
+function hasSafeTripAreaCostIntegers(input: {
+  parcelCount: number;
+  estimatedItemQuantity: number | null;
+}) {
+  return (
+    Number.isSafeInteger(input.parcelCount) &&
+    (input.estimatedItemQuantity === null ||
+      Number.isSafeInteger(input.estimatedItemQuantity))
+  );
+}
+
+async function loadStoreScopedTrip(req: any, res: any) {
+  const storeId = positiveId(req.params.storeId);
+  const tripId = positiveId(req.params.tripId);
+  if (storeId === null || tripId === null) {
+    res.status(400).json({ error: "Invalid store or trip id" });
+    return null;
+  }
+  if (!(await verifyStoreOwner(req, res, storeId))) return null;
+  const [trip] = await db
+    .select({ id: tripsTable.id })
+    .from(tripsTable)
+    .where(and(eq(tripsTable.id, tripId), eq(tripsTable.storeId, storeId)))
+    .limit(1);
+  if (!trip) {
+    res.status(404).json({ error: "Trip not found" });
+    return null;
+  }
+  return { storeId, tripId };
+}
+
+async function tripAreaBelongsToTrip(
+  tripAreaId: number,
+  tripId: number,
+  storeId: number,
+) {
+  const [area] = await db
+    .select({ id: tripAreasTable.id })
+    .from(tripAreasTable)
+    .where(
+      and(
+        eq(tripAreasTable.id, tripAreaId),
+        eq(tripAreasTable.tripId, tripId),
+        ownedOrAwaitingBackfill(tripAreasTable.storeId, storeId),
+      ),
+    )
+    .limit(1);
+  return area !== undefined;
+}
+
 function formatTrip(t: any) {
   return {
     id: t.id,
@@ -262,6 +564,27 @@ function formatTrip(t: any) {
     notes: t.notes,
     createdAt: t.createdAt,
     updatedAt: t.updatedAt,
+  };
+}
+
+function formatTripArea(area: any, costs: any[]) {
+  return {
+    id: area.id,
+    tripId: area.tripId,
+    name: area.name,
+    costs: costs.map((cost) => ({
+      id: cost.id,
+      tripAreaId: cost.tripAreaId,
+      mode: cost.mode,
+      cardboardUnitJpy: parseFloat(cost.cardboardUnitJpy),
+      shippingUnitJpy: parseFloat(cost.shippingUnitJpy),
+      parcelCount: cost.parcelCount,
+      estimatedItemQuantity: cost.estimatedItemQuantity,
+      createdAt: cost.createdAt,
+      updatedAt: cost.updatedAt,
+    })),
+    createdAt: area.createdAt,
+    updatedAt: area.updatedAt,
   };
 }
 
@@ -289,6 +612,7 @@ function formatTripRoute(r: any) {
   return {
     id: r.id,
     tripId: r.tripId,
+    tripAreaId: r.tripAreaId,
     areaTitle: r.areaTitle,
     startPlace: r.startPlace,
     endPlace: r.endPlace,

@@ -280,6 +280,7 @@ export const ListTripsResponseItem = zod.object({
   "routes": zod.array(zod.object({
   "id": zod.number(),
   "tripId": zod.number(),
+  "tripAreaId": zod.number().nullable(),
   "areaTitle": zod.string(),
   "startPlace": zod.string(),
   "endPlace": zod.string(),
@@ -350,6 +351,7 @@ export const CreateTripRouteParams = zod.object({
 
 
 
+
 export const createTripRouteBodyTrainJpyMin = 0;
 
 export const createTripRouteBodyFuelJpyMin = 0;
@@ -367,6 +369,7 @@ export const createTripRouteBodyParcelCountMin = 0;
 
 
 export const CreateTripRouteBody = zod.object({
+  "tripAreaId": zod.number().min(1).nullish(),
   "areaTitle": zod.string().min(1),
   "startPlace": zod.string().min(1),
   "endPlace": zod.string().min(1),
@@ -393,6 +396,7 @@ export const UpdateTripRouteParams = zod.object({
 
 
 
+
 export const updateTripRouteBodyTrainJpyMin = 0;
 
 export const updateTripRouteBodyFuelJpyMin = 0;
@@ -410,6 +414,7 @@ export const updateTripRouteBodyParcelCountMin = 0;
 
 
 export const UpdateTripRouteBody = zod.object({
+  "tripAreaId": zod.number().min(1).nullish(),
   "areaTitle": zod.string().min(1).optional(),
   "startPlace": zod.string().min(1).optional(),
   "endPlace": zod.string().min(1).optional(),
@@ -426,6 +431,7 @@ export const UpdateTripRouteBody = zod.object({
 export const UpdateTripRouteResponse = zod.object({
   "id": zod.number(),
   "tripId": zod.number(),
+  "tripAreaId": zod.number().nullable(),
   "areaTitle": zod.string(),
   "startPlace": zod.string(),
   "endPlace": zod.string(),
@@ -438,6 +444,157 @@ export const UpdateTripRouteResponse = zod.object({
   "shippingJpy": zod.number(),
   "parcelCount": zod.number(),
   "createdAt": zod.string()
+})
+
+
+/**
+ * @summary List domestic-shipping areas and their estimate/actual costs
+ */
+
+
+
+
+export const ListTripAreasParams = zod.object({
+  "storeId": zod.coerce.number().min(1),
+  "tripId": zod.coerce.number().min(1)
+})
+
+export const listTripAreasResponseCostsItemCardboardUnitJpyMin = 0;
+
+export const listTripAreasResponseCostsItemShippingUnitJpyMin = 0;
+
+export const listTripAreasResponseCostsItemParcelCountMin = 0;
+
+
+
+
+export const ListTripAreasResponseItem = zod.object({
+  "id": zod.number(),
+  "tripId": zod.number(),
+  "name": zod.string(),
+  "costs": zod.array(zod.object({
+  "id": zod.number(),
+  "tripAreaId": zod.number(),
+  "mode": zod.enum(['ESTIMATE', 'ACTUAL']),
+  "cardboardUnitJpy": zod.number().min(listTripAreasResponseCostsItemCardboardUnitJpyMin),
+  "shippingUnitJpy": zod.number().min(listTripAreasResponseCostsItemShippingUnitJpyMin),
+  "parcelCount": zod.number().min(listTripAreasResponseCostsItemParcelCountMin),
+  "estimatedItemQuantity": zod.number().min(1).nullable(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+export const ListTripAreasResponse = zod.array(ListTripAreasResponseItem)
+
+
+/**
+ * @summary Create a domestic-shipping area with one cost mode
+ */
+
+
+
+
+export const CreateTripAreaParams = zod.object({
+  "storeId": zod.coerce.number().min(1),
+  "tripId": zod.coerce.number().min(1)
+})
+
+
+export const createTripAreaBodyCardboardUnitJpyMin = 0;
+
+export const createTripAreaBodyShippingUnitJpyMin = 0;
+
+export const createTripAreaBodyParcelCountMin = 0;
+
+
+
+
+export const CreateTripAreaBody = zod.object({
+  "name": zod.string().min(1),
+  "mode": zod.enum(['ESTIMATE', 'ACTUAL']),
+  "cardboardUnitJpy": zod.number().min(createTripAreaBodyCardboardUnitJpyMin),
+  "shippingUnitJpy": zod.number().min(createTripAreaBodyShippingUnitJpyMin),
+  "parcelCount": zod.number().min(createTripAreaBodyParcelCountMin),
+  "estimatedItemQuantity": zod.number().min(1).nullable()
+})
+
+
+/**
+ * @summary Rename an area and upsert one cost mode
+ */
+
+
+
+
+
+export const UpdateTripAreaParams = zod.object({
+  "storeId": zod.coerce.number().min(1),
+  "tripId": zod.coerce.number().min(1),
+  "areaId": zod.coerce.number().min(1)
+})
+
+
+export const updateTripAreaBodyCardboardUnitJpyMin = 0;
+
+export const updateTripAreaBodyShippingUnitJpyMin = 0;
+
+export const updateTripAreaBodyParcelCountMin = 0;
+
+
+
+
+export const UpdateTripAreaBody = zod.object({
+  "name": zod.string().min(1).optional(),
+  "mode": zod.enum(['ESTIMATE', 'ACTUAL']),
+  "cardboardUnitJpy": zod.number().min(updateTripAreaBodyCardboardUnitJpyMin),
+  "shippingUnitJpy": zod.number().min(updateTripAreaBodyShippingUnitJpyMin),
+  "parcelCount": zod.number().min(updateTripAreaBodyParcelCountMin),
+  "estimatedItemQuantity": zod.number().min(1).nullable()
+})
+
+export const updateTripAreaResponseCostsItemCardboardUnitJpyMin = 0;
+
+export const updateTripAreaResponseCostsItemShippingUnitJpyMin = 0;
+
+export const updateTripAreaResponseCostsItemParcelCountMin = 0;
+
+
+
+
+export const UpdateTripAreaResponse = zod.object({
+  "id": zod.number(),
+  "tripId": zod.number(),
+  "name": zod.string(),
+  "costs": zod.array(zod.object({
+  "id": zod.number(),
+  "tripAreaId": zod.number(),
+  "mode": zod.enum(['ESTIMATE', 'ACTUAL']),
+  "cardboardUnitJpy": zod.number().min(updateTripAreaResponseCostsItemCardboardUnitJpyMin),
+  "shippingUnitJpy": zod.number().min(updateTripAreaResponseCostsItemShippingUnitJpyMin),
+  "parcelCount": zod.number().min(updateTripAreaResponseCostsItemParcelCountMin),
+  "estimatedItemQuantity": zod.number().min(1).nullable(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Delete a domestic-shipping area and unlink its routes
+ */
+
+
+
+
+
+export const DeleteTripAreaParams = zod.object({
+  "storeId": zod.coerce.number().min(1),
+  "tripId": zod.coerce.number().min(1),
+  "areaId": zod.coerce.number().min(1)
 })
 
 

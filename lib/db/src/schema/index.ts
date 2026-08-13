@@ -14,6 +14,7 @@ export * from "./logisticsImportRows.ts";
 export * from "./shipmentTrackingExceptions.ts";
 export * from "./shipmentTrackingRunLogs.ts";
 export * from "./trips.ts";
+export * from "./tripAreas.ts";
 export * from "./tripRoutes.ts";
 export * from "./auditLogs.ts";
 export * from "./storeSkillStates.ts";

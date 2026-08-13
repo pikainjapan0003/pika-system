@@ -192,6 +192,8 @@ export interface Trip {
 export interface TripRoute {
   id: number;
   tripId: number;
+  /** @nullable */
+  tripAreaId: number | null;
   areaTitle: string;
   startPlace: string;
   endPlace: string;
@@ -233,6 +235,11 @@ export interface TripUpdate {
 }
 
 export interface TripRouteInput {
+  /**
+     * @minimum 1
+     * @nullable
+     */
+  tripAreaId?: number | null;
   /** @minLength 1 */
   areaTitle: string;
   /** @minLength 1 */
@@ -261,6 +268,11 @@ export interface TripRouteInput {
 }
 
 export interface TripRouteUpdate {
+  /**
+     * @minimum 1
+     * @nullable
+     */
+  tripAreaId?: number | null;
   /** @minLength 1 */
   areaTitle?: string;
   /** @minLength 1 */
@@ -289,6 +301,92 @@ export interface TripRouteUpdate {
   shippingJpy?: number;
   /** @minimum 0 */
   parcelCount?: number;
+}
+
+export type TripAreaCostMode = typeof TripAreaCostMode[keyof typeof TripAreaCostMode];
+
+
+export const TripAreaCostMode = {
+  ESTIMATE: 'ESTIMATE',
+  ACTUAL: 'ACTUAL',
+} as const;
+
+export interface TripAreaCost {
+  id: number;
+  tripAreaId: number;
+  mode: TripAreaCostMode;
+  /** @minimum 0 */
+  cardboardUnitJpy: number;
+  /** @minimum 0 */
+  shippingUnitJpy: number;
+  /** @minimum 0 */
+  parcelCount: number;
+  /**
+     * @minimum 1
+     * @nullable
+     */
+  estimatedItemQuantity: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TripArea {
+  id: number;
+  tripId: number;
+  name: string;
+  costs: TripAreaCost[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type TripAreaInputMode = typeof TripAreaInputMode[keyof typeof TripAreaInputMode];
+
+
+export const TripAreaInputMode = {
+  ESTIMATE: 'ESTIMATE',
+  ACTUAL: 'ACTUAL',
+} as const;
+
+export interface TripAreaInput {
+  /** @minLength 1 */
+  name: string;
+  mode: TripAreaInputMode;
+  /** @minimum 0 */
+  cardboardUnitJpy: number;
+  /** @minimum 0 */
+  shippingUnitJpy: number;
+  /** @minimum 0 */
+  parcelCount: number;
+  /**
+     * @minimum 1
+     * @nullable
+     */
+  estimatedItemQuantity: number | null;
+}
+
+export type TripAreaUpdateMode = typeof TripAreaUpdateMode[keyof typeof TripAreaUpdateMode];
+
+
+export const TripAreaUpdateMode = {
+  ESTIMATE: 'ESTIMATE',
+  ACTUAL: 'ACTUAL',
+} as const;
+
+export interface TripAreaUpdate {
+  /** @minLength 1 */
+  name?: string;
+  mode: TripAreaUpdateMode;
+  /** @minimum 0 */
+  cardboardUnitJpy: number;
+  /** @minimum 0 */
+  shippingUnitJpy: number;
+  /** @minimum 0 */
+  parcelCount: number;
+  /**
+     * @minimum 1
+     * @nullable
+     */
+  estimatedItemQuantity: number | null;
 }
 
 /**
