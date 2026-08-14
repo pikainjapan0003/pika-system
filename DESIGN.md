@@ -44,6 +44,55 @@ typography:
     fontFamily: "Georgia"
   mono:
     fontFamily: "Menlo"
+spacing:
+  primitive:
+    "0": 0rem
+    "1": 0.25rem
+    "2": 0.5rem
+    "3": 0.75rem
+    "4": 1rem
+    "5": 1.25rem
+    "6": 1.5rem
+    "8": 2rem
+    "10": 2.5rem
+    "11": 2.75rem
+    "12": 3rem
+    "16": 4rem
+  semantic:
+    inset:
+      compact: "{spacing.primitive.2}"
+      control-y: "{spacing.primitive.2}"
+      control-x: "{spacing.primitive.3}"
+      comfortable: "{spacing.primitive.4}"
+    stack:
+      micro: "{spacing.primitive.1}"
+      related: "{spacing.primitive.2}"
+      default: "{spacing.primitive.3}"
+      relaxed: "{spacing.primitive.4}"
+      kpi-group: "{spacing.primitive.6}"
+    gap:
+      touch-target: "{spacing.primitive.2}"
+      inline: "{spacing.primitive.3}"
+      grid: "{spacing.primitive.4}"
+      major: "{spacing.primitive.6}"
+    card-padding:
+      phone: "{spacing.primitive.4}"
+      tablet: "{spacing.primitive.5}"
+      desktop: "{spacing.primitive.6}"
+    section-y:
+      phone: "{spacing.primitive.8}"
+      tablet: "{spacing.primitive.10}"
+      desktop: "{spacing.primitive.12}"
+    page-gutter:
+      phone: "{spacing.primitive.4}"
+      tablet: "{spacing.primitive.6}"
+      desktop: "{spacing.primitive.8}"
+    table-row:
+      min-height: "{spacing.primitive.11}"
+      default-height: "{spacing.primitive.12}"
+      cost-bullet-min-height: "{spacing.primitive.16}"
+      cell-y: "{spacing.primitive.3}"
+      cell-x: "{spacing.primitive.4}"
 rounded:
   sm: 0.125rem
   md: 0.25rem
@@ -299,7 +348,39 @@ Light 使用近白主底、白色主卡與低彩度藍灰邊界；深夜版使�
 
 主要字型沿用 `--app-font-sans`：`"Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif`；不複製 Stripe 的字型、品牌識別或商標。Open Design 內建 Stripe 系統只提供兩項結構參考：金融數據使用 tabular numbers，以及「資料區密集、外框留白精準」的分層手法。
 
-- 營運金額、百分比、件數、差額、刻度與表格數字一律使用 `font-variant-numeric: tabular-nums`。
+### 等寬數字實作契約
+
+所有金額、百分比、件數、差額、匯率、KPI 數字、圖表座標／Tooltip，以及表格數字欄都必須實際套用 OpenType `tnum`；只在說明文件寫「使用等寬數字」不算完成。共用實作如下：
+
+```css
+.numeric-value,
+[data-numeric="true"],
+th[data-numeric="true"],
+td[data-numeric="true"] {
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+}
+```
+
+Tailwind 元件可使用既有 `tabular-nums` utility；共用 `NumericValue`、KPI、金額輸入顯示層、表格 numeric cell 與 Recharts tick／label／tooltip 必須統一套用，不得各頁自行決定。`font-feature-settings` 是明確的相容宣告，不得拿它取代正常字型 fallback。一般段落與非數字標籤不必套用；訂單碼、查詢碼等識別字串可另用既有 mono stack，但不得因 mono 而改變金額格式。
+
+### 幣別與數字格式
+
+| 資料 | 小數位 | 正式顯示 | 規則 |
+| --- | ---: | --- | --- |
+| JPY 原幣 | 0 | `JPY 63,943` | 日圓畫面值不顯示小數；雙幣別、表格、對帳與匯出預覽一律用 `JPY` 明示幣別。 |
+| TWD 換算／成本／毛利 | 2 | `NT$ 13,108.32` | 本批成本利潤畫面固定兩位小數；裸 `$` 禁止。只有後端明確定義為整數結算欄位時才可顯示 0 位，前端不得自行四捨五入成整數。 |
+| 百分比 | 2 | `43.31%` | 毛利率、差異百分比與達標百分比固定兩位；真正的數值 0 顯示 `0.00%`，缺值則顯示「待確認」。 |
+
+- 數字部分使用 `zh-TW` 千分位，每三位以逗號分隔；幣別前綴與數字之間使用不換行空白，避免符號與金額斷行。
+- `NT$` 用於畫面上的新台幣金額；`TWD` 用於幣別選項、欄位 schema 名稱或技術說明。`JPY` 用於原幣、雙幣別並列、表格與對帳。`¥` 只可用在單一日圓情境、且欄頭或鄰近標籤已明寫 JPY 的客人端窄版；同一區塊不得混用 `JPY` 與 `¥`。
+- 當兩種幣別同時出現，必須成對標記為「原幣 JPY 63,943」與「換算 NT$ 13,108.32」，不得只靠上下位置推測幣別。
+- 負數使用真正的負號置於幣別前，例如 `−JPY 1,200`、`−NT$ 245.50`；同一畫面不得混用括號負數與前置負號。螢幕閱讀器名稱須包含「負」。
+- 顯示層可依上述位數做四捨五入，但計算、比較與提交仍使用後端／domain 原始精度，禁止把格式化字串或顯示後數值寫回計算。
+- 真正的零值可顯示 `JPY 0`、`NT$ 0.00`、`0.00%`；`null`、缺匯率或缺輸入在 numeric cell 直接顯示右對齊的「待確認」，不加幣別、不補小數、不單獨顯示破折號。輸入欄保持空值並在欄位下方顯示「尚未填寫〈欄位〉」，不得用 placeholder `0` 冒充資料。
+
+### 字級與必要文案
+
 - 貨幣符號與金額不得任意斷行；精確值不得因手機寬度而省略、截斷或縮成不可讀尺寸。
 - H1：桌機 32px／1.25，手機 28px／1.25；H2：24px／1.3；H3：18px／1.4；正文：16px／1.5；輔助文字最小 12px／1.5。
 - 主角 KPI 數字使用 `clamp(2rem, 7vw, 3rem)`；次級 KPI 不小於 20px。
@@ -313,6 +394,49 @@ Light 使用近白主底、白色主卡與低彩度藍灰邊界；深夜版使�
 ## Layout
 
 桌機與手機同等重要。平台是純瀏覽器 Web，不代表只做桌機。現況十二頁中有十一頁沒有任何 page-level breakpoint；本規格因此以 base 手機樣式為起點，再逐級增強。手機只改排列、揭露方式與局部捲動，不改四層順序、KPI 分組、圖表類型、資料語意或精確值。
+
+### Spacing：4px primitive 與 semantic role
+
+Spacing front matter 是兩層結構：`primitive` 只表達 4px 錨點級距，`semantic` 才表達用途。基準是 phase23 `index.css` 的 `--spacing: 0.25rem` 與既有 Tailwind multiplier；它們是 G4 對既有 utility 的規格映射，不新增第二套 production CSS 變數，也不加入 108-token 命名矩陣。
+
+#### Primitive 級距
+
+| Token | rem | px | 既有 Tailwind 對應 | 用途邊界 |
+| --- | ---: | ---: | --- | --- |
+| `primitive.0` | 0 | 0 | `0` | 明確無間距；不得用來代表缺資料。 |
+| `primitive.1` | 0.25rem | 4 | `1` | 圖示與小標記的 micro rhythm。 |
+| `primitive.2` | 0.5rem | 8 | `2` | 最小相鄰 touch-target 間隔、緊密 stack。 |
+| `primitive.3` | 0.75rem | 12 | `3` | 一般欄位垂直 padding、label/value 間隔。 |
+| `primitive.4` | 1rem | 16 | `4` | 手機 gutter、一般 grid gap、手機 card padding。 |
+| `primitive.5` | 1.25rem | 20 | `5` | 平板 card padding。 |
+| `primitive.6` | 1.5rem | 24 | `6` | KPI 群組間距、平板 gutter、桌機 card padding。 |
+| `primitive.8` | 2rem | 32 | `8` | 手機 section rhythm、桌機 gutter。 |
+| `primitive.10` | 2.5rem | 40 | `10` | 平板 section rhythm。 |
+| `primitive.11` | 2.75rem | 44 | `11` | 最小 touch target／可編輯列高度。 |
+| `primitive.12` | 3rem | 48 | `12` | 一般桌機表格列與桌機 section rhythm。 |
+| `primitive.16` | 4rem | 64 | `16` | 含 Bullet Chart 的成本對帳列最低高度。 |
+
+#### Semantic 用途
+
+| Role | Token 與值 | 使用契約 |
+| --- | --- | --- |
+| inset | `compact` 8px；`control-y` 8px；`control-x` 12px；`comfortable` 16px | 元件內距。padding 只是內容留白；按鈕、checkbox hit area、表格列內編輯器的最終高度仍不得低於 44px。 |
+| stack | `micro` 4px；`related` 8px；`default` 12px；`relaxed` 16px；`kpi-group` 24px | 垂直堆疊。label/help 用 4–8px；一般欄位 12px；卡內區塊 16px；13 KPI 的四組彼此固定 24px。 |
+| gap | `touch-target` 8px；`inline` 12px；`grid` 16px；`major` 24px | 並列間隔。相鄰可點控制至少 8px；一般 KPI／表單 grid 16px；跨群組或主次動作 24px。 |
+| card-padding | phone 16px；tablet 20px；desktop 24px | KPI、圖表、空狀態與摘要卡共用；卡片內部不得另猜 18px、22px 等孤立值。 |
+| table-row | `min-height` 44px；`default-height` 48px；`cost-bullet-min-height` 64px；`cell-y` 12px；`cell-x` 16px | 一般 numeric row 至少 48px；緊密可編輯 row 絕不低於 44px；成本對帳列含兩筆金額與 Bullet Chart 時至少 64px，row 內項目以 8px stack 分隔。 |
+
+#### 響應式 semantic 值
+
+| Breakpoint role | phone `<640px` | tablet `640–1023px` | desktop `≥1024px` | 依據 |
+| --- | ---: | ---: | ---: | --- |
+| `section-y` | 32px | 40px | 48px | Pika 是高資訊密度工作台，採逐級增加但不照搬行銷頁的 40／64／96；四層 Dashboard 以此分段。 |
+| `page-gutter` | 16px | 24px | 32px | 完全對齊本檔既有 base／sm／lg 頁邊距契約。 |
+| `card-padding` | 16px | 20px | 24px | 對齊既有 Tailwind 4／5／6 級距，在密度與 touch 安全間取平衡。 |
+
+13 KPI 的視覺層級固定為：同一卡 label/value 使用 `stack.related` 8px；同組卡片用 `gap.grid` 16px；「2 主角／4 收入／3 成本／4 效率」四組之間用 `stack.kpi-group` 24px；Dashboard 四大層之間才使用 responsive `section-y`。不得把四種間距壓成同一個 `gap-4`。
+
+成本對帳表格固定為：desktop cell 使用 12px vertical／16px horizontal padding，一般列 min-height 48px；含 Bullet Chart 的 row min-height 64px。手機降級成卡列後使用 16px card padding、8px 內部 stack，操作 target 仍至少 44×44px且彼此至少 8px，不得為塞進一列而縮小 hit area。
 
 ### Breakpoints
 
@@ -428,6 +552,27 @@ TrackOrder 必備狀態包括 loading、404、一般 error、cancelled、deliver
 - Level 3：Dialog，最多 `--shadow-lg`；不得用陰影代替 modal overlay 與 focus trap。
 - Focus 使用 `--ring`；錯誤、待確認與示意資料使用語意邊界與文字，不靠陰影表示。
 
+### z-index 與 portal 層級
+
+以下是由低到高的唯一層級尺度；G4 應集中成共用 layer class map，禁止各元件散落 `z-[9999]`。數值是層級契約，不新增 CSS variable，因此 108-token 矩陣不變。
+
+| 層級 | z-index | 元件指派 | 規則 |
+| --- | ---: | --- | --- |
+| base | 0 | page、Card、Table、圖表與一般內容 | 不建立不必要 stacking context；transform／opacity 不得意外蓋住浮層。 |
+| sticky | 10 | sticky page header、表格欄頭、手機 sticky CTA | 只在所屬 scroll container 內生效；不得越過 modal。 |
+| sidebar | 20 | desktop Sidebar、固定 owner navigation | 手機 Sidebar 透過 Sheet 開啟時改用 sheet/drawer band，不停留在 20。 |
+| dropdown | 30 | DropdownMenu、ContextMenu、Command menu | 主要動作不得只存在此層；開 modal 前關閉下層 menu。 |
+| popover | 40 | Popover、HoverCard、日期／篩選補充面板 | 必要資訊仍須有手機可點擊替代。 |
+| tooltip | 50 | Tooltip | 只補充，不承載唯一的精確值、錯誤或待確認原因。 |
+| sheet/drawer overlay | 60 | SheetOverlay、DrawerOverlay | overlay 必須攔截背景 pointer 並配合 focus trap。 |
+| sheet/drawer content | 61 | SheetContent、DrawerContent | 位於自身 overlay 之上；內部 sticky 使用該 modal root 的局部層級。 |
+| dialog overlay | 70 | DialogOverlay、AlertDialogOverlay | 高於 Sheet／Drawer；同一時間只允許一個 top modal。 |
+| dialog content | 71 | DialogContent、AlertDialogContent | 不靠 shadow 取代 overlay、focus trap 或 inert 背景。 |
+| modal floating | 80／81／82 | active modal 內的 dropdown／popover／tooltip | 由 active modal portal root 掛載，依序使用 80／81／82；不得讓背景頁殘留 menu 穿過 modal。 |
+| toast | 90 | Sonner、Toast、Toaster | 可高於 modal 顯示結果，但核心錯誤與必要操作仍保留在頁內／modal 內。 |
+
+任何新 portal 元件必須先歸入此表。開啟 Sheet、Drawer 或 Dialog 時，背景的 dropdown／popover／tooltip 必須關閉；由 modal 觸發的浮層則掛在 active modal portal root，避免被 overlay 截斷。不得以 DOM 順序碰運氣。
+
 ## Shapes
 
 一般卡片、輸入與按鈕沿用 `--radius: 0.375rem`；派生的 `--radius-sm/md/lg/xl` 名稱保持不變。狀態 badge 可使用膠囊形，但資料卡、圖表卡與主要容器不得堆成過度柔軟的圓角卡片牆。
@@ -496,6 +641,31 @@ hexbin 六角只屬圖 G 的資料分箱，不得作為跨頁裝飾，不得用�
 | 54 | `toggle-group.tsx` | 沿用（本批次要） | 圖層／篩選可用；預估／實際不可只靠按下色。 |
 | 55 | `tooltip.tsx` | 沿用 | 補充縮寫／公式；精確金額與待確認原因不可 hover-only。 |
 
+### 互動元件完整狀態矩陣
+
+下列狀態適用於 Button、Input、Select、Checkbox 與表格列內編輯。狀態可組合，例如 `focus-visible + error`、`disabled + estimateLocked`；組合時不得移除可見 focus 或把缺值補成 0。
+
+| 狀態 | Button | Input | Select | Checkbox | 表格列內編輯 |
+| --- | --- | --- | --- | --- | --- |
+| default | 正常前景／背景與明確動詞；44px 或 48px hit area。 | `--input` 邊界、正常文字；placeholder 不得假裝資料。 | Trigger 顯示目前值或「請選擇」，保留展開圖示。 | 未選／已選皆有可見框與文字 Label。 | 顯示真實值與編輯入口；numeric cell 右對齊。 |
+| hover | 只在可 hover 裝置使用既有 elevate overlay；不可是唯一狀態 cue。 | 邊界加強但不冒充 focus。 | Trigger 表面加強，選項 hover 不取代 selected indicator。 | 框與 label 同步回饋。 | row 可用 `--elevate-1`，編輯按鈕保持可見名稱。 |
+| active | 按下回饋使用既有 pressed overlay；不得改數字或位移布局。 | pointer down 不留下永久狀態。 | Trigger／option 顯示 pressed，選定後回 default。 | 按下後 checked state 由實際值決定。 | 進入 edit mode 後顯示儲存／取消，不以 row hover 代替。 |
+| focus-visible | 2px `--ring`＋2px offset，文字仍可讀。 | 同上；error 同時存在時 ring 與錯誤訊息都保留。 | Trigger 與 option 各有鍵盤 focus。 | focus ring 包住至少 44×44px hit area。 | focus 落在實際 editor／action，不只高亮整列。 |
+| **disabled** | 使用原生 `disabled`；muted surface＋muted foreground＋正常可辨邊界，無 hover／active，顯示禁用原因。 | 保留已存在值，使用 disabled attribute、鎖定圖示／「預估已鎖定」說明；不得只降低 opacity。 | Radix `disabled`；保留選定值與鎖定原因，trigger 不展開。 | `disabled` 且保留 checked 真值；Label 顯示不可操作原因。 | `estimateLocked` 時所有 editor 與儲存動作 disabled，row 顯示 Lock＋「預估已鎖定」，但金額仍清楚可讀。 |
+| loading | Spinner 與動詞同時保留，`aria-busy="true"`，暫時 disabled 防重送。 | 有上次值就保留並 busy；無值才用近似 skeleton，絕不顯示 0。 | 保留目前選項並 busy；不可變更。 | 由 field/group 顯示 busy 並暫停切換，不以 unchecked 冒充載入。 | 儲存中保留原值與「儲存中」；只有首次載入且無資料才用 skeleton。 |
+| error | 動作失敗後恢復可操作；錯誤放 inline Alert／field message，非 destructive 動作不得永久變紅。 | `aria-invalid="true"`、destructive 邊界與具體訊息；保留使用者輸入。 | Trigger `aria-invalid`，錯誤訊息與可修正下一步常駐。 | group 顯示錯誤文字與 icon，不只紅框。 | row 內保留未送出值、欄位級錯誤及重試／取消；不得整列消失。 |
+| read-only | Button 沒有 read-only；若沒有動作，改用文字、Badge 或靜態值，不用 disabled button 假裝欄位。 | 使用 `readOnly`，可 focus、選取與複製，正常高對比並標「僅供查看」。 | 無 native read-only；改渲染 field-shaped 靜態值＋「僅供查看」，不可套 disabled dimming。 | 改渲染 checked／unchecked indicator＋文字「僅供查看」，不保留互動 role。 | 顯示靜態 formatted value 與 read-only badge，不渲染 editor；與鎖定 disabled 分開。 |
+
+`disabled` 與「待確認」不得共用同一視覺：
+
+| 比較 | disabled／鎖定 | 待確認／missing input |
+| --- | --- | --- |
+| 語意 | 已有規則或權限使它現在不能改，例如 `estimateLocked`。 | 必要資料不存在、尚未填寫或匯率缺失。 |
+| 值 | 保留並顯示現有真值；不能因 disabled 清成空白或 0。 | 沒有可顯示的 numeric value；必須寫「待確認」或「尚未填寫…」。 |
+| 操作 | control disabled；提供鎖定原因，若有權限才另給解鎖流程。 | 原則上仍可編輯／前往補填；若同時被鎖定，兩個狀態與原因都要明寫。 |
+| 視覺 | muted surface／foreground、Lock、文字「預估已鎖定」；不得只靠 opacity。 | accent/pending 語意、提示 icon、補填 CTA；不使用 disabled cursor。 |
+| 可及性 | 原生 `disabled`；只有必須可 focus 解釋時才用 `aria-disabled="true"` 並實際攔截事件。 | 以 `aria-describedby` 關聯 pending reason；除非另有 validation error，不標 `aria-invalid`。 |
+
 ### 新建業務 composite
 
 | Composite | 組合既有元件 | 為何 55 個裡沒有可直接使用者 |
@@ -550,6 +720,17 @@ hexbin 六角只屬圖 G 的資料分箱，不得作為跨頁裝飾，不得用�
 
 E–H 即使 loading、empty 或 error，卡片標題區仍保留完整「⚠️ 示意圖・非真實資料」。動效尊重 `prefers-reduced-motion`；載入後不得造成 KPI 群組大幅 layout shift。
 
+## 已知缺口與後續
+
+本節是明確登記的未完成項，不得在 G2 終審或 G4 派工中宣稱已完備。
+
+| 缺口 | G2 現況與不在本次補齊的理由 | 後續處理 |
+| --- | --- | --- |
+| opacity token | 現有 108 個變數沒有獨立 opacity scale；本次 disabled 以 muted surface、文字、邊界、Lock 與狀態文案區分，避免靠不受控透明度。現在硬加會形成第二套 production token。 | 下一次正式 token revision 先盤點既有 `disabled:`／`opacity-*` 用量，再決定是否納入既有命名體系；未拍板前不得散造 opacity CSS variables。 |
+| icon 規範 | 55 個 shadcn primitive 已含 icon slot，但尚未凍結 icon library、尺寸、stroke、對齊、方向性與 aria-label 契約；本次只要求狀態 icon 必須搭配文字。 | G4 前另做 icon inventory；需定義 16／20／24px 使用場景、stroke consistency、decorative `aria-hidden` 與 meaningful icon accessible name。 |
+| 完整 alias bridge | G2 已補 font fallback 與七個 derived border alias，但 exporter、Light／Night、`@theme inline`、`:root` semantic variables 與全部 108 token 的一對一機械 bridge 尚未建立。`DESIGN.md` 的 108 列矩陣仍是規格真相。 | G4 token migration 前產生完整 bridge／diff guard；在此之前匯出 CSS 只作比對輸入，不可整份覆蓋 `index.css`。 |
+| motion token | G2 只保留 `prefers-reduced-motion` 與「首屏 KPI 不延遲」紅線，未定 duration、easing、stagger、distance 或 timeline token。現在先定會越過排版／資料狀態驗收並與 G5 GSAP 重疊。 | 留待 G5，以 GSAP／animation review 結果定義 motion scale、reduced-motion fallback 與效能預算；G4 不得自行建立平行 motion token。 |
+
 ## Do's and Don'ts
 
 ### 六條顯示鐵律
@@ -596,3 +777,7 @@ E–H 即使 loading、empty 或 error，卡片標題區仍保留完整「⚠️
 - Bullet Chart 在 360px 保留預估刻度、實際填色、兩筆精確金額、差額與三態文案。
 - PublicCart 與 TrackOrder 的主要流程可只用 touch 與螢幕鍵盤完成；sticky CTA 不遮住錯誤、最後一欄或 safe area。
 - Empty／loading／error／ready-but-empty／pending input 逐頁驗收；E–H 每態仍保留示意角標。
+- 驗證 phone／tablet／desktop 的 `page-gutter`、`section-y`、`card-padding`，以及 KPI 組內 16px／組間 24px 的層級差異；成本 Bullet row 不低於 64px。
+- 以 `estimateLocked` 驗證 Button／Input／Select／Checkbox／表格列內編輯的 disabled；disabled 真值、Lock 與原因常駐，pending 仍顯示待確認與補填動作。
+- 抽查 JPY、TWD、負數、真正零值、null 與百分比；所有 numeric cell 實際套用 `tnum`，null 不得格式化為 0。
+- 逐一開啟 Dropdown、Popover、Tooltip、Sheet／Drawer、Dialog 與 Sonner，驗證 portal 層級符合 0–90 尺度且 modal 內浮層不被 overlay 截斷。
