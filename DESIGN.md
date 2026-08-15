@@ -37,6 +37,27 @@ colors:
   chart-3: "hsl(157 46% 35%)"
   chart-4: "hsl(218 54% 48%)"
   chart-5: "hsl(7 62% 46%)"
+  chart-sequential-profit-1: "hsl(207 28% 94%)"
+  chart-sequential-profit-2: "hsl(204 42% 85%)"
+  chart-sequential-profit-3: "hsl(203 49% 74%)"
+  chart-sequential-profit-4: "hsl(202 57% 61%)"
+  chart-sequential-profit-5: "hsl(201 65% 48%)"
+  chart-sequential-profit-6: "hsl(201 70% 34%)"
+  chart-sequential-profit-7: "hsl(202 72% 24%)"
+  chart-diverging-profit-negative-3: "hsl(7 62% 46%)"
+  chart-diverging-profit-negative-2: "hsl(10 52% 60%)"
+  chart-diverging-profit-negative-1: "hsl(16 38% 78%)"
+  chart-diverging-profit-neutral: "hsl(210 23% 94%)"
+  chart-diverging-profit-positive-1: "hsl(157 28% 78%)"
+  chart-diverging-profit-positive-2: "hsl(157 37% 56%)"
+  chart-diverging-profit-positive-3: "hsl(157 46% 35%)"
+  chart-missing: "hsl(212 18% 55%)"
+  chart-axis: "hsl(215 10% 42%)"
+  chart-gridline: "hsl(212 18% 85%)"
+  chart-contour: "hsl(216 27% 13%)"
+  chart-target-line: "hsl(32 88% 42%)"
+  chart-legend-foreground: "hsl(215 10% 42%)"
+  chart-legend-border: "hsl(212 18% 55%)"
 typography:
   sans:
     fontFamily: "Noto Sans TC"
@@ -165,6 +186,48 @@ components:
     backgroundColor: "{colors.chart-4}"
   chart-5-swatch:
     backgroundColor: "{colors.chart-5}"
+  chart-sequential-profit-1-swatch:
+    backgroundColor: "{colors.chart-sequential-profit-1}"
+  chart-sequential-profit-2-swatch:
+    backgroundColor: "{colors.chart-sequential-profit-2}"
+  chart-sequential-profit-3-swatch:
+    backgroundColor: "{colors.chart-sequential-profit-3}"
+  chart-sequential-profit-4-swatch:
+    backgroundColor: "{colors.chart-sequential-profit-4}"
+  chart-sequential-profit-5-swatch:
+    backgroundColor: "{colors.chart-sequential-profit-5}"
+  chart-sequential-profit-6-swatch:
+    backgroundColor: "{colors.chart-sequential-profit-6}"
+  chart-sequential-profit-7-swatch:
+    backgroundColor: "{colors.chart-sequential-profit-7}"
+  chart-diverging-profit-negative-3-swatch:
+    backgroundColor: "{colors.chart-diverging-profit-negative-3}"
+  chart-diverging-profit-negative-2-swatch:
+    backgroundColor: "{colors.chart-diverging-profit-negative-2}"
+  chart-diverging-profit-negative-1-swatch:
+    backgroundColor: "{colors.chart-diverging-profit-negative-1}"
+  chart-diverging-profit-neutral-swatch:
+    backgroundColor: "{colors.chart-diverging-profit-neutral}"
+  chart-diverging-profit-positive-1-swatch:
+    backgroundColor: "{colors.chart-diverging-profit-positive-1}"
+  chart-diverging-profit-positive-2-swatch:
+    backgroundColor: "{colors.chart-diverging-profit-positive-2}"
+  chart-diverging-profit-positive-3-swatch:
+    backgroundColor: "{colors.chart-diverging-profit-positive-3}"
+  chart-missing-swatch:
+    backgroundColor: "{colors.chart-missing}"
+  chart-axis-swatch:
+    backgroundColor: "{colors.chart-axis}"
+  chart-gridline-swatch:
+    backgroundColor: "{colors.chart-gridline}"
+  chart-contour-swatch:
+    backgroundColor: "{colors.chart-contour}"
+  chart-target-line-swatch:
+    backgroundColor: "{colors.chart-target-line}"
+  chart-legend-foreground-swatch:
+    backgroundColor: "{colors.chart-legend-foreground}"
+  chart-legend-border-swatch:
+    backgroundColor: "{colors.chart-legend-border}"
 ---
 
 # Pika V1 雙軌精修版設計系統
@@ -205,6 +268,52 @@ Light 使用近白主底、白色主卡與低彩度藍灰邊界；深夜版使�
 - 尚未載入、次要背景與空狀態：`--muted`。
 
 有利／不利不得只靠紅綠，預估／實際不得只靠色差。色彩必須與文字、方向、圖例、線型或位置至少再配一種編碼。A–D 為真實資料，禁止示意角標；E–H 每張卡都必須各自完整顯示一次「⚠️ 示意圖・非真實資料」，角標不可關閉。
+
+### 資料視覺化連續色階
+
+`--chart-1`～`--chart-5` 是分類色，只能區分類別或既定語意，禁止拿五個分類色圓點拼成連續高低。熱圖、等高線與具正負中心的差異資料改用下列專用 token。這 21 個 token 是 G2 新增的資料視覺化命名，獨立於下方「既有 108 個 CSS 變數」相容矩陣；因此該矩陣仍須精確維持 108 列。
+
+#### Sequential：低 → 高
+
+| 階 | Light | 深夜 | 使用契約 |
+| --- | --- | --- | --- |
+| `--chart-sequential-profit-1` | `207 28% 94%` | `217 19% 18%` | 數值域最低端；不是「待確認」。 |
+| `--chart-sequential-profit-2` | `204 42% 85%` | `213 23% 25%` | 第二階。 |
+| `--chart-sequential-profit-3` | `203 49% 74%` | `209 31% 32%` | 第三階。 |
+| `--chart-sequential-profit-4` | `202 57% 61%` | `205 41% 40%` | 中段數值。 |
+| `--chart-sequential-profit-5` | `201 65% 48%` | `201 50% 48%` | 第五階。 |
+| `--chart-sequential-profit-6` | `201 70% 34%` | `198 56% 55%` | 第六階。 |
+| `--chart-sequential-profit-7` | `202 72% 24%` | `195 62% 66%` | 數值域最高端。 |
+
+Light 由低到高採「亮 → 暗」，深夜版獨立採「暗 → 亮」，不可用濾鏡、透明度或反相把 Light 值臨時轉成深夜值。以 HSL 轉 sRGB 再轉 OKLab 驗證，Light 的感知亮度 `L` 為 `0.9531 → 0.3868`，深夜為 `0.2908 → 0.7760`，兩者皆嚴格單調。protan／deutan／tritan 模擬下，相鄰階最小 OKLab 距離仍為 `0.0646`；正式 G4 視覺回歸須保留此單調性，不得任意插值漂移。
+
+#### Diverging：不利 ← 商業中心 → 有利
+
+| 階 | Light | 深夜 | 使用契約 |
+| --- | --- | --- | --- |
+| `--chart-diverging-profit-negative-3` | `7 62% 46%` | `7 58% 63%` | 最大不利幅度。 |
+| `--chart-diverging-profit-negative-2` | `10 52% 60%` | `9 48% 53%` | 中度不利。 |
+| `--chart-diverging-profit-negative-1` | `16 38% 78%` | `13 33% 39%` | 輕度不利。 |
+| `--chart-diverging-profit-neutral` | `210 23% 94%` | `217 19% 18%` | 有商業意義的中心，不是資料範圍中點。 |
+| `--chart-diverging-profit-positive-1` | `157 28% 78%` | `157 28% 32%` | 輕度有利。 |
+| `--chart-diverging-profit-positive-2` | `157 37% 56%` | `157 36% 44%` | 中度有利。 |
+| `--chart-diverging-profit-positive-3` | `157 46% 35%` | `157 43% 55%` | 最大有利幅度。 |
+
+Diverging 中心只准取 `0`、薪資目標或另一個已在商業規則中定義的基準；禁止取資料最大值與最小值的算術中點。Light 以亮中心向兩端加深，深夜以暗中心向兩端增亮；三種色覺缺陷模擬下相鄰階最小 OKLab 距離為 `0.0692`。色弱模擬不是免除冗餘編碼的理由：每個負值／正值仍須顯示符號、金額與「不利／有利」文字。
+
+#### 支援角色
+
+| Token | Light | 深夜 | 使用契約 |
+| --- | --- | --- | --- |
+| `--chart-missing` | `212 18% 55%` | `215 18% 48%` | 只表示缺值；同時使用斜線紋理或虛線邊界與「待確認」文字。 |
+| `--chart-axis` | `215 10% 42%` | `214 12% 66%` | 軸、刻度與必要標籤。 |
+| `--chart-gridline` | `212 18% 85%` | `215 18% 24%` | 裝飾性格線，不承載狀態。 |
+| `--chart-contour` | `216 27% 13%` | `210 24% 93%` | 一般等高線與邊界。 |
+| `--chart-target-line` | `32 88% 42%` | `35 72% 61%` | 薪資目標或其他具名商業門檻。 |
+| `--chart-legend-foreground` | `215 10% 42%` | `214 12% 66%` | 圖例文字與數字。 |
+| `--chart-legend-border` | `212 18% 55%` | `215 18% 48%` | 圖例 swatch 的必要邊界。 |
+
+「待確認」不屬於數值域，禁止落入 sequential 第一階、diverging 中心或任何 `0` 值。色階圖例是圖表的一部分，不可省略：桌機顯示五個由實際 domain 計算的金額刻度，例如 `NT$ 5,000.00／10,000.00／15,000.00／20,000.00／25,000.00`，禁止只寫「低／中／高」；diverging 圖例須把商業中心的實際值與名稱標在中央。手機若不顯示完整熱圖，仍須在文字結論或表格標出 domain、中心與精確金額。
 
 ### 108 個既有 CSS 變數
 
@@ -393,7 +502,7 @@ Tailwind 元件可使用既有 `tabular-nums` utility；共用 `NumericValue`、
 
 ## Layout
 
-桌機與手機同等重要。平台是純瀏覽器 Web，不代表只做桌機。現況十二頁中有十一頁沒有任何 page-level breakpoint；本規格因此以 base 手機樣式為起點，再逐級增強。手機只改排列、揭露方式與局部捲動，不改四層順序、KPI 分組、圖表類型、資料語意或精確值。
+桌機與手機同等重要。平台是純瀏覽器 Web，不代表只做桌機。現況十二頁中有十一頁沒有任何 page-level breakpoint；本規格因此以 base 手機樣式為起點，再逐級增強。手機只改排列、揭露方式與明確定義的窄螢幕替代，不改四層順序、KPI 分組、資料語意或精確值。任何頁面、圖表、索引列、表格、drawer 或其他容器都不得產生橫向捲動。
 
 ### Spacing：4px primitive 與 semantic role
 
@@ -449,7 +558,7 @@ Spacing front matter 是兩層結構：`primitive` 只表達 4px 錨點級距，
 | `xl` | `1280–1535px` | 最大內容寬 1440px；維持 `lg` 資訊架構並放寬圖表與明細。 |
 | `2xl` | `≥ 1536px` | 只增加外側留白與 plot width，不增加 KPI 欄數，不把資訊稀釋成海報版。 |
 
-禁止頁面根容器水平捲動。只有明訂的圖表畫布、索引列或明細表容器可以局部橫向捲動；必須有可見提示與鍵盤替代操作。
+禁止任何層級的水平捲動；`overflow-x: auto|scroll`、以超寬 `min-width` 製造局部橫拉，以及把必要資訊藏在橫向 carousel 都不合格。過寬內容必須改用重排、直向圖型、單軸摘要、文字結論或一列一卡，不得只保證頁面根容器沒有溢出。
 
 ### Dashboard：13 KPI 的跨斷點排列
 
@@ -473,29 +582,29 @@ Spacing front matter 是兩層結構：`primitive` 只表達 4px 錨點級距，
 
 ### Dashboard：A–H 的跨斷點排列
 
-- base／`sm`：一次只顯示一張圖。頂部使用 A→H 固定順序的可橫滑索引列，預設 A；提供上一張／下一張與「第 n／8 張」文字，swipe 不是唯一導覽。切換只改可見面板，不改資料或圖型。
+- base／`sm`：一次只顯示一張圖。頂部使用 A→H 固定順序的 4×2 索引按鈕網格，預設 A；提供上一張／下一張與「第 n／8 張」文字，swipe 不是唯一導覽。索引與面板都必須在容器內完整換行，切換只改可見面板與其窄螢幕替代，不改資料語意。
 - `md`：A 全寬；B–D 使用 2 欄流式網格；E–H 仍可使用單面板索引，避免平板同時出現四個不可讀 plot。
 - `lg+`：A 全寬；B–D 三欄；E–F 兩欄；G–H 兩欄。明細表維持最後一層。
 
 | 圖 | 手機 plot 尺寸與降級 |
 | --- | --- |
-| A | 高 360px；九階內層最小寬 720px，僅 plot 局部橫滑；每站累積值常駐。 |
-| B | 高 320px；內層最小寬 560px，圖例與文字共同區分預估／實際。 |
-| C | 高 240px；兩條並列堆疊橫條在手機仍完整顯示，正常不橫滑。 |
+| A | 改為直向浮動瀑布：九階由上往下，名稱置左、累積金額置右、浮動增減段置中；每站標值常駐。仍保留浮動起點、逐段累積與小計／總計本質，只改方向。 |
+| B | 每個類別一列，列內以共用零基線呈現預估／實際雙條；完整文字與精確值換行，不設定畫布最小寬。 |
+| C | 高 240px；兩條並列堆疊橫條在手機仍完整顯示，所有區段按容器百分比縮放。 |
 | D | 高度 `max(320px, 項目數 × 44px + 96px)`；零軸固定可見，圖內不得垂直捲動。 |
 | E | 高度 `max(288px, 路線數 × 44px + 80px)`；長路線名最多兩行，條尾精確金額常駐。 |
-| F | 高 336px；內層最小寬 520px，局部橫滑；點的透明 hit area 至少 44px。 |
-| G | 高 360px；內層最小寬 520px，局部橫滑；X／Y 軸、色階與薪資目標等高線不可省略。 |
-| H | 高 320px；內層寬至少為每期 72px，超出局部橫滑；每期精確值可由 tap／focus 取得。 |
+| F | base／`sm` 不縮小氣泡散點：改成地區一列一卡，依平均貢獻毛利單軸排序，並列出件數、平均貢獻毛利與收入三個精確值；`md+` 才顯示完整 X／Y／size 氣泡散點。 |
+| G | base／`sm` 顯示「達標所需件數／平均售價」文字結論與情境表；`md` 仍用表格，`lg+` 才顯示完整 hexbin、五刻度金額色階圖例與薪資目標等高線。 |
+| H | base／`sm` 改為月份直向列表／單軸趨勢摘要，每期顯示精確值與方向；`md+` 才顯示完整點陣趨勢。 |
 
-上述尺寸是 plot area，不含標題、圖例、示意角標與狀態區。局部橫滑容器顯示「左右滑動查看完整圖表」，並保留鍵盤方向鍵與明細表替代。
+F／G／H 的手機替代是同一資料的可讀降級，不是另造資料或更換桌機 canonical 圖型。所有替代仍保留 E–H 完整示意角標、精確值、資料來源與明細入口。
 
 ### 表格與 Bullet Chart 的窄螢幕降級
 
 - `< md` 時，每個成本對帳 row 轉為垂直卡列：項目／類別與狀態 → 預估、實際兩筆精確金額 → 全寬 Bullet Chart → 差額與有利／不利／待確認 → 操作。來源順序與桌機表格一致，不隱藏欄位。
 - Bullet Chart 的預估是細刻度、實際是填色；手機不得以兩條普通 progress 取代。缺預估時不畫刻度或零值，顯示「尚未填寫預估〈項目〉金額」；缺實際時顯示「尚無實際〈項目〉金額」。
-- `md+` 恢復語意表格；項目欄可 sticky，金額右對齊。若欄數仍超過容器，只允許表格 wrapper 局部橫滑，首欄與欄頭保持可辨。
-- 手機明細表預設收合但保留標題、筆數與展開按鈕；展開後不得造成整頁水平捲動。
+- `md+` 可恢復語意表格；項目欄可 sticky，金額右對齊。欄位放不下時，次要欄位移入同列的 details 區或維持卡列，禁止設定超出容器的 `min-width`，也禁止 table wrapper 橫滑。
+- 手機明細表預設收合但保留標題、筆數與展開按鈕；展開後一列一卡，所有欄位在卡內垂直排列。
 
 ### Trips 路線與大區成本編輯器
 
@@ -751,6 +860,27 @@ E–H 即使 loading、empty 或 error，卡片標題區仍保留完整「⚠️
 5. 假值須一眼可辨為假，例如整數化、刻意極端；不得使用真實行程數字。
 6. 上線前必須移除 `mocks/` 與 `<PreviewChart>` 且 CI 全綠，否則不得上線。
 
+### Anti-AI-Slop：Do
+
+- 有本規格就只使用本規格定義的顏色、字體、圓角、間距、元件與圖表 token；禁止臨場發明新顏色。資料視覺化只能使用本文件新增的 sequential／diverging／supporting chart token。
+- 先用資訊層級、留白、對齊、表面層級與真實內容建立辨識度；品牌感必須能說明來源與用途，不能靠裝飾模板代替。
+- Icon 使用既有可信元件庫並提供可見名稱；產品照片使用真實商品媒體，並設計 loading、missing 與 error fallback。
+- 每一個 KPI、圖表、badge、illustration 或動效都必須回答它提供什麼資訊或操作價值；無法回答就刪除。
+- Huashu 在 G2 只貢獻本清單，`DESIGN.md` 仍是 L0 規格；不得啟用其風格輪盤或藉 style 名稱改 token。
+
+### Anti-AI-Slop：Don't
+
+- 禁止無品牌理由的紫色漸層，不得用「科技感」作為萬用理由。
+- 禁止用 emoji 當 icon；emoji 只可出現在使用者內容或明確要求的語意文本。
+- 禁止「圓角卡片＋左側 border accent」組合；狀態改用具名 badge、整體表面、文字、圖示或資料位置表達。
+- 禁止 AI 自繪 SVG 人物／場景，避免五官錯位、比例詭異與無來源的裝飾插圖。
+- 禁止 CSS 剪影、幾何符號或字母方塊冒充真實產品照片。
+- 禁止未經品牌調校的通用系統字體擔任標題字；只使用本規格的字體角色與字重層級。
+- 禁止 `#0D1117` 深藍底搭配通用青紫霓虹 glow；深夜模式只使用本規格 token，且不使用發光效果建立層級。
+- 禁止 data slop：無資訊價值的裝飾性數字、假統計、無來源百分比或只為填滿卡片的指標。
+- 禁止每個條列都配一個裝飾 icon；icon 只在改善辨識或操作時出現。
+- 禁止「PowerPoint 切換」式動效，包括整頁 opacity 淡入淡出、每區同款 fade-up 或用轉場掩蓋資訊重排。動效必須維持元素連續性並尊重 `prefers-reduced-motion`。
+
 ### 必須
 
 - 保持「待處理 → 13 KPI → A–H → 明細」順序，以及 2＋4＋3＋4 KPI 分組。
@@ -766,14 +896,14 @@ E–H 即使 loading、empty 或 error，卡片標題區仍保留完整「⚠️
 - 不得只靠紅綠、hover、動畫或視覺位置傳達必要資訊。
 - 不得把 A 改成點陣丘形、F 改成規則蜂窩、G 拆成雙軌。
 - 不得新增第二套 production token 名稱、另建 UI kit 或重刻已有 shadcn primitive。
-- 不得讓整頁水平捲動，或用 carousel 隱藏十三項 KPI。
+- 不得讓任何容器水平捲動，或用 carousel 隱藏十三項 KPI；`overflow-x: auto|scroll` 與超寬 `min-width` 均為驗收失敗。
 - 不得讓設計說明文字、真實資料外觀的假數字或 Stripe 品牌識別進入正式產品。
 
 ### G4 實作驗收清單
 
 - Light／深夜兩模式逐一做文字與 UI 元件對比檢查；特別驗證 accent solid 與 card-on-accent text 的正確 token 引用。
-- 以 360、390、640、768、1024、1280、1536px viewport 驗收十二頁，根頁面 `scrollWidth` 不得大於 viewport。
-- Dashboard 在 360px 仍可依四層順序取得全部 13 KPI、A–H 與明細；A、F、G、H 只在 plot wrapper 局部橫滑。
+- 以 360、390、640、768、1024、1280、1536px viewport 驗收十二頁；逐一檢查頁面及全部子容器，任何元素的 `scrollWidth` 都不得大於 `clientWidth`，且 production CSS 的 `overflow-x: auto|scroll` 宣告數必須為 0。
+- Dashboard 在 360px 仍可依四層順序取得全部 13 KPI、A–H 與明細；A 使用直向九階浮動瀑布，F／G／H 使用本規格的單軸／文字／表格替代，明細一列一卡。
 - Bullet Chart 在 360px 保留預估刻度、實際填色、兩筆精確金額、差額與三態文案。
 - PublicCart 與 TrackOrder 的主要流程可只用 touch 與螢幕鍵盤完成；sticky CTA 不遮住錯誤、最後一欄或 safe area。
 - Empty／loading／error／ready-but-empty／pending input 逐頁驗收；E–H 每態仍保留示意角標。
