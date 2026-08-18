@@ -336,6 +336,17 @@ J 類全收是因十種狀態彼此互斥，且每一種都提供 fail-closed �
 
 客人端 Light 使用近白主底、白色主卡與低彩度藍灰邊界；後台 Night 使用炭黑背景、暖灰文字、暖金主利益與橘紅異常。層級主要由亮度階、面狀分區、1px 邊界、共同基線與間距建立，不以厚重陰影、玻璃擬態、glow、發光邊框或滿頁漸層建立。後台 Night 禁用 `#0D1117` 與青紫霓虹。
 
+### 品牌色 override 契約
+
+`stores.brand_primary_color` 是既有店家設定功能，不得因套用客人端 Light scope 而靜默移除。V1 的 runtime 品牌色 override 僅適用於 `PublicCart` 與 `PublicOrder`；其餘 10 個凍結畫面維持本文件的 Light／Night 逐字值，不接受品牌色覆寫。
+
+- 品牌色輸入先經既有 `safeHex()` 驗證；非法值或缺值一律回退 `DEFAULT_BRAND_PRIMARY_COLOR`（`#F57572`）。
+- 唯一允許直接覆寫的 semantic token 是 `--primary`。唯一允許依 `--primary` 在 runtime 計算的 token 是 `--primary-foreground`；既有 `--color-primary` 與 `--color-primary-foreground` alias 只跟隨引用，不得另寫一份值或新增 token 名稱。
+- 不得連帶覆寫全域 `--background`、`--foreground`、card／popover／muted／accent／destructive、border／input／ring、sidebar、`--chart-*` 或本文件的 sequential／diverging／supporting chart token。語意色是資料真值：有利綠、不利紅、待確認橘與缺值樣式絕不得被店家品牌色取代、混色或降低辨識。
+- `--primary-foreground` 必須由 `lib/brandColor.ts` 的 `getLuminance()` 依 WCAG 相對亮度與對比公式決定：sRGB channel 先正規化並 linearize，再以 `0.2126R + 0.7152G + 0.0722B` 求相對亮度，最後以 `(Llighter + 0.05) / (Ldarker + 0.05)` 實測黑／白候選。採用對比較高且達 WCAG AA `4.5:1` 的候選；不得以 HSL lightness、未 linearize RGB、固定 `0.6` 門檻或肉眼判斷宣稱通過，也不得降低門檻。
+- 所有 filled primary control 必須使用 `--primary-foreground`，禁止硬寫 `text-white`。品牌色若作為一般大小的 `text-primary`，還必須對實際 Light background／card 實測 `4.5:1`；未達標時改用固定 `--foreground`，不得因 filled pair 合格就推定彩色文字也合格。
+- override 必須限制在上述兩頁的 Light scope，進入其他 Light、Night 或 legacy route 時立即清除；不得讓寫在 `document.documentElement` 的殘值跨頁繼承。G4 實作須保留店家設定功能，同時證明其他 token 的 computed value 未變。
+
 ### 資料與狀態語意
 
 - 預估／主要資料：`--primary`、`--chart-1`。
@@ -977,9 +988,14 @@ E–H 即使 loading、empty 或 error，卡片標題區仍保留完整「⚠️
 - 不得讓任何容器水平捲動，或用 carousel 隱藏十三項 KPI；`overflow-x: auto|scroll` 與超寬 `min-width` 均為驗收失敗。
 - 不得讓設計說明文字、真實資料外觀的假數字或 Stripe 品牌識別進入正式產品。
 
+### G4 前置閘門：Scan → Diagnose → Fix
+
+實作前完成 Scan 與 Diagnose。Scan 記錄 framework、styling method 與既有 design patterns；Diagnose 覆蓋九類稽核。每項適用 finding 必須包含證據位置、現況、對應 DESIGN.md 條款、Preserve／Retire／Modernise／N/A 處置、Fix Priority 與驗證方式。所有 finding 均已處置或具名延後後，才可進入 Fix。因 Skill 未定義 P0／P1，不再宣稱「Taste-Skill P0／P1 清空」。
+
 ### G4 實作驗收清單
 
 - 客人端 6 頁逐一驗證 Light scope、後台 6 頁逐一驗證 Night scope；確認沒有互套對方值，並特別驗證 primary／accent／destructive 實心面與 card 上語意文字的正確 token 引用。
+- PublicCart／PublicOrder 分別以合法深色、合法淺色、非法值與缺值驗證品牌色：`--primary-foreground` 對 `--primary` 皆須達 `4.5:1`，非法值／缺值回退 `#F57572`，filled primary control 不得殘留 `text-white`；切換至其餘 10 頁後 override 必須清除，且 `--background`、`--foreground`、border／ring／sidebar、全部 chart 與資料語意 token 的 computed value 不變。
 - 以 360、390、640、768、1024、1280、1536px viewport 驗收十二頁；逐一檢查頁面及全部子容器，任何元素的 `scrollWidth` 都不得大於 `clientWidth`，且 production CSS 的 `overflow-x: auto|scroll` 宣告數必須為 0。
 - Dashboard 在 360px 仍可依四層順序取得全部 13 KPI、A–H 與明細；A 使用直向九階浮動瀑布，F／G／H 使用本規格的單軸／文字／表格替代，明細一列一卡。
 - Bullet Chart 在 360px 保留預估刻度、實際填色、兩筆精確金額、差額與三態文案。
