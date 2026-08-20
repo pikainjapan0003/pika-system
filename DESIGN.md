@@ -253,20 +253,20 @@ G1 已於 2026-08-18 正式關閉。定案物是 `G2\merged-draft-tripestimate.h
 
 #### 主題範圍
 
-| 範圍 | V1 主題 | 使用契約 |
-| --- | --- | --- |
-| 後台 6 頁：Dashboard／Trips／TripEstimate／TripActual／TripComparison／MonthlyProfit | **深色為主** | 使用「夜班金線」：炭黑表面、暖金主利益與結算線、橘紅注意、具名異常；高密度但不得水平捲動。 |
-| 客人端 6 頁：PublicCart／PublicOrder／TrackLookup／TrackOrder／Cvs711Select／Cvs711Return | **淺色為主** | 保持台灣消費者購物情境的溫暖、親切與手機優先；不得套用深色後台值。 |
+| 範圍                                                                                      | V1 主題      | 使用契約                                                                                   |
+| ----------------------------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------ |
+| 後台 6 頁：Dashboard／Trips／TripEstimate／TripActual／TripComparison／MonthlyProfit      | **深色為主** | 使用「夜班金線」：炭黑表面、暖金主利益與結算線、橘紅注意、具名異常；高密度但不得水平捲動。 |
+| 客人端 6 頁：PublicCart／PublicOrder／TrackLookup／TrackOrder／Cvs711Select／Cvs711Return | **淺色為主** | 保持台灣消費者購物情境的溫暖、親切與手機優先；不得套用深色後台值。                         |
 
 V1 暫不為兩邊製作對方的主題變體。兩個範圍仍共用同一套 108 個 production token 名稱；selector／page scope 決定取值，不得再建立第二套命名。Front matter 是客人端 Light 的 lint／export 投影；完整的客人端 Light／後台 Night 取值以 Colors 的 108-token 矩陣為準。
 
 #### 字體混合策略
 
-| 用途 | 字體與數字特性 |
-| --- | --- |
-| 所有數字、金額、百分比 | `--app-font-sans`（Noto Sans TC 優先）＋ `tabular-nums lining-nums`；不得為了數字對齊改用中文等寬字。 |
-| 技術標註：kicker／表頭／單位／代碼 | `--app-font-mono` 的 Latin 等寬字；若內容含中文，中文字符回退至 `--app-font-sans`。 |
-| 中文標題與正文 | `--app-font-sans`，以字級、字重、行高與區塊面積建立層級。 |
+| 用途                               | 字體與數字特性                                                                                        |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| 所有數字、金額、百分比             | `--app-font-sans`（Noto Sans TC 優先）＋ `tabular-nums lining-nums`；不得為了數字對齊改用中文等寬字。 |
+| 技術標註：kicker／表頭／單位／代碼 | `--app-font-mono` 的 Latin 等寬字；若內容含中文，中文字符回退至 `--app-font-sans`。                   |
+| 中文標題與正文                     | `--app-font-sans`，以字級、字重、行高與區塊面積建立層級。                                             |
 
 不使用中文等寬字：Menlo 沒有 CJK 字形；Sarasa Mono TC 單一字重約 10–20 MB，不納入 V1。mono 只是一個技術標註角色，不是全場字體，也不得套在中文標題或正文。
 
@@ -274,37 +274,37 @@ V1 暫不為兩邊製作對方的主題變體。兩個範圍仍共用同一套 1
 
 每類只留一個主角；其他作法必須降為表中限定用途。不得把所有探索變體同時做成跨頁元件，否則會重新形成無主次的 AI 卡片集合。
 
-| 類 | 主角 | 限定用途 | 砍除／併入 |
-| --- | --- | --- | --- |
-| A 字體 | 上述混合策略 | — | 中文等寬字。 |
-| B 數字 | hero 大數字＋正負符號＋語意色 | 幣別同行、共同右基線是格式規則 | — |
-| C 語意色 | 淡底語意面＋`▲`／`▼`／`◆` 符號雙編碼 | 一像素語意框只用於中頻狀態 | — |
-| D 徽章 | 點號＋具名文字＋一像素框線 | 刻度式只作進度；條碼式只作識別碼 | **膠囊徽章砍除。** |
-| E 卡片與層級 | 色面區塊／三段色帶 | 全框網格只用於表格區 | — |
-| F 按鈕 | 幽靈按鈕為多數 | 膠囊只留每頁一個主要按鈕；危險動作面只用於刪除類 | — |
-| G 輸入 | 直角方框＋default／focus／error 三態；錯誤具名、停用霧面、可清除尾鍵 | `DualCurrencyCalibrationField`（G10 雙幣校準台）只用於 JPY 原幣／NT$ 換算輸入 | — |
-| H 表格 | 單線列＋分組標題 | 斑馬紋只在超過 10 列時使用 | — |
-| I 進度 | `GoalEnergyBar` 能量條，內含目標刻度與超標處理 | 累計堆疊只用於成本組成 | 里程碑／三態帶／目標線併為能量條細節，不獨立成元件。 |
-| J 空／載入／錯誤 | 十種互斥狀態全收，見下表 | 同一資料區同一時間只顯示一種主狀態 | J08 黑盒診斷帶仍為候選，本次不寫入。 |
-| K 動效 | 八種功能性動效，見下表 | 同一畫面同時最多 3 種；首屏 KPI 不得等待動效 | 淡入／上滑進場秀砍除；K10 對帳級聯收束仍為候選，本次不寫入。 |
-| L 密度 | 數字優先、標籤微級、組距大而行距小 | 同一內容提供鬆／中／緊三密度作驗證，production 依頁面任務選一種 | — |
+| 類               | 主角                                                                 | 限定用途                                                                      | 砍除／併入                                                   |
+| ---------------- | -------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| A 字體           | 上述混合策略                                                         | —                                                                             | 中文等寬字。                                                 |
+| B 數字           | hero 大數字＋正負符號＋語意色                                        | 幣別同行、共同右基線是格式規則                                                | —                                                            |
+| C 語意色         | 淡底語意面＋`▲`／`▼`／`◆` 符號雙編碼                                 | 一像素語意框只用於中頻狀態                                                    | —                                                            |
+| D 徽章           | 點號＋具名文字＋一像素框線                                           | 刻度式只作進度；條碼式只作識別碼                                              | **膠囊徽章砍除。**                                           |
+| E 卡片與層級     | 色面區塊／三段色帶                                                   | 全框網格只用於表格區                                                          | —                                                            |
+| F 按鈕           | 幽靈按鈕為多數                                                       | 膠囊只留每頁一個主要按鈕；危險動作面只用於刪除類                              | —                                                            |
+| G 輸入           | 直角方框＋default／focus／error 三態；錯誤具名、停用霧面、可清除尾鍵 | `DualCurrencyCalibrationField`（G10 雙幣校準台）只用於 JPY 原幣／NT$ 換算輸入 | —                                                            |
+| H 表格           | 單線列＋分組標題                                                     | 斑馬紋只在超過 10 列時使用                                                    | —                                                            |
+| I 進度           | `GoalEnergyBar` 能量條，內含目標刻度與超標處理                       | 累計堆疊只用於成本組成                                                        | 里程碑／三態帶／目標線併為能量條細節，不獨立成元件。         |
+| J 空／載入／錯誤 | 十種互斥狀態全收，見下表                                             | 同一資料區同一時間只顯示一種主狀態                                            | J08 黑盒診斷帶仍為候選，本次不寫入。                         |
+| K 動效           | 八種功能性動效，見下表                                               | 同一畫面同時最多 3 種；首屏 KPI 不得等待動效                                  | 淡入／上滑進場秀砍除；K10 對帳級聯收束仍為候選，本次不寫入。 |
+| L 密度           | 數字優先、標籤微級、組距大而行距小                                   | 同一內容提供鬆／中／緊三密度作驗證，production 依頁面任務選一種               | —                                                            |
 
 膠囊是整套直角工業語彙的唯一例外，只保留給每頁一個主要按鈕；狀態 badge 不得再使用膠囊。`G10` 雙幣校準台與 `K09` 總帳落印鎖定正式納入；`J08` 黑盒診斷帶與 `K10` 對帳級聯收束保持候選，不得先進 G3 inventory。
 
 #### J 類十種互斥狀態
 
-| # | 狀態樣式 | 使用契約 |
-| ---: | --- | --- |
-| J1 | 待確認內聯 | 缺值具名顯示「待確認」或「尚未填寫…」，不補 0、不隱藏欄位。 |
-| J2 | 骨架屏 | 以真實標籤與最終幾何佔位，不顯示假數字；必須有超時／錯誤兜底。 |
-| J3 | 內聯錯誤 | 就地顯示原因、保留輸入或上次成功資料，不以 modal 中斷一般操作。 |
-| J4 | 字排空態 | 以標題、原因與資料範圍說明空值，不使用 AI 插畫或 emoji。 |
-| J5 | 文字進度 | 顯示工作名稱與已知筆數／階段；沒有真百分比時不得製造假百分比。 |
-| J6 | 全頁錯誤＋重試 | 只在整頁不可用時使用；保留可理解原因與至少 44×44px 的重試動作。 |
-| J7 | 樂觀載入／內容保留 | 保留舊資料並具名標示「更新中」與上次更新時間，不閃白、不跳版。 |
-| J8 | 空態＋建議動作 | 只有存在明確下一步時才給一個 CTA，例如「新增第一筆」。 |
-| J9 | 角落提示 | 只補充非阻斷結果；內容與必要錯誤仍留在原位置，toast 不得成為唯一訊息。 |
-| J10 | 三態並排比較 | 只用於 Foundations／元件驗收，並排檢查 empty／loading／error；production 不同時展示三態。 |
+|   # | 狀態樣式           | 使用契約                                                                                  |
+| --: | ------------------ | ----------------------------------------------------------------------------------------- |
+|  J1 | 待確認內聯         | 缺值具名顯示「待確認」或「尚未填寫…」，不補 0、不隱藏欄位。                               |
+|  J2 | 骨架屏             | 以真實標籤與最終幾何佔位，不顯示假數字；必須有超時／錯誤兜底。                            |
+|  J3 | 內聯錯誤           | 就地顯示原因、保留輸入或上次成功資料，不以 modal 中斷一般操作。                           |
+|  J4 | 字排空態           | 以標題、原因與資料範圍說明空值，不使用 AI 插畫或 emoji。                                  |
+|  J5 | 文字進度           | 顯示工作名稱與已知筆數／階段；沒有真百分比時不得製造假百分比。                            |
+|  J6 | 全頁錯誤＋重試     | 只在整頁不可用時使用；保留可理解原因與至少 44×44px 的重試動作。                           |
+|  J7 | 樂觀載入／內容保留 | 保留舊資料並具名標示「更新中」與上次更新時間，不閃白、不跳版。                            |
+|  J8 | 空態＋建議動作     | 只有存在明確下一步時才給一個 CTA，例如「新增第一筆」。                                    |
+|  J9 | 角落提示           | 只補充非阻斷結果；內容與必要錯誤仍留在原位置，toast 不得成為唯一訊息。                    |
+| J10 | 三態並排比較       | 只用於 Foundations／元件驗收，並排檢查 empty／loading／error；production 不同時展示三態。 |
 
 J 類全收是因十種狀態彼此互斥，且每一種都提供 fail-closed 路徑；這不授權同一區塊同時堆疊多種狀態外觀。
 
@@ -312,16 +312,16 @@ J 類全收是因十種狀態彼此互斥，且每一種都提供 fail-closed �
 
 #### K 類八種功能性動效
 
-| # | 動效 | 使用契約 |
-| ---: | --- | --- |
-| K1 | 數字結算 450–600ms | 只在一次重要重算完成時使用；幣別、小數點與欄寬固定，首屏初值仍直接可讀。 |
-| K2 | hover 抬升 150ms | 只用於可互動元素且只在支援 hover 的裝置；不得讓資料卡牆全部漂浮。 |
-| K3 | 展開收合 220–300ms | 摘要列固定，明細從其下展開；不得放大整張卡片或造成水平位移。 |
-| K4 | 單次脈衝約 500ms | 只提示一次已完成的非關鍵狀態；不得自動循環或以 glow 表現。 |
-| K5 | 進度填入 600–700ms | 目標線固定、填色移動；只在重要更新使用，初次渲染不得延遲數字結論。 |
-| K6 | 交錯更新 | 僅對最多 5 列的真實更新順序使用；不得把全頁 fade-up 包裝成「交錯」。 |
-| K7 | 狀態轉換 | 保持元素位置連續，文字與符號一起更新；`LedgerLockStamp`（K09 總帳落印鎖定）是 `estimateLocked` 的專用實例。 |
-| K8 | 按下縮放 180ms | 只作用在實際按鈕／可點控制，文字與底板一起移動，觸控後完整播放一次。 |
+|   # | 動效               | 使用契約                                                                                                    |
+| --: | ------------------ | ----------------------------------------------------------------------------------------------------------- |
+|  K1 | 數字結算 450–600ms | 只在一次重要重算完成時使用；幣別、小數點與欄寬固定，首屏初值仍直接可讀。                                    |
+|  K2 | hover 抬升 150ms   | 只用於可互動元素且只在支援 hover 的裝置；不得讓資料卡牆全部漂浮。                                           |
+|  K3 | 展開收合 220–300ms | 摘要列固定，明細從其下展開；不得放大整張卡片或造成水平位移。                                                |
+|  K4 | 單次脈衝約 500ms   | 只提示一次已完成的非關鍵狀態；不得自動循環或以 glow 表現。                                                  |
+|  K5 | 進度填入 600–700ms | 目標線固定、填色移動；只在重要更新使用，初次渲染不得延遲數字結論。                                          |
+|  K6 | 交錯更新           | 僅對最多 5 列的真實更新順序使用；不得把全頁 fade-up 包裝成「交錯」。                                        |
+|  K7 | 狀態轉換           | 保持元素位置連續，文字與符號一起更新；`LedgerLockStamp`（K09 總帳落印鎖定）是 `estimateLocked` 的專用實例。 |
+|  K8 | 按下縮放 180ms     | 只作用在實際按鈕／可點控制，文字與底板一起移動，觸控後完整播放一次。                                        |
 
 所有動效尊重 `prefers-reduced-motion`，縮減後仍須保留結果文字、符號與狀態。任一畫面同時啟用的 K 類動效不得超過 3 種。
 
@@ -364,43 +364,43 @@ J 類全收是因十種狀態彼此互斥，且每一種都提供 fail-closed �
 
 #### Sequential：低 → 高
 
-| 階 | 客人端 Light | 後台 Night | 使用契約 |
-| --- | --- | --- | --- |
+| 階                            | 客人端 Light  | 後台 Night    | 使用契約                       |
+| ----------------------------- | ------------- | ------------- | ------------------------------ |
 | `--chart-sequential-profit-1` | `207 28% 94%` | `217 19% 18%` | 數值域最低端；不是「待確認」。 |
-| `--chart-sequential-profit-2` | `204 42% 85%` | `213 23% 25%` | 第二階。 |
-| `--chart-sequential-profit-3` | `203 49% 74%` | `209 31% 32%` | 第三階。 |
-| `--chart-sequential-profit-4` | `202 57% 61%` | `205 41% 40%` | 中段數值。 |
-| `--chart-sequential-profit-5` | `201 65% 48%` | `201 50% 48%` | 第五階。 |
-| `--chart-sequential-profit-6` | `201 70% 34%` | `198 56% 55%` | 第六階。 |
-| `--chart-sequential-profit-7` | `202 72% 24%` | `195 62% 66%` | 數值域最高端。 |
+| `--chart-sequential-profit-2` | `204 42% 85%` | `213 23% 25%` | 第二階。                       |
+| `--chart-sequential-profit-3` | `203 49% 74%` | `209 31% 32%` | 第三階。                       |
+| `--chart-sequential-profit-4` | `202 57% 61%` | `205 41% 40%` | 中段數值。                     |
+| `--chart-sequential-profit-5` | `201 65% 48%` | `201 50% 48%` | 第五階。                       |
+| `--chart-sequential-profit-6` | `201 70% 34%` | `198 56% 55%` | 第六階。                       |
+| `--chart-sequential-profit-7` | `202 72% 24%` | `195 62% 66%` | 數值域最高端。                 |
 
 客人端 Light 由低到高採「亮 → 暗」，後台 Night 獨立採「暗 → 亮」，不可用濾鏡、透明度或反相把 Light 值臨時轉成 Night 值。以 HSL 轉 sRGB 再轉 OKLab 驗證，Light 的感知亮度 `L` 為 `0.9531 → 0.3868`，Night 為 `0.2908 → 0.7760`，兩者皆嚴格單調。protan／deutan／tritan 模擬下，相鄰階最小 OKLab 距離仍為 `0.0646`；正式 G4 視覺回歸須保留此單調性，不得任意插值漂移。
 
 #### Diverging：不利 ← 商業中心 → 有利
 
-| 階 | 客人端 Light | 後台 Night | 使用契約 |
-| --- | --- | --- | --- |
-| `--chart-diverging-profit-negative-3` | `7 62% 46%` | `7 58% 63%` | 最大不利幅度。 |
-| `--chart-diverging-profit-negative-2` | `10 52% 60%` | `9 48% 53%` | 中度不利。 |
-| `--chart-diverging-profit-negative-1` | `16 38% 78%` | `13 33% 39%` | 輕度不利。 |
-| `--chart-diverging-profit-neutral` | `210 23% 94%` | `217 19% 18%` | 有商業意義的中心，不是資料範圍中點。 |
-| `--chart-diverging-profit-positive-1` | `157 28% 78%` | `157 28% 32%` | 輕度有利。 |
-| `--chart-diverging-profit-positive-2` | `157 37% 56%` | `157 36% 44%` | 中度有利。 |
-| `--chart-diverging-profit-positive-3` | `157 46% 35%` | `157 43% 55%` | 最大有利幅度。 |
+| 階                                    | 客人端 Light  | 後台 Night    | 使用契約                             |
+| ------------------------------------- | ------------- | ------------- | ------------------------------------ |
+| `--chart-diverging-profit-negative-3` | `7 62% 46%`   | `7 58% 63%`   | 最大不利幅度。                       |
+| `--chart-diverging-profit-negative-2` | `10 52% 60%`  | `9 48% 53%`   | 中度不利。                           |
+| `--chart-diverging-profit-negative-1` | `16 38% 78%`  | `13 33% 39%`  | 輕度不利。                           |
+| `--chart-diverging-profit-neutral`    | `210 23% 94%` | `217 19% 18%` | 有商業意義的中心，不是資料範圍中點。 |
+| `--chart-diverging-profit-positive-1` | `157 28% 78%` | `157 28% 32%` | 輕度有利。                           |
+| `--chart-diverging-profit-positive-2` | `157 37% 56%` | `157 36% 44%` | 中度有利。                           |
+| `--chart-diverging-profit-positive-3` | `157 46% 35%` | `157 43% 55%` | 最大有利幅度。                       |
 
 Diverging 中心只准取 `0`、薪資目標或另一個已在商業規則中定義的基準；禁止取資料最大值與最小值的算術中點。客人端 Light 以亮中心向兩端加深，後台 Night 以暗中心向兩端增亮；三種色覺缺陷模擬下相鄰階最小 OKLab 距離為 `0.0692`。色弱模擬不是免除冗餘編碼的理由：每個負值／正值仍須顯示符號、金額與「不利／有利」文字。
 
 #### 支援角色
 
-| Token | 客人端 Light | 後台 Night | 使用契約 |
-| --- | --- | --- | --- |
-| `--chart-missing` | `212 18% 55%` | `215 18% 48%` | 只表示缺值；同時使用斜線紋理或虛線邊界與「待確認」文字。 |
-| `--chart-axis` | `215 10% 42%` | `214 12% 66%` | 軸、刻度與必要標籤。 |
-| `--chart-gridline` | `212 18% 85%` | `215 18% 24%` | 裝飾性格線，不承載狀態。 |
-| `--chart-contour` | `216 27% 13%` | `210 24% 93%` | 一般等高線與邊界。 |
-| `--chart-target-line` | `32 88% 42%` | `35 72% 61%` | 薪資目標或其他具名商業門檻。 |
-| `--chart-legend-foreground` | `215 10% 42%` | `214 12% 66%` | 圖例文字與數字。 |
-| `--chart-legend-border` | `212 18% 55%` | `215 18% 48%` | 圖例 swatch 的必要邊界。 |
+| Token                       | 客人端 Light  | 後台 Night    | 使用契約                                                 |
+| --------------------------- | ------------- | ------------- | -------------------------------------------------------- |
+| `--chart-missing`           | `212 18% 55%` | `215 18% 48%` | 只表示缺值；同時使用斜線紋理或虛線邊界與「待確認」文字。 |
+| `--chart-axis`              | `215 10% 42%` | `214 12% 66%` | 軸、刻度與必要標籤。                                     |
+| `--chart-gridline`          | `212 18% 85%` | `215 18% 24%` | 裝飾性格線，不承載狀態。                                 |
+| `--chart-contour`           | `216 27% 13%` | `210 24% 93%` | 一般等高線與邊界。                                       |
+| `--chart-target-line`       | `32 88% 42%`  | `35 72% 61%`  | 薪資目標或其他具名商業門檻。                             |
+| `--chart-legend-foreground` | `215 10% 42%` | `214 12% 66%` | 圖例文字與數字。                                         |
+| `--chart-legend-border`     | `212 18% 55%` | `215 18% 48%` | 圖例 swatch 的必要邊界。                                 |
 
 「待確認」不屬於數值域，禁止落入 sequential 第一階、diverging 中心或任何 `0` 值。色階圖例是圖表的一部分，不可省略：桌機顯示五個由實際 domain 計算的金額刻度，例如 `NT$ 5,000.00／10,000.00／15,000.00／20,000.00／25,000.00`，禁止只寫「低／中／高」；diverging 圖例須把商業中心的實際值與名稱標在中央。手機若不顯示完整熱圖，仍須在文字結論或表格標出 domain、中心與精確金額。
 
@@ -408,128 +408,128 @@ Diverging 中心只准取 `0`、薪資目標或另一個已在商業規則中定
 
 以下名稱是 `pika-v1-phase23/artifacts/shop-app/src/index.css` 的 108 個唯一變數；不得新增第二套 production token 名稱。Front matter 只是 `@google/design.md` 可 export 的客人端 Light 投影，這張矩陣才是客人端 Light／後台 Night 的完整規格。後台 Night 的 34 個語意取值逐字來自 `G2\night-ledger-final-token-overrides.json`；其 scope 是 `existing dark-theme or page scope only`，不得以這些深色值全域覆蓋客人端 Light。別名、字型、圓角、陰影與其他 primitive 沿用既有名稱與引用。
 
-| Token | 客人端 Light | 後台 Night |
-| --- | --- | --- |
-| `--color-background` | `hsl(var(--background))` | `hsl(var(--background))` |
-| `--color-foreground` | `hsl(var(--foreground))` | `hsl(var(--foreground))` |
-| `--color-border` | `hsl(var(--border))` | `hsl(var(--border))` |
-| `--color-input` | `hsl(var(--input))` | `hsl(var(--input))` |
-| `--color-ring` | `hsl(var(--ring))` | `hsl(var(--ring))` |
-| `--color-card` | `hsl(var(--card))` | `hsl(var(--card))` |
-| `--color-card-foreground` | `hsl(var(--card-foreground))` | `hsl(var(--card-foreground))` |
-| `--color-card-border` | `hsl(var(--card-border))` | `hsl(var(--card-border))` |
-| `--color-popover` | `hsl(var(--popover))` | `hsl(var(--popover))` |
-| `--color-popover-foreground` | `hsl(var(--popover-foreground))` | `hsl(var(--popover-foreground))` |
-| `--color-popover-border` | `hsl(var(--popover-border))` | `hsl(var(--popover-border))` |
-| `--color-primary` | `hsl(var(--primary))` | `hsl(var(--primary))` |
-| `--color-primary-foreground` | `hsl(var(--primary-foreground))` | `hsl(var(--primary-foreground))` |
-| `--color-primary-border` | `var(--primary-border)` | `var(--primary-border)` |
-| `--color-secondary` | `hsl(var(--secondary))` | `hsl(var(--secondary))` |
-| `--color-secondary-foreground` | `hsl(var(--secondary-foreground))` | `hsl(var(--secondary-foreground))` |
-| `--color-secondary-border` | `var(--secondary-border)` | `var(--secondary-border)` |
-| `--color-muted` | `hsl(var(--muted))` | `hsl(var(--muted))` |
-| `--color-muted-foreground` | `hsl(var(--muted-foreground))` | `hsl(var(--muted-foreground))` |
-| `--color-muted-border` | `var(--muted-border)` | `var(--muted-border)` |
-| `--color-accent` | `hsl(var(--accent))` | `hsl(var(--accent))` |
-| `--color-accent-foreground` | `hsl(var(--accent-foreground))` | `hsl(var(--accent-foreground))` |
-| `--color-accent-border` | `var(--accent-border)` | `var(--accent-border)` |
-| `--color-destructive` | `hsl(var(--destructive))` | `hsl(var(--destructive))` |
-| `--color-destructive-foreground` | `hsl(var(--destructive-foreground))` | `hsl(var(--destructive-foreground))` |
-| `--color-destructive-border` | `var(--destructive-border)` | `var(--destructive-border)` |
-| `--color-chart-1` | `hsl(var(--chart-1))` | `hsl(var(--chart-1))` |
-| `--color-chart-2` | `hsl(var(--chart-2))` | `hsl(var(--chart-2))` |
-| `--color-chart-3` | `hsl(var(--chart-3))` | `hsl(var(--chart-3))` |
-| `--color-chart-4` | `hsl(var(--chart-4))` | `hsl(var(--chart-4))` |
-| `--color-chart-5` | `hsl(var(--chart-5))` | `hsl(var(--chart-5))` |
-| `--color-sidebar` | `hsl(var(--sidebar))` | `hsl(var(--sidebar))` |
-| `--color-sidebar-foreground` | `hsl(var(--sidebar-foreground))` | `hsl(var(--sidebar-foreground))` |
-| `--color-sidebar-border` | `hsl(var(--sidebar-border))` | `hsl(var(--sidebar-border))` |
-| `--color-sidebar-primary` | `hsl(var(--sidebar-primary))` | `hsl(var(--sidebar-primary))` |
-| `--color-sidebar-primary-foreground` | `hsl(var(--sidebar-primary-foreground))` | `hsl(var(--sidebar-primary-foreground))` |
-| `--color-sidebar-primary-border` | `var(--sidebar-primary-border)` | `var(--sidebar-primary-border)` |
-| `--color-sidebar-accent` | `hsl(var(--sidebar-accent))` | `hsl(var(--sidebar-accent))` |
-| `--color-sidebar-accent-foreground` | `hsl(var(--sidebar-accent-foreground))` | `hsl(var(--sidebar-accent-foreground))` |
-| `--color-sidebar-accent-border` | `var(--sidebar-accent-border)` | `var(--sidebar-accent-border)` |
-| `--color-sidebar-ring` | `hsl(var(--sidebar-ring))` | `hsl(var(--sidebar-ring))` |
-| `--font-sans` | `var(--app-font-sans)` | `var(--app-font-sans)` |
-| `--font-serif` | `var(--app-font-serif)` | `var(--app-font-serif)` |
-| `--font-mono` | `var(--app-font-mono)` | `var(--app-font-mono)` |
-| `--radius-sm` | `calc(var(--radius) - 4px)` | `calc(var(--radius) - 4px)` |
-| `--radius-md` | `calc(var(--radius) - 2px)` | `calc(var(--radius) - 2px)` |
-| `--radius-lg` | `var(--radius)` | `var(--radius)` |
-| `--radius-xl` | `calc(var(--radius) + 4px)` | `calc(var(--radius) + 4px)` |
-| `--button-outline` | `rgba(0, 0, 0, 0.1)` | `rgba(0, 0, 0, 0.1)` |
-| `--badge-outline` | `rgba(0, 0, 0, 0.05)` | `rgba(0, 0, 0, 0.05)` |
-| `--opaque-button-border-intensity` | `-8` | `-8` |
-| `--elevate-1` | `rgba(0, 0, 0, 0.03)` | `rgba(0, 0, 0, 0.03)` |
-| `--elevate-2` | `rgba(0, 0, 0, 0.08)` | `rgba(0, 0, 0, 0.08)` |
-| `--background` | `40 25% 98%` | `52 5% 8%` |
-| `--foreground` | `216 27% 13%` | `43 23% 90%` |
-| `--border` | `212 18% 85%` | `45 8% 34%` |
-| `--input` | `212 18% 55%` | `45 8% 34%` |
-| `--ring` | `201 70% 34%` | `39 67% 60%` |
-| `--card` | `0 0% 100%` | `50 5% 12%` |
-| `--card-foreground` | `216 27% 13%` | `43 23% 90%` |
-| `--card-border` | `212 18% 85%` | `45 8% 34%` |
-| `--popover` | `0 0% 100%` | `50 5% 12%` |
-| `--popover-foreground` | `216 27% 13%` | `43 23% 90%` |
-| `--popover-border` | `212 18% 85%` | `45 8% 34%` |
-| `--primary` | `201 70% 34%` | `39 67% 60%` |
-| `--primary-foreground` | `0 0% 100%` | `52 5% 8%` |
-| `--secondary` | `207 28% 94%` | `48 6% 18%` |
-| `--secondary-foreground` | `216 27% 16%` | `43 23% 90%` |
-| `--muted` | `210 23% 94%` | `48 6% 18%` |
-| `--muted-foreground` | `215 10% 42%` | `43 9% 64%` |
-| `--accent` | `32 88% 42%` | `21 68% 55%` |
-| `--accent-foreground` | `216 27% 13%` | `52 5% 8%` |
-| `--destructive` | `7 62% 46%` | `5 61% 61%` |
-| `--destructive-foreground` | `0 0% 100%` | `52 5% 8%` |
-| `--sidebar` | `208 30% 95%` | `52 5% 8%` |
-| `--sidebar-foreground` | `216 27% 13%` | `43 23% 90%` |
-| `--sidebar-border` | `212 18% 84%` | `45 8% 34%` |
-| `--sidebar-primary` | `201 70% 34%` | `39 67% 60%` |
-| `--sidebar-primary-foreground` | `0 0% 100%` | `52 5% 8%` |
-| `--sidebar-accent` | `207 28% 89%` | `48 6% 18%` |
-| `--sidebar-accent-foreground` | `216 27% 13%` | `43 23% 90%` |
-| `--sidebar-ring` | `201 70% 34%` | `39 67% 60%` |
-| `--chart-1` | `201 70% 34%` | `39 67% 60%` |
-| `--chart-2` | `32 88% 42%` | `21 68% 55%` |
-| `--chart-3` | `157 46% 35%` | `105 24% 56%` |
-| `--chart-4` | `218 54% 48%` | `43 9% 64%` |
-| `--chart-5` | `7 62% 46%` | `5 61% 61%` |
-| `--app-font-sans` | `"Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif` | same as Light |
-| `--app-font-serif` | `Georgia, serif` | same as Light |
-| `--app-font-mono` | `Menlo, Consolas, monospace` | same as Light；只用於 Latin 技術標註 |
-| `--radius` | `0.375rem` | `0.375rem` |
-| `--shadow-2xs` | `0 1px 2px 0 rgba(0, 0, 0, 0.05)` | same as Light |
-| `--shadow-xs` | `0 1px 3px 0 rgba(0, 0, 0, 0.07)` | same as Light |
-| `--shadow-sm` | `0 2px 4px rgba(0,0,0,.06), 0 1px 2px -1px rgba(0,0,0,.04)` | same as Light |
-| `--shadow` | `0 4px 6px rgba(0,0,0,.07), 0 2px 4px -2px rgba(0,0,0,.05)` | same as Light |
-| `--shadow-md` | `0 6px 10px rgba(0,0,0,.08), 0 2px 4px -2px rgba(0,0,0,.06)` | same as Light |
-| `--shadow-lg` | `0 10px 15px rgba(0,0,0,.08), 0 4px 6px -2px rgba(0,0,0,.05)` | same as Light |
-| `--shadow-xl` | `0 20px 25px -5px rgba(0,0,0,.1), 0 8px 10px -6px rgba(0,0,0,.05)` | same as Light |
-| `--shadow-2xl` | `0 25px 50px -12px rgba(0, 0, 0, 0.15)` | same as Light |
-| `--tracking-normal` | `0em` | `0em` |
-| `--spacing` | `0.25rem` | `0.25rem` |
-| `--primary-border` | relative HSL from `--primary` and border intensity | same reference |
-| `--secondary-border` | relative HSL from `--secondary` and border intensity | same reference |
-| `--muted-border` | relative HSL from `--muted` and border intensity | same reference |
-| `--accent-border` | relative HSL from `--accent` and border intensity | same reference |
-| `--destructive-border` | relative HSL from `--destructive` and border intensity | same reference |
-| `--sidebar-primary-border` | relative HSL from `--sidebar-primary` and border intensity | same reference |
-| `--sidebar-accent-border` | relative HSL from `--sidebar-accent` and border intensity | same reference |
+| Token                                | 客人端 Light                                                       | 後台 Night                               |
+| ------------------------------------ | ------------------------------------------------------------------ | ---------------------------------------- |
+| `--color-background`                 | `hsl(var(--background))`                                           | `hsl(var(--background))`                 |
+| `--color-foreground`                 | `hsl(var(--foreground))`                                           | `hsl(var(--foreground))`                 |
+| `--color-border`                     | `hsl(var(--border))`                                               | `hsl(var(--border))`                     |
+| `--color-input`                      | `hsl(var(--input))`                                                | `hsl(var(--input))`                      |
+| `--color-ring`                       | `hsl(var(--ring))`                                                 | `hsl(var(--ring))`                       |
+| `--color-card`                       | `hsl(var(--card))`                                                 | `hsl(var(--card))`                       |
+| `--color-card-foreground`            | `hsl(var(--card-foreground))`                                      | `hsl(var(--card-foreground))`            |
+| `--color-card-border`                | `hsl(var(--card-border))`                                          | `hsl(var(--card-border))`                |
+| `--color-popover`                    | `hsl(var(--popover))`                                              | `hsl(var(--popover))`                    |
+| `--color-popover-foreground`         | `hsl(var(--popover-foreground))`                                   | `hsl(var(--popover-foreground))`         |
+| `--color-popover-border`             | `hsl(var(--popover-border))`                                       | `hsl(var(--popover-border))`             |
+| `--color-primary`                    | `hsl(var(--primary))`                                              | `hsl(var(--primary))`                    |
+| `--color-primary-foreground`         | `hsl(var(--primary-foreground))`                                   | `hsl(var(--primary-foreground))`         |
+| `--color-primary-border`             | `var(--primary-border)`                                            | `var(--primary-border)`                  |
+| `--color-secondary`                  | `hsl(var(--secondary))`                                            | `hsl(var(--secondary))`                  |
+| `--color-secondary-foreground`       | `hsl(var(--secondary-foreground))`                                 | `hsl(var(--secondary-foreground))`       |
+| `--color-secondary-border`           | `var(--secondary-border)`                                          | `var(--secondary-border)`                |
+| `--color-muted`                      | `hsl(var(--muted))`                                                | `hsl(var(--muted))`                      |
+| `--color-muted-foreground`           | `hsl(var(--muted-foreground))`                                     | `hsl(var(--muted-foreground))`           |
+| `--color-muted-border`               | `var(--muted-border)`                                              | `var(--muted-border)`                    |
+| `--color-accent`                     | `hsl(var(--accent))`                                               | `hsl(var(--accent))`                     |
+| `--color-accent-foreground`          | `hsl(var(--accent-foreground))`                                    | `hsl(var(--accent-foreground))`          |
+| `--color-accent-border`              | `var(--accent-border)`                                             | `var(--accent-border)`                   |
+| `--color-destructive`                | `hsl(var(--destructive))`                                          | `hsl(var(--destructive))`                |
+| `--color-destructive-foreground`     | `hsl(var(--destructive-foreground))`                               | `hsl(var(--destructive-foreground))`     |
+| `--color-destructive-border`         | `var(--destructive-border)`                                        | `var(--destructive-border)`              |
+| `--color-chart-1`                    | `hsl(var(--chart-1))`                                              | `hsl(var(--chart-1))`                    |
+| `--color-chart-2`                    | `hsl(var(--chart-2))`                                              | `hsl(var(--chart-2))`                    |
+| `--color-chart-3`                    | `hsl(var(--chart-3))`                                              | `hsl(var(--chart-3))`                    |
+| `--color-chart-4`                    | `hsl(var(--chart-4))`                                              | `hsl(var(--chart-4))`                    |
+| `--color-chart-5`                    | `hsl(var(--chart-5))`                                              | `hsl(var(--chart-5))`                    |
+| `--color-sidebar`                    | `hsl(var(--sidebar))`                                              | `hsl(var(--sidebar))`                    |
+| `--color-sidebar-foreground`         | `hsl(var(--sidebar-foreground))`                                   | `hsl(var(--sidebar-foreground))`         |
+| `--color-sidebar-border`             | `hsl(var(--sidebar-border))`                                       | `hsl(var(--sidebar-border))`             |
+| `--color-sidebar-primary`            | `hsl(var(--sidebar-primary))`                                      | `hsl(var(--sidebar-primary))`            |
+| `--color-sidebar-primary-foreground` | `hsl(var(--sidebar-primary-foreground))`                           | `hsl(var(--sidebar-primary-foreground))` |
+| `--color-sidebar-primary-border`     | `var(--sidebar-primary-border)`                                    | `var(--sidebar-primary-border)`          |
+| `--color-sidebar-accent`             | `hsl(var(--sidebar-accent))`                                       | `hsl(var(--sidebar-accent))`             |
+| `--color-sidebar-accent-foreground`  | `hsl(var(--sidebar-accent-foreground))`                            | `hsl(var(--sidebar-accent-foreground))`  |
+| `--color-sidebar-accent-border`      | `var(--sidebar-accent-border)`                                     | `var(--sidebar-accent-border)`           |
+| `--color-sidebar-ring`               | `hsl(var(--sidebar-ring))`                                         | `hsl(var(--sidebar-ring))`               |
+| `--font-sans`                        | `var(--app-font-sans)`                                             | `var(--app-font-sans)`                   |
+| `--font-serif`                       | `var(--app-font-serif)`                                            | `var(--app-font-serif)`                  |
+| `--font-mono`                        | `var(--app-font-mono)`                                             | `var(--app-font-mono)`                   |
+| `--radius-sm`                        | `calc(var(--radius) - 4px)`                                        | `calc(var(--radius) - 4px)`              |
+| `--radius-md`                        | `calc(var(--radius) - 2px)`                                        | `calc(var(--radius) - 2px)`              |
+| `--radius-lg`                        | `var(--radius)`                                                    | `var(--radius)`                          |
+| `--radius-xl`                        | `calc(var(--radius) + 4px)`                                        | `calc(var(--radius) + 4px)`              |
+| `--button-outline`                   | `rgba(0, 0, 0, 0.1)`                                               | `rgba(0, 0, 0, 0.1)`                     |
+| `--badge-outline`                    | `rgba(0, 0, 0, 0.05)`                                              | `rgba(0, 0, 0, 0.05)`                    |
+| `--opaque-button-border-intensity`   | `-8`                                                               | `-8`                                     |
+| `--elevate-1`                        | `rgba(0, 0, 0, 0.03)`                                              | `rgba(0, 0, 0, 0.03)`                    |
+| `--elevate-2`                        | `rgba(0, 0, 0, 0.08)`                                              | `rgba(0, 0, 0, 0.08)`                    |
+| `--background`                       | `40 25% 98%`                                                       | `52 5% 8%`                               |
+| `--foreground`                       | `216 27% 13%`                                                      | `43 23% 90%`                             |
+| `--border`                           | `212 18% 85%`                                                      | `45 8% 34%`                              |
+| `--input`                            | `212 18% 55%`                                                      | `45 8% 34%`                              |
+| `--ring`                             | `201 70% 34%`                                                      | `39 67% 60%`                             |
+| `--card`                             | `0 0% 100%`                                                        | `50 5% 12%`                              |
+| `--card-foreground`                  | `216 27% 13%`                                                      | `43 23% 90%`                             |
+| `--card-border`                      | `212 18% 85%`                                                      | `45 8% 34%`                              |
+| `--popover`                          | `0 0% 100%`                                                        | `50 5% 12%`                              |
+| `--popover-foreground`               | `216 27% 13%`                                                      | `43 23% 90%`                             |
+| `--popover-border`                   | `212 18% 85%`                                                      | `45 8% 34%`                              |
+| `--primary`                          | `201 70% 34%`                                                      | `39 67% 60%`                             |
+| `--primary-foreground`               | `0 0% 100%`                                                        | `52 5% 8%`                               |
+| `--secondary`                        | `207 28% 94%`                                                      | `48 6% 18%`                              |
+| `--secondary-foreground`             | `216 27% 16%`                                                      | `43 23% 90%`                             |
+| `--muted`                            | `210 23% 94%`                                                      | `48 6% 18%`                              |
+| `--muted-foreground`                 | `215 10% 42%`                                                      | `43 9% 64%`                              |
+| `--accent`                           | `32 88% 42%`                                                       | `21 68% 55%`                             |
+| `--accent-foreground`                | `216 27% 13%`                                                      | `52 5% 8%`                               |
+| `--destructive`                      | `7 62% 46%`                                                        | `5 61% 61%`                              |
+| `--destructive-foreground`           | `0 0% 100%`                                                        | `52 5% 8%`                               |
+| `--sidebar`                          | `208 30% 95%`                                                      | `52 5% 8%`                               |
+| `--sidebar-foreground`               | `216 27% 13%`                                                      | `43 23% 90%`                             |
+| `--sidebar-border`                   | `212 18% 84%`                                                      | `45 8% 34%`                              |
+| `--sidebar-primary`                  | `201 70% 34%`                                                      | `39 67% 60%`                             |
+| `--sidebar-primary-foreground`       | `0 0% 100%`                                                        | `52 5% 8%`                               |
+| `--sidebar-accent`                   | `207 28% 89%`                                                      | `48 6% 18%`                              |
+| `--sidebar-accent-foreground`        | `216 27% 13%`                                                      | `43 23% 90%`                             |
+| `--sidebar-ring`                     | `201 70% 34%`                                                      | `39 67% 60%`                             |
+| `--chart-1`                          | `201 70% 34%`                                                      | `39 67% 60%`                             |
+| `--chart-2`                          | `32 88% 42%`                                                       | `21 68% 55%`                             |
+| `--chart-3`                          | `157 46% 35%`                                                      | `105 24% 56%`                            |
+| `--chart-4`                          | `218 54% 48%`                                                      | `43 9% 64%`                              |
+| `--chart-5`                          | `7 62% 46%`                                                        | `5 61% 61%`                              |
+| `--app-font-sans`                    | `"Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif`  | same as Light                            |
+| `--app-font-serif`                   | `Georgia, serif`                                                   | same as Light                            |
+| `--app-font-mono`                    | `Menlo, Consolas, monospace`                                       | same as Light；只用於 Latin 技術標註     |
+| `--radius`                           | `0.375rem`                                                         | `0.375rem`                               |
+| `--shadow-2xs`                       | `0 1px 2px 0 rgba(0, 0, 0, 0.05)`                                  | same as Light                            |
+| `--shadow-xs`                        | `0 1px 3px 0 rgba(0, 0, 0, 0.07)`                                  | same as Light                            |
+| `--shadow-sm`                        | `0 2px 4px rgba(0,0,0,.06), 0 1px 2px -1px rgba(0,0,0,.04)`        | same as Light                            |
+| `--shadow`                           | `0 4px 6px rgba(0,0,0,.07), 0 2px 4px -2px rgba(0,0,0,.05)`        | same as Light                            |
+| `--shadow-md`                        | `0 6px 10px rgba(0,0,0,.08), 0 2px 4px -2px rgba(0,0,0,.06)`       | same as Light                            |
+| `--shadow-lg`                        | `0 10px 15px rgba(0,0,0,.08), 0 4px 6px -2px rgba(0,0,0,.05)`      | same as Light                            |
+| `--shadow-xl`                        | `0 20px 25px -5px rgba(0,0,0,.1), 0 8px 10px -6px rgba(0,0,0,.05)` | same as Light                            |
+| `--shadow-2xl`                       | `0 25px 50px -12px rgba(0, 0, 0, 0.15)`                            | same as Light                            |
+| `--tracking-normal`                  | `0em`                                                              | `0em`                                    |
+| `--spacing`                          | `0.25rem`                                                          | `0.25rem`                                |
+| `--primary-border`                   | relative HSL from `--primary` and border intensity                 | same reference                           |
+| `--secondary-border`                 | relative HSL from `--secondary` and border intensity               | same reference                           |
+| `--muted-border`                     | relative HSL from `--muted` and border intensity                   | same reference                           |
+| `--accent-border`                    | relative HSL from `--accent` and border intensity                  | same reference                           |
+| `--destructive-border`               | relative HSL from `--destructive` and border intensity             | same reference                           |
+| `--sidebar-primary-border`           | relative HSL from `--sidebar-primary` and border intensity         | same reference                           |
+| `--sidebar-accent-border`            | relative HSL from `--sidebar-accent` and border intensity          | same reference                           |
 
 ### 對比與引用契約
 
 後台 Night 的對比基準以夜班金線覆寫值重新計算；不得沿用舊深藍灰主題的數字或結論。
 
-| Pair | 對比 | 使用契約 |
-| --- | ---: | --- |
-| `--foreground`／`--background` | `14.9149:1` | 一般正文與頁面底。 |
-| `--primary`／`--primary-foreground` | `8.8903:1` | 暖金實心主按鈕、主利益與結算重點。 |
-| `--accent`／`--accent-foreground` | `5.7323:1` | 橘色實心注意面；不是一般主操作色。 |
-| `--destructive`／`--destructive-foreground` | `5.3106:1` | 錯誤／異常實心面，仍須有文字與符號雙編碼。 |
-| `--muted-foreground`／`--card` | `6.8058:1` | 次要但必要的標註、時間與單位。 |
+| Pair                                        |        對比 | 使用契約                                   |
+| ------------------------------------------- | ----------: | ------------------------------------------ |
+| `--foreground`／`--background`              | `14.9149:1` | 一般正文與頁面底。                         |
+| `--primary`／`--primary-foreground`         |  `8.8903:1` | 暖金實心主按鈕、主利益與結算重點。         |
+| `--accent`／`--accent-foreground`           |  `5.7323:1` | 橘色實心注意面；不是一般主操作色。         |
+| `--destructive`／`--destructive-foreground` |  `5.3106:1` | 錯誤／異常實心面，仍須有文字與符號雙編碼。 |
+| `--muted-foreground`／`--card`              |  `6.8058:1` | 次要但必要的標註、時間與單位。             |
 
 `--accent-foreground` 與 `--destructive-foreground` 只准用於各自的實心背景；卡面上的注意／異常文字直接使用 `--accent`／`--destructive`。暖金 `--primary` 只標主利益、目標、結算線與每頁唯一主要按鈕；橘色 `--accent` 只標注意，`--destructive` 只標錯誤或異常。
 
@@ -553,7 +553,9 @@ Diverging 中心只准取 `0`、薪資目標或另一個已在商業規則中定
 th[data-numeric="true"],
 td[data-numeric="true"] {
   font-variant-numeric: tabular-nums lining-nums;
-  font-feature-settings: "tnum" 1, "lnum" 1;
+  font-feature-settings:
+    "tnum" 1,
+    "lnum" 1;
 }
 ```
 
@@ -561,11 +563,11 @@ Tailwind 元件可使用既有 `tabular-nums` utility；共用 `NumericValue`、
 
 ### 幣別與數字格式
 
-| 資料 | 小數位 | 正式顯示 | 規則 |
-| --- | ---: | --- | --- |
-| JPY 原幣 | 0 | `JPY 63,943` | 日圓畫面值不顯示小數；雙幣別、表格、對帳與匯出預覽一律用 `JPY` 明示幣別。 |
-| TWD 換算／成本／毛利 | 2 | `NT$ 13,108.32` | 本批成本利潤畫面固定兩位小數；裸 `$` 禁止。只有後端明確定義為整數結算欄位時才可顯示 0 位，前端不得自行四捨五入成整數。 |
-| 百分比 | 2 | `43.31%` | 毛利率、差異百分比與達標百分比固定兩位；真正的數值 0 顯示 `0.00%`，缺值則顯示「待確認」。 |
+| 資料                 | 小數位 | 正式顯示        | 規則                                                                                                                   |
+| -------------------- | -----: | --------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| JPY 原幣             |      0 | `JPY 63,943`    | 日圓畫面值不顯示小數；雙幣別、表格、對帳與匯出預覽一律用 `JPY` 明示幣別。                                              |
+| TWD 換算／成本／毛利 |      2 | `NT$ 13,108.32` | 本批成本利潤畫面固定兩位小數；裸 `$` 禁止。只有後端明確定義為整數結算欄位時才可顯示 0 位，前端不得自行四捨五入成整數。 |
+| 百分比               |      2 | `43.31%`        | 毛利率、差異百分比與達標百分比固定兩位；真正的數值 0 顯示 `0.00%`，缺值則顯示「待確認」。                              |
 
 - 數字部分使用 `zh-TW` 千分位，每三位以逗號分隔；幣別前綴與數字之間使用不換行空白，避免符號與金額斷行。
 - `NT$` 用於畫面上的新台幣金額；`TWD` 用於幣別選項、欄位 schema 名稱或技術說明。`JPY` 用於原幣、雙幣別並列、表格與對帳。`¥` 只可用在單一日圓情境、且欄頭或鄰近標籤已明寫 JPY 的客人端窄版；同一區塊不得混用 `JPY` 與 `¥`。
@@ -596,38 +598,38 @@ Spacing front matter 是兩層結構：`primitive` 只表達 4px 錨點級距，
 
 #### Primitive 級距
 
-| Token | rem | px | 既有 Tailwind 對應 | 用途邊界 |
-| --- | ---: | ---: | --- | --- |
-| `primitive.0` | 0 | 0 | `0` | 明確無間距；不得用來代表缺資料。 |
-| `primitive.1` | 0.25rem | 4 | `1` | 圖示與小標記的 micro rhythm。 |
-| `primitive.2` | 0.5rem | 8 | `2` | 最小相鄰 touch-target 間隔、緊密 stack。 |
-| `primitive.3` | 0.75rem | 12 | `3` | 一般欄位垂直 padding、label/value 間隔。 |
-| `primitive.4` | 1rem | 16 | `4` | 手機 gutter、一般 grid gap、手機 card padding。 |
-| `primitive.5` | 1.25rem | 20 | `5` | 平板 card padding。 |
-| `primitive.6` | 1.5rem | 24 | `6` | KPI 群組間距、平板 gutter、桌機 card padding。 |
-| `primitive.8` | 2rem | 32 | `8` | 手機 section rhythm、桌機 gutter。 |
-| `primitive.10` | 2.5rem | 40 | `10` | 平板 section rhythm。 |
-| `primitive.11` | 2.75rem | 44 | `11` | 最小 touch target／可編輯列高度。 |
-| `primitive.12` | 3rem | 48 | `12` | 一般桌機表格列與桌機 section rhythm。 |
-| `primitive.16` | 4rem | 64 | `16` | 含 Bullet Chart 的成本對帳列最低高度。 |
+| Token          |     rem |  px | 既有 Tailwind 對應 | 用途邊界                                        |
+| -------------- | ------: | --: | ------------------ | ----------------------------------------------- |
+| `primitive.0`  |       0 |   0 | `0`                | 明確無間距；不得用來代表缺資料。                |
+| `primitive.1`  | 0.25rem |   4 | `1`                | 圖示與小標記的 micro rhythm。                   |
+| `primitive.2`  |  0.5rem |   8 | `2`                | 最小相鄰 touch-target 間隔、緊密 stack。        |
+| `primitive.3`  | 0.75rem |  12 | `3`                | 一般欄位垂直 padding、label/value 間隔。        |
+| `primitive.4`  |    1rem |  16 | `4`                | 手機 gutter、一般 grid gap、手機 card padding。 |
+| `primitive.5`  | 1.25rem |  20 | `5`                | 平板 card padding。                             |
+| `primitive.6`  |  1.5rem |  24 | `6`                | KPI 群組間距、平板 gutter、桌機 card padding。  |
+| `primitive.8`  |    2rem |  32 | `8`                | 手機 section rhythm、桌機 gutter。              |
+| `primitive.10` |  2.5rem |  40 | `10`               | 平板 section rhythm。                           |
+| `primitive.11` | 2.75rem |  44 | `11`               | 最小 touch target／可編輯列高度。               |
+| `primitive.12` |    3rem |  48 | `12`               | 一般桌機表格列與桌機 section rhythm。           |
+| `primitive.16` |    4rem |  64 | `16`               | 含 Bullet Chart 的成本對帳列最低高度。          |
 
 #### Semantic 用途
 
-| Role | Token 與值 | 使用契約 |
-| --- | --- | --- |
-| inset | `compact` 8px；`control-y` 8px；`control-x` 12px；`comfortable` 16px | 元件內距。padding 只是內容留白；按鈕、checkbox hit area、表格列內編輯器的最終高度仍不得低於 44px。 |
-| stack | `micro` 4px；`related` 8px；`default` 12px；`relaxed` 16px；`kpi-group` 24px | 垂直堆疊。label/help 用 4–8px；一般欄位 12px；卡內區塊 16px；13 KPI 的四組彼此固定 24px。 |
-| gap | `touch-target` 8px；`inline` 12px；`grid` 16px；`major` 24px | 並列間隔。相鄰可點控制至少 8px；一般 KPI／表單 grid 16px；跨群組或主次動作 24px。 |
-| card-padding | phone 16px；tablet 20px；desktop 24px | KPI、圖表、空狀態與摘要卡共用；卡片內部不得另猜 18px、22px 等孤立值。 |
-| table-row | `min-height` 44px；`default-height` 48px；`cost-bullet-min-height` 64px；`cell-y` 12px；`cell-x` 16px | 一般 numeric row 至少 48px；緊密可編輯 row 絕不低於 44px；成本對帳列含兩筆金額與 Bullet Chart 時至少 64px，row 內項目以 8px stack 分隔。 |
+| Role         | Token 與值                                                                                            | 使用契約                                                                                                                                 |
+| ------------ | ----------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| inset        | `compact` 8px；`control-y` 8px；`control-x` 12px；`comfortable` 16px                                  | 元件內距。padding 只是內容留白；按鈕、checkbox hit area、表格列內編輯器的最終高度仍不得低於 44px。                                       |
+| stack        | `micro` 4px；`related` 8px；`default` 12px；`relaxed` 16px；`kpi-group` 24px                          | 垂直堆疊。label/help 用 4–8px；一般欄位 12px；卡內區塊 16px；13 KPI 的四組彼此固定 24px。                                                |
+| gap          | `touch-target` 8px；`inline` 12px；`grid` 16px；`major` 24px                                          | 並列間隔。相鄰可點控制至少 8px；一般 KPI／表單 grid 16px；跨群組或主次動作 24px。                                                        |
+| card-padding | phone 16px；tablet 20px；desktop 24px                                                                 | KPI、圖表、空狀態與摘要卡共用；卡片內部不得另猜 18px、22px 等孤立值。                                                                    |
+| table-row    | `min-height` 44px；`default-height` 48px；`cost-bullet-min-height` 64px；`cell-y` 12px；`cell-x` 16px | 一般 numeric row 至少 48px；緊密可編輯 row 絕不低於 44px；成本對帳列含兩筆金額與 Bullet Chart 時至少 64px，row 內項目以 8px stack 分隔。 |
 
 #### 響應式 semantic 值
 
-| Breakpoint role | phone `<640px` | tablet `640–1023px` | desktop `≥1024px` | 依據 |
-| --- | ---: | ---: | ---: | --- |
-| `section-y` | 32px | 40px | 48px | Pika 是高資訊密度工作台，採逐級增加但不照搬行銷頁的 40／64／96；四層 Dashboard 以此分段。 |
-| `page-gutter` | 16px | 24px | 32px | 完全對齊本檔既有 base／sm／lg 頁邊距契約。 |
-| `card-padding` | 16px | 20px | 24px | 對齊既有 Tailwind 4／5／6 級距，在密度與 touch 安全間取平衡。 |
+| Breakpoint role | phone `<640px` | tablet `640–1023px` | desktop `≥1024px` | 依據                                                                                      |
+| --------------- | -------------: | ------------------: | ----------------: | ----------------------------------------------------------------------------------------- |
+| `section-y`     |           32px |                40px |              48px | Pika 是高資訊密度工作台，採逐級增加但不照搬行銷頁的 40／64／96；四層 Dashboard 以此分段。 |
+| `page-gutter`   |           16px |                24px |              32px | 完全對齊本檔既有 base／sm／lg 頁邊距契約。                                                |
+| `card-padding`  |           16px |                20px |              24px | 對齊既有 Tailwind 4／5／6 級距，在密度與 touch 安全間取平衡。                             |
 
 13 KPI 的視覺層級固定為：同一卡 label/value 使用 `stack.related` 8px；同組卡片用 `gap.grid` 16px；「2 主角／4 收入／3 成本／4 效率」四組之間用 `stack.kpi-group` 24px；Dashboard 四大層之間才使用 responsive `section-y`。不得把四種間距壓成同一個 `gap-4`。
 
@@ -635,14 +637,14 @@ Spacing front matter 是兩層結構：`primitive` 只表達 4px 錨點級距，
 
 ### Breakpoints
 
-| 名稱 | 範圍 | 版面契約 |
-| --- | --- | --- |
-| base／phone | `< 640px` | 單欄、16px 頁邊距、底部主要動作避開 safe area、所有 touch target 至少 44×44px。 |
-| `sm` | `640–767px` | 24px 頁邊距；非主角 KPI 可兩欄，但不得壓縮金額；表單仍以單欄為主。 |
-| `md` | `768–1023px` | 主角 KPI 兩欄；群組 KPI 兩欄；表單可 2 欄；表格在內容允許時恢復欄模式。 |
-| `lg` | `1024–1279px` | 桌機側欄、32px 內容邊距；收入 4 欄、成本 3 欄、效率 4 欄；A 全寬，B–D 三欄，E–H 兩欄。 |
-| `xl` | `1280–1535px` | 最大內容寬 1440px；維持 `lg` 資訊架構並放寬圖表與明細。 |
-| `2xl` | `≥ 1536px` | 只增加外側留白與 plot width，不增加 KPI 欄數，不把資訊稀釋成海報版。 |
+| 名稱        | 範圍          | 版面契約                                                                               |
+| ----------- | ------------- | -------------------------------------------------------------------------------------- |
+| base／phone | `< 640px`     | 單欄、16px 頁邊距、底部主要動作避開 safe area、所有 touch target 至少 44×44px。        |
+| `sm`        | `640–767px`   | 24px 頁邊距；非主角 KPI 可兩欄，但不得壓縮金額；表單仍以單欄為主。                     |
+| `md`        | `768–1023px`  | 主角 KPI 兩欄；群組 KPI 兩欄；表單可 2 欄；表格在內容允許時恢復欄模式。                |
+| `lg`        | `1024–1279px` | 桌機側欄、32px 內容邊距；收入 4 欄、成本 3 欄、效率 4 欄；A 全寬，B–D 三欄，E–H 兩欄。 |
+| `xl`        | `1280–1535px` | 最大內容寬 1440px；維持 `lg` 資訊架構並放寬圖表與明細。                                |
+| `2xl`       | `≥ 1536px`    | 只增加外側留白與 plot width，不增加 KPI 欄數，不把資訊稀釋成海報版。                   |
 
 禁止任何層級的水平捲動；`overflow-x: auto|scroll`、以超寬 `min-width` 製造局部橫拉，以及把必要資訊藏在橫向 carousel 都不合格。過寬內容必須改用重排、直向圖型、單軸摘要、文字結論或一列一卡，不得只保證頁面根容器沒有溢出。
 
@@ -655,12 +657,12 @@ Spacing front matter 是兩層結構：`primitive` 只表達 4px 錨點級距，
 - 3 成本：商品進貨成本、固定成本、變動成本。
 - 4 效率與基準：薪資目標、商品總件數、平均單件毛利、平均每日毛利。
 
-| Breakpoint | 具體排列 |
-| --- | --- |
-| base | 待處理置頂；兩個主角各佔全寬且永久展開。收入群預設展開，四項單欄依凍結順序排列；成本群與效率群是彼此獨立 disclosure，預設收合但可同時展開，展開後單欄。收合標題只顯示群組名、項目數與展開狀態，不自行創造彙總值。 |
-| `sm` | 兩個主角仍各佔全寬；展開群組內的非主角 KPI 兩欄。數字放不下時回退單欄，不縮小至 20px 以下。 |
-| `md` | 兩個主角並列 2 欄；收入、成本、效率各自 2 欄，全部預設展開。 |
-| `lg+` | 兩主角 2 欄；收入 4 欄；成本 3 欄；效率 4 欄。禁止把十三張卡做成無分組的 13 等分牆。 |
+| Breakpoint | 具體排列                                                                                                                                                                                                          |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| base       | 待處理置頂；兩個主角各佔全寬且永久展開。收入群預設展開，四項單欄依凍結順序排列；成本群與效率群是彼此獨立 disclosure，預設收合但可同時展開，展開後單欄。收合標題只顯示群組名、項目數與展開狀態，不自行創造彙總值。 |
+| `sm`       | 兩個主角仍各佔全寬；展開群組內的非主角 KPI 兩欄。數字放不下時回退單欄，不縮小至 20px 以下。                                                                                                                       |
+| `md`       | 兩個主角並列 2 欄；收入、成本、效率各自 2 欄，全部預設展開。                                                                                                                                                      |
+| `lg+`      | 兩主角 2 欄；收入 4 欄；成本 3 欄；效率 4 欄。禁止把十三張卡做成無分組的 13 等分牆。                                                                                                                              |
 
 待處理事項有內容時預設展開；沒有事項時仍保留第一層，縮成一列完整空狀態，不得消失。首屏 KPI 不得等待圖表載入或動效才出現。
 
@@ -672,16 +674,16 @@ Spacing front matter 是兩層結構：`primitive` 只表達 4px 錨點級距，
 - `md`：A 全寬；B–D 使用 2 欄流式網格；E–H 仍可使用單面板索引，避免平板同時出現四個不可讀 plot。
 - `lg+`：A 全寬；B–D 三欄；E–F 兩欄；G–H 兩欄。明細表維持最後一層。
 
-| 圖 | 手機 plot 尺寸與降級 |
-| --- | --- |
-| A | 改為直向浮動瀑布：九階由上往下，名稱置左、累積金額置右、浮動增減段置中；每站標值常駐。仍保留浮動起點、逐段累積與小計／總計本質，只改方向。 |
-| B | 每個類別一列，列內以共用零基線呈現預估／實際雙條；完整文字與精確值換行，不設定畫布最小寬。 |
-| C | 高 240px；兩條並列堆疊橫條在手機仍完整顯示，所有區段按容器百分比縮放。 |
-| D | 高度 `max(320px, 項目數 × 44px + 96px)`；零軸固定可見，圖內不得垂直捲動。 |
-| E | 高度 `max(288px, 路線數 × 44px + 80px)`；長路線名最多兩行，條尾精確金額常駐。 |
-| F | base／`sm` 不縮小氣泡散點：改成地區一列一卡，依平均貢獻毛利單軸排序，並列出件數、平均貢獻毛利與收入三個精確值；`md+` 才顯示完整 X／Y／size 氣泡散點。 |
-| G | base／`sm` 顯示「達標所需件數／平均售價」文字結論與情境表；`md` 仍用表格，`lg+` 才顯示完整 hexbin、五刻度金額色階圖例與薪資目標等高線。 |
-| H | base／`sm` 改為月份直向列表／單軸趨勢摘要，每期顯示精確值與方向；`md+` 才顯示完整點陣趨勢。 |
+| 圖  | 手機 plot 尺寸與降級                                                                                                                                  |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A   | 改為直向浮動瀑布：九階由上往下，名稱置左、累積金額置右、浮動增減段置中；每站標值常駐。仍保留浮動起點、逐段累積與小計／總計本質，只改方向。            |
+| B   | 每個類別一列，列內以共用零基線呈現預估／實際雙條；完整文字與精確值換行，不設定畫布最小寬。                                                            |
+| C   | 高 240px；兩條並列堆疊橫條在手機仍完整顯示，所有區段按容器百分比縮放。                                                                                |
+| D   | 高度 `max(320px, 項目數 × 44px + 96px)`；零軸固定可見，圖內不得垂直捲動。                                                                             |
+| E   | 高度 `max(288px, 路線數 × 44px + 80px)`；長路線名最多兩行，條尾精確金額常駐。                                                                         |
+| F   | base／`sm` 不縮小氣泡散點：改成地區一列一卡，依平均貢獻毛利單軸排序，並列出件數、平均貢獻毛利與收入三個精確值；`md+` 才顯示完整 X／Y／size 氣泡散點。 |
+| G   | base／`sm` 顯示「達標所需件數／平均售價」文字結論與情境表；`md` 仍用表格，`lg+` 才顯示完整 hexbin、五刻度金額色階圖例與薪資目標等高線。               |
+| H   | base／`sm` 改為月份直向列表／單軸趨勢摘要，每期顯示精確值與方向；`md+` 才顯示完整點陣趨勢。                                                           |
 
 F／G／H 的手機替代是同一資料的可讀降級，不是另造資料或更換桌機 canonical 圖型。所有替代仍保留 E–H 完整示意角標、精確值、資料來源與明細入口。
 
@@ -720,20 +722,20 @@ TrackOrder 必備狀態包括 loading、404、一般 error、cancelled、deliver
 
 原始碼核實：Dashboard、Trips、TripEstimate、TripActual、TripComparison、MonthlyProfit、PublicCart、TrackLookup、TrackOrder、Cvs711Select、Cvs711Return 的 responsive token 數均為 0；PublicOrder 僅有 10 個 `sm:` token，全部只處理五行取貨卡。`max-w-[480px] mx-auto` 不是桌機響應式方案。
 
-| 頁面 | base／phone | `md` | `lg+` |
-| --- | --- | --- | --- |
-| Dashboard | 四層單欄；2 主角常駐、其餘分組揭露；A–H 單面板 | 主角 2 欄、群組 2 欄；A 全寬 | Sidebar；2＋4＋3＋4 KPI；A／B–D／E–F／G–H 固定網格 |
-| Trips | 行程→大區→路線 progressive disclosure；Drawer 編輯 | master-detail；安全欄位 2 欄 | 左導航／右成本 editor；三個成本入口常駐 |
-| TripEstimate | 成本項目先名稱再金額／幣別；UNIT／DAILY 直排 | 成本列恢復三欄，projection 並列 | 輸入約 8 欄、摘要約 4 欄；pending reason 留在欄位旁 |
-| TripActual | 類別→名稱→金額／幣別→日期→照片→提交；照片不溢出 | 表單與已記錄費用分區，安全欄位 2 欄 | 表單／照片約 5 欄，費用清單約 7 欄 |
-| TripComparison | 每項 comparison card 顯示預估、實際、差額、percent、direction、state | 切回完整 Table，項目 sticky、金額右對齊 | 表格與比較圖可主從配置，表格仍是真相來源 |
-| MonthlyProfit | 月份滿寬；定格毛利跨滿，其他指標 2 欄 | 月份移入 header，四指標 2×2 或同列 | 內容約 960px，不把少量數字拉散 |
-| PublicCart | 商品→取貨→收件／門市／地址→摘要→sticky CTA | 內容 2 欄，DOM 仍先商品後結帳 | 左商品／右表單與 sticky 摘要；empty／success 保持窄版 |
-| PublicOrder | 商品、表單、取貨、金額、CTA 單欄；沿用既有取貨卡 `sm` reflow | 商品約 5 欄、訂購表單約 7 欄 | 摘要可 sticky；選中取貨 detail 留在表單欄 |
-| TrackLookup | 320–420px 單一查詢表單，input／CTA 48px | 只增加外圍留白 | 不新增欄位或裝飾面板 |
-| TrackOrder | 狀態優先、垂直 timeline、完整 public-safe 明細 | 左狀態／timeline／商品，右訂單／物流／收件／代碼 | 只增加留白；禁止 Owner Sidebar／BottomNav |
-| Cvs711Select | sticky 搜尋、單欄結果；搜尋與選擇按鈕 ≥44px | 結果可 2 欄，搜尋／錯誤／筆數跨滿 | 最大內容約 900px，不改 provider 或返回路徑 |
-| Cvs711Return | 單一 processing／error transient state；CTA 滿寬 44px | 限制內容寬度 | 不新增導航或多欄 |
+| 頁面           | base／phone                                                          | `md`                                             | `lg+`                                                 |
+| -------------- | -------------------------------------------------------------------- | ------------------------------------------------ | ----------------------------------------------------- |
+| Dashboard      | 四層單欄；2 主角常駐、其餘分組揭露；A–H 單面板                       | 主角 2 欄、群組 2 欄；A 全寬                     | Sidebar；2＋4＋3＋4 KPI；A／B–D／E–F／G–H 固定網格    |
+| Trips          | 行程→大區→路線 progressive disclosure；Drawer 編輯                   | master-detail；安全欄位 2 欄                     | 左導航／右成本 editor；三個成本入口常駐               |
+| TripEstimate   | 成本項目先名稱再金額／幣別；UNIT／DAILY 直排                         | 成本列恢復三欄，projection 並列                  | 輸入約 8 欄、摘要約 4 欄；pending reason 留在欄位旁   |
+| TripActual     | 類別→名稱→金額／幣別→日期→照片→提交；照片不溢出                      | 表單與已記錄費用分區，安全欄位 2 欄              | 表單／照片約 5 欄，費用清單約 7 欄                    |
+| TripComparison | 每項 comparison card 顯示預估、實際、差額、percent、direction、state | 切回完整 Table，項目 sticky、金額右對齊          | 表格與比較圖可主從配置，表格仍是真相來源              |
+| MonthlyProfit  | 月份滿寬；定格毛利跨滿，其他指標 2 欄                                | 月份移入 header，四指標 2×2 或同列               | 內容約 960px，不把少量數字拉散                        |
+| PublicCart     | 商品→取貨→收件／門市／地址→摘要→sticky CTA                           | 內容 2 欄，DOM 仍先商品後結帳                    | 左商品／右表單與 sticky 摘要；empty／success 保持窄版 |
+| PublicOrder    | 商品、表單、取貨、金額、CTA 單欄；沿用既有取貨卡 `sm` reflow         | 商品約 5 欄、訂購表單約 7 欄                     | 摘要可 sticky；選中取貨 detail 留在表單欄             |
+| TrackLookup    | 320–420px 單一查詢表單，input／CTA 48px                              | 只增加外圍留白                                   | 不新增欄位或裝飾面板                                  |
+| TrackOrder     | 狀態優先、垂直 timeline、完整 public-safe 明細                       | 左狀態／timeline／商品，右訂單／物流／收件／代碼 | 只增加留白；禁止 Owner Sidebar／BottomNav             |
+| Cvs711Select   | sticky 搜尋、單欄結果；搜尋與選擇按鈕 ≥44px                          | 結果可 2 欄，搜尋／錯誤／筆數跨滿                | 最大內容約 900px，不改 provider 或返回路徑            |
+| Cvs711Return   | 單一 processing／error transient state；CTA 滿寬 44px                | 限制內容寬度                                     | 不新增導航或多欄                                      |
 
 所有頁面只 reflow 同一棵 DOM，不為不同 breakpoint 同時 render 兩份 live form。sticky CTA 使用 `env(safe-area-inset-bottom)`，虛擬鍵盤開啟時回到文流，且不得遮住最後欄位或 inline error。G4 最低驗收寬度為 320、360、390、430、640、768、1024、1280、1440px。
 
@@ -751,20 +753,20 @@ TrackOrder 必備狀態包括 loading、404、一般 error、cancelled、deliver
 
 以下是由低到高的唯一層級尺度；G4 應集中成共用 layer class map，禁止各元件散落 `z-[9999]`。數值是層級契約，不新增 CSS variable，因此 108-token 矩陣不變。
 
-| 層級 | z-index | 元件指派 | 規則 |
-| --- | ---: | --- | --- |
-| base | 0 | page、Card、Table、圖表與一般內容 | 不建立不必要 stacking context；transform／opacity 不得意外蓋住浮層。 |
-| sticky | 10 | sticky page header、表格欄頭、手機 sticky CTA | 只在所屬 scroll container 內生效；不得越過 modal。 |
-| sidebar | 20 | desktop Sidebar、固定 owner navigation | 手機 Sidebar 透過 Sheet 開啟時改用 sheet/drawer band，不停留在 20。 |
-| dropdown | 30 | DropdownMenu、ContextMenu、Command menu | 主要動作不得只存在此層；開 modal 前關閉下層 menu。 |
-| popover | 40 | Popover、HoverCard、日期／篩選補充面板 | 必要資訊仍須有手機可點擊替代。 |
-| tooltip | 50 | Tooltip | 只補充，不承載唯一的精確值、錯誤或待確認原因。 |
-| sheet/drawer overlay | 60 | SheetOverlay、DrawerOverlay | overlay 必須攔截背景 pointer 並配合 focus trap。 |
-| sheet/drawer content | 61 | SheetContent、DrawerContent | 位於自身 overlay 之上；內部 sticky 使用該 modal root 的局部層級。 |
-| dialog overlay | 70 | DialogOverlay、AlertDialogOverlay | 高於 Sheet／Drawer；同一時間只允許一個 top modal。 |
-| dialog content | 71 | DialogContent、AlertDialogContent | 不靠 shadow 取代 overlay、focus trap 或 inert 背景。 |
-| modal floating | 80／81／82 | active modal 內的 dropdown／popover／tooltip | 由 active modal portal root 掛載，依序使用 80／81／82；不得讓背景頁殘留 menu 穿過 modal。 |
-| toast | 90 | Sonner、Toast、Toaster | 可高於 modal 顯示結果，但核心錯誤與必要操作仍保留在頁內／modal 內。 |
+| 層級                 |    z-index | 元件指派                                      | 規則                                                                                      |
+| -------------------- | ---------: | --------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| base                 |          0 | page、Card、Table、圖表與一般內容             | 不建立不必要 stacking context；transform／opacity 不得意外蓋住浮層。                      |
+| sticky               |         10 | sticky page header、表格欄頭、手機 sticky CTA | 只在所屬 scroll container 內生效；不得越過 modal。                                        |
+| sidebar              |         20 | desktop Sidebar、固定 owner navigation        | 手機 Sidebar 透過 Sheet 開啟時改用 sheet/drawer band，不停留在 20。                       |
+| dropdown             |         30 | DropdownMenu、ContextMenu、Command menu       | 主要動作不得只存在此層；開 modal 前關閉下層 menu。                                        |
+| popover              |         40 | Popover、HoverCard、日期／篩選補充面板        | 必要資訊仍須有手機可點擊替代。                                                            |
+| tooltip              |         50 | Tooltip                                       | 只補充，不承載唯一的精確值、錯誤或待確認原因。                                            |
+| sheet/drawer overlay |         60 | SheetOverlay、DrawerOverlay                   | overlay 必須攔截背景 pointer 並配合 focus trap。                                          |
+| sheet/drawer content |         61 | SheetContent、DrawerContent                   | 位於自身 overlay 之上；內部 sticky 使用該 modal root 的局部層級。                         |
+| dialog overlay       |         70 | DialogOverlay、AlertDialogOverlay             | 高於 Sheet／Drawer；同一時間只允許一個 top modal。                                        |
+| dialog content       |         71 | DialogContent、AlertDialogContent             | 不靠 shadow 取代 overlay、focus trap 或 inert 背景。                                      |
+| modal floating       | 80／81／82 | active modal 內的 dropdown／popover／tooltip  | 由 active modal portal root 掛載，依序使用 80／81／82；不得讓背景頁殘留 menu 穿過 modal。 |
+| toast                |         90 | Sonner、Toast、Toaster                        | 可高於 modal 顯示結果，但核心錯誤與必要操作仍保留在頁內／modal 內。                       |
 
 任何新 portal 元件必須先歸入此表。開啟 Sheet、Drawer 或 Dialog 時，背景的 dropdown／popover／tooltip 必須關閉；由 modal 觸發的浮層則掛在 active modal portal root，避免被 overlay 截斷。不得以 DOM 順序碰運氣。
 
@@ -778,105 +780,105 @@ hexbin 六角只屬圖 G 的資料分箱，不得作為跨頁裝飾，不得用�
 
 既有 `components/ui/` 正好有 55 個 `.tsx`。處置原則是 **49 沿用、6 擴充、0 重建 primitive**；新建只限業務 composite，且必須組合既有 primitive。G3 在同一 Drafts 檔建立 local components，元件清單必須涵蓋本節全部 primitive 處置與業務 composite；不得因 Starter 不能發布 Team Library 而省略元件。四個原型來源頁目前多為 raw HTML controls，G4 應逐步收斂到以下 inventory，不得另外建立平行 UI kit。
 
-| # | 既有元件 | 處置 | 本批規格 |
-| ---: | --- | --- | --- |
-| 1 | `accordion.tsx` | 沿用 | 手機行程／大區可折疊；主要數字不得因折疊消失。 |
-| 2 | `alert.tsx` | **擴充** | 由 default/destructive 增加 info/warning/success/pending；圖示＋文字並用。 |
-| 3 | `alert-dialog.tsx` | 沿用 | 只用於不可回復確認，不為一般編輯增加阻力。 |
-| 4 | `aspect-ratio.tsx` | 沿用 | 商品圖與媒體維持比例；缺圖仍提供替代內容。 |
-| 5 | `avatar.tsx` | 沿用（本批不採） | 凍結資料無頭像時不得捏造照片。 |
-| 6 | `badge.tsx` | **擴充** | 增 estimate/actual/pending/favorable/unfavorable/neutral 語意；預設為點號＋具名文字＋直角框，禁止膠囊 badge。 |
-| 7 | `breadcrumb.tsx` | 沿用 | 桌機顯示層級；手機改簡潔返回，不塞完整 breadcrumb。 |
-| 8 | `button.tsx` | **擴充** | 增 44px／48px touch size；幽靈為多數，每頁只准一個膠囊主要按鈕，danger surface 只供刪除類。 |
-| 9 | `button-group.tsx` | 沿用 | 購物車數量步進與相鄰動作；不取代 Tabs。 |
-| 10 | `calendar.tsx` | 沿用（本批不採） | 無凍結日期欄時不得憑空新增。 |
-| 11 | `card.tsx` | 沿用 | KPI、行程、大區、購物車與摘要共用結構；後台資料面為直角色帶／網格，客人端才沿用 control radius。 |
-| 12 | `carousel.tsx` | 沿用（本批不採） | 儀表板 KPI／圖表不得藏進 carousel。 |
-| 13 | `chart.tsx` | **擴充** | 補可變高度、文字摘要、空／待確認狀態與 A–H composite，不重建 wrapper。 |
-| 14 | `checkbox.tsx` | 沿用（本批不採） | 凍結欄位無多選，不增加假需求。 |
-| 15 | `collapsible.tsx` | 沿用 | 手機次級明細；必填與待確認訊息不得預設隱藏。 |
-| 16 | `command.tsx` | 沿用（本批不採） | 無凍結全域搜尋需求，不新增假入口。 |
-| 17 | `context-menu.tsx` | 沿用（本批不採） | 核心編輯／結帳動作不得只藏在右鍵。 |
-| 18 | `dialog.tsx` | 沿用 | 桌機複雜表單可用；手機優先 Sheet／Drawer。 |
-| 19 | `drawer.tsx` | 沿用 | 手機行程、大區、路線編輯使用底部 drawer。 |
-| 20 | `dropdown-menu.tsx` | 沿用 | 只收納次要／溢出動作，主要 CTA 常駐。 |
-| 21 | `empty.tsx` | 沿用 | Slot 已完整；所有空態直接組合，不另建 primitive。 |
-| 22 | `field.tsx` | 沿用 | Trips／PublicCart 表單首選；承接 description、error 與方向。 |
-| 23 | `form.tsx` | 沿用 | G4 若遷移 react-hook-form 才使用，原型不改資料行為。 |
-| 24 | `hover-card.tsx` | 沿用（本批次要） | 可補充公式；必要資訊仍須可點擊及手機可見。 |
-| 25 | `input.tsx` | **擴充** | 增 44／48px touch size、invalid/pending、具名錯誤、停用霧面與 44px 可清除尾鍵；後台方框為直角，保留 number/inputMode。 |
-| 26 | `input-group.tsx` | 沿用 | 金額、幣別、件／箱等單位與前後綴。 |
-| 27 | `input-otp.tsx` | 沿用（本批不採） | 付款末五碼是單一選填對帳欄，不拆成 OTP。 |
-| 28 | `item.tsx` | 沿用 | 購物車列、最近訂單、低庫存、路線列共用 family。 |
-| 29 | `kbd.tsx` | 沿用（本批次要） | 只用桌機快捷提示，不影響手機流程。 |
-| 30 | `label.tsx` | 沿用 | 輸入皆有可關聯 Label，必填不只靠顏色。 |
-| 31 | `menubar.tsx` | 沿用（本批不採） | Owner 導覽採 Sidebar，不建平行 menubar。 |
-| 32 | `navigation-menu.tsx` | 沿用（本批不採） | PublicCart 無凍結多層網站導覽。 |
-| 33 | `pagination.tsx` | 沿用（本批不採） | 五原型無分頁契約，不虛構頁碼。 |
-| 34 | `popover.tsx` | 沿用 | 桌機篩選／補充資訊；手機要有可點擊替代。 |
-| 35 | `progress.tsx` | 沿用 | 只作 GoalEnergyBar 填色 substrate；里程碑、三態帶、目標線與超標處理都是能量條細節，不另建 progress 元件。 |
-| 36 | `radio-group.tsx` | 沿用 | PublicCart 取貨方式使用可鍵盤操作的 card-radio。 |
-| 37 | `resizable.tsx` | 沿用（本批不採） | 無可調面板需求，寬度由 responsive grid 決定。 |
-| 38 | `scroll-area.tsx` | 沿用 | 側欄與長清單可用；主頁避免多層隱藏捲動。 |
-| 39 | `select.tsx` | **擴充** | 增 touch size，承接大區、模式、縣市與行政區。 |
-| 40 | `separator.tsx` | 沿用 | 成本分段、訂單摘要與清單分隔。 |
-| 41 | `sheet.tsx` | 沿用 | 手機編輯器與 Sidebar mobile，不另刻 overlay panel。 |
-| 42 | `sidebar.tsx` | 沿用 | 已含 desktop/mobile/collapsed/Sheet；新建 shell，不重建 primitive。 |
-| 43 | `skeleton.tsx` | 沿用 | Primitive 足夠；另組合各頁真實幾何，對應 J2，並提供超時／錯誤兜底。 |
-| 44 | `slider.tsx` | 沿用（本批不採） | 金額、匯率、件數需精確輸入，不以 slider 取代。 |
-| 45 | `sonner.tsx` | 沿用 | 輕量成功／失敗回饋；不取代頁內持續錯誤。 |
-| 46 | `spinner.tsx` | 沿用 | 按鈕／局部短載入；頁級使用 Skeleton，中文 aria-label。 |
-| 47 | `switch.tsx` | 沿用（本批不採） | 五原型無布林設定，不增加假開關。 |
-| 48 | `table.tsx` | 沿用 | Comparison 與明細；主角為單線列＋分組標題，超過 10 列才可斑馬紋；sticky 欄與數字對齊在 composite 層。 |
-| 49 | `tabs.tsx` | 沿用 | 預估／實際內容分頁，文字標籤常駐。 |
-| 50 | `textarea.tsx` | 沿用 | 行程／結帳備註，維持 optional 標示。 |
-| 51 | `toast.tsx` | 沿用 | 保留 Radix 相容層；核心待確認／錯誤不可只用短暫 toast。 |
-| 52 | `toaster.tsx` | 沿用 | 沿用 `useToast`，不得建立第三套通知。 |
-| 53 | `toggle.tsx` | 沿用（本批次要） | 只作非互斥小型視圖控制，預估／實際優先 Tabs。 |
-| 54 | `toggle-group.tsx` | 沿用（本批次要） | 圖層／篩選可用；預估／實際不可只靠按下色。 |
-| 55 | `tooltip.tsx` | 沿用 | 補充縮寫／公式；精確金額與待確認原因不可 hover-only。 |
+|   # | 既有元件              | 處置             | 本批規格                                                                                                               |
+| --: | --------------------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------- |
+|   1 | `accordion.tsx`       | 沿用             | 手機行程／大區可折疊；主要數字不得因折疊消失。                                                                         |
+|   2 | `alert.tsx`           | **擴充**         | 由 default/destructive 增加 info/warning/success/pending；圖示＋文字並用。                                             |
+|   3 | `alert-dialog.tsx`    | 沿用             | 只用於不可回復確認，不為一般編輯增加阻力。                                                                             |
+|   4 | `aspect-ratio.tsx`    | 沿用             | 商品圖與媒體維持比例；缺圖仍提供替代內容。                                                                             |
+|   5 | `avatar.tsx`          | 沿用（本批不採） | 凍結資料無頭像時不得捏造照片。                                                                                         |
+|   6 | `badge.tsx`           | **擴充**         | 增 estimate/actual/pending/favorable/unfavorable/neutral 語意；預設為點號＋具名文字＋直角框，禁止膠囊 badge。          |
+|   7 | `breadcrumb.tsx`      | 沿用             | 桌機顯示層級；手機改簡潔返回，不塞完整 breadcrumb。                                                                    |
+|   8 | `button.tsx`          | **擴充**         | 增 44px／48px touch size；幽靈為多數，每頁只准一個膠囊主要按鈕，danger surface 只供刪除類。                            |
+|   9 | `button-group.tsx`    | 沿用             | 購物車數量步進與相鄰動作；不取代 Tabs。                                                                                |
+|  10 | `calendar.tsx`        | 沿用（本批不採） | 無凍結日期欄時不得憑空新增。                                                                                           |
+|  11 | `card.tsx`            | 沿用             | KPI、行程、大區、購物車與摘要共用結構；後台資料面為直角色帶／網格，客人端才沿用 control radius。                       |
+|  12 | `carousel.tsx`        | 沿用（本批不採） | 儀表板 KPI／圖表不得藏進 carousel。                                                                                    |
+|  13 | `chart.tsx`           | **擴充**         | 補可變高度、文字摘要、空／待確認狀態與 A–H composite，不重建 wrapper。                                                 |
+|  14 | `checkbox.tsx`        | 沿用（本批不採） | 凍結欄位無多選，不增加假需求。                                                                                         |
+|  15 | `collapsible.tsx`     | 沿用             | 手機次級明細；必填與待確認訊息不得預設隱藏。                                                                           |
+|  16 | `command.tsx`         | 沿用（本批不採） | 無凍結全域搜尋需求，不新增假入口。                                                                                     |
+|  17 | `context-menu.tsx`    | 沿用（本批不採） | 核心編輯／結帳動作不得只藏在右鍵。                                                                                     |
+|  18 | `dialog.tsx`          | 沿用             | 桌機複雜表單可用；手機優先 Sheet／Drawer。                                                                             |
+|  19 | `drawer.tsx`          | 沿用             | 手機行程、大區、路線編輯使用底部 drawer。                                                                              |
+|  20 | `dropdown-menu.tsx`   | 沿用             | 只收納次要／溢出動作，主要 CTA 常駐。                                                                                  |
+|  21 | `empty.tsx`           | 沿用             | Slot 已完整；所有空態直接組合，不另建 primitive。                                                                      |
+|  22 | `field.tsx`           | 沿用             | Trips／PublicCart 表單首選；承接 description、error 與方向。                                                           |
+|  23 | `form.tsx`            | 沿用             | G4 若遷移 react-hook-form 才使用，原型不改資料行為。                                                                   |
+|  24 | `hover-card.tsx`      | 沿用（本批次要） | 可補充公式；必要資訊仍須可點擊及手機可見。                                                                             |
+|  25 | `input.tsx`           | **擴充**         | 增 44／48px touch size、invalid/pending、具名錯誤、停用霧面與 44px 可清除尾鍵；後台方框為直角，保留 number/inputMode。 |
+|  26 | `input-group.tsx`     | 沿用             | 金額、幣別、件／箱等單位與前後綴。                                                                                     |
+|  27 | `input-otp.tsx`       | 沿用（本批不採） | 付款末五碼是單一選填對帳欄，不拆成 OTP。                                                                               |
+|  28 | `item.tsx`            | 沿用             | 購物車列、最近訂單、低庫存、路線列共用 family。                                                                        |
+|  29 | `kbd.tsx`             | 沿用（本批次要） | 只用桌機快捷提示，不影響手機流程。                                                                                     |
+|  30 | `label.tsx`           | 沿用             | 輸入皆有可關聯 Label，必填不只靠顏色。                                                                                 |
+|  31 | `menubar.tsx`         | 沿用（本批不採） | Owner 導覽採 Sidebar，不建平行 menubar。                                                                               |
+|  32 | `navigation-menu.tsx` | 沿用（本批不採） | PublicCart 無凍結多層網站導覽。                                                                                        |
+|  33 | `pagination.tsx`      | 沿用（本批不採） | 五原型無分頁契約，不虛構頁碼。                                                                                         |
+|  34 | `popover.tsx`         | 沿用             | 桌機篩選／補充資訊；手機要有可點擊替代。                                                                               |
+|  35 | `progress.tsx`        | 沿用             | 只作 GoalEnergyBar 填色 substrate；里程碑、三態帶、目標線與超標處理都是能量條細節，不另建 progress 元件。              |
+|  36 | `radio-group.tsx`     | 沿用             | PublicCart 取貨方式使用可鍵盤操作的 card-radio。                                                                       |
+|  37 | `resizable.tsx`       | 沿用（本批不採） | 無可調面板需求，寬度由 responsive grid 決定。                                                                          |
+|  38 | `scroll-area.tsx`     | 沿用             | 側欄與長清單可用；主頁避免多層隱藏捲動。                                                                               |
+|  39 | `select.tsx`          | **擴充**         | 增 touch size，承接大區、模式、縣市與行政區。                                                                          |
+|  40 | `separator.tsx`       | 沿用             | 成本分段、訂單摘要與清單分隔。                                                                                         |
+|  41 | `sheet.tsx`           | 沿用             | 手機編輯器與 Sidebar mobile，不另刻 overlay panel。                                                                    |
+|  42 | `sidebar.tsx`         | 沿用             | 已含 desktop/mobile/collapsed/Sheet；新建 shell，不重建 primitive。                                                    |
+|  43 | `skeleton.tsx`        | 沿用             | Primitive 足夠；另組合各頁真實幾何，對應 J2，並提供超時／錯誤兜底。                                                    |
+|  44 | `slider.tsx`          | 沿用（本批不採） | 金額、匯率、件數需精確輸入，不以 slider 取代。                                                                         |
+|  45 | `sonner.tsx`          | 沿用             | 輕量成功／失敗回饋；不取代頁內持續錯誤。                                                                               |
+|  46 | `spinner.tsx`         | 沿用             | 按鈕／局部短載入；頁級使用 Skeleton，中文 aria-label。                                                                 |
+|  47 | `switch.tsx`          | 沿用（本批不採） | 五原型無布林設定，不增加假開關。                                                                                       |
+|  48 | `table.tsx`           | 沿用             | Comparison 與明細；主角為單線列＋分組標題，超過 10 列才可斑馬紋；sticky 欄與數字對齊在 composite 層。                  |
+|  49 | `tabs.tsx`            | 沿用             | 預估／實際內容分頁，文字標籤常駐。                                                                                     |
+|  50 | `textarea.tsx`        | 沿用             | 行程／結帳備註，維持 optional 標示。                                                                                   |
+|  51 | `toast.tsx`           | 沿用             | 保留 Radix 相容層；核心待確認／錯誤不可只用短暫 toast。                                                                |
+|  52 | `toaster.tsx`         | 沿用             | 沿用 `useToast`，不得建立第三套通知。                                                                                  |
+|  53 | `toggle.tsx`          | 沿用（本批次要） | 只作非互斥小型視圖控制，預估／實際優先 Tabs。                                                                          |
+|  54 | `toggle-group.tsx`    | 沿用（本批次要） | 圖層／篩選可用；預估／實際不可只靠按下色。                                                                             |
+|  55 | `tooltip.tsx`         | 沿用             | 補充縮寫／公式；精確金額與待確認原因不可 hover-only。                                                                  |
 
 ### 互動元件完整狀態矩陣
 
 下列狀態適用於 Button、Input、Select、Checkbox 與表格列內編輯。狀態可組合，例如 `focus-visible + error`、`disabled + estimateLocked`；組合時不得移除可見 focus 或把缺值補成 0。
 
-| 狀態 | Button | Input | Select | Checkbox | 表格列內編輯 |
-| --- | --- | --- | --- | --- | --- |
-| default | 正常前景／背景與明確動詞；44px 或 48px hit area。 | `--input` 邊界、正常文字；placeholder 不得假裝資料。 | Trigger 顯示目前值或「請選擇」，保留展開圖示。 | 未選／已選皆有可見框與文字 Label。 | 顯示真實值與編輯入口；numeric cell 右對齊。 |
-| hover | 只在可 hover 裝置使用既有 elevate overlay；不可是唯一狀態 cue。 | 邊界加強但不冒充 focus。 | Trigger 表面加強，選項 hover 不取代 selected indicator。 | 框與 label 同步回饋。 | row 可用 `--elevate-1`，編輯按鈕保持可見名稱。 |
-| active | 按下回饋使用既有 pressed overlay；不得改數字或位移布局。 | pointer down 不留下永久狀態。 | Trigger／option 顯示 pressed，選定後回 default。 | 按下後 checked state 由實際值決定。 | 進入 edit mode 後顯示儲存／取消，不以 row hover 代替。 |
-| focus-visible | 2px `--ring`＋2px offset，文字仍可讀。 | 同上；error 同時存在時 ring 與錯誤訊息都保留。 | Trigger 與 option 各有鍵盤 focus。 | focus ring 包住至少 44×44px hit area。 | focus 落在實際 editor／action，不只高亮整列。 |
-| **disabled** | 使用原生 `disabled`；muted surface＋muted foreground＋正常可辨邊界，無 hover／active，顯示禁用原因。 | 保留已存在值，使用 disabled attribute、鎖定圖示／「預估已鎖定」說明；不得只降低 opacity。 | Radix `disabled`；保留選定值與鎖定原因，trigger 不展開。 | `disabled` 且保留 checked 真值；Label 顯示不可操作原因。 | `estimateLocked` 時所有 editor 與儲存動作 disabled，row 顯示 Lock＋「預估已鎖定」，但金額仍清楚可讀。 |
-| loading | Spinner 與動詞同時保留，`aria-busy="true"`，暫時 disabled 防重送。 | 有上次值就保留並 busy；無值才用近似 skeleton，絕不顯示 0。 | 保留目前選項並 busy；不可變更。 | 由 field/group 顯示 busy 並暫停切換，不以 unchecked 冒充載入。 | 儲存中保留原值與「儲存中」；只有首次載入且無資料才用 skeleton。 |
-| error | 動作失敗後恢復可操作；錯誤放 inline Alert／field message，非 destructive 動作不得永久變紅。 | `aria-invalid="true"`、destructive 邊界與具體訊息；保留使用者輸入。 | Trigger `aria-invalid`，錯誤訊息與可修正下一步常駐。 | group 顯示錯誤文字與 icon，不只紅框。 | row 內保留未送出值、欄位級錯誤及重試／取消；不得整列消失。 |
-| read-only | Button 沒有 read-only；若沒有動作，改用文字、Badge 或靜態值，不用 disabled button 假裝欄位。 | 使用 `readOnly`，可 focus、選取與複製，正常高對比並標「僅供查看」。 | 無 native read-only；改渲染 field-shaped 靜態值＋「僅供查看」，不可套 disabled dimming。 | 改渲染 checked／unchecked indicator＋文字「僅供查看」，不保留互動 role。 | 顯示靜態 formatted value 與 read-only badge，不渲染 editor；與鎖定 disabled 分開。 |
+| 狀態          | Button                                                                                               | Input                                                                                     | Select                                                                                   | Checkbox                                                                 | 表格列內編輯                                                                                          |
+| ------------- | ---------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| default       | 正常前景／背景與明確動詞；44px 或 48px hit area。                                                    | `--input` 邊界、正常文字；placeholder 不得假裝資料。                                      | Trigger 顯示目前值或「請選擇」，保留展開圖示。                                           | 未選／已選皆有可見框與文字 Label。                                       | 顯示真實值與編輯入口；numeric cell 右對齊。                                                           |
+| hover         | 只在可 hover 裝置使用既有 elevate overlay；不可是唯一狀態 cue。                                      | 邊界加強但不冒充 focus。                                                                  | Trigger 表面加強，選項 hover 不取代 selected indicator。                                 | 框與 label 同步回饋。                                                    | row 可用 `--elevate-1`，編輯按鈕保持可見名稱。                                                        |
+| active        | 按下回饋使用既有 pressed overlay；不得改數字或位移布局。                                             | pointer down 不留下永久狀態。                                                             | Trigger／option 顯示 pressed，選定後回 default。                                         | 按下後 checked state 由實際值決定。                                      | 進入 edit mode 後顯示儲存／取消，不以 row hover 代替。                                                |
+| focus-visible | 2px `--ring`＋2px offset，文字仍可讀。                                                               | 同上；error 同時存在時 ring 與錯誤訊息都保留。                                            | Trigger 與 option 各有鍵盤 focus。                                                       | focus ring 包住至少 44×44px hit area。                                   | focus 落在實際 editor／action，不只高亮整列。                                                         |
+| **disabled**  | 使用原生 `disabled`；muted surface＋muted foreground＋正常可辨邊界，無 hover／active，顯示禁用原因。 | 保留已存在值，使用 disabled attribute、鎖定圖示／「預估已鎖定」說明；不得只降低 opacity。 | Radix `disabled`；保留選定值與鎖定原因，trigger 不展開。                                 | `disabled` 且保留 checked 真值；Label 顯示不可操作原因。                 | `estimateLocked` 時所有 editor 與儲存動作 disabled，row 顯示 Lock＋「預估已鎖定」，但金額仍清楚可讀。 |
+| loading       | Spinner 與動詞同時保留，`aria-busy="true"`，暫時 disabled 防重送。                                   | 有上次值就保留並 busy；無值才用近似 skeleton，絕不顯示 0。                                | 保留目前選項並 busy；不可變更。                                                          | 由 field/group 顯示 busy 並暫停切換，不以 unchecked 冒充載入。           | 儲存中保留原值與「儲存中」；只有首次載入且無資料才用 skeleton。                                       |
+| error         | 動作失敗後恢復可操作；錯誤放 inline Alert／field message，非 destructive 動作不得永久變紅。          | `aria-invalid="true"`、destructive 邊界與具體訊息；保留使用者輸入。                       | Trigger `aria-invalid`，錯誤訊息與可修正下一步常駐。                                     | group 顯示錯誤文字與 icon，不只紅框。                                    | row 內保留未送出值、欄位級錯誤及重試／取消；不得整列消失。                                            |
+| read-only     | Button 沒有 read-only；若沒有動作，改用文字、Badge 或靜態值，不用 disabled button 假裝欄位。         | 使用 `readOnly`，可 focus、選取與複製，正常高對比並標「僅供查看」。                       | 無 native read-only；改渲染 field-shaped 靜態值＋「僅供查看」，不可套 disabled dimming。 | 改渲染 checked／unchecked indicator＋文字「僅供查看」，不保留互動 role。 | 顯示靜態 formatted value 與 read-only badge，不渲染 editor；與鎖定 disabled 分開。                    |
 
 `disabled` 與「待確認」不得共用同一視覺：
 
-| 比較 | disabled／鎖定 | 待確認／missing input |
-| --- | --- | --- |
-| 語意 | 已有規則或權限使它現在不能改，例如 `estimateLocked`。 | 必要資料不存在、尚未填寫或匯率缺失。 |
-| 值 | 保留並顯示現有真值；不能因 disabled 清成空白或 0。 | 沒有可顯示的 numeric value；必須寫「待確認」或「尚未填寫…」。 |
-| 操作 | control disabled；提供鎖定原因，若有權限才另給解鎖流程。 | 原則上仍可編輯／前往補填；若同時被鎖定，兩個狀態與原因都要明寫。 |
-| 視覺 | muted surface／foreground、Lock、文字「預估已鎖定」；不得只靠 opacity。 | accent/pending 語意、提示 icon、補填 CTA；不使用 disabled cursor。 |
+| 比較   | disabled／鎖定                                                                       | 待確認／missing input                                                                       |
+| ------ | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
+| 語意   | 已有規則或權限使它現在不能改，例如 `estimateLocked`。                                | 必要資料不存在、尚未填寫或匯率缺失。                                                        |
+| 值     | 保留並顯示現有真值；不能因 disabled 清成空白或 0。                                   | 沒有可顯示的 numeric value；必須寫「待確認」或「尚未填寫…」。                               |
+| 操作   | control disabled；提供鎖定原因，若有權限才另給解鎖流程。                             | 原則上仍可編輯／前往補填；若同時被鎖定，兩個狀態與原因都要明寫。                            |
+| 視覺   | muted surface／foreground、Lock、文字「預估已鎖定」；不得只靠 opacity。              | accent/pending 語意、提示 icon、補填 CTA；不使用 disabled cursor。                          |
 | 可及性 | 原生 `disabled`；只有必須可 focus 解釋時才用 `aria-disabled="true"` 並實際攔截事件。 | 以 `aria-describedby` 關聯 pending reason；除非另有 validation error，不標 `aria-invalid`。 |
 
 ### 新建業務 composite
 
-| Composite | 組合既有元件 | 為何 55 個裡沒有可直接使用者 |
-| --- | --- | --- |
-| `ResponsiveOwnerShell` | Sidebar、Sheet、Button、Tooltip | Primitive 不含 Pika 路由、權限可見度、桌機側欄與手機導覽規則。 |
-| `KpiCard`／`KpiDeck` | Card、Badge、Tooltip、Skeleton | 需封裝 13 KPI 格式、待確認及 2＋4＋3＋4 分組。 |
-| `GoalEnergyBar` | Progress、Badge、Tooltip | 既有 Progress 沒有百分比、兩筆金額、差額、目標刻度與後端三態。 |
-| `CostBulletRow` | Chart、Badge、Tooltip | 無既有 Bullet Chart；需預估刻度、實際填色、精確雙值與缺值正式文案。 |
-| `DualCurrencyCalibrationField` | Field、InputGroup、Input、Badge、Button | G10 雙幣校準台；JPY 原幣與 NT$ 換算共同約束、匯率鎖定狀態常駐，窄版上下排列。 |
-| `SemanticStatePanel` | Empty、Skeleton、Alert、Sonner、Button | 封裝 J1–J10 的互斥狀態契約；同一資料區同時只允許一種主狀態。 |
-| `LedgerLockStamp` | Badge、Button | K09 總帳落印鎖定；只對真實 `estimateLocked` 狀態使用，落定後仍保留可讀文字與鎖定原因。 |
-| `AnalyticsChartFrame` ＋ A–H | Chart、Card、Empty、Skeleton、Alert | `chart.tsx` 只是 wrapper，沒有八種資料關係 composite、文字摘要與資料標記契約。 |
-| `TripAreaCostEditor`／`RouteCostEditor` | Field、InputGroup、Select、Tabs、Alert、Button | 需封裝 nullable fuel、手填 ETC、ESTIMATE／ACTUAL、分攤與 fail-closed 契約。 |
-| `VarianceComparisonTable`／`VarianceCell` | Table、Badge、Tooltip | 需整合 estimated／actual／difference／percent／direction／state。 |
-| `CartLineItem`／`QuantityStepper`／`PickupMethodCard`／`CheckoutSummary` | Item、ButtonGroup、RadioGroup、Card、Field | Primitive 不含商品、物流、門市、運費、付款與收件資料契約。 |
-| 頁級 Skeleton compositions | Skeleton、Card、Table | 頁級骨架必須反映各頁真實幾何，不能由 generic block 猜測。 |
+| Composite                                                                | 組合既有元件                                   | 為何 55 個裡沒有可直接使用者                                                           |
+| ------------------------------------------------------------------------ | ---------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `ResponsiveOwnerShell`                                                   | Sidebar、Sheet、Button、Tooltip                | Primitive 不含 Pika 路由、權限可見度、桌機側欄與手機導覽規則。                         |
+| `KpiCard`／`KpiDeck`                                                     | Card、Badge、Tooltip、Skeleton                 | 需封裝 13 KPI 格式、待確認及 2＋4＋3＋4 分組。                                         |
+| `GoalEnergyBar`                                                          | Progress、Badge、Tooltip                       | 既有 Progress 沒有百分比、兩筆金額、差額、目標刻度與後端三態。                         |
+| `CostBulletRow`                                                          | Chart、Badge、Tooltip                          | 無既有 Bullet Chart；需預估刻度、實際填色、精確雙值與缺值正式文案。                    |
+| `DualCurrencyCalibrationField`                                           | Field、InputGroup、Input、Badge、Button        | G10 雙幣校準台；JPY 原幣與 NT$ 換算共同約束、匯率鎖定狀態常駐，窄版上下排列。          |
+| `SemanticStatePanel`                                                     | Empty、Skeleton、Alert、Sonner、Button         | 封裝 J1–J10 的互斥狀態契約；同一資料區同時只允許一種主狀態。                           |
+| `LedgerLockStamp`                                                        | Badge、Button                                  | K09 總帳落印鎖定；只對真實 `estimateLocked` 狀態使用，落定後仍保留可讀文字與鎖定原因。 |
+| `AnalyticsChartFrame` ＋ A–H                                             | Chart、Card、Empty、Skeleton、Alert            | `chart.tsx` 只是 wrapper，沒有八種資料關係 composite、文字摘要與資料標記契約。         |
+| `TripAreaCostEditor`／`RouteCostEditor`                                  | Field、InputGroup、Select、Tabs、Alert、Button | 需封裝 nullable fuel、手填 ETC、ESTIMATE／ACTUAL、分攤與 fail-closed 契約。            |
+| `VarianceComparisonTable`／`VarianceCell`                                | Table、Badge、Tooltip                          | 需整合 estimated／actual／difference／percent／direction／state。                      |
+| `CartLineItem`／`QuantityStepper`／`PickupMethodCard`／`CheckoutSummary` | Item、ButtonGroup、RadioGroup、Card、Field     | Primitive 不含商品、物流、門市、運費、付款與收件資料契約。                             |
+| 頁級 Skeleton compositions                                               | Skeleton、Card、Table                          | 頁級骨架必須反映各頁真實幾何，不能由 generic block 猜測。                              |
 
 ### `chart.tsx`、`empty.tsx`、`skeleton.tsx` 裁定
 
@@ -892,29 +894,29 @@ hexbin 六角只屬圖 G 的資料分箱，不得作為跨頁裝飾，不得用�
 
 ### A–H 圖表契約與反迎合
 
-| 圖 | 資料 | 固定圖型與適配理由 | Owner 提過但不採用者與理由 |
-| --- | --- | --- | --- |
-| A 損益瀑布 | 真實；九階從銷售到最終利益 | 真正的浮動瀑布：增減段從前站終點起算，小計／總計落零基線，每站標累積值；同時保留方向、順序與可驗算性。 | 不採點陣丘形，因會破壞浮動起點、接續終點與累積語意；不採蜂窩，因資料不是二維密度場。 |
-| B 預估↔實際 | 真實；同類指標雙版本 | 共用零基線的群組長條，適合同類兩值並列與跨類別量級比較。 | 不採能量條，因不是單一目標進度；不採堆疊，因預估與實際不是組成關係；不採蜂窩。 |
-| C 成本結構 | 真實；進貨／固定／變動的雙版本組成 | 並列堆疊條保留 part-to-whole，也能比較兩版的組成變化與總長。 | 不採 waffle／蜂窩，三分類堆疊更省空間且邊界清楚；不採散點，因無連續 X／Y。 |
-| D 差異貢獻 | 真實；各項有利／不利貢獻 | 以零為中心的發散長條；零軸是方向天然分界，可讀方向、量級與驅動項。 | 不採 progress／能量條，差異不朝單一目標累積；不採蜂窩；不得只用紅綠。 |
-| E 路線單件成本排行 | 示意；各路線單件交通成本 | 高到低水平排行長條；適合長路線名與單量值名次，條尾保留精確金額。 | 不採蜂窩，序位不是二維密度；不採散點，只有一個主量值。 |
-| F 地區散點 | 示意；件數 X、平均貢獻毛利 Y、收入 size | 氣泡散點完整保留 X／Y／size 三個連續編碼，可看關聯與離群地區。 | 明確拒絕規則蜂窩／waffle，因會同時消滅三個維度；蜂窩偏好放到真正適合的 G。 |
-| G 敏感度熱圖 | 示意；件數 × 每件毛利推演利益與薪資邊界 | 單一資料場的 hexbin 六角熱圖＋薪資目標等高線；鄰接格適合辨認可行、未達與虧損區。 | 不分雙軌，情境推演沒有預估／實際二元性；不混作 waffle，六角是 X／Y 分箱而非固定金額單位。 |
-| H 歷史趨勢 | 示意；各月營業利益 | 圓點點陣趨勢；X 軸保留時間順序，高度／堆疊量表達數值並附每期精確值。 | 不採六角蜂窩，時間序列需一維先後；不採實心面積，避免大色塊壓過密集資訊。 |
+| 圖                 | 資料                                    | 固定圖型與適配理由                                                                                     | Owner 提過但不採用者與理由                                                                |
+| ------------------ | --------------------------------------- | ------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------- |
+| A 損益瀑布         | 真實；九階從銷售到最終利益              | 真正的浮動瀑布：增減段從前站終點起算，小計／總計落零基線，每站標累積值；同時保留方向、順序與可驗算性。 | 不採點陣丘形，因會破壞浮動起點、接續終點與累積語意；不採蜂窩，因資料不是二維密度場。      |
+| B 預估↔實際        | 真實；同類指標雙版本                    | 共用零基線的群組長條，適合同類兩值並列與跨類別量級比較。                                               | 不採能量條，因不是單一目標進度；不採堆疊，因預估與實際不是組成關係；不採蜂窩。            |
+| C 成本結構         | 真實；進貨／固定／變動的雙版本組成      | 並列堆疊條保留 part-to-whole，也能比較兩版的組成變化與總長。                                           | 不採 waffle／蜂窩，三分類堆疊更省空間且邊界清楚；不採散點，因無連續 X／Y。                |
+| D 差異貢獻         | 真實；各項有利／不利貢獻                | 以零為中心的發散長條；零軸是方向天然分界，可讀方向、量級與驅動項。                                     | 不採 progress／能量條，差異不朝單一目標累積；不採蜂窩；不得只用紅綠。                     |
+| E 路線單件成本排行 | 示意；各路線單件交通成本                | 高到低水平排行長條；適合長路線名與單量值名次，條尾保留精確金額。                                       | 不採蜂窩，序位不是二維密度；不採散點，只有一個主量值。                                    |
+| F 地區散點         | 示意；件數 X、平均貢獻毛利 Y、收入 size | 氣泡散點完整保留 X／Y／size 三個連續編碼，可看關聯與離群地區。                                         | 明確拒絕規則蜂窩／waffle，因會同時消滅三個維度；蜂窩偏好放到真正適合的 G。                |
+| G 敏感度熱圖       | 示意；件數 × 每件毛利推演利益與薪資邊界 | 單一資料場的 hexbin 六角熱圖＋薪資目標等高線；鄰接格適合辨認可行、未達與虧損區。                       | 不分雙軌，情境推演沒有預估／實際二元性；不混作 waffle，六角是 X／Y 分箱而非固定金額單位。 |
+| H 歷史趨勢         | 示意；各月營業利益                      | 圓點點陣趨勢；X 軸保留時間順序，高度／堆疊量表達數值並附每期精確值。                                   | 不採六角蜂窩，時間序列需一維先後；不採實心面積，避免大色塊壓過密集資訊。                  |
 
 圖表只是摘要，KPI 與明細才是可核對真相。每張圖都有可由螢幕閱讀器讀取的文字摘要與對應明細入口；Tooltip 必須可由 tap 與鍵盤 focus 開啟，不得 hover-only。
 
 ### Empty／loading／error／待確認
 
-| 狀態 | 規格 |
-| --- | --- |
-| Initial loading | 按四層順序保留版位；KPI、圖表與表格 skeleton 使用最終元件近似高度。Skeleton 不顯示可被誤認為真值的數字。 |
-| Partial loading | 只替換失敗或載入中的群組／面板；已成功區域持續可讀，首屏 KPI 不等待圖表。 |
-| Empty | 使用既有 `empty.tsx`，保留區塊標題、原因、下一步與可選 CTA；不得留白。 |
-| Pending／missing input | 這是待確認，不是 empty。顯示「尚未填寫〈欄位〉」或「待確認」，不得補 0。 |
-| Error | 在失敗區塊內顯示圖示、中文原因、保留上次成功資料的說明及至少 44×44px 的重試按鈕；不得把錯誤當 0 或移除整層。 |
-| Ready but empty | 保留標題、資料範圍與 empty action；不得與 request error 混為一談。 |
+| 狀態                   | 規格                                                                                                         |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Initial loading        | 按四層順序保留版位；KPI、圖表與表格 skeleton 使用最終元件近似高度。Skeleton 不顯示可被誤認為真值的數字。     |
+| Partial loading        | 只替換失敗或載入中的群組／面板；已成功區域持續可讀，首屏 KPI 不等待圖表。                                    |
+| Empty                  | 使用既有 `empty.tsx`，保留區塊標題、原因、下一步與可選 CTA；不得留白。                                       |
+| Pending／missing input | 這是待確認，不是 empty。顯示「尚未填寫〈欄位〉」或「待確認」，不得補 0。                                     |
+| Error                  | 在失敗區塊內顯示圖示、中文原因、保留上次成功資料的說明及至少 44×44px 的重試按鈕；不得把錯誤當 0 或移除整層。 |
+| Ready but empty        | 保留標題、資料範圍與 empty action；不得與 request error 混為一談。                                           |
 
 E–H 即使 loading、empty 或 error，卡片標題區仍保留完整「⚠️ 示意圖・非真實資料」。動效尊重 `prefers-reduced-motion`；載入後不得造成 KPI 群組大幅 layout shift。
 
@@ -922,12 +924,12 @@ E–H 即使 loading、empty 或 error，卡片標題區仍保留完整「⚠️
 
 本節是明確登記的未完成項，不得在 G2 終審或 G4 派工中宣稱已完備。
 
-| 缺口 | G2 現況與不在本次補齊的理由 | 後續處理 |
-| --- | --- | --- |
-| opacity token | 現有 108 個變數沒有獨立 opacity scale；本次 disabled 以 muted surface、文字、邊界、Lock 與狀態文案區分，避免靠不受控透明度。現在硬加會形成第二套 production token。 | 下一次正式 token revision 先盤點既有 `disabled:`／`opacity-*` 用量，再決定是否納入既有命名體系；未拍板前不得散造 opacity CSS variables。 |
-| icon 規範 | 55 個 shadcn primitive 已含 icon slot，但尚未凍結 icon library、尺寸、stroke、對齊、方向性與 aria-label 契約；本次只要求狀態 icon 必須搭配文字。 | G4 前另做 icon inventory；需定義 16／20／24px 使用場景、stroke consistency、decorative `aria-hidden` 與 meaningful icon accessible name。 |
-| 完整 alias bridge | G2 已補 font fallback 與七個 derived border alias，但 exporter、客人端 Light／後台 Night page scope、`@theme inline`、`:root` semantic variables 與全部 108 token 的一對一機械 bridge 尚未建立。`DESIGN.md` 的 108 列矩陣仍是規格真相。 | G4 token migration 前產生完整 bridge／diff guard；在此之前匯出 CSS 只作比對輸入，不可整份覆蓋 `index.css`。 |
-| motion token | G2 已定八種功能性動效、時間範圍、同畫面最多 3 種、K09 專用狀態轉換與 `prefers-reduced-motion` 紅線，但尚未新增 duration／easing production token 名稱。 | G5 依 animation review 將既定範圍實作成共用 motion scale；未核准前不得散造平行 CSS variables，也不得加入 K10 候選。 |
+| 缺口              | G2 現況與不在本次補齊的理由                                                                                                                                                                                                             | 後續處理                                                                                                                                  |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| opacity token     | 現有 108 個變數沒有獨立 opacity scale；本次 disabled 以 muted surface、文字、邊界、Lock 與狀態文案區分，避免靠不受控透明度。現在硬加會形成第二套 production token。                                                                     | 下一次正式 token revision 先盤點既有 `disabled:`／`opacity-*` 用量，再決定是否納入既有命名體系；未拍板前不得散造 opacity CSS variables。  |
+| icon 規範         | 55 個 shadcn primitive 已含 icon slot，但尚未凍結 icon library、尺寸、stroke、對齊、方向性與 aria-label 契約；本次只要求狀態 icon 必須搭配文字。                                                                                        | G4 前另做 icon inventory；需定義 16／20／24px 使用場景、stroke consistency、decorative `aria-hidden` 與 meaningful icon accessible name。 |
+| 完整 alias bridge | G2 已補 font fallback 與七個 derived border alias，但 exporter、客人端 Light／後台 Night page scope、`@theme inline`、`:root` semantic variables 與全部 108 token 的一對一機械 bridge 尚未建立。`DESIGN.md` 的 108 列矩陣仍是規格真相。 | G4 token migration 前產生完整 bridge／diff guard；在此之前匯出 CSS 只作比對輸入，不可整份覆蓋 `index.css`。                               |
+| motion token      | G2 已定八種功能性動效、時間範圍、同畫面最多 3 種、K09 專用狀態轉換與 `prefers-reduced-motion` 紅線，但尚未新增 duration／easing production token 名稱。                                                                                 | G5 依 animation review 將既定範圍實作成共用 motion scale；未核准前不得散造平行 CSS variables，也不得加入 K10 候選。                       |
 
 ## Do's and Don'ts
 
