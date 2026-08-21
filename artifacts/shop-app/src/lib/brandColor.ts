@@ -33,17 +33,56 @@ function hexToHsl(hex: string): string | null {
   return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
 }
 
+/**
+ * WCAG 2.x 相對亮度（gamma 線性化後加權）：
+ *   c_lin = c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
+ *   L     = 0.2126*R_lin + 0.7152*G_lin + 0.0722*B_lin
+ * 舊實作缺線性化（直接用 sRGB 通道），會把亮色誤判為深色前景需求。
+ */
 export function getLuminance(hex: string): number {
   const m = /^#([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   if (!m) return 0.5;
-  const r = parseInt(m[1], 16) / 255;
-  const g = parseInt(m[2], 16) / 255;
-  const b = parseInt(m[3], 16) / 255;
+  const linear = (value: number) => {
+    const c = value / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  };
+  const r = linear(parseInt(m[1], 16));
+  const g = linear(parseInt(m[2], 16));
+  const b = linear(parseInt(m[3], 16));
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 
+const BRAND_FOREGROUND_OPTIONS = [
+  { color: "#ffffff", hsl: "0 0% 100%" },
+  { color: "#1a1a1a", hsl: "20 15% 15%" },
+] as const;
+
+function contrastRatio(luminanceA: number, luminanceB: number): number {
+  const lighter = Math.max(luminanceA, luminanceB);
+  const darker = Math.min(luminanceA, luminanceB);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+/**
+ * 品牌前景唯一決策點：白字與深字各算一次對比，取較高者。
+ * （殘餘：某些顏色白字深字皆不足 4.5（如 #7A7A7A），仍取較高者盡力而為；
+ *   警告 UI 為 Owner 乙案，本批不處理。）
+ * applyBrandColor 與 getContrastForeground 都走這裡，不留第二份邏輯。
+ */
+export function resolveBrandForeground(hex: string): {
+  color: "#ffffff" | "#1a1a1a";
+  hsl: "0 0% 100%" | "20 15% 15%";
+} {
+  const background = getLuminance(hex);
+  const white = contrastRatio(background, getLuminance("#ffffff"));
+  const dark = contrastRatio(background, getLuminance("#1a1a1a"));
+  return white >= dark
+    ? BRAND_FOREGROUND_OPTIONS[0]
+    : BRAND_FOREGROUND_OPTIONS[1];
+}
+
 export function getContrastForeground(hex: string): "#ffffff" | "#1a1a1a" {
-  return getLuminance(hex) > 0.6 ? "#1a1a1a" : "#ffffff";
+  return resolveBrandForeground(hex).color;
 }
 
 export function applyBrandColor(hexInput: string | null | undefined): void {
@@ -58,6 +97,6 @@ export function applyBrandColor(hexInput: string | null | undefined): void {
   root.style.setProperty("--chart-1", hsl);
   root.style.setProperty(
     "--primary-foreground",
-    getLuminance(hex) > 0.6 ? "20 15% 15%" : "0 0% 100%",
+    resolveBrandForeground(hex).hsl,
   );
 }
