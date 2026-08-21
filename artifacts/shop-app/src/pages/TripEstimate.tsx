@@ -9,9 +9,12 @@ import {
   type OperatingCostCurrency,
 } from "../lib/operatingCostDisplay";
 import { BottomNav } from "./Dashboard";
+import { DualCurrencyCalibrationField } from "../components/DualCurrencyCalibrationField";
+import { LedgerLockStamp } from "../components/LedgerLockStamp";
+import { SemanticStatePanel } from "../components/SemanticStatePanel";
 
 const inputClass =
-  "h-11 w-full rounded-xl border border-input bg-white px-3 text-sm text-foreground";
+  "h-11 w-full rounded-xl border border-input bg-background px-3 text-sm text-foreground tabular-nums lining-nums";
 
 type CostCategoryKind = "FIXED" | "VARIABLE" | "PURCHASE";
 type Category = {
@@ -116,6 +119,12 @@ const OUTCOME_LABELS: Record<ReadyTripProfitProjection["outcome"], string> = {
   LOSS: "虧損",
 };
 
+const OUTCOME_SURFACE: Record<ReadyTripProfitProjection["outcome"], string> = {
+  SALARY_TARGET_MET: "bg-chart-3/10 text-chart-3",
+  PROFIT_BELOW_SALARY_TARGET: "bg-accent/10 text-accent",
+  LOSS: "bg-destructive/10 text-destructive",
+};
+
 export default function TripEstimatePage({ tripId }: { tripId: number }) {
   const [, setLocation] = useLocation();
   const { getToken } = useAuth();
@@ -126,6 +135,7 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
     Record<number, OperatingCostCurrency>
   >({});
   const [exchangeRate, setExchangeRate] = useState("");
+  const [calibrationJpy, setCalibrationJpy] = useState("");
   const [totalItemQuantity, setTotalItemQuantity] = useState("");
   const [unitGrossProfitTwd, setUnitGrossProfitTwd] = useState("");
   const [loading, setLoading] = useState(true);
@@ -290,11 +300,30 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
       (entry) => entry.categoryId == null,
     );
 
+    if (section.categories.length === 0 && customEntries.length === 0) {
+      return (
+        <section
+          key={config.key}
+          data-cost-section={config.kind}
+          className="space-y-3 rounded-2xl border border-border bg-card p-4"
+        >
+          <h2 className="font-bold">{config.title}</h2>
+          <SemanticStatePanel
+            state={{
+              kind: "empty",
+              title: "尚無成本項目",
+              reason: "此分類目前沒有可編輯的成本項目。",
+            }}
+          />
+        </section>
+      );
+    }
+
     return (
       <section
         key={config.key}
         data-cost-section={config.kind}
-        className="space-y-3 rounded-2xl border border-border bg-white p-4"
+        className="space-y-3 rounded-2xl border border-border bg-card p-4"
       >
         <h2 className="font-bold">{config.title}</h2>
         {section.categories.map((category) => {
@@ -322,7 +351,7 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
               <div className="min-w-0">
                 <select
                   aria-label={`${category.name}幣別`}
-                  className="h-11 w-full rounded-xl border border-input bg-white px-2 text-sm text-foreground"
+                  className="h-11 w-full rounded-xl border border-input bg-background px-2 text-sm text-foreground"
                   value={entryCurrency}
                   onChange={(event) =>
                     setCurrencies((current) => ({
@@ -335,7 +364,7 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
                   <option value="TWD">TWD</option>
                   <option value="JPY">JPY</option>
                 </select>
-                <span className="mt-1 block break-words text-right text-xs text-muted-foreground">
+                <span className="mt-1 block break-words text-right text-xs tabular-nums lining-nums text-muted-foreground">
                   {formatConvertedAmount(
                     values[category.id] ?? "0",
                     entryCurrency,
@@ -352,7 +381,7 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
             className="flex items-center justify-between gap-3 border-t border-border pt-3 text-sm"
           >
             <span>{entry.customLabel ?? entry.categoryName ?? "自訂項目"}</span>
-            <span className="text-right text-muted-foreground">
+            <span className="text-right tabular-nums lining-nums text-muted-foreground">
               {entry.currency} {entry.originalAmount}
               <br />
               {formatConvertedAmount(
@@ -365,7 +394,9 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
         ))}
         <div className="flex items-center justify-between border-t border-border pt-3 text-sm font-semibold">
           <span>{config.title.replace(/（.*$/, "合計")}</span>
-          <span>{formatApiTwd(section.totalTwd)}</span>
+          <span className="tabular-nums lining-nums">
+            {formatApiTwd(section.totalTwd)}
+          </span>
         </div>
       </section>
     );
@@ -373,7 +404,7 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
 
   return (
     <div className="min-h-[100dvh] bg-background pb-24">
-      <header className="sticky top-0 z-10 border-b border-border bg-white px-5 pb-4 pt-10">
+      <header className="sticky top-0 z-10 border-b border-border bg-card px-5 pb-4 pt-10">
         <div className="mx-auto flex max-w-[480px] items-center gap-3">
           <button
             type="button"
@@ -390,21 +421,31 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
       </header>
       <main className="mx-auto max-w-[480px] space-y-4 px-5 py-5">
         {loading && (
-          <p className="text-center text-sm text-muted-foreground">載入中…</p>
+          <SemanticStatePanel
+            state={{
+              kind: "loading",
+              label: "載入中…",
+              fallbackMessage: "正在讀取預估成本，請稍候。",
+            }}
+          />
         )}
         {error && (
-          <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">
-            {error}
-          </p>
+          <SemanticStatePanel
+            state={{
+              kind: "inlineError",
+              title: "操作未完成",
+              message: error,
+            }}
+          />
         )}
         {message && (
-          <p className="rounded-xl bg-green-50 p-3 text-sm text-green-700">
+          <p className="rounded-xl bg-secondary p-3 text-sm text-secondary-foreground">
             {message}
           </p>
         )}
         {summary && (
           <>
-            <section className="rounded-2xl border border-border bg-white p-4">
+            <section className="space-y-3 rounded-2xl border border-border bg-card p-4">
               <label className="block text-sm font-semibold">
                 估算匯率（JPY → TWD）
                 <input
@@ -415,8 +456,42 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
                   inputMode="decimal"
                 />
               </label>
+              <DualCurrencyCalibrationField
+                jpyValue={calibrationJpy}
+                conversion={
+                  exchangeRate.trim()
+                    ? {
+                        status: "ready",
+                        twdDisplay: formatConvertedAmount(
+                          calibrationJpy,
+                          "JPY",
+                          exchangeRate,
+                        ),
+                        exchangeRateDisplay: exchangeRate,
+                        exchangeRateLocked: summary.estimateLocked,
+                      }
+                    : {
+                        status: "pending",
+                        reason: "尚未提供換算匯率",
+                        exchangeRateLocked: summary.estimateLocked,
+                      }
+                }
+                interaction={
+                  summary.estimateLocked
+                    ? {
+                        mode: "disabled",
+                        reason: "預估已鎖定，未解鎖前無法校準匯率。",
+                      }
+                    : {
+                        mode: "editable",
+                        onJpyValueChange: setCalibrationJpy,
+                        onClear: () => setCalibrationJpy(""),
+                      }
+                }
+                description="輸入一筆已知日圓金額，即時校準台幣換算與匯率。"
+              />
               {summary.estimateModifiedAfterLock && (
-                <p className="mt-2 text-xs text-amber-700">
+                <p className="text-xs text-accent">
                   此預估曾在鎖定後解鎖修改，紀錄會永久保留。
                 </p>
               )}
@@ -424,7 +499,7 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
 
             {SECTION_CONFIG.map(renderSection)}
 
-            <section className="space-y-2 rounded-2xl border border-border bg-white p-4 text-sm">
+            <section className="space-y-2 rounded-2xl border border-border bg-card p-4 text-sm">
               <h2 className="font-bold">費用摘要</h2>
               {SECTION_CONFIG.map((config) => (
                 <div
@@ -432,14 +507,14 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
                   className="flex items-center justify-between"
                 >
                   <span>{config.feeLabel}</span>
-                  <span>
+                  <span className="tabular-nums lining-nums">
                     {formatApiTwd(summary.sections[config.key].paymentFeeTwd)}
                   </span>
                 </div>
               ))}
               <div className="flex items-center justify-between border-t border-border pt-2 font-semibold">
                 <span>營業費用合計</span>
-                <span>
+                <span className="tabular-nums lining-nums">
                   {summary.tripProfit.status === "ready"
                     ? formatApiTwd(summary.tripProfit.operatingExpenseTwd)
                     : OPERATING_COST_PENDING_LABEL}
@@ -447,7 +522,7 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
               </div>
             </section>
 
-            <section className="space-y-3 rounded-2xl border border-border bg-white p-4">
+            <section className="space-y-3 rounded-2xl border border-border bg-card p-4">
               <h2 className="font-bold">整趟損益預估</h2>
               <div className="grid grid-cols-2 gap-2">
                 <label className="block text-sm">
@@ -496,65 +571,71 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
                           <>
                             <div className="flex items-center justify-between gap-2">
                               <span>預估營業毛利</span>
-                              <span>
+                              <span className="tabular-nums lining-nums">
                                 {formatApiTwd(projection.grossProfitTwd)}
                               </span>
                             </div>
                             <div className="flex items-center justify-between gap-2">
                               <span>預估營業淨利</span>
-                              <span>
+                              <span className="tabular-nums lining-nums">
                                 {formatApiTwd(
                                   projection.finalOperatingProfitTwd,
                                 )}
                               </span>
                             </div>
-                            <p className="rounded-xl bg-muted p-3 font-semibold">
+                            <p
+                              className={`rounded-xl p-3 font-semibold ${OUTCOME_SURFACE[projection.outcome]}`}
+                            >
                               結論：{OUTCOME_LABELS[projection.outcome]}
                             </p>
                           </>
                         ) : (
-                          <div className="rounded-xl bg-amber-50 p-3 text-amber-800">
-                            <p className="font-semibold">
-                              {OPERATING_COST_PENDING_LABEL}
-                            </p>
-                            <p>{projection.reason}</p>
-                          </div>
+                          <SemanticStatePanel
+                            state={{
+                              kind: "pending",
+                              title: OPERATING_COST_PENDING_LABEL,
+                              reason: projection.reason,
+                            }}
+                          />
                         )}
                       </div>
                     );
                   })}
                 </div>
               ) : (
-                <div className="rounded-xl bg-amber-50 p-3 text-sm text-amber-800">
-                  <p className="font-semibold">
-                    {OPERATING_COST_PENDING_LABEL}
-                  </p>
-                  <p>{summary.tripProfit.reason}</p>
-                </div>
+                <SemanticStatePanel
+                  state={{
+                    kind: "pending",
+                    title: OPERATING_COST_PENDING_LABEL,
+                    reason: summary.tripProfit.reason,
+                  }}
+                />
               )}
             </section>
 
+            {summary.estimateLocked ? (
+              <LedgerLockStamp
+                estimateLocked
+                reason="預估已鎖定，未解鎖前無法修改預估成本。"
+                action={{
+                  label: "解鎖估算",
+                  onAction: () => void unlockEstimate(),
+                }}
+              />
+            ) : null}
             <div className="flex gap-2">
               <button
                 type="button"
-                className="min-h-11 flex-1 rounded-xl bg-primary font-semibold text-white disabled:opacity-50"
+                className="min-h-11 flex-1 rounded-xl bg-primary font-semibold text-primary-foreground disabled:opacity-50"
                 disabled={saving || summary.estimateLocked}
                 onClick={() => void save()}
               >
                 儲存估算
               </button>
-              {summary.estimateLocked ? (
+              {summary.estimateLocked ? null : (
                 <button
                   type="button"
-                  className="min-h-11 flex-1 rounded-xl border border-primary text-primary"
-                  onClick={() => void unlockEstimate()}
-                >
-                  解鎖估算
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  className="min-h-11 flex-1 rounded-xl border border-border bg-white"
+                  className="min-h-11 flex-1 rounded-xl border border-border bg-card"
                   onClick={() => void lockEstimate()}
                 >
                   結束並鎖定
