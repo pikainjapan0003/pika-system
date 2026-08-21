@@ -18,6 +18,7 @@ import {
   Router as WouterRouter,
 } from "wouter";
 import { QueryClientProvider, useQueryClient } from "@tanstack/react-query";
+import { RouteThemeController } from "@/components/RouteThemeController";
 import { Toaster } from "@/components/ui/toaster";
 import { queryClient } from "@/lib/queryClient";
 import {
@@ -575,6 +576,7 @@ function ClerkProviderWithRoutes() {
 function App() {
   return (
     <WouterRouter base={basePath}>
+      <RouteThemeController basePath={basePath} />
       <ClerkProviderWithRoutes />
     </WouterRouter>
   );

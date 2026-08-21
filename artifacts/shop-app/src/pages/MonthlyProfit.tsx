@@ -71,7 +71,7 @@ export default function MonthlyProfitPage() {
 
   return (
     <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-24">
-      <header className="bg-white border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
+      <header className="bg-card border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
         <button
           type="button"
           onClick={() => setLocation("/dashboard")}
@@ -86,7 +86,7 @@ export default function MonthlyProfitPage() {
       </header>
 
       <main className="px-5 py-5 space-y-4">
-        <label className="block bg-white border border-border rounded-2xl p-4">
+        <label className="block bg-card border border-border rounded-2xl p-4">
           <span className="block text-xs font-medium text-muted-foreground mb-2">
             帳務月份（台灣時間）
           </span>
@@ -104,7 +104,7 @@ export default function MonthlyProfitPage() {
           </p>
         )}
         {error && (
-          <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
             {error}
           </div>
         )}
@@ -148,10 +148,10 @@ function ReportCard({
 }) {
   return (
     <div
-      className={`rounded-2xl border border-border bg-white p-4 ${wide ? "col-span-2" : ""}`}
+      className={`rounded-2xl border border-border bg-card p-4 ${wide ? "col-span-2" : ""}`}
     >
       <div
-        className={`text-xl font-bold ${alert ? "text-amber-600" : "text-primary"}`}
+        className={`text-xl font-bold tabular-nums lining-nums ${alert ? "text-accent" : "text-primary"}`}
       >
         {value}
       </div>

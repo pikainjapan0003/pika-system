@@ -213,6 +213,27 @@ jobs:
           console.log("V1_FIXED_COST_SCHEMA_GUARD=PASS");
           NODE
 
+      - name: Verify V1 mock import isolation
+        run: |
+          set -eo pipefail
+          offenders=""
+          while IFS= read -r file; do
+            case "$file" in
+              */mocks/*) continue ;;
+            esac
+            if grep -qE "mocks/[A-Za-z0-9_-]" "$file" 2>/dev/null; then
+              case "$(basename "$file")" in
+                PreviewChart.tsx) ;;
+                *) offenders="${offenders} ${file}" ;;
+              esac
+            fi
+          done < <(git ls-files | grep -E '\.(ts|tsx|js|mjs)$' || true)
+          if [ -n "$offenders" ]; then
+            echo "::error::V1 mock isolation violated; mocks/ referenced outside PreviewChart.tsx:$offenders"
+            exit 1
+          fi
+          echo "V1_MOCK_IMPORT_GUARD=PASS"
+
       - name: Test database routes
         id: database-route-tests
         working-directory: artifacts/api-server

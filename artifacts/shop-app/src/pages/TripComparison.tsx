@@ -64,7 +64,7 @@ export default function TripComparisonPage({ tripId }: { tripId: number }) {
 
   return (
     <div className="min-h-[100dvh] bg-background pb-24">
-      <header className="sticky top-0 z-10 border-b border-border bg-white px-5 pb-4 pt-10">
+      <header className="sticky top-0 z-10 border-b border-border bg-card px-5 pb-4 pt-10">
         <div className="mx-auto flex max-w-[480px] items-center gap-3">
           <button
             type="button"
@@ -84,17 +84,17 @@ export default function TripComparisonPage({ tripId }: { tripId: number }) {
           <p className="text-center text-sm text-muted-foreground">載入中…</p>
         )}
         {status === "pending_confirmation" && (
-          <p className="rounded-xl bg-amber-50 p-4 text-sm text-amber-800">
+          <p className="rounded-xl bg-accent/10 p-4 text-sm text-accent">
             匯率尚未確認，完成兩側匯率後才能比較。
           </p>
         )}
         {error && (
-          <p className="rounded-xl bg-red-50 p-4 text-sm text-red-700">
+          <p className="rounded-xl bg-destructive/10 p-4 text-sm text-destructive">
             {error}
           </p>
         )}
         {status === "ready" && (
-          <section className="overflow-x-auto rounded-2xl border border-border bg-white p-4">
+          <section className="overflow-x-auto rounded-2xl border border-border bg-card p-4">
             <table className="w-full min-w-[560px] text-left text-sm">
               <thead>
                 <tr className="border-b border-border text-xs text-muted-foreground">
@@ -126,7 +126,7 @@ export default function TripComparisonPage({ tripId }: { tripId: number }) {
                         : `NT$${row.variance.difference}`}
                     </td>
                     <td
-                      className={`py-3 font-semibold ${row.variance?.direction === "unfavorable" ? "text-red-600" : row.variance?.direction === "favorable" ? "text-green-600" : "text-muted-foreground"}`}
+                      className={`py-3 font-semibold ${row.variance?.direction === "unfavorable" ? "text-destructive" : row.variance?.direction === "favorable" ? "text-chart-3" : "text-muted-foreground"}`}
                     >
                       {row.variance
                         ? directionLabel(row.variance.direction)

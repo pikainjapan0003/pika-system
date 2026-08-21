@@ -124,7 +124,7 @@ function CartItemCard({
   const lineTotal = item.unitPrice * item.quantity;
 
   return (
-    <div className="bg-white rounded-2xl border border-border p-3 flex gap-3">
+    <div className="bg-card rounded-2xl border border-border p-3 flex gap-3">
       {/* Product image */}
       <div className="w-16 h-16 rounded-xl overflow-hidden bg-muted shrink-0">
         {item.productImageUrl ? (
@@ -187,7 +187,7 @@ function CartItemCard({
             <button
               type="button"
               onClick={() => onUpdateQty(Math.max(1, item.quantity - 1))}
-              className="w-8 h-8 rounded-lg border border-input bg-white text-foreground font-bold flex items-center justify-center text-base leading-none"
+              className="w-8 h-8 rounded-lg border border-input bg-background text-foreground font-bold flex items-center justify-center text-base leading-none"
             >
               −
             </button>
@@ -197,7 +197,7 @@ function CartItemCard({
             <button
               type="button"
               onClick={() => onUpdateQty(item.quantity + 1)}
-              className="w-8 h-8 rounded-lg border border-input bg-white text-foreground font-bold flex items-center justify-center text-base leading-none"
+              className="w-8 h-8 rounded-lg border border-input bg-background text-foreground font-bold flex items-center justify-center text-base leading-none"
             >
               +
             </button>
@@ -253,7 +253,7 @@ function SuccessPage({ order }: { order: CartOrderResult }) {
   return (
     <div className="min-h-[100dvh] bg-background px-5 py-10 max-w-[480px] mx-auto">
       <div className="text-center mb-6">
-        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+        <div className="w-16 h-16 bg-secondary text-secondary-foreground rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
           ✓
         </div>
         <h1 className="text-xl font-bold text-foreground">下單成功！</h1>
@@ -263,14 +263,14 @@ function SuccessPage({ order }: { order: CartOrderResult }) {
       </div>
 
       {/* Order summary card */}
-      <div className="bg-white rounded-2xl p-4 border border-border space-y-3 mb-3">
+      <div className="bg-card rounded-2xl p-4 border border-border space-y-3 mb-3">
         <SummaryRow label="追蹤碼" value={order.publicToken} mono />
         <SummaryRow label="取貨方式" value={order.pickupMethod} />
         <SummaryRow label="下單時間" value={formatDate(order.createdAt)} />
       </div>
 
       {/* Items list */}
-      <div className="bg-white rounded-2xl border border-border overflow-hidden mb-3">
+      <div className="bg-card rounded-2xl border border-border overflow-hidden mb-3">
         <div className="px-4 py-3 border-b border-border">
           <span className="text-xs font-semibold text-muted-foreground">
             商品明細
@@ -328,7 +328,7 @@ function SuccessPage({ order }: { order: CartOrderResult }) {
 
       <button
         onClick={handleCopy}
-        className="w-full h-11 rounded-xl border border-border bg-white text-sm font-medium text-foreground mb-2"
+        className="w-full h-11 rounded-xl border border-border bg-card text-sm font-medium text-foreground mb-2"
       >
         {copied ? "已複製！" : "複製追蹤碼"}
       </button>
@@ -346,9 +346,9 @@ function SuccessPage({ order }: { order: CartOrderResult }) {
 }
 
 const inputClass =
-  "w-full h-12 px-4 rounded-xl border border-input bg-white text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 text-base";
+  "w-full h-12 px-4 rounded-xl border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 text-base";
 const selectClass =
-  "w-full h-12 px-4 rounded-xl border border-input bg-white text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 text-base";
+  "w-full h-12 px-4 rounded-xl border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 text-base";
 
 export default function PublicCartPage() {
   const [cartItems, setCartItems] = useState<BuyerCartItem[]>([]);
@@ -573,7 +573,7 @@ export default function PublicCartPage() {
   if (cartItems.length === 0) {
     return (
       <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto">
-        <div className="bg-white px-5 py-4 flex items-center gap-3 border-b border-border">
+        <div className="bg-card px-5 py-4 flex items-center gap-3 border-b border-border">
           <button
             onClick={() => window.history.back()}
             className="text-primary font-medium text-sm"
@@ -596,7 +596,7 @@ export default function PublicCartPage() {
   return (
     <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-8">
       {/* Header */}
-      <div className="bg-white px-5 py-4 flex items-center gap-3 border-b border-border sticky top-0 z-10">
+      <div className="bg-card px-5 py-4 flex items-center gap-3 border-b border-border sticky top-0 z-10">
         <button
           onClick={() => window.history.back()}
           className="text-primary font-medium text-sm"
@@ -697,7 +697,7 @@ export default function PublicCartPage() {
                     className={`w-full flex items-center gap-4 px-5 py-5 min-h-[72px] rounded-2xl border-2 text-left transition-colors ${
                       isSelected
                         ? "bg-primary/10 border-primary"
-                        : "bg-white border-border hover:border-primary/40"
+                        : "bg-card border-border hover:border-primary/40"
                     }`}
                   >
                     <div
@@ -782,7 +782,7 @@ export default function PublicCartPage() {
                       {/* CVS store — 7-11 */}
                       {isSevenElevenMethod(m) && (
                         <div
-                          className={`rounded-2xl px-4 py-4 space-y-3 border ${cvsStore ? "bg-green-50/30 border-green-200" : "bg-white border-border"}`}
+                          className={`rounded-2xl px-4 py-4 space-y-3 border ${cvsStore ? "bg-chart-3/10 border-chart-3/30" : "bg-card border-border"}`}
                         >
                           {cvsStore ? (
                             <>
@@ -791,7 +791,7 @@ export default function PublicCartPage() {
                                   xmlns="http://www.w3.org/2000/svg"
                                   viewBox="0 0 20 20"
                                   fill="currentColor"
-                                  className="w-3.5 h-3.5 text-green-600 shrink-0"
+                                  className="w-3.5 h-3.5 text-chart-3 shrink-0"
                                 >
                                   <path
                                     fillRule="evenodd"
@@ -799,7 +799,7 @@ export default function PublicCartPage() {
                                     clipRule="evenodd"
                                   />
                                 </svg>
-                                <span className="text-xs font-semibold text-green-700">
+                                <span className="text-xs font-semibold text-chart-3">
                                   已選取門市
                                 </span>
                               </div>
@@ -839,7 +839,7 @@ export default function PublicCartPage() {
                       {/* CVS store — 全家 */}
                       {isFamilyMartMethod(m) && (
                         <div
-                          className={`rounded-2xl px-4 py-4 space-y-3 border ${cvsStore ? "bg-green-50/30 border-green-200" : "bg-white border-border"}`}
+                          className={`rounded-2xl px-4 py-4 space-y-3 border ${cvsStore ? "bg-chart-3/10 border-chart-3/30" : "bg-card border-border"}`}
                         >
                           {cvsStore ? (
                             <>
@@ -848,7 +848,7 @@ export default function PublicCartPage() {
                                   xmlns="http://www.w3.org/2000/svg"
                                   viewBox="0 0 20 20"
                                   fill="currentColor"
-                                  className="w-3.5 h-3.5 text-green-600 shrink-0"
+                                  className="w-3.5 h-3.5 text-chart-3 shrink-0"
                                 >
                                   <path
                                     fillRule="evenodd"
@@ -856,7 +856,7 @@ export default function PublicCartPage() {
                                     clipRule="evenodd"
                                   />
                                 </svg>
-                                <span className="text-xs font-semibold text-green-700">
+                                <span className="text-xs font-semibold text-chart-3">
                                   已選取門市
                                 </span>
                               </div>
@@ -895,7 +895,7 @@ export default function PublicCartPage() {
 
                       {/* Home delivery */}
                       {isHomeDeliveryMethod(m) && (
-                        <div className="bg-white border border-border rounded-2xl px-4 py-4 space-y-4">
+                        <div className="bg-card border border-border rounded-2xl px-4 py-4 space-y-4">
                           <p className="text-sm font-semibold text-foreground">
                             {m === "黑貓宅急便"
                               ? "黑貓宅急便收件資訊"
@@ -971,7 +971,7 @@ export default function PublicCartPage() {
 
                       {/* 面交 */}
                       {isMeetupMethod(m) && (
-                        <div className="bg-white border border-border rounded-2xl px-4 py-4 space-y-4">
+                        <div className="bg-card border border-border rounded-2xl px-4 py-4 space-y-4">
                           <p className="text-sm font-semibold text-foreground">
                             面交地點資訊（選填）
                           </p>
@@ -1045,7 +1045,7 @@ export default function PublicCartPage() {
         <button
           type="submit"
           disabled={isSubmitting || cartItems.length === 0}
-          className="w-full h-12 bg-primary text-white font-bold rounded-xl text-base disabled:opacity-60 sticky bottom-4"
+          className="w-full h-12 bg-primary text-primary-foreground font-bold rounded-xl text-base disabled:opacity-60 sticky bottom-4"
         >
           {isSubmitting
             ? "送出中..."

@@ -423,4 +423,94 @@ test("locked estimate exposes unlock action and modified warning", async () => {
   root.unmount();
 });
 
+test("exchange-rate card calibrates JPY into exact grouped TWD", async () => {
+  globalThis.fetch = async () => response(makeSummary());
+  const { container, root } = await renderPage();
+
+  const field = container.querySelector(
+    "[data-slot='dual-currency-calibration-field']",
+  );
+  assert.ok(field);
+  const jpyInput = field.querySelector("input[id$='-jpy']");
+  const twdInput = container.querySelector("input[aria-label='台幣換算結果']");
+  assert.ok(jpyInput);
+  assert.ok(twdInput);
+  setInputValue(jpyInput, "63943");
+
+  const updated = await waitForCondition(() =>
+    twdInput.value.includes("NT$13,108.32"),
+  );
+  assert.equal(updated, true);
+  assert.match(field.textContent, /1\s*JPY\s*=\s*0\.205\s*TWD/);
+  assert.match(field.textContent, /匯率未鎖定/);
+  root.unmount();
+});
+
+test("calibration panel shows 待確認 without a rate and never shows zero", async () => {
+  globalThis.fetch = async () => response(makeSummary());
+  const { container, root } = await renderPage();
+
+  setInputValue(container.querySelector("input[aria-label='估算匯率']"), "");
+  const twdInput = container.querySelector("input[aria-label='台幣換算結果']");
+
+  const updated = await waitForCondition(() =>
+    container.textContent.includes("尚未提供換算匯率"),
+  );
+  assert.equal(updated, true);
+  assert.equal(twdInput.value, "");
+  assert.match(container.textContent, /待確認：尚未提供換算匯率/);
+  const fieldText =
+    container.querySelector("[data-slot='dual-currency-calibration-field']")
+      ?.textContent ?? "";
+  assert.doesNotMatch(fieldText, /NT\$0/);
+  root.unmount();
+});
+
+test("locked estimate renders the ledger stamp and disables editing", async () => {
+  const locked = makeSummary({
+    estimateLocked: true,
+    estimateModifiedAfterLock: true,
+  });
+  globalThis.fetch = async () => response(locked);
+  const { container, root } = await renderPage(locked);
+
+  const stamp = container.querySelector("[data-slot='ledger-lock-stamp']");
+  assert.ok(stamp);
+  assert.match(stamp.textContent, /預估已鎖定/);
+  assert.ok(findButtonByText(container, "解鎖估算"));
+
+  const saveButton = findButtonByText(container, "儲存估算");
+  assert.ok(saveButton);
+  assert.equal(saveButton.disabled, true);
+
+  const field = container.querySelector(
+    "[data-slot='dual-currency-calibration-field']",
+  );
+  const jpyInput = field?.querySelector("input[id$='-jpy']");
+  assert.equal(jpyInput?.disabled, true);
+  assert.match(field.textContent, /目前不可編輯/);
+  root.unmount();
+});
+
+test("empty section renders a designed empty state", async () => {
+  const summary = makeSummary({
+    sections: {
+      ...makeSummary().sections,
+      fixed: section([], {
+        totalTwd: "0.000000000000",
+        paymentFeeTwd: "0.000000000000",
+      }),
+    },
+  });
+  globalThis.fetch = async () => response(summary);
+  const { container, root } = await renderPage(summary);
+
+  const fixedSection = container.querySelector("[data-cost-section='FIXED']");
+  assert.ok(fixedSection);
+  assert.match(fixedSection.textContent, /尚無成本項目/);
+  assert.match(fixedSection.textContent, /此分類目前沒有可編輯的成本項目。/);
+  assert.equal(fixedSection.querySelectorAll("input").length, 0);
+  root.unmount();
+});
+
 after(() => restoreDom());
