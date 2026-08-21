@@ -344,6 +344,69 @@ body[data-pika-theme="night"] {
 }
 /* design-token-bridge:end */
 
+/* ============================================================================
+   資料視覺化 token（21 個）
+   source: DESIGN.md「資料視覺化連續色階／發散色階／支援角色」節（L369 起）
+   這 21 個 token 屬 G2 新增命名，不在「既有 108 個 CSS 變數」相容矩陣內，
+   故不屬於 design-token-bridge 的 108 矩陣搬移範圍；本區在生成區塊之外，
+   bridge 重跑不會覆蓋（SOURCE_COMMIT 釘選邏輯未動）。
+   Light 欄 → :root（含 legacy 兜底）；Night 欄 → body[data-pika-theme="night"]。
+   取值逐字照抄 DESIGN.md 雙值，未調色、未四捨五入、未省略。
+   ========================================================================== */
+:root {
+  /* Sequential 連續色階（低 → 高；Light 亮 → 暗） */
+  --chart-sequential-profit-1: 207 28% 94%;
+  --chart-sequential-profit-2: 204 42% 85%;
+  --chart-sequential-profit-3: 203 49% 74%;
+  --chart-sequential-profit-4: 202 57% 61%;
+  --chart-sequential-profit-5: 201 65% 48%;
+  --chart-sequential-profit-6: 201 70% 34%;
+  --chart-sequential-profit-7: 202 72% 24%;
+  /* Diverging 發散色階（不利 ← 商業中心 → 有利） */
+  --chart-diverging-profit-negative-3: 7 62% 46%;
+  --chart-diverging-profit-negative-2: 10 52% 60%;
+  --chart-diverging-profit-negative-1: 16 38% 78%;
+  --chart-diverging-profit-neutral: 210 23% 94%;
+  --chart-diverging-profit-positive-1: 157 28% 78%;
+  --chart-diverging-profit-positive-2: 157 37% 56%;
+  --chart-diverging-profit-positive-3: 157 46% 35%;
+  /* 支援角色 */
+  --chart-missing: 212 18% 55%;
+  --chart-axis: 215 10% 42%;
+  --chart-gridline: 212 18% 85%;
+  --chart-contour: 216 27% 13%;
+  --chart-target-line: 32 88% 42%;
+  --chart-legend-foreground: 215 10% 42%;
+  --chart-legend-border: 212 18% 55%;
+}
+
+body[data-pika-theme="night"] {
+  /* Sequential（Night 暗 → 亮） */
+  --chart-sequential-profit-1: 217 19% 18%;
+  --chart-sequential-profit-2: 213 23% 25%;
+  --chart-sequential-profit-3: 209 31% 32%;
+  --chart-sequential-profit-4: 205 41% 40%;
+  --chart-sequential-profit-5: 201 50% 48%;
+  --chart-sequential-profit-6: 198 56% 55%;
+  --chart-sequential-profit-7: 195 62% 66%;
+  /* Diverging */
+  --chart-diverging-profit-negative-3: 7 58% 63%;
+  --chart-diverging-profit-negative-2: 9 48% 53%;
+  --chart-diverging-profit-negative-1: 13 33% 39%;
+  --chart-diverging-profit-neutral: 217 19% 18%;
+  --chart-diverging-profit-positive-1: 157 28% 32%;
+  --chart-diverging-profit-positive-2: 157 36% 44%;
+  --chart-diverging-profit-positive-3: 157 43% 55%;
+  /* 支援角色 */
+  --chart-missing: 215 18% 48%;
+  --chart-axis: 214 12% 66%;
+  --chart-gridline: 215 18% 24%;
+  --chart-contour: 210 24% 93%;
+  --chart-target-line: 35 72% 61%;
+  --chart-legend-foreground: 214 12% 66%;
+  --chart-legend-border: 215 18% 48%;
+}
+
 @layer base {
   * {
     @apply border-border;
