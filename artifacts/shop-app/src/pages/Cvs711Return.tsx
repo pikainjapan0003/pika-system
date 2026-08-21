@@ -82,7 +82,7 @@ export default function Cvs711ReturnPage() {
           <p className="font-medium text-foreground">{errorMsg}</p>
           <button
             onClick={() => window.history.back()}
-            className="w-full h-11 rounded-xl bg-primary text-white text-sm font-semibold"
+            className="w-full h-11 rounded-xl bg-primary text-primary-foreground text-sm font-semibold"
           >
             返回
           </button>

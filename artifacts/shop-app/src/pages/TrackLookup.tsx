@@ -38,7 +38,7 @@ export default function TrackLookupPage() {
               setError("");
             }}
             placeholder="貼上追蹤碼..."
-            className="w-full h-12 px-4 rounded-xl border border-input bg-white text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm font-mono"
+            className="w-full h-12 px-4 rounded-xl border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm font-mono"
             autoComplete="off"
             autoCorrect="off"
             spellCheck={false}
@@ -46,7 +46,7 @@ export default function TrackLookupPage() {
           {error && <p className="text-destructive text-sm">{error}</p>}
           <button
             type="submit"
-            className="w-full h-12 bg-primary text-white font-semibold rounded-xl text-base"
+            className="w-full h-12 bg-primary text-primary-foreground font-semibold rounded-xl text-base"
           >
             查詢
           </button>
