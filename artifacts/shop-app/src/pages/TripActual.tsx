@@ -5,7 +5,7 @@ import { useGetMyStore } from "@workspace/api-client-react";
 import { BottomNav } from "./Dashboard";
 
 const inputClass =
-  "h-11 w-full rounded-xl border border-input bg-white px-3 text-sm text-foreground";
+  "h-11 w-full rounded-xl border border-input bg-background px-3 text-sm text-foreground tabular-nums lining-nums";
 
 type Category = { id: number; name: string };
 type Entry = {
@@ -151,7 +151,7 @@ export default function TripActualPage({ tripId }: { tripId: number }) {
 
   return (
     <div className="min-h-[100dvh] bg-background pb-24">
-      <header className="sticky top-0 z-10 border-b border-border bg-white px-5 pb-4 pt-10">
+      <header className="sticky top-0 z-10 border-b border-border bg-card px-5 pb-4 pt-10">
         <div className="mx-auto flex max-w-[480px] items-center gap-3">
           <button
             type="button"
@@ -171,18 +171,18 @@ export default function TripActualPage({ tripId }: { tripId: number }) {
           <p className="text-center text-sm text-muted-foreground">載入中…</p>
         )}
         {error && (
-          <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">
+          <p className="rounded-xl bg-destructive/10 p-3 text-sm text-destructive">
             {error}
           </p>
         )}
         {message && (
-          <p className="rounded-xl bg-green-50 p-3 text-sm text-green-700">
+          <p className="rounded-xl bg-secondary p-3 text-sm text-secondary-foreground">
             {message}
           </p>
         )}
         {summary && (
           <>
-            <section className="space-y-2 rounded-2xl border border-border bg-white p-4">
+            <section className="space-y-2 rounded-2xl border border-border bg-card p-4">
               <h2 className="font-bold">新增發票／收據</h2>
               <label className="block text-sm">
                 類別
@@ -270,14 +270,14 @@ export default function TripActualPage({ tripId }: { tripId: number }) {
               )}
               <button
                 type="button"
-                className="min-h-11 w-full rounded-xl bg-primary font-semibold text-white disabled:opacity-50"
+                className="min-h-11 w-full rounded-xl bg-primary font-semibold text-primary-foreground disabled:opacity-50"
                 disabled={saving}
                 onClick={() => void save()}
               >
                 新增實際費用
               </button>
             </section>
-            <section className="space-y-2 rounded-2xl border border-border bg-white p-4">
+            <section className="space-y-2 rounded-2xl border border-border bg-card p-4">
               <h2 className="font-bold">已記錄費用</h2>
               {summary.entries.length === 0 && (
                 <p className="text-sm text-muted-foreground">尚無實際費用</p>
@@ -290,7 +290,7 @@ export default function TripActualPage({ tripId }: { tripId: number }) {
                   <span>
                     {entry.categoryName ?? entry.customLabel ?? "自訂項目"}
                   </span>
-                  <span>
+                  <span className="tabular-nums lining-nums">
                     {entry.currency} {entry.originalAmount}
                     {entry.photoUrl ? "" : " · 無單據"}
                   </span>
