@@ -23,7 +23,7 @@ import { ExchangeRateReferenceHint } from "@/components/ExchangeRateReferenceHin
 import { formatActionableError } from "@/lib/actionableError";
 
 const inputClass =
-  "w-full h-11 px-3.5 rounded-xl border border-input bg-white text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm";
+  "w-full h-11 px-3.5 rounded-xl border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm tabular-nums lining-nums";
 
 function TripForm({
   initial,
@@ -116,14 +116,14 @@ function TripForm({
               notes: notes.trim(),
             });
           }}
-          className="flex-1 h-10 rounded-xl bg-primary text-white text-sm font-semibold disabled:opacity-50"
+          className="flex-1 h-10 rounded-xl bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50"
         >
           {submitting ? "儲存中…" : "儲存"}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="h-10 px-4 rounded-xl border border-border bg-white text-sm"
+          className="h-10 px-4 rounded-xl border border-border bg-card text-sm"
         >
           取消
         </button>
@@ -259,7 +259,7 @@ function RouteForm({
         {numField("停車費 (¥)", parkingJpy, setParkingJpy)}
         {numField("ETC 費用 (¥) *", etcJpy, setEtcJpy)}
       </div>
-      <p className="rounded-xl bg-white px-3 py-2 text-xs leading-relaxed text-muted-foreground">
+      <p className="rounded-xl bg-card px-3 py-2 text-xs leading-relaxed text-muted-foreground">
         請填這條路線實際發生的日圓費用；ETC 必須手動填寫，可填
         0。油資留空＝待確認。系統不會自動填
         0，也不會自動推估。儲存後系統才會依已拍板公式分攤，預估件數不正確時不會用
@@ -322,14 +322,14 @@ function RouteForm({
               etcJpy,
             });
           }}
-          className="flex-1 h-10 rounded-xl bg-primary text-white text-sm font-semibold disabled:opacity-50"
+          className="flex-1 h-10 rounded-xl bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50"
         >
           {submitting ? "儲存中…" : "儲存"}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="h-10 px-4 rounded-xl border border-border bg-white text-sm"
+          className="h-10 px-4 rounded-xl border border-border bg-card text-sm"
         >
           取消
         </button>
@@ -482,14 +482,14 @@ function AreaForm({
               estimatedItemQuantity,
             });
           }}
-          className="flex-1 h-10 rounded-xl bg-primary text-white text-sm font-semibold disabled:opacity-50"
+          className="flex-1 h-10 rounded-xl bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50"
         >
           {submitting ? "儲存中…" : "儲存大區"}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="h-10 px-4 rounded-xl border border-border bg-white text-sm"
+          className="h-10 px-4 rounded-xl border border-border bg-card text-sm"
         >
           取消
         </button>
@@ -583,7 +583,7 @@ function TripCard({
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-border overflow-hidden">
+    <div className="bg-card rounded-2xl border border-border overflow-hidden">
       <div className="px-4 py-3.5 border-b border-border flex items-start justify-between gap-2">
         {editingTrip ? (
           <div className="flex-1">
@@ -853,7 +853,7 @@ export default function TripsPage() {
 
   return (
     <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-24">
-      <header className="bg-white border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
+      <header className="bg-card border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
         <div className="flex items-center gap-3">
           <button
             type="button"
@@ -882,7 +882,7 @@ export default function TripsPage() {
         )}
 
         {!isLoading && (trips ?? []).length === 0 && !addingTrip && (
-          <div className="bg-white rounded-2xl border border-border px-5 py-8 text-center">
+          <div className="bg-card rounded-2xl border border-border px-5 py-8 text-center">
             <p className="text-sm text-muted-foreground">尚未建立任何行程</p>
           </div>
         )}
@@ -894,7 +894,7 @@ export default function TripsPage() {
           ))}
 
         {addingTrip ? (
-          <div className="bg-white rounded-2xl border border-border p-4">
+          <div className="bg-card rounded-2xl border border-border p-4">
             <TripForm
               submitting={createTrip.isPending}
               onCancel={() => setAddingTrip(false)}
