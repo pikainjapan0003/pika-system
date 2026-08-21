@@ -524,7 +524,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center bg-background px-5">
         <div className="text-center max-w-sm w-full">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+          <div className="w-16 h-16 bg-secondary text-secondary-foreground rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
             ✓
           </div>
           <h1 className="text-xl font-bold text-foreground">下單成功！</h1>
@@ -533,7 +533,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
             <br />
             感謝您的訂購！
           </p>
-          <div className="mt-6 bg-white rounded-2xl p-4 border border-border text-left space-y-2">
+          <div className="mt-6 bg-card rounded-2xl p-4 border border-border text-left space-y-2">
             <SummaryRow label="追蹤碼" value={token} mono />
             <SummaryRow label="商品" value={productName} />
             <SummaryRow label="數量" value={`x${submittedOrder.quantity}`} />
@@ -549,7 +549,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
             />
           </div>
           {submittedCvsStore && (
-            <div className="mt-3 bg-white rounded-2xl p-4 border border-border text-left space-y-1.5">
+            <div className="mt-3 bg-card rounded-2xl p-4 border border-border text-left space-y-1.5">
               <div className="text-xs font-semibold text-muted-foreground">
                 已選門市
               </div>
@@ -572,7 +572,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
           <div className="mt-4 flex flex-col gap-2">
             <button
               onClick={handleCopy}
-              className="w-full h-11 rounded-xl border border-border bg-white text-sm font-medium text-foreground"
+              className="w-full h-11 rounded-xl border border-border bg-card text-sm font-medium text-foreground"
             >
               {copied ? "已複製！" : "複製追蹤碼"}
             </button>
@@ -594,7 +594,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
   return (
     <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto">
       {/* Product info */}
-      <div className="bg-white">
+      <div className="bg-card">
         {product.imageUrl && (
           <img
             src={product.imageUrl}
@@ -655,11 +655,11 @@ export default function PublicOrderPage({ shareToken }: Props) {
           {orderDeadlineAt != null && (
             <div className="mt-4">
               {isOrderClosed ? (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-100 text-red-700 text-xs font-semibold border border-red-200">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-destructive/10 text-destructive text-xs font-semibold border border-destructive/30">
                   已截止收單
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-50 text-red-600 text-xs font-semibold border border-red-200">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-destructive/10 text-destructive text-xs font-semibold border border-destructive/30">
                   {formatDate(product.orderDeadlineAt as string)} 截止
                 </span>
               )}
@@ -688,8 +688,8 @@ export default function PublicOrderPage({ shareToken }: Props) {
                   }
                   className={`min-h-11 px-4 py-2 rounded-xl text-sm font-medium border transition-colors ${
                     specValues[spec.name] === val
-                      ? "bg-primary text-white border-primary"
-                      : "bg-white text-foreground border-border"
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-card text-foreground border-border"
                   }`}
                 >
                   {val}
@@ -708,7 +708,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
             <button
               type="button"
               onClick={() => setQuantity(Math.max(1, quantity - 1))}
-              className="w-11 min-h-11 rounded-xl border border-input bg-white text-foreground text-xl font-bold flex items-center justify-center"
+              className="w-11 min-h-11 rounded-xl border border-input bg-background text-foreground text-xl font-bold flex items-center justify-center"
             >
               −
             </button>
@@ -718,7 +718,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
             <button
               type="button"
               onClick={() => setQuantity(quantity + 1)}
-              className="w-11 min-h-11 rounded-xl border border-input bg-white text-foreground text-xl font-bold flex items-center justify-center"
+              className="w-11 min-h-11 rounded-xl border border-input bg-background text-foreground text-xl font-bold flex items-center justify-center"
             >
               +
             </button>
@@ -733,7 +733,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
             disabled={isOrderClosed}
             className={`flex-1 h-11 rounded-xl font-bold text-sm transition-colors disabled:opacity-60 ${
               cartJustAdded
-                ? "bg-green-500 text-white"
+                ? "bg-chart-3/15 text-chart-3 border-2 border-chart-3/30"
                 : "bg-primary/15 text-primary border-2 border-primary/30 hover:bg-primary/20"
             }`}
           >
@@ -741,7 +741,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
           </button>
           <a
             href="/cart"
-            className="relative flex items-center gap-1.5 h-11 px-4 rounded-xl border border-border bg-white text-foreground text-sm font-semibold shrink-0"
+            className="relative flex items-center gap-1.5 h-11 px-4 rounded-xl border border-border bg-card text-foreground text-sm font-semibold shrink-0"
             aria-label="購物車"
           >
             <svg
@@ -753,7 +753,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
               <path d="M2.25 2.25a.75.75 0 000 1.5h1.386c.17 0 .318.114.362.278l2.558 9.592a3.752 3.752 0 00-2.806 3.63c0 .414.336.75.75.75h15.75a.75.75 0 000-1.5H5.378A2.25 2.25 0 017.5 15h11.218a.75.75 0 00.674-.421 60.358 60.358 0 002.96-7.228.75.75 0 00-.525-.965A60.864 60.864 0 005.68 4.509l-.232-.867A1.875 1.875 0 003.636 2.25H2.25zM3.75 20.25a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zM16.5 20.25a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0z" />
             </svg>
             {cartCount > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-primary text-white text-[9px] font-bold rounded-full flex items-center justify-center leading-none">
+              <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-primary text-primary-foreground text-[9px] font-bold rounded-full flex items-center justify-center leading-none">
                 {cartCount > 9 ? "9+" : cartCount}
               </span>
             )}
@@ -808,7 +808,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
         </div>
 
         {/* 收件資訊（Step 7H-4：買家不一定是收件人） */}
-        <div className="bg-white border border-border rounded-2xl px-4 py-3 space-y-3">
+        <div className="bg-card border border-border rounded-2xl px-4 py-3 space-y-3">
           <p className="text-sm font-semibold text-foreground">收件資訊</p>
           <label className="flex items-center gap-2 cursor-pointer select-none">
             <input
@@ -873,7 +873,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
                     className={`w-full flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:min-h-[96px] px-5 py-4 rounded-2xl border-2 transition-colors text-left shadow-sm ${
                       isSelected
                         ? "bg-primary/10 border-primary"
-                        : "bg-white border-border hover:border-primary/40 hover:bg-primary/5"
+                        : "bg-card border-border hover:border-primary/40 hover:bg-primary/5"
                     }`}
                   >
                     {/* Row 1 (mobile) / Left (desktop): radio + logo + fee(mobile only) */}
@@ -928,7 +928,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
                       {/* 7-11 detail */}
                       {isSevenElevenMethod(m) && (
                         <div
-                          className={`rounded-2xl px-4 py-3 space-y-2 border ${cvsStore ? "bg-green-50/30 border-green-200" : "bg-white border-border"}`}
+                          className={`rounded-2xl px-4 py-3 space-y-2 border ${cvsStore ? "bg-chart-3/10 border-chart-3/30" : "bg-card border-border"}`}
                         >
                           {cvsStore ? (
                             <>
@@ -937,7 +937,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
                                   xmlns="http://www.w3.org/2000/svg"
                                   viewBox="0 0 20 20"
                                   fill="currentColor"
-                                  className="w-3.5 h-3.5 text-green-600 shrink-0"
+                                  className="w-3.5 h-3.5 text-chart-3 shrink-0"
                                 >
                                   <path
                                     fillRule="evenodd"
@@ -945,7 +945,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
                                     clipRule="evenodd"
                                   />
                                 </svg>
-                                <span className="text-xs font-semibold text-green-700">
+                                <span className="text-xs font-semibold text-chart-3">
                                   已選取門市
                                 </span>
                               </div>
@@ -973,7 +973,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
                                 </div>
                               )}
                               {!cvsStore.storeAddress && (
-                                <div className="text-xs text-amber-600">
+                                <div className="text-xs text-accent">
                                   地址資料未完整回傳，請確認門市資訊
                                 </div>
                               )}
@@ -1009,7 +1009,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
                       {/* 全家 detail */}
                       {isFamilyMartMethod(m) && (
                         <div
-                          className={`rounded-2xl px-4 py-3 space-y-2 border ${cvsStore ? "bg-green-50/30 border-green-200" : "bg-white border-border"}`}
+                          className={`rounded-2xl px-4 py-3 space-y-2 border ${cvsStore ? "bg-chart-3/10 border-chart-3/30" : "bg-card border-border"}`}
                         >
                           {cvsStore ? (
                             <>
@@ -1018,7 +1018,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
                                   xmlns="http://www.w3.org/2000/svg"
                                   viewBox="0 0 20 20"
                                   fill="currentColor"
-                                  className="w-3.5 h-3.5 text-green-600 shrink-0"
+                                  className="w-3.5 h-3.5 text-chart-3 shrink-0"
                                 >
                                   <path
                                     fillRule="evenodd"
@@ -1026,7 +1026,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
                                     clipRule="evenodd"
                                   />
                                 </svg>
-                                <span className="text-xs font-semibold text-green-700">
+                                <span className="text-xs font-semibold text-chart-3">
                                   已選取門市
                                 </span>
                               </div>
@@ -1054,7 +1054,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
                                 </div>
                               )}
                               {!cvsStore.storeAddress && (
-                                <div className="text-xs text-amber-600">
+                                <div className="text-xs text-accent">
                                   地址資料未完整回傳，請確認門市資訊
                                 </div>
                               )}
@@ -1089,7 +1089,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
 
                       {/* 黑貓 / 郵局 detail — structured address */}
                       {isHomeDeliveryMethod(m) && (
-                        <div className="bg-white border border-border rounded-2xl px-4 py-3 space-y-3">
+                        <div className="bg-card border border-border rounded-2xl px-4 py-3 space-y-3">
                           <p className="text-sm font-semibold text-foreground">
                             {m === "黑貓宅急便"
                               ? "黑貓宅急便收件資訊"
@@ -1177,7 +1177,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
 
                       {/* 面交 detail — 與黑貓 / 郵局相同的結構化地點欄位（選填） */}
                       {isMeetupMethod(m) && (
-                        <div className="bg-white border border-border rounded-2xl px-4 py-3 space-y-3">
+                        <div className="bg-card border border-border rounded-2xl px-4 py-3 space-y-3">
                           <p className="text-sm font-semibold text-foreground">
                             面交地點資訊（選填）
                           </p>
@@ -1271,7 +1271,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
         <button
           type="submit"
           disabled={submitOrder.isPending || isOrderClosed}
-          className="w-full h-12 bg-primary text-white font-bold rounded-xl text-base disabled:opacity-60 sticky bottom-4"
+          className="w-full h-12 bg-primary text-primary-foreground font-bold rounded-xl text-base disabled:opacity-60 sticky bottom-4"
         >
           {isOrderClosed
             ? "已截止收單"
@@ -1308,6 +1308,6 @@ function SummaryRow({
 }
 
 const inputClass =
-  "w-full h-12 px-4 rounded-xl border border-input bg-white text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 text-base";
+  "w-full h-12 px-4 rounded-xl border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 text-base";
 const selectClass =
-  "w-full h-12 px-4 rounded-xl border border-input bg-white text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 text-base";
+  "w-full h-12 px-4 rounded-xl border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 text-base";

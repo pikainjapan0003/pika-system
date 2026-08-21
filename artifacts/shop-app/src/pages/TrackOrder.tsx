@@ -30,26 +30,26 @@ function getTrackingBadge(order: {
   latestTrackingStatus?: string | null;
 }): { label: string; className: string } {
   if (order.status === "cancelled") {
-    return { label: "已取消", className: "bg-gray-100 text-gray-600" };
+    return { label: "已取消", className: "bg-muted text-muted-foreground" };
   }
   switch (order.latestTrackingStatus) {
     case "delivered":
-      return { label: "已送達", className: "bg-green-100 text-green-700" };
+      return { label: "已送達", className: "bg-chart-3/10 text-chart-3" };
     case "picked_up":
-      return { label: "已取貨", className: "bg-green-100 text-green-700" };
+      return { label: "已取貨", className: "bg-chart-3/10 text-chart-3" };
     case "arrived_store":
-      return { label: "待取貨", className: "bg-blue-100 text-blue-700" };
+      return { label: "待取貨", className: "bg-chart-4/10 text-chart-4" };
     case "in_transit":
-      return { label: "運送中", className: "bg-blue-100 text-blue-700" };
+      return { label: "運送中", className: "bg-chart-4/10 text-chart-4" };
     case "pending":
-      return { label: "已出貨", className: "bg-blue-100 text-blue-700" };
+      return { label: "已出貨", className: "bg-chart-4/10 text-chart-4" };
     case "returned":
     case "exception":
     case "unknown":
-      return { label: "需店家確認", className: "bg-amber-100 text-amber-700" };
+      return { label: "需店家確認", className: "bg-accent/10 text-accent" };
   }
   if (order.trackingCode) {
-    return { label: "已出貨", className: "bg-blue-100 text-blue-700" };
+    return { label: "已出貨", className: "bg-chart-4/10 text-chart-4" };
   }
   return {
     label: "店家處理中",
@@ -230,7 +230,7 @@ export default function TrackOrderPage({ publicToken }: Props) {
 
   const isCancelled = order.status === "cancelled";
   const statusColor =
-    STATUS_COLORS[order.status] ?? "bg-gray-100 text-gray-600";
+    STATUS_COLORS[order.status] ?? "bg-muted text-muted-foreground";
 
   return (
     <div className="min-h-[100dvh] bg-background px-5 py-8">
@@ -258,7 +258,7 @@ export default function TrackOrderPage({ publicToken }: Props) {
         {(() => {
           const badge = getTrackingBadge(order);
           return (
-            <div className="bg-white rounded-2xl border border-border px-5 py-4 mb-3 flex items-center justify-between">
+            <div className="bg-card rounded-2xl border border-border px-5 py-4 mb-3 flex items-center justify-between">
               <span className="text-sm text-muted-foreground">物流狀態</span>
               <span
                 className={`text-sm px-3 py-1.5 rounded-full font-semibold ${badge.className}`}
@@ -280,7 +280,7 @@ export default function TrackOrderPage({ publicToken }: Props) {
             </p>
           </div>
         ) : (
-          <div className="bg-white rounded-2xl border border-border mb-3 overflow-hidden">
+          <div className="bg-card rounded-2xl border border-border mb-3 overflow-hidden">
             <div className="px-5 py-3 border-b border-border">
               <h2 className="text-xs font-semibold text-muted-foreground">
                 訂單進度
@@ -297,9 +297,9 @@ export default function TrackOrderPage({ publicToken }: Props) {
                       <div
                         className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 ${
                           state === "done"
-                            ? "bg-green-100 text-green-700"
+                            ? "bg-chart-3/10 text-chart-3"
                             : state === "current"
-                              ? "bg-primary text-white"
+                              ? "bg-primary text-primary-foreground"
                               : "bg-secondary text-muted-foreground"
                         }`}
                       >
@@ -307,7 +307,7 @@ export default function TrackOrderPage({ publicToken }: Props) {
                       </div>
                       {!isLast && (
                         <div
-                          className={`w-px h-5 mt-0.5 ${state === "done" ? "bg-green-200" : "bg-border"}`}
+                          className={`w-px h-5 mt-0.5 ${state === "done" ? "bg-chart-3/40" : "bg-border"}`}
                         />
                       )}
                     </div>
@@ -319,7 +319,7 @@ export default function TrackOrderPage({ publicToken }: Props) {
                       <span
                         className={`text-sm ${
                           state === "done"
-                            ? "text-green-700 font-medium"
+                            ? "text-chart-3 font-medium"
                             : state === "current"
                               ? "text-primary font-semibold"
                               : "text-muted-foreground"
@@ -344,7 +344,7 @@ export default function TrackOrderPage({ publicToken }: Props) {
         {(() => {
           const items = normalizeOrderItems(order as any);
           return (
-            <div className="bg-white rounded-2xl border border-border overflow-hidden mb-3">
+            <div className="bg-card rounded-2xl border border-border overflow-hidden mb-3">
               <div className="px-5 py-3 border-b border-border">
                 <h2 className="text-xs font-semibold text-muted-foreground">
                   商品明細
@@ -398,7 +398,7 @@ export default function TrackOrderPage({ publicToken }: Props) {
         })()}
 
         {/* Order details card */}
-        <div className="bg-white rounded-2xl border border-border overflow-hidden">
+        <div className="bg-card rounded-2xl border border-border overflow-hidden">
           <div className="px-5 py-4 border-b border-border flex items-center justify-between">
             <span className="text-sm text-muted-foreground">目前狀態</span>
             <span
@@ -415,7 +415,7 @@ export default function TrackOrderPage({ publicToken }: Props) {
         </div>
 
         {/* Shipment info card */}
-        <div className="bg-white rounded-2xl border border-border overflow-hidden mt-3">
+        <div className="bg-card rounded-2xl border border-border overflow-hidden mt-3">
           <div className="px-5 py-3 border-b border-border">
             <h2 className="text-xs font-semibold text-muted-foreground">
               物流資訊
@@ -452,7 +452,7 @@ export default function TrackOrderPage({ publicToken }: Props) {
                 {(order.latestTrackingStatus === "exception" ||
                   order.latestTrackingStatus === "unknown" ||
                   order.latestTrackingStatus === "returned") && (
-                  <p className="text-xs text-amber-700 leading-relaxed">
+                  <p className="text-xs text-accent leading-relaxed">
                     物流資料需要店家確認，請稍後再查看，或聯絡店家。
                   </p>
                 )}
@@ -471,7 +471,7 @@ export default function TrackOrderPage({ publicToken }: Props) {
         </div>
 
         {/* Pickup / recipient info card */}
-        <div className="bg-white rounded-2xl border border-border overflow-hidden mt-3">
+        <div className="bg-card rounded-2xl border border-border overflow-hidden mt-3">
           <div className="px-5 py-3 border-b border-border">
             <h2 className="text-xs font-semibold text-muted-foreground">
               取貨 / 收件資訊
@@ -510,7 +510,7 @@ export default function TrackOrderPage({ publicToken }: Props) {
         </div>
 
         {canEditPaymentLast5 && (
-          <div className="bg-white rounded-2xl border border-border overflow-hidden mt-3">
+          <div className="bg-card rounded-2xl border border-border overflow-hidden mt-3">
             <div className="px-5 py-3 border-b border-border">
               <h2 className="text-xs font-semibold text-muted-foreground">
                 付款末五碼（選填）
@@ -529,7 +529,7 @@ export default function TrackOrderPage({ publicToken }: Props) {
                   )
                 }
                 placeholder="請填 5 位數字"
-                className="w-full h-11 px-3 rounded-xl border border-input bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className="w-full h-11 px-3 rounded-xl border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
               <button
                 type="button"
@@ -557,7 +557,7 @@ export default function TrackOrderPage({ publicToken }: Props) {
           {order.trackingCode && (
             <button
               onClick={() => handleCopyTracking(order.trackingCode!)}
-              className="w-full h-11 rounded-xl border border-border bg-white text-sm font-medium text-foreground"
+              className="w-full h-11 rounded-xl border border-border bg-card text-sm font-medium text-foreground"
             >
               {copiedTracking ? "已複製！" : "複製物流追蹤碼"}
             </button>
@@ -565,7 +565,7 @@ export default function TrackOrderPage({ publicToken }: Props) {
           {/* Copy public token (order query code, not logistics tracking code) */}
           <button
             onClick={() => handleCopyToken(order.publicToken)}
-            className="w-full h-11 rounded-xl border border-border bg-white text-sm font-medium text-foreground"
+            className="w-full h-11 rounded-xl border border-border bg-card text-sm font-medium text-foreground"
           >
             {copiedToken ? "已複製！" : "複製訂單查詢碼"}
           </button>

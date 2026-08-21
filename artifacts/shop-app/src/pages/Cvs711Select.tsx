@@ -168,7 +168,7 @@ export default function Cvs711SelectPage() {
   return (
     <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-8">
       {/* Sticky header */}
-      <div className="bg-white border-b border-border px-5 pt-10 pb-3 sticky top-0 z-10">
+      <div className="bg-card border-b border-border px-5 pt-10 pb-3 sticky top-0 z-10">
         <div className="flex items-center gap-3 mb-3">
           <button
             type="button"
@@ -195,7 +195,7 @@ export default function Cvs711SelectPage() {
           <button
             type="submit"
             disabled={isLoading}
-            className="h-10 px-4 rounded-xl bg-primary text-white text-sm font-semibold disabled:opacity-60"
+            className="h-10 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-60"
           >
             {isLoading ? "…" : "搜尋"}
           </button>
@@ -216,13 +216,13 @@ export default function Cvs711SelectPage() {
             <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           </div>
         ) : apiError ? (
-          <div className="bg-white rounded-2xl border border-border p-8 text-center">
+          <div className="bg-card rounded-2xl border border-border p-8 text-center">
             <p className="text-sm text-muted-foreground">
               門市查詢暫時無法使用，請稍後再試。
             </p>
           </div>
         ) : hasSearched && results.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-border p-8 text-center space-y-3">
+          <div className="bg-card rounded-2xl border border-border p-8 text-center space-y-3">
             <p className="text-sm text-muted-foreground">
               找不到符合的{config.prefix}門市，請換個關鍵字再試。
             </p>
@@ -276,7 +276,7 @@ function StoreCard({
   const freshness = getCvsStoreFreshness(store.sourceUpdatedAt);
 
   return (
-    <div className="bg-white rounded-2xl border border-border px-4 py-3 space-y-2">
+    <div className="bg-card rounded-2xl border border-border px-4 py-3 space-y-2">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <div className="text-sm font-semibold text-foreground">
@@ -308,7 +308,7 @@ function StoreCard({
               className={
                 freshness.level === "verify_first"
                   ? "text-xs font-semibold text-destructive mt-1"
-                  : "text-xs font-medium text-amber-700 mt-1"
+                  : "text-xs font-medium text-accent mt-1"
               }
             >
               {freshness.label}
@@ -320,7 +320,7 @@ function StoreCard({
         type="button"
         onClick={onSelect}
         disabled={isSelecting}
-        className="w-full h-9 rounded-xl bg-primary text-white text-sm font-semibold disabled:opacity-60 transition-opacity"
+        className="w-full h-9 rounded-xl bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-60 transition-opacity"
       >
         {isSelecting ? "登記中…" : "選擇此門市"}
       </button>
