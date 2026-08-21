@@ -16,6 +16,13 @@ import {
 } from "@/lib/dashboardMetrics";
 import { useDailySkillVisibility } from "@/lib/dailySkillVisibilityContext";
 import { OnboardingQuestionnaire } from "@/lib/OnboardingQuestionnaireCard";
+import { ProfitKpiBoard } from "@/components/ProfitKpiBoard";
+import { PreviewChart } from "@/components/PreviewChart";
+import { CostStructureStack } from "@/components/charts/CostStructureStack";
+import { EstimateActualBars } from "@/components/charts/EstimateActualBars";
+import { ProfitWaterfall } from "@/components/charts/ProfitWaterfall";
+import { VarianceContribution } from "@/components/charts/VarianceContribution";
+import { useTripProfitBoard } from "@/lib/tripProfitBoard";
 
 interface ProfitSummary {
   capturedProfitSubtotalDisplayTwd: string;
@@ -113,6 +120,7 @@ export default function DashboardPage() {
     query: { enabled: !!storeId } as any,
   });
   const { getToken } = useAuth();
+  const board = useTripProfitBoard(storeId, getToken);
   const [profitSummary, setProfitSummary] = useState<ProfitSummary | null>(
     null,
   );
@@ -148,7 +156,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto">
       {/* Header */}
-      <header className="bg-white border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
+      <header className="bg-card border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
         <div className="flex items-center justify-between">
           <div>
             <div className="text-xs text-muted-foreground">歡迎回來</div>
@@ -166,18 +174,56 @@ export default function DashboardPage() {
       </header>
 
       <div className="px-5 py-5 space-y-5">
+        {/* 成本利潤 KPI（13 張卡，G0 凍結）；無行程時走 empty 空狀態 */}
+        <ProfitKpiBoard
+          trips={board.trips}
+          selectedTripId={board.selectedTripId}
+          onSelectTrip={board.setSelectedTripId}
+          estimate={board.estimate}
+          loading={board.loading}
+          error={board.error}
+        />
+
+        {/* 圖表 A–H：A–D 真實資料（operating-summary／fixed-cost-comparison），E–H 示意圖（PreviewChart） */}
+        <section className="space-y-4" aria-label="分析圖表">
+          <ProfitWaterfall
+            estimate={board.estimate}
+            summaryId="chart-a-summary"
+          />
+          <EstimateActualBars
+            estimate={board.estimate}
+            actual={board.actual}
+            summaryId="chart-b-summary"
+          />
+          <CostStructureStack
+            estimate={board.estimate}
+            summaryId="chart-c-summary"
+          />
+          <VarianceContribution
+            rows={board.comparisonRows}
+            summaryId="chart-d-summary"
+          />
+          <PreviewChart chart="routeCostRanking" summaryId="chart-e-summary" />
+          <PreviewChart chart="areaScatter" summaryId="chart-f-summary" />
+          <PreviewChart
+            chart="sensitivityHeatmap"
+            summaryId="chart-g-summary"
+          />
+          <PreviewChart chart="historyTrend" summaryId="chart-h-summary" />
+        </section>
+
         {/* Store info prompt card */}
         {(store?.name === "我的代購店" || !store?.description) && (
-          <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4">
-            <p className="text-sm font-semibold text-amber-900 mb-1">
+          <div className="bg-accent/10 border border-accent/30 rounded-2xl p-4">
+            <p className="text-sm font-semibold text-accent mb-1">
               完善商店資訊
             </p>
-            <p className="text-xs text-amber-700 leading-relaxed">
+            <p className="text-xs text-accent leading-relaxed">
               你的店鋪已建立，可以先新增商品開始收單。建議到設定補上店鋪名稱與介紹，讓買家更容易辨識。
             </p>
             <button
               onClick={() => setLocation("/settings")}
-              className="mt-3 text-xs font-semibold text-amber-800 bg-amber-100 px-3 py-1.5 rounded-lg active:opacity-75 transition-opacity"
+              className="mt-3 text-xs font-semibold text-accent bg-accent/15 px-3 py-1.5 rounded-lg active:opacity-75 transition-opacity"
             >
               前往設定
             </button>
@@ -278,7 +324,7 @@ export default function DashboardPage() {
 
         {/* Status breakdown */}
         {stats?.statusBreakdown && stats.statusBreakdown.length > 0 && (
-          <div className="bg-white rounded-2xl p-4 border border-border">
+          <div className="bg-card rounded-2xl p-4 border border-border">
             <h2 className="text-sm font-semibold text-foreground mb-3">
               訂單狀態分佈
             </h2>
@@ -289,7 +335,7 @@ export default function DashboardPage() {
                   className="flex items-center justify-between"
                 >
                   <span
-                    className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[item.status] ?? "bg-gray-100 text-gray-600"}`}
+                    className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[item.status] ?? "bg-muted text-muted-foreground"}`}
                   >
                     {STATUS_LABELS[item.status] ?? item.status}
                   </span>
@@ -366,7 +412,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Recent orders */}
-        <section className="rounded-2xl border border-border bg-white p-4">
+        <section className="rounded-2xl border border-border bg-card p-4">
           <div className="flex items-start justify-between gap-3">
             <div>
               <h2 className="text-sm font-semibold text-foreground">
@@ -393,12 +439,12 @@ export default function DashboardPage() {
               {lowStockProducts.slice(0, 5).map((product) => (
                 <div
                   key={product.id}
-                  className="flex items-center justify-between rounded-xl bg-amber-50 px-3 py-2"
+                  className="flex items-center justify-between rounded-xl bg-accent/10 px-3 py-2"
                 >
-                  <span className="min-w-0 truncate text-sm font-medium text-amber-950">
+                  <span className="min-w-0 truncate text-sm font-medium text-accent">
                     {product.name}
                   </span>
-                  <span className="shrink-0 text-sm font-bold text-amber-800">
+                  <span className="shrink-0 text-sm font-bold text-accent">
                     剩 {product.inventory}
                   </span>
                 </div>
@@ -425,7 +471,7 @@ export default function DashboardPage() {
             </button>
           </div>
           {recentOrders.length === 0 ? (
-            <div className="bg-white rounded-2xl p-8 border border-border text-center">
+            <div className="bg-card rounded-2xl p-8 border border-border text-center">
               <p className="text-muted-foreground text-sm">目前還沒有訂單</p>
               <button
                 onClick={() => setLocation("/products")}
@@ -439,7 +485,7 @@ export default function DashboardPage() {
               {recentOrders.map((o) => (
                 <div
                   key={o.id}
-                  className="bg-white rounded-2xl p-4 border border-border"
+                  className="bg-card rounded-2xl p-4 border border-border"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
@@ -451,7 +497,7 @@ export default function DashboardPage() {
                       </div>
                     </div>
                     <span
-                      className={`text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${STATUS_COLORS[o.status] ?? "bg-gray-100 text-gray-600"}`}
+                      className={`text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${STATUS_COLORS[o.status] ?? "bg-muted text-muted-foreground"}`}
                     >
                       {STATUS_LABELS[o.status] ?? o.status}
                     </span>
@@ -488,11 +534,11 @@ function OwnerMetricCard({
 }) {
   return (
     <div
-      className={`rounded-2xl border p-3 ${accent ? "border-amber-200 bg-amber-50" : "border-border bg-white"}`}
+      className={`rounded-2xl border p-3 ${accent ? "border-accent/30 bg-accent/10" : "border-border bg-card"}`}
     >
       <p className="text-xs text-muted-foreground">{label}</p>
       <p
-        className={`mt-1 text-lg font-bold ${accent ? "text-amber-800" : "text-foreground"}`}
+        className={`mt-1 text-lg font-bold ${accent ? "text-accent" : "text-foreground"}`}
       >
         {value}
       </p>
@@ -514,7 +560,7 @@ function StatCard({
   return (
     <div
       onClick={onClick}
-      className={`rounded-2xl p-3 border ${accent ? "bg-primary/10 border-primary/20" : "bg-white border-border"} ${onClick ? "cursor-pointer active:opacity-75 transition-opacity" : ""}`}
+      className={`rounded-2xl p-3 border ${accent ? "bg-primary/10 border-primary/20" : "bg-card border-border"} ${onClick ? "cursor-pointer active:opacity-75 transition-opacity" : ""}`}
     >
       <div
         className={`text-xs mb-1 ${accent ? "text-primary" : "text-muted-foreground"}`}
@@ -546,17 +592,17 @@ function ActionCard({
   return (
     <button
       onClick={onClick}
-      className="bg-white rounded-2xl p-4 border border-border text-left active:bg-secondary transition-colors relative"
+      className="bg-card rounded-2xl p-4 border border-border text-left active:bg-secondary transition-colors relative"
     >
       {badge && (
-        <span className="absolute top-3 right-3 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 max-w-[45%] truncate">
+        <span className="absolute top-3 right-3 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-destructive/10 text-destructive max-w-[45%] truncate">
           {badge}
         </span>
       )}
       <div className="text-2xl mb-2">{icon}</div>
       <div className="font-semibold text-foreground text-sm">{label}</div>
       <div
-        className={`text-xs mt-0.5 ${badge ? "text-red-600" : "text-muted-foreground"}`}
+        className={`text-xs mt-0.5 ${badge ? "text-destructive" : "text-muted-foreground"}`}
       >
         {desc}
       </div>
@@ -602,7 +648,7 @@ export function BottomNav({
     },
   ].filter((item) => skillVisibility.isVisible(item.surface));
   return (
-    <nav className="fixed bottom-0 left-0 right-0 max-w-[480px] mx-auto bg-white border-t border-border px-2 pb-safe">
+    <nav className="fixed bottom-0 left-0 right-0 max-w-[480px] mx-auto bg-card border-t border-border px-2 pb-safe">
       <div className="flex">
         {items.map((item) => (
           <button
