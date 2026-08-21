@@ -88,7 +88,7 @@ export function applyThemeRouteScope(
   if (scope === "legacy") {
     body.style.removeProperty("color-scheme");
   } else {
-    body.style.colorScheme = scope;
+    body.style.colorScheme = scope === "night" ? "dark" : "light";
   }
 }
 

@@ -18,7 +18,7 @@ test("Testing Library renders into the shared jsdom environment", async () => {
     assert.equal(document.body.dataset.pikaTheme, "night");
     assert.equal(document.body.dataset.pikaBrand, "disabled");
     assert.equal(document.body.classList.contains("dark"), true);
-    assert.equal(document.body.style.colorScheme, "night");
+    assert.equal(document.body.style.colorScheme, "dark");
 
     applyThemeRouteScope("light", true, document);
     assert.equal(document.body.dataset.pikaTheme, "light");
