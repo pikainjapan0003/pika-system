@@ -13,8 +13,12 @@ import { requireAuth, verifyStoreOwner } from "../middlewares/auth.ts";
 const router = Router();
 
 export function positiveId(value: unknown): number | null {
-  const parsed =
-    typeof value === "string" && /^\d+$/.test(value) ? Number(value) : NaN;
+  let parsed = NaN;
+  if (typeof value === "string" && /^\d+$/.test(value)) {
+    parsed = Number(value);
+  } else if (typeof value === "number") {
+    parsed = value;
+  }
   return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
 }
 
