@@ -893,6 +893,83 @@ export const useCreateTrip = <TError = ErrorType<unknown>,
       return useMutation(getCreateTripMutationOptions(options));
     }
 
+export const getListStoreTripsUrl = (storeId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/trips`
+}
+
+/**
+ * @summary List a store's trips (with their routes)
+ */
+export const listStoreTrips = async (storeId: number, options?: RequestInit): Promise<TripWithRoutes[]> => {
+
+  return customFetch<TripWithRoutes[]>(getListStoreTripsUrl(storeId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListStoreTripsQueryKey = (storeId: number,) => {
+    return [
+    `/api/stores/${storeId}/trips`
+    ] as const;
+    }
+
+
+export const getListStoreTripsQueryOptions = <TData = Awaited<ReturnType<typeof listStoreTrips>>, TError = ErrorType<void>>(storeId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listStoreTrips>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListStoreTripsQueryKey(storeId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listStoreTrips>>> = ({ signal }) => listStoreTrips(storeId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(storeId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listStoreTrips>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListStoreTripsQueryResult = NonNullable<Awaited<ReturnType<typeof listStoreTrips>>>
+export type ListStoreTripsQueryError = ErrorType<void>
+
+
+/**
+ * @summary List a store's trips (with their routes)
+ */
+
+export function useListStoreTrips<TData = Awaited<ReturnType<typeof listStoreTrips>>, TError = ErrorType<void>>(
+ storeId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listStoreTrips>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListStoreTripsQueryOptions(storeId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
 export const getUpdateTripUrl = (tripId: number,) => {
 
 
