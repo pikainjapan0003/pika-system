@@ -214,15 +214,19 @@ if (!process.env.DATABASE_URL) {
       response.data.map((trip) => trip.id).sort((a, b) => a - b),
       [tripAId, legacyTripId].sort((a, b) => a - b),
     );
-    assert.equal(JSON.stringify(response.data).includes("BATCH-22 B trip"), false);
-    assert.equal(JSON.stringify(response.data).includes("BATCH-22 A route"), true);
+    assert.equal(
+      JSON.stringify(response.data).includes("BATCH-22 B trip"),
+      false,
+    );
+    assert.equal(
+      JSON.stringify(response.data).includes("BATCH-22 A route"),
+      true,
+    );
     assert.equal(JSON.stringify(response.data).includes("storeId"), false);
 
-    const crossStore = await request(
-      "GET",
-      `/stores/${storeAId}/trips`,
-      { userId: MERCHANT_B },
-    );
+    const crossStore = await request("GET", `/stores/${storeAId}/trips`, {
+      userId: MERCHANT_B,
+    });
     assert.equal(crossStore.status, 403, JSON.stringify(crossStore.data));
 
     const missingStore = await request("GET", "/stores/99999999/trips");
