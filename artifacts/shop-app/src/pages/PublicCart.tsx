@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   getCart,
   updateCartQty,
@@ -27,6 +27,7 @@ import familymartLogo from "@/assets/logistics/familymart-logo-official.png";
 import blackcatLogo from "@/assets/logistics/blackcat-logo-official.svg";
 import postofficeLogo from "@/assets/logistics/postoffice-logo.svg";
 import { calculateMoneyPreview } from "@/lib/moneyPreview";
+import { loadMotion, motionEnabled, PIKA_EASE } from "@/lib/motion";
 
 interface CartOrderItem {
   productId: number;
@@ -253,7 +254,7 @@ function SuccessPage({ order }: { order: CartOrderResult }) {
   return (
     <div className="min-h-[100dvh] bg-background px-5 py-10 max-w-[480px] mx-auto">
       <div className="text-center mb-6">
-        <div className="w-16 h-16 bg-secondary text-secondary-foreground rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+        <div className="w-16 h-16 bg-secondary text-secondary-foreground rounded-full flex items-center justify-center mx-auto mb-4 text-3xl animate-cs-pulse-once">
           ✓
         </div>
         <h1 className="text-xl font-bold text-foreground">下單成功！</h1>
@@ -370,6 +371,38 @@ export default function PublicCartPage() {
   const availablePickupMethods = ALL_PICKUP_METHODS.filter((method) =>
     cartItems.every((item) => isPickupMethodEnabled(method, item)),
   );
+
+  // ② ScrollTrigger 長頁區塊進場：捲到才播（低調、一次；只當延後播放的觸發器）
+  const pageRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const root = pageRef.current;
+    if (!root || !motionEnabled()) return;
+    let killTriggers: (() => void) | undefined;
+    void loadMotion().then(({ gsap, ScrollTrigger }) => {
+      if (!gsap || !ScrollTrigger) return;
+      const blocks = Array.from(
+        root.querySelectorAll<HTMLElement>("[data-reveal-block]"),
+      );
+      const triggers = blocks.map((block) =>
+        ScrollTrigger.create({
+          trigger: block,
+          start: "top 88%",
+          once: true,
+          onEnter: () => {
+            gsap.fromTo(
+              block,
+              { opacity: 0.001, y: 8 },
+              { opacity: 1, y: 0, duration: 0.24, ease: PIKA_EASE.uiOut },
+            );
+          },
+        }),
+      );
+      killTriggers = () => triggers.forEach((trigger) => trigger.kill());
+    });
+    return () => {
+      killTriggers?.();
+    };
+  }, []);
 
   useEffect(() => {
     applyBrandColor(DEFAULT_BRAND_PRIMARY_COLOR);
@@ -594,7 +627,10 @@ export default function PublicCartPage() {
   }
 
   return (
-    <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-8">
+    <div
+      className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-8"
+      ref={pageRef}
+    >
       {/* Header */}
       <div className="bg-card px-5 py-4 flex items-center gap-3 border-b border-border sticky top-0 z-10">
         <button
@@ -610,7 +646,7 @@ export default function PublicCartPage() {
       </div>
 
       {/* Cart items */}
-      <div className="px-4 pt-4 space-y-3">
+      <div className="px-4 pt-4 space-y-3" data-reveal-block>
         {cartItems.map((item) => (
           <CartItemCard
             key={item.itemKey}
@@ -622,7 +658,11 @@ export default function PublicCartPage() {
       </div>
 
       {/* Checkout form */}
-      <form onSubmit={handleCheckout} className="px-4 pt-5 space-y-4">
+      <form
+        onSubmit={handleCheckout}
+        className="px-4 pt-5 space-y-4"
+        data-reveal-block
+      >
         <div className="text-base font-bold text-foreground">填寫取貨資訊</div>
 
         <div>
@@ -1045,7 +1085,7 @@ export default function PublicCartPage() {
         <button
           type="submit"
           disabled={isSubmitting || cartItems.length === 0}
-          className="w-full h-12 bg-primary text-primary-foreground font-bold rounded-xl text-base disabled:opacity-60 sticky bottom-4"
+          className="k8-press w-full h-12 bg-primary text-primary-foreground font-bold rounded-xl text-base disabled:opacity-60 sticky bottom-4"
         >
           {isSubmitting
             ? "送出中..."

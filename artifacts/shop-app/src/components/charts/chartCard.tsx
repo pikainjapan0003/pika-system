@@ -61,6 +61,7 @@ export function ChartCard({
 }) {
   return (
     <section
+      data-chart-reveal
       className={
         className ?? "space-y-3 rounded-2xl border border-border bg-card p-4"
       }
