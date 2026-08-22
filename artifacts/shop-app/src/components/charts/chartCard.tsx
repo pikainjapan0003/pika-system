@@ -1,4 +1,5 @@
-import type { ReactNode } from "react";
+import type { ReactElement, ReactNode } from "react";
+import { ResponsiveContainer } from "recharts";
 
 import { CHART_TOKEN } from "./chartTheme";
 
@@ -10,6 +11,28 @@ import { CHART_TOKEN } from "./chartTheme";
 export function ChartResponsiveOnly({ children }: { children: ReactNode }) {
   if (typeof ResizeObserver === "undefined") return null;
   return <>{children}</>;
+}
+
+/**
+ * jsdom guard + 尺寸容器：recharts 的裸 BarChart／LineChart／ScatterChart
+ * 沒有 width/height 時不會產生任何 SVG（A–H 圖表在瀏覽器全部隱形）。
+ * ChartFrame 提供 ResponsiveContainer（100% × height），jsdom 下回傳 null。
+ */
+export function ChartFrame({
+  height = 240,
+  children,
+}: {
+  height?: number;
+  children: ReactNode;
+}) {
+  if (typeof ResizeObserver === "undefined") return null;
+  return (
+    <div className="min-w-0" style={{ width: "100%", height }}>
+      <ResponsiveContainer width="100%" height="100%">
+        {children as ReactElement}
+      </ResponsiveContainer>
+    </div>
+  );
 }
 
 export interface ChartLegendItem {

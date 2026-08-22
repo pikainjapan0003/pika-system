@@ -12,7 +12,7 @@ import {
   OPERATING_COST_PENDING_LABEL,
 } from "../../lib/operatingCostDisplay";
 import type { ComparisonRow } from "../../lib/tripProfitBoard";
-import { ChartCard, ChartLegendRow, ChartResponsiveOnly } from "./chartCard";
+import { ChartCard, ChartFrame, ChartLegendRow } from "./chartCard";
 import {
   CHART_TOKEN,
   divergingNegative,
@@ -90,7 +90,7 @@ export function VarianceContribution({
       }
     >
       {data.length > 0 ? (
-        <ChartResponsiveOnly>
+        <ChartFrame>
           <BarChart
             data={data}
             layout="vertical"
@@ -134,7 +134,7 @@ export function VarianceContribution({
               ))}
             </Bar>
           </BarChart>
-        </ChartResponsiveOnly>
+        </ChartFrame>
       ) : (
         <p className="text-sm text-muted-foreground">
           尚無可顯示的差異；
