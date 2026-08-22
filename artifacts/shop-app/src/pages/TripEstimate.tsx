@@ -1,5 +1,5 @@
 import { useAuth } from "@clerk/react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { useGetMyStore } from "@workspace/api-client-react";
 import {
@@ -12,6 +12,12 @@ import { BottomNav } from "./Dashboard";
 import { DualCurrencyCalibrationField } from "../components/DualCurrencyCalibrationField";
 import { LedgerLockStamp } from "../components/LedgerLockStamp";
 import { SemanticStatePanel } from "../components/SemanticStatePanel";
+import {
+  K_DURATION,
+  loadMotion,
+  motionEnabled,
+  PIKA_EASE,
+} from "../lib/motion";
 
 const inputClass =
   "h-11 w-full rounded-xl border border-input bg-background px-3 text-sm text-foreground tabular-nums lining-nums";
@@ -142,6 +148,10 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  // K3 展開收合（220–300ms）：摘要列固定、明細從其下展開；預設展開。
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const [settleNonce, setSettleNonce] = useState(0);
+  const settleRootRef = useRef<HTMLDivElement>(null);
 
   async function request(path: string, init?: RequestInit) {
     const token = await getToken();
@@ -200,6 +210,67 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
   useEffect(() => {
     void load();
   }, [store?.id, tripId]);
+
+  // K1｜數字結算（450–600ms）＋ SplitText（④）：只在一次重要重算完成時使用。
+  // 首屏初值仍直接可讀（settleNonce 只在儲存成功後遞增，首次載入不播放；
+  // deps 刻意不含 summary／tripId：切換行程的 load() 不會誤播結算）；
+  // 「待確認」狀態完全不播放（紅線 4）；只對數字字元過渡（幣別符號、小數點、
+  // 千分位不參與拆分動畫，tabular-nums 對齊由父層 class 保持）。
+  useEffect(() => {
+    if (settleNonce === 0 || !settleRootRef.current) return;
+    if (!motionEnabled()) return;
+    const root = settleRootRef.current;
+    const amountEls = Array.from(
+      root.querySelectorAll<HTMLElement>("[data-settle-amount]"),
+    ).filter((el) => {
+      const text = el.textContent ?? "";
+      return text.length > 0 && !text.includes(OPERATING_COST_PENDING_LABEL);
+    });
+    if (amountEls.length === 0) return;
+    let cleanup: (() => void) | undefined;
+    void loadMotion().then(({ gsap, SplitText }) => {
+      if (!gsap || !SplitText) return;
+      const tl = gsap.timeline({
+        defaults: { ease: PIKA_EASE.uiOut },
+        onComplete: () => {
+          // SplitText 拆分是暫時性 DOM；結束後還原，避免污染後續渲染
+          splits.forEach((s) => s.revert());
+        },
+      });
+      // SplitText 的型別不含建構子簽名；以回傳值結構收斂（revert 是實例方法）
+      const splits: Array<{ revert: () => void }> = [];
+      amountEls.forEach((el, index) => {
+        const split = new SplitText(el, {
+          type: "chars",
+          charsClass: "settle-char",
+        });
+        splits.push(split);
+        const digitChars = split.chars.filter((ch) =>
+          /^[0-9]$/.test(ch.textContent ?? ""),
+        );
+        if (digitChars.length === 0) return;
+        tl.fromTo(
+          digitChars,
+          { opacity: 0.55, y: 3 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.22,
+            stagger: 0.02,
+          },
+          index * 0.06,
+        );
+      });
+      tl.play();
+      cleanup = () => {
+        tl.kill();
+        splits.forEach((s) => s.revert());
+      };
+    });
+    return () => {
+      cleanup?.();
+    };
+  }, [settleNonce]);
 
   const categories = useMemo(
     () =>
@@ -260,6 +331,8 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
       }
       await load();
       setMessage("預估成本已儲存");
+      // K1｜一次重要重算完成後，費用摘要與損益數字結算編排（450–600ms）
+      setSettleNonce((n) => n + 1);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "儲存失敗");
     } finally {
@@ -293,6 +366,41 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
     }
   }
 
+  /** K3｜展開收合（220–300ms）；摘要列固定、明細從其下展開，不得造成水平位移。 */
+  const bodyRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  function toggleSection(key: string) {
+    const body = bodyRefs.current[key];
+    const willCollapse = !collapsed[key];
+    if (body && motionEnabled()) {
+      // 先取 state，切換，再用 Flip 補償（async 載入後 rAF）
+      void loadMotion().then(({ Flip, gsap }) => {
+        if (!Flip || !gsap) {
+          setCollapsed((current) => ({ ...current, [key]: willCollapse }));
+          return;
+        }
+        const bodyEl = bodyRefs.current[key];
+        if (!bodyEl) {
+          setCollapsed((current) => ({ ...current, [key]: willCollapse }));
+          return;
+        }
+        const state = Flip.getState(bodyEl);
+        setCollapsed((current) => ({ ...current, [key]: willCollapse }));
+        requestAnimationFrame(() => {
+          Flip.from(state, {
+            duration: K_DURATION.expand,
+            ease: PIKA_EASE.inOut,
+            scale: true,
+            absolute: true,
+            onComplete: () =>
+              gsap.set(bodyEl, { clearProps: "transform,opacity" }),
+          });
+        });
+      });
+    } else {
+      setCollapsed((current) => ({ ...current, [key]: willCollapse }));
+    }
+  }
+
   function renderSection(config: (typeof SECTION_CONFIG)[number]) {
     if (!summary) return null;
     const section = summary.sections[config.key];
@@ -319,84 +427,110 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
       );
     }
 
+    const isCollapsed = collapsed[config.key] ?? false;
+
     return (
       <section
         key={config.key}
         data-cost-section={config.kind}
         className="space-y-3 rounded-2xl border border-border bg-card p-4"
       >
-        <h2 className="font-bold">{config.title}</h2>
-        {section.categories.map((category) => {
-          const entryCurrency = currencies[category.id] ?? "TWD";
-          return (
-            <div
-              key={category.id}
-              className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_5.5rem] items-start gap-2 text-sm"
-            >
-              <span className="pt-3 text-muted-foreground">
-                {category.name}
-              </span>
-              <input
-                aria-label={category.name}
-                className={inputClass}
-                value={values[category.id] ?? "0"}
-                onChange={(event) =>
-                  setValues((current) => ({
-                    ...current,
-                    [category.id]: event.target.value,
-                  }))
-                }
-                inputMode="decimal"
-              />
-              <div className="min-w-0">
-                <select
-                  aria-label={`${category.name}幣別`}
-                  className="h-11 w-full rounded-xl border border-input bg-background px-2 text-sm text-foreground"
-                  value={entryCurrency}
+        {/* 摘要列固定；明細從其下展開（K3） */}
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="font-bold">{config.title}</h2>
+          <button
+            type="button"
+            aria-expanded={!isCollapsed}
+            aria-label={
+              isCollapsed ? `展開${config.title}` : `收合${config.title}`
+            }
+            onClick={() => toggleSection(config.key)}
+            className="k8-press min-h-8 px-2 text-xs font-medium text-muted-foreground"
+          >
+            {isCollapsed ? "展開 ▾" : "收合 ▴"}
+          </button>
+        </div>
+        <div
+          ref={(node) => {
+            bodyRefs.current[config.key] = node;
+          }}
+          hidden={isCollapsed}
+          className="space-y-3"
+        >
+          {section.categories.map((category) => {
+            const entryCurrency = currencies[category.id] ?? "TWD";
+            return (
+              <div
+                key={category.id}
+                className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_5.5rem] items-start gap-2 text-sm"
+              >
+                <span className="pt-3 text-muted-foreground">
+                  {category.name}
+                </span>
+                <input
+                  aria-label={category.name}
+                  className={inputClass}
+                  value={values[category.id] ?? "0"}
                   onChange={(event) =>
-                    setCurrencies((current) => ({
+                    setValues((current) => ({
                       ...current,
-                      [category.id]: event.target
-                        .value as OperatingCostCurrency,
+                      [category.id]: event.target.value,
                     }))
                   }
-                >
-                  <option value="TWD">TWD</option>
-                  <option value="JPY">JPY</option>
-                </select>
-                <span className="mt-1 block break-words text-right text-xs tabular-nums lining-nums text-muted-foreground">
-                  {formatConvertedAmount(
-                    values[category.id] ?? "0",
-                    entryCurrency,
-                    exchangeRate,
-                  )}
-                </span>
+                  inputMode="decimal"
+                />
+                <div className="min-w-0">
+                  <select
+                    aria-label={`${category.name}幣別`}
+                    className="h-11 w-full rounded-xl border border-input bg-background px-2 text-sm text-foreground"
+                    value={entryCurrency}
+                    onChange={(event) =>
+                      setCurrencies((current) => ({
+                        ...current,
+                        [category.id]: event.target
+                          .value as OperatingCostCurrency,
+                      }))
+                    }
+                  >
+                    <option value="TWD">TWD</option>
+                    <option value="JPY">JPY</option>
+                  </select>
+                  <span className="mt-1 block break-words text-right text-xs tabular-nums lining-nums text-muted-foreground">
+                    {formatConvertedAmount(
+                      values[category.id] ?? "0",
+                      entryCurrency,
+                      exchangeRate,
+                    )}
+                  </span>
+                </div>
               </div>
+            );
+          })}
+          {customEntries.map((entry) => (
+            <div
+              key={entry.id}
+              className="flex items-center justify-between gap-3 border-t border-border pt-3 text-sm"
+            >
+              <span>
+                {entry.customLabel ?? entry.categoryName ?? "自訂項目"}
+              </span>
+              <span className="text-right tabular-nums lining-nums text-muted-foreground">
+                {entry.currency} {entry.originalAmount}
+                <br />
+                {formatConvertedAmount(
+                  entry.originalAmount,
+                  entry.currency,
+                  exchangeRate,
+                )}
+              </span>
             </div>
-          );
-        })}
-        {customEntries.map((entry) => (
-          <div
-            key={entry.id}
-            className="flex items-center justify-between gap-3 border-t border-border pt-3 text-sm"
-          >
-            <span>{entry.customLabel ?? entry.categoryName ?? "自訂項目"}</span>
-            <span className="text-right tabular-nums lining-nums text-muted-foreground">
-              {entry.currency} {entry.originalAmount}
-              <br />
-              {formatConvertedAmount(
-                entry.originalAmount,
-                entry.currency,
-                exchangeRate,
-              )}
+          ))}
+          <div className="flex items-center justify-between border-t border-border pt-3 text-sm font-semibold">
+            <span>{config.title.replace(/（.*$/, "合計")}</span>
+            <span className="tabular-nums lining-nums">
+              {formatApiTwd(section.totalTwd)}
             </span>
           </div>
-        ))}
-        <div className="flex items-center justify-between border-t border-border pt-3 text-sm font-semibold">
-          <span>{config.title.replace(/（.*$/, "合計")}</span>
-          <span className="tabular-nums lining-nums">
-            {formatApiTwd(section.totalTwd)}
-          </span>
         </div>
       </section>
     );
@@ -499,7 +633,10 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
 
             {SECTION_CONFIG.map(renderSection)}
 
-            <section className="space-y-2 rounded-2xl border border-border bg-card p-4 text-sm">
+            <section
+              ref={settleRootRef}
+              className="space-y-2 rounded-2xl border border-border bg-card p-4 text-sm"
+            >
               <h2 className="font-bold">費用摘要</h2>
               {SECTION_CONFIG.map((config) => (
                 <div
@@ -507,14 +644,14 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
                   className="flex items-center justify-between"
                 >
                   <span>{config.feeLabel}</span>
-                  <span className="tabular-nums lining-nums">
+                  <span className="tabular-nums lining-nums" data-settle-amount>
                     {formatApiTwd(summary.sections[config.key].paymentFeeTwd)}
                   </span>
                 </div>
               ))}
               <div className="flex items-center justify-between border-t border-border pt-2 font-semibold">
                 <span>營業費用合計</span>
-                <span className="tabular-nums lining-nums">
+                <span className="tabular-nums lining-nums" data-settle-amount>
                   {summary.tripProfit.status === "ready"
                     ? formatApiTwd(summary.tripProfit.operatingExpenseTwd)
                     : OPERATING_COST_PENDING_LABEL}
@@ -571,13 +708,19 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
                           <>
                             <div className="flex items-center justify-between gap-2">
                               <span>預估營業毛利</span>
-                              <span className="tabular-nums lining-nums">
+                              <span
+                                className="tabular-nums lining-nums"
+                                data-settle-amount
+                              >
                                 {formatApiTwd(projection.grossProfitTwd)}
                               </span>
                             </div>
                             <div className="flex items-center justify-between gap-2">
                               <span>預估營業淨利</span>
-                              <span className="tabular-nums lining-nums">
+                              <span
+                                className="tabular-nums lining-nums"
+                                data-settle-amount
+                              >
                                 {formatApiTwd(
                                   projection.finalOperatingProfitTwd,
                                 )}
@@ -626,7 +769,7 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
             <div className="flex gap-2">
               <button
                 type="button"
-                className="min-h-11 flex-1 rounded-xl bg-primary font-semibold text-primary-foreground disabled:opacity-50"
+                className="k8-press min-h-11 flex-1 rounded-xl bg-primary font-semibold text-primary-foreground disabled:opacity-50"
                 disabled={saving || summary.estimateLocked}
                 onClick={() => void save()}
               >

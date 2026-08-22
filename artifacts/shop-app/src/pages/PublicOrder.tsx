@@ -7,6 +7,7 @@ import {
 import { addToCart, getCart, cartTotalQty } from "@/lib/cartStorage";
 import { applyBrandColor, DEFAULT_BRAND_PRIMARY_COLOR } from "@/lib/brandColor";
 import { formatActionableError } from "@/lib/actionableError";
+import { loadMotion, motionEnabled, PIKA_EASE } from "@/lib/motion";
 import {
   isSevenElevenMethod,
   isFamilyMartMethod,
@@ -182,6 +183,38 @@ export default function PublicOrderPage({ shareToken }: Props) {
     ? new Date(product.orderDeadlineAt as string)
     : null;
   const [now, setNow] = useState(() => new Date());
+
+  // ② ScrollTrigger 長頁區塊進場：捲到才播（低調、一次；只當延後播放的觸發器）
+  const pageRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const root = pageRef.current;
+    if (!root || !motionEnabled()) return;
+    let killTriggers: (() => void) | undefined;
+    void loadMotion().then(({ gsap, ScrollTrigger }) => {
+      if (!gsap || !ScrollTrigger) return;
+      const blocks = Array.from(
+        root.querySelectorAll<HTMLElement>("[data-reveal-block]"),
+      );
+      const triggers = blocks.map((block) =>
+        ScrollTrigger.create({
+          trigger: block,
+          start: "top 88%",
+          once: true,
+          onEnter: () => {
+            gsap.fromTo(
+              block,
+              { opacity: 0.001, y: 8 },
+              { opacity: 1, y: 0, duration: 0.24, ease: PIKA_EASE.uiOut },
+            );
+          },
+        }),
+      );
+      killTriggers = () => triggers.forEach((trigger) => trigger.kill());
+    });
+    return () => {
+      killTriggers?.();
+    };
+  }, []);
 
   const shippingFee = getShippingFee(pickupMethod);
   const moneyPreview = calculateMoneyPreview({
@@ -524,7 +557,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center bg-background px-5">
         <div className="text-center max-w-sm w-full">
-          <div className="w-16 h-16 bg-secondary text-secondary-foreground rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+          <div className="w-16 h-16 bg-secondary text-secondary-foreground rounded-full flex items-center justify-center mx-auto mb-4 text-3xl animate-cs-pulse-once">
             ✓
           </div>
           <h1 className="text-xl font-bold text-foreground">下單成功！</h1>
@@ -592,7 +625,10 @@ export default function PublicOrderPage({ shareToken }: Props) {
   }
 
   return (
-    <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto">
+    <div
+      className="min-h-[100dvh] bg-background max-w-[480px] mx-auto"
+      ref={pageRef}
+    >
       {/* Product info */}
       <div className="bg-card">
         {product.imageUrl && (
@@ -669,7 +705,11 @@ export default function PublicOrderPage({ shareToken }: Props) {
       </div>
 
       {/* Order form */}
-      <form onSubmit={handleSubmit} className="px-5 py-5 space-y-5">
+      <form
+        onSubmit={handleSubmit}
+        className="px-5 py-5 space-y-5"
+        data-reveal-block
+      >
         <div className="text-base font-bold text-foreground">填寫訂購資訊</div>
 
         {/* Specs */}
@@ -1271,7 +1311,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
         <button
           type="submit"
           disabled={submitOrder.isPending || isOrderClosed}
-          className="w-full h-12 bg-primary text-primary-foreground font-bold rounded-xl text-base disabled:opacity-60 sticky bottom-4"
+          className="k8-press w-full h-12 bg-primary text-primary-foreground font-bold rounded-xl text-base disabled:opacity-60 sticky bottom-4"
         >
           {isOrderClosed
             ? "已截止收單"
