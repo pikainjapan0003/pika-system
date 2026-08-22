@@ -46,6 +46,38 @@ router.get("/trips", requireAuth, async (req: any, res) => {
   );
 });
 
+// Dashboard KPI board（useTripProfitBoard）以「前端實際行為」固定抓取此網址；
+// 上一批審計發現後端與 openapi 皆缺此端點 → KPI 板永遠「尚無行程」。
+// 與 GET /trips?storeId= 同形（含 routes），並以商店主權驗證。
+router.get("/stores/:storeId/trips", requireAuth, async (req: any, res) => {
+  const storeId = positiveId(req.params.storeId);
+  if (storeId === null) {
+    return res.status(400).json({ error: "Invalid store id" });
+  }
+  if (!(await verifyStoreOwner(req, res, storeId))) return;
+
+  const trips = await db
+    .select()
+    .from(tripsTable)
+    .where(ownedOrAwaitingBackfill(tripsTable.storeId, storeId));
+  const routes = await db
+    .select()
+    .from(tripRoutesTable)
+    .where(ownedOrAwaitingBackfill(tripRoutesTable.storeId, storeId));
+  const routesByTrip = new Map<number, typeof routes>();
+  for (const route of routes) {
+    const list = routesByTrip.get(route.tripId) ?? [];
+    list.push(route);
+    routesByTrip.set(route.tripId, list);
+  }
+  return res.json(
+    trips.map((t) => ({
+      ...formatTrip(t),
+      routes: (routesByTrip.get(t.id) ?? []).map(formatTripRoute),
+    })),
+  );
+});
+
 router.post("/trips", requireAuth, async (req: any, res) => {
   const storeId = await resolveOwnedStoreId(req, res);
   if (storeId === null) return;
