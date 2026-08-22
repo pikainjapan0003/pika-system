@@ -1,7 +1,7 @@
 import { Bar, BarChart, Legend, Tooltip, XAxis, YAxis } from "recharts";
 import { formatApiTwd } from "../../lib/operatingCostDisplay";
 import type { OperatingSummary } from "../../lib/tripProfitBoard";
-import { ChartCard, ChartLegendRow, ChartResponsiveOnly } from "./chartCard";
+import { ChartCard, ChartFrame, ChartLegendRow } from "./chartCard";
 import { CHART_TOKEN } from "./chartTheme";
 
 function num(value: string | null | undefined): number | null {
@@ -73,7 +73,7 @@ export function CostStructureStack({
       }
     >
       {ready ? (
-        <ChartResponsiveOnly>
+        <ChartFrame>
           <BarChart
             data={data}
             layout="vertical"
@@ -108,7 +108,7 @@ export function CostStructureStack({
               <Bar key={s.key} dataKey={s.key} stackId="cost" fill={s.color} />
             ))}
           </BarChart>
-        </ChartResponsiveOnly>
+        </ChartFrame>
       ) : (
         <p className="text-sm text-muted-foreground">
           尚無就緒的成本結構資料。

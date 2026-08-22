@@ -20,8 +20,8 @@ import {
 } from "@/mocks/mockProfitCharts";
 import {
   ChartCard,
+  ChartFrame,
   ChartLegendRow,
-  ChartResponsiveOnly,
 } from "./charts/chartCard";
 import {
   CHART_TOKEN,
@@ -118,7 +118,7 @@ export function PreviewChart({
       </div>
       <div>
         {chart === "routeCostRanking" ? (
-          <ChartResponsiveOnly>
+          <ChartFrame height={220}>
             <BarChart
               data={MOCK_ROUTE_COST_RANKING}
               layout="vertical"
@@ -155,11 +155,11 @@ export function PreviewChart({
                 ))}
               </Bar>
             </BarChart>
-          </ChartResponsiveOnly>
+          </ChartFrame>
         ) : null}
 
         {chart === "areaScatter" ? (
-          <ChartResponsiveOnly>
+          <ChartFrame height={240}>
             <ScatterChart margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
               <CartesianGrid
                 strokeDasharray="3 3"
@@ -195,13 +195,13 @@ export function PreviewChart({
               />
               <Scatter data={MOCK_AREA_SCATTER} fill={divergingPositive(2)} />
             </ScatterChart>
-          </ChartResponsiveOnly>
+          </ChartFrame>
         ) : null}
 
         {chart === "sensitivityHeatmap" ? <HeatmapPreview /> : null}
 
         {chart === "historyTrend" ? (
-          <ChartResponsiveOnly>
+          <ChartFrame height={240}>
             <LineChart
               data={MOCK_HISTORY_TREND}
               margin={{ top: 8, right: 8, left: 8, bottom: 8 }}
@@ -235,7 +235,7 @@ export function PreviewChart({
                 dot={{ r: 3, fill: CHART_TOKEN.actual, strokeWidth: 0 }}
               />
             </LineChart>
-          </ChartResponsiveOnly>
+          </ChartFrame>
         ) : null}
       </div>
     </ChartCard>
