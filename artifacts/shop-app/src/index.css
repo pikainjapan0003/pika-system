@@ -459,3 +459,101 @@ body[data-pika-theme="night"] {
 @utility animate-cs-pulse-soft {
   animation: cs-pulse-soft 2.5s ease-in-out infinite;
 }
+
+/* ============================================================================
+   P｜prefers-reduced-motion 全域降級規則（G5 前置任務）
+   source: DESIGN.md「所有動效尊重 prefers-reduced-motion，縮減後仍須保留
+   結果文字、符號與狀態」（K 類表下 L326）
+   ⛔ 刻意寫在 design-token-bridge 生成區塊之外：bridge 重跑不會覆蓋本區。
+   降級策略（G5 動效紅線 3 的 CSS 端落實）：
+   - 既有 CSS 動效（tw-animate-css animate-in/out、animate-spin、
+     animate-cs-*、transition-*）一律縮到近乎瞬時並只播一次 →
+     元素直接呈現「動畫最終狀態」，結果文字、符號與狀態全部保留。
+   - 互動 hover 抬升（K2）同樣取消位移，只保留顏色等瞬時變化。
+   - GSAP 端（Timeline／ScrollTrigger／Flip／SplitText／SVG）不走 CSS
+     media query，改由 src/lib/motion.ts 的 prefersReducedMotion() 守門：
+     reduce 為 true 時完全不建動畫、直接呈現最終版面（無位移、無淡入）。
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* 動態暈眩敏感使用者：不播放任何位移型 CSS 動效（K2 hover 抬升等） */
+  .k2-lift {
+    transition: none !important;
+  }
+  .k2-lift:hover,
+  .k2-lift:focus-visible {
+    transform: none !important;
+  }
+
+  /* 非裝飾用途的狀態指示（載入 spinner 等）保留「形」，但停止旋轉 */
+  .animate-spin,
+  .animate-cs-spin-gentle,
+  .animate-cs-float,
+  .animate-cs-pulse-soft {
+    animation: none !important;
+  }
+}
+
+/* ============================================================================
+   K 類動效（非 GSAP 的 CSS 部分）＋ recharts 繪入基底
+   時長一律照抄 DESIGN.md K 類表，本區在 bridge 生成區塊之外。
+   ========================================================================== */
+
+/* K2｜hover 抬升 150ms：只給「可互動」卡片；只在支援 hover 的裝置啟用。
+   ⛔ 不得讓資料卡牆全部漂浮——只加在 onClick 互動卡（見各頁面使用處）。 */
+@media (hover: hover) and (pointer: fine) {
+  .k2-lift {
+    transition:
+      transform 150ms ease-out,
+      border-color 150ms ease;
+    will-change: transform;
+  }
+  .k2-lift:hover {
+    transform: translateY(-2px);
+  }
+  .k2-lift:active {
+    transform: translateY(0);
+  }
+}
+
+/* K8｜按下縮放 180ms：只作用在實際按鈕；觸控後完整播放一次（:active 單次）。
+   文字與底板一起縮放（transform 套在整個按鈕上）。 */
+.k8-press {
+  transition: transform 180ms ease-out;
+  will-change: transform;
+}
+.k8-press:active {
+  transform: scale(0.97);
+}
+
+/* K4｜單次脈衝約 500ms：只提示一次已完成的非關鍵狀態；
+   不得自動循環、不得以 glow 表現。 */
+@keyframes cs-pulse-once {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.04);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@utility animate-cs-pulse-once {
+  animation: cs-pulse-once 500ms ease-out 1;
+}
+
+/* ⑤ SVG 繪入基底：recharts 長條只動 transform（GPU），
+   目標線（ReferenceLine）不參與動畫、保持固定。 */
+.recharts-rectangle {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+}
