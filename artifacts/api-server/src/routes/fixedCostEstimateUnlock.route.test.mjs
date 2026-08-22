@@ -688,4 +688,151 @@ if (!process.env.DATABASE_URL) {
       .where(eq(tripRoutesTable.id, restrictRouteId));
     assert.equal(storedRoute.id, restrictRouteId);
   });
+
+  test("cost-entries accepts a numeric categoryId exactly as the merchant UI sends it (V1 estimate save regression)", async () => {
+    // TripEstimate.tsx「儲存估算」送出 categoryId: category.id（number）。
+    // 修復前 positiveId 只收字串 -> 400 -> 估算頁永遠存不進去；
+    // 此測試以「前端實際 payload 形狀」打 API，不得繞路由。
+    const [contractTrip] = await db
+      .insert(tripsTable)
+      .values({ storeId, name: "V1 phase24 numeric categoryId contract trip" })
+      .returning();
+    try {
+      const created = await request(
+        "POST",
+        `/stores/${storeId}/trips/${contractTrip.id}/cost-entries`,
+        {
+          mode: "ESTIMATE",
+          categoryId, // number（與前端一致）
+          originalAmount: "2000",
+          currency: "TWD",
+        },
+      );
+      assert.equal(created.status, 201, JSON.stringify(created.data));
+      assert.equal(created.data.categoryId, categoryId);
+      assert.equal(created.data.originalAmount, "2000.000000000000");
+      assert.equal(created.data.currency, "TWD");
+
+      // 既有行為：數字字串照常成功（同一行程同分類唯一 → 換行程驗證）。
+      const [stringTrip] = await db
+        .insert(tripsTable)
+        .values({ storeId, name: "V1 phase24 string categoryId contract trip" })
+        .returning();
+      let stringEntryId;
+      try {
+        const createdAsString = await request(
+          "POST",
+          `/stores/${storeId}/trips/${stringTrip.id}/cost-entries`,
+          {
+            mode: "ESTIMATE",
+            categoryId: String(categoryId),
+            originalAmount: "3000",
+            currency: "JPY",
+          },
+        );
+        assert.equal(
+          createdAsString.status,
+          201,
+          JSON.stringify(createdAsString.data),
+        );
+        assert.equal(createdAsString.data.categoryId, categoryId);
+        stringEntryId = createdAsString.data.id;
+        const listed = await request(
+          "GET",
+          `/stores/${storeId}/trips/${stringTrip.id}/cost-entries?mode=ESTIMATE`,
+        );
+        assert.equal(listed.status, 200);
+        assert.equal(listed.data.length, 1);
+      } finally {
+        if (stringEntryId !== undefined) {
+          await db
+            .delete(costEntriesTable)
+            .where(eq(costEntriesTable.id, stringEntryId));
+        }
+        await db.delete(tripsTable).where(eq(tripsTable.id, stringTrip.id));
+      }
+    } finally {
+      await db
+        .delete(costEntriesTable)
+        .where(eq(costEntriesTable.tripId, contractTrip.id));
+      await db.delete(tripsTable).where(eq(tripsTable.id, contractTrip.id));
+    }
+  });
+
+  test("cost-entries rejects invalid categoryId values without widening the value domain", async () => {
+    const [contractTrip] = await db
+      .insert(tripsTable)
+      .values({ storeId, name: "V1 phase24 categoryId rejection trip" })
+      .returning();
+    try {
+      const invalidCategoryIds = [
+        0,
+        -1,
+        1.5,
+        "abc",
+        "1.5",
+        "",
+        "0",
+        "-3",
+        null,
+        Number.MAX_SAFE_INTEGER + 2,
+        Number.NaN,
+        Number.POSITIVE_INFINITY,
+      ];
+      for (const illegal of invalidCategoryIds) {
+        const body = {
+          mode: "ESTIMATE",
+          originalAmount: "100",
+          currency: "TWD",
+        };
+        if (illegal !== undefined) body.categoryId = illegal;
+        const rejected = await request(
+          "POST",
+          `/stores/${storeId}/trips/${contractTrip.id}/cost-entries`,
+          body,
+        );
+        assert.equal(
+          rejected.status,
+          400,
+          JSON.stringify({ illegal, ...rejected.data }),
+        );
+        assert.equal(
+          rejected.data.error,
+          "exactly one of categoryId or customLabel is required",
+        );
+      }
+
+      // 未送 categoryId 也無 customLabel -> 必須被拒。
+      const missing = await request(
+        "POST",
+        `/stores/${storeId}/trips/${contractTrip.id}/cost-entries`,
+        { mode: "ESTIMATE", originalAmount: "100", currency: "TWD" },
+      );
+      assert.equal(missing.status, 400);
+
+      // 對照組：customLabel 仍可單獨成立（不因本次修復而破壞）。
+      const labeled = await request(
+        "POST",
+        `/stores/${storeId}/trips/${contractTrip.id}/cost-entries`,
+        {
+          mode: "ESTIMATE",
+          customLabel: "V1 phase24 no-category entry",
+          originalAmount: "100",
+          currency: "TWD",
+        },
+      );
+      assert.equal(labeled.status, 201, JSON.stringify(labeled.data));
+
+      const [storedEntry] = await db
+        .select({ customLabel: costEntriesTable.customLabel })
+        .from(costEntriesTable)
+        .where(eq(costEntriesTable.id, labeled.data.id));
+      assert.equal(storedEntry.customLabel, "V1 phase24 no-category entry");
+    } finally {
+      await db
+        .delete(costEntriesTable)
+        .where(eq(costEntriesTable.tripId, contractTrip.id));
+      await db.delete(tripsTable).where(eq(tripsTable.id, contractTrip.id));
+    }
+  });
 }
