@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import {
   useGetMyStore,
@@ -23,6 +23,7 @@ import { EstimateActualBars } from "@/components/charts/EstimateActualBars";
 import { ProfitWaterfall } from "@/components/charts/ProfitWaterfall";
 import { VarianceContribution } from "@/components/charts/VarianceContribution";
 import { useTripProfitBoard } from "@/lib/tripProfitBoard";
+import { K_DURATION, loadMotion, motionEnabled, PIKA_EASE } from "@/lib/motion";
 
 interface ProfitSummary {
   capturedProfitSubtotalDisplayTwd: string;
@@ -153,6 +154,65 @@ export default function DashboardPage() {
   const orderCounts = countDashboardOrders(orders ?? []);
   const lowStockProducts = findLowStockProducts(products ?? []);
 
+  // ② ScrollTrigger＋⑤ SVG 繪入：首屏以下的 8 張圖表捲到才播放進場
+  // （只當「延後播放」的觸發器；不做 parallax／pin／scrub；once 只播第一次，
+  //  資料更新不得重播全套）。jsdom 無 matchMedia → motionEnabled=false → 不掛。
+  const chartsRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const root = chartsRef.current;
+    if (!root || !motionEnabled()) return;
+    let killTriggers: (() => void) | undefined;
+    void loadMotion().then(({ gsap, ScrollTrigger }) => {
+      if (!gsap || !ScrollTrigger) return;
+      const triggers = Array.from(
+        root.querySelectorAll<HTMLElement>("[data-chart-reveal]"),
+      ).map((card) =>
+        ScrollTrigger.create({
+          trigger: card,
+          start: "top 90%",
+          once: true,
+          onEnter: () => {
+            // 長條由底長出（transform-only；目標線 ReferenceLine 不參與）
+            const rects = card.querySelectorAll(".recharts-rectangle");
+            const curves = card.querySelectorAll(".recharts-line-curve");
+            const tl = gsap.timeline({ defaults: { ease: PIKA_EASE.inOut } });
+            if (rects.length > 0) {
+              tl.fromTo(
+                rects,
+                { scaleY: 0 },
+                {
+                  scaleY: 1,
+                  duration: K_DURATION.fill,
+                  ease: PIKA_EASE.inOut,
+                  stagger: 0.05,
+                },
+                0,
+              );
+            }
+            // 線圖 stroke-dashoffset 繪入（historyTrend 為唯一的線圖）
+            curves.forEach((curve) => {
+              tl.fromTo(
+                curve,
+                { strokeDasharray: 1, strokeDashoffset: 1 },
+                {
+                  strokeDashoffset: 0,
+                  duration: K_DURATION.fill,
+                  ease: PIKA_EASE.uiOut,
+                },
+                0.1,
+              );
+            });
+            tl.play();
+          },
+        }),
+      );
+      killTriggers = () => triggers.forEach((trigger) => trigger.kill());
+    });
+    return () => {
+      killTriggers?.();
+    };
+  }, []);
+
   return (
     <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto">
       {/* Header */}
@@ -180,12 +240,14 @@ export default function DashboardPage() {
           selectedTripId={board.selectedTripId}
           onSelectTrip={board.setSelectedTripId}
           estimate={board.estimate}
+          actual={board.actual}
+          comparisonRows={board.comparisonRows}
           loading={board.loading}
           error={board.error}
         />
 
         {/* 圖表 A–H：A–D 真實資料（operating-summary／fixed-cost-comparison），E–H 示意圖（PreviewChart） */}
-        <section className="space-y-4" aria-label="分析圖表">
+        <section className="space-y-4" aria-label="分析圖表" ref={chartsRef}>
           <ProfitWaterfall
             estimate={board.estimate}
             summaryId="chart-a-summary"
@@ -592,7 +654,7 @@ function ActionCard({
   return (
     <button
       onClick={onClick}
-      className="bg-card rounded-2xl p-4 border border-border text-left active:bg-secondary transition-colors relative"
+      className="k2-lift bg-card rounded-2xl p-4 border border-border text-left active:bg-secondary transition-colors relative"
     >
       {badge && (
         <span className="absolute top-3 right-3 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-destructive/10 text-destructive max-w-[45%] truncate">
