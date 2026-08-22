@@ -68,6 +68,13 @@ export default defineConfig({
     dedupe: ["react", "react-dom"],
   },
   root: path.resolve(import.meta.dirname),
+  optimizeDeps: {
+    // gsap 各入口若被 vite dev 分開 pre-bundle，會各自內嵌一份 gsap-core
+    // （重複實例），導致 Flip / ScrollTrigger / SplitText 的 tween 在 dev 下
+    // 不播放（duration 0）。exclude 後走原始 ESM，瀏覽器依 URL 去重為單一
+    // core；production build 不受此設定影響（rollup 只打包一次）。
+    exclude: ["gsap", "gsap/ScrollTrigger", "gsap/Flip", "gsap/SplitText"],
+  },
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
