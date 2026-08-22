@@ -17,6 +17,7 @@ import {
   loadMotion,
   motionEnabled,
   PIKA_EASE,
+  prefersReducedMotion,
 } from "../lib/motion";
 
 const inputClass =
@@ -368,37 +369,65 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
 
   /** K3｜展開收合（220–300ms）；摘要列固定、明細從其下展開，不得造成水平位移。 */
   const bodyRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const k3Timers = useRef<Record<string, number>>({});
+  // DESIGN.md K 類表：K3 展開收合 220–300ms（取 K_DURATION.expand = 250ms）。
+  const k3CollapseMs = Math.round(K_DURATION.expand * 1000);
+
+  // 清理未完成的 K3 計時器，避免組件卸載後仍操作節點。
+  useEffect(() => {
+    return () => {
+      for (const key of Object.keys(k3Timers.current)) {
+        window.clearTimeout(k3Timers.current[key]);
+      }
+    };
+  }, []);
+
   function toggleSection(key: string) {
     const body = bodyRefs.current[key];
     const willCollapse = !collapsed[key];
-    if (body && motionEnabled()) {
-      // 先取 state，切換，再用 Flip 補償（async 載入後 rAF）
-      void loadMotion().then(({ Flip, gsap }) => {
-        if (!Flip || !gsap) {
-          setCollapsed((current) => ({ ...current, [key]: willCollapse }));
-          return;
-        }
-        const bodyEl = bodyRefs.current[key];
-        if (!bodyEl) {
-          setCollapsed((current) => ({ ...current, [key]: willCollapse }));
-          return;
-        }
-        const state = Flip.getState(bodyEl);
-        setCollapsed((current) => ({ ...current, [key]: willCollapse }));
-        requestAnimationFrame(() => {
-          Flip.from(state, {
-            duration: K_DURATION.expand,
-            ease: PIKA_EASE.inOut,
-            scale: true,
-            absolute: true,
-            onComplete: () =>
-              gsap.set(bodyEl, { clearProps: "transform,opacity" }),
-          });
-        });
-      });
-    } else {
+    if (!body) {
       setCollapsed((current) => ({ ...current, [key]: willCollapse }));
+      return;
     }
+    // prefers-reduced-motion：不做高度動畫，直接切換；展開時內容仍完整可讀。
+    if (prefersReducedMotion()) {
+      body.hidden = willCollapse;
+      body.setAttribute("aria-hidden", String(willCollapse));
+      setCollapsed((current) => ({ ...current, [key]: willCollapse }));
+      return;
+    }
+    window.clearTimeout(k3Timers.current[key]);
+    body.style.transition =
+      "height " + k3CollapseMs + "ms cubic-bezier(0.23, 1, 0.32, 1)";
+    body.style.overflow = "hidden";
+    if (willCollapse) {
+      // 收合：先量目前高度再縮到 0；立即對螢幕閱讀器隱藏，
+      // 動畫結束後補上 hidden 徹底移除。
+      body.hidden = false;
+      body.setAttribute("aria-hidden", "true");
+      body.style.height = body.getBoundingClientRect().height + "px";
+      void body.offsetHeight; // 強制 reflow，讓初始高度生效再過渡。
+      body.style.height = "0px";
+      k3Timers.current[key] = window.setTimeout(() => {
+        body.style.transition = "";
+        body.style.overflow = "";
+        body.style.height = "";
+        body.hidden = true;
+      }, k3CollapseMs);
+    } else {
+      // 展開：從 0 長到完整高度，結束後恢復 auto（內容保持可讀）。
+      body.hidden = false;
+      body.setAttribute("aria-hidden", "false");
+      body.style.height = "0px";
+      void body.offsetHeight;
+      body.style.height = body.scrollHeight + "px";
+      k3Timers.current[key] = window.setTimeout(() => {
+        body.style.transition = "";
+        body.style.overflow = "";
+        body.style.height = "";
+      }, k3CollapseMs);
+    }
+    setCollapsed((current) => ({ ...current, [key]: willCollapse }));
   }
 
   function renderSection(config: (typeof SECTION_CONFIG)[number]) {
@@ -454,7 +483,6 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
           ref={(node) => {
             bodyRefs.current[config.key] = node;
           }}
-          hidden={isCollapsed}
           className="space-y-3"
         >
           {section.categories.map((category) => {
