@@ -18,11 +18,7 @@ import {
   MOCK_ROUTE_COST_RANKING,
   MOCK_SENSITIVITY_HEATMAP,
 } from "@/mocks/mockProfitCharts";
-import {
-  ChartCard,
-  ChartFrame,
-  ChartLegendRow,
-} from "./charts/chartCard";
+import { ChartCard, ChartFrame, ChartLegendRow } from "./charts/chartCard";
 import {
   CHART_TOKEN,
   divergingPositive,
