@@ -23,8 +23,11 @@ if (!process.env.DATABASE_URL) {
 
   const { default: express } = await import("express");
   const {
+    costEntriesTable,
     db,
+    ordersTable,
     pool,
+    productsTable,
     storesTable,
     tripAreaCostsTable,
     tripAreasTable,
@@ -33,10 +36,12 @@ if (!process.env.DATABASE_URL) {
   } = await import("@workspace/db");
   const { eq, inArray } = await import("drizzle-orm");
   const { default: tripsRouter } = await import("./trips.ts");
+  const { default: chartDataRouter } = await import("./chartData.ts");
 
   const app = express();
   app.use(express.json());
   app.use("/api", tripsRouter);
+  app.use("/api", chartDataRouter);
 
   let server;
   let baseUrl;
@@ -46,6 +51,20 @@ if (!process.env.DATABASE_URL) {
   let tripBId;
   let legacyTripId;
   let routeAId;
+  // Chart data fixtures (batch 25): E route cost ranking + F area scatter.
+  let chartTripEId;
+  let chartAreaEId;
+  let chartRouteEId;
+  let chartRoutePendingFuelId;
+  let chartRoutePendingAreaId;
+  let chartTripFId;
+  let chartAreaNorthId;
+  let chartRouteF1Id;
+  let chartTripFNoRateId;
+  let chartAreaNoRateId;
+  let chartRouteFNoRateId;
+  let chartAreaMiddleId;
+  let chartRouteF3Id;
 
   before(async () => {
     await new Promise((resolve) => {
@@ -97,6 +116,267 @@ if (!process.env.DATABASE_URL) {
       })
       .returning();
     routeAId = routeA.id;
+
+    // --- chart E fixtures (route unit cost ranking) ---
+    const [chartTripE] = await db
+      .insert(tripsTable)
+      .values({
+        storeId: storeAId,
+        name: "BATCH-25 chart E trip",
+        exchangeRate: "0.2",
+        hepTotalJpy: null,
+        totalItemQuantity: null,
+      })
+      .returning();
+    chartTripEId = chartTripE.id;
+    const [chartAreaE] = await db
+      .insert(tripAreasTable)
+      .values({
+        storeId: storeAId,
+        tripId: chartTripEId,
+        name: "BATCH-25 E area",
+      })
+      .returning();
+    chartAreaEId = chartAreaE.id;
+    await db.insert(tripAreaCostsTable).values({
+      tripAreaId: chartAreaEId,
+      mode: "ESTIMATE",
+      cardboardUnitJpy: "10",
+      shippingUnitJpy: "20",
+      parcelCount: 3,
+      estimatedItemQuantity: 10,
+    });
+    const [chartRouteE] = await db
+      .insert(tripRoutesTable)
+      .values({
+        storeId: storeAId,
+        tripId: chartTripEId,
+        tripAreaId: chartAreaEId,
+        areaTitle: "BATCH-25 E route",
+        startPlace: "A",
+        endPlace: "B",
+        estQty: 10,
+        trainJpy: "100",
+        fuelJpy: "50",
+        parkingJpy: "30",
+        etcJpy: "20",
+      })
+      .returning();
+    chartRouteEId = chartRouteE.id;
+    const [chartRoutePendingFuel] = await db
+      .insert(tripRoutesTable)
+      .values({
+        storeId: storeAId,
+        tripId: chartTripEId,
+        tripAreaId: chartAreaEId,
+        areaTitle: "BATCH-25 pending fuel route",
+        startPlace: "A",
+        endPlace: "B",
+        estQty: 5,
+        trainJpy: "10",
+        fuelJpy: null,
+        parkingJpy: "0",
+        etcJpy: "0",
+      })
+      .returning();
+    chartRoutePendingFuelId = chartRoutePendingFuel.id;
+    const [chartRoutePendingArea] = await db
+      .insert(tripRoutesTable)
+      .values({
+        storeId: storeAId,
+        tripId: chartTripEId,
+        tripAreaId: null,
+        areaTitle: "BATCH-25 pending area route",
+        startPlace: "A",
+        endPlace: "B",
+        estQty: 5,
+        trainJpy: "10",
+        fuelJpy: "20",
+        parkingJpy: "0",
+        etcJpy: "30",
+      })
+      .returning();
+    chartRoutePendingAreaId = chartRoutePendingArea.id;
+
+    // --- chart F fixtures (area scatter) ---
+    const [chartTripF] = await db
+      .insert(tripsTable)
+      .values({
+        storeId: storeAId,
+        name: "BATCH-25 chart F trip",
+        exchangeRate: "0.25",
+        actualExchangeRate: "0.25",
+      })
+      .returning();
+    chartTripFId = chartTripF.id;
+    const [chartAreaNorth] = await db
+      .insert(tripAreasTable)
+      .values({
+        storeId: storeAId,
+        tripId: chartTripFId,
+        name: "BATCH-25 北區",
+      })
+      .returning();
+    chartAreaNorthId = chartAreaNorth.id;
+    const [chartRouteF1] = await db
+      .insert(tripRoutesTable)
+      .values({
+        storeId: storeAId,
+        tripId: chartTripFId,
+        tripAreaId: chartAreaNorthId,
+        areaTitle: "BATCH-25 北區 route",
+        startPlace: "A",
+        endPlace: "B",
+        estQty: 5,
+        etcJpy: "0",
+      })
+      .returning();
+    chartRouteF1Id = chartRouteF1.id;
+    const [chartProductF1] = await db
+      .insert(productsTable)
+      .values({
+        storeId: storeAId,
+        name: "BATCH-25 product north",
+        price: "100",
+        costJpy: "200",
+        isTransportCostExempt: false,
+        tripRouteId: chartRouteF1Id,
+        shareToken: `batch25-share-north-${nonce}`,
+      })
+      .returning();
+    await db.insert(ordersTable).values({
+      productId: chartProductF1.id,
+      storeId: storeAId,
+      productName: "BATCH-25 product north",
+      publicToken: `batch25-order-north-${nonce}`,
+      buyerName: "BATCH-25 buyer",
+      buyerPhone: "0",
+      pickupMethod: "self_pickup",
+      quantity: 4,
+      unitPrice: "100",
+      shippingFee: "0",
+      totalPrice: "400",
+      status: "preparing",
+    });
+    await db.insert(costEntriesTable).values({
+      storeId: storeAId,
+      tripId: chartTripFId,
+      tripRouteId: chartRouteF1Id,
+      mode: "ACTUAL",
+      customLabel: "BATCH-25 north fuel",
+      currency: "JPY",
+      originalAmount: "500",
+    });
+
+    const [chartTripFNoRate] = await db
+      .insert(tripsTable)
+      .values({
+        storeId: storeAId,
+        name: "BATCH-25 chart F no-rate trip",
+        exchangeRate: null,
+        actualExchangeRate: null,
+      })
+      .returning();
+    chartTripFNoRateId = chartTripFNoRate.id;
+    const [chartAreaNoRate] = await db
+      .insert(tripAreasTable)
+      .values({
+        storeId: storeAId,
+        tripId: chartTripFNoRateId,
+        name: "BATCH-25 東區",
+      })
+      .returning();
+    chartAreaNoRateId = chartAreaNoRate.id;
+    const [chartRouteFNoRate] = await db
+      .insert(tripRoutesTable)
+      .values({
+        storeId: storeAId,
+        tripId: chartTripFNoRateId,
+        tripAreaId: chartAreaNoRateId,
+        areaTitle: "BATCH-25 東區 route",
+        startPlace: "A",
+        endPlace: "B",
+        estQty: 5,
+        etcJpy: "0",
+      })
+      .returning();
+    chartRouteFNoRateId = chartRouteFNoRate.id;
+    const [chartProductFNoRate] = await db
+      .insert(productsTable)
+      .values({
+        storeId: storeAId,
+        name: "BATCH-25 product no-rate",
+        price: "100",
+        costJpy: "200",
+        isTransportCostExempt: false,
+        tripRouteId: chartRouteFNoRateId,
+        shareToken: `batch25-share-norate-${nonce}`,
+      })
+      .returning();
+    await db.insert(ordersTable).values({
+      productId: chartProductFNoRate.id,
+      storeId: storeAId,
+      productName: "BATCH-25 product no-rate",
+      publicToken: `batch25-order-norate-${nonce}`,
+      buyerName: "BATCH-25 buyer",
+      buyerPhone: "0",
+      pickupMethod: "self_pickup",
+      quantity: 2,
+      unitPrice: "100",
+      shippingFee: "0",
+      totalPrice: "200",
+      status: "shipped",
+    });
+
+    const [chartAreaMiddle] = await db
+      .insert(tripAreasTable)
+      .values({
+        storeId: storeAId,
+        tripId: chartTripFId,
+        name: "BATCH-25 中區",
+      })
+      .returning();
+    chartAreaMiddleId = chartAreaMiddle.id;
+    const [chartRouteF3] = await db
+      .insert(tripRoutesTable)
+      .values({
+        storeId: storeAId,
+        tripId: chartTripFId,
+        tripAreaId: chartAreaMiddleId,
+        areaTitle: "BATCH-25 中區 route",
+        startPlace: "A",
+        endPlace: "B",
+        estQty: 5,
+        etcJpy: "0",
+      })
+      .returning();
+    chartRouteF3Id = chartRouteF3.id;
+    const [chartProductF3] = await db
+      .insert(productsTable)
+      .values({
+        storeId: storeAId,
+        name: "BATCH-25 product middle",
+        price: "200",
+        costJpy: null,
+        isTransportCostExempt: false,
+        tripRouteId: chartRouteF3Id,
+        shareToken: `batch25-share-middle-${nonce}`,
+      })
+      .returning();
+    await db.insert(ordersTable).values({
+      productId: chartProductF3.id,
+      storeId: storeAId,
+      productName: "BATCH-25 product middle",
+      publicToken: `batch25-order-middle-${nonce}`,
+      buyerName: "BATCH-25 buyer",
+      buyerPhone: "0",
+      pickupMethod: "self_pickup",
+      quantity: 2,
+      unitPrice: "200",
+      shippingFee: "0",
+      totalPrice: "400",
+      status: "preparing",
+    });
   });
 
   after(async () => {
@@ -192,7 +472,13 @@ if (!process.env.DATABASE_URL) {
     assert.equal(response.status, 200);
     assert.deepEqual(
       response.data.map((trip) => trip.id).sort((a, b) => a - b),
-      [tripAId, legacyTripId].sort((a, b) => a - b),
+      [
+        tripAId,
+        legacyTripId,
+        chartTripEId,
+        chartTripFId,
+        chartTripFNoRateId,
+      ].sort((a, b) => a - b),
     );
     assert.equal(
       JSON.stringify(response.data).includes("BATCH-22 B trip"),
@@ -212,7 +498,13 @@ if (!process.env.DATABASE_URL) {
     assert.equal(response.status, 200, JSON.stringify(response.data));
     assert.deepEqual(
       response.data.map((trip) => trip.id).sort((a, b) => a - b),
-      [tripAId, legacyTripId].sort((a, b) => a - b),
+      [
+        tripAId,
+        legacyTripId,
+        chartTripEId,
+        chartTripFId,
+        chartTripFNoRateId,
+      ].sort((a, b) => a - b),
     );
     assert.equal(
       JSON.stringify(response.data).includes("BATCH-22 B trip"),
@@ -677,5 +969,143 @@ if (!process.env.DATABASE_URL) {
 
     await db.delete(tripAreasTable).where(eq(tripAreasTable.id, areaB.id));
     await db.delete(tripsTable).where(eq(tripsTable.id, otherTripA.id));
+  });
+  test("chart E route cost ranking reports computed unit costs and pending routes", async () => {
+    const response = await request(
+      "GET",
+      `/stores/${storeAId}/charts/route-cost-ranking`,
+    );
+    assert.equal(response.status, 200, JSON.stringify(response.data));
+    assert.equal(response.data.status, "pending_confirmation");
+    assert.equal(JSON.stringify(response.data).includes("storeId"), false);
+
+    const byTitle = new Map(
+      response.data.items.map((item) => [item.name, item]),
+    );
+    const ready = byTitle.get("BATCH-25 E route");
+    assert.equal(ready.status, "ready");
+    assert.equal(ready.unitCostTwd, "5.887000000000");
+    assert.equal(ready.reason, null);
+    assert.equal(ready.tripName, "BATCH-25 chart E trip");
+
+    // Sorted: a ready route must rank above every pending route.
+    const readyIndex = response.data.items.findIndex(
+      (item) => item.routeId === chartRouteEId,
+    );
+    for (const item of response.data.items.slice(readyIndex + 1)) {
+      assert.equal(item.status, "pending_confirmation");
+    }
+
+    assert.equal(
+      byTitle.get("BATCH-25 pending fuel route").status,
+      "pending_confirmation",
+    );
+    assert.equal(
+      byTitle.get("BATCH-25 pending fuel route").reason,
+      "missing_fuel_jpy",
+    );
+    assert.equal(byTitle.get("BATCH-25 pending fuel route").unitCostTwd, null);
+    assert.equal(
+      byTitle.get("BATCH-25 pending area route").reason,
+      "missing_trip_area",
+    );
+    // tripA has no exchange rate; its routes must fail closed as well.
+    const legacyPending = byTitle.get("BATCH-22 A route");
+    assert.equal(legacyPending.status, "pending_confirmation");
+    assert.equal(legacyPending.reason, "missing_exchange_rate");
+    assert.equal(legacyPending.unitCostTwd, null);
+  });
+
+  test("chart E route cost ranking enforces store ownership", async () => {
+    const crossStore = await request(
+      "GET",
+      `/stores/${storeAId}/charts/route-cost-ranking`,
+      { userId: MERCHANT_B },
+    );
+    assert.equal(crossStore.status, 403, JSON.stringify(crossStore.data));
+
+    const missingStore = await request(
+      "GET",
+      "/stores/99999999/charts/route-cost-ranking",
+    );
+    assert.equal(missingStore.status, 404, JSON.stringify(missingStore.data));
+
+    const invalidStore = await request(
+      "GET",
+      "/stores/not-a-number/charts/route-cost-ranking",
+    );
+    assert.equal(invalidStore.status, 400, JSON.stringify(invalidStore.data));
+
+    const unauthenticated = await request(
+      "GET",
+      `/stores/${storeAId}/charts/route-cost-ranking`,
+      { userId: null },
+    );
+    assert.equal(
+      unauthenticated.status,
+      401,
+      JSON.stringify(unauthenticated.data),
+    );
+  });
+
+  test("chart F area scatter aggregates actual performance and fails closed", async () => {
+    const response = await request(
+      "GET",
+      `/stores/${storeAId}/charts/area-scatter`,
+    );
+    assert.equal(response.status, 200, JSON.stringify(response.data));
+    assert.equal(response.data.status, "pending_confirmation");
+    assert.equal(JSON.stringify(response.data).includes("storeId"), false);
+
+    const byName = new Map(
+      response.data.items.map((item) => [item.areaName, item]),
+    );
+    const north = byName.get("BATCH-25 北區");
+    assert.equal(north.status, "ready");
+    assert.equal(north.itemQuantity, "4");
+    assert.equal(north.revenueTwd, "400.000000000000");
+    assert.equal(north.averageUnitProfitTwd, "18.750000000000");
+    assert.equal(north.tripCount, 1);
+
+    const middle = byName.get("BATCH-25 中區");
+    assert.equal(middle.status, "pending_confirmation");
+    assert.equal(middle.reason, "missing_product_cost_jpy");
+    assert.equal(middle.itemQuantity, null);
+    assert.equal(middle.revenueTwd, null);
+    assert.equal(middle.averageUnitProfitTwd, null);
+
+    const east = byName.get("BATCH-25 東區");
+    assert.equal(east.status, "pending_confirmation");
+    assert.equal(east.reason, "missing_actual_exchange_rate");
+    assert.equal(east.itemQuantity, null);
+  });
+
+  test("chart F area scatter enforces store ownership and input rules", async () => {
+    const crossStore = await request(
+      "GET",
+      `/stores/${storeAId}/charts/area-scatter`,
+      { userId: MERCHANT_B },
+    );
+    assert.equal(crossStore.status, 403, JSON.stringify(crossStore.data));
+
+    const missingStore = await request(
+      "GET",
+      "/stores/99999999/charts/area-scatter",
+    );
+    assert.equal(missingStore.status, 404, JSON.stringify(missingStore.data));
+
+    const invalidStore = await request("GET", "/stores/x/charts/area-scatter");
+    assert.equal(invalidStore.status, 400, JSON.stringify(invalidStore.data));
+
+    const unauthenticated = await request(
+      "GET",
+      `/stores/${storeAId}/charts/area-scatter`,
+      { userId: null },
+    );
+    assert.equal(
+      unauthenticated.status,
+      401,
+      JSON.stringify(unauthenticated.data),
+    );
   });
 }

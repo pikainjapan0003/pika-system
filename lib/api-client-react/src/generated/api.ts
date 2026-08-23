@@ -20,10 +20,12 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AreaScatterResponse,
   BulkOrderUpdate,
   BulkOrderUpdateResponse,
   GetSellerAgentSettings200,
   HealthStatus,
+  HistoryTrendResponse,
   MerchantOrderInput,
   Order,
   OrderIdsBody,
@@ -38,6 +40,8 @@ import type {
   ProductUpdate,
   PublicOrder,
   PublicProduct,
+  RouteCostRankingResponse,
+  SensitivityHeatmapResponse,
   ShippingListResponse,
   Store,
   StoreInput,
@@ -958,6 +962,330 @@ export function useListStoreTrips<TData = Awaited<ReturnType<typeof listStoreTri
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getListStoreTripsQueryOptions(storeId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getListRouteCostRankingUrl = (storeId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/charts/route-cost-ranking`
+}
+
+/**
+ * Each route's unit cost is the finalCostPerItem from the existing transport-cost pipeline (resolveProductTransportCost). A route whose inputs are incomplete is reported pending_confirmation instead of a fake zero.
+
+ * @summary Per-route computed unit transport cost ranking (chart E)
+ */
+export const listRouteCostRanking = async (storeId: number, options?: RequestInit): Promise<RouteCostRankingResponse> => {
+
+  return customFetch<RouteCostRankingResponse>(getListRouteCostRankingUrl(storeId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListRouteCostRankingQueryKey = (storeId: number,) => {
+    return [
+    `/api/stores/${storeId}/charts/route-cost-ranking`
+    ] as const;
+    }
+
+
+export const getListRouteCostRankingQueryOptions = <TData = Awaited<ReturnType<typeof listRouteCostRanking>>, TError = ErrorType<void>>(storeId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listRouteCostRanking>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListRouteCostRankingQueryKey(storeId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listRouteCostRanking>>> = ({ signal }) => listRouteCostRanking(storeId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(storeId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listRouteCostRanking>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListRouteCostRankingQueryResult = NonNullable<Awaited<ReturnType<typeof listRouteCostRanking>>>
+export type ListRouteCostRankingQueryError = ErrorType<void>
+
+
+/**
+ * @summary Per-route computed unit transport cost ranking (chart E)
+ */
+
+export function useListRouteCostRanking<TData = Awaited<ReturnType<typeof listRouteCostRanking>>, TError = ErrorType<void>>(
+ storeId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listRouteCostRanking>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListRouteCostRankingQueryOptions(storeId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getListAreaScatterUrl = (storeId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/charts/area-scatter`
+}
+
+/**
+ * Aggregates actual order performance (item quantity, revenue and quantity-weighted average unit profit) per trip area name across the store's trips. Uses the existing actual order quantity rollup and actual unit profit calculations; incomplete areas are reported pending_confirmation.
+
+ * @summary Product performance aggregated by trip area (chart F)
+ */
+export const listAreaScatter = async (storeId: number, options?: RequestInit): Promise<AreaScatterResponse> => {
+
+  return customFetch<AreaScatterResponse>(getListAreaScatterUrl(storeId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAreaScatterQueryKey = (storeId: number,) => {
+    return [
+    `/api/stores/${storeId}/charts/area-scatter`
+    ] as const;
+    }
+
+
+export const getListAreaScatterQueryOptions = <TData = Awaited<ReturnType<typeof listAreaScatter>>, TError = ErrorType<void>>(storeId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAreaScatter>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAreaScatterQueryKey(storeId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAreaScatter>>> = ({ signal }) => listAreaScatter(storeId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(storeId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAreaScatter>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAreaScatterQueryResult = NonNullable<Awaited<ReturnType<typeof listAreaScatter>>>
+export type ListAreaScatterQueryError = ErrorType<void>
+
+
+/**
+ * @summary Product performance aggregated by trip area (chart F)
+ */
+
+export function useListAreaScatter<TData = Awaited<ReturnType<typeof listAreaScatter>>, TError = ErrorType<void>>(
+ storeId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAreaScatter>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAreaScatterQueryOptions(storeId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetSensitivityHeatmapUrl = (storeId: number,
+    tripId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/trips/${tripId}/charts/sensitivity-heatmap`
+}
+
+/**
+ * Sweeps quantity rows and unit-gross-profit columns against the trip's breakeven inputs (reuses calculateBreakeven). Each cell is the final profit quantity * unitGrossProfit - netCostToRecover as an exact decimal string (negative values are valid loss cells). Missing breakeven inputs are reported pending_confirmation.
+Required query inputs (validated by the route; intentionally not declared as OpenAPI query parameters because orval 8.9.1 emits a colliding 'operationIdParams' TS type when an operation has both path and query parameters):
+- 'quantities': comma-separated positive integers (row sweep, max 20) - 'unitGrossProfits': comma-separated non-negative decimals
+  (column sweep, max 20)
+
+ * @summary Breakeven sensitivity matrix over quantity x unit gross profit (chart G)
+ */
+export const getSensitivityHeatmap = async (storeId: number,
+    tripId: number, options?: RequestInit): Promise<SensitivityHeatmapResponse> => {
+
+  return customFetch<SensitivityHeatmapResponse>(getGetSensitivityHeatmapUrl(storeId,tripId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSensitivityHeatmapQueryKey = (storeId: number,
+    tripId: number,) => {
+    return [
+    `/api/stores/${storeId}/trips/${tripId}/charts/sensitivity-heatmap`
+    ] as const;
+    }
+
+
+export const getGetSensitivityHeatmapQueryOptions = <TData = Awaited<ReturnType<typeof getSensitivityHeatmap>>, TError = ErrorType<void>>(storeId: number,
+    tripId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSensitivityHeatmap>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSensitivityHeatmapQueryKey(storeId,tripId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSensitivityHeatmap>>> = ({ signal }) => getSensitivityHeatmap(storeId,tripId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(storeId && tripId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSensitivityHeatmap>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSensitivityHeatmapQueryResult = NonNullable<Awaited<ReturnType<typeof getSensitivityHeatmap>>>
+export type GetSensitivityHeatmapQueryError = ErrorType<void>
+
+
+/**
+ * @summary Breakeven sensitivity matrix over quantity x unit gross profit (chart G)
+ */
+
+export function useGetSensitivityHeatmap<TData = Awaited<ReturnType<typeof getSensitivityHeatmap>>, TError = ErrorType<void>>(
+ storeId: number,
+    tripId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSensitivityHeatmap>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSensitivityHeatmapQueryOptions(storeId,tripId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getListHistoryTrendUrl = (storeId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/charts/history-trend`
+}
+
+/**
+ * Buckets the store's trips by month and sums each trip's ACTUAL unit projection final operating profit (reuses calculateTripProfit). A month containing a trip without complete actual data is reported pending_confirmation instead of a partial sum.
+
+ * @summary Monthly final operating profit across trips (chart H)
+ */
+export const listHistoryTrend = async (storeId: number, options?: RequestInit): Promise<HistoryTrendResponse> => {
+
+  return customFetch<HistoryTrendResponse>(getListHistoryTrendUrl(storeId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListHistoryTrendQueryKey = (storeId: number,) => {
+    return [
+    `/api/stores/${storeId}/charts/history-trend`
+    ] as const;
+    }
+
+
+export const getListHistoryTrendQueryOptions = <TData = Awaited<ReturnType<typeof listHistoryTrend>>, TError = ErrorType<void>>(storeId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listHistoryTrend>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListHistoryTrendQueryKey(storeId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listHistoryTrend>>> = ({ signal }) => listHistoryTrend(storeId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(storeId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listHistoryTrend>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListHistoryTrendQueryResult = NonNullable<Awaited<ReturnType<typeof listHistoryTrend>>>
+export type ListHistoryTrendQueryError = ErrorType<void>
+
+
+/**
+ * @summary Monthly final operating profit across trips (chart H)
+ */
+
+export function useListHistoryTrend<TData = Awaited<ReturnType<typeof listHistoryTrend>>, TError = ErrorType<void>>(
+ storeId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listHistoryTrend>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListHistoryTrendQueryOptions(storeId,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

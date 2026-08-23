@@ -349,6 +349,113 @@ export const ListStoreTripsResponse = zod.array(ListStoreTripsResponseItem)
 
 
 /**
+ * Each route's unit cost is the finalCostPerItem from the existing transport-cost pipeline (resolveProductTransportCost). A route whose inputs are incomplete is reported pending_confirmation instead of a fake zero.
+
+ * @summary Per-route computed unit transport cost ranking (chart E)
+ */
+
+
+
+export const ListRouteCostRankingParams = zod.object({
+  "storeId": zod.coerce.number().min(1)
+})
+
+export const ListRouteCostRankingResponse = zod.object({
+  "status": zod.enum(['ready', 'pending_confirmation']),
+  "items": zod.array(zod.object({
+  "routeId": zod.number(),
+  "tripId": zod.number(),
+  "name": zod.string().describe('Route area title'),
+  "tripName": zod.string().nullable(),
+  "unitCostTwd": zod.string().nullable().describe('Exact final transport cost per item (scale 12); null while pending_confirmation'),
+  "status": zod.enum(['ready', 'pending_confirmation']),
+  "reason": zod.string().nullable().describe('Pending reason from the transport-cost pipeline')
+}))
+})
+
+
+/**
+ * Aggregates actual order performance (item quantity, revenue and quantity-weighted average unit profit) per trip area name across the store's trips. Uses the existing actual order quantity rollup and actual unit profit calculations; incomplete areas are reported pending_confirmation.
+
+ * @summary Product performance aggregated by trip area (chart F)
+ */
+
+
+
+export const ListAreaScatterParams = zod.object({
+  "storeId": zod.coerce.number().min(1)
+})
+
+export const ListAreaScatterResponse = zod.object({
+  "status": zod.enum(['ready', 'pending_confirmation']),
+  "items": zod.array(zod.object({
+  "areaName": zod.string().describe('Trip area name merged across the store\'s trips'),
+  "tripCount": zod.number(),
+  "itemQuantity": zod.string().nullable().describe('Exact sum of actual order item quantities; null while pending_confirmation'),
+  "revenueTwd": zod.string().nullable().describe('Exact sum of included order totals; null while pending_confirmation'),
+  "averageUnitProfitTwd": zod.string().nullable().describe('Quantity-weighted average of existing per-product actual unit profits (scale 12)'),
+  "status": zod.enum(['ready', 'pending_confirmation']),
+  "reason": zod.string().nullable()
+}))
+})
+
+
+/**
+ * Sweeps quantity rows and unit-gross-profit columns against the trip's breakeven inputs (reuses calculateBreakeven). Each cell is the final profit quantity * unitGrossProfit - netCostToRecover as an exact decimal string (negative values are valid loss cells). Missing breakeven inputs are reported pending_confirmation.
+Required query inputs (validated by the route; intentionally not declared as OpenAPI query parameters because orval 8.9.1 emits a colliding 'operationIdParams' TS type when an operation has both path and query parameters):
+- 'quantities': comma-separated positive integers (row sweep, max 20) - 'unitGrossProfits': comma-separated non-negative decimals
+  (column sweep, max 20)
+
+ * @summary Breakeven sensitivity matrix over quantity x unit gross profit (chart G)
+ */
+
+
+
+
+export const GetSensitivityHeatmapParams = zod.object({
+  "storeId": zod.coerce.number().min(1),
+  "tripId": zod.coerce.number().min(1)
+})
+
+export const GetSensitivityHeatmapResponse = zod.object({
+  "status": zod.enum(['ready', 'pending_confirmation']),
+  "label": zod.string().nullish(),
+  "reason": zod.string().nullish(),
+  "netCostToRecoverTwd": zod.string().nullable().describe('From calculateBreakeven (scale 12); null while pending_confirmation'),
+  "breakevenQuantity": zod.string().nullable().describe('From calculateBreakeven; null while pending_confirmation'),
+  "salaryTargetQuantity": zod.string().nullable(),
+  "rows": zod.array(zod.string()).describe('Swept quantities (exact integer strings)'),
+  "columns": zod.array(zod.string()).describe('Swept unit gross profits (exact decimal strings)'),
+  "cells": zod.array(zod.array(zod.string())).describe('cells[row][col] = profitTwd = column \* row - netCostToRecoverTwd (scale 12); negative values are loss cells')
+})
+
+
+/**
+ * Buckets the store's trips by month and sums each trip's ACTUAL unit projection final operating profit (reuses calculateTripProfit). A month containing a trip without complete actual data is reported pending_confirmation instead of a partial sum.
+
+ * @summary Monthly final operating profit across trips (chart H)
+ */
+
+
+
+export const ListHistoryTrendParams = zod.object({
+  "storeId": zod.coerce.number().min(1)
+})
+
+export const ListHistoryTrendResponse = zod.object({
+  "status": zod.enum(['ready', 'pending_confirmation']),
+  "mode": zod.enum(['ACTUAL']),
+  "items": zod.array(zod.object({
+  "month": zod.string().describe('YYYY-MM bucket (trip startDate, falling back to created month)'),
+  "tripCount": zod.number(),
+  "profitTwd": zod.string().nullable().describe('Exact monthly final operating profit (scale 12); null while pending_confirmation'),
+  "status": zod.enum(['ready', 'pending_confirmation']),
+  "reason": zod.string().nullable()
+}))
+})
+
+
+/**
  * @summary Update a trip
  */
 export const UpdateTripParams = zod.object({

@@ -37,10 +37,12 @@ if (!process.env.DATABASE_URL) {
   } = await import("@workspace/db");
   const { default: fixedCostSummaryRouter } =
     await import("./fixedCostSummary.ts");
+  const { default: chartDataRouter } = await import("./chartData.ts");
 
   const app = express();
   app.use(express.json());
   app.use("/api", fixedCostSummaryRouter);
+  app.use("/api", chartDataRouter);
 
   let server;
   let baseUrl;
@@ -48,6 +50,11 @@ if (!process.env.DATABASE_URL) {
   let otherStoreId;
   let tripId;
   let customEntryId;
+  // Chart data fixtures (batch 25): G sensitivity + H history trend.
+  let chartTripGId;
+  let chartTripH1Id;
+  let chartTripH2Id;
+  let chartTripH3Id;
   const categoryIds = [];
 
   before(async () => {
@@ -161,6 +168,98 @@ if (!process.env.DATABASE_URL) {
         target: operatingSettingsTable.id,
         set: { referenceDailyWage: "1500" },
       });
+
+    // --- chart G fixtures (sensitivity heatmap) ---
+    const [chartTripG] = await db
+      .insert(tripsTable)
+      .values({
+        storeId,
+        name: "BATCH-25 chart G pending trip",
+        exchangeRate: "0.2",
+      })
+      .returning();
+    chartTripGId = chartTripG.id;
+
+    // --- chart H fixtures (history trend) ---
+    const [chartTripH1] = await db
+      .insert(tripsTable)
+      .values({
+        storeId,
+        name: "BATCH-25 chart H trip 1",
+        startDate: "2026-01-10",
+        exchangeRate: "0.2",
+        actualExchangeRate: "0.2",
+        workingDays: 10,
+        totalItemQuantity: 100,
+        unitGrossProfitTwd: "50",
+        creditCardRebateTwd: "0",
+      })
+      .returning();
+    chartTripH1Id = chartTripH1.id;
+    const [chartTripH2] = await db
+      .insert(tripsTable)
+      .values({
+        storeId,
+        name: "BATCH-25 chart H trip 2",
+        startDate: "2026-01-15",
+        exchangeRate: "0.2",
+        actualExchangeRate: "0.2",
+        workingDays: 10,
+        totalItemQuantity: 50,
+        unitGrossProfitTwd: "50",
+        creditCardRebateTwd: "0",
+      })
+      .returning();
+    chartTripH2Id = chartTripH2.id;
+    const [chartTripH3] = await db
+      .insert(tripsTable)
+      .values({
+        storeId,
+        name: "BATCH-25 chart H pending trip",
+        startDate: "2026-02-03",
+        exchangeRate: "0.2",
+        actualExchangeRate: "0.2",
+        workingDays: 10,
+        totalItemQuantity: null,
+        unitGrossProfitTwd: null,
+        creditCardRebateTwd: "0",
+      })
+      .returning();
+    chartTripH3Id = chartTripH3.id;
+    await db.insert(costEntriesTable).values([
+      {
+        storeId,
+        tripId: chartTripH1Id,
+        mode: "ACTUAL",
+        categoryId: categoryIds[0],
+        currency: "JPY",
+        originalAmount: "200",
+      },
+      {
+        storeId,
+        tripId: chartTripH1Id,
+        mode: "ACTUAL",
+        categoryId: categoryIds[1],
+        currency: "TWD",
+        originalAmount: "100",
+      },
+      {
+        storeId,
+        tripId: chartTripH1Id,
+        mode: "ACTUAL",
+        categoryId: categoryIds[2],
+        currency: "TWD",
+        originalAmount: "500",
+      },
+      {
+        storeId,
+        tripId: chartTripH2Id,
+        mode: "ACTUAL",
+        categoryId: categoryIds[0],
+        currency: "JPY",
+        originalAmount: "300",
+      },
+    ]);
   });
 
   after(async () => {
@@ -568,5 +667,158 @@ if (!process.env.DATABASE_URL) {
       ),
       false,
     );
+  });
+  test("chart G sensitivity heatmap inverts breakeven across the swept grid", async () => {
+    const response = await fetch(
+      `${baseUrl}/stores/${storeId}/trips/${tripId}/charts/sensitivity-heatmap?quantities=90,120,150,180,210&unitGrossProfits=40,60,80,100,120`,
+      { headers: { "x-test-user-id": OWNER_ID } },
+    );
+    const body = await response.json();
+    assert.equal(response.status, 200, JSON.stringify(body));
+    assert.equal(body.status, "ready");
+    // fixed 100 JPY x 0.2 = 20; variable 50 JPY x 0.2 = 10; fee base 30; fee 0.45; rebate 0
+    assert.equal(body.netCostToRecoverTwd, "30.450000000000");
+    assert.equal(body.breakevenQuantity, "1");
+    assert.equal(body.salaryTargetQuantity, "116");
+    assert.deepEqual(body.rows, ["90", "120", "150", "180", "210"]);
+    assert.deepEqual(body.columns, ["40", "60", "80", "100", "120"]);
+    assert.equal(body.cells.length, 5);
+    assert.equal(body.cells[0].length, 5);
+    assert.equal(body.cells[0][0], "3569.550000000000");
+    assert.equal(body.cells[4][4], "25169.550000000000");
+    assert.equal(body.cells[0][4], "10769.550000000000");
+    assert.equal(JSON.stringify(body).includes("storeId"), false);
+  });
+
+  test("chart G reports loss cells as exact negative profits", async () => {
+    const response = await fetch(
+      `${baseUrl}/stores/${storeId}/trips/${tripId}/charts/sensitivity-heatmap?quantities=10&unitGrossProfits=2`,
+      { headers: { "x-test-user-id": OWNER_ID } },
+    );
+    const body = await response.json();
+    assert.equal(response.status, 200, JSON.stringify(body));
+    assert.equal(body.status, "ready");
+    assert.deepEqual(body.cells, [["-10.450000000000"]]);
+  });
+
+  test("chart G fails closed when breakeven inputs are missing", async () => {
+    const response = await fetch(
+      `${baseUrl}/stores/${storeId}/trips/${chartTripGId}/charts/sensitivity-heatmap?quantities=90&unitGrossProfits=40`,
+      { headers: { "x-test-user-id": OWNER_ID } },
+    );
+    const body = await response.json();
+    assert.equal(response.status, 200, JSON.stringify(body));
+    assert.equal(body.status, "pending_confirmation");
+    assert.equal(body.label, "待確認");
+    assert.equal(body.reason, "缺少損益平衡資料");
+    assert.equal(body.netCostToRecoverTwd, null);
+    assert.equal(body.breakevenQuantity, null);
+    assert.equal(body.rows.length, 0);
+    assert.equal(body.cells.length, 0);
+  });
+
+  test("chart G validates sweep parameters and store ownership", async () => {
+    const missingParams = await fetch(
+      `${baseUrl}/stores/${storeId}/trips/${tripId}/charts/sensitivity-heatmap`,
+      { headers: { "x-test-user-id": OWNER_ID } },
+    );
+    assert.equal(missingParams.status, 400);
+
+    const invalidParams = await fetch(
+      `${baseUrl}/stores/${storeId}/trips/${tripId}/charts/sensitivity-heatmap?quantities=90,abc&unitGrossProfits=40`,
+      { headers: { "x-test-user-id": OWNER_ID } },
+    );
+    assert.equal(invalidParams.status, 400);
+
+    const negativeProfit = await fetch(
+      `${baseUrl}/stores/${storeId}/trips/${tripId}/charts/sensitivity-heatmap?quantities=90&unitGrossProfits=-40`,
+      { headers: { "x-test-user-id": OWNER_ID } },
+    );
+    assert.equal(negativeProfit.status, 400);
+
+    const oversized = await fetch(
+      `${baseUrl}/stores/${storeId}/trips/${tripId}/charts/sensitivity-heatmap?quantities=${Array.from({ length: 21 }, (_, index) => index + 1).join(",")}&unitGrossProfits=40`,
+      { headers: { "x-test-user-id": OWNER_ID } },
+    );
+    assert.equal(oversized.status, 400);
+
+    const crossStore = await fetch(
+      `${baseUrl}/stores/${storeId}/trips/${tripId}/charts/sensitivity-heatmap?quantities=90&unitGrossProfits=40`,
+      { headers: { "x-test-user-id": OTHER_OWNER_ID } },
+    );
+    assert.equal(crossStore.status, 403);
+
+    const missingTrip = await fetch(
+      `${baseUrl}/stores/${storeId}/trips/99999999/charts/sensitivity-heatmap?quantities=90&unitGrossProfits=40`,
+      { headers: { "x-test-user-id": OWNER_ID } },
+    );
+    assert.equal(missingTrip.status, 404);
+
+    const unauthenticated = await fetch(
+      `${baseUrl}/stores/${storeId}/trips/${tripId}/charts/sensitivity-heatmap?quantities=90&unitGrossProfits=40`,
+    );
+    assert.equal(unauthenticated.status, 401);
+  });
+
+  test("chart H history trend sums monthly actual profits and fails closed per month", async () => {
+    const response = await fetch(
+      `${baseUrl}/stores/${storeId}/charts/history-trend`,
+      { headers: { "x-test-user-id": OWNER_ID } },
+    );
+    const body = await response.json();
+    assert.equal(response.status, 200, JSON.stringify(body));
+    assert.equal(body.status, "pending_confirmation");
+    assert.equal(body.mode, "ACTUAL");
+    assert.equal(JSON.stringify(body).includes("storeId"), false);
+
+    const january = body.items.find((item) => item.month === "2026-01");
+    assert.equal(january.status, "ready");
+    assert.equal(january.tripCount, 2);
+    // h1: 100 x 50 - (40 + 100 + 0.6) = 4859.4; h2: 50 x 50 - (60 + 0.9) = 2439.1
+    assert.equal(january.profitTwd, "7298.500000000000");
+    assert.equal(january.reason, null);
+
+    const february = body.items.find((item) => item.month === "2026-02");
+    assert.equal(february.status, "pending_confirmation");
+    assert.equal(february.tripCount, 1);
+    assert.equal(february.profitTwd, null);
+    assert.equal(february.reason, "缺少單件毛利或預估件數");
+
+    const months = body.items.map((item) => item.month).sort();
+    assert.deepEqual(months.slice(0, 2), ["2026-01", "2026-02"]);
+    // The pre-existing fixture trip (created just now, no startDate) may add
+    // exactly one current-month bucket; never anything else.
+    assert.equal(months.length, 3);
+    assert.equal(months.includes("2026-01"), true);
+    // No cross-store trips leak into the response.
+    assert.equal(
+      body.items.some((item) => item.tripCount > 0 && item.month === "2099-12"),
+      false,
+    );
+  });
+
+  test("chart H history trend enforces store ownership", async () => {
+    const crossStore = await fetch(
+      `${baseUrl}/stores/${storeId}/charts/history-trend`,
+      { headers: { "x-test-user-id": OTHER_OWNER_ID } },
+    );
+    assert.equal(crossStore.status, 403);
+
+    const missingStore = await fetch(
+      `${baseUrl}/stores/99999999/charts/history-trend`,
+      { headers: { "x-test-user-id": OWNER_ID } },
+    );
+    assert.equal(missingStore.status, 404);
+
+    const invalidStore = await fetch(
+      `${baseUrl}/stores/not-a-number/charts/history-trend`,
+      { headers: { "x-test-user-id": OWNER_ID } },
+    );
+    assert.equal(invalidStore.status, 400);
+
+    const unauthenticated = await fetch(
+      `${baseUrl}/stores/${storeId}/charts/history-trend`,
+    );
+    assert.equal(unauthenticated.status, 401);
   });
 }
