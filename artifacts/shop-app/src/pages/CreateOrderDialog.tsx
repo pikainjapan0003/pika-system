@@ -656,7 +656,7 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
                         className={`w-full flex items-center gap-3 min-h-[64px] px-4 py-3 rounded-2xl border-2 transition-colors text-left shadow-sm ${
                           isSelected
                             ? "bg-primary/10 border-primary"
-                            : "bg-white border-border hover:border-primary/40 hover:bg-primary/5"
+                            : "bg-card border-border hover:border-primary/40 hover:bg-primary/5"
                         }`}
                       >
                         <div
@@ -696,7 +696,7 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
                           {(isSevenElevenMethod(opt.value) ||
                             isFamilyMartMethod(opt.value)) && (
                             <div
-                              className={`rounded-2xl px-4 py-3 space-y-2 border ${cvsStoreAddress ? "bg-green-50/30 border-green-200" : "bg-white border-border"}`}
+                              className={`rounded-2xl px-4 py-3 space-y-2 border ${cvsStoreAddress ? "bg-chart-3/10 border-chart-3/30" : "bg-card border-border"}`}
                             >
                               {cvsStoreAddress ? (
                                 <>
@@ -705,7 +705,7 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
                                       xmlns="http://www.w3.org/2000/svg"
                                       viewBox="0 0 20 20"
                                       fill="currentColor"
-                                      className="w-3.5 h-3.5 text-green-600 shrink-0"
+                                      className="w-3.5 h-3.5 text-chart-3 shrink-0"
                                     >
                                       <path
                                         fillRule="evenodd"
@@ -713,7 +713,7 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
                                         clipRule="evenodd"
                                       />
                                     </svg>
-                                    <span className="text-xs font-semibold text-green-700">
+                                    <span className="text-xs font-semibold text-chart-3">
                                       已選取門市
                                     </span>
                                   </div>
@@ -780,7 +780,7 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
                                         !cvsSearchQuery.trim() ||
                                         cvsSearchStatus === "loading"
                                       }
-                                      className="h-9 px-3 rounded-xl bg-primary text-white text-xs font-medium disabled:opacity-50 shrink-0"
+                                      className="h-9 px-3 rounded-xl bg-primary text-primary-foreground text-xs font-medium disabled:opacity-50 shrink-0"
                                     >
                                       {cvsSearchStatus === "loading"
                                         ? "搜尋中…"
@@ -829,7 +829,7 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
                                               onClick={() =>
                                                 handleCvsStoreSelect(s)
                                               }
-                                              className="shrink-0 h-7 px-2.5 rounded-lg bg-primary text-white text-[11px] font-medium"
+                                              className="shrink-0 h-7 px-2.5 rounded-lg bg-primary text-primary-foreground text-[11px] font-medium"
                                             >
                                               選擇
                                             </button>
@@ -843,7 +843,7 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
                           )}
                           {(cat === "home_black_cat" ||
                             cat === "home_post") && (
-                            <div className="bg-white border border-border rounded-2xl px-4 py-3 space-y-3">
+                            <div className="bg-card border border-border rounded-2xl px-4 py-3 space-y-3">
                               <p className="text-sm font-semibold text-foreground">
                                 {cat === "home_black_cat"
                                   ? "黑貓宅急便收件資訊"
@@ -882,7 +882,7 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
                             </div>
                           )}
                           {cat === "self_pickup" && (
-                            <div className="bg-white border border-border rounded-2xl px-4 py-3 space-y-3">
+                            <div className="bg-card border border-border rounded-2xl px-4 py-3 space-y-3">
                               <p className="text-sm font-semibold text-foreground">
                                 {pickupMethod === "面交"
                                   ? "面交地點資訊（選填）"
@@ -950,7 +950,7 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
             <div className="space-y-1.5">
               <SectionTitle>金額預覽</SectionTitle>
               <FormSection>
-                <div className="bg-white rounded-xl border border-border/50 divide-y divide-border/40">
+                <div className="bg-card rounded-xl border border-border/50 divide-y divide-border/40">
                   <div className="flex items-center justify-between px-3 py-2 gap-2">
                     <span className="text-xs text-muted-foreground">
                       商品小計
@@ -1015,12 +1015,12 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
         </div>
 
         {/* Footer buttons */}
-        <div className="shrink-0 px-5 py-4 border-t border-border bg-white space-y-2">
+        <div className="shrink-0 px-5 py-4 border-t border-border bg-card space-y-2">
           <button
             type="button"
             onClick={handleSubmit}
             disabled={isPending}
-            className="w-full h-10 rounded-xl bg-primary text-white text-sm font-semibold disabled:opacity-60 transition-opacity"
+            className="w-full h-10 rounded-xl bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-60 transition-opacity"
           >
             {isPending ? "建立中…" : "建立訂單"}
           </button>
@@ -1041,7 +1041,7 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
 
 function FormSection({ children }: { children: React.ReactNode }) {
   return (
-    <div className="bg-white rounded-2xl border border-border px-4 py-3 space-y-3">
+    <div className="bg-card rounded-2xl border border-border px-4 py-3 space-y-3">
       {children}
     </div>
   );
