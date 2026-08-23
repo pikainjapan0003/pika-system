@@ -1328,7 +1328,7 @@ components:
 
     TripRouteInput:
       type: object
-      required: [areaTitle, startPlace, endPlace, estQty, etcJpy]
+      required: [areaTitle, estQty, etcJpy]
       properties:
         tripAreaId:
           type: ["integer", "null"]
@@ -1337,11 +1337,11 @@ components:
           type: string
           minLength: 1
         startPlace:
+          # O-4：起點／終點不再必填；可留空（空字串）。DB 欄位為 NOT NULL text，缺省前端送 ""。
           type: string
-          minLength: 1
         endPlace:
+          # O-4：同上。
           type: string
-          minLength: 1
         estQty:
           type: integer
           minimum: 1
@@ -1377,11 +1377,11 @@ components:
           type: string
           minLength: 1
         startPlace:
+          # O-4：起點不再必填；可留空（空字串）。
           type: string
-          minLength: 1
         endPlace:
+          # O-4：終點不再必填；可留空（空字串）。
           type: string
-          minLength: 1
         estQty:
           type: integer
           minimum: 1

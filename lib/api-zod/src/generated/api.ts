@@ -385,8 +385,6 @@ export const CreateTripRouteParams = zod.object({
 
 
 
-
-
 export const createTripRouteBodyTrainJpyMin = 0;
 
 export const createTripRouteBodyFuelJpyMin = 0;
@@ -406,8 +404,8 @@ export const createTripRouteBodyParcelCountMin = 0;
 export const CreateTripRouteBody = zod.object({
   "tripAreaId": zod.number().min(1).nullish(),
   "areaTitle": zod.string().min(1),
-  "startPlace": zod.string().min(1),
-  "endPlace": zod.string().min(1),
+  "startPlace": zod.string().optional(),
+  "endPlace": zod.string().optional(),
   "estQty": zod.number().min(1),
   "trainJpy": zod.number().min(createTripRouteBodyTrainJpyMin).optional(),
   "fuelJpy": zod.number().min(createTripRouteBodyFuelJpyMin).nullish(),
@@ -426,8 +424,6 @@ export const UpdateTripRouteParams = zod.object({
   "tripId": zod.coerce.number(),
   "routeId": zod.coerce.number()
 })
-
-
 
 
 
@@ -451,8 +447,8 @@ export const updateTripRouteBodyParcelCountMin = 0;
 export const UpdateTripRouteBody = zod.object({
   "tripAreaId": zod.number().min(1).nullish(),
   "areaTitle": zod.string().min(1).optional(),
-  "startPlace": zod.string().min(1).optional(),
-  "endPlace": zod.string().min(1).optional(),
+  "startPlace": zod.string().optional(),
+  "endPlace": zod.string().optional(),
   "estQty": zod.number().min(1).optional(),
   "trainJpy": zod.number().min(updateTripRouteBodyTrainJpyMin).optional(),
   "fuelJpy": zod.number().min(updateTripRouteBodyFuelJpyMin).nullish(),
