@@ -472,9 +472,13 @@ if (!process.env.DATABASE_URL) {
     assert.equal(response.status, 200);
     assert.deepEqual(
       response.data.map((trip) => trip.id).sort((a, b) => a - b),
-      [tripAId, legacyTripId, chartTripEId, chartTripFId, chartTripFNoRateId].sort(
-        (a, b) => a - b,
-      ),
+      [
+        tripAId,
+        legacyTripId,
+        chartTripEId,
+        chartTripFId,
+        chartTripFNoRateId,
+      ].sort((a, b) => a - b),
     );
     assert.equal(
       JSON.stringify(response.data).includes("BATCH-22 B trip"),
@@ -494,9 +498,13 @@ if (!process.env.DATABASE_URL) {
     assert.equal(response.status, 200, JSON.stringify(response.data));
     assert.deepEqual(
       response.data.map((trip) => trip.id).sort((a, b) => a - b),
-      [tripAId, legacyTripId, chartTripEId, chartTripFId, chartTripFNoRateId].sort(
-        (a, b) => a - b,
-      ),
+      [
+        tripAId,
+        legacyTripId,
+        chartTripEId,
+        chartTripFId,
+        chartTripFNoRateId,
+      ].sort((a, b) => a - b),
     );
     assert.equal(
       JSON.stringify(response.data).includes("BATCH-22 B trip"),
