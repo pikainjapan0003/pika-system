@@ -559,7 +559,7 @@ export default function ProductFormPage({ productId }: Props) {
     return (
       <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-8">
         {/* Three-column header */}
-        <header className="bg-white border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
+        <header className="bg-card border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
           <div className="flex items-center justify-between">
             <span className="min-w-[3rem]" />
             <h1 className="text-base font-bold text-foreground">商品已建立</h1>
@@ -575,7 +575,7 @@ export default function ProductFormPage({ productId }: Props) {
 
         <div className="px-5 py-5 space-y-4">
           {/* ── 分享卡片 ─────────────────────────── */}
-          <div className="bg-white rounded-2xl border border-border overflow-hidden">
+          <div className="bg-card rounded-2xl border border-border overflow-hidden">
             {/* 商品主圖 */}
             {createdProduct.imageUrl ? (
               <img
@@ -605,7 +605,7 @@ export default function ProductFormPage({ productId }: Props) {
           </div>
 
           {/* ── 商品下單連結 ──────────────────────── */}
-          <div className="bg-white rounded-2xl border border-border px-5 py-3">
+          <div className="bg-card rounded-2xl border border-border px-5 py-3">
             <p className="text-xs text-muted-foreground mb-1.5">商品下單連結</p>
             <p className="text-xs text-foreground break-all font-mono leading-relaxed">
               {shareUrl}
@@ -616,7 +616,7 @@ export default function ProductFormPage({ productId }: Props) {
           <button
             type="button"
             onClick={copyShareLink}
-            className="w-full h-12 bg-primary text-white font-semibold rounded-xl text-base"
+            className="w-full h-12 bg-primary text-primary-foreground font-semibold rounded-xl text-base"
           >
             {copied ? "✓ 已複製連結" : "複製商品連結"}
           </button>
@@ -672,7 +672,7 @@ export default function ProductFormPage({ productId }: Props) {
     <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-8">
       <form onSubmit={handleSubmit}>
         {/* Three-column header */}
-        <header className="bg-white border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
+        <header className="bg-card border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
           <div className="flex items-center justify-between">
             <button
               type="button"
@@ -703,7 +703,7 @@ export default function ProductFormPage({ productId }: Props) {
           )}
 
           {/* ── 商品圖 ─────────────────────────────── */}
-          <div className="bg-white rounded-2xl border border-border overflow-hidden">
+          <div className="bg-card rounded-2xl border border-border overflow-hidden">
             <div className="flex items-center justify-between px-5 pt-5 pb-3">
               <h2 className="text-sm font-bold text-foreground">商品圖</h2>
               <span className="text-[10px] text-muted-foreground/60">
@@ -730,7 +730,7 @@ export default function ProductFormPage({ productId }: Props) {
                       onError={(e) => (e.currentTarget.style.display = "none")}
                     />
                     {/* 主圖 badge */}
-                    <span className="absolute bottom-1 left-1 text-xs bg-primary text-white font-semibold px-1.5 py-0.5 rounded-md leading-none">
+                    <span className="absolute bottom-1 left-1 text-xs bg-primary text-primary-foreground font-semibold px-1.5 py-0.5 rounded-md leading-none">
                       主圖
                     </span>
                     {/* × remove */}
@@ -738,14 +738,14 @@ export default function ProductFormPage({ productId }: Props) {
                       type="button"
                       onClick={handleRemoveImage}
                       disabled={uploadStatus === "uploading"}
-                      className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-gray-700/80 text-white rounded-full flex items-center justify-center text-xs leading-none disabled:opacity-50"
+                      className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-foreground/80 text-background rounded-full flex items-center justify-center text-xs leading-none disabled:opacity-50"
                     >
                       ×
                     </button>
                     {/* Uploading overlay */}
                     {uploadStatus === "uploading" && (
-                      <div className="absolute inset-0 rounded-xl bg-black/40 flex items-center justify-center">
-                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <div className="absolute inset-0 rounded-xl bg-foreground/40 flex items-center justify-center">
+                        <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
                       </div>
                     )}
                   </div>
@@ -771,7 +771,7 @@ export default function ProductFormPage({ productId }: Props) {
                   已上傳 {displayPreview ? "1" : "0"} / 1
                 </span>
                 {uploadStatus === "done" && (
-                  <span className="text-xs text-green-600 font-medium">
+                  <span className="text-xs text-chart-3 font-medium">
                     ✓ 圖片已上傳
                   </span>
                 )}
@@ -817,7 +817,7 @@ export default function ProductFormPage({ productId }: Props) {
           </div>
 
           {/* ── 基本資訊 ──────────────────────────── */}
-          <div className="bg-white rounded-2xl border border-border overflow-hidden">
+          <div className="bg-card rounded-2xl border border-border overflow-hidden">
             <div className="px-5 pt-5 pb-2">
               <h2 className="text-sm font-bold text-foreground">基本資訊</h2>
             </div>
@@ -864,7 +864,7 @@ export default function ProductFormPage({ productId }: Props) {
                 <button
                   type="button"
                   onClick={() => setShowCategorySheet(true)}
-                  className="w-full h-12 px-4 rounded-xl border border-input bg-white text-foreground text-base flex items-center justify-between"
+                  className="w-full h-12 px-4 rounded-xl border border-input bg-background text-foreground text-base flex items-center justify-between"
                 >
                   <span
                     className={
@@ -902,7 +902,7 @@ export default function ProductFormPage({ productId }: Props) {
                         }
                         className={`flex-1 min-h-11 rounded-xl text-sm font-medium border transition-colors ${
                           storageTemp === temp
-                            ? "bg-primary text-white border-primary"
+                            ? "bg-primary text-primary-foreground border-primary"
                             : "bg-secondary/60 text-foreground border-border"
                         }`}
                       >
@@ -948,7 +948,7 @@ export default function ProductFormPage({ productId }: Props) {
           </div>
 
           {/* ── 成本設定（用於訂單成本／毛利快照計算） ────────────────────────── */}
-          <div className="bg-white rounded-2xl border border-border overflow-hidden">
+          <div className="bg-card rounded-2xl border border-border overflow-hidden">
             <div className="px-5 pt-5 pb-2">
               <h2 className="text-sm font-bold text-foreground">成本設定</h2>
               <p className="text-xs text-muted-foreground mt-1">
@@ -1022,7 +1022,7 @@ export default function ProductFormPage({ productId }: Props) {
           </div>
 
           {/* ── 售價與庫存 ────────────────────────── */}
-          <div className="bg-white rounded-2xl border border-border overflow-hidden">
+          <div className="bg-card rounded-2xl border border-border overflow-hidden">
             <div className="px-5 pt-5 pb-2">
               <h2 className="text-sm font-bold text-foreground">售價與庫存</h2>
             </div>
@@ -1042,7 +1042,7 @@ export default function ProductFormPage({ productId }: Props) {
                     placeholder="0"
                     min="0"
                     step="1"
-                    className="flex-1 h-16 px-4 rounded-xl border border-input bg-white text-foreground text-2xl font-bold placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    className="flex-1 h-16 px-4 rounded-xl border border-input bg-background text-foreground text-2xl font-bold placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/30"
                   />
                 </div>
               </div>
@@ -1095,7 +1095,7 @@ export default function ProductFormPage({ productId }: Props) {
           </div>
 
           {/* ── 規格設定 ──────────────────────────── */}
-          <div className="bg-white rounded-2xl border border-border overflow-hidden">
+          <div className="bg-card rounded-2xl border border-border overflow-hidden">
             <div className="px-5 pt-5 pb-2">
               <h2 className="text-sm font-bold text-foreground">規格設定</h2>
               <p className="text-xs text-muted-foreground mt-0.5">
@@ -1109,7 +1109,7 @@ export default function ProductFormPage({ productId }: Props) {
                   <button
                     type="button"
                     onClick={addSpec}
-                    className="min-h-11 px-5 bg-primary text-white text-sm font-semibold rounded-xl"
+                    className="min-h-11 px-5 bg-primary text-primary-foreground text-sm font-semibold rounded-xl"
                   >
                     + 新增規格
                   </button>
@@ -1124,7 +1124,7 @@ export default function ProductFormPage({ productId }: Props) {
                           value={spec.name}
                           onChange={(e) => updateSpecName(i, e.target.value)}
                           placeholder="規格名稱（例：顏色）"
-                          className="flex-1 min-h-11 px-3 rounded-lg border border-input bg-white text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                          className="flex-1 min-h-11 px-3 rounded-lg border border-input bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                         />
                         <button
                           type="button"
@@ -1139,7 +1139,7 @@ export default function ProductFormPage({ productId }: Props) {
                         value={spec.values.join("，")}
                         onChange={(e) => updateSpecValues(i, e.target.value)}
                         placeholder="選項，用逗號分隔（例：紅色，藍色，白色）"
-                        className="w-full min-h-11 px-3 rounded-lg border border-input bg-white text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        className="w-full min-h-11 px-3 rounded-lg border border-input bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                       />
                     </div>
                   ))}
@@ -1156,7 +1156,7 @@ export default function ProductFormPage({ productId }: Props) {
           </div>
 
           {/* ── 收單截止時間 ─────────────────── */}
-          <div className="bg-white rounded-2xl border border-border overflow-hidden">
+          <div className="bg-card rounded-2xl border border-border overflow-hidden">
             <div className="flex items-center justify-between px-5 pt-5 pb-4">
               <div>
                 <h2 className="text-sm font-bold text-foreground">
@@ -1172,7 +1172,7 @@ export default function ProductFormPage({ productId }: Props) {
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${deadlineEnabled ? "bg-primary" : "bg-input"}`}
               >
                 <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${deadlineEnabled ? "translate-x-6" : "translate-x-1"}`}
+                  className={`inline-block h-4 w-4 transform rounded-full bg-background shadow transition-transform ${deadlineEnabled ? "translate-x-6" : "translate-x-1"}`}
                 />
               </button>
             </div>
@@ -1227,7 +1227,7 @@ export default function ProductFormPage({ productId }: Props) {
                     <button
                       type="button"
                       onClick={openDateSheet}
-                      className="flex-1 h-12 rounded-xl border border-input bg-white text-sm flex items-center justify-between px-4"
+                      className="flex-1 h-12 rounded-xl border border-input bg-background text-sm flex items-center justify-between px-4"
                     >
                       <span
                         className={
@@ -1243,7 +1243,7 @@ export default function ProductFormPage({ productId }: Props) {
                     <button
                       type="button"
                       onClick={openTimeSheet}
-                      className="w-36 h-12 rounded-xl border border-input bg-white text-sm flex items-center justify-between px-4"
+                      className="w-36 h-12 rounded-xl border border-input bg-background text-sm flex items-center justify-between px-4"
                     >
                       <span className="text-foreground">
                         {formatDeadlineTimeDisplay()}
@@ -1260,7 +1260,7 @@ export default function ProductFormPage({ productId }: Props) {
           </div>
 
           {/* ── 商品描述 ──────────────────────────── */}
-          <div className="bg-white rounded-2xl border border-border overflow-hidden">
+          <div className="bg-card rounded-2xl border border-border overflow-hidden">
             <div className="px-5 pt-5 pb-2">
               <h2 className="text-sm font-bold text-foreground">商品描述</h2>
               <p className="text-xs text-muted-foreground mt-0.5">
@@ -1279,7 +1279,7 @@ export default function ProductFormPage({ productId }: Props) {
           </div>
 
           {/* ── 內部備註 ──────────────────────────── */}
-          <div className="bg-white rounded-2xl border border-border overflow-hidden">
+          <div className="bg-card rounded-2xl border border-border overflow-hidden">
             <div className="px-5 pt-5 pb-2">
               <h2 className="text-sm font-bold text-foreground">內部備註</h2>
               <p className="text-xs text-muted-foreground mt-0.5">
@@ -1303,10 +1303,10 @@ export default function ProductFormPage({ productId }: Props) {
       {showDateSheet && (
         <>
           <div
-            className="fixed inset-0 bg-black/40 z-40"
+            className="fixed inset-0 bg-foreground/40 z-40"
             onClick={() => setShowDateSheet(false)}
           />
-          <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white rounded-t-3xl z-50 pb-8">
+          <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-card rounded-t-3xl z-50 pb-8">
             <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-border">
               <span className="min-w-[3rem]" />
               <h2 className="text-base font-bold text-foreground">選擇日期</h2>
@@ -1396,7 +1396,7 @@ export default function ProductFormPage({ productId }: Props) {
                               pendingDate?.y === calViewYear &&
                               pendingDate?.m === calViewMonth &&
                               pendingDate?.d === day
-                                ? "bg-primary text-white font-bold"
+                                ? "bg-primary text-primary-foreground font-bold"
                                 : "text-foreground hover:bg-secondary"
                             }`}
                           >
@@ -1417,10 +1417,10 @@ export default function ProductFormPage({ productId }: Props) {
       {showTimeSheet && (
         <>
           <div
-            className="fixed inset-0 bg-black/40 z-40"
+            className="fixed inset-0 bg-foreground/40 z-40"
             onClick={() => setShowTimeSheet(false)}
           />
-          <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white rounded-t-3xl z-50 pb-8">
+          <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-card rounded-t-3xl z-50 pb-8">
             <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-border">
               <span className="min-w-[3rem]" />
               <h2 className="text-base font-bold text-foreground">選擇時間</h2>
@@ -1439,8 +1439,8 @@ export default function ProductFormPage({ productId }: Props) {
                 style={{ height: 240 }}
               >
                 <div className="pointer-events-none absolute inset-x-0 top-[96px] h-12 bg-secondary/80 rounded-xl z-10" />
-                <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-white to-transparent z-20" />
-                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-white to-transparent z-20" />
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-card to-transparent z-20" />
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-card to-transparent z-20" />
                 <div
                   ref={ampmColRef}
                   className="overflow-y-auto h-full"
@@ -1487,8 +1487,8 @@ export default function ProductFormPage({ productId }: Props) {
                 style={{ height: 240 }}
               >
                 <div className="pointer-events-none absolute inset-x-0 top-[96px] h-12 bg-secondary/80 rounded-xl z-10" />
-                <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-white to-transparent z-20" />
-                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-white to-transparent z-20" />
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-card to-transparent z-20" />
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-card to-transparent z-20" />
                 <div
                   ref={hourColRef}
                   className="overflow-y-auto h-full"
@@ -1539,8 +1539,8 @@ export default function ProductFormPage({ productId }: Props) {
                 style={{ height: 240 }}
               >
                 <div className="pointer-events-none absolute inset-x-0 top-[96px] h-12 bg-secondary/80 rounded-xl z-10" />
-                <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-white to-transparent z-20" />
-                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-white to-transparent z-20" />
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-card to-transparent z-20" />
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-card to-transparent z-20" />
                 <div
                   ref={minuteColRef}
                   className="overflow-y-auto h-full"
@@ -1593,10 +1593,10 @@ export default function ProductFormPage({ productId }: Props) {
       {showCategorySheet && (
         <>
           <div
-            className="fixed inset-0 bg-black/40 z-40"
+            className="fixed inset-0 bg-foreground/40 z-40"
             onClick={() => setShowCategorySheet(false)}
           />
-          <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white rounded-t-3xl z-50 pb-8">
+          <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-card rounded-t-3xl z-50 pb-8">
             <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-border">
               <button
                 type="button"
@@ -1684,4 +1684,4 @@ function CategoryOption({
 }
 
 const inputClass =
-  "w-full h-12 px-4 rounded-xl border border-input bg-white text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 text-base";
+  "w-full h-12 px-4 rounded-xl border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 text-base";
