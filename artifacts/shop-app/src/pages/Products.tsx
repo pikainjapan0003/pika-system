@@ -66,7 +66,7 @@ function formatWeight(weightKg: number | null | undefined): string | null {
 
 function StatCard({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="bg-white rounded-2xl border border-border px-3 py-3 text-center">
+    <div className="bg-card rounded-2xl border border-border px-3 py-3 text-center">
       <p className="text-base font-bold text-foreground">{value}</p>
       <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
     </div>
@@ -154,7 +154,7 @@ export default function ProductsPage() {
   return (
     <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-24">
       {/* Header */}
-      <header className="bg-white border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
+      <header className="bg-card border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
         <div className="flex items-start justify-between gap-2">
           <div>
             <h1 className="text-xl font-bold text-foreground">商品</h1>
@@ -166,7 +166,7 @@ export default function ProductsPage() {
             <button
               type="button"
               onClick={() => setLocation("/categories")}
-              className="flex-shrink-0 h-8 px-3 rounded-xl border border-border bg-white text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors mt-1"
+              className="flex-shrink-0 h-8 px-3 rounded-xl border border-border bg-card text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors mt-1"
             >
               分類管理
             </button>
@@ -189,7 +189,7 @@ export default function ProductsPage() {
           </div>
         ) : !products || products.length === 0 ? (
           /* ── Empty / onboarding ──────────────────────────── */
-          <div className="bg-white rounded-2xl border border-border overflow-hidden">
+          <div className="bg-card rounded-2xl border border-border overflow-hidden">
             <div className="px-6 py-8 text-center">
               <div className="text-4xl mb-4">📦</div>
               <p className="text-foreground font-semibold text-base">
@@ -212,7 +212,7 @@ export default function ProductsPage() {
               </div>
               <button
                 onClick={() => setLocation("/products/new")}
-                className="h-11 px-8 bg-primary text-white text-sm font-semibold rounded-xl"
+                className="h-11 px-8 bg-primary text-primary-foreground text-sm font-semibold rounded-xl"
               >
                 建立第一個商品
               </button>
@@ -226,7 +226,7 @@ export default function ProductsPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="搜尋商品名稱"
-              className="w-full h-11 px-4 rounded-xl border border-input bg-white text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
+              className="w-full h-11 px-4 rounded-xl border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
             />
 
             {/* ── Filter bar ───────────────────────────────── */}
@@ -245,7 +245,7 @@ export default function ProductsPage() {
                     onClick={() => setActiveFilter(f)}
                     className={`h-8 px-3 rounded-full text-sm font-medium transition-colors ${
                       isSelected
-                        ? "bg-primary text-white"
+                        ? "bg-primary text-primary-foreground"
                         : "bg-secondary text-muted-foreground hover:text-foreground"
                     }`}
                   >
@@ -287,7 +287,7 @@ export default function ProductsPage() {
                           setOpenMenuId(null);
                           setLocation(`/products/${p.id}/edit`);
                         }}
-                        className="bg-white rounded-2xl border border-border cursor-pointer active:bg-secondary/40 transition-colors"
+                        className="bg-card rounded-2xl border border-border cursor-pointer active:bg-secondary/40 transition-colors"
                       >
                         <div className="flex items-start gap-3 p-4">
                           {/* Image */}
@@ -312,7 +312,7 @@ export default function ProductsPage() {
                             <p className="text-primary font-bold text-base mt-0.5">
                               NT$ {Number(p.price).toLocaleString()}
                             </p>
-                            <p className="text-xs font-medium text-emerald-700 mt-1">
+                            <p className="text-xs font-medium text-chart-3 mt-1">
                               {p.estimatedProfit?.status === "ready"
                                 ? `預估毛利 NT$ ${formatIntegerAmount(p.estimatedProfit.unitProfitTwd)}${
                                     p.estimatedProfit.transportStatus ===
@@ -350,11 +350,11 @@ export default function ProductsPage() {
                               <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
                                 {formatDeadlineStatus(p.orderDeadlineAt) ===
                                 "open" ? (
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-primary text-white">
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-primary text-primary-foreground">
                                     收單中
                                   </span>
                                 ) : (
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-gray-200 text-gray-600">
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-muted text-muted-foreground">
                                     已截止
                                   </span>
                                 )}
@@ -379,11 +379,11 @@ export default function ProductsPage() {
                                 void toggleActive(p);
                               }}
                               className={`relative w-10 h-5 rounded-full cursor-pointer transition-colors ${
-                                p.isActive ? "bg-primary" : "bg-gray-200"
+                                p.isActive ? "bg-primary" : "bg-muted"
                               }`}
                             >
                               <div
-                                className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${
+                                className={`absolute top-0.5 w-4 h-4 bg-background rounded-full shadow transition-transform ${
                                   p.isActive
                                     ? "translate-x-5"
                                     : "translate-x-0.5"
@@ -410,7 +410,7 @@ export default function ProductsPage() {
 
                       {/* Dropdown menu */}
                       {openMenuId === p.id && (
-                        <div className="absolute right-0 top-full mt-1 z-[20] bg-white rounded-xl border border-border shadow-lg min-w-[152px] overflow-hidden">
+                        <div className="absolute right-0 top-full mt-1 z-[20] bg-popover rounded-xl border border-border shadow-lg min-w-[152px] overflow-hidden">
                           <button
                             type="button"
                             onClick={(e) => {
@@ -458,7 +458,7 @@ export default function ProductsPage() {
       {/* FAB: + 新增 */}
       <button
         onClick={() => setLocation("/products/new")}
-        className="fixed bottom-28 right-5 w-12 h-12 bg-primary text-white rounded-full shadow-lg flex items-center justify-center text-2xl z-20"
+        className="fixed bottom-28 right-5 w-12 h-12 bg-primary text-primary-foreground rounded-full shadow-lg flex items-center justify-center text-2xl z-20"
         aria-label="新增商品"
       >
         +
