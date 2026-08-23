@@ -66,7 +66,7 @@ export function ShippingListDialog({ open, onClose, data }: Props) {
             <button
               type="button"
               onClick={() => printShippingList(data)}
-              className="h-7 px-2.5 text-xs font-medium rounded-lg border border-border bg-white text-foreground hover:bg-secondary/50"
+              className="h-7 px-2.5 text-xs font-medium rounded-lg border border-border bg-card text-foreground hover:bg-secondary/50"
             >
               列印
             </button>
@@ -74,7 +74,7 @@ export function ShippingListDialog({ open, onClose, data }: Props) {
               <button
                 type="button"
                 aria-label="關閉"
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700 active:bg-neutral-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-300"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition hover:bg-secondary hover:text-foreground active:bg-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <svg
                   className="w-4 h-4"
@@ -96,8 +96,8 @@ export function ShippingListDialog({ open, onClose, data }: Props) {
 
         {/* Excluded warning */}
         {data.excludedOrderIds.length > 0 && (
-          <div className="px-4 py-2.5 bg-amber-50 border-b border-amber-200 shrink-0">
-            <p className="text-xs text-amber-700">
+          <div className="px-4 py-2.5 bg-accent/10 border-b border-accent/30 shrink-0">
+            <p className="text-xs text-accent">
               已排除 {data.excludedOrderIds.length} 筆已取消訂單 （ID:{" "}
               {data.excludedOrderIds.join("、")}）
             </p>
@@ -130,7 +130,7 @@ export function ShippingListDialog({ open, onClose, data }: Props) {
 
 function ShippingOrderCard({ order }: { order: ShippingListOrder }) {
   return (
-    <div className="bg-white rounded-xl border border-border/60 divide-y divide-border/40 overflow-hidden">
+    <div className="bg-card rounded-xl border border-border/60 divide-y divide-border/40 overflow-hidden">
       {/* Order number + status */}
       <div className="flex items-center justify-between px-3 py-2.5">
         <span className="text-sm font-bold text-primary">
