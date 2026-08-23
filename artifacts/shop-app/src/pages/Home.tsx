@@ -8,7 +8,9 @@ export default function HomePage() {
       <header className="px-6 pt-10 pb-6">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-sm">畫</span>
+            <span className="text-primary-foreground font-bold text-sm">
+              畫
+            </span>
           </div>
           <span className="font-bold text-xl text-foreground">畫夢代購</span>
         </div>

@@ -460,7 +460,9 @@ export default function LogisticsImportHistoryPage() {
                     </p>
                   </div>
                   <div className="rounded-lg bg-secondary py-1.5">
-                    <p className="text-[10px] text-secondary-foreground">成功</p>
+                    <p className="text-[10px] text-secondary-foreground">
+                      成功
+                    </p>
                     <p className="text-sm font-bold text-secondary-foreground">
                       {batch.successRows}
                     </p>

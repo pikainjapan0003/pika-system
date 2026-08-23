@@ -274,7 +274,10 @@ function WorkerCard({
 
   const a =
     accent === "blue"
-      ? { badge: "bg-chart-4/10 text-chart-4", btn: "bg-chart-4 text-primary-foreground" }
+      ? {
+          badge: "bg-chart-4/10 text-chart-4",
+          btn: "bg-chart-4 text-primary-foreground",
+        }
       : {
           badge: "bg-chart-5/10 text-chart-5",
           btn: "bg-chart-5 text-primary-foreground",
