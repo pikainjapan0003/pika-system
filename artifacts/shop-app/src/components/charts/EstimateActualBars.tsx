@@ -4,7 +4,7 @@ import {
   OPERATING_COST_PENDING_LABEL,
 } from "../../lib/operatingCostDisplay";
 import type { OperatingSummary } from "../../lib/tripProfitBoard";
-import { ChartCard, ChartLegendRow, ChartResponsiveOnly } from "./chartCard";
+import { ChartCard, ChartFrame, ChartLegendRow } from "./chartCard";
 import { CHART_TOKEN } from "./chartTheme";
 
 function num(value: string | null | undefined): number | null {
@@ -74,7 +74,7 @@ export function EstimateActualBars({
         />
       }
     >
-      <ChartResponsiveOnly>
+      <ChartFrame>
         <BarChart data={data} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
           <CartesianGrid strokeDasharray="3 3" stroke={CHART_TOKEN.gridline} />
           <XAxis
@@ -106,7 +106,7 @@ export function EstimateActualBars({
           />
           <Bar dataKey="實際" fill={CHART_TOKEN.actual} radius={[4, 4, 0, 0]} />
         </BarChart>
-      </ChartResponsiveOnly>
+      </ChartFrame>
       <p className="text-xs text-muted-foreground">
         {anyMissing ? "部分類別待確認（不補 0）。" : "全數已確認。"}
       </p>

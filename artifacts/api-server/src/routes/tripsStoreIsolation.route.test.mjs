@@ -155,6 +155,7 @@ if (!process.env.DATABASE_URL) {
         `/trips/${tripAId}/routes/${routeAId}`,
         { areaTitle: "No auth" },
       ],
+      ["GET", `/stores/${storeAId}/trips`, undefined],
       ["GET", `/stores/${storeAId}/trips/${tripAId}/areas`, undefined],
       [
         "POST",
@@ -204,6 +205,36 @@ if (!process.env.DATABASE_URL) {
     assert.equal(JSON.stringify(response.data).includes("storeId"), false);
   });
 
+  test("dashboard trips endpoint GET /stores/:storeId/trips matches the frontend contract (KPI board source)", async () => {
+    // useTripProfitBoard（tripProfitBoard.ts:225）以「前端實際行為」固定抓取此網址；
+    // 修復前後端與 openapi 皆無此路由 → KPI 板永遠「尚無行程」。
+    const response = await request("GET", `/stores/${storeAId}/trips`);
+    assert.equal(response.status, 200, JSON.stringify(response.data));
+    assert.deepEqual(
+      response.data.map((trip) => trip.id).sort((a, b) => a - b),
+      [tripAId, legacyTripId].sort((a, b) => a - b),
+    );
+    assert.equal(
+      JSON.stringify(response.data).includes("BATCH-22 B trip"),
+      false,
+    );
+    assert.equal(
+      JSON.stringify(response.data).includes("BATCH-22 A route"),
+      true,
+    );
+    assert.equal(JSON.stringify(response.data).includes("storeId"), false);
+
+    const crossStore = await request("GET", `/stores/${storeAId}/trips`, {
+      userId: MERCHANT_B,
+    });
+    assert.equal(crossStore.status, 403, JSON.stringify(crossStore.data));
+
+    const missingStore = await request("GET", "/stores/99999999/trips");
+    assert.equal(missingStore.status, 404, JSON.stringify(missingStore.data));
+
+    const invalidStore = await request("GET", "/stores/not-a-number/trips");
+    assert.equal(invalidStore.status, 400, JSON.stringify(invalidStore.data));
+  });
   test("new trips and routes are stamped with the authenticated store", async () => {
     const tripResponse = await request("POST", "/trips", {
       body: { name: "BATCH-22 newly owned trip" },
