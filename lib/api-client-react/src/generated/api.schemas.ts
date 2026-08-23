@@ -1076,6 +1076,169 @@ export interface UpdateSellerAgentSettingsRequest {
   webhookSecret?: string | null;
 }
 
+export type RouteCostRankingItemStatus = typeof RouteCostRankingItemStatus[keyof typeof RouteCostRankingItemStatus];
+
+
+export const RouteCostRankingItemStatus = {
+  ready: 'ready',
+  pending_confirmation: 'pending_confirmation',
+} as const;
+
+export interface RouteCostRankingItem {
+  routeId: number;
+  tripId: number;
+  /** Route area title */
+  name: string;
+  /** @nullable */
+  tripName: string | null;
+  /**
+     * Exact final transport cost per item (scale 12); null while pending_confirmation
+     * @nullable
+     */
+  unitCostTwd: string | null;
+  status: RouteCostRankingItemStatus;
+  /**
+     * Pending reason from the transport-cost pipeline
+     * @nullable
+     */
+  reason: string | null;
+}
+
+export type RouteCostRankingResponseStatus = typeof RouteCostRankingResponseStatus[keyof typeof RouteCostRankingResponseStatus];
+
+
+export const RouteCostRankingResponseStatus = {
+  ready: 'ready',
+  pending_confirmation: 'pending_confirmation',
+} as const;
+
+export interface RouteCostRankingResponse {
+  status: RouteCostRankingResponseStatus;
+  items: RouteCostRankingItem[];
+}
+
+export type AreaScatterItemStatus = typeof AreaScatterItemStatus[keyof typeof AreaScatterItemStatus];
+
+
+export const AreaScatterItemStatus = {
+  ready: 'ready',
+  pending_confirmation: 'pending_confirmation',
+} as const;
+
+export interface AreaScatterItem {
+  /** Trip area name merged across the store's trips */
+  areaName: string;
+  tripCount: number;
+  /**
+     * Exact sum of actual order item quantities; null while pending_confirmation
+     * @nullable
+     */
+  itemQuantity: string | null;
+  /**
+     * Exact sum of included order totals; null while pending_confirmation
+     * @nullable
+     */
+  revenueTwd: string | null;
+  /**
+     * Quantity-weighted average of existing per-product actual unit profits (scale 12)
+     * @nullable
+     */
+  averageUnitProfitTwd: string | null;
+  status: AreaScatterItemStatus;
+  /** @nullable */
+  reason: string | null;
+}
+
+export type AreaScatterResponseStatus = typeof AreaScatterResponseStatus[keyof typeof AreaScatterResponseStatus];
+
+
+export const AreaScatterResponseStatus = {
+  ready: 'ready',
+  pending_confirmation: 'pending_confirmation',
+} as const;
+
+export interface AreaScatterResponse {
+  status: AreaScatterResponseStatus;
+  items: AreaScatterItem[];
+}
+
+export type SensitivityHeatmapResponseStatus = typeof SensitivityHeatmapResponseStatus[keyof typeof SensitivityHeatmapResponseStatus];
+
+
+export const SensitivityHeatmapResponseStatus = {
+  ready: 'ready',
+  pending_confirmation: 'pending_confirmation',
+} as const;
+
+export interface SensitivityHeatmapResponse {
+  status: SensitivityHeatmapResponseStatus;
+  /** @nullable */
+  label?: string | null;
+  /** @nullable */
+  reason?: string | null;
+  /**
+     * From calculateBreakeven (scale 12); null while pending_confirmation
+     * @nullable
+     */
+  netCostToRecoverTwd: string | null;
+  /**
+     * From calculateBreakeven; null while pending_confirmation
+     * @nullable
+     */
+  breakevenQuantity: string | null;
+  /** @nullable */
+  salaryTargetQuantity: string | null;
+  /** Swept quantities (exact integer strings) */
+  rows: string[];
+  /** Swept unit gross profits (exact decimal strings) */
+  columns: string[];
+  /** cells[row][col] = profitTwd = column * row - netCostToRecoverTwd (scale 12); negative values are loss cells */
+  cells: string[][];
+}
+
+export type HistoryTrendItemStatus = typeof HistoryTrendItemStatus[keyof typeof HistoryTrendItemStatus];
+
+
+export const HistoryTrendItemStatus = {
+  ready: 'ready',
+  pending_confirmation: 'pending_confirmation',
+} as const;
+
+export interface HistoryTrendItem {
+  /** YYYY-MM bucket (trip startDate, falling back to created month) */
+  month: string;
+  tripCount: number;
+  /**
+     * Exact monthly final operating profit (scale 12); null while pending_confirmation
+     * @nullable
+     */
+  profitTwd: string | null;
+  status: HistoryTrendItemStatus;
+  /** @nullable */
+  reason: string | null;
+}
+
+export type HistoryTrendResponseStatus = typeof HistoryTrendResponseStatus[keyof typeof HistoryTrendResponseStatus];
+
+
+export const HistoryTrendResponseStatus = {
+  ready: 'ready',
+  pending_confirmation: 'pending_confirmation',
+} as const;
+
+export type HistoryTrendResponseMode = typeof HistoryTrendResponseMode[keyof typeof HistoryTrendResponseMode];
+
+
+export const HistoryTrendResponseMode = {
+  ACTUAL: 'ACTUAL',
+} as const;
+
+export interface HistoryTrendResponse {
+  status: HistoryTrendResponseStatus;
+  mode: HistoryTrendResponseMode;
+  items: HistoryTrendItem[];
+}
+
 export type GetSellerAgentSettings200 = {
   data: SellerAgentSettings;
 };
