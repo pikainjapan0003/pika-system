@@ -25,10 +25,10 @@ export default function LaundryCountdownTimer({
 
   if (closed) {
     return (
-      <div className="mt-3 mb-1 rounded-2xl bg-red-50 border-2 border-red-100 overflow-hidden select-none">
+      <div className="mt-3 mb-1 rounded-2xl bg-destructive/10 border-2 border-destructive/20 overflow-hidden select-none">
         <div className="px-4 py-3 text-center">
-          <div className="text-base font-bold text-red-500">已截止收單</div>
-          <div className="text-xs text-red-400 mt-0.5">
+          <div className="text-base font-bold text-destructive">已截止收單</div>
+          <div className="text-xs text-destructive/70 mt-0.5">
             此商品目前無法送出訂單。
           </div>
         </div>

@@ -155,14 +155,14 @@ export function LogisticsSyncStatusNotice() {
   const recentRuns = status?.recentRuns ?? [];
 
   return (
-    <div className="bg-white rounded-2xl border border-border p-5 space-y-3">
+    <div className="bg-card rounded-2xl border border-border p-5 space-y-3">
       <h2 className="text-sm font-bold text-foreground">物流同步狀態</h2>
 
       {loading && !status && (
         <p className="text-xs text-muted-foreground">載入同步狀態中…</p>
       )}
       {loadError && (
-        <div className="text-xs text-red-700 bg-red-50 border border-red-200 rounded-xl px-3 py-2 flex items-center justify-between gap-2">
+        <div className="text-xs text-destructive bg-destructive/10 border border-destructive/30 rounded-xl px-3 py-2 flex items-center justify-between gap-2">
           <span>{loadError}</span>
           <button
             type="button"
@@ -219,18 +219,18 @@ export function LogisticsSyncStatusNotice() {
           type="button"
           disabled={syncing || !storeId}
           onClick={handleManualSync}
-          className="w-full h-10 rounded-xl bg-primary text-white text-sm font-medium disabled:opacity-50"
+          className="w-full h-10 rounded-xl bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50"
         >
           {syncing ? "同步中…" : "立即同步已支援物流"}
         </button>
       )}
       {syncError && (
-        <div className="text-xs text-red-700 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+        <div className="text-xs text-destructive bg-destructive/10 border border-destructive/30 rounded-xl px-3 py-2">
           {syncError}
         </div>
       )}
       {syncMessage && (
-        <div className="text-xs text-green-800 bg-green-50 border border-green-200 rounded-xl px-3 py-2">
+        <div className="text-xs text-secondary-foreground bg-secondary border border-border rounded-xl px-3 py-2">
           {syncMessage}
         </div>
       )}

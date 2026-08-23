@@ -371,8 +371,8 @@ test("blank fuel on create sends an explicit null and shows the fail-closed hint
     /留空＝待確認。系統不會自動填 0，也不會自動推估。/,
   );
   setInputValue(findInputByLabel(view.container, "路線名稱 *"), "大阪市區");
-  setInputValue(findInputByLabel(view.container, "起點 *"), "梅田");
-  setInputValue(findInputByLabel(view.container, "終點 *"), "難波");
+  setInputValue(findInputByLabel(view.container, "起點"), "梅田");
+  setInputValue(findInputByLabel(view.container, "終點"), "難波");
   setInputValue(findInputByLabel(view.container, "預估件數 *"), "3");
   setInputValue(findInputByLabel(view.container, "ETC 費用 (¥) *"), "0");
   setSelectValue(findSelectByLabel(view.container, "所屬大區"), "21");

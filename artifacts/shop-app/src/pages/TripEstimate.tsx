@@ -3,9 +3,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { useGetMyStore } from "@workspace/api-client-react";
 import {
+  decimalStringAtMost,
   formatApiTwd,
   formatConvertedAmount,
   OPERATING_COST_PENDING_LABEL,
+  trimAmountForDisplay,
   type OperatingCostCurrency,
 } from "../lib/operatingCostDisplay";
 import { BottomNav } from "./Dashboard";
@@ -131,6 +133,14 @@ const OUTCOME_SURFACE: Record<ReadyTripProfitProjection["outcome"], string> = {
   PROFIT_BELOW_SALARY_TARGET: "bg-accent/10 text-accent",
   LOSS: "bg-destructive/10 text-destructive",
 };
+
+// O-2：輸入合理性上限（字串級；建議值與依據見 docs/ai-ops/85，供審批者 B 複核）
+const INPUT_MAX_LIMITS = {
+  totalItemQuantity: "100000", // 預估件數（件）
+  unitGrossProfitTwd: "1000000", // 單件毛利（TWD）
+  exchangeRate: "1000", // 估算匯率（JPY → TWD）
+  originalAmount: "100000000", // 各成本項目單筆金額（TWD／JPY 原幣）
+} as const;
 
 export default function TripEstimatePage({ tripId }: { tripId: number }) {
   const [, setLocation] = useLocation();
@@ -283,6 +293,50 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
 
   async function save() {
     if (!store?.id || !summary) return;
+    // O-2：輸入合理性上限守衛（字串級比較，不經 Number／parseFloat）。
+    // 超限可能是被污染的輸入（如 O-1 的 12 位零上接數字），先攔下並具名回報。
+    const trimmedRate = exchangeRate.trim();
+    if (
+      trimmedRate &&
+      !decimalStringAtMost(trimmedRate, INPUT_MAX_LIMITS.exchangeRate)
+    ) {
+      setError(
+        `估算匯率 ${trimmedRate} 超出上限 ${INPUT_MAX_LIMITS.exchangeRate}，可能有誤輸入；請檢查後再儲存。`,
+      );
+      return;
+    }
+    const trimmedQty = totalItemQuantity.trim();
+    if (
+      trimmedQty &&
+      !decimalStringAtMost(trimmedQty, INPUT_MAX_LIMITS.totalItemQuantity)
+    ) {
+      setError(
+        `預估件數 ${trimmedQty} 超出上限 ${INPUT_MAX_LIMITS.totalItemQuantity} 件，可能有誤輸入；請檢查後再儲存。`,
+      );
+      return;
+    }
+    const trimmedUnit = unitGrossProfitTwd.trim();
+    if (
+      trimmedUnit &&
+      !decimalStringAtMost(trimmedUnit, INPUT_MAX_LIMITS.unitGrossProfitTwd)
+    ) {
+      setError(
+        `單件毛利 ${trimmedUnit} 超出上限 ${INPUT_MAX_LIMITS.unitGrossProfitTwd} 元，可能有誤輸入；請檢查後再儲存。`,
+      );
+      return;
+    }
+    for (const category of categories) {
+      const amount = (values[category.id] ?? "0").trim();
+      if (
+        amount &&
+        !decimalStringAtMost(amount, INPUT_MAX_LIMITS.originalAmount)
+      ) {
+        setError(
+          `${category.name} 金額 ${amount} 超出上限 ${INPUT_MAX_LIMITS.originalAmount} 元，可能有誤輸入；請檢查後再儲存。`,
+        );
+        return;
+      }
+    }
     setSaving(true);
     setError("");
     setMessage("");
@@ -498,7 +552,7 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
                 <input
                   aria-label={category.name}
                   className={inputClass}
-                  value={values[category.id] ?? "0"}
+                  value={trimAmountForDisplay(values[category.id] ?? "0")}
                   onChange={(event) =>
                     setValues((current) => ({
                       ...current,
@@ -613,7 +667,7 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
                 <input
                   aria-label="估算匯率"
                   className={`${inputClass} mt-2`}
-                  value={exchangeRate}
+                  value={trimAmountForDisplay(exchangeRate)}
                   onChange={(event) => setExchangeRate(event.target.value)}
                   inputMode="decimal"
                 />
@@ -695,7 +749,7 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
                   <input
                     aria-label="預估件數"
                     className={`${inputClass} mt-1`}
-                    value={totalItemQuantity}
+                    value={trimAmountForDisplay(totalItemQuantity)}
                     onChange={(event) =>
                       setTotalItemQuantity(event.target.value)
                     }
@@ -707,7 +761,7 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
                   <input
                     aria-label="單件毛利"
                     className={`${inputClass} mt-1`}
-                    value={unitGrossProfitTwd}
+                    value={trimAmountForDisplay(unitGrossProfitTwd)}
                     onChange={(event) =>
                       setUnitGrossProfitTwd(event.target.value)
                     }
