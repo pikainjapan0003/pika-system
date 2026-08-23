@@ -45,7 +45,7 @@ export default function GuidePage() {
 
   return (
     <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-10">
-      <header className="bg-white border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
+      <header className="bg-card border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
         <div className="flex items-center gap-3">
           <button
             onClick={() => setLocation("/dashboard")}
@@ -59,7 +59,7 @@ export default function GuidePage() {
 
       <div className="px-5 py-5 space-y-5">
         {/* Steps */}
-        <div className="bg-white rounded-2xl border border-border overflow-hidden">
+        <div className="bg-card rounded-2xl border border-border overflow-hidden">
           <div className="px-5 py-4 border-b border-border">
             <h2 className="text-sm font-semibold text-foreground">快速上手</h2>
           </div>
@@ -86,7 +86,7 @@ export default function GuidePage() {
         </div>
 
         {/* Tips */}
-        <div className="bg-white rounded-2xl border border-border overflow-hidden">
+        <div className="bg-card rounded-2xl border border-border overflow-hidden">
           <div className="px-5 py-4 border-b border-border">
             <h2 className="text-sm font-semibold text-foreground">使用技巧</h2>
           </div>
@@ -107,7 +107,7 @@ export default function GuidePage() {
           </h2>
           <p className="text-sm text-muted-foreground leading-relaxed">
             買家點擊分享連結 → 填寫下單資訊 → 收到追蹤碼 → 可隨時至{" "}
-            <span className="font-mono text-xs bg-white px-1 py-0.5 rounded">
+            <span className="font-mono text-xs bg-muted px-1 py-0.5 rounded">
               /track
             </span>{" "}
             查詢訂單狀態。

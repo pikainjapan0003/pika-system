@@ -24,7 +24,7 @@ interface StoreCreditResponse {
 type GetToken = () => Promise<string | null>;
 
 const inputClass =
-  "h-11 w-full rounded-xl border border-input bg-white px-3 text-sm";
+  "h-11 w-full rounded-xl border border-input bg-background px-3 text-sm";
 
 function displayTwd(value: string): string {
   const rounded = ExactDecimal.from(value).toDecimalPlaces(0);
@@ -151,7 +151,7 @@ export function CustomerStoreCreditPanel({
   };
 
   return (
-    <section className="space-y-4 rounded-2xl border border-border bg-white p-4">
+    <section className="space-y-4 rounded-2xl border border-border bg-card p-4">
       <div>
         <p className="text-sm font-medium text-muted-foreground">購物金餘額</p>
         <p className="mt-1 text-3xl font-bold">
@@ -208,7 +208,7 @@ export function CustomerStoreCreditPanel({
           type="button"
           disabled={!preview || reasonCode.trim() === ""}
           onClick={openConfirmation}
-          className="min-h-11 w-full rounded-xl bg-primary px-4 text-sm font-semibold text-white disabled:opacity-50"
+          className="min-h-11 w-full rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-50"
         >
           預覽並確認
         </button>
@@ -218,7 +218,7 @@ export function CustomerStoreCreditPanel({
         <div
           role="dialog"
           aria-label="確認購物金變更"
-          className="space-y-3 rounded-xl border border-amber-300 bg-amber-50 p-3"
+          className="space-y-3 rounded-xl border border-accent/30 bg-accent/10 p-3"
         >
           <p className="font-semibold">請再次確認</p>
           <p className="text-sm">
@@ -230,7 +230,7 @@ export function CustomerStoreCreditPanel({
               type="button"
               disabled={saving}
               onClick={() => setConfirming(false)}
-              className="min-h-11 rounded-xl border border-border bg-white text-sm"
+              className="min-h-11 rounded-xl border border-border bg-card text-sm"
             >
               取消
             </button>
@@ -238,7 +238,7 @@ export function CustomerStoreCreditPanel({
               type="button"
               disabled={saving}
               onClick={() => void confirmMutation()}
-              className="min-h-11 rounded-xl bg-primary text-sm font-semibold text-white"
+              className="min-h-11 rounded-xl bg-primary text-sm font-semibold text-primary-foreground"
             >
               {saving ? "處理中…" : "確認變更"}
             </button>

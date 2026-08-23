@@ -92,12 +92,12 @@ const PAYMENT_STATUS_LABELS: Record<string, string> = {
   failed: "付款失敗",
 };
 const PAYMENT_STATUS_COLORS: Record<string, string> = {
-  unpaid: "bg-red-100 text-red-700",
-  pending: "bg-amber-100 text-amber-600",
-  partially_paid: "bg-blue-100 text-blue-700",
-  paid: "bg-green-100 text-green-700",
-  refunded: "bg-gray-100 text-gray-600",
-  failed: "bg-red-100 text-red-700",
+  unpaid: "bg-destructive/10 text-destructive",
+  pending: "bg-accent/15 text-accent/80",
+  partially_paid: "bg-chart-4/10 text-chart-4",
+  paid: "bg-chart-3/10 text-chart-3",
+  refunded: "bg-muted text-muted-foreground",
+  failed: "bg-destructive/10 text-destructive",
 };
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
   cash: "現金",
@@ -125,12 +125,12 @@ const SHIPPING_STATUS_LABELS: Record<string, string> = {
 };
 const SHIPPING_STATUS_COLORS: Record<string, string> = {
   not_shipped: "bg-secondary/80 text-muted-foreground",
-  preparing: "bg-amber-100 text-amber-600",
-  shipped: "bg-cyan-100 text-cyan-700",
-  arrived: "bg-blue-100 text-blue-600",
-  picked_up: "bg-green-100 text-green-600",
-  returned: "bg-orange-100 text-orange-600",
-  cancelled: "bg-gray-100 text-gray-500",
+  preparing: "bg-accent/15 text-accent/80",
+  shipped: "bg-chart-4/10 text-chart-4",
+  arrived: "bg-chart-4/10 text-chart-4",
+  picked_up: "bg-chart-3/10 text-chart-3",
+  returned: "bg-accent/10 text-accent",
+  cancelled: "bg-muted text-muted-foreground",
 };
 const SHIPPING_METHOD_LABELS: Record<string, string> = {
   self_pickup: "自取",
@@ -189,12 +189,12 @@ type OrderWithTracking = Order & {
   profitSnapshotDisplay?: ProfitSnapshotDisplay | null;
 };
 
-const TRACKING_TONE_PINK = "bg-pink-50/70 border-pink-200/70 text-pink-900";
-const TRACKING_TONE_YELLOW =
-  "bg-yellow-50/80 border-yellow-200/80 text-yellow-900";
-const TRACKING_TONE_GREEN = "bg-green-50/75 border-green-200/75 text-green-900";
-const TRACKING_TONE_GRAY = "bg-gray-50/80 border-gray-200/80 text-gray-700";
-const TRACKING_TONE_RED = "bg-red-50/75 border-red-200/75 text-red-900";
+const TRACKING_TONE_PINK = "bg-accent/10 border-accent/30 text-accent";
+const TRACKING_TONE_YELLOW = "bg-chart-4/10 border-chart-4/30 text-chart-4";
+const TRACKING_TONE_GREEN = "bg-chart-3/10 border-chart-3/30 text-chart-3";
+const TRACKING_TONE_GRAY = "bg-muted/70 border-border/70 text-muted-foreground";
+const TRACKING_TONE_RED =
+  "bg-destructive/10 border-destructive/30 text-destructive";
 
 function includesAny(text: string, keywords: string[]): boolean {
   return keywords.some((k) => text.includes(k));
@@ -828,7 +828,7 @@ export default function OrdersPage() {
 
   return (
     <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-28">
-      <header className="bg-white border-b border-border px-5 pt-10 pb-3">
+      <header className="bg-card border-b border-border px-5 pt-10 pb-3">
         <div className="mb-3">
           <h1 className="text-lg font-bold text-foreground">訂單管理</h1>
           <div
@@ -838,7 +838,7 @@ export default function OrdersPage() {
             <button
               onClick={() => setShowAddOrder(true)}
               disabled={!storeId}
-              className="min-h-11 w-full px-3 text-xs font-semibold text-white bg-primary rounded-xl disabled:opacity-50"
+              className="min-h-11 w-full px-3 text-xs font-semibold text-primary-foreground bg-primary rounded-xl disabled:opacity-50"
             >
               ＋ 新增訂單
             </button>
@@ -999,7 +999,7 @@ export default function OrdersPage() {
             )}
 
             {sortedFiltered.length === 0 ? (
-              <div className="bg-white rounded-2xl p-10 border border-border text-center">
+              <div className="bg-card rounded-2xl p-10 border border-border text-center">
                 <p className="text-muted-foreground text-sm">
                   {allOrders.length > 0
                     ? "找不到符合條件的訂單"
@@ -1011,7 +1011,7 @@ export default function OrdersPage() {
                 {sortedFiltered.map((o) => (
                   <div
                     key={o.id}
-                    className="bg-white rounded-2xl border border-border overflow-hidden"
+                    className="bg-card rounded-2xl border border-border overflow-hidden"
                   >
                     {/* Card header */}
                     <div
@@ -1045,7 +1045,7 @@ export default function OrdersPage() {
                           >
                             {selectedIds.has(o.id) && (
                               <svg
-                                className="w-2.5 h-2.5 text-white"
+                                className="w-2.5 h-2.5 text-primary-foreground"
                                 fill="none"
                                 viewBox="0 0 10 8"
                               >
@@ -1084,7 +1084,7 @@ export default function OrdersPage() {
                           {o.pickupMethod}
                         </span>
                         <span
-                          className={`text-[11px] px-2 py-0.5 rounded-full font-medium shrink-0 ${STATUS_COLORS[o.status] ?? "bg-gray-100 text-gray-600"}`}
+                          className={`text-[11px] px-2 py-0.5 rounded-full font-medium shrink-0 ${STATUS_COLORS[o.status] ?? "bg-muted text-muted-foreground"}`}
                         >
                           {STATUS_LABELS[o.status] ?? o.status}
                         </span>
@@ -1218,7 +1218,7 @@ export default function OrdersPage() {
                         {/* 買家資訊 */}
                         <div>
                           <SectionLabel>買家資訊</SectionLabel>
-                          <div className="bg-white rounded-xl border border-border/50 divide-y divide-border/40">
+                          <div className="bg-card rounded-xl border border-border/50 divide-y divide-border/40">
                             <DetailRow
                               label="姓名"
                               value={
@@ -1261,7 +1261,7 @@ export default function OrdersPage() {
                         {/* 收件資訊（Step 7H-4） */}
                         <div>
                           <SectionLabel>收件資訊</SectionLabel>
-                          <div className="bg-white rounded-xl border border-border/50 divide-y divide-border/40">
+                          <div className="bg-card rounded-xl border border-border/50 divide-y divide-border/40">
                             {(() => {
                               const rName = (o.recipientName ?? "").trim();
                               const rPhone = (o.recipientPhone ?? "").trim();
@@ -1327,7 +1327,7 @@ export default function OrdersPage() {
                             const items = normalizeOrderItems(o as any);
                             if (items.length > 1) {
                               return (
-                                <div className="bg-white rounded-xl border border-border/50 divide-y divide-border/40">
+                                <div className="bg-card rounded-xl border border-border/50 divide-y divide-border/40">
                                   {items.map((item, idx) => {
                                     const specSummary = formatSpecSummary(
                                       item.specValues,
@@ -1372,7 +1372,7 @@ export default function OrdersPage() {
                               );
                             }
                             return (
-                              <div className="bg-white rounded-xl border border-border/50 divide-y divide-border/40">
+                              <div className="bg-card rounded-xl border border-border/50 divide-y divide-border/40">
                                 <DetailRow
                                   label="商品名稱"
                                   value={o.productName ?? "—"}
@@ -1400,7 +1400,7 @@ export default function OrdersPage() {
                         {/* 成本與單件毛利快照（只顯示訂單建立/補拍時定格值） */}
                         <div>
                           <SectionLabel>成本與單件毛利</SectionLabel>
-                          <div className="bg-white rounded-xl border border-border/50 divide-y divide-border/40">
+                          <div className="bg-card rounded-xl border border-border/50 divide-y divide-border/40">
                             <DetailRow
                               label="快照狀態"
                               value={profitSnapshotStatusLabel(
@@ -1429,7 +1429,7 @@ export default function OrdersPage() {
                                   bold
                                 />
                                 <div className="px-3 py-3 space-y-2">
-                                  <p className="text-xs text-amber-700">
+                                  <p className="text-xs text-accent">
                                     {o.profitSnapshotStatus == null
                                       ? "舊單可用現在的成本補拍一次；補拍時間不是成交當時，成功後即永久定格。"
                                       : "成本資料補齊後可補拍一次；成功後即永久定格。"}
@@ -1440,10 +1440,10 @@ export default function OrdersPage() {
                                       void handleBackfillProfitSnapshot(o.id)
                                     }
                                     disabled={backfillingOrderId === o.id}
-                                    className="w-full min-h-11 rounded-xl bg-primary text-white text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
+                                    className="w-full min-h-11 rounded-xl bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
                                   >
                                     {backfillingOrderId === o.id && (
-                                      <span className="w-3.5 h-3.5 border-2 border-white/60 border-t-white rounded-full animate-spin" />
+                                      <span className="w-3.5 h-3.5 border-2 border-primary-foreground/60 border-t-primary-foreground rounded-full animate-spin" />
                                     )}
                                     {backfillingOrderId === o.id
                                       ? "補拍中…"
@@ -1568,13 +1568,13 @@ export default function OrdersPage() {
                           <p className="text-[10px] text-muted-foreground/50 mb-1.5">
                             店家手動記錄，尚未串接金流
                           </p>
-                          <div className="bg-white rounded-xl border border-border/50 divide-y divide-border/40">
+                          <div className="bg-card rounded-xl border border-border/50 divide-y divide-border/40">
                             <div className="flex items-center justify-between px-3 py-2.5 gap-2">
                               <span className="text-xs text-muted-foreground shrink-0">
                                 付款狀態
                               </span>
                               <span
-                                className={`text-xs px-2 py-0.5 rounded-full font-medium ${PAYMENT_STATUS_COLORS[o.paymentStatus ?? "unpaid"] ?? "bg-gray-100 text-gray-500"}`}
+                                className={`text-xs px-2 py-0.5 rounded-full font-medium ${PAYMENT_STATUS_COLORS[o.paymentStatus ?? "unpaid"] ?? "bg-muted text-muted-foreground"}`}
                               >
                                 {PAYMENT_STATUS_LABELS[
                                   o.paymentStatus ?? "unpaid"
@@ -1658,7 +1658,7 @@ export default function OrdersPage() {
                           <p className="text-[10px] text-muted-foreground/50 mb-1.5">
                             店家手動記錄，尚未串接物流
                           </p>
-                          <div className="bg-white rounded-xl border border-border/50 divide-y divide-border/40">
+                          <div className="bg-card rounded-xl border border-border/50 divide-y divide-border/40">
                             <div className="flex items-center justify-between px-3 py-2.5 gap-2">
                               <span className="text-xs text-muted-foreground shrink-0">
                                 出貨狀態
@@ -1817,7 +1817,7 @@ export default function OrdersPage() {
                           <div>
                             <SectionLabel>7-11 門市</SectionLabel>
                             {o.storeCode ? (
-                              <div className="bg-white rounded-xl border border-primary/20 px-4 py-3 space-y-1">
+                              <div className="bg-card rounded-xl border border-primary/20 px-4 py-3 space-y-1">
                                 <div className="text-sm font-semibold text-foreground">
                                   7-11 {o.storeName}
                                 </div>
@@ -1847,8 +1847,8 @@ export default function OrdersPage() {
                                 </div>
                               </div>
                             ) : (
-                              <div className="bg-amber-50 rounded-xl border border-amber-200 px-4 py-3">
-                                <p className="text-xs text-amber-700">
+                              <div className="bg-accent/10 rounded-xl border border-accent/30 px-4 py-3">
+                                <p className="text-xs text-accent">
                                   尚未選擇 7-11 門市
                                 </p>
                               </div>
@@ -1877,7 +1877,7 @@ export default function OrdersPage() {
                           <div>
                             <SectionLabel>全家門市</SectionLabel>
                             {o.storeCode ? (
-                              <div className="bg-white rounded-xl border border-primary/20 px-4 py-3 space-y-1">
+                              <div className="bg-card rounded-xl border border-primary/20 px-4 py-3 space-y-1">
                                 <div className="text-sm font-semibold text-foreground">
                                   全家 {o.storeName}
                                 </div>
@@ -1907,8 +1907,8 @@ export default function OrdersPage() {
                                 </div>
                               </div>
                             ) : (
-                              <div className="bg-amber-50 rounded-xl border border-amber-200 px-4 py-3">
-                                <p className="text-xs text-amber-700">
+                              <div className="bg-accent/10 rounded-xl border border-accent/30 px-4 py-3">
+                                <p className="text-xs text-accent">
                                   尚未選擇全家門市
                                 </p>
                               </div>
@@ -1937,7 +1937,7 @@ export default function OrdersPage() {
                         {orderIsHome(o.pickupMethod, o.shippingMethod) && (
                           <div>
                             <SectionLabel>物流方式</SectionLabel>
-                            <div className="bg-white rounded-xl border border-border/50 px-4 py-3">
+                            <div className="bg-card rounded-xl border border-border/50 px-4 py-3">
                               <span className="text-sm font-medium text-foreground">
                                 {HOME_DELIVERY_LABELS[o.pickupMethod] ??
                                   o.pickupMethod}
@@ -1950,8 +1950,8 @@ export default function OrdersPage() {
                         {DEPRECATED_METHODS[o.pickupMethod] && (
                           <div>
                             <SectionLabel>物流方式</SectionLabel>
-                            <div className="bg-amber-50 rounded-xl border border-amber-200 px-4 py-3">
-                              <p className="text-xs text-amber-700">
+                            <div className="bg-accent/10 rounded-xl border border-accent/30 px-4 py-3">
+                              <p className="text-xs text-accent">
                                 已停用的取貨方式：
                                 {DEPRECATED_METHODS[o.pickupMethod]}
                               </p>
@@ -1968,7 +1968,7 @@ export default function OrdersPage() {
                           Object.keys(o.specValues as object).length > 0 && (
                             <div>
                               <SectionLabel>規格</SectionLabel>
-                              <div className="bg-white rounded-xl border border-border/50 px-3 py-2.5">
+                              <div className="bg-card rounded-xl border border-border/50 px-3 py-2.5">
                                 <span className="text-sm font-medium text-foreground">
                                   {Object.entries(o.specValues as object)
                                     .map(([k, v]) => `${k}: ${v}`)
@@ -1981,7 +1981,7 @@ export default function OrdersPage() {
                         {/* 訂單資訊 */}
                         <div>
                           <SectionLabel>訂單資訊</SectionLabel>
-                          <div className="bg-white rounded-xl border border-border/50 divide-y divide-border/40">
+                          <div className="bg-card rounded-xl border border-border/50 divide-y divide-border/40">
                             <DetailRow label="訂單編號" value={`#${o.id}`} />
                             <DetailRow
                               label="下單時間"
@@ -1992,7 +1992,7 @@ export default function OrdersPage() {
                                 目前狀態
                               </span>
                               <span
-                                className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[o.status] ?? "bg-gray-100 text-gray-600"}`}
+                                className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[o.status] ?? "bg-muted text-muted-foreground"}`}
                               >
                                 {STATUS_LABELS[o.status] ?? o.status}
                               </span>
@@ -2039,7 +2039,7 @@ export default function OrdersPage() {
                                         copyKey,
                                       )
                                     }
-                                    className="min-h-11 rounded-xl border border-border bg-white px-2 py-2 text-xs font-medium text-foreground"
+                                    className="min-h-11 rounded-xl border border-border bg-card px-2 py-2 text-xs font-medium text-foreground"
                                   >
                                     {copiedKey === copyKey
                                       ? "已複製"
@@ -2077,7 +2077,7 @@ export default function OrdersPage() {
                               `${o.id}-link`,
                             )
                           }
-                          className="w-full min-h-11 rounded-xl border border-border bg-white text-xs font-medium text-foreground"
+                          className="w-full min-h-11 rounded-xl border border-border bg-card text-xs font-medium text-foreground"
                         >
                           {copiedKey === `${o.id}-link`
                             ? "已複製追蹤連結"
@@ -2088,7 +2088,7 @@ export default function OrdersPage() {
                         <button
                           type="button"
                           onClick={() => printOrderReceipt(o, store)}
-                          className="w-full min-h-11 rounded-xl border border-border bg-white text-xs font-medium text-foreground"
+                          className="w-full min-h-11 rounded-xl border border-border bg-card text-xs font-medium text-foreground"
                         >
                           列印銷貨單
                         </button>
@@ -2148,7 +2148,7 @@ export default function OrdersPage() {
                                         className={`min-h-11 px-4 rounded-xl text-sm font-medium border transition-colors ${
                                           isCurrent
                                             ? "border-primary bg-primary/10 text-primary cursor-default disabled:opacity-100"
-                                            : `${STATUS_COLORS[s] ? `border-transparent ${STATUS_COLORS[s]}` : "border-input bg-white text-foreground"} disabled:opacity-60`
+                                            : `${STATUS_COLORS[s] ? `border-transparent ${STATUS_COLORS[s]}` : "border-input bg-background text-foreground"} disabled:opacity-60`
                                         }`}
                                       >
                                         {!isCurrent && loadingOrderId === o.id
@@ -2169,7 +2169,7 @@ export default function OrdersPage() {
                                   o.status === "completed" ||
                                   hasTracking;
                                 return (
-                                  <div className="border border-red-200 rounded-xl px-3 py-3 bg-red-50/40 space-y-2">
+                                  <div className="border border-destructive/30 rounded-xl px-3 py-3 bg-destructive/10 space-y-2">
                                     <SectionLabel>危險操作</SectionLabel>
                                     <p className="text-[11px] text-muted-foreground">
                                       取消訂單：保留紀錄，狀態改為已取消。刪除訂單：移除誤建立或誤下的訂單，刪除後不可復原。
@@ -2189,7 +2189,7 @@ export default function OrdersPage() {
                                                 o.creditSpent ?? null,
                                             })
                                           }
-                                          className="min-h-11 px-4 rounded-xl text-sm font-medium border border-red-300 bg-white text-red-600 hover:bg-red-50 transition-colors disabled:opacity-60"
+                                          className="min-h-11 px-4 rounded-xl text-sm font-medium border border-destructive/30 bg-background text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-60"
                                         >
                                           {loadingOrderId === o.id
                                             ? "更新中..."
@@ -2208,7 +2208,7 @@ export default function OrdersPage() {
                                             buyerName: o.buyerName,
                                           })
                                         }
-                                        className="min-h-11 px-4 rounded-xl text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50"
+                                        className="min-h-11 px-4 rounded-xl text-sm font-medium bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors disabled:opacity-50"
                                       >
                                         {deletingOrderId === o.id
                                           ? "刪除中..."
@@ -2243,7 +2243,7 @@ export default function OrdersPage() {
 
       {/* Bulk action bar — shown when any order is selected */}
       {selectedIds.size > 0 && (
-        <div className="fixed bottom-16 left-0 right-0 max-w-[480px] mx-auto z-20 bg-white border-t border-border shadow-lg px-4 py-3">
+        <div className="fixed bottom-16 left-0 right-0 max-w-[480px] mx-auto z-20 bg-card border-t border-border shadow-lg px-4 py-3">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-semibold text-foreground">
               已選 {selectedIds.size} 筆
@@ -2279,7 +2279,7 @@ export default function OrdersPage() {
                 type="button"
                 onClick={() => handleBulkUpdate("payment")}
                 disabled={!bulkPaymentStatus || isBulkLoading}
-                className="min-h-11 px-3 rounded-xl bg-primary text-white text-xs font-semibold disabled:opacity-40 shrink-0"
+                className="min-h-11 px-3 rounded-xl bg-primary text-primary-foreground text-xs font-semibold disabled:opacity-40 shrink-0"
               >
                 {isBulkLoading ? "…" : "套用"}
               </button>
@@ -2307,7 +2307,7 @@ export default function OrdersPage() {
                 type="button"
                 onClick={() => handleBulkUpdate("shipping")}
                 disabled={!bulkShippingStatus || isBulkLoading}
-                className="min-h-11 px-3 rounded-xl bg-primary text-white text-xs font-semibold disabled:opacity-40 shrink-0"
+                className="min-h-11 px-3 rounded-xl bg-primary text-primary-foreground text-xs font-semibold disabled:opacity-40 shrink-0"
               >
                 {isBulkLoading ? "…" : "套用"}
               </button>
@@ -2343,7 +2343,7 @@ export default function OrdersPage() {
                 type="button"
                 onClick={handleDownloadPickingCsv}
                 disabled={csvPickingLoading}
-                className="min-h-11 px-3 text-xs font-medium rounded-xl border border-border bg-white text-foreground disabled:opacity-50 shrink-0"
+                className="min-h-11 px-3 text-xs font-medium rounded-xl border border-border bg-card text-foreground disabled:opacity-50 shrink-0"
               >
                 {csvPickingLoading ? "下載中…" : "↓ 撿貨 CSV"}
               </button>
@@ -2351,7 +2351,7 @@ export default function OrdersPage() {
                 type="button"
                 onClick={handleDownloadShippingCsv}
                 disabled={csvShippingLoading}
-                className="min-h-11 px-3 text-xs font-medium rounded-xl border border-border bg-white text-foreground disabled:opacity-50 shrink-0"
+                className="min-h-11 px-3 text-xs font-medium rounded-xl border border-border bg-card text-foreground disabled:opacity-50 shrink-0"
               >
                 {csvShippingLoading ? "下載中…" : "↓ 出貨 CSV"}
               </button>
@@ -2501,7 +2501,9 @@ function FilterTab({
     <button
       onClick={onClick}
       className={`flex-shrink-0 h-8 px-3 rounded-full text-xs font-medium transition-colors ${
-        active ? "bg-primary text-white" : "bg-secondary text-muted-foreground"
+        active
+          ? "bg-primary text-primary-foreground"
+          : "bg-secondary text-muted-foreground"
       }`}
     >
       {label}
@@ -2520,9 +2522,9 @@ function StatCard({
   urgent?: boolean;
 }) {
   return (
-    <div className="bg-white rounded-xl border border-border p-3 text-center">
+    <div className="bg-card rounded-xl border border-border p-3 text-center">
       <div
-        className={`text-lg font-bold ${urgent ? "text-amber-600" : "text-primary"}`}
+        className={`text-lg font-bold ${urgent ? "text-accent/80" : "text-primary"}`}
       >
         {value}
       </div>
@@ -2561,7 +2563,7 @@ function profitSnapshotStatusLabel(
 function ProfitSnapshotBadge({ order }: { order: OrderWithTracking }) {
   if (order.profitSnapshotStatus === "pending") {
     return (
-      <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-amber-50 text-amber-700 shrink-0">
+      <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-accent/10 text-accent shrink-0">
         毛利待確認
       </span>
     );
@@ -2571,14 +2573,14 @@ function ProfitSnapshotBadge({ order }: { order: OrderWithTracking }) {
     order.profitSnapshotStatus === "exempt"
   ) {
     return (
-      <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-emerald-50 text-emerald-700 shrink-0">
+      <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-chart-3/10 text-chart-3 shrink-0">
         毛利 {formatSnapshotMoney(order.profitSnapshotDisplay?.unitProfitTwd)}
         {order.profitSnapshotStatus === "exempt" ? "・免攤" : ""}
       </span>
     );
   }
   return (
-    <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-gray-100 text-gray-600 shrink-0">
+    <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-muted text-muted-foreground shrink-0">
       毛利尚無快照
     </span>
   );

@@ -35,7 +35,7 @@ const blankDraft: CustomerDraft = {
 };
 
 const inputClass =
-  "w-full h-11 px-3 rounded-xl border border-input bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30";
+  "w-full h-11 px-3 rounded-xl border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30";
 
 export default function CustomersPage() {
   const [, setLocation] = useLocation();
@@ -181,7 +181,7 @@ export default function CustomersPage() {
 
   return (
     <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-24">
-      <header className="bg-white border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
+      <header className="bg-card border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
         <h1 className="text-lg font-bold">客戶管理</h1>
         <p className="text-xs text-muted-foreground mt-1">
           預設遮罩；顯示完整資料會留下瀏覽器稽核紀錄。
@@ -189,7 +189,7 @@ export default function CustomersPage() {
       </header>
 
       <main className="p-5 space-y-4">
-        <section className="bg-white border border-border rounded-2xl p-4 space-y-3">
+        <section className="bg-card border border-border rounded-2xl p-4 space-y-3">
           <div>
             <h2 className="font-semibold">匯出客戶 CSV</h2>
             <p className="mt-1 text-xs text-muted-foreground">
@@ -215,7 +215,7 @@ export default function CustomersPage() {
           </button>
         </section>
 
-        <section className="bg-white border border-border rounded-2xl p-4 space-y-3">
+        <section className="bg-card border border-border rounded-2xl p-4 space-y-3">
           <h2 className="font-semibold">
             {editingId ? "編輯客戶" : "新增客戶"}
           </h2>
@@ -328,7 +328,7 @@ export default function CustomersPage() {
             return (
               <article
                 key={customer.id}
-                className="bg-white border border-border rounded-2xl p-4 space-y-2"
+                className="bg-card border border-border rounded-2xl p-4 space-y-2"
               >
                 <div className="flex justify-between gap-3">
                   <div>

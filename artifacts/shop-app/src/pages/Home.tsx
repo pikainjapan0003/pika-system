@@ -8,7 +8,9 @@ export default function HomePage() {
       <header className="px-6 pt-10 pb-6">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">畫</span>
+            <span className="text-primary-foreground font-bold text-sm">
+              畫
+            </span>
           </div>
           <span className="font-bold text-xl text-foreground">畫夢代購</span>
         </div>
@@ -30,7 +32,7 @@ export default function HomePage() {
         <div className="space-y-3">
           <button
             onClick={() => setLocation("/sign-up")}
-            className="w-full h-12 bg-primary text-white font-semibold rounded-xl text-base active:opacity-90 transition-opacity"
+            className="w-full h-12 bg-primary text-primary-foreground font-semibold rounded-xl text-base active:opacity-90 transition-opacity"
           >
             免費開始使用
           </button>

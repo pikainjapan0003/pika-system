@@ -10,7 +10,7 @@ export default function NotFound() {
         <p className="text-muted-foreground text-sm mt-1">您訪問的頁面不存在</p>
         <button
           onClick={() => setLocation("/")}
-          className="mt-6 h-10 px-6 bg-primary text-white text-sm font-semibold rounded-xl"
+          className="mt-6 h-10 px-6 bg-primary text-primary-foreground text-sm font-semibold rounded-xl"
         >
           回首頁
         </button>

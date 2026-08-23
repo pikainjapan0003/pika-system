@@ -73,7 +73,9 @@ export default function SetupPage() {
       <div className="w-full max-w-sm">
         <div className="mb-8">
           <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center mb-4">
-            <span className="text-white font-bold text-xl">畫</span>
+            <span className="text-primary-foreground font-bold text-xl">
+              畫
+            </span>
           </div>
           <h1 className="text-2xl font-bold text-foreground">建立您的店鋪</h1>
           <p className="text-muted-foreground text-sm mt-1">
@@ -91,7 +93,7 @@ export default function SetupPage() {
               value={name}
               onChange={(e) => handleNameChange(e.target.value)}
               placeholder="例：小美代購"
-              className="w-full h-12 px-4 rounded-xl border border-input bg-white text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 text-base"
+              className="w-full h-12 px-4 rounded-xl border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 text-base"
             />
           </div>
 
@@ -105,7 +107,7 @@ export default function SetupPage() {
                 value={slug}
                 onChange={(e) => setSlug(toSlug(e.target.value))}
                 placeholder="xiao-mei-shop"
-                className="flex-1 h-12 px-4 rounded-xl border border-input bg-white text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 text-base"
+                className="flex-1 h-12 px-4 rounded-xl border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 text-base"
               />
             </div>
             <p className="text-xs text-muted-foreground mt-1">
@@ -122,7 +124,7 @@ export default function SetupPage() {
               onChange={(e) => setDescription(e.target.value)}
               placeholder="簡單介紹您的店鋪..."
               rows={3}
-              className="w-full px-4 py-3 rounded-xl border border-input bg-white text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 text-base resize-none"
+              className="w-full px-4 py-3 rounded-xl border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 text-base resize-none"
             />
           </div>
 
@@ -135,7 +137,7 @@ export default function SetupPage() {
           <button
             type="submit"
             disabled={createStore.isPending}
-            className="w-full h-12 bg-primary text-white font-semibold rounded-xl text-base disabled:opacity-60 active:opacity-90 transition-opacity"
+            className="w-full h-12 bg-primary text-primary-foreground font-semibold rounded-xl text-base disabled:opacity-60 active:opacity-90 transition-opacity"
           >
             {createStore.isPending ? "建立中..." : "建立店鋪"}
           </button>

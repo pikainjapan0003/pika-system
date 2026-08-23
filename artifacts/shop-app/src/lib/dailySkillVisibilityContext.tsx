@@ -129,14 +129,14 @@ export function DailySkillPageGate({
   if (!isVisible(surface)) {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center px-5">
-        <div className="w-full max-w-sm rounded-2xl border border-border bg-white p-6 text-center">
+        <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 text-center">
           <h1 className="font-bold text-foreground">這項功能尚未開啟</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             可在技能地圖查看前置條件並決定是否開啟。
           </p>
           <button
             type="button"
-            className="mt-4 min-h-11 w-full rounded-xl bg-primary font-semibold text-white"
+            className="mt-4 min-h-11 w-full rounded-xl bg-primary font-semibold text-primary-foreground"
             onClick={() => setLocation("/skill-map")}
           >
             前往技能地圖

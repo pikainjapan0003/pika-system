@@ -54,7 +54,7 @@ export default function AuditLogsPage() {
 
   return (
     <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-24">
-      <header className="sticky top-0 z-10 border-b border-border bg-white px-5 pb-4 pt-10">
+      <header className="sticky top-0 z-10 border-b border-border bg-card px-5 pb-4 pt-10">
         <button
           type="button"
           onClick={() => setLocation("/settings")}
@@ -69,14 +69,14 @@ export default function AuditLogsPage() {
       </header>
       <main className="space-y-3 p-5">
         {error && (
-          <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">
+          <p className="rounded-xl bg-destructive/10 p-3 text-sm text-destructive">
             {error}
           </p>
         )}
         {rows.map((row) => (
           <article
             key={row.id}
-            className="rounded-2xl border border-border bg-white p-4"
+            className="rounded-2xl border border-border bg-card p-4"
           >
             <p className="font-medium">
               {ACTION_LABELS[row.action] ?? row.action}
