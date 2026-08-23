@@ -189,7 +189,7 @@ export default function SkillMapPage() {
 
   return (
     <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-24">
-      <header className="sticky top-0 z-10 border-b border-border bg-white px-5 pb-4 pt-10">
+      <header className="sticky top-0 z-10 border-b border-border bg-card px-5 pb-4 pt-10">
         <div className="flex items-center">
           <button
             type="button"
@@ -210,12 +210,12 @@ export default function SkillMapPage() {
 
       <main className="space-y-5 px-5 py-5">
         {error && (
-          <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">
+          <p className="rounded-xl bg-destructive/10 p-3 text-sm text-destructive">
             {error}
           </p>
         )}
         {state && (
-          <section className="grid grid-cols-2 gap-3 rounded-2xl border border-border bg-white p-4">
+          <section className="grid grid-cols-2 gap-3 rounded-2xl border border-border bg-card p-4">
             <div>
               <p className="text-xs text-muted-foreground">目前狀態</p>
               <p className="mt-1 text-lg font-bold text-foreground">
@@ -260,7 +260,7 @@ export default function SkillMapPage() {
                 return (
                   <article
                     key={skill.id}
-                    className="rounded-2xl border border-border bg-white p-4"
+                    className="rounded-2xl border border-border bg-card p-4"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div>
@@ -273,7 +273,7 @@ export default function SkillMapPage() {
                       </div>
                       <button
                         type="button"
-                        className="min-h-11 shrink-0 rounded-full px-3 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50 data-[enabled=true]:bg-emerald-100 data-[enabled=true]:text-emerald-700 data-[enabled=false]:bg-stone-100 data-[enabled=false]:text-stone-600"
+                        className="min-h-11 shrink-0 rounded-full px-3 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50 data-[enabled=true]:bg-chart-3/10 data-[enabled=true]:text-chart-3 data-[enabled=false]:bg-muted data-[enabled=false]:text-muted-foreground"
                         data-enabled={status?.enabled ? "true" : "false"}
                         disabled={
                           !status || busy !== "" || (!status.enabled && !ready)
@@ -294,7 +294,7 @@ export default function SkillMapPage() {
                       </button>
                     </div>
                     {!ready && status && (
-                      <p className="mt-2 rounded-lg bg-amber-50 p-2 text-xs text-amber-800">
+                      <p className="mt-2 rounded-lg bg-accent/10 p-2 text-xs text-accent">
                         {status.prerequisite.missing.join("；")}
                       </p>
                     )}
@@ -338,12 +338,12 @@ export default function SkillMapPage() {
 
       {packagePreview && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-foreground/40 p-4"
           role="dialog"
           aria-modal="true"
           aria-labelledby="package-preview-title"
         >
-          <div className="w-full max-w-[448px] rounded-2xl bg-white p-5">
+          <div className="w-full max-w-[448px] rounded-2xl bg-card p-5">
             <h2 id="package-preview-title" className="font-bold">
               套餐差異預覽
             </h2>
@@ -373,7 +373,7 @@ export default function SkillMapPage() {
               </button>
               <button
                 type="button"
-                className="min-h-11 rounded-xl bg-primary font-semibold text-white disabled:opacity-50"
+                className="min-h-11 rounded-xl bg-primary font-semibold text-primary-foreground disabled:opacity-50"
                 disabled={busy !== "" || packagePreview.enableNow.length === 0}
                 onClick={() => void applyPackage()}
               >
@@ -386,12 +386,12 @@ export default function SkillMapPage() {
 
       {pendingHighRisk && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-foreground/40 p-4"
           role="dialog"
           aria-modal="true"
           aria-labelledby="risk-confirm-title"
         >
-          <div className="w-full max-w-[448px] rounded-2xl bg-white p-5">
+          <div className="w-full max-w-[448px] rounded-2xl bg-card p-5">
             <h2 id="risk-confirm-title" className="font-bold">
               第二次確認：{pendingHighRisk.title}
             </h2>
@@ -416,7 +416,7 @@ export default function SkillMapPage() {
               </button>
               <button
                 type="button"
-                className="min-h-11 rounded-xl bg-primary font-semibold text-white disabled:opacity-50"
+                className="min-h-11 rounded-xl bg-primary font-semibold text-primary-foreground disabled:opacity-50"
                 disabled={!riskAcknowledged || busy !== ""}
                 onClick={() => {
                   const pending = pendingHighRisk;
