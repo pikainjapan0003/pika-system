@@ -270,6 +270,130 @@ paths:
         "404":
           description: Store not found
 
+  /stores/{storeId}/charts/route-cost-ranking:
+    get:
+      operationId: listRouteCostRanking
+      tags: [charts]
+      summary: Per-route computed unit transport cost ranking (chart E)
+      description: >
+        Each route's unit cost is the finalCostPerItem from the existing
+        transport-cost pipeline (resolveProductTransportCost). A route whose
+        inputs are incomplete is reported pending_confirmation instead of a
+        fake zero.
+      parameters:
+        - $ref: "#/components/parameters/StoreId"
+      responses:
+        "200":
+          description: Route unit cost ranking
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RouteCostRankingResponse"
+        "400":
+          description: Invalid store id
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Store not found
+
+  /stores/{storeId}/charts/area-scatter:
+    get:
+      operationId: listAreaScatter
+      tags: [charts]
+      summary: Product performance aggregated by trip area (chart F)
+      description: >
+        Aggregates actual order performance (item quantity, revenue and
+        quantity-weighted average unit profit) per trip area name across the
+        store's trips. Uses the existing actual order quantity rollup and
+        actual unit profit calculations; incomplete areas are reported
+        pending_confirmation.
+      parameters:
+        - $ref: "#/components/parameters/StoreId"
+      responses:
+        "200":
+          description: Area scatter aggregation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AreaScatterResponse"
+        "400":
+          description: Invalid store id
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Store not found
+
+  /stores/{storeId}/trips/{tripId}/charts/sensitivity-heatmap:
+    get:
+      operationId: getSensitivityHeatmap
+      tags: [charts]
+      summary: Breakeven sensitivity matrix over quantity x unit gross profit (chart G)
+      description: >
+        Sweeps quantity rows and unit-gross-profit columns against the trip's
+        breakeven inputs (reuses calculateBreakeven). Each cell is the final
+        profit quantity * unitGrossProfit - netCostToRecover as an exact
+        decimal string (negative values are valid loss cells). Missing
+        breakeven inputs are reported pending_confirmation.
+
+        Required query inputs (validated by the route; intentionally not
+        declared as OpenAPI query parameters because orval 8.9.1 emits a
+        colliding 'operationIdParams' TS type when an operation has both path
+        and query parameters):
+
+        - 'quantities': comma-separated positive integers (row sweep, max 20)
+        - 'unitGrossProfits': comma-separated non-negative decimals
+          (column sweep, max 20)
+      parameters:
+        - $ref: "#/components/parameters/StoreId"
+        - $ref: "#/components/parameters/TripId"
+      responses:
+        "200":
+          description: Breakeven sensitivity matrix
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SensitivityHeatmapResponse"
+        "400":
+          description: Invalid store, trip or sweep parameters
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Store or trip not found
+
+  /stores/{storeId}/charts/history-trend:
+    get:
+      operationId: listHistoryTrend
+      tags: [charts]
+      summary: Monthly final operating profit across trips (chart H)
+      description: >
+        Buckets the store's trips by month and sums each trip's ACTUAL unit
+        projection final operating profit (reuses calculateTripProfit). A
+        month containing a trip without complete actual data is reported
+        pending_confirmation instead of a partial sum.
+      parameters:
+        - $ref: "#/components/parameters/StoreId"
+      responses:
+        "200":
+          description: Monthly history trend
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HistoryTrendResponse"
+        "400":
+          description: Invalid store id
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Store not found
+
   /trips/{tripId}:
     patch:
       operationId: updateTrip
@@ -2335,3 +2459,157 @@ components:
         webhookSecret:
           type: ["string", "null"]
           description: Plaintext secret (min 16, max 256 chars). Pass null to clear.
+    RouteCostRankingItem:
+      type: object
+      required: [routeId, tripId, name, tripName, unitCostTwd, status, reason]
+      properties:
+        routeId:
+          type: integer
+        tripId:
+          type: integer
+        name:
+          type: string
+          description: Route area title
+        tripName:
+          type: ["string", "null"]
+        unitCostTwd:
+          type: ["string", "null"]
+          description: Exact final transport cost per item (scale 12); null while pending_confirmation
+        status:
+          type: string
+          enum: [ready, pending_confirmation]
+        reason:
+          type: ["string", "null"]
+          description: Pending reason from the transport-cost pipeline
+
+    RouteCostRankingResponse:
+      type: object
+      required: [status, items]
+      properties:
+        status:
+          type: string
+          enum: [ready, pending_confirmation]
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RouteCostRankingItem"
+
+    AreaScatterItem:
+      type: object
+      required:
+        - areaName
+        - tripCount
+        - itemQuantity
+        - revenueTwd
+        - averageUnitProfitTwd
+        - status
+        - reason
+      properties:
+        areaName:
+          type: string
+          description: Trip area name merged across the store's trips
+        tripCount:
+          type: integer
+        itemQuantity:
+          type: ["string", "null"]
+          description: Exact sum of actual order item quantities; null while pending_confirmation
+        revenueTwd:
+          type: ["string", "null"]
+          description: Exact sum of included order totals; null while pending_confirmation
+        averageUnitProfitTwd:
+          type: ["string", "null"]
+          description: Quantity-weighted average of existing per-product actual unit profits (scale 12)
+        status:
+          type: string
+          enum: [ready, pending_confirmation]
+        reason:
+          type: ["string", "null"]
+
+    AreaScatterResponse:
+      type: object
+      required: [status, items]
+      properties:
+        status:
+          type: string
+          enum: [ready, pending_confirmation]
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AreaScatterItem"
+
+    SensitivityHeatmapResponse:
+      type: object
+      required:
+        - status
+        - netCostToRecoverTwd
+        - breakevenQuantity
+        - salaryTargetQuantity
+        - rows
+        - columns
+        - cells
+      properties:
+        status:
+          type: string
+          enum: [ready, pending_confirmation]
+        label:
+          type: ["string", "null"]
+        reason:
+          type: ["string", "null"]
+        netCostToRecoverTwd:
+          type: ["string", "null"]
+          description: From calculateBreakeven (scale 12); null while pending_confirmation
+        breakevenQuantity:
+          type: ["string", "null"]
+          description: From calculateBreakeven; null while pending_confirmation
+        salaryTargetQuantity:
+          type: ["string", "null"]
+        rows:
+          type: array
+          items:
+            type: string
+          description: Swept quantities (exact integer strings)
+        columns:
+          type: array
+          items:
+            type: string
+          description: Swept unit gross profits (exact decimal strings)
+        cells:
+          type: array
+          items:
+            type: array
+            items:
+              type: string
+          description: cells[row][col] = profitTwd = column * row - netCostToRecoverTwd (scale 12); negative values are loss cells
+
+    HistoryTrendItem:
+      type: object
+      required: [month, tripCount, profitTwd, status, reason]
+      properties:
+        month:
+          type: string
+          description: YYYY-MM bucket (trip startDate, falling back to created month)
+        tripCount:
+          type: integer
+        profitTwd:
+          type: ["string", "null"]
+          description: Exact monthly final operating profit (scale 12); null while pending_confirmation
+        status:
+          type: string
+          enum: [ready, pending_confirmation]
+        reason:
+          type: ["string", "null"]
+
+    HistoryTrendResponse:
+      type: object
+      required: [status, mode, items]
+      properties:
+        status:
+          type: string
+          enum: [ready, pending_confirmation]
+        mode:
+          type: string
+          enum: [ACTUAL]
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/HistoryTrendItem"

@@ -22,6 +22,7 @@ import skillsRouter from "./skills.ts";
 import fixedCostsRouter from "./fixedCosts.ts";
 import operatingInputsRouter from "./operatingInputs.ts";
 import fixedCostSummaryRouter from "./fixedCostSummary.ts";
+import chartDataRouter from "./chartData.ts";
 
 const router: IRouter = Router();
 
@@ -47,6 +48,7 @@ router.use(skillsRouter);
 router.use(fixedCostsRouter);
 router.use(operatingInputsRouter);
 router.use(fixedCostSummaryRouter);
+router.use(chartDataRouter);
 if (process.env.NODE_ENV !== "production") {
   router.use(devHandoffRouter);
 }

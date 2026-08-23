@@ -6,10 +6,19 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './areaScatterItem';
+export * from './areaScatterItemStatus';
+export * from './areaScatterResponse';
+export * from './areaScatterResponseStatus';
 export * from './bulkOrderUpdate';
 export * from './bulkOrderUpdateResponse';
 export * from './getSellerAgentSettings200';
 export * from './healthStatus';
+export * from './historyTrendItem';
+export * from './historyTrendItemStatus';
+export * from './historyTrendResponse';
+export * from './historyTrendResponseMode';
+export * from './historyTrendResponseStatus';
 export * from './merchantOrderInput';
 export * from './merchantOrderInputSpecValues';
 export * from './merchantOrderInputStoreSelectedBy';
@@ -44,12 +53,18 @@ export * from './publicOrderSpecValues';
 export * from './publicOrderStatus';
 export * from './publicProduct';
 export * from './publicProductStorageTemp';
+export * from './routeCostRankingItem';
+export * from './routeCostRankingItemStatus';
+export * from './routeCostRankingResponse';
+export * from './routeCostRankingResponseStatus';
 export * from './sellerAgentSettings';
 export * from './sellerAgentSettingsAgentMode';
 export * from './sellerAgentSettingsAgentStatus';
 export * from './sellerAgentSettingsEnabledLogisticsItem';
 export * from './sellerAgentSettingsQueryFrequency';
 export * from './sellerAgentSettingsQueryMethodsItem';
+export * from './sensitivityHeatmapResponse';
+export * from './sensitivityHeatmapResponseStatus';
 export * from './shippingListOrder';
 export * from './shippingListOrderSpecValues';
 export * from './shippingListResponse';
