@@ -376,8 +376,9 @@ router.post("/trips/:tripId/routes", requireAuth, async (req: any, res) => {
         tripId,
         tripAreaId,
         areaTitle: parsed.data.areaTitle,
-        startPlace: parsed.data.startPlace,
-        endPlace: parsed.data.endPlace,
+        // O-4：起點／終點可留空；缺省視為空字串（DB 欄位 NOT NULL）。
+        startPlace: parsed.data.startPlace ?? "",
+        endPlace: parsed.data.endPlace ?? "",
         estQty: parsed.data.estQty,
         trainJpy:
           parsed.data.trainJpy != null
