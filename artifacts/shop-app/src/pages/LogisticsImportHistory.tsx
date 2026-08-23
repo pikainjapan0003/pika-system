@@ -51,15 +51,15 @@ const BATCH_STATUS_LABELS: Record<string, string> = {
 };
 
 const BATCH_STATUS_BADGE: Record<string, string> = {
-  dry_run: "bg-amber-100 text-amber-700",
-  confirmed: "bg-green-100 text-green-700",
-  completed: "bg-green-100 text-green-700",
-  success: "bg-green-100 text-green-700",
-  partial: "bg-yellow-100 text-yellow-800",
-  cancelled: "bg-gray-100 text-gray-500",
-  failed: "bg-red-100 text-red-700",
-  processing: "bg-blue-100 text-blue-700",
-  pending: "bg-amber-100 text-amber-700",
+  dry_run: "bg-accent/15 text-accent",
+  confirmed: "bg-chart-3/10 text-chart-3",
+  completed: "bg-chart-3/10 text-chart-3",
+  success: "bg-chart-3/10 text-chart-3",
+  partial: "bg-accent/15 text-accent",
+  cancelled: "bg-muted text-muted-foreground",
+  failed: "bg-destructive/10 text-destructive",
+  processing: "bg-chart-4/10 text-chart-4",
+  pending: "bg-accent/15 text-accent",
 };
 
 // row matchStatus → 四類結果（語氣：成功正向 / 略過中性 / 失敗警示 / 待確認提醒）
@@ -82,10 +82,10 @@ const RESULT_LABELS: Record<RowResult, string> = {
 };
 
 const RESULT_BADGE: Record<RowResult, string> = {
-  success: "bg-green-100 text-green-700",
-  skipped: "bg-gray-100 text-gray-600",
-  failed: "bg-red-100 text-red-700",
-  pending: "bg-blue-100 text-blue-700",
+  success: "bg-chart-3/10 text-chart-3",
+  skipped: "bg-muted text-muted-foreground",
+  failed: "bg-destructive/10 text-destructive",
+  pending: "bg-chart-4/10 text-chart-4",
 };
 
 // 英文 errorCode → 繁體中文原因＋說明（errorCode 優先於 matchStatus）
@@ -355,7 +355,7 @@ export default function LogisticsImportHistoryPage() {
 
   return (
     <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-24">
-      <header className="bg-white border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
+      <header className="bg-card border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
         <h1 className="text-lg font-bold text-foreground">物流匯入紀錄</h1>
         <p className="text-xs text-muted-foreground mt-1">
           查看每次 Excel 匯入結果與明細。
@@ -376,18 +376,18 @@ export default function LogisticsImportHistoryPage() {
             <p className="text-xs text-muted-foreground">匯入紀錄載入中...</p>
           </div>
         ) : error ? (
-          <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-4 text-center space-y-2">
-            <p className="text-sm text-red-700">{error}</p>
+          <div className="bg-destructive/10 border border-destructive/30 rounded-xl px-4 py-4 text-center space-y-2">
+            <p className="text-sm text-destructive">{error}</p>
             <button
               type="button"
               onClick={() => void fetchBatches()}
-              className="h-8 px-4 rounded-lg border border-red-200 bg-white text-xs font-medium text-red-700"
+              className="h-8 px-4 rounded-lg border border-destructive/30 bg-background text-xs font-medium text-destructive"
             >
               重新整理
             </button>
           </div>
         ) : items.length === 0 ? (
-          <div className="bg-white rounded-2xl p-10 border border-border text-center">
+          <div className="bg-card rounded-2xl p-10 border border-border text-center">
             <p className="text-muted-foreground text-sm">
               目前沒有物流匯入紀錄
             </p>
@@ -425,7 +425,7 @@ export default function LogisticsImportHistoryPage() {
             return (
               <div
                 key={batch.id}
-                className="bg-white rounded-2xl border border-border px-4 py-3.5 space-y-2"
+                className="bg-card rounded-2xl border border-border px-4 py-3.5 space-y-2"
               >
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <span className="text-xs font-bold text-foreground">
@@ -438,7 +438,7 @@ export default function LogisticsImportHistoryPage() {
                     </span>
                   )}
                   <span
-                    className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${BATCH_STATUS_BADGE[batch.status] ?? "bg-gray-100 text-gray-500"}`}
+                    className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${BATCH_STATUS_BADGE[batch.status] ?? "bg-muted text-muted-foreground"}`}
                   >
                     {BATCH_STATUS_LABELS[batch.status] ?? "其他狀態"}
                   </span>
@@ -459,35 +459,35 @@ export default function LogisticsImportHistoryPage() {
                       {batch.totalRows}
                     </p>
                   </div>
-                  <div className="rounded-lg bg-green-50 py-1.5">
-                    <p className="text-[10px] text-green-700">成功</p>
-                    <p className="text-sm font-bold text-green-700">
+                  <div className="rounded-lg bg-secondary py-1.5">
+                    <p className="text-[10px] text-secondary-foreground">成功</p>
+                    <p className="text-sm font-bold text-secondary-foreground">
                       {batch.successRows}
                     </p>
                   </div>
-                  <div className="rounded-lg bg-gray-50 py-1.5">
-                    <p className="text-[10px] text-gray-500">略過</p>
-                    <p className="text-sm font-bold text-gray-600">
+                  <div className="rounded-lg bg-muted py-1.5">
+                    <p className="text-[10px] text-muted-foreground">略過</p>
+                    <p className="text-sm font-bold text-muted-foreground">
                       {batch.skippedRows}
                     </p>
                   </div>
                   <div
-                    className={`rounded-lg py-1.5 ${batch.failedRows > 0 ? "bg-red-50" : "bg-gray-50"}`}
+                    className={`rounded-lg py-1.5 ${batch.failedRows > 0 ? "bg-destructive/10" : "bg-muted"}`}
                   >
                     <p
-                      className={`text-[10px] ${batch.failedRows > 0 ? "text-red-700" : "text-gray-500"}`}
+                      className={`text-[10px] ${batch.failedRows > 0 ? "text-destructive" : "text-muted-foreground"}`}
                     >
                       失敗
                     </p>
                     <p
-                      className={`text-sm font-bold ${batch.failedRows > 0 ? "text-red-700" : "text-gray-600"}`}
+                      className={`text-sm font-bold ${batch.failedRows > 0 ? "text-destructive" : "text-muted-foreground"}`}
                     >
                       {batch.failedRows}
                     </p>
                   </div>
                 </div>
                 {batch.pendingRows > 0 && (
-                  <p className="text-[11px] text-blue-700">
+                  <p className="text-[11px] text-chart-4">
                     待確認：{batch.pendingRows} 筆（尚未正式寫入）
                   </p>
                 )}
@@ -513,7 +513,7 @@ export default function LogisticsImportHistoryPage() {
                         明細載入中...
                       </p>
                     ) : rowsState.state === "error" ? (
-                      <p className="text-xs text-red-700 py-2">
+                      <p className="text-xs text-destructive py-2">
                         明細載入失敗，請重新整理後再試
                       </p>
                     ) : totalRowsLoaded === 0 ? (
@@ -531,8 +531,8 @@ export default function LogisticsImportHistoryPage() {
                               onClick={() => setFilter(batch.id, chip.value)}
                               className={`h-7 px-2.5 rounded-full text-[11px] font-medium border ${
                                 filter === chip.value
-                                  ? "bg-primary text-white border-primary"
-                                  : "bg-white text-muted-foreground border-border"
+                                  ? "bg-primary text-primary-foreground border-primary"
+                                  : "bg-card text-muted-foreground border-border"
                               }`}
                             >
                               {chip.label}
@@ -544,7 +544,7 @@ export default function LogisticsImportHistoryPage() {
                           value={search}
                           onChange={(e) => setSearch(batch.id, e.target.value)}
                           placeholder="搜尋貨號、訂單編號或 Excel 列號"
-                          className="w-full h-9 rounded-xl border border-input bg-white text-xs text-foreground px-3"
+                          className="w-full h-9 rounded-xl border border-input bg-background text-xs text-foreground px-3"
                         />
                         <p className="text-[11px] text-muted-foreground">
                           目前顯示 {filtered.length} / {totalRowsLoaded} 筆

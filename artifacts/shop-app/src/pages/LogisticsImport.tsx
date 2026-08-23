@@ -63,14 +63,14 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const STATUS_CLASS: Record<string, string> = {
-  matched: "bg-green-100 text-green-700",
-  needs_review: "bg-yellow-100 text-yellow-700",
-  ambiguous: "bg-yellow-100 text-yellow-700",
-  not_found: "bg-gray-100 text-gray-500",
-  conflict: "bg-red-100 text-red-700",
-  invalid: "bg-red-100 text-red-700",
-  imported: "bg-green-100 text-green-700",
-  skipped: "bg-gray-100 text-gray-500",
+  matched: "bg-chart-3/10 text-chart-3",
+  needs_review: "bg-accent/15 text-accent",
+  ambiguous: "bg-accent/15 text-accent",
+  not_found: "bg-muted text-muted-foreground",
+  conflict: "bg-destructive/10 text-destructive",
+  invalid: "bg-destructive/10 text-destructive",
+  imported: "bg-chart-3/10 text-chart-3",
+  skipped: "bg-muted text-muted-foreground",
 };
 
 const ERROR_MESSAGE: Record<string, string> = {
@@ -268,7 +268,7 @@ export default function LogisticsImportPage() {
 
   return (
     <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-24">
-      <header className="bg-white border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
+      <header className="bg-card border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
         <h1 className="text-lg font-bold text-foreground">物流 Excel 匯入</h1>
         <p className="text-xs text-muted-foreground mt-1">
           支援 7-11 / 全家
@@ -287,7 +287,7 @@ export default function LogisticsImportPage() {
         <LogisticsSyncStatusNotice />
 
         {/* provider + file */}
-        <div className="bg-white rounded-2xl border border-border p-5 space-y-4">
+        <div className="bg-card rounded-2xl border border-border p-5 space-y-4">
           <div>
             <label className="block text-sm font-medium text-foreground mb-1.5">
               物流商
@@ -308,7 +308,7 @@ export default function LogisticsImportPage() {
                   }}
                   className={`h-11 rounded-xl text-sm font-medium border ${
                     provider === value
-                      ? "bg-primary text-white border-primary"
+                      ? "bg-primary text-primary-foreground border-primary"
                       : "bg-secondary text-foreground border-input"
                   }`}
                 >
@@ -345,21 +345,21 @@ export default function LogisticsImportPage() {
             type="button"
             disabled={!storeId || !file || uploading}
             onClick={handleUpload}
-            className="w-full h-11 bg-primary text-white font-semibold rounded-xl text-sm disabled:opacity-50"
+            className="w-full h-11 bg-primary text-primary-foreground font-semibold rounded-xl text-sm disabled:opacity-50"
           >
             {uploading ? "比對中…" : "開始比對（dry-run）"}
           </button>
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">
+          <div className="bg-destructive/10 border border-destructive/30 text-destructive text-sm rounded-xl px-4 py-3">
             {error}
           </div>
         )}
 
         {/* dry-run summary */}
         {summary && (
-          <div className="bg-white rounded-2xl border border-border p-5 space-y-4">
+          <div className="bg-card rounded-2xl border border-border p-5 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-bold text-foreground">比對結果</h2>
               <span className="text-xs text-muted-foreground">
@@ -370,12 +370,12 @@ export default function LogisticsImportPage() {
               {(
                 [
                   ["總列數", summary.totalRows, ""],
-                  ["可匯入", summary.matchedRows, "text-green-600"],
-                  ["需確認", summary.needsReviewRows, "text-yellow-600"],
-                  ["多候選", summary.ambiguousRows, "text-yellow-600"],
+                  ["可匯入", summary.matchedRows, "text-chart-3"],
+                  ["需確認", summary.needsReviewRows, "text-accent/80"],
+                  ["多候選", summary.ambiguousRows, "text-accent/80"],
                   ["找不到", summary.notFoundRows, "text-muted-foreground"],
-                  ["衝突", summary.conflictRows, "text-red-600"],
-                  ["不完整", summary.invalidRows, "text-red-600"],
+                  ["衝突", summary.conflictRows, "text-destructive"],
+                  ["不完整", summary.invalidRows, "text-destructive"],
                 ] as const
               ).map(([label, value, cls]) => (
                 <div key={label} className="bg-secondary rounded-xl py-2">
@@ -389,7 +389,7 @@ export default function LogisticsImportPage() {
 
             {/* confirm */}
             {confirmResult ? (
-              <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-sm text-green-800">
+              <div className="bg-secondary border border-border rounded-xl px-4 py-3 text-sm text-secondary-foreground">
                 已確認匯入：成功 {confirmResult.importedCount} 筆、略過{" "}
                 {confirmResult.skippedCount} 筆。
                 {confirmResult.rows.some((r) => r.status === "skipped") && (
@@ -399,11 +399,11 @@ export default function LogisticsImportPage() {
                       .map((r) => {
                         const texts = getImportRowTexts(r.errorCode, r.status);
                         return (
-                          <li key={r.rowId} className="text-xs text-green-700">
+                          <li key={r.rowId} className="text-xs text-secondary-foreground">
                             <div>
                               Excel 第 {r.rowNumber} 列 — 原因：{texts.reason}
                             </div>
-                            <div className="text-green-700/80">
+                            <div className="text-secondary-foreground/80">
                               說明：{texts.description}
                             </div>
                             {r.errorCode && (
@@ -422,7 +422,7 @@ export default function LogisticsImportPage() {
                 type="button"
                 disabled={summary.matchedRows === 0 || confirming}
                 onClick={handleConfirm}
-                className="w-full h-11 bg-primary text-white font-semibold rounded-xl text-sm disabled:opacity-50"
+                className="w-full h-11 bg-primary text-primary-foreground font-semibold rounded-xl text-sm disabled:opacity-50"
               >
                 {confirming
                   ? "匯入中…"
@@ -434,7 +434,7 @@ export default function LogisticsImportPage() {
 
         {/* rows table */}
         {summary && summary.rows.length > 0 && (
-          <div className="bg-white rounded-2xl border border-border overflow-hidden">
+          <div className="bg-card rounded-2xl border border-border overflow-hidden">
             <div className="px-5 pt-4 pb-2">
               <h2 className="text-sm font-bold text-foreground">
                 明細（個資已遮罩）
@@ -463,7 +463,7 @@ export default function LogisticsImportPage() {
                       <td className="px-3 py-2">{row.rowNumber}</td>
                       <td className="px-3 py-2">
                         <span
-                          className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_CLASS[row.matchStatus] ?? "bg-gray-100 text-gray-500"}`}
+                          className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_CLASS[row.matchStatus] ?? "bg-muted text-muted-foreground"}`}
                         >
                           {STATUS_LABEL[row.matchStatus] ?? row.matchStatus}
                         </span>

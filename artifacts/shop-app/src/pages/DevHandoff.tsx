@@ -189,7 +189,7 @@ function Section({
     !content ||
     (Array.isArray(content) ? content.length === 0 : !content.trim());
   return (
-    <div className="bg-white rounded-2xl border border-border overflow-hidden">
+    <div className="bg-card rounded-2xl border border-border overflow-hidden">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -274,14 +274,14 @@ function WorkerCard({
 
   const a =
     accent === "blue"
-      ? { badge: "bg-blue-100 text-blue-800", btn: "bg-blue-600 text-white" }
+      ? { badge: "bg-chart-4/10 text-chart-4", btn: "bg-chart-4 text-primary-foreground" }
       : {
-          badge: "bg-purple-100 text-purple-800",
-          btn: "bg-purple-600 text-white",
+          badge: "bg-chart-5/10 text-chart-5",
+          btn: "bg-chart-5 text-primary-foreground",
         };
 
   return (
-    <div className="bg-white rounded-2xl border border-border overflow-hidden">
+    <div className="bg-card rounded-2xl border border-border overflow-hidden">
       {/* Card header */}
       <div className="px-5 py-4 border-b border-border">
         <div className="flex items-center justify-between gap-3">
@@ -296,8 +296,8 @@ function WorkerCard({
                 <span
                   className={`text-xs font-medium ${
                     data.status === "completed"
-                      ? "text-green-600"
-                      : "text-yellow-600"
+                      ? "text-chart-3"
+                      : "text-accent/80"
                   }`}
                 >
                   {data.status}
@@ -385,8 +385,8 @@ function WorkerCard({
               <div
                 className={`rounded-xl px-3 py-2 text-xs ${
                   rawReplyLen > 0
-                    ? "bg-green-50 border border-green-200 text-green-800"
-                    : "bg-yellow-50 border border-yellow-200 text-yellow-800"
+                    ? "bg-secondary border border-border text-secondary-foreground"
+                    : "bg-accent/10 border border-accent/30 text-accent"
                 }`}
               >
                 rawReply：{rawReplyLen > 0 ? `${rawReplyLen} chars` : "⚠ 空"}
@@ -471,7 +471,7 @@ function LegacySection() {
     : null;
 
   return (
-    <div className="bg-white rounded-2xl border border-border overflow-hidden opacity-70">
+    <div className="bg-card rounded-2xl border border-border overflow-hidden opacity-70">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -556,7 +556,7 @@ function LegacySection() {
                   type="button"
                   onClick={clearHandoff}
                   disabled={clearing}
-                  className="h-9 text-xs text-destructive border border-destructive/30 bg-white rounded-xl disabled:opacity-50"
+                  className="h-9 text-xs text-destructive border border-destructive/30 bg-card rounded-xl disabled:opacity-50"
                 >
                   {clearing ? "清空中..." : "清空"}
                 </button>
@@ -565,10 +565,10 @@ function LegacySection() {
               <div
                 className={`rounded-xl px-3 py-2 space-y-1 text-xs ${
                   isExactMode && hasVerification
-                    ? "bg-green-50 border border-green-200"
+                    ? "bg-secondary border border-border"
                     : isExactMode
-                      ? "bg-blue-50 border border-blue-200"
-                      : "bg-yellow-50 border border-yellow-200"
+                      ? "bg-chart-4/10 border border-chart-4/30"
+                      : "bg-accent/10 border border-accent/30"
                 }`}
               >
                 <div className="flex items-center gap-2">
@@ -582,10 +582,10 @@ function LegacySection() {
                   <span
                     className={`font-medium ${
                       isExactMode && hasVerification
-                        ? "text-green-800"
+                        ? "text-secondary-foreground"
                         : isExactMode
-                          ? "text-blue-800"
-                          : "text-yellow-800"
+                          ? "text-chart-4"
+                          : "text-accent"
                     }`}
                   >
                     rawReply mode: {data.rawReplyMode ?? "(未設定)"}
@@ -604,7 +604,7 @@ function LegacySection() {
                       <strong className="text-foreground">{sha256Short}</strong>
                     </span>
                   ) : (
-                    <span className="text-yellow-700">sha256: ⚠ 未計算</span>
+                    <span className="text-accent">sha256: ⚠ 未計算</span>
                   )}
                 </div>
               </div>
@@ -640,7 +640,7 @@ function LegacySection() {
 function WriteInstructions() {
   const [open, setOpen] = useState(false);
   return (
-    <div className="bg-white rounded-2xl border border-border overflow-hidden">
+    <div className="bg-card rounded-2xl border border-border overflow-hidden">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -719,7 +719,7 @@ function DevHandoffInner() {
 
   return (
     <div className="min-h-[100dvh] bg-background max-w-[640px] mx-auto pb-10">
-      <header className="bg-white border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
+      <header className="bg-card border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -729,7 +729,7 @@ function DevHandoffInner() {
             ←
           </button>
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold bg-yellow-400 text-yellow-900 px-2 py-0.5 rounded-full">
+            <span className="text-xs font-bold bg-accent text-accent-foreground px-2 py-0.5 rounded-full">
               DEV
             </span>
             <h1 className="text-lg font-bold text-foreground">
