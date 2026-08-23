@@ -14,10 +14,8 @@ export interface TripRouteInput {
   tripAreaId?: number | null;
   /** @minLength 1 */
   areaTitle: string;
-  /** @minLength 1 */
-  startPlace: string;
-  /** @minLength 1 */
-  endPlace: string;
+  startPlace?: string;
+  endPlace?: string;
   /** @minimum 1 */
   estQty: number;
   /** @minimum 0 */

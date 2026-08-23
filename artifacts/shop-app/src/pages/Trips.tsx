@@ -233,7 +233,7 @@ function RouteForm({
       <div className="grid grid-cols-2 gap-2">
         <div>
           <label className="block text-xs text-muted-foreground mb-1">
-            起點 *
+            起點
           </label>
           <input
             value={startPlace}
@@ -243,7 +243,7 @@ function RouteForm({
         </div>
         <div>
           <label className="block text-xs text-muted-foreground mb-1">
-            終點 *
+            終點
           </label>
           <input
             value={endPlace}
@@ -273,12 +273,12 @@ function RouteForm({
           type="button"
           disabled={submitting}
           onClick={() => {
-            if (!areaTitle.trim() || !startPlace.trim() || !endPlace.trim()) {
+            if (!areaTitle.trim()) {
               setError(
                 formatActionableError({
                   happened: "路線沒有儲存。",
-                  reason: "路線名稱、起點或終點仍是空白。",
-                  action: "請補齊三個必填欄位。",
+                  reason: "路線名稱仍是空白。",
+                  action: "請填寫路線名稱；起點與終點可留空。",
                   support: "若仍無法儲存，請截圖交給系統管理者。",
                 }),
               );
