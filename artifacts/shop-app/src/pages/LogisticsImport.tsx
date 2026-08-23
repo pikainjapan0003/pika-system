@@ -399,7 +399,10 @@ export default function LogisticsImportPage() {
                       .map((r) => {
                         const texts = getImportRowTexts(r.errorCode, r.status);
                         return (
-                          <li key={r.rowId} className="text-xs text-secondary-foreground">
+                          <li
+                            key={r.rowId}
+                            className="text-xs text-secondary-foreground"
+                          >
                             <div>
                               Excel 第 {r.rowNumber} 列 — 原因：{texts.reason}
                             </div>

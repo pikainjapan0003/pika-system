@@ -190,11 +190,11 @@ type OrderWithTracking = Order & {
 };
 
 const TRACKING_TONE_PINK = "bg-accent/10 border-accent/30 text-accent";
-const TRACKING_TONE_YELLOW =
-  "bg-chart-4/10 border-chart-4/30 text-chart-4";
+const TRACKING_TONE_YELLOW = "bg-chart-4/10 border-chart-4/30 text-chart-4";
 const TRACKING_TONE_GREEN = "bg-chart-3/10 border-chart-3/30 text-chart-3";
 const TRACKING_TONE_GRAY = "bg-muted/70 border-border/70 text-muted-foreground";
-const TRACKING_TONE_RED = "bg-destructive/10 border-destructive/30 text-destructive";
+const TRACKING_TONE_RED =
+  "bg-destructive/10 border-destructive/30 text-destructive";
 
 function includesAny(text: string, keywords: string[]): boolean {
   return keywords.some((k) => text.includes(k));
@@ -2501,7 +2501,9 @@ function FilterTab({
     <button
       onClick={onClick}
       className={`flex-shrink-0 h-8 px-3 rounded-full text-xs font-medium transition-colors ${
-        active ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
+        active
+          ? "bg-primary text-primary-foreground"
+          : "bg-secondary text-muted-foreground"
       }`}
     >
       {label}
