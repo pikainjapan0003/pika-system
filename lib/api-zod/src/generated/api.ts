@@ -314,6 +314,41 @@ export const CreateTripBody = zod.object({
 
 
 /**
+ * @summary List a store's trips (with their routes)
+ */
+export const ListStoreTripsParams = zod.object({
+  "storeId": zod.coerce.number()
+})
+
+export const ListStoreTripsResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "exchangeRate": zod.number().nullish(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.string()
+}).and(zod.object({
+  "routes": zod.array(zod.object({
+  "id": zod.number(),
+  "tripId": zod.number(),
+  "tripAreaId": zod.number().nullable(),
+  "areaTitle": zod.string(),
+  "startPlace": zod.string(),
+  "endPlace": zod.string(),
+  "trainJpy": zod.number(),
+  "fuelJpy": zod.number().nullable(),
+  "parkingJpy": zod.number(),
+  "etcJpy": zod.number().nullish(),
+  "estQty": zod.number(),
+  "cardboardJpy": zod.number(),
+  "shippingJpy": zod.number(),
+  "parcelCount": zod.number(),
+  "createdAt": zod.string()
+})).optional()
+}))
+export const ListStoreTripsResponse = zod.array(ListStoreTripsResponseItem)
+
+
+/**
  * @summary Update a trip
  */
 export const UpdateTripParams = zod.object({

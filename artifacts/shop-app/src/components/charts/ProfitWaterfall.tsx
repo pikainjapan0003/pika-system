@@ -12,7 +12,7 @@ import {
 import { ExactDecimal } from "@workspace/db/transport-cost";
 import { formatApiTwd } from "../../lib/operatingCostDisplay";
 import type { OperatingSummary } from "../../lib/tripProfitBoard";
-import { ChartCard, ChartLegendRow, ChartResponsiveOnly } from "./chartCard";
+import { ChartCard, ChartFrame, ChartLegendRow } from "./chartCard";
 import {
   CHART_TOKEN,
   divergingNegative,
@@ -176,7 +176,7 @@ export function ProfitWaterfall({
       legend={<ChartLegendRow items={legend} />}
     >
       {data.length > 0 ? (
-        <ChartResponsiveOnly>
+        <ChartFrame>
           <BarChart
             data={data}
             margin={{ top: 8, right: 8, left: 8, bottom: 8 }}
@@ -221,7 +221,7 @@ export function ProfitWaterfall({
               ))}
             </Bar>
           </BarChart>
-        </ChartResponsiveOnly>
+        </ChartFrame>
       ) : (
         <p className="text-sm text-muted-foreground">
           尚無就緒的預估損益資料（待確認）。
