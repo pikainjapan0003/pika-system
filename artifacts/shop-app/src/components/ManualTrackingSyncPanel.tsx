@@ -574,7 +574,7 @@ export function ManualTrackingSyncPanel({
             <div
               className={`text-xs rounded-xl px-3 py-2 space-y-1 ${
                 isExpired
-                  ? "bg-amber-50 border border-amber-200"
+                  ? "bg-accent/10 border border-accent/30"
                   : "bg-secondary"
               }`}
             >
@@ -608,14 +608,14 @@ export function ManualTrackingSyncPanel({
                 {job.pickupStoreName && <p>取件門市：{job.pickupStoreName}</p>}
                 {job.pickupDeadline && <p>取件期限：{job.pickupDeadline}</p>}
                 {!isExpired && remainingSeconds !== null && (
-                  <p className={remainingSeconds <= 30 ? "text-amber-600" : ""}>
+                  <p className={remainingSeconds <= 30 ? "text-accent/80" : ""}>
                     {remainingSeconds > 0
                       ? `預覽有效剩餘：${remainingSeconds} 秒`
                       : "預覽已過期，請重新查詢。"}
                   </p>
                 )}
                 {job.skippedReason && (
-                  <p className="text-amber-600">
+                  <p className="text-accent/80">
                     略過原因：{job.skippedReason}
                   </p>
                 )}
@@ -624,7 +624,7 @@ export function ManualTrackingSyncPanel({
               {/* 7-11 preview-only 標示（取代 commit 按鈕） */}
               {syncState.phase === "previewReadyCanCommit" &&
                 job.provider === "711" && (
-                  <p className="text-amber-700 text-[11px] font-medium pt-0.5">
+                  <p className="text-accent text-[11px] font-medium pt-0.5">
                     7-11 目前為預覽模式，尚未開放寫入。
                   </p>
                 )}
@@ -655,7 +655,7 @@ export function ManualTrackingSyncPanel({
                 </p>
               )}
               {isExpired && (
-                <p className="text-amber-700 font-medium text-[11px]">
+                <p className="text-accent font-medium text-[11px]">
                   預覽已過期，請重新查詢。
                 </p>
               )}
@@ -665,7 +665,7 @@ export function ManualTrackingSyncPanel({
 
         {/* previewError */}
         {syncState.phase === "previewError" && (
-          <p className="text-xs text-destructive bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+          <p className="text-xs text-destructive bg-destructive/10 border border-destructive/30 rounded-xl px-3 py-2">
             {syncState.message}（{syncState.errorCode}）
           </p>
         )}
@@ -679,17 +679,17 @@ export function ManualTrackingSyncPanel({
 
         {/* commitSuccess */}
         {syncState.phase === "commitSuccess" && (
-          <div className="text-xs bg-green-50 border border-green-200 rounded-xl px-3 py-2 space-y-1">
-            <p className="text-green-800 font-medium">
+          <div className="text-xs bg-secondary border border-border rounded-xl px-3 py-2 space-y-1">
+            <p className="text-secondary-foreground font-medium">
               已寫入 {syncState.insertedEventCount} 筆貨態事件。
             </p>
             {syncState.latestStatusText && (
-              <p className="text-green-700">
+              <p className="text-secondary-foreground">
                 最新貨態：{syncState.latestStatusText}
               </p>
             )}
             {syncState.latestEventAt && (
-              <p className="text-green-700">
+              <p className="text-secondary-foreground">
                 最新時間：{syncState.latestEventAt}
               </p>
             )}
@@ -717,7 +717,7 @@ export function ManualTrackingSyncPanel({
 
         {/* commitError */}
         {syncState.phase === "commitError" && (
-          <div className="text-xs bg-red-50 border border-red-200 rounded-xl px-3 py-2 space-y-1">
+          <div className="text-xs bg-destructive/10 border border-destructive/30 rounded-xl px-3 py-2 space-y-1">
             <p className="text-destructive font-medium">寫入未完成</p>
             <p className="text-destructive">{syncState.message}</p>
             <p className="text-destructive/70">
@@ -728,9 +728,9 @@ export function ManualTrackingSyncPanel({
 
         {/* drifted */}
         {syncState.phase === "drifted" && (
-          <div className="text-xs bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 space-y-1">
-            <p className="text-amber-700 font-medium">{syncState.message}</p>
-            <p className="text-amber-600">
+          <div className="text-xs bg-accent/10 border border-accent/30 rounded-xl px-3 py-2 space-y-1">
+            <p className="text-accent font-medium">{syncState.message}</p>
+            <p className="text-accent/80">
               請重新按「查詢最新貨態」取得新的預覽結果。
             </p>
           </div>
@@ -821,7 +821,7 @@ export function ManualTrackingSyncPanel({
                     預覽剩餘：
                   </span>
                   <span
-                    className={remainingSeconds <= 30 ? "text-amber-600" : ""}
+                    className={remainingSeconds <= 30 ? "text-accent/80" : ""}
                   >
                     {remainingSeconds > 0 ? `${remainingSeconds} 秒` : "已過期"}
                   </span>
