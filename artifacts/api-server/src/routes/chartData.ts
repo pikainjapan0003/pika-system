@@ -4,11 +4,17 @@ import {
   calculateActualQuantityRollup,
   calculateActualRouteCostRollup,
   calculateActualUnitProfit,
+  calculateBreakevenSensitivity,
+  calculateFixedCostTotals,
+  calculateTripProfit,
+  costCategoriesTable,
   costEntriesTable,
   db,
+  DEFAULT_REFERENCE_DAILY_WAGE,
   emptyActualRouteCostGroup,
   ExactDecimal,
   INCLUDED_ACTUAL_ORDER_STATUSES,
+  operatingSettingsTable,
   ordersTable,
   productsTable,
   resolveProductTransportCost,
@@ -18,7 +24,7 @@ import {
   tripsTable,
 } from "@workspace/db";
 import { requireAuth, verifyStoreOwner } from "../middlewares/auth.ts";
-import { positiveId } from "./fixedCosts.ts";
+import { loadTrip, positiveId } from "./fixedCosts.ts";
 
 const router = Router();
 
@@ -453,6 +459,372 @@ router.get(
       status: items.some((item) => item.status !== "ready")
         ? "pending_confirmation"
         : "ready",
+      items,
+    });
+  },
+);
+
+// ---------------------------------------------------------------------------
+// G · 敏感度熱圖
+// Sweeps quantity x unit gross profit against the trip's breakeven inputs.
+// The breakeven computation itself is the existing calculateBreakeven; sweep
+// cell values are its exact inverse identity. Missing inputs fail closed.
+// ---------------------------------------------------------------------------
+function parseSweepQuantities(raw: unknown): string[] | null {
+  if (typeof raw !== "string") return null;
+  const parts = raw
+    .split(",")
+    .map((part) => part.trim())
+    .filter((part) => part !== "");
+  if (parts.length === 0 || parts.length > SENSITIVITY_SWEEP_MAX) return null;
+  for (const part of parts) {
+    if (!/^\d{1,15}$/.test(part) || BigInt(part) <= 0n) return null;
+  }
+  return parts;
+}
+
+function parseSweepUnitGrossProfits(raw: unknown): string[] | null {
+  if (typeof raw !== "string") return null;
+  const parts = raw
+    .split(",")
+    .map((part) => part.trim())
+    .filter((part) => part !== "");
+  if (parts.length === 0 || parts.length > SENSITIVITY_SWEEP_MAX) return null;
+  for (const part of parts) {
+    if (!/^\d+(?:\.\d+)?$/.test(part)) return null;
+  }
+  return parts;
+}
+
+router.get(
+  "/stores/:storeId/trips/:tripId/charts/sensitivity-heatmap",
+  requireAuth,
+  async (req: any, res) => {
+    const access = await loadTrip(req, res);
+    if (!access) return;
+    const quantities = parseSweepQuantities(req.query.quantities);
+    const unitGrossProfits = parseSweepUnitGrossProfits(
+      req.query.unitGrossProfits,
+    );
+    if (quantities === null || unitGrossProfits === null) {
+      return res.status(400).json({
+        error:
+          "quantities (positive integers) and unitGrossProfits (non-negative decimals) are required, max 20 each",
+      });
+    }
+
+    const rows = await db
+      .select({
+        entry: costEntriesTable,
+        categoryKind: costCategoriesTable.kind,
+      })
+      .from(costEntriesTable)
+      .leftJoin(
+        costCategoriesTable,
+        eq(costEntriesTable.categoryId, costCategoriesTable.id),
+      )
+      .where(
+        and(
+          eq(costEntriesTable.storeId, access.storeId),
+          eq(costEntriesTable.tripId, access.tripId),
+          eq(costEntriesTable.mode, "ESTIMATE"),
+        ),
+      )
+      .orderBy(asc(costEntriesTable.id));
+    const categoryKind = (row: any) => row.categoryKind ?? "FIXED";
+    const rowsByKind = Object.fromEntries(
+      (["FIXED", "VARIABLE", "PURCHASE"] as const).map((kind) => [
+        kind,
+        rows.filter((row) => categoryKind(row) === kind),
+      ]),
+    ) as Record<"FIXED" | "VARIABLE" | "PURCHASE", typeof rows>;
+    const exchangeRate = access.trip.exchangeRate;
+    const totalsByKind = Object.fromEntries(
+      (["FIXED", "VARIABLE", "PURCHASE"] as const).map((kind) => [
+        kind,
+        calculateFixedCostTotals({
+          entries: rowsByKind[kind].map((row) => ({
+            ...row.entry,
+            originalAmount: String(row.entry.originalAmount),
+          })),
+          exchangeRate,
+        }),
+      ]),
+    ) as Record<
+      "FIXED" | "VARIABLE" | "PURCHASE",
+      ReturnType<typeof calculateFixedCostTotals>
+    >;
+
+    const pendingSection = Object.values(totalsByKind).find(
+      (totals) => totals.status !== "ready",
+    );
+    if (pendingSection) {
+      return res.json({
+        status: "pending_confirmation",
+        label: pendingSection.label,
+        reason: pendingSection.reason,
+        netCostToRecoverTwd: null,
+        breakevenQuantity: null,
+        salaryTargetQuantity: null,
+        rows: [],
+        columns: [],
+        cells: [],
+      });
+    }
+    const fixed = totalsByKind.FIXED as Extract<
+      (typeof totalsByKind)["FIXED"],
+      { status: "ready" }
+    >;
+    const variable = totalsByKind.VARIABLE as Extract<
+      (typeof totalsByKind)["VARIABLE"],
+      { status: "ready" }
+    >;
+    const [settings] = await db
+      .select({ referenceDailyWage: operatingSettingsTable.referenceDailyWage })
+      .from(operatingSettingsTable)
+      .where(eq(operatingSettingsTable.id, 1))
+      .limit(1);
+    const salaryTargetTwd =
+      settings !== undefined && access.trip.workingDays !== null
+        ? ExactDecimal.from(
+            settings.referenceDailyWage ?? DEFAULT_REFERENCE_DAILY_WAGE,
+          )
+            .multiply(ExactDecimal.from(String(access.trip.workingDays)))
+            .toDecimalPlaces(12)
+        : undefined;
+
+    const result = calculateBreakevenSensitivity({
+      fixedCostJpyOriginTwd: fixed.fixedCostJpyOriginTwd.toDecimalPlaces(12),
+      fixedCostTwdDirectTwd: fixed.fixedCostTwdDirectTwd.toDecimalPlaces(12),
+      variableCostBaseTotalTwd: variable.fixedCostTotalTwd.toDecimalPlaces(12),
+      creditCardRebateTwd: String(access.trip.creditCardRebateTwd),
+      unitGrossProfitTwd:
+        access.trip.unitGrossProfitTwd == null
+          ? null
+          : String(access.trip.unitGrossProfitTwd),
+      salaryTargetTwd,
+      quantities,
+      unitGrossProfits,
+    });
+
+    if (result.status !== "ready") {
+      return res.json({
+        status: "pending_confirmation",
+        label: result.label,
+        reason: result.reason,
+        netCostToRecoverTwd: null,
+        breakevenQuantity: null,
+        salaryTargetQuantity: null,
+        rows: [],
+        columns: [],
+        cells: [],
+      });
+    }
+    return res.json({
+      status: "ready",
+      label: null,
+      reason: null,
+      netCostToRecoverTwd: serializeDecimal(result.netCostToRecoverTwd),
+      breakevenQuantity: String(result.breakevenQuantity),
+      salaryTargetQuantity: String(result.salaryTargetQuantity),
+      rows: result.rows,
+      columns: result.columns,
+      cells: result.cells,
+    });
+  },
+);
+// ---------------------------------------------------------------------------
+// H · 歷史趨勢
+// Buckets the store's trips by month and sums each trip's ACTUAL unit
+// projection final operating profit (the same per-trip assembly the
+// operating-summary endpoint uses for ACTUAL mode, reusing calculateFixedCost
+// Totals and calculateTripProfit). A month with any incomplete trip is
+// reported pending_confirmation — never a partial sum.
+// ---------------------------------------------------------------------------
+function tripMonth(trip: any): string {
+  if (trip.startDate != null && trip.startDate !== "") {
+    return trip.startDate.slice(0, 7);
+  }
+  return trip.createdAt.toISOString().slice(0, 7);
+}
+
+router.get(
+  "/stores/:storeId/charts/history-trend",
+  requireAuth,
+  async (req: any, res) => {
+    const storeId = positiveId(req.params.storeId);
+    if (storeId === null) {
+      return res.status(400).json({ error: "Invalid store id" });
+    }
+    if (!(await verifyStoreOwner(req, res, storeId))) return;
+
+    const [trips, rows, settings] = await Promise.all([
+      db
+        .select()
+        .from(tripsTable)
+        .where(ownedOrAwaitingBackfill(tripsTable.storeId, storeId)),
+      db
+        .select({
+          entry: costEntriesTable,
+          categoryKind: costCategoriesTable.kind,
+        })
+        .from(costEntriesTable)
+        .leftJoin(
+          costCategoriesTable,
+          eq(costEntriesTable.categoryId, costCategoriesTable.id),
+        )
+        .where(
+          and(
+            eq(costEntriesTable.storeId, storeId),
+            eq(costEntriesTable.mode, "ACTUAL"),
+          ),
+        ),
+      db
+        .select({
+          referenceDailyWage: operatingSettingsTable.referenceDailyWage,
+        })
+        .from(operatingSettingsTable)
+        .where(eq(operatingSettingsTable.id, 1))
+        .limit(1),
+    ]);
+    const referenceDailyWageTwd =
+      settings[0]?.referenceDailyWage ?? DEFAULT_REFERENCE_DAILY_WAGE;
+
+    const entriesByTrip = new Map<number, typeof rows>();
+    for (const row of rows) {
+      const list = entriesByTrip.get(row.entry.tripId) ?? [];
+      list.push(row);
+      entriesByTrip.set(row.entry.tripId, list);
+    }
+
+    const months = new Map<
+      string,
+      {
+        tripCount: number;
+        profitTwd: ExactDecimal | null;
+        status: "ready" | "pending_confirmation";
+        reason: string | null;
+      }
+    >();
+    const categoryKind = (row: any) => row.categoryKind ?? "FIXED";
+
+    for (const trip of trips) {
+      const month = tripMonth(trip);
+      const bucket = months.get(month) ?? {
+        tripCount: 0,
+        profitTwd: ExactDecimal.zero(),
+        status: "ready" as const,
+        reason: null,
+      };
+      bucket.tripCount += 1;
+      const tripRows = entriesByTrip.get(trip.id) ?? [];
+      const rowsByKind = Object.fromEntries(
+        (["FIXED", "VARIABLE", "PURCHASE"] as const).map((kind) => [
+          kind,
+          tripRows.filter((row) => categoryKind(row) === kind),
+        ]),
+      ) as Record<"FIXED" | "VARIABLE" | "PURCHASE", typeof rows>;
+      const exchangeRate = trip.actualExchangeRate;
+      const totalsByKind = Object.fromEntries(
+        (["FIXED", "VARIABLE", "PURCHASE"] as const).map((kind) => [
+          kind,
+          calculateFixedCostTotals({
+            entries: rowsByKind[kind].map((row) => ({
+              ...row.entry,
+              originalAmount: String(row.entry.originalAmount),
+            })),
+            exchangeRate,
+          }),
+        ]),
+      ) as Record<
+        "FIXED" | "VARIABLE" | "PURCHASE",
+        ReturnType<typeof calculateFixedCostTotals>
+      >;
+      const pendingSection = Object.values(totalsByKind).find(
+        (totals) => totals.status !== "ready",
+      );
+      let tripProfit:
+        | Extract<ReturnType<typeof calculateTripProfit>, { status: "ready" }>
+        | { status: "pending_confirmation"; label: string; reason: string };
+      if (pendingSection) {
+        tripProfit = pendingSection;
+      } else {
+        const fixed = totalsByKind.FIXED as Extract<
+          (typeof totalsByKind)["FIXED"],
+          { status: "ready" }
+        >;
+        const variable = totalsByKind.VARIABLE as Extract<
+          (typeof totalsByKind)["VARIABLE"],
+          { status: "ready" }
+        >;
+        const purchase = totalsByKind.PURCHASE as Extract<
+          (typeof totalsByKind)["PURCHASE"],
+          { status: "ready" }
+        >;
+        tripProfit = calculateTripProfit({
+          fixedCostJpyOriginTwd:
+            fixed.fixedCostJpyOriginTwd.toDecimalPlaces(12),
+          fixedCostTwdDirectTwd:
+            fixed.fixedCostTwdDirectTwd.toDecimalPlaces(12),
+          variableCostJpyOriginTwd:
+            variable.fixedCostJpyOriginTwd.toDecimalPlaces(12),
+          variableCostTwdDirectTwd:
+            variable.fixedCostTwdDirectTwd.toDecimalPlaces(12),
+          purchaseCostJpyOriginTwd:
+            purchase.fixedCostJpyOriginTwd.toDecimalPlaces(12),
+          purchaseCostTwdDirectTwd:
+            purchase.fixedCostTwdDirectTwd.toDecimalPlaces(12),
+          unitGrossProfitTwd:
+            trip.unitGrossProfitTwd == null
+              ? null
+              : String(trip.unitGrossProfitTwd),
+          dailyGrossProfitTwd:
+            trip.dailyGrossProfitTwd == null
+              ? null
+              : String(trip.dailyGrossProfitTwd),
+          estimatedItemQuantity: trip.totalItemQuantity,
+          creditCardRebateTwd: String(trip.creditCardRebateTwd),
+          workingDays: trip.workingDays,
+          referenceDailyWageTwd,
+        } as Parameters<typeof calculateTripProfit>[0]);
+      }
+      if (tripProfit.status !== "ready") {
+        bucket.status = "pending_confirmation";
+        bucket.reason = bucket.reason ?? tripProfit.reason;
+        bucket.profitTwd = null;
+      } else if (tripProfit.projections.unit.status !== "ready") {
+        bucket.status = "pending_confirmation";
+        bucket.reason = bucket.reason ?? tripProfit.projections.unit.reason;
+        bucket.profitTwd = null;
+      } else if (bucket.status === "ready") {
+        bucket.profitTwd =
+          bucket.profitTwd === null
+            ? null
+            : bucket.profitTwd.add(
+                tripProfit.projections.unit.finalOperatingProfitTwd,
+              );
+      }
+      months.set(month, bucket);
+    }
+
+    const items = [...months.entries()]
+      .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
+      .map(([month, bucket]) => ({
+        month,
+        tripCount: bucket.tripCount,
+        profitTwd:
+          bucket.profitTwd === null
+            ? null
+            : bucket.profitTwd.toDecimalPlaces(12),
+        status: bucket.status,
+        reason: bucket.reason,
+      }));
+
+    return res.json({
+      status: items.some((item) => item.status !== "ready")
+        ? "pending_confirmation"
+        : "ready",
+      mode: "ACTUAL",
       items,
     });
   },
