@@ -237,7 +237,7 @@ export default function AgentSettingsPage() {
 
   return (
     <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-24">
-      <header className="bg-white border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
+      <header className="bg-card border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
         <div className="flex items-center gap-3">
           <button
             type="button"
@@ -258,7 +258,7 @@ export default function AgentSettingsPage() {
 
       <div className="px-5 py-5 space-y-5">
         {isDefault && (
-          <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 text-xs text-blue-700">
+          <div className="bg-chart-4/10 border border-chart-4/20 rounded-xl px-4 py-3 text-xs text-chart-4">
             目前尚未儲存 Agent
             設定。你可以先調整欄位，按下儲存後系統會建立設定。
           </div>
@@ -436,7 +436,7 @@ export default function AgentSettingsPage() {
               <span
                 className={`text-xs px-2.5 py-1 rounded-full font-medium ${
                   settings?.hasWebhookSecret
-                    ? "bg-green-100 text-green-700"
+                    ? "bg-chart-3/10 text-chart-3"
                     : "bg-secondary text-muted-foreground"
                 }`}
               >
@@ -480,7 +480,7 @@ export default function AgentSettingsPage() {
           type="button"
           onClick={() => void handleSave()}
           disabled={isSaving}
-          className="w-full h-12 bg-primary text-white font-semibold rounded-xl text-base disabled:opacity-60"
+          className="w-full h-12 bg-primary text-primary-foreground font-semibold rounded-xl text-base disabled:opacity-60"
         >
           {isSaving ? "儲存中..." : "儲存設定"}
         </button>
@@ -501,7 +501,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-white rounded-2xl border border-border overflow-hidden">
+    <div className="bg-card rounded-2xl border border-border overflow-hidden">
       <div className="px-5 pt-4 pb-2">
         <h2 className="text-sm font-bold text-foreground">{title}</h2>
       </div>
@@ -573,7 +573,7 @@ function SelectRow({
     <div className="space-y-1.5">
       <p className="text-sm font-medium text-foreground">{label}</p>
       <Select value={value} onValueChange={onValueChange} disabled={disabled}>
-        <SelectTrigger className="w-full h-12 rounded-xl border border-input bg-white text-foreground text-sm">
+        <SelectTrigger className="w-full h-12 rounded-xl border border-input bg-background text-foreground text-sm">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -589,4 +589,4 @@ function SelectRow({
 }
 
 const inputClass =
-  "w-full h-12 px-4 rounded-xl border border-input bg-white text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 text-base disabled:opacity-60";
+  "w-full h-12 px-4 rounded-xl border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 text-base disabled:opacity-60";

@@ -36,7 +36,7 @@ interface CustomerOrderRecord {
 }
 
 const inputClass =
-  "h-11 w-full rounded-xl border border-input bg-white px-3 text-sm";
+  "h-11 w-full rounded-xl border border-input bg-background px-3 text-sm";
 
 export default function CustomerDetailPage({
   customerId,
@@ -146,7 +146,7 @@ export default function CustomerDetailPage({
 
   return (
     <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-24">
-      <header className="sticky top-0 z-10 border-b border-border bg-white px-5 pb-4 pt-10">
+      <header className="sticky top-0 z-10 border-b border-border bg-card px-5 pb-4 pt-10">
         <button
           type="button"
           onClick={() => setLocation("/customers")}
@@ -158,13 +158,13 @@ export default function CustomerDetailPage({
       </header>
       <main className="space-y-4 p-5">
         {error && (
-          <p className="rounded-xl bg-red-50 p-3 text-sm text-destructive">
+          <p className="rounded-xl bg-destructive/10 p-3 text-sm text-destructive">
             {error}
           </p>
         )}
         {customer && (
           <>
-            <section className="space-y-2 rounded-2xl border border-border bg-white p-4">
+            <section className="space-y-2 rounded-2xl border border-border bg-card p-4">
               <p className="text-xs text-muted-foreground">{customer.code}</p>
               <h2 className="font-semibold">
                 {revealed ? customer.name : maskName(customer.name)}
@@ -209,7 +209,7 @@ export default function CustomerDetailPage({
               getToken={getToken}
             />
 
-            <section className="space-y-3 rounded-2xl border border-border bg-white p-4">
+            <section className="space-y-3 rounded-2xl border border-border bg-card p-4">
               <div>
                 <h2 className="font-semibold">常用門市</h2>
                 <p className="text-xs text-muted-foreground">
@@ -262,7 +262,7 @@ export default function CustomerDetailPage({
                 type="button"
                 disabled={saving}
                 onClick={() => void saveCvs()}
-                className="min-h-11 w-full rounded-xl bg-primary text-sm font-semibold text-white disabled:opacity-50"
+                className="min-h-11 w-full rounded-xl bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-50"
               >
                 {saving ? "儲存中…" : "儲存常用門市"}
               </button>
@@ -273,7 +273,7 @@ export default function CustomerDetailPage({
               {orders.map((order) => (
                 <article
                   key={order.id}
-                  className="rounded-2xl border border-border bg-white p-4"
+                  className="rounded-2xl border border-border bg-card p-4"
                 >
                   <div className="flex justify-between gap-3">
                     <p className="font-medium">
@@ -287,7 +287,7 @@ export default function CustomerDetailPage({
                     {new Date(order.createdAt).toLocaleString("zh-TW")}
                   </p>
                   <p
-                    className={`mt-2 text-sm font-semibold ${order.profit.amountTwd === null ? "text-amber-700" : "text-foreground"}`}
+                    className={`mt-2 text-sm font-semibold ${order.profit.amountTwd === null ? "text-accent" : "text-foreground"}`}
                   >
                     {order.profit.label}
                     {order.profit.amountTwd === null
