@@ -93,19 +93,19 @@
 
 ## 5 · 驗證鏈逐步結果
 
-| 步驟                                                      | 結果                                                                                                                                                                       |
-| --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1 codegen drift                                           | generated diff = 0（Windows git status 乾淨＋連續兩次 codegen 逐位元一致 CLIENT_DIFF=0／ZOD_DIFF=0；WSL git 因 worktree 指向 Windows path 無法運作，此為環境限制非 drift） |
-| 2 Prettier 全庫（pnpm exec 釘 3.8.3、--end-of-line auto） | 最後一次編輯後執行 → **PASS**（All matched files use Prettier code style!）                                                                                                |
-| 3 schema push                                             | drizzle-kit push --force → Changes applied ✓                                                                                                                               |
-| 4 seed                                                    | fixed=12 variable=7 purchase=1 total=20 operating_settings_id_1=1 ✓                                                                                                        |
-| 5 V1_FIXED_COST_SCHEMA_GUARD                              | **PASS**                                                                                                                                                                   |
-| 5b V1_MOCK_IMPORT_GUARD                                   | **PASS**（以相同掃描邏輯於 repo root 執行）                                                                                                                                |
-| 6 DB routes                                               | **120 / 120**（基準 110，新增 10：trips 檔 +4、fixedCostSummary 檔 +6），fail 0，duration 249,943 ms                                                                       |
-| 7 pure suites                                             | **485 / 485**（基準 479，新增 6），fail 0，PURE_EXIT=0，duration 914,969 ms（含 shop-app jsdom 頁面測試，比照 CI 設定 TSX_TSCONFIG_PATH）                                  |
-| 8 Playwright                                              | **本機未驗，留待 push 後 current-HEAD CI**（沿用包23/包24 先例：需完整 stack＋chromium，本機環境 Docker Desktop 佔用與 Clerk 替身限制；不謊報）                            |
-| 9 Typecheck ×4                                            | 全過（typecheck:libs＋api-server＋mockup-sandbox＋shop-app＋scripts，TYPECHECK_EXIT=0）                                                                                    |
-| 10 Build                                                  | 見下方 build 結果（本批未動前端，預期主 chunk gzip 406.09 kB 不變、上限 460 內）                                                                                           |
+| 步驟                                                      | 結果                                                                                                                                                                            |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1 codegen drift                                           | generated diff = 0（Windows git status 乾淨＋連續兩次 codegen 逐位元一致 CLIENT_DIFF=0／ZOD_DIFF=0；WSL git 因 worktree 指向 Windows path 無法運作，此為環境限制非 drift）      |
+| 2 Prettier 全庫（pnpm exec 釘 3.8.3、--end-of-line auto） | 最後一次編輯後執行 → **PASS**（All matched files use Prettier code style!）                                                                                                     |
+| 3 schema push                                             | drizzle-kit push --force → Changes applied ✓                                                                                                                                    |
+| 4 seed                                                    | fixed=12 variable=7 purchase=1 total=20 operating_settings_id_1=1 ✓                                                                                                             |
+| 5 V1_FIXED_COST_SCHEMA_GUARD                              | **PASS**                                                                                                                                                                        |
+| 5b V1_MOCK_IMPORT_GUARD                                   | **PASS**（以相同掃描邏輯於 repo root 執行）                                                                                                                                     |
+| 6 DB routes                                               | **120 / 120**（基準 110，新增 10：trips 檔 +4、fixedCostSummary 檔 +6），fail 0，duration 249,943 ms                                                                            |
+| 7 pure suites                                             | **485 / 485**（基準 479，新增 6），fail 0，PURE_EXIT=0，duration 914,969 ms（含 shop-app jsdom 頁面測試，比照 CI 設定 TSX_TSCONFIG_PATH）                                       |
+| 8 Playwright                                              | **本機未驗，留待 push 後 current-HEAD CI**（沿用包23/包24 先例：需完整 stack＋chromium，本機環境 Docker Desktop 佔用與 Clerk 替身限制；不謊報）                                 |
+| 9 Typecheck ×4                                            | 全過（typecheck:libs＋api-server＋mockup-sandbox＋shop-app＋scripts，TYPECHECK_EXIT=0）                                                                                         |
+| 10 Build                                                  | **BUILD_EXIT=0**（api-server esbuild 140s＋mockup-sandbox 10s＋shop-app vite 完成）；主 chunk gzip **406.09 kB（406,094 bytes）＝基準完全一致**（本批未動前端），上限 460 kB 內 |
 
 ## 6 · 已知限制／登記
 
@@ -119,10 +119,12 @@
 
 ## 7 · Git 拓樸（本批，未 push）
 
-| 順序 | Commit    | Subject                                                                              |
-| ---- | --------- | ------------------------------------------------------------------------------------ |
-| C1   | `fa8b306` | contract(api-spec): declare E/F/G/H chart-data endpoints and sync generated clients  |
-| C2   | `e621f7f` | feat(lib): expose transport-cost pipeline and add breakeven sensitivity matrix       |
-| C3   | `8344647` | feat(api-server): add E route cost ranking and F area scatter chart endpoints        |
-| C4   | `4ecf285` | feat(api-server): wire G breakeven sensitivity heatmap and H history trend endpoints |
-| C5   | 本文件    | docs(ai-ops): 88 audit                                                               |
+| 順序 | Commit     | Subject                                                                              |
+| ---- | ---------- | ------------------------------------------------------------------------------------ |
+| C1   | `fa8b306`  | contract(api-spec): declare E/F/G/H chart-data endpoints and sync generated clients  |
+| C2   | `e621f7f`  | feat(lib): expose transport-cost pipeline and add breakeven sensitivity matrix       |
+| C3   | `8344647`  | feat(api-server): add E route cost ranking and F area scatter chart endpoints        |
+| C4   | `4ecf285`  | feat(api-server): wire G breakeven sensitivity heatmap and H history trend endpoints |
+| C5   | `27ef81d`  | style(test): prettier formatting for chart route tests                               |
+| C6   | `5d0734b`  | docs(ai-ops): add 88 v1 chart data layer backend audit                               |
+| C7   | 本文件收尾 | docs(ai-ops): fill build result in 88 audit                                          |
