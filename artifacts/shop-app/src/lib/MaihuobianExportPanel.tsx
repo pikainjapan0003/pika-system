@@ -252,7 +252,7 @@ export function MaihuobianExportPanel({
   return (
     <section
       aria-label="賣貨便匯出"
-      className="mb-4 rounded-2xl border border-border bg-white p-4"
+      className="mb-4 rounded-2xl border border-border bg-card p-4"
     >
       <div className="flex items-start justify-between gap-3">
         <div>
@@ -307,7 +307,7 @@ export function MaihuobianExportPanel({
         </p>
       )}
       {downloaded !== null && (
-        <p className="mt-3 text-sm text-green-700">
+        <p className="mt-3 text-sm text-chart-3">
           {downloaded.format === "CSV"
             ? `已下載 ${downloaded.count} 筆 CSV 資料。`
             : "已下載 XLSM 檔案。"}
@@ -317,7 +317,7 @@ export function MaihuobianExportPanel({
       {preview && (
         <div className="mt-4 space-y-4">
           <div>
-            <h3 className="text-sm font-bold text-green-700">
+            <h3 className="text-sm font-bold text-chart-3">
               可匯出（{preview.eligibleCount}）
             </h3>
             {preview.eligibleCount === 0 ? (
@@ -328,7 +328,7 @@ export function MaihuobianExportPanel({
               <ul className="mt-2 space-y-2">
                 {preview.eligible.map((candidate) => (
                   <li key={candidate.orderId}>
-                    <label className="flex min-h-11 items-center gap-2 rounded-xl border border-green-200 px-3 text-sm">
+                    <label className="flex min-h-11 items-center gap-2 rounded-xl border border-chart-3/30 px-3 text-sm">
                       <input
                         type="checkbox"
                         aria-label={`選取訂單 ${candidate.orderId}`}
@@ -347,7 +347,7 @@ export function MaihuobianExportPanel({
           </div>
 
           <div>
-            <h3 className="text-sm font-bold text-amber-700">
+            <h3 className="text-sm font-bold text-accent">
               不可匯出（{preview.ineligibleCount}）
             </h3>
             {preview.ineligibleCount === 0 ? (
@@ -357,12 +357,12 @@ export function MaihuobianExportPanel({
                 {preview.ineligible.map((candidate) => (
                   <li
                     key={candidate.orderId}
-                    className="rounded-xl border border-amber-200 bg-amber-50 p-3"
+                    className="rounded-xl border border-accent/30 bg-accent/10 p-3"
                   >
                     <p className="text-sm font-semibold">
                       訂單 #{candidate.orderId}
                     </p>
-                    <ul className="mt-1 list-disc pl-5 text-xs text-amber-800">
+                    <ul className="mt-1 list-disc pl-5 text-xs text-accent">
                       {candidate.reasons.map((reason) => (
                         <li key={`${reason.field ?? ""}-${reason.code}`}>
                           {reason.message}
@@ -379,7 +379,7 @@ export function MaihuobianExportPanel({
             type="button"
             onClick={prepareExport}
             disabled={selectedIds.size === 0}
-            className="min-h-11 w-full rounded-xl bg-primary px-3 text-sm font-semibold text-white disabled:opacity-50"
+            className="min-h-11 w-full rounded-xl bg-primary px-3 text-sm font-semibold text-primary-foreground disabled:opacity-50"
           >
             準備匯出 {selectedIds.size} 筆
           </button>
@@ -390,12 +390,12 @@ export function MaihuobianExportPanel({
         <div
           role="dialog"
           aria-label="賣貨便匯出確認"
-          className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3"
+          className="mt-4 rounded-xl border border-destructive/30 bg-destructive/10 p-3"
         >
-          <p className="text-sm font-bold text-red-800">
+          <p className="text-sm font-bold text-destructive">
             將匯出 {selectedIds.size} 筆明文個資
           </p>
-          <p className="mt-1 text-xs text-red-700">
+          <p className="mt-1 text-xs text-destructive">
             檔案包含姓名、手機與取件門市，只能用於本次賣貨便出貨，請妥善保管並於使用後刪除。
           </p>
           <label className="mt-3 flex min-h-11 items-center gap-2 text-sm">
@@ -412,7 +412,7 @@ export function MaihuobianExportPanel({
               type="button"
               onClick={() => downloadExport("csv")}
               disabled={!cleartextConfirmed || exporting}
-              className="min-h-11 w-full rounded-xl bg-red-600 px-3 text-sm font-semibold text-white disabled:opacity-50"
+              className="min-h-11 w-full rounded-xl bg-destructive px-3 text-sm font-semibold text-destructive-foreground disabled:opacity-50"
             >
               {exporting ? "產生中…" : "確認並下載 CSV"}
             </button>
@@ -420,7 +420,7 @@ export function MaihuobianExportPanel({
               type="button"
               onClick={() => downloadExport("xlsm")}
               disabled={!cleartextConfirmed || exporting}
-              className="min-h-11 w-full rounded-xl bg-red-600 px-3 text-sm font-semibold text-white disabled:opacity-50"
+              className="min-h-11 w-full rounded-xl bg-destructive px-3 text-sm font-semibold text-destructive-foreground disabled:opacity-50"
             >
               {exporting ? "產生中…" : "確認並下載 XLSM"}
             </button>

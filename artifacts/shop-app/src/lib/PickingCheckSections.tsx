@@ -28,8 +28,8 @@ function ItemCard({
     <div
       className={`rounded-xl border p-3 ${
         item.checked
-          ? "border-green-200 bg-green-50"
-          : "border-border/60 bg-white"
+          ? "border-chart-3/30 bg-chart-3/10"
+          : "border-border/60 bg-card"
       }`}
     >
       <div className="flex items-start gap-3">
@@ -41,8 +41,8 @@ function ItemCard({
           onClick={() => onToggle(item)}
           className={`flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-xl border text-lg font-bold ${
             item.checked
-              ? "border-green-500 bg-green-500 text-white"
-              : "border-neutral-300 bg-white text-neutral-500"
+              ? "border-chart-3 bg-chart-3 text-primary-foreground"
+              : "border-border bg-background text-muted-foreground"
           } disabled:cursor-not-allowed disabled:opacity-50`}
         >
           {item.checked ? "✓" : "○"}
@@ -60,7 +60,7 @@ function ItemCard({
             訂單 #{item.orderId} · 數量 {item.quantity}
           </p>
           {item.readOnly && (
-            <p className="mt-1 text-[11px] font-medium text-amber-700">
+            <p className="mt-1 text-[11px] font-medium text-accent">
               已出貨，勾選紀錄僅供查看
             </p>
           )}
@@ -85,7 +85,7 @@ export function PickingCheckSections({ items, pendingKey, onToggle }: Props) {
         </h3>
         <div className="space-y-2">
           {unchecked.length === 0 ? (
-            <p className="rounded-xl bg-green-50 px-3 py-4 text-center text-sm text-green-700">
+            <p className="rounded-xl bg-secondary px-3 py-4 text-center text-sm text-secondary-foreground">
               這批商品都已包好
             </p>
           ) : (
