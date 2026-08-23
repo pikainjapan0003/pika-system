@@ -91,7 +91,7 @@ export default function ExchangeRateReferencePage() {
 
   return (
     <div className="mx-auto min-h-[100dvh] max-w-[480px] bg-background pb-24">
-      <header className="sticky top-0 z-10 border-b border-border bg-white px-5 pb-4 pt-10">
+      <header className="sticky top-0 z-10 border-b border-border bg-card px-5 pb-4 pt-10">
         <button
           type="button"
           onClick={() => setLocation("/settings")}
@@ -106,7 +106,7 @@ export default function ExchangeRateReferencePage() {
       </header>
 
       <main className="space-y-4 px-5 py-5">
-        <section className="rounded-2xl border border-border bg-white p-4">
+        <section className="rounded-2xl border border-border bg-card p-4">
           <label className="block text-sm font-semibold text-foreground">
             店鋪進貨匯率（日圓 → 台幣）
           </label>
@@ -123,7 +123,7 @@ export default function ExchangeRateReferencePage() {
               setError("");
             }}
             placeholder="留空表示待確認，例如 0.199"
-            className="mt-2 min-h-11 w-full rounded-xl border border-input bg-white px-3.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
+            className="mt-2 min-h-11 w-full rounded-xl border border-input bg-background px-3.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
           />
 
           <ExchangeRateReferenceHint
@@ -136,12 +136,12 @@ export default function ExchangeRateReferencePage() {
           />
 
           {error && (
-            <p className="mt-3 whitespace-pre-line rounded-xl bg-red-50 p-3 text-xs text-red-700">
+            <p className="mt-3 whitespace-pre-line rounded-xl bg-destructive/10 p-3 text-xs text-destructive">
               {error}
             </p>
           )}
           {saved && (
-            <p className="mt-3 rounded-xl bg-emerald-50 p-3 text-xs font-medium text-emerald-700">
+            <p className="mt-3 rounded-xl bg-secondary p-3 text-xs font-medium text-secondary-foreground">
               已儲存店鋪進貨匯率。
             </p>
           )}
@@ -150,7 +150,7 @@ export default function ExchangeRateReferencePage() {
             type="button"
             onClick={() => void save()}
             disabled={isLoading || !store || updateStore.isPending}
-            className="mt-4 min-h-11 w-full rounded-xl bg-primary px-4 text-sm font-semibold text-white disabled:opacity-50"
+            className="mt-4 min-h-11 w-full rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-50"
           >
             {updateStore.isPending ? "儲存中…" : "儲存店鋪匯率"}
           </button>

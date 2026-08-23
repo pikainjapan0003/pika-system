@@ -12,12 +12,12 @@ export const STATUS_LABELS: Record<OrderStatus, string> &
 
 export const STATUS_COLORS: Record<OrderStatus, string> &
   Record<string, string> = {
-  pending: "bg-amber-100 text-amber-700",
-  awaiting_payment: "bg-blue-100 text-blue-700",
-  preparing: "bg-purple-100 text-purple-700",
-  shipped: "bg-cyan-100 text-cyan-700",
-  completed: "bg-green-100 text-green-700",
-  cancelled: "bg-gray-100 text-gray-500",
+  pending: "bg-accent/10 text-accent",
+  awaiting_payment: "bg-chart-4/10 text-chart-4",
+  preparing: "bg-chart-4/10 text-chart-4",
+  shipped: "bg-chart-4/10 text-chart-4",
+  completed: "bg-chart-3/10 text-chart-3",
+  cancelled: "bg-muted text-muted-foreground",
 };
 
 export const ALL_STATUSES = Object.keys(STATUS_LABELS) as OrderStatus[];

@@ -32,7 +32,7 @@ export function ProductShippingTemperatureField({
             onClick={() => onChange(option.value)}
             className={`min-h-11 rounded-xl text-sm font-medium border transition-colors ${
               value === option.value
-                ? "bg-primary text-white border-primary"
+                ? "bg-primary text-primary-foreground border-primary"
                 : "bg-secondary/60 text-foreground border-border"
             }`}
           >

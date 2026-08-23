@@ -120,7 +120,7 @@ export default function ProductCategoriesPage() {
   return (
     <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-16">
       {/* Header */}
-      <header className="bg-white border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10 flex items-center gap-3">
+      <header className="bg-card border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10 flex items-center gap-3">
         <button
           type="button"
           onClick={() => setLocation("/products")}
@@ -139,7 +139,7 @@ export default function ProductCategoriesPage() {
 
       <div className="px-5 py-5 space-y-4">
         {/* 新增分類 */}
-        <div className="bg-white rounded-2xl border border-border p-4 space-y-3">
+        <div className="bg-card rounded-2xl border border-border p-4 space-y-3">
           <p className="text-sm font-semibold text-foreground">新增分類</p>
           <div className="flex gap-2">
             <input
@@ -160,7 +160,7 @@ export default function ProductCategoriesPage() {
               type="button"
               onClick={() => void handleCreate()}
               disabled={isCreating || !storeId}
-              className="h-11 px-4 bg-primary text-white text-sm font-semibold rounded-xl disabled:opacity-50 flex-shrink-0"
+              className="h-11 px-4 bg-primary text-primary-foreground text-sm font-semibold rounded-xl disabled:opacity-50 flex-shrink-0"
             >
               {isCreating ? "新增中…" : "新增"}
             </button>
@@ -171,7 +171,7 @@ export default function ProductCategoriesPage() {
         </div>
 
         {/* 分類列表 */}
-        <div className="bg-white rounded-2xl border border-border overflow-hidden">
+        <div className="bg-card rounded-2xl border border-border overflow-hidden">
           <div className="px-4 py-3 border-b border-border">
             <p className="text-sm font-semibold text-foreground">
               分類列表
@@ -232,7 +232,7 @@ export default function ProductCategoriesPage() {
                           type="button"
                           onClick={() => void handleSaveEdit(cat.id)}
                           disabled={isSavingEdit}
-                          className="h-9 px-4 bg-primary text-white text-xs font-semibold rounded-lg disabled:opacity-50"
+                          className="h-9 px-4 bg-primary text-primary-foreground text-xs font-semibold rounded-lg disabled:opacity-50"
                         >
                           {isSavingEdit ? "儲存中…" : "儲存"}
                         </button>

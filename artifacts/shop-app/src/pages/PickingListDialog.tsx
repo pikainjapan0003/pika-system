@@ -108,7 +108,7 @@ export function PickingListDialog({ open, onClose, data }: Props) {
             <button
               type="button"
               onClick={() => printPickingList(data)}
-              className="min-h-11 px-3 text-xs font-medium rounded-lg border border-border bg-white text-foreground hover:bg-secondary/50"
+              className="min-h-11 px-3 text-xs font-medium rounded-lg border border-border bg-card text-foreground hover:bg-secondary/50"
             >
               列印
             </button>
@@ -116,7 +116,7 @@ export function PickingListDialog({ open, onClose, data }: Props) {
               <button
                 type="button"
                 aria-label="關閉"
-                className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700 active:bg-neutral-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-300"
+                className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full text-muted-foreground transition hover:bg-secondary hover:text-foreground active:bg-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <svg
                   className="w-4 h-4"
@@ -138,8 +138,8 @@ export function PickingListDialog({ open, onClose, data }: Props) {
 
         {/* Excluded warning */}
         {data.excludedOrderIds.length > 0 && (
-          <div className="px-4 py-2.5 bg-amber-50 border-b border-amber-200 shrink-0">
-            <p className="text-xs text-amber-700">
+          <div className="px-4 py-2.5 bg-accent/10 border-b border-accent/30 shrink-0">
+            <p className="text-xs text-accent">
               已排除 {data.excludedOrderIds.length} 筆已取消訂單 （ID:{" "}
               {data.excludedOrderIds.join("、")}）
             </p>
@@ -169,7 +169,7 @@ export function PickingListDialog({ open, onClose, data }: Props) {
               data.items.map((item, i) => (
                 <div
                   key={`${item.productId}-${item.skuCode ?? i}`}
-                  className="bg-white rounded-xl border border-border/60 p-3.5"
+                  className="bg-card rounded-xl border border-border/60 p-3.5"
                 >
                   <div className="flex items-start justify-between gap-2 mb-1.5">
                     <div className="flex-1 min-w-0">
@@ -195,7 +195,7 @@ export function PickingListDialog({ open, onClose, data }: Props) {
                   {(item.storageTemp || item.shelfLife) && (
                     <div className="flex gap-3 mb-1.5">
                       {item.storageTemp && (
-                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-medium">
+                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-chart-4/10 text-chart-4 font-medium">
                           {STORAGE_TEMP_LABELS[item.storageTemp] ??
                             item.storageTemp}
                         </span>

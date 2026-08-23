@@ -42,10 +42,10 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const STATUS_BADGE: Record<string, string> = {
-  open: "bg-amber-100 text-amber-700",
-  reviewing: "bg-blue-100 text-blue-700",
-  resolved: "bg-green-100 text-green-700",
-  ignored: "bg-gray-100 text-gray-500",
+  open: "bg-accent/15 text-accent",
+  reviewing: "bg-chart-4/10 text-chart-4",
+  resolved: "bg-chart-3/10 text-chart-3",
+  ignored: "bg-muted text-muted-foreground",
 };
 
 const SEVERITY_LABELS: Record<string, string> = {
@@ -56,10 +56,10 @@ const SEVERITY_LABELS: Record<string, string> = {
 };
 
 const SEVERITY_BADGE: Record<string, string> = {
-  info: "bg-gray-100 text-gray-600",
-  warning: "bg-yellow-100 text-yellow-800",
-  error: "bg-red-100 text-red-700",
-  critical: "bg-red-100 text-red-700",
+  info: "bg-muted text-muted-foreground",
+  warning: "bg-accent/15 text-accent",
+  error: "bg-destructive/10 text-destructive",
+  critical: "bg-destructive/10 text-destructive",
 };
 
 const STATUS_FILTERS = [
@@ -233,7 +233,7 @@ function formatTime(iso: string | null): string {
 }
 
 const SELECT =
-  "h-9 rounded-xl border border-input bg-white text-xs text-foreground px-2 min-w-0";
+  "h-9 rounded-xl border border-input bg-background text-xs text-foreground px-2 min-w-0";
 
 export default function LogisticsExceptionsPage() {
   const { data: store } = useGetMyStore();
@@ -375,7 +375,7 @@ export default function LogisticsExceptionsPage() {
 
   return (
     <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-24">
-      <header className="bg-white border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
+      <header className="bg-card border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
         <h1 className="text-lg font-bold text-foreground">物流異常處理</h1>
         <p className="text-xs text-muted-foreground mt-1">
           集中處理匯入與物流查詢失敗的資料。
@@ -427,7 +427,7 @@ export default function LogisticsExceptionsPage() {
       <div className="px-5 py-4 space-y-3">
         <LogisticsSyncStatusHint />
         {actionError && !loading && !error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">
+          <div className="bg-destructive/10 border border-destructive/30 text-destructive text-sm rounded-xl px-4 py-3">
             {actionError}
           </div>
         )}
@@ -439,18 +439,18 @@ export default function LogisticsExceptionsPage() {
             </p>
           </div>
         ) : error ? (
-          <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-4 text-center space-y-2">
-            <p className="text-sm text-red-700">{error}</p>
+          <div className="bg-destructive/10 border border-destructive/30 rounded-xl px-4 py-4 text-center space-y-2">
+            <p className="text-sm text-destructive">{error}</p>
             <button
               type="button"
               onClick={() => void fetchExceptions()}
-              className="h-8 px-4 rounded-lg border border-red-200 bg-white text-xs font-medium text-red-700"
+              className="h-8 px-4 rounded-lg border border-destructive/30 bg-background text-xs font-medium text-destructive"
             >
               重新整理
             </button>
           </div>
         ) : items.length === 0 ? (
-          <div className="bg-white rounded-2xl p-10 border border-border text-center">
+          <div className="bg-card rounded-2xl p-10 border border-border text-center">
             <p className="text-muted-foreground text-sm">
               {status === "open"
                 ? "目前沒有待處理物流異常"
@@ -469,7 +469,7 @@ export default function LogisticsExceptionsPage() {
             return (
               <div
                 key={group.key}
-                className="bg-white rounded-2xl border border-border px-4 py-3.5 space-y-2"
+                className="bg-card rounded-2xl border border-border px-4 py-3.5 space-y-2"
               >
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <span className="text-xs font-bold text-foreground">
@@ -482,12 +482,12 @@ export default function LogisticsExceptionsPage() {
                     {SOURCE_LABELS[group.sourceType] ?? "系統"}
                   </span>
                   <span
-                    className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${STATUS_BADGE[group.status] ?? "bg-gray-100 text-gray-500"}`}
+                    className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${STATUS_BADGE[group.status] ?? "bg-muted text-muted-foreground"}`}
                   >
                     {STATUS_LABELS[group.status] ?? "其他狀態"}
                   </span>
                   <span
-                    className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${SEVERITY_BADGE[group.severity] ?? "bg-gray-100 text-gray-600"}`}
+                    className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${SEVERITY_BADGE[group.severity] ?? "bg-muted text-muted-foreground"}`}
                   >
                     {SEVERITY_LABELS[group.severity] ?? "一般"}
                   </span>
@@ -519,7 +519,7 @@ export default function LogisticsExceptionsPage() {
                         onClick={() =>
                           void updateGroupStatus(group, "resolved")
                         }
-                        className="h-8 px-3 rounded-lg bg-primary text-white text-xs font-medium disabled:opacity-50"
+                        className="h-8 px-3 rounded-lg bg-primary text-primary-foreground text-xs font-medium disabled:opacity-50"
                       >
                         {acting ? "處理中..." : "全部標記已處理"}
                       </button>
