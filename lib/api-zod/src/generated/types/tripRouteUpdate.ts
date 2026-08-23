@@ -14,9 +14,7 @@ export interface TripRouteUpdate {
   tripAreaId?: number | null;
   /** @minLength 1 */
   areaTitle?: string;
-  /** @minLength 1 */
   startPlace?: string;
-  /** @minLength 1 */
   endPlace?: string;
   /** @minimum 1 */
   estQty?: number;
