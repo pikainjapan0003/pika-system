@@ -835,13 +835,27 @@ G4 最低響應式驗收視口：390／768／1024／1440px（RS-1），並以既
 - 鯨魚：成熟比例（近座頭鯨）、線框／光點／網格／聲吶成像；⛔ 純色塊狀圓滾輪廓；透明度 15–40%（依位置調整）；建議頁首右側聲吶圓環內；⛔ 不置於圖表與主要文字後方。
 - 鯨魚元件的具體尺寸、筆畫與資產規格在本關**未定案**，見下：
 
+### 雷達主視覺
+
+Owner 2026-08-24 裁決（乙案）：
+
+- ⭐ 全站每頁最多一個雷達主視覺，位置在 KPI 頁最上方。
+- ⛔ KPI 卡片內不放雷達（否決「每卡一個小雷達」）。
+- 理由：13 張 KPI 卡各轉一個雷達會互相搶注意力，KPI 卡的主角是數字；雷達應是該頁門面，不是每個數字的背景。⭐ 同時滿足 Q6 硬性附註「應重新設計層級」——主視覺即層級。
+- 尺寸 TBD，須落在下列範圍（審批者 B 依產品實測推算）：
+  - 產品實測（ProfitKpiBoard.tsx 第 241、257 行）：grid grid-cols-2 gap-2 sm:grid-cols-3、卡片 rounded-2xl border p-3，⛔ 無固定像素尺寸。
+  - 手機 390px：內容區約 358px；塞在 KPI 卡內（2 欄）→ 卡片約 175px，雷達上限約 140px；當整頁主視覺（滿寬）→ 上限約 358px。
+  - ⭐ 建議區間 240–320px，最終值待 Owner 於 G3／G6 確認。
+- 掃描動效沿用 MO-1（6–10 秒一圈），reduced-motion 下停止旋轉。
+
 ### 鯨魚識別元素
 
 TBD — 待包25 粒子鯨魚工作線驗收後回填。
 
-已知約束：fill:none、stroke:currentColor、
-實際上線尺寸為 62px（kpi-hero, opacity .4）
-與 74px（radar-hero, opacity .4），96px（guest-hero, opacity .2）。
+已知約束：fill:none、stroke:currentColor。
+⚠️ 尺寸與 opacity TBD — 62px／74px／96px 出自 G1 樣張頁
+（Desktop\pika-phase25-g1\index.html）作者自訂，非產品規格、
+未經 Owner 裁決，⛔ 不得作為上線尺寸寫入本文件。
 
 > ⛔ 本關不得自行決定鯨魚長相、不得引用 V1–V8 任一版為定案；G3 樣張內建線框鯨魚僅為示範資產（REG-3），正式資產由粒子鯨魚工作線產出後回填本節。其餘章節不因鯨魚未定而留空。
 
@@ -1227,4 +1241,4 @@ disabled 與「待確認」不得共用同一視覺：
 - 抽查 JPY、TWD、負數、真正零值、null 與百分比；所有 numeric cell 實際套用 tnum，null 不得格式化為 0。
 - 逐一開啟 Dropdown、Popover、Tooltip、Sheet／Drawer、Dialog 與 Sonner，驗證 portal 層級符合 0–90 尺度且 modal 內浮層不被 overlay 截斷。
 - 聲吶掃描實測 6–10 秒一圈；prefers-reduced-motion 模擬下掃描／呼吸／粒子全部關閉，結果文字、符號與狀態仍在（MO-1／MO-2）；每畫面同時啟用的 K 類動效 ≤3（MO-3）。
-- 鯨魚顯示以「鯨魚識別元素」的已知約束為準（62px／74px／96px、opacity .2–.4）；正式資產待粒子鯨魚工作線回填（TBD）。
+- 鯨魚顯示以「鯨魚識別元素」小節的已知約束為準（尺寸與 opacity 為 TBD，⛔ 不得引用 G1 樣張自訂值）；正式資產待粒子鯨魚工作線回填（TBD）。
