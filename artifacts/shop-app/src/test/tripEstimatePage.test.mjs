@@ -74,6 +74,7 @@ function makeSummary(overrides = {}) {
     exchangeRate: "0.205",
     totalItemQuantity: 700,
     unitGrossProfitTwd: "130",
+    dailyGrossProfitTwd: null,
     entries: [],
     categories: allCategories,
     sections: {
@@ -243,6 +244,7 @@ test("saving estimate sends original decimals, per-item currency, and UNIT input
     exchangeRate: "0.205",
     totalItemQuantity: "700",
     unitGrossProfitTwd: "130",
+    dailyGrossProfitTwd: null,
   });
 
   const firstCategoryCall = await waitForCall(calls, (call) => {
@@ -265,6 +267,57 @@ test("saving estimate sends original decimals, per-item currency, and UNIT input
     originalAmount: "63943",
     currency: "JPY",
   });
+  root.unmount();
+});
+
+test("daily gross profit input backfills, accepts a typed value, and submits it as a string", async () => {
+  const summary = makeSummary({ dailyGrossProfitTwd: "9850.5" });
+  const calls = [];
+  globalThis.fetch = async (url, init = {}) => {
+    calls.push({ url, init });
+    if (String(url).includes("operating-summary")) {
+      return response(summary);
+    }
+    return response({ ok: true });
+  };
+  const { container, root } = await renderPage(summary);
+
+  // 回填：既有 dailyGrossProfitTwd 載入輸入欄（純字串，未經 Number）
+  const dailyInput = container.querySelector("input[aria-label='每日毛利']");
+  assert.ok(dailyInput);
+  assert.match(container.textContent, /每日毛利（TWD）/);
+  assert.equal(dailyInput.value, "9850.5");
+
+  // 填寫：輸入小數值，state 保持字串原樣
+  setInputValue(dailyInput, "12300.75");
+  assert.equal(dailyInput.value, "12300.75");
+
+  const saveButton = findButtonByText(container, "儲存估算");
+  assert.ok(saveButton);
+  saveButton.click();
+
+  const operatingInputCall = await waitForCall(calls, (call) =>
+    String(call.url).endsWith("/operating-inputs"),
+  );
+  assert.ok(operatingInputCall);
+  assert.deepEqual(JSON.parse(operatingInputCall.init.body), {
+    exchangeRate: "0.205",
+    totalItemQuantity: "700",
+    unitGrossProfitTwd: "130",
+    dailyGrossProfitTwd: "12300.75",
+  });
+
+  // 清空後再送出：缺值必須送 null、不得送 0
+  setInputValue(dailyInput, "");
+  const secondSave = findButtonByText(container, "儲存估算");
+  assert.ok(secondSave);
+  secondSave.click();
+  const clearedCall = await waitForCall(calls, (call) => {
+    if (!String(call.url).endsWith("/operating-inputs")) return false;
+    return JSON.parse(call.init.body).dailyGrossProfitTwd === null;
+  });
+  assert.ok(clearedCall);
+  assert.equal(JSON.parse(clearedCall.init.body).dailyGrossProfitTwd, null);
   root.unmount();
 });
 
