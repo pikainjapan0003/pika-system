@@ -84,6 +84,7 @@ type Summary = {
   exchangeRate: string | null;
   totalItemQuantity: number | null;
   unitGrossProfitTwd: string | null;
+  dailyGrossProfitTwd: string | null;
   entries: Entry[];
   categories: Category[];
   sections: {
@@ -138,6 +139,7 @@ const OUTCOME_SURFACE: Record<ReadyTripProfitProjection["outcome"], string> = {
 const INPUT_MAX_LIMITS = {
   totalItemQuantity: "100000", // 預估件數（件）
   unitGrossProfitTwd: "1000000", // 單件毛利（TWD）
+  dailyGrossProfitTwd: "1000000", // 每日毛利（TWD）
   exchangeRate: "1000", // 估算匯率（JPY → TWD）
   originalAmount: "100000000", // 各成本項目單筆金額（TWD／JPY 原幣）
 } as const;
@@ -155,6 +157,7 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
   const [calibrationJpy, setCalibrationJpy] = useState("");
   const [totalItemQuantity, setTotalItemQuantity] = useState("");
   const [unitGrossProfitTwd, setUnitGrossProfitTwd] = useState("");
+  const [dailyGrossProfitTwd, setDailyGrossProfitTwd] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
@@ -195,6 +198,7 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
           : String(payload.totalItemQuantity),
       );
       setUnitGrossProfitTwd(payload.unitGrossProfitTwd ?? "");
+      setDailyGrossProfitTwd(payload.dailyGrossProfitTwd ?? "");
       setValues(
         Object.fromEntries(
           payload.entries
@@ -325,6 +329,16 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
       );
       return;
     }
+    const trimmedDaily = dailyGrossProfitTwd.trim();
+    if (
+      trimmedDaily &&
+      !decimalStringAtMost(trimmedDaily, INPUT_MAX_LIMITS.dailyGrossProfitTwd)
+    ) {
+      setError(
+        `每日毛利 ${trimmedDaily} 超出上限 ${INPUT_MAX_LIMITS.dailyGrossProfitTwd} 元，可能有誤輸入；請檢查後再儲存。`,
+      );
+      return;
+    }
     for (const category of categories) {
       const amount = (values[category.id] ?? "0").trim();
       if (
@@ -349,6 +363,7 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
             exchangeRate: exchangeRate.trim() || null,
             totalItemQuantity: totalItemQuantity.trim() || null,
             unitGrossProfitTwd: unitGrossProfitTwd.trim() || null,
+            dailyGrossProfitTwd: dailyGrossProfitTwd.trim() || null,
           }),
         },
       );
@@ -743,7 +758,7 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
 
             <section className="space-y-3 rounded-2xl border border-border bg-card p-4">
               <h2 className="font-bold">整趟損益預估</h2>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 <label className="block text-sm">
                   預估件數
                   <input
@@ -764,6 +779,18 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
                     value={trimAmountForDisplay(unitGrossProfitTwd)}
                     onChange={(event) =>
                       setUnitGrossProfitTwd(event.target.value)
+                    }
+                    inputMode="decimal"
+                  />
+                </label>
+                <label className="block text-sm">
+                  每日毛利（TWD）
+                  <input
+                    aria-label="每日毛利"
+                    className={`${inputClass} mt-1`}
+                    value={trimAmountForDisplay(dailyGrossProfitTwd)}
+                    onChange={(event) =>
+                      setDailyGrossProfitTwd(event.target.value)
                     }
                     inputMode="decimal"
                   />
