@@ -53,6 +53,24 @@ mock.module("@workspace/api-client-react", {
     }),
     useListOrders: () => ({ data: orders }),
     useListProducts: () => ({ data: products }),
+    useListRouteCostRanking: () => ({
+      data: { status: "ready", items: [] },
+      isLoading: false,
+      error: null,
+      refetch: async () => undefined,
+    }),
+    useListAreaScatter: () => ({
+      data: { status: "ready", items: [] },
+      isLoading: false,
+      error: null,
+      refetch: async () => undefined,
+    }),
+    useListHistoryTrend: () => ({
+      data: { status: "ready", mode: "ACTUAL", items: [] },
+      isLoading: false,
+      error: null,
+      refetch: async () => undefined,
+    }),
   },
 });
 mock.module("../lib/dailySkillVisibilityContext.tsx", {
