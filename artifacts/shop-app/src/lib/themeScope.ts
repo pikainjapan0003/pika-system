@@ -1,5 +1,7 @@
 export type PikaThemeScope = "light" | "night" | "legacy";
 
+const PIKA_PALETTE = "deepsea";
+
 const LIGHT_ROUTES = new Set([
   "/cart",
   "/track",
@@ -82,6 +84,7 @@ export function applyThemeRouteScope(
 ): void {
   const { body } = targetDocument;
   body.dataset.pikaTheme = scope;
+  body.dataset.pikaPalette = PIKA_PALETTE;
   body.dataset.pikaBrand = brandOverrideEnabled ? "enabled" : "disabled";
   body.classList.toggle("dark", scope === "night");
 
