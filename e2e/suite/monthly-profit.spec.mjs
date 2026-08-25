@@ -44,8 +44,14 @@ test("the monthly report shows rounded snapshot profit and nonzero exception cou
   await page.locator('input[type="month"]').fill("2026-07");
 
   await expect(page.getByText("NT$ 1,559", { exact: true })).toBeVisible();
-  await expect(page.locator("div", { hasText: /^2待確認$/ })).toBeVisible();
-  await expect(page.locator("div", { hasText: /^3尚無快照$/ })).toBeVisible();
-  await expect(page.locator("div", { hasText: /^0待確認$/ })).toHaveCount(0);
-  await expect(page.locator("div", { hasText: /^0尚無快照$/ })).toHaveCount(0);
+  const pendingMetric = page.locator("dl > div").filter({
+    has: page.locator("dt", { hasText: /^待確認$/ }),
+  });
+  const missingMetric = page.locator("dl > div").filter({
+    has: page.locator("dt", { hasText: /^尚無快照$/ }),
+  });
+  await expect(pendingMetric).toContainText("待確認2");
+  await expect(missingMetric).toContainText("尚無快照3");
+  await expect(pendingMetric.locator("dd")).not.toHaveText("0");
+  await expect(missingMetric.locator("dd")).not.toHaveText("0");
 });

@@ -18,7 +18,7 @@ import {
   type TripArea,
   type TripAreaCost,
 } from "@workspace/api-client-react";
-import { BottomNav } from "./Dashboard";
+import { BottomNavigation } from "../components/BottomNavigation";
 import { ExchangeRateReferenceHint } from "@/components/ExchangeRateReferenceHint";
 import { formatActionableError } from "@/lib/actionableError";
 
@@ -852,7 +852,7 @@ export default function TripsPage() {
   const storeId = store?.id;
 
   return (
-    <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-24">
+    <div className="mx-auto min-h-[100dvh] max-w-[480px] bg-background pb-[calc(112px+env(safe-area-inset-bottom))]">
       <header className="bg-card border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
         <div className="flex items-center gap-3">
           <button
@@ -924,7 +924,7 @@ export default function TripsPage() {
         )}
       </div>
 
-      <BottomNav active="settings" />
+      <BottomNavigation active="more" />
     </div>
   );
 }
