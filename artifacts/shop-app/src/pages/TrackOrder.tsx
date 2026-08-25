@@ -3,6 +3,9 @@ import { useLocation } from "wouter";
 import { useGetPublicOrder } from "@workspace/api-client-react";
 import { STATUS_COLORS, STATUS_STEPS, STATUS_LABELS } from "../lib/orderStatus";
 import { formatActionableError } from "@/lib/actionableError";
+import { SemanticStatePanel } from "@/components/SemanticStatePanel";
+import { exactDecimal } from "@/components/charts/exactChart";
+import { trimAmountForDisplay } from "@/lib/operatingCostDisplay";
 
 interface Props {
   publicToken: string;
@@ -65,19 +68,75 @@ function isSelfPickup(pickupMethod?: string | null): boolean {
   return m.includes("面交") || m.includes("自取");
 }
 
-function formatDate(iso: string): string {
+function formatDate(iso: string | null | undefined): string {
+  if (!iso?.trim()) return "待確認（時間未完整回傳）";
   const d = new Date(iso);
+  if (!Number.isFinite(d.getTime())) return "待確認（時間未完整回傳）";
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+function normalizeExactAmount(value: unknown): string | null {
+  if (value === null || value === undefined) return null;
+  const normalized = String(value).trim();
+  if (!normalized) return null;
+  const decimal = exactDecimal(normalized);
+  return decimal !== null && !decimal.isNegative() ? normalized : null;
+}
+
+function formatExactAmountForDisplay(value: unknown): string | null {
+  const normalized = normalizeExactAmount(value);
+  if (normalized === null) return null;
+  const decimal = exactDecimal(normalized);
+  if (decimal === null) return null;
+  const trimmed = trimAmountForDisplay(decimal.toDecimalPlaces(3));
+  const [integerPart, fractionPart] = trimmed.split(".");
+  const groupedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return fractionPart === undefined
+    ? groupedInteger
+    : `${groupedInteger}.${fractionPart}`;
+}
+
+function normalizeQuantity(value: unknown): number | null {
+  return typeof value === "number" && Number.isSafeInteger(value) && value > 0
+    ? value
+    : null;
+}
+
+function multiplyExactAmount(
+  amount: string | null,
+  quantity: number | null,
+): string | null {
+  if (amount === null || quantity === null) return null;
+  const amountDecimal = exactDecimal(amount);
+  const quantityDecimal = exactDecimal(String(quantity));
+  if (amountDecimal === null || quantityDecimal === null) return null;
+  return amountDecimal.multiply(quantityDecimal).toDecimalPlaces(12);
+}
+
+function divideExactAmount(
+  amount: string | null,
+  quantity: number | null,
+): string | null {
+  if (amount === null || quantity === null) return null;
+  const amountDecimal = exactDecimal(amount);
+  const quantityDecimal = exactDecimal(String(quantity));
+  if (amountDecimal === null || quantityDecimal === null) return null;
+  return amountDecimal.divide(quantityDecimal).toDecimalPlaces(12);
+}
+
 interface OrderItem {
-  productName: string;
+  productName: string | null;
   specValues: Record<string, string>;
-  quantity: number;
-  unitPrice: number;
-  subtotal: number;
+  quantity: number | null;
+  unitPrice: string | null;
+  subtotal: string | null;
   productImageUrl?: string | null;
+}
+
+interface NormalizedOrderItems {
+  items: OrderItem[];
+  malformedItemCount: number;
 }
 
 // Returns a normalized items array. If order.items (JSONB multi-item) exists, use it.
@@ -86,25 +145,76 @@ function normalizeOrderItems(order: {
   items?: unknown;
   productName?: string | null;
   specValues?: unknown;
-  quantity?: number;
-  unitPrice?: number;
-  totalPrice?: number;
-}): OrderItem[] {
-  const raw = order.items as OrderItem[] | null | undefined;
-  if (Array.isArray(raw) && raw.length > 0) return raw;
-  const qty = order.quantity ?? 1;
+  quantity?: unknown;
+  unitPrice?: unknown;
+  totalPrice?: unknown;
+}): NormalizedOrderItems {
+  const raw = Array.isArray(order.items) ? order.items : [];
+  if (raw.length > 0) {
+    const items = raw.flatMap((entry): OrderItem[] => {
+      if (typeof entry !== "object" || entry === null || Array.isArray(entry)) {
+        return [];
+      }
+
+      const item = entry as Record<string, unknown>;
+      const quantity = normalizeQuantity(item.quantity);
+      const unitPrice = normalizeExactAmount(item.unitPrice);
+      return [
+        {
+          productName:
+            typeof item.productName === "string" && item.productName.trim()
+              ? item.productName
+              : null,
+          specValues:
+            item.specValues !== null &&
+            typeof item.specValues === "object" &&
+            !Array.isArray(item.specValues)
+              ? (item.specValues as Record<string, string>)
+              : {},
+          quantity,
+          unitPrice,
+          subtotal:
+            normalizeExactAmount(item.subtotal) ??
+            multiplyExactAmount(unitPrice, quantity),
+          productImageUrl:
+            typeof item.productImageUrl === "string"
+              ? item.productImageUrl
+              : null,
+        },
+      ];
+    });
+    return {
+      items,
+      malformedItemCount: raw.length - items.length,
+    };
+  }
+
+  const quantity = normalizeQuantity(order.quantity);
+  const totalPrice = normalizeExactAmount(order.totalPrice);
+  const explicitUnitPrice = normalizeExactAmount(order.unitPrice);
   const unitPrice =
-    order.unitPrice ??
-    (order.totalPrice != null && qty > 0 ? order.totalPrice / qty : 0);
-  return [
-    {
-      productName: order.productName ?? "（商品）",
-      specValues: (order.specValues as Record<string, string>) ?? {},
-      quantity: qty,
-      unitPrice,
-      subtotal: unitPrice * qty,
-    },
-  ];
+    explicitUnitPrice ?? divideExactAmount(totalPrice, quantity);
+  const productName = order.productName?.trim() || null;
+  if (
+    productName === null &&
+    quantity === null &&
+    unitPrice === null &&
+    totalPrice === null
+  ) {
+    return { items: [], malformedItemCount: 0 };
+  }
+  return {
+    items: [
+      {
+        productName,
+        specValues: (order.specValues as Record<string, string>) ?? {},
+        quantity,
+        unitPrice,
+        subtotal: totalPrice ?? multiplyExactAmount(unitPrice, quantity),
+      },
+    ],
+    malformedItemCount: 0,
+  };
 }
 
 function formatSpecSummary(specValues: Record<string, string>): string {
@@ -120,32 +230,51 @@ export default function TrackOrderPage({ publicToken }: Props) {
   const [paymentLast5, setPaymentLast5] = useState("");
   const [paymentMessage, setPaymentMessage] = useState("");
   const [savingPaymentLast5, setSavingPaymentLast5] = useState(false);
-  const { data: order, isLoading, error } = useGetPublicOrder(publicToken);
+  const [copyError, setCopyError] = useState("");
+  const {
+    data: order,
+    isLoading,
+    isFetching,
+    error,
+    refetch,
+  } = useGetPublicOrder(publicToken);
 
   useEffect(() => {
     setPaymentLast5((order as any)?.paymentLast5 ?? "");
   }, [order?.publicToken, (order as any)?.paymentLast5]);
 
   const handleCopyToken = (text: string) => {
-    if (!navigator.clipboard) return;
+    setCopyError("");
+    if (!navigator.clipboard) {
+      setCopyError("複製功能無法使用，請長按訂單查詢碼手動複製。");
+      return;
+    }
     navigator.clipboard
       .writeText(text)
       .then(() => {
         setCopiedToken(true);
         setTimeout(() => setCopiedToken(false), 2000);
       })
-      .catch(() => {});
+      .catch(() => {
+        setCopyError("複製失敗，請長按訂單查詢碼手動複製。");
+      });
   };
 
   const handleCopyTracking = (text: string) => {
-    if (!navigator.clipboard) return;
+    setCopyError("");
+    if (!navigator.clipboard) {
+      setCopyError("複製功能無法使用，請長按物流追蹤碼手動複製。");
+      return;
+    }
     navigator.clipboard
       .writeText(text)
       .then(() => {
         setCopiedTracking(true);
         setTimeout(() => setCopiedTracking(false), 2000);
       })
-      .catch(() => {});
+      .catch(() => {
+        setCopyError("複製失敗，請長按物流追蹤碼手動複製。");
+      });
   };
 
   const canEditPaymentLast5 =
@@ -185,45 +314,77 @@ export default function TrackOrderPage({ publicToken }: Props) {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-[100dvh] items-center justify-center bg-background">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-[100dvh] bg-background px-5 py-8">
+        <SemanticStatePanel
+          className="mx-auto max-w-sm"
+          state={{
+            kind: "loading",
+            label: "正在載入訂單狀態",
+            fallbackMessage: "若等待時間過長，請確認網路連線後重新整理。",
+          }}
+        />
       </div>
     );
   }
 
-  if (error || !order) {
-    const is404 = (error as any)?.status === 404;
+  if (error) {
+    const is404 = (error as { status?: number })?.status === 404;
     return (
-      <div className="flex min-h-[100dvh] items-center justify-center bg-background px-5">
-        <div className="text-center">
-          <div className="text-4xl mb-3">{is404 ? "🔍" : "😔"}</div>
-          <h1 className="text-lg font-bold text-foreground">
-            {is404 ? "找不到此訂單" : "查詢失敗"}
-          </h1>
-          <p className="text-muted-foreground text-sm mt-2 whitespace-pre-line">
-            {formatActionableError(
-              is404
-                ? {
-                    happened: "目前找不到這張訂單。",
-                    reason: "訂單查詢碼可能不完整或不正確。",
-                    action: "請回到查詢入口，重新貼上完整查詢碼。",
-                    support: "若仍找不到，請把查詢碼提供給店家。",
-                  }
-                : {
-                    happened: "訂單狀態暫時無法載入。",
-                    reason: "網路或系統暫時沒有回應。",
-                    action: "請保留查詢碼，稍後再試一次。",
-                    support: "若持續失敗，請把畫面截圖傳給店家。",
+      <div className="min-h-[100dvh] bg-background px-5 py-8">
+        <SemanticStatePanel
+          className="mx-auto max-w-sm"
+          state={
+            is404
+              ? {
+                  kind: "emptyAction",
+                  title: "找不到此訂單",
+                  reason:
+                    "訂單查詢碼可能不完整或不正確。請回到查詢入口，重新貼上完整查詢碼。",
+                  action: {
+                    label: "返回查詢入口",
+                    onAction: () => setLocation("/track"),
                   },
-            )}
-          </p>
-          <button
-            onClick={() => setLocation("/track")}
-            className="mt-5 inline-flex min-h-11 items-center text-sm text-primary font-medium"
-          >
-            ← 返回查詢入口
-          </button>
-        </div>
+                }
+              : {
+                  kind: "pageError",
+                  title: "訂單狀態載入失敗",
+                  message: formatActionableError({
+                    happened: "訂單狀態暫時無法載入。",
+                    reason:
+                      error instanceof Error
+                        ? error.message
+                        : "網路或系統暫時沒有回應。",
+                    action: "請保留查詢碼，重新載入一次。",
+                    support: "若持續失敗，請把畫面截圖傳給店家。",
+                  }),
+                  retry: {
+                    label: isFetching ? "重新載入中…" : "重新載入",
+                    onAction: () => void refetch(),
+                    busy: isFetching,
+                  },
+                }
+          }
+        />
+      </div>
+    );
+  }
+
+  if (!order) {
+    return (
+      <div className="min-h-[100dvh] bg-background px-5 py-8">
+        <SemanticStatePanel
+          className="mx-auto max-w-sm"
+          state={{
+            kind: "pending",
+            title: "訂單資料待確認",
+            reason: "系統尚未回傳完整訂單內容，沒有以 0 或空白代替。",
+            action: {
+              label: isFetching ? "重新確認中…" : "重新確認",
+              onAction: () => void refetch(),
+              busy: isFetching,
+            },
+          }}
+        />
       </div>
     );
   }
@@ -231,6 +392,10 @@ export default function TrackOrderPage({ publicToken }: Props) {
   const isCancelled = order.status === "cancelled";
   const statusColor =
     STATUS_COLORS[order.status] ?? "bg-muted text-muted-foreground";
+  const { items, malformedItemCount } = normalizeOrderItems(
+    order as unknown as Parameters<typeof normalizeOrderItems>[0],
+  );
+  const orderTotalDisplay = formatExactAmountForDisplay(order.orderTotal);
 
   return (
     <div className="min-h-[100dvh] bg-background px-5 py-8">
@@ -341,61 +506,114 @@ export default function TrackOrderPage({ publicToken }: Props) {
         )}
 
         {/* Items card — supports both multi-item (cart) orders and legacy single-item orders */}
-        {(() => {
-          const items = normalizeOrderItems(order as any);
-          return (
-            <div className="bg-card rounded-2xl border border-border overflow-hidden mb-3">
-              <div className="px-5 py-3 border-b border-border">
-                <h2 className="text-xs font-semibold text-muted-foreground">
-                  商品明細
-                </h2>
-              </div>
-              <div className="divide-y divide-border">
-                {items.map((item, idx) => {
-                  const specSummary = formatSpecSummary(item.specValues);
-                  return (
-                    <div key={idx} className="px-5 py-3 flex items-start gap-3">
-                      {item.productImageUrl && (
-                        <img
-                          src={item.productImageUrl}
-                          alt={item.productName}
-                          className="w-12 h-12 rounded-lg object-cover flex-shrink-0 mt-0.5"
-                        />
-                      )}
-                      <div className="flex-1 min-w-0 space-y-1">
-                        <div className="text-sm font-medium text-foreground">
-                          {item.productName}
-                        </div>
-                        {specSummary && (
-                          <div className="text-xs text-muted-foreground">
-                            規格：{specSummary}
-                          </div>
-                        )}
-                        <div className="flex items-center justify-between mt-1">
-                          <span className="text-xs text-muted-foreground">
-                            × {item.quantity} 件 · NT${" "}
-                            {item.unitPrice.toLocaleString()} / 件
-                          </span>
-                          <span className="text-sm font-semibold text-foreground">
-                            NT$ {item.subtotal.toLocaleString()}
-                          </span>
-                        </div>
+        <div className="bg-card rounded-2xl border border-border overflow-hidden mb-3">
+          <div className="px-5 py-3 border-b border-border">
+            <h2 className="text-xs font-semibold text-muted-foreground">
+              商品明細
+            </h2>
+          </div>
+          {items.length === 0 ? (
+            <SemanticStatePanel
+              className="border-0"
+              state={{
+                kind: "pending",
+                title: "商品明細待確認",
+                reason:
+                  malformedItemCount > 0
+                    ? `系統回傳的 ${malformedItemCount} 筆商品資料格式不完整，沒有以空白或 0 代替。`
+                    : "系統尚未回傳商品名稱、數量與金額，沒有以 0 代替。",
+              }}
+            />
+          ) : (
+            <div className="divide-y divide-border">
+              {malformedItemCount > 0 && (
+                <SemanticStatePanel
+                  className="border-0"
+                  state={{
+                    kind: "pending",
+                    title: "部分商品明細待確認",
+                    reason: `系統有 ${malformedItemCount} 筆商品資料格式不完整，已先顯示其餘可確認內容，沒有以空白或 0 代替。`,
+                  }}
+                />
+              )}
+              {items.map((item, idx) => {
+                const specSummary = formatSpecSummary(item.specValues);
+                const unitPriceDisplay = formatExactAmountForDisplay(
+                  item.unitPrice,
+                );
+                const subtotalDisplay = formatExactAmountForDisplay(
+                  item.subtotal,
+                );
+                const missingParts = [
+                  item.productName === null ? "商品名稱" : null,
+                  item.quantity === null ? "數量" : null,
+                  unitPriceDisplay === null ? "單價" : null,
+                  subtotalDisplay === null ? "小計" : null,
+                ].filter((part): part is string => part !== null);
+                return (
+                  <div key={idx} className="px-5 py-3 flex items-start gap-3">
+                    {item.productImageUrl && (
+                      <img
+                        src={item.productImageUrl}
+                        alt={item.productName ?? "商品圖片"}
+                        className="w-12 h-12 rounded-lg object-cover flex-shrink-0 mt-0.5"
+                      />
+                    )}
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <div className="text-sm font-medium text-foreground">
+                        {item.productName ?? "商品名稱待確認"}
                       </div>
+                      {specSummary && (
+                        <div className="text-xs text-muted-foreground">
+                          規格：{specSummary}
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between gap-3 mt-1">
+                        <span className="text-xs text-muted-foreground tabular-nums lining-nums">
+                          {item.quantity === null
+                            ? "數量待確認"
+                            : "× " + item.quantity + " 件"}{" "}
+                          ·{" "}
+                          {unitPriceDisplay === null
+                            ? "單價待確認"
+                            : "NT$ " + unitPriceDisplay + " / 件"}
+                        </span>
+                        <span className="text-sm font-semibold text-foreground tabular-nums lining-nums">
+                          {subtotalDisplay === null
+                            ? "小計待確認"
+                            : "NT$ " + subtotalDisplay}
+                        </span>
+                      </div>
+                      {missingParts.length > 0 && (
+                        <p className="text-xs text-accent" role="status">
+                          資料待確認：系統未完整回傳
+                          {missingParts.join("、")}。
+                        </p>
+                      )}
                     </div>
-                  );
-                })}
-              </div>
-              <div className="px-5 py-3 border-t border-border flex items-center justify-between">
-                <span className="text-sm font-semibold text-foreground">
-                  訂單總額
-                </span>
-                <span className="text-base font-bold text-primary">
-                  NT$ {Number(order.orderTotal).toLocaleString()}
-                </span>
-              </div>
+                  </div>
+                );
+              })}
             </div>
-          );
-        })()}
+          )}
+          <div className="px-5 py-3 border-t border-border space-y-1">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-sm font-semibold text-foreground">
+                訂單總額
+              </span>
+              <span className="text-base font-bold text-primary tabular-nums lining-nums">
+                {orderTotalDisplay === null
+                  ? "待確認"
+                  : "NT$ " + orderTotalDisplay}
+              </span>
+            </div>
+            {orderTotalDisplay === null && (
+              <p className="text-xs text-accent" role="status">
+                原因：系統未回傳有效訂單總額，沒有以 0 代替。
+              </p>
+            )}
+          </div>
+        </div>
 
         {/* Order details card */}
         <div className="bg-card rounded-2xl border border-border overflow-hidden">
@@ -404,12 +622,15 @@ export default function TrackOrderPage({ publicToken }: Props) {
             <span
               className={`text-sm px-3 py-1 rounded-full font-medium ${statusColor}`}
             >
-              {order.statusLabel}
+              {order.statusLabel || "狀態待確認"}
             </span>
           </div>
 
           <div className="px-5 py-4 space-y-3">
-            <InfoRow label="取貨方式" value={order.pickupMethod} />
+            <InfoRow
+              label="取貨方式"
+              value={order.pickupMethod || "待確認（系統尚未回傳取貨方式）"}
+            />
             <InfoRow label="下單時間" value={formatDate(order.createdAt)} />
           </div>
         </div>
@@ -424,14 +645,14 @@ export default function TrackOrderPage({ publicToken }: Props) {
           <div className="px-5 py-4 space-y-3">
             {order.trackingCode ? (
               <>
-                {(order.trackingProviderLabel ?? order.trackingProvider) && (
-                  <InfoRow
-                    label="物流商"
-                    value={
-                      order.trackingProviderLabel ?? order.trackingProvider!
-                    }
-                  />
-                )}
+                <InfoRow
+                  label="物流商"
+                  value={
+                    order.trackingProviderLabel ??
+                    order.trackingProvider ??
+                    "待確認（系統尚未回傳物流商）"
+                  }
+                />
                 <InfoRow label="物流貨號" value={order.trackingCode} />
                 {order.latestTrackingStatusLabel ? (
                   <InfoRow
@@ -439,16 +660,17 @@ export default function TrackOrderPage({ publicToken }: Props) {
                     value={order.latestTrackingStatusLabel}
                   />
                 ) : (
-                  <InfoRow label="最新貨態" value="等待物流商更新" />
-                )}
-                {(order.latestTrackingTime ?? order.shipmentUpdatedAt) && (
                   <InfoRow
-                    label="貨態時間"
-                    value={formatDate(
-                      (order.latestTrackingTime ?? order.shipmentUpdatedAt)!,
-                    )}
+                    label="最新貨態"
+                    value="待確認（物流商尚未回傳最新貨態）"
                   />
                 )}
+                <InfoRow
+                  label="貨態時間"
+                  value={formatDate(
+                    order.latestTrackingTime ?? order.shipmentUpdatedAt,
+                  )}
+                />
                 {(order.latestTrackingStatus === "exception" ||
                   order.latestTrackingStatus === "unknown" ||
                   order.latestTrackingStatus === "returned") && (
@@ -464,7 +686,7 @@ export default function TrackOrderPage({ publicToken }: Props) {
               </p>
             ) : (
               <p className="text-sm text-muted-foreground leading-relaxed">
-                店家正在處理訂單，目前尚未建立物流資料。出貨後這裡會更新物流資訊。
+                物流追蹤碼待確認：店家正在處理訂單，目前尚未建立物流資料。出貨後這裡會更新物流資訊。
               </p>
             )}
           </div>
@@ -478,14 +700,23 @@ export default function TrackOrderPage({ publicToken }: Props) {
             </h2>
           </div>
           <div className="px-5 py-4 space-y-3">
-            <InfoRow label="取貨方式" value={order.pickupMethod} />
+            <InfoRow
+              label="取貨方式"
+              value={order.pickupMethod || "待確認（系統尚未回傳取貨方式）"}
+            />
             {/* CVS 門市名稱／地址不對外公開（public tracking 政策），僅顯示買家自己的收件資訊摘要 */}
-            {order.recipientNameMasked && (
-              <InfoRow label="收件人" value={order.recipientNameMasked} />
-            )}
-            {order.recipientPhoneMasked && (
-              <InfoRow label="收件電話" value={order.recipientPhoneMasked} />
-            )}
+            <InfoRow
+              label="收件人"
+              value={
+                order.recipientNameMasked ?? "待確認（系統未回傳收件人摘要）"
+              }
+            />
+            <InfoRow
+              label="收件電話"
+              value={
+                order.recipientPhoneMasked ?? "待確認（系統未回傳電話摘要）"
+              }
+            />
             {/* 面交 / 自取：顯示地點摘要（public-safe），未填則請依店家通知 */}
             {isSelfPickup(order.pickupMethod) ? (
               <InfoRow
@@ -496,15 +727,18 @@ export default function TrackOrderPage({ publicToken }: Props) {
                       ? "自取地點"
                       : "取貨地點"
                 }
-                value={order.recipientAddressMasked ?? "請依店家通知為準"}
+                value={
+                  order.recipientAddressMasked ??
+                  "待確認（系統未回傳取貨地點，請依店家通知）"
+                }
               />
             ) : (
-              order.recipientAddressMasked && (
-                <InfoRow
-                  label="收件地址"
-                  value={order.recipientAddressMasked}
-                />
-              )
+              <InfoRow
+                label="收件地址"
+                value={
+                  order.recipientAddressMasked ?? "待確認（系統未回傳地址摘要）"
+                }
+              />
             )}
           </div>
         </div>
@@ -517,7 +751,11 @@ export default function TrackOrderPage({ publicToken }: Props) {
               </h2>
             </div>
             <div className="px-5 py-4 space-y-2">
+              <label htmlFor="payment-last5" className="sr-only">
+                付款末五碼
+              </label>
               <input
+                id="payment-last5"
                 type="text"
                 inputMode="numeric"
                 maxLength={5}
@@ -546,7 +784,13 @@ export default function TrackOrderPage({ publicToken }: Props) {
                 僅供人工對帳，不會自動判定付款。
               </p>
               {paymentMessage && (
-                <p className="text-xs text-primary">{paymentMessage}</p>
+                <p
+                  className="text-xs text-primary"
+                  role="status"
+                  aria-live="polite"
+                >
+                  {paymentMessage}
+                </p>
               )}
             </div>
           </div>
@@ -556,6 +800,7 @@ export default function TrackOrderPage({ publicToken }: Props) {
         <div className="mt-4 space-y-2">
           {order.trackingCode && (
             <button
+              type="button"
               onClick={() => handleCopyTracking(order.trackingCode!)}
               className="w-full h-11 rounded-xl border border-border bg-card text-sm font-medium text-foreground"
             >
@@ -564,11 +809,17 @@ export default function TrackOrderPage({ publicToken }: Props) {
           )}
           {/* Copy public token (order query code, not logistics tracking code) */}
           <button
+            type="button"
             onClick={() => handleCopyToken(order.publicToken)}
             className="w-full h-11 rounded-xl border border-border bg-card text-sm font-medium text-foreground"
           >
             {copiedToken ? "已複製！" : "複製訂單查詢碼"}
           </button>
+          {copyError && (
+            <p className="text-xs text-destructive" role="alert">
+              複製未完成：{copyError}
+            </p>
+          )}
         </div>
 
         <p className="text-xs text-muted-foreground text-center mt-4 leading-relaxed">
