@@ -95,39 +95,39 @@ const clerkAppearance = {
     logoImageUrl: `${window.location.origin}${basePath}/logo.svg`,
   },
   variables: {
-    colorPrimary: DEFAULT_BRAND_PRIMARY_COLOR,
-    colorForeground: "hsl(20,15%,15%)",
-    colorMutedForeground: "hsl(20,10%,50%)",
-    colorDanger: "hsl(0,72%,51%)",
-    colorBackground: "hsl(36,33%,97%)",
-    colorInput: "hsl(30,15%,88%)",
-    colorInputForeground: "hsl(20,15%,15%)",
-    colorNeutral: "hsl(30,15%,70%)",
+    colorPrimary: "hsl(var(--primary))",
+    colorForeground: "hsl(var(--foreground))",
+    colorMutedForeground: "hsl(var(--secondary-foreground))",
+    colorDanger: "hsl(var(--destructive))",
+    colorBackground: "hsl(var(--card))",
+    colorInput: "hsl(var(--input))",
+    colorInputForeground: "hsl(var(--foreground))",
+    colorNeutral: "hsl(var(--muted-foreground))",
     fontFamily: "'Noto Sans TC', 'PingFang TC', sans-serif",
     borderRadius: "0.75rem",
   },
   elements: {
     rootBox: "w-full flex justify-center",
     cardBox:
-      "bg-white rounded-2xl w-[440px] max-w-full overflow-hidden shadow-lg",
+      "bg-card rounded-2xl w-[440px] max-w-full overflow-hidden shadow-lg",
     card: "!shadow-none !border-0 !bg-transparent !rounded-none",
     footer: "!shadow-none !border-0 !bg-transparent !rounded-none",
     headerTitle: "text-foreground font-bold",
-    headerSubtitle: "text-muted-foreground",
+    headerSubtitle: "text-secondary-foreground",
     socialButtonsBlockButtonText: "text-foreground",
     formFieldLabel: "text-foreground font-medium",
     footerActionLink: "text-primary font-medium",
-    footerActionText: "text-muted-foreground",
-    dividerText: "text-muted-foreground",
+    footerActionText: "text-secondary-foreground",
+    dividerText: "text-secondary-foreground",
     identityPreviewEditButton: "text-primary",
-    formFieldSuccessText: "text-green-600",
+    formFieldSuccessText: "text-chart-3",
     alertText: "text-foreground",
     logoBox: "mb-2",
     logoImage: "h-10",
     socialButtonsBlockButton:
-      "border border-border bg-white hover:bg-secondary",
-    formButtonPrimary: "bg-primary hover:opacity-90 text-white",
-    formFieldInput: "border-input bg-white text-foreground",
+      "border border-border bg-background hover:bg-secondary",
+    formButtonPrimary: "bg-primary hover:opacity-90 text-primary-foreground",
+    formFieldInput: "border-input bg-secondary text-foreground",
     footerAction: "border-t border-border",
     dividerLine: "bg-border",
     alert: "bg-secondary border-border",
@@ -265,12 +265,12 @@ function MerchantPortal() {
   if (storeInitState === "failed") {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center px-5">
-        <div className="w-full max-w-sm bg-white rounded-2xl p-6 border border-border space-y-4 text-center">
+        <div className="w-full max-w-sm bg-card rounded-2xl p-6 border border-border space-y-4 text-center">
           <p className="font-medium text-foreground">初始化店鋪失敗</p>
-          <p className="text-sm text-muted-foreground">{storeInitError}</p>
+          <p className="text-sm text-secondary-foreground">{storeInitError}</p>
           <button
             onClick={() => setStoreInitState("idle")}
-            className="w-full h-11 bg-primary text-white font-semibold rounded-xl text-sm"
+            className="w-full h-11 bg-primary text-primary-foreground font-semibold rounded-xl text-sm"
           >
             重試
           </button>
@@ -282,14 +282,14 @@ function MerchantPortal() {
   if (isAuthError) {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center px-5">
-        <div className="w-full max-w-sm bg-white rounded-2xl p-6 border border-border space-y-4 text-center">
+        <div className="w-full max-w-sm bg-card rounded-2xl p-6 border border-border space-y-4 text-center">
           <p className="font-medium text-foreground">登入狀態已失效</p>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-secondary-foreground">
             請重新登入後繼續使用畫夢代購。
           </p>
           <button
             onClick={() => void signOut({ redirectUrl: basePath || "/" })}
-            className="w-full h-11 bg-primary text-white font-semibold rounded-xl text-sm"
+            className="w-full h-11 bg-primary text-primary-foreground font-semibold rounded-xl text-sm"
           >
             重新登入
           </button>
@@ -301,9 +301,9 @@ function MerchantPortal() {
   if (error && !is404) {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center px-5">
-        <div className="w-full max-w-sm bg-white rounded-2xl p-6 border border-border text-center">
+        <div className="w-full max-w-sm bg-card rounded-2xl p-6 border border-border text-center">
           <p className="font-medium text-foreground">無法載入店鋪資料</p>
-          <p className="text-sm text-muted-foreground mt-2">
+          <p className="text-sm text-secondary-foreground mt-2">
             請確認網路連線後重新整理頁面
           </p>
         </div>
