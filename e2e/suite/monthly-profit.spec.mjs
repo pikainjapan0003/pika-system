@@ -50,7 +50,7 @@ test("the monthly report shows rounded snapshot profit and nonzero exception cou
   const missingMetric = page.locator("dl > div").filter({
     has: page.locator("dt", { hasText: /^尚無快照$/ }),
   });
-  await expect(pendingMetric).toContainText("待確認2");
+  await expect(pendingMetric.locator("dd")).toHaveText("2");
   await expect(missingMetric).toContainText("尚無快照3");
   await expect(pendingMetric.locator("dd")).not.toHaveText("0");
   await expect(missingMetric.locator("dd")).not.toHaveText("0");
