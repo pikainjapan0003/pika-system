@@ -25,7 +25,10 @@ import blackcatLogo from "@/assets/logistics/blackcat-logo-official.svg";
 import postofficeLogo from "@/assets/logistics/postoffice-logo.svg";
 import { TAIWAN_ZIPCODE_REGIONS, getDistricts } from "@/lib/taiwanZipcodes";
 import { RecipientAddressFields } from "@/components/RecipientAddressFields";
+import { SemanticStatePanel } from "@/components/SemanticStatePanel";
 import { calculateMoneyPreview } from "@/lib/moneyPreview";
+import { trimAmountForDisplay } from "@/lib/operatingCostDisplay";
+import { exactDecimal } from "@/components/charts/exactChart";
 
 interface Props {
   shareToken: string;
@@ -38,9 +41,53 @@ interface Spec {
 
 function formatDate(iso: string): string {
   const d = new Date(iso);
+  if (!Number.isFinite(d.getTime())) return "待確認（下單時間未完整回傳）";
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
+
+function normalizeExactAmount(value: unknown): string | null {
+  if (value === null || value === undefined) return null;
+  const normalized = String(value).trim();
+  if (!normalized) return null;
+  const decimal = exactDecimal(normalized);
+  return decimal !== null && !decimal.isNegative() ? normalized : null;
+}
+
+function formatExactAmountForDisplay(value: unknown): string | null {
+  const normalized = normalizeExactAmount(value);
+  if (normalized === null) return null;
+  const decimal = exactDecimal(normalized);
+  if (decimal === null) return null;
+  const trimmed = trimAmountForDisplay(decimal.toDecimalPlaces(3));
+  const [integerPart, fractionPart] = trimmed.split(".");
+  const groupedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return fractionPart === undefined
+    ? groupedInteger
+    : `${groupedInteger}.${fractionPart}`;
+}
+
+function addExactAmounts(left: unknown, right: unknown): string | null {
+  const normalizedLeft = normalizeExactAmount(left);
+  const normalizedRight = normalizeExactAmount(right);
+  if (normalizedLeft === null || normalizedRight === null) return null;
+
+  const leftDecimal = exactDecimal(normalizedLeft);
+  const rightDecimal = exactDecimal(normalizedRight);
+  if (leftDecimal === null || rightDecimal === null) return null;
+
+  return leftDecimal.add(rightDecimal).toDecimalPlaces(12);
+}
+
+type ExactCartInput = Omit<Parameters<typeof addToCart>[0], "unitPrice"> & {
+  unitPrice: string;
+};
+
+// cartStorage's generated-facing type is still numeric, but its runtime
+// persistence is JSON-only. Keep the API ExactDecimal value as a string here.
+const addExactPriceToCart = addToCart as unknown as (
+  params: ExactCartInput,
+) => ReturnType<typeof addToCart>;
 
 type PickupMethod =
   | "7-11 賣貨便"
@@ -147,7 +194,13 @@ function PickupMethodLogo({ method }: { method: string }) {
 }
 
 export default function PublicOrderPage({ shareToken }: Props) {
-  const { data: product, isLoading, error } = useGetPublicProduct(shareToken);
+  const {
+    data: product,
+    isLoading,
+    isFetching,
+    error,
+    refetch,
+  } = useGetPublicProduct(shareToken);
   const submitOrder = useSubmitOrder();
 
   const [buyerName, setBuyerName] = useState("");
@@ -167,6 +220,8 @@ export default function PublicOrderPage({ shareToken }: Props) {
   );
   const [formError, setFormError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState("");
+  const [productImageFailed, setProductImageFailed] = useState(false);
   const [cvsStore, setCvsStore] = useState<CvsStore | null>(null);
   const [shippingCity, setShippingCity] = useState("");
   const [shippingDistrict, setShippingDistrict] = useState("");
@@ -183,6 +238,10 @@ export default function PublicOrderPage({ shareToken }: Props) {
     ? new Date(product.orderDeadlineAt as string)
     : null;
   const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    setProductImageFailed(false);
+  }, [product?.imageUrl]);
 
   // ② ScrollTrigger 長頁區塊進場：捲到才播（低調、一次；只當延後播放的觸發器）
   const pageRef = useRef<HTMLDivElement>(null);
@@ -217,10 +276,15 @@ export default function PublicOrderPage({ shareToken }: Props) {
   }, []);
 
   const shippingFee = getShippingFee(pickupMethod);
-  const moneyPreview = calculateMoneyPreview({
-    lines: [{ unitPrice: product?.price ?? 0, quantity }],
-    shippingFee,
-  });
+  const productPriceAmount = normalizeExactAmount(product?.price);
+  const productPriceDisplay = formatExactAmountForDisplay(product?.price);
+  const moneyPreview =
+    productPriceAmount === null
+      ? null
+      : calculateMoneyPreview({
+          lines: [{ unitPrice: productPriceAmount, quantity }],
+          shippingFee,
+        });
   const needsCvsStore = isStorePickupMethod(pickupMethod);
   const availablePickupMethods = ALL_PICKUP_METHODS.filter((method) =>
     isPickupMethodEnabled(method, product),
@@ -308,6 +372,10 @@ export default function PublicOrderPage({ shareToken }: Props) {
 
   const handleAddToCart = () => {
     if (!product) return;
+    if (productPriceAmount === null) {
+      setFormError("商品價格待確認：店家尚未提供可下單的金額，請聯絡店家。");
+      return;
+    }
     for (const spec of specs) {
       if (!specValues[spec.name]) {
         setFormError(`請選擇${spec.name}`);
@@ -315,12 +383,12 @@ export default function PublicOrderPage({ shareToken }: Props) {
       }
     }
     setFormError("");
-    const newCart = addToCart({
+    const newCart = addExactPriceToCart({
       shareToken,
       productId: product.id,
       productName: product.name,
       productImageUrl: product.imageUrl,
-      unitPrice: Number(product.price),
+      unitPrice: productPriceAmount,
       quantity,
       specValues,
       shippingCvsEnabled: (product as any).shippingCvsEnabled,
@@ -375,6 +443,18 @@ export default function PublicOrderPage({ shareToken }: Props) {
     e.preventDefault();
     setFormError("");
 
+    if (productPriceAmount === null) {
+      setFormError("商品價格待確認：店家尚未提供可下單的金額，請聯絡店家。");
+      return;
+    }
+
+    if (availablePickupMethods.length === 0) {
+      setFormError(
+        "取貨方式待確認：店家尚未提供可用方式，請聯絡店家後再下單。",
+      );
+      return;
+    }
+
     const deadline = product?.orderDeadlineAt
       ? new Date(product.orderDeadlineAt as string)
       : null;
@@ -402,6 +482,16 @@ export default function PublicOrderPage({ shareToken }: Props) {
     if (needsCvsStore && !cvsStore) {
       const label = isFamilyMartMethod(pickupMethod) ? "全家門市" : "7-11 門市";
       setFormError(`請先選擇${label}`);
+      return;
+    }
+    if (
+      needsCvsStore &&
+      cvsStore &&
+      (!cvsStore.storeName?.trim() || !cvsStore.storeAddress?.trim())
+    ) {
+      setFormError(
+        "門市資料待確認：門市名稱或地址尚未完整回傳，請重新選擇門市。",
+      );
       return;
     }
 
@@ -509,26 +599,84 @@ export default function PublicOrderPage({ shareToken }: Props) {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-[100dvh] items-center justify-center bg-background">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-[100dvh] bg-background px-5 py-10">
+        <div className="mx-auto w-full max-w-[480px]">
+          <SemanticStatePanel
+            className="rounded-2xl border-border bg-card p-5"
+            state={{
+              kind: "loading",
+              label: "正在載入商品與取貨資訊",
+              fallbackMessage: "若等待較久，請確認網路連線後重新整理。",
+            }}
+          />
+        </div>
       </div>
     );
   }
 
-  if (error || !product) {
+  if (error) {
+    const is404 = (error as { status?: number }).status === 404;
     return (
       <div className="flex min-h-[100dvh] items-center justify-center bg-background px-5">
-        <div className="text-center">
-          <div className="text-4xl mb-3">😔</div>
-          <h1 className="text-lg font-bold text-foreground">商品頁無法開啟</h1>
-          <p className="text-muted-foreground text-sm mt-2 whitespace-pre-line">
-            {formatActionableError({
-              happened: "目前看不到這件商品。",
-              reason: "連結可能已失效，或商品已下架。",
-              action: "請回到店家的最新分享連結再試一次。",
-              support: "若仍找不到，請把這個連結傳給店家確認。",
-            })}
-          </p>
+        <div className="w-full max-w-sm">
+          <SemanticStatePanel
+            className="rounded-2xl bg-card"
+            state={
+              is404
+                ? {
+                    kind: "emptyAction",
+                    title: "找不到這件商品",
+                    reason:
+                      "分享連結可能已失效，或商品已下架。請向店家索取最新連結。",
+                    action: {
+                      label: "回上一頁",
+                      onAction: () => window.history.back(),
+                    },
+                  }
+                : {
+                    kind: "pageError",
+                    title: "商品頁暫時無法載入",
+                    message: formatActionableError({
+                      happened: "商品與取貨資訊沒有載入。",
+                      reason: "網路或系統暫時沒有回應。",
+                      action: "請保留此連結並重新載入。",
+                      support: "若持續失敗，請把連結傳給店家確認。",
+                    }),
+                    retry: {
+                      label: isFetching ? "重新載入中…" : "重新載入",
+                      onAction: () => {
+                        void refetch();
+                      },
+                      busy: isFetching,
+                    },
+                  }
+            }
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="flex min-h-[100dvh] items-center justify-center bg-background px-5">
+        <div className="w-full max-w-sm">
+          <SemanticStatePanel
+            className="rounded-2xl bg-card"
+            state={{
+              kind: "pending",
+              title: "商品資料待確認",
+              reason:
+                "系統沒有回傳商品內容。請先重新載入；若仍無資料，請把分享連結提供給店家。",
+              action: {
+                label: isFetching ? "重新載入中…" : "重新載入",
+                onAction: () => {
+                  void refetch();
+                },
+                busy: isFetching,
+              },
+            }}
+          />
         </div>
       </div>
     );
@@ -536,22 +684,43 @@ export default function PublicOrderPage({ shareToken }: Props) {
 
   if (submittedOrder) {
     const productName = submittedOrder.productName ?? product.name;
-    // 訂單總額 = 商品小計（totalPrice）+ 運費（shippingFee）
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const orderTotal =
-      Number((submittedOrder as any).totalPrice ?? 0) +
-      Number((submittedOrder as any).shippingFee ?? 0);
-    const token = submittedOrder.publicToken;
+    const submittedTotalPrice = normalizeExactAmount(
+      (submittedOrder as { totalPrice?: unknown }).totalPrice,
+    );
+    const submittedShippingFee = normalizeExactAmount(
+      (submittedOrder as { shippingFee?: unknown }).shippingFee,
+    );
+    const orderTotal = formatExactAmountForDisplay(
+      addExactAmounts(submittedTotalPrice, submittedShippingFee),
+    );
+    const token = submittedOrder.publicToken?.trim() ?? "";
+    const submittedQuantity =
+      Number.isSafeInteger(submittedOrder.quantity) &&
+      submittedOrder.quantity > 0
+        ? submittedOrder.quantity
+        : null;
+    const missingConfirmationReasons = [
+      orderTotal === null ? "訂單金額資料未完整回傳" : null,
+      token ? null : "訂單查詢碼未回傳",
+      submittedQuantity === null ? "商品數量未完整回傳" : null,
+      submittedOrder.pickupMethod?.trim() ? null : "取貨方式未回傳",
+    ].filter((reason): reason is string => reason !== null);
 
     const handleCopy = () => {
-      if (!navigator.clipboard) return;
+      setCopyError("");
+      if (!navigator.clipboard) {
+        setCopyError("複製功能無法使用，請長按查詢碼手動複製。");
+        return;
+      }
       navigator.clipboard
         .writeText(token)
         .then(() => {
           setCopied(true);
           setTimeout(() => setCopied(false), 2000);
         })
-        .catch(() => {});
+        .catch(() => {
+          setCopyError("複製失敗，請長按查詢碼手動複製。");
+        });
     };
 
     return (
@@ -567,30 +736,56 @@ export default function PublicOrderPage({ shareToken }: Props) {
             感謝您的訂購！
           </p>
           <div className="mt-6 bg-card rounded-2xl p-4 border border-border text-left space-y-2">
-            <SummaryRow label="追蹤碼" value={token} mono />
-            <SummaryRow label="商品" value={productName} />
-            <SummaryRow label="數量" value={`x${submittedOrder.quantity}`} />
+            <SummaryRow label="追蹤碼" value={token || "待確認"} mono />
+            <SummaryRow
+              label="商品"
+              value={productName?.trim() || "待確認（商品名稱未回傳）"}
+            />
+            <SummaryRow
+              label="數量"
+              value={
+                submittedQuantity === null
+                  ? "待確認（商品數量未回傳）"
+                  : "x" + submittedQuantity
+              }
+            />
             <SummaryRow
               label="金額"
-              value={`NT$ ${orderTotal.toLocaleString()}`}
+              value={orderTotal === null ? "待確認" : `NT$ ${orderTotal}`}
               bold
             />
-            <SummaryRow label="取貨方式" value={submittedOrder.pickupMethod} />
+            <SummaryRow
+              label="取貨方式"
+              value={
+                submittedOrder.pickupMethod?.trim() ||
+                "待確認（取貨方式未回傳）"
+              }
+            />
             <SummaryRow
               label="下單時間"
               value={formatDate(submittedOrder.createdAt)}
             />
           </div>
+          {missingConfirmationReasons.length > 0 && (
+            <SemanticStatePanel
+              className="mt-3 rounded-xl text-left"
+              state={{
+                kind: "pending",
+                title: "訂單確認資料待確認",
+                reason: `${missingConfirmationReasons.join("、")}。請勿重複送出；請保留此畫面並聯絡店家。`,
+              }}
+            />
+          )}
           {submittedCvsStore && (
             <div className="mt-3 bg-card rounded-2xl p-4 border border-border text-left space-y-1.5">
               <div className="text-xs font-semibold text-muted-foreground">
                 已選門市
               </div>
               <div className="text-sm font-semibold text-foreground">
-                {submittedCvsStore.storeName}
+                {submittedCvsStore.storeName || "待確認（門市名稱未回傳）"}
               </div>
               <div className="text-xs text-muted-foreground">
-                {submittedCvsStore.storeAddress}
+                {submittedCvsStore.storeAddress || "待確認（門市地址未回傳）"}
               </div>
               {submittedCvsStore.storePhone && (
                 <div className="text-xs text-muted-foreground">
@@ -603,19 +798,33 @@ export default function PublicOrderPage({ shareToken }: Props) {
             </div>
           )}
           <div className="mt-4 flex flex-col gap-2">
-            <button
-              onClick={handleCopy}
-              className="w-full h-11 rounded-xl border border-border bg-card text-sm font-medium text-foreground"
-            >
-              {copied ? "已複製！" : "複製追蹤碼"}
-            </button>
-            <a
-              href={`/track/${token}`}
-              className="w-full h-11 rounded-xl bg-primary/10 text-primary text-sm font-medium flex items-center justify-center"
-            >
-              查看訂單狀態
-            </a>
+            {token && (
+              <>
+                <button
+                  type="button"
+                  onClick={handleCopy}
+                  className="w-full h-11 rounded-xl border border-border bg-card text-sm font-medium text-foreground"
+                >
+                  {copied ? "已複製！" : "複製追蹤碼"}
+                </button>
+                <a
+                  href={`/track/${token}`}
+                  className="w-full h-11 rounded-xl bg-primary/10 text-primary text-sm font-medium flex items-center justify-center"
+                >
+                  查看訂單狀態
+                </a>
+              </>
+            )}
           </div>
+          {copyError && (
+            <p
+              className="mt-3 text-sm text-destructive"
+              role="alert"
+              aria-live="assertive"
+            >
+              {copyError}
+            </p>
+          )}
           <p className="text-xs text-muted-foreground mt-4 leading-relaxed">
             請截圖保留此頁面作為訂購憑證
           </p>
@@ -631,13 +840,22 @@ export default function PublicOrderPage({ shareToken }: Props) {
     >
       {/* Product info */}
       <div className="bg-card">
-        {product.imageUrl && (
+        {product.imageUrl && !productImageFailed ? (
           <img
             src={product.imageUrl}
             alt={product.name}
             className="w-full h-56 object-cover"
-            onError={(e) => (e.currentTarget.style.display = "none")}
+            onError={() => setProductImageFailed(true)}
           />
+        ) : (
+          <div
+            className="flex h-56 w-full items-center justify-center bg-muted px-5 text-center text-sm text-muted-foreground"
+            role="status"
+          >
+            {product.imageUrl
+              ? "商品圖片載入失敗，商品文字與價格仍可查看。"
+              : "店家尚未提供商品圖片。"}
+          </div>
         )}
         <div className="px-5 py-5">
           <div className="text-xs text-muted-foreground mb-1">
@@ -649,9 +867,16 @@ export default function PublicOrderPage({ shareToken }: Props) {
               {product.description}
             </p>
           )}
-          <div className="text-2xl font-bold text-primary mt-3">
-            NT$ {Number(product.price).toLocaleString()}
+          <div className="mt-3 text-2xl font-bold tabular-nums text-primary">
+            {productPriceDisplay === null
+              ? "待確認"
+              : `NT$ ${productPriceDisplay}`}
           </div>
+          {productPriceDisplay === null && (
+            <p className="mt-1 text-xs text-accent" role="status">
+              商品價格尚未完整回傳，暫時無法下單，請聯絡店家。
+            </p>
+          )}
           {product.inventory != null && (
             <div className="text-xs text-muted-foreground mt-1">
               剩餘庫存：{product.inventory}
@@ -770,14 +995,18 @@ export default function PublicOrderPage({ shareToken }: Props) {
           <button
             type="button"
             onClick={handleAddToCart}
-            disabled={isOrderClosed}
+            disabled={isOrderClosed || productPriceAmount === null}
             className={`flex-1 h-11 rounded-xl font-bold text-sm transition-colors disabled:opacity-60 ${
               cartJustAdded
                 ? "bg-chart-3/15 text-chart-3 border-2 border-chart-3/30"
                 : "bg-primary/15 text-primary border-2 border-primary/30 hover:bg-primary/20"
             }`}
           >
-            {cartJustAdded ? "✓ 已加入購物車" : "加入購物車"}
+            {cartJustAdded
+              ? "✓ 已加入購物車"
+              : productPriceAmount === null
+                ? "價格待確認"
+                : "加入購物車"}
           </button>
           <a
             href="/cart"
@@ -892,7 +1121,9 @@ export default function PublicOrderPage({ shareToken }: Props) {
             />
           </div>
           {(formError === "請輸入收件人" || formError === "請輸入收件電話") && (
-            <p className="text-xs text-destructive">{formError}</p>
+            <p className="text-xs text-destructive" role="alert">
+              {formError}
+            </p>
           )}
         </div>
 
@@ -902,6 +1133,17 @@ export default function PublicOrderPage({ shareToken }: Props) {
             取貨方式 *
           </label>
           <div className="space-y-3">
+            {availablePickupMethods.length === 0 && (
+              <SemanticStatePanel
+                className="rounded-xl"
+                state={{
+                  kind: "pending",
+                  title: "取貨方式待確認",
+                  reason:
+                    "店家尚未提供這件商品可用的取貨方式。請聯絡店家確認後再下單。",
+                }}
+              />
+            )}
             {availablePickupMethods.map((m) => {
               const isSelected = pickupMethod === m;
               return (
@@ -910,6 +1152,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
                   <button
                     type="button"
                     onClick={() => setPickupMethod(m)}
+                    aria-pressed={isSelected}
                     className={`w-full flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:min-h-[96px] px-5 py-4 rounded-2xl border-2 transition-colors text-left shadow-sm ${
                       isSelected
                         ? "bg-primary/10 border-primary"
@@ -953,6 +1196,11 @@ export default function PublicOrderPage({ shareToken }: Props) {
                       ) : (
                         m
                       )}
+                      {isSelected && (
+                        <span className="mt-1 block text-xs font-normal">
+                          已選取
+                        </span>
+                      )}
                     </span>
                     {/* Fee — desktop only */}
                     <span
@@ -991,18 +1239,20 @@ export default function PublicOrderPage({ shareToken }: Props) {
                               </div>
                               <div className="flex items-start justify-between gap-2">
                                 <span className="text-sm font-semibold text-foreground">
-                                  {cvsStore.storeName}
+                                  {cvsStore.storeName ||
+                                    "門市名稱待確認（來源未提供）"}
                                 </span>
                                 <button
                                   type="button"
                                   onClick={handleSelectStore}
-                                  className="shrink-0 text-xs font-medium text-primary border border-primary/30 px-2.5 py-1 rounded-lg"
+                                  className="shrink-0 min-h-11 text-xs font-medium text-primary border border-primary/30 px-2.5 py-1 rounded-lg"
                                 >
                                   重選
                                 </button>
                               </div>
                               <div className="text-xs text-muted-foreground">
-                                {cvsStore.storeAddress || "地址未回傳"}
+                                {cvsStore.storeAddress ||
+                                  "門市地址待確認（來源未提供）"}
                               </div>
                               <div className="text-xs text-muted-foreground/70">
                                 門市編號：{cvsStore.storeId}
@@ -1037,7 +1287,10 @@ export default function PublicOrderPage({ shareToken }: Props) {
                                 選擇 7-11 門市
                               </button>
                               {formError === "請先選擇 7-11 門市" && (
-                                <p className="text-xs text-destructive">
+                                <p
+                                  className="text-xs text-destructive"
+                                  role="alert"
+                                >
                                   請先選擇 7-11 門市
                                 </p>
                               )}
@@ -1072,18 +1325,20 @@ export default function PublicOrderPage({ shareToken }: Props) {
                               </div>
                               <div className="flex items-start justify-between gap-2">
                                 <span className="text-sm font-semibold text-foreground">
-                                  {cvsStore.storeName}
+                                  {cvsStore.storeName ||
+                                    "門市名稱待確認（來源未提供）"}
                                 </span>
                                 <button
                                   type="button"
                                   onClick={handleSelectStore}
-                                  className="shrink-0 text-xs font-medium text-primary border border-primary/30 px-2.5 py-1 rounded-lg"
+                                  className="shrink-0 min-h-11 text-xs font-medium text-primary border border-primary/30 px-2.5 py-1 rounded-lg"
                                 >
                                   重選
                                 </button>
                               </div>
                               <div className="text-xs text-muted-foreground">
-                                {cvsStore.storeAddress || "地址未回傳"}
+                                {cvsStore.storeAddress ||
+                                  "門市地址待確認（來源未提供）"}
                               </div>
                               <div className="text-xs text-muted-foreground/70">
                                 門市編號：{cvsStore.storeId}
@@ -1118,7 +1373,10 @@ export default function PublicOrderPage({ shareToken }: Props) {
                                 選擇全家門市
                               </button>
                               {formError === "請先選擇全家門市" && (
-                                <p className="text-xs text-destructive">
+                                <p
+                                  className="text-xs text-destructive"
+                                  role="alert"
+                                >
                                   請先選擇全家門市
                                 </p>
                               )}
@@ -1208,7 +1466,10 @@ export default function PublicOrderPage({ shareToken }: Props) {
                             />
                           </div>
                           {formError === "請完整填寫收件地址" && (
-                            <p className="text-xs text-destructive">
+                            <p
+                              className="text-xs text-destructive"
+                              role="alert"
+                            >
                               請完整填寫收件地址
                             </p>
                           )}
@@ -1236,7 +1497,10 @@ export default function PublicOrderPage({ shareToken }: Props) {
                             onAddressLineChange={setShippingAddressLine}
                           />
                           {formError === "請先選擇縣市與行政區" && (
-                            <p className="text-xs text-destructive">
+                            <p
+                              className="text-xs text-destructive"
+                              role="alert"
+                            >
                               請先選擇縣市與行政區
                             </p>
                           )}
@@ -1281,10 +1545,14 @@ export default function PublicOrderPage({ shareToken }: Props) {
 
         {/* Price breakdown */}
         {pickupMethod && (
-          <div className="bg-secondary/40 rounded-2xl px-4 py-3 space-y-1.5">
+          <div className="bg-secondary/40 rounded-2xl px-4 py-3 space-y-1.5 tabular-nums">
             <div className="flex justify-between text-sm text-muted-foreground">
               <span>商品小計</span>
-              <span>NT$ {moneyPreview.itemSubtotal}</span>
+              <span>
+                {moneyPreview === null
+                  ? "待確認"
+                  : `NT$ ${moneyPreview.itemSubtotal}`}
+              </span>
             </div>
             <div className="flex justify-between text-sm text-muted-foreground">
               <span>運費</span>
@@ -1293,7 +1561,9 @@ export default function PublicOrderPage({ shareToken }: Props) {
             <div className="flex justify-between text-base font-bold text-foreground pt-1 border-t border-border/50">
               <span>訂單總額</span>
               <span className="text-primary">
-                NT$ {moneyPreview.orderTotal}
+                {moneyPreview === null
+                  ? "待確認"
+                  : `NT$ ${moneyPreview.orderTotal}`}
               </span>
             </div>
           </div>
@@ -1303,21 +1573,31 @@ export default function PublicOrderPage({ shareToken }: Props) {
           formError !== "請先選擇 7-11 門市" &&
           formError !== "請先選擇全家門市" &&
           formError !== "請完整填寫收件地址" && (
-            <div className="bg-destructive/10 text-destructive text-sm px-4 py-3 rounded-xl">
+            <div
+              className="bg-destructive/10 text-destructive text-sm px-4 py-3 rounded-xl whitespace-pre-line"
+              role="alert"
+            >
               {formError}
             </div>
           )}
 
         <button
           type="submit"
-          disabled={submitOrder.isPending || isOrderClosed}
+          disabled={
+            submitOrder.isPending ||
+            isOrderClosed ||
+            productPriceAmount === null ||
+            availablePickupMethods.length === 0
+          }
           className="k8-press w-full h-12 bg-primary text-primary-foreground font-bold rounded-xl text-base disabled:opacity-60 sticky bottom-4"
         >
           {isOrderClosed
             ? "已截止收單"
             : submitOrder.isPending
               ? "送出中..."
-              : `確認下單 · NT$ ${moneyPreview.orderTotal}`}
+              : moneyPreview === null
+                ? "確認下單 · 金額待確認"
+                : `確認下單 · NT$ ${moneyPreview.orderTotal}`}
         </button>
       </form>
     </div>
@@ -1339,7 +1619,7 @@ function SummaryRow({
     <div className="flex items-center justify-between text-sm gap-2">
       <span className="text-muted-foreground shrink-0">{label}</span>
       <span
-        className={`text-foreground text-right break-all ${bold ? "font-bold" : ""} ${mono ? "font-mono text-xs" : ""}`}
+        className={`text-foreground text-right break-all tabular-nums ${bold ? "font-bold" : ""} ${mono ? "font-mono text-xs" : ""}`}
       >
         {value}
       </span>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   getCart,
   updateCartQty,
@@ -28,25 +28,25 @@ import blackcatLogo from "@/assets/logistics/blackcat-logo-official.svg";
 import postofficeLogo from "@/assets/logistics/postoffice-logo.svg";
 import { calculateMoneyPreview } from "@/lib/moneyPreview";
 import { loadMotion, motionEnabled, PIKA_EASE } from "@/lib/motion";
+import { SemanticStatePanel } from "@/components/SemanticStatePanel";
+import { exactDecimal } from "@/components/charts/exactChart";
+import { trimAmountForDisplay } from "@/lib/operatingCostDisplay";
 
 interface CartOrderItem {
-  productId: number;
-  shareToken: string;
-  productName: string;
-  productImageUrl?: string | null;
+  productName: string | null;
+  productImageUrl: string | null;
   specValues: Record<string, string>;
-  quantity: number;
-  unitPrice: number;
-  subtotal: number;
+  quantity: number | null;
+  subtotal: unknown;
 }
 
 interface CartOrderResult {
-  publicToken: string;
-  pickupMethod: string;
-  createdAt: string;
-  shippingFee: number;
-  totalPrice: number;
-  items: CartOrderItem[];
+  publicToken?: string | null;
+  pickupMethod?: string | null;
+  createdAt?: string | null;
+  shippingFee?: unknown;
+  totalPrice?: unknown;
+  items?: unknown;
 }
 
 const CART_CVS_KEY = "buyer-cart";
@@ -106,10 +106,104 @@ function formatSpecSummary(specValues: Record<string, string>): string {
   return entries.map(([, v]) => v).join(" / ");
 }
 
-function formatDate(iso: string): string {
+function normalizeCartOrderItem(value: unknown): CartOrderItem | null {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return null;
+  }
+
+  const rawItem = value as Record<string, unknown>;
+  const rawSpecValues = rawItem.specValues;
+  const specValues =
+    typeof rawSpecValues === "object" &&
+    rawSpecValues !== null &&
+    !Array.isArray(rawSpecValues)
+      ? Object.fromEntries(
+          Object.entries(rawSpecValues).filter(
+            (entry): entry is [string, string] =>
+              typeof entry[1] === "string" && entry[1].trim().length > 0,
+          ),
+        )
+      : {};
+
+  return {
+    productName:
+      typeof rawItem.productName === "string" && rawItem.productName.trim()
+        ? rawItem.productName
+        : null,
+    productImageUrl:
+      typeof rawItem.productImageUrl === "string" &&
+      rawItem.productImageUrl.trim()
+        ? rawItem.productImageUrl
+        : null,
+    specValues,
+    quantity:
+      typeof rawItem.quantity === "number" &&
+      Number.isSafeInteger(rawItem.quantity) &&
+      rawItem.quantity > 0
+        ? rawItem.quantity
+        : null,
+    subtotal: rawItem.subtotal,
+  };
+}
+
+function formatDate(iso: string | null | undefined): string {
+  if (!iso?.trim()) return "待確認（下單時間未完整回傳）";
   const d = new Date(iso);
+  if (!Number.isFinite(d.getTime())) return "待確認（下單時間格式無效）";
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function normalizeExactAmount(value: unknown): string | null {
+  if (value === null || value === undefined) return null;
+  const normalized = String(value).trim();
+  if (!normalized) return null;
+  const decimal = exactDecimal(normalized);
+  return decimal !== null && !decimal.isNegative() ? normalized : null;
+}
+
+function formatExactAmountForDisplay(value: unknown): string | null {
+  const normalized = normalizeExactAmount(value);
+  if (normalized === null) return null;
+  const decimal = exactDecimal(normalized);
+  if (decimal === null) return null;
+  const trimmed = trimAmountForDisplay(decimal.toDecimalPlaces(3));
+  const [integerPart, fractionPart] = trimmed.split(".");
+  const groupedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return fractionPart === undefined
+    ? groupedInteger
+    : `${groupedInteger}.${fractionPart}`;
+}
+
+function addExactAmounts(...values: unknown[]): string | null {
+  let total = exactDecimal("0");
+  if (total === null) return null;
+  for (const value of values) {
+    const normalized = normalizeExactAmount(value);
+    if (normalized === null) return null;
+    const decimal = exactDecimal(normalized);
+    if (decimal === null) return null;
+    total = total.add(decimal);
+  }
+  return total.toDecimalPlaces(12);
+}
+
+function isExactZero(value: string | null): boolean {
+  if (value === null) return false;
+  const decimal = exactDecimal(value);
+  const zero = exactDecimal("0");
+  return decimal !== null && zero !== null && decimal.equals(zero);
+}
+
+function multiplyExactAmount(amount: unknown, quantity: number): string | null {
+  const normalized = normalizeExactAmount(amount);
+  if (normalized === null || !Number.isSafeInteger(quantity) || quantity <= 0) {
+    return null;
+  }
+  const amountDecimal = exactDecimal(normalized);
+  const quantityDecimal = exactDecimal(String(quantity));
+  if (amountDecimal === null || quantityDecimal === null) return null;
+  return amountDecimal.multiply(quantityDecimal).toDecimalPlaces(12);
 }
 
 function CartItemCard({
@@ -122,7 +216,10 @@ function CartItemCard({
   onRemove: () => void;
 }) {
   const specSummary = formatSpecSummary(item.specValues);
-  const lineTotal = item.unitPrice * item.quantity;
+  const unitPriceDisplay = formatExactAmountForDisplay(item.unitPrice);
+  const lineTotalDisplay = formatExactAmountForDisplay(
+    multiplyExactAmount(item.unitPrice, item.quantity),
+  );
 
   return (
     <div className="bg-card rounded-2xl border border-border p-3 flex gap-3">
@@ -156,15 +253,17 @@ function CartItemCard({
                 {specSummary}
               </p>
             )}
-            <p className="text-xs text-muted-foreground mt-0.5">
-              NT$ {item.unitPrice.toLocaleString()} / 件
+            <p className="text-xs text-muted-foreground mt-0.5 tabular-nums lining-nums">
+              {unitPriceDisplay === null
+                ? "單價待確認（商品未提供有效金額）"
+                : "NT$ " + unitPriceDisplay + " / 件"}
             </p>
           </div>
           {/* Delete */}
           <button
             type="button"
             onClick={onRemove}
-            className="shrink-0 w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors rounded-lg"
+            className="shrink-0 min-w-11 min-h-11 flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors rounded-lg"
             aria-label="刪除"
           >
             <svg
@@ -188,23 +287,27 @@ function CartItemCard({
             <button
               type="button"
               onClick={() => onUpdateQty(Math.max(1, item.quantity - 1))}
-              className="w-8 h-8 rounded-lg border border-input bg-background text-foreground font-bold flex items-center justify-center text-base leading-none"
+              className="min-w-11 min-h-11 rounded-lg border border-input bg-background text-foreground font-bold flex items-center justify-center text-base leading-none"
+              aria-label={`將 ${item.productName} 數量減少一件`}
             >
               −
             </button>
-            <span className="w-6 text-center text-sm font-semibold text-foreground">
+            <span className="w-8 text-center text-sm font-semibold text-foreground tabular-nums lining-nums">
               {item.quantity}
             </span>
             <button
               type="button"
               onClick={() => onUpdateQty(item.quantity + 1)}
-              className="w-8 h-8 rounded-lg border border-input bg-background text-foreground font-bold flex items-center justify-center text-base leading-none"
+              className="min-w-11 min-h-11 rounded-lg border border-input bg-background text-foreground font-bold flex items-center justify-center text-base leading-none"
+              aria-label={`將 ${item.productName} 數量增加一件`}
             >
               +
             </button>
           </div>
-          <p className="text-sm font-bold text-primary">
-            NT$ {lineTotal.toLocaleString()}
+          <p className="text-sm font-bold text-primary tabular-nums lining-nums">
+            {lineTotalDisplay === null
+              ? "小計待確認"
+              : "NT$ " + lineTotalDisplay}
           </p>
         </div>
       </div>
@@ -227,7 +330,7 @@ function SummaryRow({
     <div className="flex items-center justify-between text-sm gap-2">
       <span className="text-muted-foreground shrink-0">{label}</span>
       <span
-        className={`text-foreground text-right break-all ${bold ? "font-bold" : ""} ${mono ? "font-mono text-xs" : ""}`}
+        className={`text-foreground text-right break-all tabular-nums lining-nums ${bold ? "font-bold" : ""} ${mono ? "font-mono text-xs" : ""}`}
       >
         {value}
       </span>
@@ -237,19 +340,39 @@ function SummaryRow({
 
 function SuccessPage({ order }: { order: CartOrderResult }) {
   const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState("");
+  const publicToken = order.publicToken?.trim() || null;
+  const rawItems = Array.isArray(order.items) ? order.items : [];
+  const items = rawItems
+    .map(normalizeCartOrderItem)
+    .filter((item): item is CartOrderItem => item !== null);
+  const malformedItemCount = rawItems.length - items.length;
+  const shippingFee = normalizeExactAmount(order.shippingFee);
+  const shippingFeeDisplay = formatExactAmountForDisplay(shippingFee);
+  const orderTotalDisplay = formatExactAmountForDisplay(
+    addExactAmounts(order.totalPrice, order.shippingFee),
+  );
 
   const handleCopy = () => {
-    if (!navigator.clipboard) return;
+    setCopyError("");
+    if (!publicToken) {
+      setCopyError("系統未回傳訂單查詢碼，請聯絡店家確認。");
+      return;
+    }
+    if (!navigator.clipboard) {
+      setCopyError("瀏覽器不支援複製，請長按訂單查詢碼手動複製。");
+      return;
+    }
     navigator.clipboard
-      .writeText(order.publicToken)
+      .writeText(publicToken)
       .then(() => {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       })
-      .catch(() => {});
+      .catch(() => {
+        setCopyError("複製失敗，請長按訂單查詢碼手動複製。");
+      });
   };
-
-  const orderTotal = order.totalPrice + order.shippingFee;
 
   return (
     <div className="min-h-[100dvh] bg-background px-5 py-10 max-w-[480px] mx-auto">
@@ -265,8 +388,15 @@ function SuccessPage({ order }: { order: CartOrderResult }) {
 
       {/* Order summary card */}
       <div className="bg-card rounded-2xl p-4 border border-border space-y-3 mb-3">
-        <SummaryRow label="追蹤碼" value={order.publicToken} mono />
-        <SummaryRow label="取貨方式" value={order.pickupMethod} />
+        <SummaryRow
+          label="追蹤碼"
+          value={publicToken ?? "待確認（系統未回傳訂單查詢碼）"}
+          mono
+        />
+        <SummaryRow
+          label="取貨方式"
+          value={order.pickupMethod || "待確認（系統未回傳取貨方式）"}
+        />
         <SummaryRow label="下單時間" value={formatDate(order.createdAt)} />
       </div>
 
@@ -277,68 +407,123 @@ function SuccessPage({ order }: { order: CartOrderResult }) {
             商品明細
           </span>
         </div>
-        <div className="divide-y divide-border">
-          {order.items.map((item, idx) => {
-            const specSummary = formatSpecSummary(item.specValues);
-            return (
-              <div key={idx} className="px-4 py-3 flex items-start gap-3">
-                {item.productImageUrl && (
-                  <img
-                    src={item.productImageUrl}
-                    alt={item.productName}
-                    className="w-12 h-12 rounded-lg object-cover flex-shrink-0 mt-0.5"
-                  />
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-foreground">
-                    {item.productName}
-                  </div>
-                  {specSummary && (
-                    <div className="text-xs text-muted-foreground mt-0.5">
-                      {specSummary}
-                    </div>
+        {rawItems.length === 0 ? (
+          <SemanticStatePanel
+            className="border-0"
+            state={{
+              kind: "pending",
+              title: "商品明細待確認",
+              reason:
+                "訂單已建立，但系統尚未回傳商品明細，沒有以空白或 0 代替。",
+            }}
+          />
+        ) : (
+          <div className="divide-y divide-border">
+            {malformedItemCount > 0 && (
+              <SemanticStatePanel
+                className="border-0"
+                state={{
+                  kind: "pending",
+                  title: "部分商品明細待確認",
+                  reason: `系統有 ${malformedItemCount} 筆商品資料格式不完整，已先顯示其餘可確認內容，沒有以空白或 0 代替。`,
+                }}
+              />
+            )}
+            {items.map((item, idx) => {
+              const specSummary = formatSpecSummary(item.specValues);
+              const subtotalDisplay = formatExactAmountForDisplay(
+                item.subtotal,
+              );
+              return (
+                <div key={idx} className="px-4 py-3 flex items-start gap-3">
+                  {item.productImageUrl && (
+                    <img
+                      src={item.productImageUrl}
+                      alt={item.productName ?? "商品圖片"}
+                      className="w-12 h-12 rounded-lg object-cover flex-shrink-0 mt-0.5"
+                    />
                   )}
-                  <div className="text-xs text-muted-foreground mt-0.5">
-                    × {item.quantity}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-foreground">
+                      {item.productName ?? "待確認（商品名稱未回傳）"}
+                    </div>
+                    {specSummary && (
+                      <div className="text-xs text-muted-foreground mt-0.5">
+                        {specSummary}
+                      </div>
+                    )}
+                    <div className="text-xs text-muted-foreground mt-0.5 tabular-nums lining-nums">
+                      {item.quantity === null
+                        ? "數量待確認（系統未回傳有效數量）"
+                        : "× " + item.quantity}
+                    </div>
+                  </div>
+                  <div className="text-sm font-semibold text-foreground shrink-0 tabular-nums lining-nums">
+                    {subtotalDisplay === null
+                      ? "小計待確認"
+                      : "NT$ " + subtotalDisplay}
                   </div>
                 </div>
-                <div className="text-sm font-semibold text-foreground shrink-0">
-                  NT$ {item.subtotal.toLocaleString()}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
         <div className="px-4 py-3 border-t border-border space-y-1.5">
-          {order.shippingFee > 0 && (
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">運費</span>
-              <span className="text-foreground">
-                NT$ {order.shippingFee.toLocaleString()}
-              </span>
-            </div>
-          )}
           <div className="flex items-center justify-between text-sm">
-            <span className="font-semibold text-foreground">訂單總額</span>
-            <span className="font-bold text-primary text-base">
-              NT$ {orderTotal.toLocaleString()}
+            <span className="text-muted-foreground">運費</span>
+            <span className="text-foreground tabular-nums lining-nums">
+              {shippingFeeDisplay === null
+                ? "待確認（系統未回傳有效運費）"
+                : isExactZero(shippingFee)
+                  ? "免費"
+                  : "NT$ " + shippingFeeDisplay}
             </span>
           </div>
+          <div className="flex items-center justify-between text-sm">
+            <span className="font-semibold text-foreground">訂單總額</span>
+            <span className="font-bold text-primary text-base tabular-nums lining-nums">
+              {orderTotalDisplay === null
+                ? "待確認"
+                : "NT$ " + orderTotalDisplay}
+            </span>
+          </div>
+          {orderTotalDisplay === null && (
+            <p className="text-xs text-accent" role="status">
+              原因：商品合計或運費尚未完整回傳，沒有以 0 代替。
+            </p>
+          )}
         </div>
       </div>
 
       <button
+        type="button"
         onClick={handleCopy}
+        disabled={!publicToken}
         className="w-full h-11 rounded-xl border border-border bg-card text-sm font-medium text-foreground mb-2"
       >
-        {copied ? "已複製！" : "複製追蹤碼"}
+        {!publicToken ? "訂單查詢碼待確認" : copied ? "已複製！" : "複製追蹤碼"}
       </button>
-      <a
-        href={`/track/${order.publicToken}`}
-        className="w-full h-11 rounded-xl bg-primary/10 text-primary text-sm font-medium flex items-center justify-center"
-      >
-        查看訂單狀態
-      </a>
+      {publicToken ? (
+        <a
+          href={`/track/${publicToken}`}
+          className="w-full h-11 rounded-xl bg-primary/10 text-primary text-sm font-medium flex items-center justify-center"
+        >
+          查看訂單狀態
+        </a>
+      ) : (
+        <SemanticStatePanel
+          state={{
+            kind: "pending",
+            title: "查詢連結待確認",
+            reason: "系統未回傳訂單查詢碼，請先保留此頁並聯絡店家。",
+          }}
+        />
+      )}
+      {copyError && (
+        <p className="mt-2 text-xs text-destructive" role="alert">
+          複製未完成：{copyError}
+        </p>
+      )}
       <p className="text-xs text-muted-foreground text-center mt-4 leading-relaxed">
         請截圖保留此頁面作為訂購憑證
       </p>
@@ -364,6 +549,11 @@ export default function PublicCartPage() {
   const [shippingZip, setShippingZip] = useState("");
   const [shippingAddressLine, setShippingAddressLine] = useState("");
   const [formError, setFormError] = useState("");
+  const [cartLoadState, setCartLoadState] = useState<"loading" | "ready">(
+    "loading",
+  );
+  const [cartLoadError, setCartLoadError] = useState("");
+  const [pickupMethodNotice, setPickupMethodNotice] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedOrder, setSubmittedOrder] = useState<CartOrderResult | null>(
     null,
@@ -374,6 +564,40 @@ export default function PublicCartPage() {
 
   // ② ScrollTrigger 長頁區塊進場：捲到才播（低調、一次；只當延後播放的觸發器）
   const pageRef = useRef<HTMLDivElement>(null);
+  const loadCartState = useCallback(() => {
+    setCartLoadState("loading");
+    setCartLoadError("");
+    try {
+      applyBrandColor(DEFAULT_BRAND_PRIMARY_COLOR);
+      setCartItems(getCart());
+      setCvsStore(loadCvsStore(CART_CVS_KEY));
+      try {
+        const savedMethod =
+          typeof localStorage === "undefined"
+            ? null
+            : localStorage.getItem(CART_CVS_METHOD_KEY);
+        if (savedMethod && isStorePickupMethod(savedMethod)) {
+          setPickupMethod(savedMethod);
+        }
+      } catch {
+        setPickupMethodNotice("先前的取貨方式無法讀取，請在本頁重新選擇。");
+      }
+    } catch (loadError) {
+      setCartLoadError(
+        formatActionableError({
+          happened: "購物車內容暫時無法載入。",
+          reason:
+            loadError instanceof Error
+              ? loadError.message
+              : "瀏覽器儲存空間沒有回應。",
+          action: "請重新載入一次；商品不會以空白內容代替。",
+          support: "若仍失敗，請返回商品頁重新加入購物車。",
+        }),
+      );
+    } finally {
+      setCartLoadState("ready");
+    }
+  }, []);
   useEffect(() => {
     const root = pageRef.current;
     if (!root || !motionEnabled()) return;
@@ -405,23 +629,19 @@ export default function PublicCartPage() {
   }, []);
 
   useEffect(() => {
-    applyBrandColor(DEFAULT_BRAND_PRIMARY_COLOR);
-    setCartItems(getCart());
-    const stored = loadCvsStore(CART_CVS_KEY);
-    if (stored) setCvsStore(stored);
-    try {
-      const savedMethod = localStorage.getItem(CART_CVS_METHOD_KEY);
-      if (savedMethod && isStorePickupMethod(savedMethod))
-        setPickupMethod(savedMethod);
-    } catch {}
-  }, []);
+    loadCartState();
+  }, [loadCartState]);
 
   useEffect(() => {
     if (
       pickupMethod &&
       !availablePickupMethods.includes(pickupMethod as PickupMethod)
-    )
+    ) {
+      setPickupMethodNotice(
+        "原取貨方式已取消：購物車內商品沒有共同支援該方式，請重新選擇。",
+      );
       setPickupMethod("");
+    }
   }, [availablePickupMethods, pickupMethod]);
 
   useEffect(() => {
@@ -444,6 +664,12 @@ export default function PublicCartPage() {
 
   const needsCvsStore = isStorePickupMethod(pickupMethod);
   const shippingFee = getShippingFee(pickupMethod);
+  const hasValidCartAmounts = cartItems.every(
+    (item) =>
+      normalizeExactAmount(item.unitPrice) !== null &&
+      Number.isSafeInteger(item.quantity) &&
+      item.quantity > 0,
+  );
   const moneyPreview = calculateMoneyPreview({
     lines: cartItems.map((item) => ({
       unitPrice: item.unitPrice,
@@ -499,6 +725,18 @@ export default function PublicCartPage() {
       setFormError("購物車是空的");
       return;
     }
+    if (availablePickupMethods.length === 0) {
+      setFormError(
+        "取貨方式待確認：購物車內商品沒有共同支援的取貨方式，請分開下單或聯絡店家。",
+      );
+      return;
+    }
+    if (!hasValidCartAmounts) {
+      setFormError(
+        "商品金額待確認：購物車內有商品未提供有效單價或數量，尚未以 0 送出。",
+      );
+      return;
+    }
     if (!buyerName.trim() || !buyerPhone.trim() || !pickupMethod) {
       setFormError("請填寫姓名、電話和取貨方式");
       return;
@@ -506,6 +744,16 @@ export default function PublicCartPage() {
     if (needsCvsStore && !cvsStore) {
       const label = isFamilyMartMethod(pickupMethod) ? "全家門市" : "7-11 門市";
       setFormError(`請先選擇${label}`);
+      return;
+    }
+    if (
+      needsCvsStore &&
+      cvsStore &&
+      (!cvsStore.storeName?.trim() || !cvsStore.storeAddress?.trim())
+    ) {
+      setFormError(
+        "門市資料待確認：門市名稱或地址尚未完整回傳，請重新選擇門市。",
+      );
       return;
     }
     if (isHomeDeliveryMethod(pickupMethod)) {
@@ -603,24 +851,63 @@ export default function PublicCartPage() {
     return <SuccessPage order={submittedOrder} />;
   }
 
+  if (cartLoadState === "loading") {
+    return (
+      <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto px-5 py-8">
+        <SemanticStatePanel
+          state={{
+            kind: "loading",
+            label: "正在載入購物車",
+            fallbackMessage: "若等待時間過長，請確認瀏覽器儲存空間可用。",
+          }}
+        />
+      </div>
+    );
+  }
+
+  if (cartLoadError) {
+    return (
+      <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto px-5 py-8">
+        <SemanticStatePanel
+          state={{
+            kind: "pageError",
+            title: "購物車載入失敗",
+            message: cartLoadError,
+            retry: {
+              label: "重新載入",
+              onAction: loadCartState,
+            },
+          }}
+        />
+      </div>
+    );
+  }
+
   if (cartItems.length === 0) {
     return (
       <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto">
         <div className="bg-card px-5 py-4 flex items-center gap-3 border-b border-border">
           <button
+            type="button"
             onClick={() => window.history.back()}
-            className="text-primary font-medium text-sm"
+            className="min-h-11 text-primary font-medium text-sm"
           >
             ← 返回
           </button>
           <h1 className="text-base font-bold text-foreground flex-1">購物車</h1>
         </div>
-        <div className="flex flex-col items-center justify-center py-24 px-5">
-          <div className="text-5xl mb-4">🛒</div>
-          <p className="text-muted-foreground text-base">購物車是空的</p>
-          <p className="text-muted-foreground text-sm mt-1">
-            快去挑選喜歡的商品吧！
-          </p>
+        <div className="py-16 px-5">
+          <SemanticStatePanel
+            state={{
+              kind: "emptyAction",
+              title: "購物車目前沒有商品",
+              reason: "尚未加入任何商品；返回商品頁後可重新選擇規格與數量。",
+              action: {
+                label: "返回繼續選購",
+                onAction: () => window.history.back(),
+              },
+            }}
+          />
         </div>
       </div>
     );
@@ -634,8 +921,9 @@ export default function PublicCartPage() {
       {/* Header */}
       <div className="bg-card px-5 py-4 flex items-center gap-3 border-b border-border sticky top-0 z-10">
         <button
+          type="button"
           onClick={() => window.history.back()}
-          className="text-primary font-medium text-sm"
+          className="min-h-11 text-primary font-medium text-sm"
         >
           ← 繼續選購
         </button>
@@ -717,6 +1005,21 @@ export default function PublicCartPage() {
             取貨方式 *
           </label>
           <div className="space-y-4">
+            {pickupMethodNotice && (
+              <p className="text-sm text-accent" role="status">
+                取貨方式提醒：{pickupMethodNotice}
+              </p>
+            )}
+            {availablePickupMethods.length === 0 && (
+              <SemanticStatePanel
+                state={{
+                  kind: "pending",
+                  title: "取貨方式待確認",
+                  reason:
+                    "購物車內商品沒有共同支援的取貨方式。請分開下單，或聯絡店家確認可用方式。",
+                }}
+              />
+            )}
             {availablePickupMethods.map((m, index) => {
               const isSelected = pickupMethod === m;
               const groupLabel = pickupMethodGroup(m);
@@ -733,7 +1036,11 @@ export default function PublicCartPage() {
                   )}
                   <button
                     type="button"
-                    onClick={() => setPickupMethod(m)}
+                    onClick={() => {
+                      setPickupMethodNotice("");
+                      setPickupMethod(m);
+                    }}
+                    aria-pressed={isSelected}
                     className={`w-full flex items-center gap-4 px-5 py-5 min-h-[72px] rounded-2xl border-2 text-left transition-colors ${
                       isSelected
                         ? "bg-primary/10 border-primary"
@@ -809,6 +1116,11 @@ export default function PublicCartPage() {
                       ) : (
                         m
                       )}
+                      {isSelected && (
+                        <span className="mt-1 block text-xs font-normal">
+                          已選取
+                        </span>
+                      )}
                     </span>
                     <span
                       className={`text-sm font-semibold shrink-0 ${isSelected ? "text-primary" : "text-muted-foreground"}`}
@@ -845,7 +1157,8 @@ export default function PublicCartPage() {
                               </div>
                               <div className="flex items-start justify-between gap-2">
                                 <span className="text-sm font-semibold text-foreground">
-                                  {cvsStore.storeName}
+                                  {cvsStore.storeName ||
+                                    "門市名稱待確認（來源未提供）"}
                                 </span>
                                 <button
                                   type="button"
@@ -856,7 +1169,8 @@ export default function PublicCartPage() {
                                 </button>
                               </div>
                               <div className="text-xs text-muted-foreground">
-                                {cvsStore.storeAddress}
+                                {cvsStore.storeAddress ||
+                                  "門市地址待確認（來源未提供）"}
                               </div>
                             </>
                           ) : (
@@ -867,7 +1181,7 @@ export default function PublicCartPage() {
                               <button
                                 type="button"
                                 onClick={handleSelectStore}
-                                className="w-full h-10 rounded-xl border-2 border-primary bg-primary/5 text-primary text-sm font-semibold"
+                                className="w-full min-h-11 rounded-xl border-2 border-primary bg-primary/5 text-primary text-sm font-semibold"
                               >
                                 選擇 7-11 門市
                               </button>
@@ -902,7 +1216,8 @@ export default function PublicCartPage() {
                               </div>
                               <div className="flex items-start justify-between gap-2">
                                 <span className="text-sm font-semibold text-foreground">
-                                  {cvsStore.storeName}
+                                  {cvsStore.storeName ||
+                                    "門市名稱待確認（來源未提供）"}
                                 </span>
                                 <button
                                   type="button"
@@ -913,7 +1228,8 @@ export default function PublicCartPage() {
                                 </button>
                               </div>
                               <div className="text-xs text-muted-foreground">
-                                {cvsStore.storeAddress}
+                                {cvsStore.storeAddress ||
+                                  "門市地址待確認（來源未提供）"}
                               </div>
                             </>
                           ) : (
@@ -924,7 +1240,7 @@ export default function PublicCartPage() {
                               <button
                                 type="button"
                                 onClick={handleSelectStore}
-                                className="w-full h-10 rounded-xl border-2 border-primary bg-primary/5 text-primary text-sm font-semibold"
+                                className="w-full min-h-11 rounded-xl border-2 border-primary bg-primary/5 text-primary text-sm font-semibold"
                               >
                                 選擇全家門市
                               </button>
@@ -1059,39 +1375,60 @@ export default function PublicCartPage() {
         {/* Price summary */}
         {pickupMethod && (
           <div className="bg-secondary/40 rounded-2xl px-4 py-3 space-y-1.5">
-            <div className="flex justify-between text-sm text-muted-foreground">
+            <div className="flex justify-between text-sm text-muted-foreground tabular-nums lining-nums">
               <span>商品小計</span>
-              <span>NT$ {moneyPreview.itemSubtotal}</span>
+              <span>
+                {hasValidCartAmounts
+                  ? "NT$ " + moneyPreview.itemSubtotal
+                  : "待確認（商品金額不完整）"}
+              </span>
             </div>
-            <div className="flex justify-between text-sm text-muted-foreground">
+            <div className="flex justify-between text-sm text-muted-foreground tabular-nums lining-nums">
               <span>運費</span>
               <span>{shippingFee === 0 ? "免費" : `NT$ ${shippingFee}`}</span>
             </div>
-            <div className="flex justify-between text-base font-bold text-foreground pt-1 border-t border-border/50">
+            <div className="flex justify-between text-base font-bold text-foreground pt-1 border-t border-border/50 tabular-nums lining-nums">
               <span>訂單總額</span>
               <span className="text-primary">
-                NT$ {moneyPreview.orderTotal}
+                {hasValidCartAmounts
+                  ? "NT$ " + moneyPreview.orderTotal
+                  : "待確認"}
               </span>
             </div>
+            {!hasValidCartAmounts && (
+              <p className="text-xs text-accent" role="status">
+                原因：至少一項商品未提供有效單價或數量，沒有以 0 代替。
+              </p>
+            )}
           </div>
         )}
 
         {formError && (
-          <div className="bg-destructive/10 text-destructive text-sm px-4 py-3 rounded-xl">
+          <div
+            className="bg-destructive/10 text-destructive text-sm px-4 py-3 rounded-xl"
+            role="alert"
+          >
             <span className="whitespace-pre-line">{formError}</span>
           </div>
         )}
 
         <button
           type="submit"
-          disabled={isSubmitting || cartItems.length === 0}
+          disabled={
+            isSubmitting ||
+            cartItems.length === 0 ||
+            availablePickupMethods.length === 0 ||
+            !hasValidCartAmounts
+          }
           className="k8-press w-full h-12 bg-primary text-primary-foreground font-bold rounded-xl text-base disabled:opacity-60 sticky bottom-4"
         >
           {isSubmitting
             ? "送出中..."
-            : pickupMethod
+            : pickupMethod && hasValidCartAmounts
               ? `確認下單 · NT$ ${moneyPreview.orderTotal}`
-              : "確認下單"}
+              : hasValidCartAmounts
+                ? "確認下單"
+                : "商品金額待確認"}
         </button>
       </form>
     </div>
