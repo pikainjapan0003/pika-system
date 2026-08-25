@@ -19,6 +19,9 @@ import {
   type TripListItem,
 } from "@/lib/tripProfitBoard";
 import { motionEnabled } from "@/lib/motion";
+import { AreaScatterChart } from "./charts/AreaScatterChart";
+import { HistoryTrendChart } from "./charts/HistoryTrendChart";
+import { RouteCostRankingChart } from "./charts/RouteCostRankingChart";
 
 const PENDING = "待確認";
 
@@ -598,19 +601,7 @@ function CostPanel({ cards }: { cards: Map<string, KpiCard> }) {
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
-      <section className="rounded-[16px] border border-border bg-card p-4">
-        <h3 className="text-base font-semibold">成本占比待確認</h3>
-        <p className="mt-1 text-xs text-muted-foreground">
-          目前沒有可用占比，不以 0% 或假比例取代。
-        </p>
-        <div
-          className="mx-auto mt-5 grid aspect-square w-44 place-items-center rounded-full border-[18px] border-muted"
-          role="img"
-          aria-label="成本占比圖待確認"
-        >
-          <strong className="text-lg tabular-nums lining-nums">待確認</strong>
-        </div>
-      </section>
+      <RouteCostRankingChart />
 
       <section className="rounded-[16px] border border-border bg-card p-4">
         <h3 className="text-base font-semibold">商品進貨成本為排行首項</h3>
@@ -648,33 +639,7 @@ function TrendPanel({
 }) {
   return (
     <div className="space-y-4">
-      <section className="rounded-[16px] border border-border bg-card p-4">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h3 className="text-base font-semibold">歷史趨勢待確認</h3>
-            <p className="mt-1 text-xs text-muted-foreground">
-              預設一張主圖；切換指標不會同時堆出四張圖。
-            </p>
-          </div>
-          <label className="grid gap-1 text-xs text-muted-foreground">
-            趨勢指標
-            <select className="h-11 rounded-xl border border-input bg-background px-3 text-sm text-foreground">
-              <option>平均單件毛利</option>
-              <option>商品總件數</option>
-              <option>平均每日毛利</option>
-            </select>
-          </label>
-        </div>
-        <div
-          className="mt-5 grid min-h-56 place-items-center rounded-xl border border-border bg-muted p-4"
-          role="img"
-          aria-label="單一主趨勢圖資料待確認"
-        >
-          <p className="text-center text-sm text-muted-foreground">
-            尚無趨勢資料。取得足夠行程資料後顯示單一主圖。
-          </p>
-        </div>
-      </section>
+      <HistoryTrendChart />
 
       {monthlyTrendContent ? (
         <section className="mx-auto w-full max-w-[960px]">
@@ -693,16 +658,15 @@ function TrendPanel({
           ]}
         />
 
-        <section className="rounded-[16px] border border-border bg-card p-4">
-          <h3 className="text-base font-semibold">行程比較</h3>
-          <div className="mt-3 rounded-xl border border-border bg-muted p-4">
-            <p className="font-semibold">尚無行程比較資料</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              至少有兩趟具備可比較資料後，這裡會顯示結論與差異方向。
-            </p>
-          </div>
-        </section>
+        <AreaScatterChart />
       </div>
+
+      {/*
+        Sensitivity heatmap (G) intentionally remains a strategic omission:
+        DESIGN.md leaves retention to Owner, and the endpoint has no approved
+        product sweep defaults. Hard-coding route-test axes would create mock
+        financial scenarios and an unapproved third Trend visualization.
+      */}
     </div>
   );
 }

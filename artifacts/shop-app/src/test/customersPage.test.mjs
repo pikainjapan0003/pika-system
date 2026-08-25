@@ -38,6 +38,24 @@ mock.module("@workspace/api-client-react", {
     useGetStoreStats: () => ({ data: undefined }),
     useListOrders: () => ({ data: [] }),
     useListProducts: () => ({ data: [] }),
+    useListRouteCostRanking: () => ({
+      data: { status: "ready", items: [] },
+      isLoading: false,
+      error: null,
+      refetch: async () => undefined,
+    }),
+    useListAreaScatter: () => ({
+      data: { status: "ready", items: [] },
+      isLoading: false,
+      error: null,
+      refetch: async () => undefined,
+    }),
+    useListHistoryTrend: () => ({
+      data: { status: "ready", mode: "ACTUAL", items: [] },
+      isLoading: false,
+      error: null,
+      refetch: async () => undefined,
+    }),
   },
 });
 
