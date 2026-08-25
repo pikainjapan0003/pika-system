@@ -2,7 +2,7 @@ import { useAuth } from "@clerk/react";
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useGetMyStore } from "@workspace/api-client-react";
-import { BottomNav } from "./Dashboard";
+import { BottomNavigation } from "../components/BottomNavigation";
 
 type ComparisonRow = {
   key: string;
@@ -63,7 +63,7 @@ export default function TripComparisonPage({ tripId }: { tripId: number }) {
         : "持平";
 
   return (
-    <div className="min-h-[100dvh] bg-background pb-24">
+    <div className="min-h-[100dvh] bg-background pb-[calc(112px+env(safe-area-inset-bottom))]">
       <header className="sticky top-0 z-10 border-b border-border bg-card px-5 pb-4 pt-10">
         <div className="mx-auto flex max-w-[480px] items-center gap-3">
           <button
@@ -144,7 +144,7 @@ export default function TripComparisonPage({ tripId }: { tripId: number }) {
           </section>
         )}
       </main>
-      <BottomNav active="settings" />
+      <BottomNavigation active="more" />
     </div>
   );
 }

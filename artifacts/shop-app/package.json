@@ -83,6 +83,7 @@
     "@clerk/react": "^6.7.2",
     "@clerk/themes": "^2.4.57",
     "gsap": "^3.15.0",
-    "internal": "link:@clerk/react/internal"
+    "internal": "link:@clerk/react/internal",
+    "three": "0.185.1"
   }
 }
