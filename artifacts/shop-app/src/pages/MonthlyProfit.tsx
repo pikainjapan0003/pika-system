@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@clerk/react";
 import { useGetMyStore } from "@workspace/api-client-react";
-import { useLocation } from "wouter";
 
-import { BottomNav } from "./Dashboard";
+import { BottomNavigation } from "@/components/BottomNavigation";
+import { ProfitKpiBoard } from "@/components/ProfitKpiBoard";
+import { SemanticStatePanel } from "@/components/SemanticStatePanel";
+import { useTripProfitBoard } from "@/lib/tripProfitBoard";
 
 interface MonthlyProfitReport {
   month: string;
@@ -32,9 +34,9 @@ function formatInteger(value: string): string {
 }
 
 export default function MonthlyProfitPage() {
-  const [, setLocation] = useLocation();
   const { getToken } = useAuth();
   const { data: store } = useGetMyStore();
+  const board = useTripProfitBoard(store?.id, getToken);
   const [month, setMonth] = useState(currentTaipeiMonth);
   const [report, setReport] = useState<MonthlyProfitReport | null>(null);
   const [loading, setLoading] = useState(false);
@@ -69,93 +71,124 @@ export default function MonthlyProfitPage() {
     };
   }, [getToken, month, store?.id]);
 
-  return (
-    <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-24">
-      <header className="bg-card border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
-        <button
-          type="button"
-          onClick={() => setLocation("/dashboard")}
-          className="mb-2 min-h-11 text-xs text-muted-foreground"
-        >
-          ‹ 返回首頁
-        </button>
-        <h1 className="text-lg font-bold text-foreground">每月毛利報表</h1>
-        <p className="text-xs text-muted-foreground mt-1">
-          只讀取訂單定格快照；待確認資料不會默認為 0。
-        </p>
-      </header>
+  const openedFromKpiNavigation =
+    new URLSearchParams(window.location.search).get("view") === "kpi";
 
-      <main className="px-5 py-5 space-y-4">
-        <label className="block bg-card border border-border rounded-2xl p-4">
-          <span className="block text-xs font-medium text-muted-foreground mb-2">
-            帳務月份（台灣時間）
-          </span>
+  const monthlyTrendContent = (
+    <section aria-labelledby="monthly-profit-title" className="space-y-4">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h3 id="monthly-profit-title" className="text-base font-semibold">
+            每月毛利快照
+          </h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            只讀取訂單定格快照；缺少的資料維持待確認。
+          </p>
+        </div>
+        <label className="grid gap-1 text-xs text-muted-foreground">
+          帳務月份（台灣時間）
           <input
             type="month"
             value={month}
             onChange={(event) => setMonth(event.target.value)}
-            className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
+            className="min-h-11 rounded-xl border border-input bg-background px-3 text-sm text-foreground"
           />
         </label>
+      </div>
 
-        {loading && (
-          <p className="text-sm text-muted-foreground text-center py-8">
-            讀取中…
+      {loading ? (
+        <SemanticStatePanel
+          state={{
+            kind: "loading",
+            label: "讀取每月毛利",
+            fallbackMessage: "正在讀取所選月份的定格毛利，請稍候。",
+          }}
+        />
+      ) : null}
+      {error ? (
+        <SemanticStatePanel
+          state={{
+            kind: "inlineError",
+            title: "無法讀取每月毛利",
+            message: error,
+          }}
+        />
+      ) : null}
+      {!loading && !error && report ? (
+        <div className="rounded-[16px] border border-border bg-background p-4 sm:p-5">
+          <p className="text-xs font-medium text-muted-foreground">
+            已定格毛利
           </p>
-        )}
-        {error && (
-          <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
-            {error}
-          </div>
-        )}
-        {!loading && report && (
-          <section className="grid grid-cols-2 gap-3">
-            <ReportCard
-              label="已定格毛利"
-              value={`NT$ ${formatInteger(report.capturedProfitSubtotalDisplayTwd)}`}
-              wide
-            />
-            <ReportCard label="訂單數" value={String(report.orderCount)} />
-            <ReportCard
+          <p className="mt-2 text-2xl font-bold tabular-nums lining-nums text-foreground sm:text-[28px]">
+            NT$ {formatInteger(report.capturedProfitSubtotalDisplayTwd)}
+          </p>
+          <dl className="mt-4 grid divide-y divide-border border-y border-border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+            <MonthlyMetric label="訂單數" value={String(report.orderCount)} />
+            <MonthlyMetric
               label="待確認"
               value={String(report.pendingOrderCount)}
               alert={report.pendingOrderCount > 0}
             />
-            <ReportCard
+            <MonthlyMetric
               label="尚無快照"
               value={String(report.missingSnapshotOrderCount)}
               alert={report.missingSnapshotOrderCount > 0}
             />
-          </section>
-        )}
+          </dl>
+        </div>
+      ) : null}
+      {!loading && !error && !report ? (
+        <SemanticStatePanel
+          state={{
+            kind: "empty",
+            title: "尚無月報資料",
+            reason: "所選月份目前沒有可顯示的訂單定格快照。",
+          }}
+        />
+      ) : null}
+    </section>
+  );
+
+  return (
+    <div className="min-h-[100dvh] bg-background pb-[calc(112px+env(safe-area-inset-bottom))]">
+      <main className="mx-auto max-w-[1280px] px-4 py-6 sm:px-6 lg:px-8">
+        <ProfitKpiBoard
+          presentation="full"
+          initialCategory={openedFromKpiNavigation ? "overview" : "trend"}
+          monthlyTrendContent={monthlyTrendContent}
+          trips={board.trips}
+          selectedTripId={board.selectedTripId}
+          onSelectTrip={board.setSelectedTripId}
+          estimate={board.estimate}
+          actual={board.actual}
+          comparisonRows={board.comparisonRows}
+          loading={board.loading}
+          error={board.error}
+        />
       </main>
 
-      <BottomNav active="dashboard" />
+      <BottomNavigation active="kpi" />
     </div>
   );
 }
 
-function ReportCard({
+function MonthlyMetric({
   label,
   value,
-  wide,
-  alert,
+  alert = false,
 }: {
   label: string;
   value: string;
-  wide?: boolean;
   alert?: boolean;
 }) {
   return (
-    <div
-      className={`rounded-2xl border border-border bg-card p-4 ${wide ? "col-span-2" : ""}`}
-    >
-      <div
-        className={`text-xl font-bold tabular-nums lining-nums ${alert ? "text-accent" : "text-primary"}`}
+    <div className="px-3 py-3 first:pl-0">
+      <dt className="text-xs text-muted-foreground">{label}</dt>
+      <dd
+        className={`mt-1 text-lg font-semibold tabular-nums lining-nums ${alert ? "text-accent" : "text-foreground"}`}
       >
         {value}
-      </div>
-      <div className="text-xs text-muted-foreground mt-1">{label}</div>
+      </dd>
     </div>
   );
 }
