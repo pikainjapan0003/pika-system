@@ -84,8 +84,8 @@ const PREVIEW_CONFIGS: Record<PreviewKey, FeaturePreviewConfig> = {
     label: "銷貨單標題",
     desc: "未來可自訂銷貨單上方的品牌標題，讓每張銷貨單都帶有您的品牌識別。",
     icon: ReceiptText,
-    iconBg: "bg-orange-50",
-    iconColor: "text-orange-400",
+    iconBg: "bg-chart-2/10",
+    iconColor: "text-chart-2",
     previewCards: [
       {
         title: "預覽：銷貨單頂部",
@@ -98,8 +98,8 @@ const PREVIEW_CONFIGS: Record<PreviewKey, FeaturePreviewConfig> = {
     label: "頁尾文案",
     desc: "未來可設定銷貨單底部的感謝語與注意事項，讓每張單據都傳遞品牌溫度。",
     icon: ScrollText,
-    iconBg: "bg-sky-50",
-    iconColor: "text-sky-400",
+    iconBg: "bg-chart-1/10",
+    iconColor: "text-chart-1",
     previewCards: [
       {
         title: "預覽：銷貨單底部文案",
@@ -116,8 +116,8 @@ const PREVIEW_CONFIGS: Record<PreviewKey, FeaturePreviewConfig> = {
     label: "社群連結",
     desc: "未來可加入 Instagram、Threads、Facebook 等社群連結，讓買家一鍵追蹤您的賣場。",
     icon: Share2,
-    iconBg: "bg-fuchsia-50",
-    iconColor: "text-fuchsia-400",
+    iconBg: "bg-chart-5/10",
+    iconColor: "text-chart-5",
     previewCards: [
       {
         title: "預覽：社群連結",
@@ -130,8 +130,8 @@ const PREVIEW_CONFIGS: Record<PreviewKey, FeaturePreviewConfig> = {
     label: "退換貨資訊",
     desc: "未來可建立退換貨規則與提醒文字，在訂單頁與銷貨單上自動顯示。",
     icon: RefreshCcw,
-    iconBg: "bg-teal-50",
-    iconColor: "text-teal-400",
+    iconBg: "bg-chart-4/10",
+    iconColor: "text-chart-4",
     previewCards: [
       {
         title: "預覽：退換貨規則",
@@ -148,8 +148,8 @@ const PREVIEW_CONFIGS: Record<PreviewKey, FeaturePreviewConfig> = {
     label: "購物須知",
     desc: "未來可設定買家下單前注意事項，減少誤解與客服溝通成本。",
     icon: ListChecks,
-    iconBg: "bg-amber-50",
-    iconColor: "text-amber-400",
+    iconBg: "bg-chart-2/10",
+    iconColor: "text-chart-2",
     previewCards: [
       {
         title: "預覽：購物須知",
@@ -167,8 +167,8 @@ const PREVIEW_CONFIGS: Record<PreviewKey, FeaturePreviewConfig> = {
     label: "訂單頁尾",
     desc: "未來可在買家訂單頁底部加入店家補充說明，讓每位買家都看到您想傳達的資訊。",
     icon: MessageCircle,
-    iconBg: "bg-emerald-50",
-    iconColor: "text-emerald-400",
+    iconBg: "bg-chart-3/10",
+    iconColor: "text-chart-3",
     previewCards: [
       {
         title: "預覽：訂單頁尾說明",
@@ -450,7 +450,7 @@ export default function SettingsPage() {
       {/* ── MAIN settings page ─────────────────── */}
       {activeSection === "main" && (
         <>
-          <header className="bg-white border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
+          <header className="bg-background border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
             <h1 className="text-lg font-bold text-foreground">設定</h1>
           </header>
 
@@ -487,7 +487,7 @@ export default function SettingsPage() {
       {activeSection === "storeHub" && (
         <>
           {/* Header */}
-          <header className="bg-white border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10 flex items-center">
+          <header className="bg-background border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10 flex items-center">
             <button
               type="button"
               onClick={() => setActiveSection("main")}
@@ -505,7 +505,7 @@ export default function SettingsPage() {
                 disabled={
                   updateStore.isPending || logoUploadStatus === "uploading"
                 }
-                className="min-h-11 px-4 bg-primary text-white text-sm font-semibold rounded-full disabled:opacity-60 whitespace-nowrap"
+                className="min-h-11 px-4 bg-primary text-primary-foreground text-sm font-semibold rounded-full disabled:opacity-60 whitespace-nowrap"
               >
                 {saved
                   ? "已儲存！"
@@ -524,7 +524,7 @@ export default function SettingsPage() {
               </p>
 
               {/* Logo 主卡 */}
-              <div className="bg-white rounded-2xl border border-border overflow-hidden mb-3">
+              <div className="bg-card rounded-2xl border border-border overflow-hidden mb-3">
                 <div className="flex items-start gap-4 px-5 py-5">
                   {/* Large logo preview */}
                   <div className="w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0 border border-border">
@@ -539,15 +539,18 @@ export default function SettingsPage() {
                           }
                         />
                         {logoUploadStatus === "uploading" && (
-                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                            <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          <div className="absolute inset-0 bg-background/40 flex items-center justify-center">
+                            <div className="w-6 h-6 border-2 border-foreground border-t-transparent rounded-full animate-spin" />
                           </div>
                         )}
                       </div>
                     ) : (
                       <div
-                        className="w-full h-full flex items-center justify-center text-3xl font-bold text-white"
-                        style={{ backgroundColor: previewHex }}
+                        className="w-full h-full flex items-center justify-center text-3xl font-bold"
+                        style={{
+                          backgroundColor: previewHex,
+                          color: getContrastForeground(previewHex),
+                        }}
                       >
                         {name.trim().charAt(0).toUpperCase() || "店"}
                       </div>
@@ -575,7 +578,7 @@ export default function SettingsPage() {
                       移除 Logo
                     </button>
                     {logoUploadStatus === "done" && (
-                      <p className="text-xs text-green-600 font-medium text-center">
+                      <p className="text-xs text-chart-3 font-medium text-center">
                         ✓ Logo 已上傳
                       </p>
                     )}
@@ -586,13 +589,13 @@ export default function SettingsPage() {
                     )}
                   </div>
                 </div>
-                <div className="px-5 pb-4 text-xs text-muted-foreground">
+                <div className="px-5 pb-4 text-xs text-secondary-foreground">
                   會顯示於銷貨單與未來賣場頁
                 </div>
               </div>
 
               {/* 店家資訊列表卡 */}
-              <div className="bg-white rounded-2xl border border-border overflow-hidden">
+              <div className="bg-card rounded-2xl border border-border overflow-hidden">
                 {/* 店名 / 抬頭 */}
                 <button
                   type="button"
@@ -608,7 +611,7 @@ export default function SettingsPage() {
                     />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs text-muted-foreground font-medium">
+                    <div className="text-xs text-secondary-foreground font-medium">
                       店名 / 抬頭
                     </div>
                     <div className="text-sm font-semibold text-foreground truncate mt-0.5">
@@ -650,12 +653,12 @@ export default function SettingsPage() {
                     />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs text-muted-foreground font-medium">
+                    <div className="text-xs text-secondary-foreground font-medium">
                       店鋪簡介
                     </div>
                     <div className="text-sm text-foreground truncate mt-0.5">
                       {description.trim() || (
-                        <span className="text-muted-foreground">選填</span>
+                        <span className="text-secondary-foreground">選填</span>
                       )}
                     </div>
                   </div>
@@ -691,7 +694,7 @@ export default function SettingsPage() {
                     />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs text-muted-foreground font-medium">
+                    <div className="text-xs text-secondary-foreground font-medium">
                       品牌顏色
                     </div>
                     <div className="flex items-center gap-2 mt-0.5">
@@ -765,7 +768,7 @@ export default function SettingsPage() {
                     <RefreshCcw size={17} className="text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs text-muted-foreground font-medium mb-1.5">
+                    <div className="text-xs text-secondary-foreground font-medium mb-1.5">
                       店鋪進貨匯率（日圓 → 台幣，可留空）
                     </div>
                     <input
@@ -793,7 +796,7 @@ export default function SettingsPage() {
 
                 {/* 物流方式 */}
                 <div className="px-5 py-4">
-                  <div className="text-xs text-muted-foreground font-medium mb-3">
+                  <div className="text-xs text-secondary-foreground font-medium mb-3">
                     客人可選物流方式
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-sm">
@@ -837,7 +840,7 @@ export default function SettingsPage() {
                       </label>
                     ))}
                   </div>
-                  <p className="mt-2 text-xs text-muted-foreground">
+                  <p className="mt-2 text-xs text-secondary-foreground">
                     關閉後只影響新客人下單頁；既有訂單不變。
                   </p>
                 </div>
@@ -850,14 +853,14 @@ export default function SettingsPage() {
                     <Fingerprint size={17} className="text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs text-muted-foreground font-medium">
+                    <div className="text-xs text-secondary-foreground font-medium">
                       網址代碼
                     </div>
                     <div className="text-sm font-mono font-medium text-foreground mt-0.5">
                       {store?.slug ?? "—"}
                     </div>
                   </div>
-                  <span className="text-xs text-muted-foreground shrink-0">
+                  <span className="text-xs text-secondary-foreground shrink-0">
                     系統產生
                   </span>
                 </div>
@@ -869,10 +872,10 @@ export default function SettingsPage() {
               <p className="text-sm font-bold text-foreground px-1 mb-3">
                 賣場連結
               </p>
-              <div className="bg-white rounded-2xl border border-border overflow-hidden">
+              <div className="bg-card rounded-2xl border border-border overflow-hidden">
                 <ProfileLinkRow />
                 <div className="border-t border-border/40 mx-5" />
-                <div className="px-5 py-3 text-xs text-muted-foreground leading-relaxed">
+                <div className="px-5 py-3 text-xs text-secondary-foreground leading-relaxed">
                   商品公開連結格式如上。將追蹤碼欄位替換為實際單號後分享給顧客，即可讓顧客自行查詢訂單狀態。
                 </div>
               </div>
@@ -883,13 +886,13 @@ export default function SettingsPage() {
               <p className="text-sm font-bold text-foreground px-1 mb-3">
                 銷貨單設定
               </p>
-              <div className="bg-white rounded-2xl border border-border overflow-hidden">
+              <div className="bg-card rounded-2xl border border-border overflow-hidden">
                 <ComingSoonRow
                   icon={ReceiptText}
                   label="銷貨單標題"
                   desc="可調整銷貨單上的品牌標題"
-                  iconBg="bg-orange-50"
-                  iconColor="text-orange-400"
+                  iconBg="bg-chart-2/10"
+                  iconColor="text-chart-2"
                   animClass="animate-cs-float"
                   onClick={() => setActivePreviewKey("receiptTitle")}
                 />
@@ -898,8 +901,8 @@ export default function SettingsPage() {
                   icon={ScrollText}
                   label="頁尾文案"
                   desc="可設定感謝語、注意事項與品牌訊息"
-                  iconBg="bg-sky-50"
-                  iconColor="text-sky-400"
+                  iconBg="bg-chart-1/10"
+                  iconColor="text-chart-1"
                   animClass="animate-cs-float"
                   onClick={() => setActivePreviewKey("receiptFooter")}
                 />
@@ -911,13 +914,13 @@ export default function SettingsPage() {
               <p className="text-sm font-bold text-foreground px-1 mb-3">
                 賣場資訊
               </p>
-              <div className="bg-white rounded-2xl border border-border overflow-hidden">
+              <div className="bg-card rounded-2xl border border-border overflow-hidden">
                 <ComingSoonRow
                   icon={Share2}
                   label="社群連結"
                   desc="可加入 Instagram、Threads、Facebook 等連結"
-                  iconBg="bg-fuchsia-50"
-                  iconColor="text-fuchsia-400"
+                  iconBg="bg-chart-5/10"
+                  iconColor="text-chart-5"
                   animClass="animate-cs-float"
                   onClick={() => setActivePreviewKey("socialLinks")}
                 />
@@ -926,8 +929,8 @@ export default function SettingsPage() {
                   icon={RefreshCcw}
                   label="退換貨資訊"
                   desc="可建立退換貨規則與提醒文字"
-                  iconBg="bg-teal-50"
-                  iconColor="text-teal-400"
+                  iconBg="bg-chart-4/10"
+                  iconColor="text-chart-4"
                   animClass="animate-cs-spin-gentle"
                   onClick={() => setActivePreviewKey("returnPolicy")}
                 />
@@ -936,8 +939,8 @@ export default function SettingsPage() {
                   icon={ListChecks}
                   label="購物須知"
                   desc="可設定下單前注意事項"
-                  iconBg="bg-amber-50"
-                  iconColor="text-amber-400"
+                  iconBg="bg-chart-2/10"
+                  iconColor="text-chart-2"
                   animClass="animate-cs-float"
                   onClick={() => setActivePreviewKey("shoppingNotice")}
                 />
@@ -946,8 +949,8 @@ export default function SettingsPage() {
                   icon={MessageCircle}
                   label="訂單頁尾"
                   desc="可在買家訂單頁加入店家補充說明"
-                  iconBg="bg-emerald-50"
-                  iconColor="text-emerald-400"
+                  iconBg="bg-chart-3/10"
+                  iconColor="text-chart-3"
                   animClass="animate-cs-pulse-soft"
                   onClick={() => setActivePreviewKey("orderFooter")}
                 />
@@ -981,15 +984,15 @@ function CustomersEntry() {
       <button
         type="button"
         onClick={() => setLocation("/customers")}
-        className="w-full bg-white border border-border rounded-2xl px-4 py-4 flex items-center justify-between text-left hover:bg-secondary/50 transition-colors"
+        className="w-full bg-card border border-border rounded-2xl px-4 py-4 flex items-center justify-between text-left hover:bg-secondary/50 transition-colors"
       >
         <div className="flex items-center gap-3">
-          <span className="w-9 h-9 rounded-xl bg-sky-100 flex items-center justify-center text-lg shrink-0">
+          <span className="w-9 h-9 rounded-xl bg-chart-1/10 flex items-center justify-center text-lg shrink-0">
             👥
           </span>
           <div>
             <p className="text-sm font-semibold text-foreground">客戶管理</p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-secondary-foreground">
               客戶代號、常用門市與隱私遮罩
             </p>
           </div>
@@ -1007,17 +1010,17 @@ function TripsEntry() {
       <button
         type="button"
         onClick={() => setLocation("/trips")}
-        className="w-full bg-white border border-border rounded-2xl px-4 py-4 flex items-center justify-between text-left hover:bg-secondary/50 transition-colors"
+        className="w-full bg-card border border-border rounded-2xl px-4 py-4 flex items-center justify-between text-left hover:bg-secondary/50 transition-colors"
       >
         <div className="flex items-center gap-3">
-          <span className="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center text-lg flex-shrink-0">
+          <span className="w-9 h-9 rounded-xl bg-chart-2/10 flex items-center justify-center text-lg flex-shrink-0">
             🧳
           </span>
           <div>
             <p className="text-sm font-semibold text-foreground">
               行程與路線管理
             </p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-secondary-foreground">
               用於商品的交通成本分攤設定
             </p>
           </div>
@@ -1035,17 +1038,17 @@ function ExchangeRateReferenceEntry() {
       <button
         type="button"
         onClick={() => setLocation("/settings/exchange-rate-reference")}
-        className="w-full bg-white border border-border rounded-2xl px-4 py-4 flex items-center justify-between text-left hover:bg-secondary/50 transition-colors"
+        className="w-full bg-card border border-border rounded-2xl px-4 py-4 flex items-center justify-between text-left hover:bg-secondary/50 transition-colors"
       >
         <div className="flex items-center gap-3">
-          <span className="w-9 h-9 rounded-xl bg-sky-100 flex items-center justify-center text-lg flex-shrink-0">
+          <span className="w-9 h-9 rounded-xl bg-chart-4/10 flex items-center justify-center text-lg flex-shrink-0">
             💱
           </span>
           <div>
             <p className="text-sm font-semibold text-foreground">
               銀行匯率參考
             </p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-secondary-foreground">
               比較銀行日圓即期賣出並手動套用
             </p>
           </div>
@@ -1063,15 +1066,15 @@ function AgentSettingsEntry() {
       <button
         type="button"
         onClick={() => setLocation("/settings/agent")}
-        className="w-full bg-white border border-border rounded-2xl px-4 py-4 flex items-center justify-between text-left hover:bg-secondary/50 transition-colors"
+        className="w-full bg-card border border-border rounded-2xl px-4 py-4 flex items-center justify-between text-left hover:bg-secondary/50 transition-colors"
       >
         <div className="flex items-center gap-3">
-          <span className="w-9 h-9 rounded-xl bg-indigo-100 flex items-center justify-center text-lg flex-shrink-0">
+          <span className="w-9 h-9 rounded-xl bg-chart-1/10 flex items-center justify-center text-lg flex-shrink-0">
             🤖
           </span>
           <div>
             <p className="text-sm font-semibold text-foreground">AI 代查設定</p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-secondary-foreground">
               Seller Agent / 物流自動查詢設定
             </p>
           </div>
@@ -1089,15 +1092,15 @@ function SkillMapEntry() {
       <button
         type="button"
         onClick={() => setLocation("/skill-map")}
-        className="w-full bg-white border border-border rounded-2xl px-4 py-4 flex items-center justify-between text-left hover:bg-secondary/50 transition-colors"
+        className="w-full bg-card border border-border rounded-2xl px-4 py-4 flex items-center justify-between text-left hover:bg-secondary/50 transition-colors"
       >
         <div className="flex items-center gap-3">
-          <span className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center text-lg flex-shrink-0">
+          <span className="w-9 h-9 rounded-xl bg-chart-3/10 flex items-center justify-center text-lg flex-shrink-0">
             🗺️
           </span>
           <div>
             <p className="text-sm font-semibold text-foreground">技能地圖</p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-secondary-foreground">
               查看六種套餐、前置條件與目前解鎖狀態
             </p>
           </div>
@@ -1115,15 +1118,15 @@ function AuditLogsEntry() {
       <button
         type="button"
         onClick={() => setLocation("/audit-logs")}
-        className="w-full bg-white border border-border rounded-2xl px-4 py-4 flex items-center justify-between text-left hover:bg-secondary/50 transition-colors"
+        className="w-full bg-card border border-border rounded-2xl px-4 py-4 flex items-center justify-between text-left hover:bg-secondary/50 transition-colors"
       >
         <div className="flex items-center gap-3">
-          <span className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-lg flex-shrink-0">
+          <span className="w-9 h-9 rounded-xl bg-chart-4/10 flex items-center justify-center text-lg flex-shrink-0">
             🧾
           </span>
           <div>
             <p className="text-sm font-semibold text-foreground">操作紀錄</p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-secondary-foreground">
               查看個資揭露、匯出與參考匯率套用紀錄
             </p>
           </div>
@@ -1141,23 +1144,23 @@ function DevHandoffEntry() {
       <button
         type="button"
         onClick={() => setLocation("/dev/handoff")}
-        className="w-full bg-white border border-border rounded-2xl px-4 py-4 flex items-center justify-between text-left hover:bg-secondary/50 transition-colors"
+        className="w-full bg-card border border-border rounded-2xl px-4 py-4 flex items-center justify-between text-left hover:bg-secondary/50 transition-colors"
       >
         <div className="flex items-center gap-3">
-          <span className="w-9 h-9 rounded-xl bg-yellow-100 flex items-center justify-center text-lg flex-shrink-0">
+          <span className="w-9 h-9 rounded-xl bg-chart-2/10 flex items-center justify-center text-lg flex-shrink-0">
             📋
           </span>
           <div>
             <p className="text-sm font-semibold text-foreground">
               研發中繼剪貼板
             </p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-secondary-foreground">
               Claude Handoff / Codex Copy Center
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs font-bold bg-yellow-400 text-yellow-900 px-1.5 py-0.5 rounded-full">
+          <span className="text-xs font-bold bg-accent text-accent-foreground px-1.5 py-0.5 rounded-full">
             DEV
           </span>
           <span className="text-muted-foreground text-sm">›</span>
@@ -1184,7 +1187,7 @@ function HubCard({
     <button
       type="button"
       onClick={onClick}
-      className="w-full bg-white border border-border rounded-2xl px-4 py-4 flex items-center justify-between text-left hover:bg-secondary/50 transition-colors"
+      className="w-full bg-card border border-border rounded-2xl px-4 py-4 flex items-center justify-between text-left hover:bg-secondary/50 transition-colors"
     >
       <div className="flex items-center gap-3">
         <span className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-lg flex-shrink-0">
@@ -1192,7 +1195,7 @@ function HubCard({
         </span>
         <div>
           <p className="text-sm font-semibold text-foreground">{title}</p>
-          <p className="text-xs text-muted-foreground">{subtitle}</p>
+          <p className="text-xs text-secondary-foreground">{subtitle}</p>
         </div>
       </div>
       <div className="flex items-center gap-2 shrink-0">
@@ -1229,7 +1232,7 @@ function ProfileLinkRow() {
         <Globe size={17} className="text-primary animate-cs-float" />
       </div>
       <div className="flex-1 min-w-0">
-        <div className="text-xs text-muted-foreground font-medium">
+        <div className="text-xs text-secondary-foreground font-medium">
           個人賣場連結
         </div>
         <div className="text-xs font-mono text-foreground truncate mt-0.5">
@@ -1243,7 +1246,7 @@ function ProfileLinkRow() {
         title="複製連結"
       >
         {copied ? (
-          <Check size={15} className="text-green-500" />
+          <Check size={15} className="text-chart-3" />
         ) : (
           <Copy size={15} className="text-muted-foreground" />
         )}
@@ -1259,19 +1262,19 @@ function PreviewCard({
 }: PreviewCardConfig & { style?: "list" | "pill" | "receipt" }) {
   if (style === "receipt") {
     return (
-      <div className="rounded-2xl border border-border/60 bg-white overflow-hidden">
+      <div className="rounded-2xl border border-border/60 bg-card overflow-hidden">
         <div className="px-4 pt-3 pb-1">
-          <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+          <span className="text-[10px] font-medium text-secondary-foreground uppercase tracking-wide">
             {title}
           </span>
         </div>
         <div className="px-4 py-5 text-center border-t border-border/40">
           <p className="text-base font-bold text-foreground">{items[0]}</p>
-          <p className="text-sm text-muted-foreground mt-1 tracking-widest">
+          <p className="text-sm text-secondary-foreground mt-1 tracking-widest">
             {items[1]}
           </p>
           {items[2] && (
-            <p className="text-[10px] text-muted-foreground/60 mt-3">
+            <p className="text-[10px] text-secondary-foreground mt-3">
               {items[2]}
             </p>
           )}
@@ -1281,9 +1284,9 @@ function PreviewCard({
   }
   if (style === "pill") {
     return (
-      <div className="rounded-2xl border border-border/60 bg-white overflow-hidden">
+      <div className="rounded-2xl border border-border/60 bg-card overflow-hidden">
         <div className="px-4 pt-3 pb-1">
-          <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+          <span className="text-[10px] font-medium text-secondary-foreground uppercase tracking-wide">
             {title}
           </span>
         </div>
@@ -1291,7 +1294,7 @@ function PreviewCard({
           {items.map((item, i) => (
             <span
               key={i}
-              className="text-xs bg-fuchsia-50 text-fuchsia-500 border border-fuchsia-100 px-3 py-1 rounded-full font-medium"
+              className="text-xs bg-chart-5/10 text-chart-5 border border-chart-5/20 px-3 py-1 rounded-full font-medium"
             >
               {item}
             </span>
@@ -1301,9 +1304,9 @@ function PreviewCard({
     );
   }
   return (
-    <div className="rounded-2xl border border-border/60 bg-white overflow-hidden">
+    <div className="rounded-2xl border border-border/60 bg-card overflow-hidden">
       <div className="px-4 pt-3 pb-1">
-        <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+        <span className="text-[10px] font-medium text-secondary-foreground uppercase tracking-wide">
           {title}
         </span>
       </div>
@@ -1337,10 +1340,10 @@ function SettingsPreviewPanel({
   const Icon = config.icon;
   return (
     <>
-      <div className="fixed inset-0 bg-black/40 z-40" onClick={onClose} />
+      <div className="fixed inset-0 bg-background/40 z-40" onClick={onClose} />
       <div className="fixed bottom-0 inset-x-0 z-50 flex justify-center">
         <div
-          className="w-full max-w-md bg-white rounded-t-3xl shadow-2xl flex flex-col"
+          className="w-full max-w-md bg-popover rounded-t-3xl shadow-2xl flex flex-col"
           style={{ maxHeight: "84vh" }}
         >
           <div className="flex justify-center pt-3 pb-0.5">
@@ -1364,17 +1367,17 @@ function SettingsPreviewPanel({
                 {config.label}
               </span>
             </div>
-            <span className="text-[10px] font-medium bg-indigo-50 text-indigo-400 px-2.5 py-1 rounded-full border border-indigo-100 whitespace-nowrap shrink-0">
+            <span className="text-[10px] font-medium bg-chart-1/10 text-chart-1 px-2.5 py-1 rounded-full border border-chart-1/20 whitespace-nowrap shrink-0">
               設計預覽
             </span>
           </div>
           <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
-            <p className="text-sm text-muted-foreground leading-relaxed">
+            <p className="text-sm text-secondary-foreground leading-relaxed">
               {config.desc}
             </p>
-            <div className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-2.5 flex items-start gap-2">
-              <span className="text-amber-400 text-sm mt-0.5 shrink-0">⚠</span>
-              <p className="text-xs text-amber-600 leading-relaxed">
+            <div className="bg-accent/10 border border-accent/20 rounded-xl px-4 py-2.5 flex items-start gap-2">
+              <span className="text-accent text-sm mt-0.5 shrink-0">⚠</span>
+              <p className="text-xs text-accent leading-relaxed">
                 尚未串接正式儲存，此為設計預覽
               </p>
             </div>
@@ -1433,16 +1436,16 @@ function ComingSoonRow({
       </div>
       <div className="flex-1 min-w-0">
         <div className="text-sm font-medium text-foreground">{label}</div>
-        <div className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+        <div className="text-xs text-secondary-foreground mt-0.5 leading-relaxed">
           {desc}
         </div>
       </div>
       {clickable ? (
-        <span className="text-[10px] font-medium bg-indigo-50 text-indigo-400 px-2.5 py-1 rounded-full shrink-0 ml-3 border border-indigo-100 whitespace-nowrap">
+        <span className="text-[10px] font-medium bg-chart-1/10 text-chart-1 px-2.5 py-1 rounded-full shrink-0 ml-3 border border-chart-1/20 whitespace-nowrap">
           可預覽
         </span>
       ) : (
-        <span className="text-[10px] font-medium bg-rose-50 text-rose-400 px-2.5 py-1 rounded-full shrink-0 ml-3 border border-rose-100 whitespace-nowrap">
+        <span className="text-[10px] font-medium bg-muted text-muted-foreground px-2.5 py-1 rounded-full shrink-0 ml-3 border border-border whitespace-nowrap">
           即將支援
         </span>
       )}
@@ -1627,7 +1630,7 @@ function ColorPicker({ hex, onChange }: ColorPickerProps) {
           }}
         >
           <div
-            className="w-4 h-4 rounded-full border-2 border-white"
+            className="w-4 h-4 rounded-full border-2 border-foreground"
             style={{ boxShadow: "0 0 0 1.5px rgba(0,0,0,0.5)" }}
           />
         </div>
@@ -1658,7 +1661,7 @@ function ColorPicker({ hex, onChange }: ColorPickerProps) {
           }}
         >
           <div
-            className="w-5 h-5 rounded-full border-2 border-white"
+            className="w-5 h-5 rounded-full border-2 border-foreground"
             style={{
               backgroundColor: `hsl(${hsv.h},100%,50%)`,
               boxShadow: "0 0 0 1.5px rgba(0,0,0,0.4)",
@@ -1671,4 +1674,4 @@ function ColorPicker({ hex, onChange }: ColorPickerProps) {
 }
 
 const inputClass =
-  "w-full h-12 px-4 rounded-xl border border-input bg-white text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 text-base";
+  "w-full h-12 px-4 rounded-xl border border-input bg-secondary text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 text-base";
