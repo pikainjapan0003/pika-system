@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react";
 import { useSearch, useLocation } from "wouter";
-import { parseCvsParamsFromUrl, saveCvsStore } from "@/lib/cvs711";
+import {
+  loadCvsStore,
+  parseCvsParamsFromUrl,
+  saveCvsStore,
+} from "@/lib/cvs711";
 import { useAuth } from "@clerk/react";
+import { SemanticStatePanel } from "@/components/SemanticStatePanel";
+import { formatActionableError } from "@/lib/actionableError";
 
 export default function Cvs711ReturnPage() {
   const rawSearch = useSearch();
@@ -20,15 +26,16 @@ export default function Cvs711ReturnPage() {
 
       const store = parseCvsParamsFromUrl(params);
 
-      if (!store || !store.storeId) {
-        setErrorMsg("門市資料不完整，請重新選擇門市");
+      if (
+        !store?.storeId?.trim() ||
+        !store.storeName?.trim() ||
+        !store.storeAddress?.trim()
+      ) {
+        setErrorMsg(
+          "門市資料待確認：店號、門市名稱或地址尚未完整回傳，沒有以空白資料儲存。請返回重新選擇門市。",
+        );
         setStatus("error");
         return;
-      }
-
-      if (!store.storeAddress) {
-        // Allow proceed but the address may be empty; UI shows a warning
-        store.storeAddress = "";
       }
 
       if (source === "admin" && orderId) {
@@ -53,12 +60,29 @@ export default function Cvs711ReturnPage() {
 
           if (!res.ok) {
             const data = await res.json().catch(() => ({}));
-            setErrorMsg(data?.error ?? "更新門市資料失敗，請稍後再試");
+            setErrorMsg(
+              formatActionableError({
+                happened: "門市資料沒有更新。",
+                reason: data?.error ?? "系統暫時沒有接受門市資料。",
+                action: "請返回並重新選擇門市。",
+                support: "若仍失敗，請稍後回到訂單頁再試。",
+              }),
+            );
             setStatus("error");
             return;
           }
-        } catch {
-          setErrorMsg("更新門市資料失敗，請確認網路連線");
+        } catch (updateError) {
+          setErrorMsg(
+            formatActionableError({
+              happened: "門市資料沒有更新。",
+              reason:
+                updateError instanceof Error
+                  ? updateError.message
+                  : "網路暫時沒有回應。",
+              action: "請確認網路連線後返回重選。",
+              support: "若仍失敗，請稍後回到訂單頁再試。",
+            }),
+          );
           setStatus("error");
           return;
         }
@@ -66,6 +90,19 @@ export default function Cvs711ReturnPage() {
         // Customer flow: save to localStorage with shareToken or generic key
         const storageKey = shareToken ?? "pending";
         saveCvsStore(storageKey, store);
+        const savedStore = loadCvsStore(storageKey);
+        if (
+          !savedStore ||
+          savedStore.storeId !== store.storeId ||
+          savedStore.storeName !== store.storeName ||
+          savedStore.storeAddress !== store.storeAddress
+        ) {
+          setErrorMsg(
+            "門市資料沒有儲存：瀏覽器儲存空間可能停用或已滿。請允許網站儲存資料後返回重選。",
+          );
+          setStatus("error");
+          return;
+        }
       }
 
       setLocation(returnPath, { replace: true });
@@ -76,24 +113,33 @@ export default function Cvs711ReturnPage() {
 
   if (status === "error") {
     return (
-      <div className="flex min-h-[100dvh] items-center justify-center bg-background px-5">
-        <div className="w-full max-w-sm text-center space-y-4">
-          <div className="text-4xl">⚠️</div>
-          <p className="font-medium text-foreground">{errorMsg}</p>
-          <button
-            onClick={() => window.history.back()}
-            className="w-full h-11 rounded-xl bg-primary text-primary-foreground text-sm font-semibold"
-          >
-            返回
-          </button>
-        </div>
+      <div className="min-h-[100dvh] bg-background px-5 py-8">
+        <SemanticStatePanel
+          className="mx-auto max-w-sm"
+          state={{
+            kind: "pageError",
+            title: "門市選擇未完成",
+            message: errorMsg,
+            retry: {
+              label: "返回重新選擇",
+              onAction: () => window.history.back(),
+            },
+          }}
+        />
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-background">
-      <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+    <div className="min-h-[100dvh] bg-background px-5 py-8">
+      <SemanticStatePanel
+        className="mx-auto max-w-sm"
+        state={{
+          kind: "loading",
+          label: "正在確認門市資料",
+          fallbackMessage: "完成後會自動返回上一個流程，請勿關閉此頁。",
+        }}
+      />
     </div>
   );
 }

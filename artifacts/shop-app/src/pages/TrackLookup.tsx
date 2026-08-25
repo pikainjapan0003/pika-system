@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
+import { Search } from "lucide-react";
 
 export default function TrackLookupPage() {
   const [token, setToken] = useState("");
@@ -21,7 +22,7 @@ export default function TrackLookupPage() {
       <div className="max-w-sm w-full">
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
-            🔍
+            <Search className="size-7 text-primary" aria-hidden="true" />
           </div>
           <h1 className="text-xl font-bold text-foreground">查詢訂單狀態</h1>
           <p className="text-muted-foreground text-sm mt-2">
@@ -30,7 +31,11 @@ export default function TrackLookupPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          <label htmlFor="order-tracking-code" className="sr-only">
+            訂單追蹤碼
+          </label>
           <input
+            id="order-tracking-code"
             type="text"
             value={token}
             onChange={(e) => {
@@ -42,8 +47,18 @@ export default function TrackLookupPage() {
             autoComplete="off"
             autoCorrect="off"
             spellCheck={false}
+            aria-invalid={Boolean(error)}
+            aria-describedby={error ? "tracking-code-error" : undefined}
           />
-          {error && <p className="text-destructive text-sm">{error}</p>}
+          {error && (
+            <p
+              id="tracking-code-error"
+              className="text-destructive text-sm"
+              role="alert"
+            >
+              查詢尚未送出：{error}。
+            </p>
+          )}
           <button
             type="submit"
             className="w-full h-12 bg-primary text-primary-foreground font-semibold rounded-xl text-base"
