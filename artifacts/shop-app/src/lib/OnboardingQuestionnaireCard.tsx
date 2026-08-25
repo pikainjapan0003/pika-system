@@ -116,11 +116,9 @@ export function OnboardingQuestionnaire({
 
   if (applied) {
     return (
-      <section className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-        <h2 className="text-sm font-semibold text-emerald-950">
-          推薦套餐已套用
-        </h2>
-        <p className="mt-1 text-xs text-emerald-800">
+      <section className="rounded-2xl border border-chart-3/30 bg-chart-3/10 p-4">
+        <h2 className="text-sm font-semibold text-chart-3">推薦套餐已套用</h2>
+        <p className="mt-1 text-xs text-secondary-foreground">
           可到技能地圖查看已開啟項目與仍需確認的高風險技能。
         </p>
       </section>
@@ -130,9 +128,9 @@ export function OnboardingQuestionnaire({
   if (preview) {
     const { recommendation, packages } = preview;
     return (
-      <section className="rounded-2xl border border-sky-200 bg-sky-50 p-4">
-        <h2 className="text-sm font-semibold text-sky-950">你的推薦套餐</h2>
-        <p className="mt-1 text-sm font-bold text-sky-900">
+      <section className="rounded-2xl border border-primary/30 bg-primary/10 p-4">
+        <h2 className="text-sm font-semibold text-foreground">你的推薦套餐</h2>
+        <p className="mt-1 text-sm font-bold text-primary">
           新手套餐
           {recommendation.mainPackage === "beginner"
             ? ""
@@ -142,7 +140,7 @@ export function OnboardingQuestionnaire({
           {packages.map((item) => (
             <div
               key={item.packageKey}
-              className="rounded-xl border border-sky-100 bg-white p-3 text-xs text-sky-900"
+              className="rounded-xl border border-border bg-card p-3 text-xs text-foreground"
             >
               <p className="font-semibold">{PACKAGE_LABELS[item.packageKey]}</p>
               <p className="mt-1">
@@ -151,13 +149,13 @@ export function OnboardingQuestionnaire({
                   "目前沒有"}
               </p>
               {item.requiresConfirmation.length > 0 && (
-                <p className="mt-1 text-amber-700">
+                <p className="mt-1 text-accent">
                   需到技能地圖確認：
                   {item.requiresConfirmation.join("、")}
                 </p>
               )}
               {item.missingPrerequisite.length > 0 && (
-                <p className="mt-1 text-amber-700">
+                <p className="mt-1 text-accent">
                   前置條件尚未完成：
                   {item.missingPrerequisite
                     .map((entry) => entry.skillKey)
@@ -167,11 +165,11 @@ export function OnboardingQuestionnaire({
             </div>
           ))}
         </div>
-        {error && <p className="mt-3 text-xs text-red-700">{error}</p>}
+        {error && <p className="mt-3 text-xs text-destructive">{error}</p>}
         <div className="mt-4 grid grid-cols-2 gap-3">
           <button
             type="button"
-            className="min-h-11 rounded-xl border border-sky-300 bg-white text-sm font-semibold text-sky-800"
+            className="min-h-11 rounded-xl border border-border bg-background text-sm font-semibold text-foreground"
             disabled={busy !== ""}
             onClick={() => setPreview(null)}
           >
@@ -179,7 +177,7 @@ export function OnboardingQuestionnaire({
           </button>
           <button
             type="button"
-            className="min-h-11 rounded-xl bg-sky-700 text-sm font-semibold text-white disabled:opacity-50"
+            className="min-h-11 rounded-xl bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-50"
             disabled={busy !== ""}
             onClick={() => void applyRecommendation()}
           >
@@ -191,24 +189,24 @@ export function OnboardingQuestionnaire({
   }
 
   return (
-    <section className="rounded-2xl border border-sky-200 bg-sky-50 p-4">
-      <h2 className="text-sm font-semibold text-sky-950">
+    <section className="rounded-2xl border border-primary/30 bg-primary/10 p-4">
+      <h2 className="text-sm font-semibold text-foreground">
         用 4 題找到適合的技能套餐
       </h2>
-      <p className="mt-1 text-xs leading-relaxed text-sky-800">
+      <p className="mt-1 text-xs leading-relaxed text-secondary-foreground">
         先看推薦內容，再由你決定是否套用；未回答的題目不計分。
       </p>
       <div className="mt-4 space-y-4">
         {ONBOARDING_QUESTIONS.map((question, questionIndex) => (
           <fieldset key={question.key}>
-            <legend className="text-sm font-semibold text-sky-950">
+            <legend className="text-sm font-semibold text-foreground">
               {questionIndex + 1}. {question.title}
             </legend>
             <div className="mt-2 space-y-2">
               {question.options.map((option) => (
                 <label
                   key={option.value}
-                  className="flex min-h-11 items-center gap-3 rounded-xl border border-sky-100 bg-white px-3 text-sm text-sky-950"
+                  className="flex min-h-11 items-center gap-3 rounded-xl border border-border bg-card px-3 text-sm text-foreground"
                 >
                   <input
                     type="radio"
@@ -229,10 +227,10 @@ export function OnboardingQuestionnaire({
           </fieldset>
         ))}
       </div>
-      {error && <p className="mt-3 text-xs text-red-700">{error}</p>}
+      {error && <p className="mt-3 text-xs text-destructive">{error}</p>}
       <button
         type="button"
-        className="mt-4 min-h-11 w-full rounded-xl bg-sky-700 text-sm font-semibold text-white disabled:opacity-50"
+        className="mt-4 min-h-11 w-full rounded-xl bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-50"
         disabled={busy !== ""}
         onClick={() => void showRecommendation(answers)}
       >
@@ -240,7 +238,7 @@ export function OnboardingQuestionnaire({
       </button>
       <button
         type="button"
-        className="mt-2 min-h-11 w-full text-sm font-medium text-sky-800 disabled:opacity-50"
+        className="mt-2 min-h-11 w-full text-sm font-medium text-primary disabled:opacity-50"
         disabled={busy !== ""}
         onClick={() => void showRecommendation({})}
       >
