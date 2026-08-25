@@ -10,7 +10,7 @@ import {
   trimAmountForDisplay,
   type OperatingCostCurrency,
 } from "../lib/operatingCostDisplay";
-import { BottomNav } from "./Dashboard";
+import { BottomNavigation } from "../components/BottomNavigation";
 import { DualCurrencyCalibrationField } from "../components/DualCurrencyCalibrationField";
 import { LedgerLockStamp } from "../components/LedgerLockStamp";
 import { SemanticStatePanel } from "../components/SemanticStatePanel";
@@ -634,7 +634,7 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
   }
 
   return (
-    <div className="min-h-[100dvh] bg-background pb-24">
+    <div className="min-h-[100dvh] bg-background pb-[calc(112px+env(safe-area-inset-bottom))]">
       <header className="sticky top-0 z-10 border-b border-border bg-card px-5 pb-4 pt-10">
         <div className="mx-auto flex max-w-[480px] items-center gap-3">
           <button
@@ -897,7 +897,7 @@ export default function TripEstimatePage({ tripId }: { tripId: number }) {
           </>
         )}
       </main>
-      <BottomNav active="settings" />
+      <BottomNavigation active="more" />
     </div>
   );
 }
