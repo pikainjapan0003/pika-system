@@ -54,11 +54,6 @@ mock.module("../pages/PickingListDialog.tsx", {
 mock.module("../pages/ShippingListDialog.tsx", {
   namedExports: { ShippingListDialog: () => null },
 });
-mock.module("../lib/dailySkillVisibilityContext.tsx", {
-  namedExports: {
-    useDailySkillVisibility: () => ({ isVisible: () => true }),
-  },
-});
 mock.module("../lib/MaihuobianExportPanel.tsx", {
   namedExports: { MaihuobianExportPanel: () => null },
 });

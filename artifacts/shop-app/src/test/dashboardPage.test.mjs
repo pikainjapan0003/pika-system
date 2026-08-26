@@ -21,12 +21,6 @@ globalThis.HTMLInputElement = window.HTMLInputElement;
 
 let orders = [];
 let products = [];
-let visibility = {
-  loaded: true,
-  enabledSkillCount: 1,
-  isVisible: () => true,
-  refresh: async () => undefined,
-};
 
 mock.module("@clerk/react", {
   namedExports: {
@@ -73,19 +67,6 @@ mock.module("@workspace/api-client-react", {
     }),
   },
 });
-mock.module("../lib/dailySkillVisibilityContext.tsx", {
-  namedExports: { useDailySkillVisibility: () => visibility },
-});
-mock.module("../lib/OnboardingQuestionnaireCard", {
-  namedExports: {
-    OnboardingQuestionnaire: () =>
-      React.createElement(
-        "div",
-        { "data-testid": "onboarding-questionnaire" },
-        "進階功能引導卡",
-      ),
-  },
-});
 mock.module("../components/SonarBackground.tsx", {
   namedExports: {
     SonarBackground: () =>
@@ -93,7 +74,7 @@ mock.module("../components/SonarBackground.tsx", {
   },
 });
 
-const { cleanup, fireEvent, getByTestId, queryByText, render, waitFor } =
+const { cleanup, fireEvent, render, waitFor } =
   await import("@testing-library/react");
 const { ProfitKpiBoard } = await import("../components/ProfitKpiBoard.tsx");
 const { default: DashboardPage } = await import("../pages/Dashboard.tsx");
@@ -134,12 +115,6 @@ afterEach(() => {
   cleanup();
   orders = [];
   products = [];
-  visibility = {
-    loaded: true,
-    enabledSkillCount: 1,
-    isVisible: () => true,
-    refresh: async () => undefined,
-  };
   globalThis.fetch = originalFetch;
 });
 
@@ -158,14 +133,11 @@ after(() => {
   else globalThis.HTMLInputElement = originalHtmlInputElement;
 });
 
-test("zero enabled skills show the onboarding card", async () => {
-  visibility = { ...visibility, enabledSkillCount: 0 };
+test("dashboard no longer renders the removed feature questionnaire", async () => {
   installFetch();
   const view = render(React.createElement(DashboardPage));
-  await waitFor(() =>
-    assert.ok(getByTestId(view.container, "onboarding-questionnaire")),
-  );
-  assert.match(view.container.textContent, /進階功能引導卡/);
+  await waitFor(() => assert.match(view.container.textContent, /店鋪設定/));
+  assert.doesNotMatch(view.container.textContent, /進階功能引導卡/);
 });
 
 test("recent order uses the resolved NT$ display total", async () => {
@@ -176,16 +148,18 @@ test("recent order uses the resolved NT$ display total", async () => {
   assert.match(view.container.textContent, /測試商品/);
 });
 
-test("disabled product skill hides the dashboard product entry", async () => {
-  visibility = {
-    ...visibility,
-    isVisible: (surface) => surface !== "products",
-  };
+test("dashboard keeps every core quick action available", async () => {
   installFetch();
   const view = render(React.createElement(DashboardPage));
   await waitFor(() => assert.match(view.container.textContent, /店鋪設定/));
-  assert.equal(queryByText(view.container, "新增、編輯商品"), null);
-  assert.match(view.container.textContent, /查看訂單/);
+  for (const label of [
+    "新增、編輯商品",
+    "管理所有訂單",
+    "上傳 7-11 / 全家 Excel",
+    "如何開始接單",
+  ]) {
+    assert.match(view.container.textContent, new RegExp(label));
+  }
 });
 
 function estimateSummaryFixture() {

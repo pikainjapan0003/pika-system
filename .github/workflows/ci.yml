@@ -252,7 +252,6 @@ jobs:
             src/routes/customersAndProfitIsolation.route.test.mjs \
             src/routes/public.route.test.mjs \
             src/routes/publicRateLimit.route.test.mjs \
-            src/routes/skills.route.test.mjs \
             src/routes/maihuobianExport.route.test.mjs \
             src/routes/storeCreditOrder.route.test.mjs \
             src/routes/customerStoreCredit.route.test.mjs \

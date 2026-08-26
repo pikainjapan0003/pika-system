@@ -27,9 +27,6 @@ test("Maihuobian eligibility accepts only the 38元 sell便 method", async ({
         },
       });
     }
-    if (path === "/api/stores/1/skills") {
-      return route.fulfill({ json: { catalogVersion: 1, skills: [] } });
-    }
     if (path === "/api/stores/1/orders") {
       return route.fulfill({ json: [] });
     }

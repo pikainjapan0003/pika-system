@@ -17,7 +17,6 @@ export * from "./trips.ts";
 export * from "./tripAreas.ts";
 export * from "./tripRoutes.ts";
 export * from "./auditLogs.ts";
-export * from "./storeSkillStates.ts";
 export * from "./storeCreditTransactions.ts";
 export * from "./orderPickingChecks.ts";
 export * from "./operatingSettings.ts";
