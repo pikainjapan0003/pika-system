@@ -32,22 +32,6 @@ test("customer list detail link reaches the customer detail page", async ({
     const path = new URL(route.request().url()).pathname;
     if (path.startsWith("/api/__clerk/")) return route.fallback();
     if (path === "/api/me/store") return route.fulfill({ json: fakeStore });
-    if (path === "/api/stores/1/skills") {
-      return route.fulfill({
-        json: {
-          catalogVersion: 1,
-          skills: [
-            {
-              skillKey: "S-19",
-              enabled: true,
-              configured: true,
-              highRisk: true,
-              prerequisite: { ready: true, missing: [] },
-            },
-          ],
-        },
-      });
-    }
     if (path === "/api/stores/1/customers") {
       return route.fulfill({ json: [fakeCustomer] });
     }

@@ -53,9 +53,6 @@ test("a picking check survives reload and becomes read-only after shipment", asy
         },
       });
     }
-    if (path === "/api/stores/1/skills") {
-      return route.fulfill({ json: { catalogVersion: 1, skills: [] } });
-    }
     if (path === "/api/stores/1/orders") {
       return route.fulfill({ json: [fakeOrder] });
     }

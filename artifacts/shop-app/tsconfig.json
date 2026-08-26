@@ -18,8 +18,7 @@
         "../../lib/api-client-react/src/index.ts"
       ],
       "@workspace/privacy": ["../../lib/privacy/src/index.ts"],
-      "@workspace/shipping": ["../../lib/shipping/src/index.ts"],
-      "@workspace/db/skill-map": ["../../lib/db/src/skills/skillState.ts"]
+      "@workspace/shipping": ["../../lib/shipping/src/index.ts"]
     }
   },
   "references": [

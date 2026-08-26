@@ -28,10 +28,6 @@ import {
   setAuthTokenGetter,
 } from "@workspace/api-client-react";
 import { applyBrandColor, DEFAULT_BRAND_PRIMARY_COLOR } from "@/lib/brandColor";
-import {
-  DailySkillPageGate,
-  StoreSkillVisibilityProvider,
-} from "@/lib/dailySkillVisibilityContext";
 import { CUSTOMER_PORTAL_ROUTE_PATTERN } from "@/lib/customerRoutes";
 
 import HomePage from "@/pages/Home";
@@ -51,7 +47,6 @@ import TrackLookupPage from "@/pages/TrackLookup";
 import TrackOrderPage from "@/pages/TrackOrder";
 import SettingsPage from "@/pages/Settings";
 import ExchangeRateReferencePage from "@/pages/ExchangeRateReference";
-import SkillMapPage from "@/pages/SkillMap";
 import AuditLogsPage from "@/pages/AuditLogs";
 import AgentSettingsPage from "@/pages/AgentSettings";
 import TripsPage from "@/pages/Trips";
@@ -314,144 +309,48 @@ function MerchantPortal() {
   if (!store) return null;
 
   return (
-    <StoreSkillVisibilityProvider storeId={store.id}>
-      <Switch>
-        <Route path="/dashboard" component={DashboardPage} />
-        <Route path="/products/new">
-          {() => (
-            <DailySkillPageGate surface="products">
-              <ProductFormPage />
-            </DailySkillPageGate>
-          )}
-        </Route>
-        <Route path="/products/:productId/edit">
-          {(params) => (
-            <DailySkillPageGate surface="products">
-              <ProductFormPage productId={Number(params.productId)} />
-            </DailySkillPageGate>
-          )}
-        </Route>
-        <Route path="/products">
-          {() => (
-            <DailySkillPageGate surface="products">
-              <ProductsPage />
-            </DailySkillPageGate>
-          )}
-        </Route>
-        <Route path="/categories">
-          {() => (
-            <DailySkillPageGate surface="categories">
-              <ProductCategoriesPage />
-            </DailySkillPageGate>
-          )}
-        </Route>
-        <Route path="/orders">
-          {() => (
-            <DailySkillPageGate surface="orders">
-              <OrdersPage />
-            </DailySkillPageGate>
-          )}
-        </Route>
-        <Route path="/reports/monthly-profit">
-          {() => (
-            <DailySkillPageGate surface="orders">
-              <MonthlyProfitPage />
-            </DailySkillPageGate>
-          )}
-        </Route>
-        <Route path="/customers">
-          {() => (
-            <DailySkillPageGate surface="customers">
-              <CustomersPage />
-            </DailySkillPageGate>
-          )}
-        </Route>
-        <Route path="/customers/:customerId">
-          {(params) => (
-            <DailySkillPageGate surface="customers">
-              <CustomerDetailPage customerId={Number(params.customerId)} />
-            </DailySkillPageGate>
-          )}
-        </Route>
-        <Route path="/logistics/import/history">
-          {() => (
-            <DailySkillPageGate surface="logistics">
-              <LogisticsImportHistoryPage />
-            </DailySkillPageGate>
-          )}
-        </Route>
-        <Route path="/logistics/import">
-          {() => (
-            <DailySkillPageGate surface="logistics">
-              <LogisticsImportPage />
-            </DailySkillPageGate>
-          )}
-        </Route>
-        <Route path="/logistics/exceptions">
-          {() => (
-            <DailySkillPageGate surface="logistics">
-              <LogisticsExceptionsPage />
-            </DailySkillPageGate>
-          )}
-        </Route>
-        <Route path="/settings/agent">
-          {() => (
-            <DailySkillPageGate surface="agent-settings">
-              <AgentSettingsPage />
-            </DailySkillPageGate>
-          )}
-        </Route>
-        <Route
-          path="/settings/exchange-rate-reference"
-          component={ExchangeRateReferencePage}
-        />
-        <Route path="/skill-map" component={SkillMapPage} />
-        <Route path="/audit-logs">
-          {() => (
-            <DailySkillPageGate surface="audit-logs">
-              <AuditLogsPage />
-            </DailySkillPageGate>
-          )}
-        </Route>
-        <Route path="/settings" component={SettingsPage} />
-        <Route path="/trips">
-          {() => (
-            <DailySkillPageGate surface="trips">
-              <TripsPage />
-            </DailySkillPageGate>
-          )}
-        </Route>
-        <Route path="/trips/:tripId/estimate">
-          {(params) => (
-            <DailySkillPageGate surface="trips">
-              <TripEstimatePage tripId={Number(params.tripId)} />
-            </DailySkillPageGate>
-          )}
-        </Route>
-        <Route path="/trips/:tripId/actual">
-          {(params) => (
-            <DailySkillPageGate surface="trips">
-              <TripActualPage tripId={Number(params.tripId)} />
-            </DailySkillPageGate>
-          )}
-        </Route>
-        <Route path="/trips/:tripId/comparison">
-          {(params) => (
-            <DailySkillPageGate surface="trips">
-              <TripComparisonPage tripId={Number(params.tripId)} />
-            </DailySkillPageGate>
-          )}
-        </Route>
-        <Route path="/guide">
-          {() => (
-            <DailySkillPageGate surface="guide">
-              <GuidePage />
-            </DailySkillPageGate>
-          )}
-        </Route>
-        <Route component={NotFoundPage} />
-      </Switch>
-    </StoreSkillVisibilityProvider>
+    <Switch>
+      <Route path="/dashboard" component={DashboardPage} />
+      <Route path="/products/new">{() => <ProductFormPage />}</Route>
+      <Route path="/products/:productId/edit">
+        {(params) => <ProductFormPage productId={Number(params.productId)} />}
+      </Route>
+      <Route path="/products" component={ProductsPage} />
+      <Route path="/categories" component={ProductCategoriesPage} />
+      <Route path="/orders" component={OrdersPage} />
+      <Route path="/reports/monthly-profit" component={MonthlyProfitPage} />
+      <Route path="/customers" component={CustomersPage} />
+      <Route path="/customers/:customerId">
+        {(params) => (
+          <CustomerDetailPage customerId={Number(params.customerId)} />
+        )}
+      </Route>
+      <Route
+        path="/logistics/import/history"
+        component={LogisticsImportHistoryPage}
+      />
+      <Route path="/logistics/import" component={LogisticsImportPage} />
+      <Route path="/logistics/exceptions" component={LogisticsExceptionsPage} />
+      <Route path="/settings/agent" component={AgentSettingsPage} />
+      <Route
+        path="/settings/exchange-rate-reference"
+        component={ExchangeRateReferencePage}
+      />
+      <Route path="/audit-logs" component={AuditLogsPage} />
+      <Route path="/settings" component={SettingsPage} />
+      <Route path="/trips" component={TripsPage} />
+      <Route path="/trips/:tripId/estimate">
+        {(params) => <TripEstimatePage tripId={Number(params.tripId)} />}
+      </Route>
+      <Route path="/trips/:tripId/actual">
+        {(params) => <TripActualPage tripId={Number(params.tripId)} />}
+      </Route>
+      <Route path="/trips/:tripId/comparison">
+        {(params) => <TripComparisonPage tripId={Number(params.tripId)} />}
+      </Route>
+      <Route path="/guide" component={GuidePage} />
+      <Route component={NotFoundPage} />
+    </Switch>
   );
 }
 
@@ -508,7 +407,6 @@ function AppRouter() {
         path="/settings/exchange-rate-reference"
         component={MerchantPortal}
       />
-      <Route path="/skill-map" component={MerchantPortal} />
       <Route path="/audit-logs" component={MerchantPortal} />
       <Route path="/settings" component={MerchantPortal} />
       <Route path="/trips" component={MerchantPortal} />
