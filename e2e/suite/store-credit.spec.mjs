@@ -40,22 +40,6 @@ test("grant credit, spend it on an order, then restore it on cancellation", asyn
         },
       });
     }
-    if (path === "/api/stores/1/skills") {
-      return route.fulfill({
-        json: {
-          catalogVersion: 1,
-          skills: [
-            {
-              skillKey: "S-19",
-              enabled: true,
-              configured: true,
-              highRisk: true,
-              prerequisite: { ready: true, missing: [] },
-            },
-          ],
-        },
-      });
-    }
     if (path === "/api/stores/1/customers/1" && request.method() === "GET") {
       return route.fulfill({ json: { customer, orders: [] } });
     }

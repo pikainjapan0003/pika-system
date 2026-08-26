@@ -73,7 +73,6 @@ export async function seedDemoData(databaseUrl, { append = false } = {}) {
     productsTable,
     storesTable,
     storeCreditTransactionsTable,
-    storeSkillStatesTable,
     tripRoutesTable,
     tripsTable,
   } = dbModule;
@@ -122,19 +121,6 @@ export async function seedDemoData(databaseUrl, { append = false } = {}) {
           notes: "僅供拋棄式示範庫使用",
         })
         .returning();
-
-      const enabledSkillKeys = ["S-07", "S-08", "S-19"];
-      await tx.insert(storeSkillStatesTable).values(
-        enabledSkillKeys.map((skillKey) => ({
-          storeId: store.id,
-          skillKey,
-          enabled: true,
-          enabledAt: capturedAt,
-          enabledBy: "demo-seed",
-          catalogVersion: 1,
-          source: "package",
-        })),
-      );
 
       const [trip] = await tx
         .insert(tripsTable)
@@ -579,7 +565,6 @@ export async function seedDemoData(databaseUrl, { append = false } = {}) {
         runId,
         storeId: store.id,
         customerId: customer.id,
-        enabledSkillKeys,
         tripId: trip.id,
         tripRouteId: route.id,
         productIds: [allocatedProduct.id, pendingProduct.id, exemptProduct.id],
