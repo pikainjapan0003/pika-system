@@ -32,9 +32,9 @@ mock.module("@workspace/api-client-react", {
     useGetShippingList: () => ({ mutateAsync: async () => ({}) }),
   },
 });
-mock.module("../pages/Dashboard.tsx", {
+mock.module("../components/BottomNavigation.tsx", {
   namedExports: {
-    BottomNav: () => React.createElement("nav", null, "bottom-nav"),
+    BottomNavigation: () => React.createElement("nav", null, "bottom-nav"),
   },
 });
 mock.module("../pages/CreateOrderDialog.tsx", {

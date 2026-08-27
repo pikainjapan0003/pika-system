@@ -30,8 +30,8 @@ mock.module("@/lib/serverAudit", {
     },
   },
 });
-mock.module("../pages/Dashboard.tsx", {
-  namedExports: { BottomNav: () => React.createElement("nav", null) },
+mock.module("../components/BottomNavigation.tsx", {
+  namedExports: { BottomNavigation: () => React.createElement("nav", null) },
 });
 mock.module("../lib/CustomerStoreCreditPanel.tsx", {
   namedExports: { CustomerStoreCreditPanel: () => null },

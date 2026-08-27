@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@clerk/react";
 import { useGetMyStore } from "@workspace/api-client-react";
 import { maskAddress, maskName, maskPhone } from "@workspace/privacy";
-import { BottomNav } from "./Dashboard";
+import { BottomNavigation } from "@/components/BottomNavigation";
 import { useLocation } from "wouter";
 import { recordServerAuditEvent } from "@/lib/serverAudit";
 
@@ -180,7 +180,7 @@ export default function CustomersPage() {
   };
 
   return (
-    <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-24">
+    <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-[calc(112px+env(safe-area-inset-bottom))]">
       <header className="bg-card border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
         <h1 className="text-lg font-bold">客戶管理</h1>
         <p className="text-xs text-muted-foreground mt-1">
@@ -401,7 +401,7 @@ export default function CustomersPage() {
           )}
         </section>
       </main>
-      <BottomNav active="settings" />
+      <BottomNavigation active="more" />
     </div>
   );
 }
