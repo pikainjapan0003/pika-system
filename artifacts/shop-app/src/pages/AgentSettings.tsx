@@ -8,7 +8,7 @@ import {
   getGetSellerAgentSettingsQueryKey,
 } from "@workspace/api-client-react";
 import { toast } from "@/hooks/use-toast";
-import { BottomNav } from "./Dashboard";
+import { BottomNavigation } from "@/components/BottomNavigation";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -204,7 +204,7 @@ export default function AgentSettingsPage() {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center px-5">
         <p className="text-sm text-muted-foreground">請先設定店鋪</p>
-        <BottomNav active="settings" />
+        <BottomNavigation active="more" />
       </div>
     );
   }
@@ -213,7 +213,7 @@ export default function AgentSettingsPage() {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center flex-col gap-3">
         <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-        <BottomNav active="settings" />
+        <BottomNavigation active="more" />
       </div>
     );
   }
@@ -230,13 +230,13 @@ export default function AgentSettingsPage() {
             重試
           </button>
         </div>
-        <BottomNav active="settings" />
+        <BottomNavigation active="more" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-24">
+    <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-[calc(112px+env(safe-area-inset-bottom))]">
       <header className="bg-card border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
         <div className="flex items-center gap-3">
           <button
@@ -486,7 +486,7 @@ export default function AgentSettingsPage() {
         </button>
       </div>
 
-      <BottomNav active="settings" />
+      <BottomNavigation active="more" />
     </div>
   );
 }

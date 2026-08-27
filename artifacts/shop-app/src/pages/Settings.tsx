@@ -7,7 +7,7 @@ import {
   getGetMyStoreQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { BottomNav } from "./Dashboard";
+import { BottomNavigation } from "@/components/BottomNavigation";
 import { ExchangeRateReferenceHint } from "@/components/ExchangeRateReferenceHint";
 import { formatActionableError } from "@/lib/actionableError";
 import {
@@ -435,7 +435,7 @@ export default function SettingsPage() {
   const displayLogoPreview = logoLocalPreview ?? (logoUrl.trim() || null);
 
   return (
-    <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-24">
+    <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-[calc(112px+env(safe-area-inset-bottom))]">
       {/* Hidden file input — always mounted so ref stays stable */}
       <input
         ref={logoFileInputRef}
@@ -967,7 +967,7 @@ export default function SettingsPage() {
           onClose={() => setActivePreviewKey(null)}
         />
       )}
-      <BottomNav active="settings" />
+      <BottomNavigation active="more" />
     </div>
   );
 }
@@ -1309,8 +1309,11 @@ function SettingsPreviewPanel({
   const Icon = config.icon;
   return (
     <>
-      <div className="fixed inset-0 bg-background/40 z-40" onClick={onClose} />
-      <div className="fixed bottom-0 inset-x-0 z-50 flex justify-center">
+      <div
+        className="fixed inset-0 z-[60] bg-background/40"
+        onClick={onClose}
+      />
+      <div className="fixed bottom-0 inset-x-0 z-[70] flex justify-center">
         <div
           className="w-full max-w-md bg-popover rounded-t-3xl shadow-2xl flex flex-col"
           style={{ maxHeight: "84vh" }}

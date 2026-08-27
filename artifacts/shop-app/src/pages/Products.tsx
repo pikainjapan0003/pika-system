@@ -8,7 +8,7 @@ import {
   getListProductsQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { BottomNav } from "./Dashboard";
+import { BottomNavigation } from "@/components/BottomNavigation";
 
 const ONBOARDING_STEPS = [
   { n: "1", text: "建立商品，設定名稱、售價與庫存" },
@@ -150,7 +150,7 @@ export default function ProductsPage() {
     });
 
   return (
-    <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-24">
+    <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-[calc(112px+env(safe-area-inset-bottom))]">
       {/* Header */}
       <header className="bg-card border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
         <div className="flex items-start justify-between gap-2">
@@ -454,13 +454,13 @@ export default function ProductsPage() {
       {/* FAB: + 新增 */}
       <button
         onClick={() => setLocation("/products/new")}
-        className="fixed bottom-28 right-5 w-12 h-12 bg-primary text-primary-foreground rounded-full shadow-lg flex items-center justify-center text-2xl z-20"
+        className="fixed bottom-[calc(112px+env(safe-area-inset-bottom))] right-5 w-12 h-12 bg-primary text-primary-foreground rounded-full shadow-lg flex items-center justify-center text-2xl z-20"
         aria-label="新增商品"
       >
         +
       </button>
 
-      <BottomNav active="products" />
+      <BottomNavigation active="products" />
     </div>
   );
 }
