@@ -15,7 +15,7 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { maskAddress, maskName, maskPhone } from "@workspace/privacy";
-import { BottomNav } from "./Dashboard";
+import { BottomNavigation } from "@/components/BottomNavigation";
 import {
   STATUS_LABELS,
   STATUS_COLORS,
@@ -825,7 +825,7 @@ export default function OrdersPage() {
   };
 
   return (
-    <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-28">
+    <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-[calc(112px+env(safe-area-inset-bottom))]">
       <header className="bg-card border-b border-border px-5 pt-10 pb-3">
         <div className="mb-3">
           <h1 className="text-lg font-bold text-foreground">訂單管理</h1>
@@ -2237,7 +2237,7 @@ export default function OrdersPage() {
 
       {/* Bulk action bar — shown when any order is selected */}
       {selectedIds.size > 0 && (
-        <div className="fixed bottom-16 left-0 right-0 max-w-[480px] mx-auto z-20 bg-card border-t border-border shadow-lg px-4 py-3">
+        <div className="fixed bottom-[calc(104px+env(safe-area-inset-bottom))] left-0 right-0 max-w-[480px] mx-auto z-20 bg-card border-t border-border shadow-lg px-4 py-3">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-semibold text-foreground">
               已選 {selectedIds.size} 筆
@@ -2364,7 +2364,7 @@ export default function OrdersPage() {
         </div>
       )}
 
-      <BottomNav active="orders" />
+      <BottomNavigation active="orders" />
 
       {storeId && (
         <CreateOrderDialog

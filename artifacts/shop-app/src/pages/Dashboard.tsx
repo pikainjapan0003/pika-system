@@ -16,6 +16,7 @@ import {
 } from "@/lib/dashboardMetrics";
 import { ProfitKpiBoard } from "@/components/ProfitKpiBoard";
 import { PreviewChart } from "@/components/PreviewChart";
+import { BottomNavigation } from "@/components/BottomNavigation";
 import { CostStructureStack } from "@/components/charts/CostStructureStack";
 import { EstimateActualBars } from "@/components/charts/EstimateActualBars";
 import { ProfitWaterfall } from "@/components/charts/ProfitWaterfall";
@@ -205,7 +206,7 @@ export default function DashboardPage() {
   }, []);
 
   return (
-    <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto">
+    <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-[calc(112px+env(safe-area-inset-bottom))]">
       {/* Header */}
       <header className="bg-card border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
         <div className="flex items-center justify-between">
@@ -552,7 +553,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Bottom nav */}
-      <BottomNav active="dashboard" />
+      <BottomNavigation active="home" />
     </div>
   );
 }
@@ -641,57 +642,5 @@ function ActionCard({
         {desc}
       </div>
     </button>
-  );
-}
-
-export function BottomNav({
-  active,
-}: {
-  active: "dashboard" | "products" | "orders" | "settings";
-}) {
-  const [, setLocation] = useLocation();
-  const items = [
-    {
-      key: "dashboard",
-      label: "首頁",
-      path: "/dashboard",
-      icon: "○",
-    },
-    {
-      key: "products",
-      label: "商品",
-      path: "/products",
-      icon: "◻",
-    },
-    {
-      key: "orders",
-      label: "訂單",
-      path: "/orders",
-      icon: "≡",
-    },
-    {
-      key: "settings",
-      label: "設定",
-      path: "/settings",
-      icon: "⊙",
-    },
-  ];
-  return (
-    <nav className="fixed bottom-0 left-0 right-0 max-w-[480px] mx-auto bg-card border-t border-border px-2 pb-safe">
-      <div className="flex">
-        {items.map((item) => (
-          <button
-            key={item.key}
-            onClick={() => setLocation(item.path)}
-            className={`flex-1 flex flex-col items-center py-3 text-xs font-medium transition-colors ${
-              active === item.key ? "text-primary" : "text-muted-foreground"
-            }`}
-          >
-            <span className="text-lg leading-none mb-0.5">{item.icon}</span>
-            {item.label}
-          </button>
-        ))}
-      </div>
-    </nav>
   );
 }

@@ -16,9 +16,9 @@ mock.module("wouter", {
 mock.module("@workspace/api-client-react", {
   namedExports: { useGetMyStore: () => ({ data: { id: 1 } }) },
 });
-mock.module("../pages/Dashboard.tsx", {
+mock.module("../components/BottomNavigation.tsx", {
   namedExports: {
-    BottomNav: () => React.createElement("nav", null, "bottom-nav"),
+    BottomNavigation: () => React.createElement("nav", null, "bottom-nav"),
   },
 });
 

@@ -3,7 +3,7 @@ import { useAuth } from "@clerk/react";
 import { useGetMyStore } from "@workspace/api-client-react";
 import { maskAddress, maskName, maskPhone } from "@workspace/privacy";
 import { useLocation } from "wouter";
-import { BottomNav } from "./Dashboard";
+import { BottomNavigation } from "@/components/BottomNavigation";
 import { recordServerAuditEvent } from "@/lib/serverAudit";
 import { CustomerStoreCreditPanel } from "@/lib/CustomerStoreCreditPanel";
 
@@ -145,7 +145,7 @@ export default function CustomerDetailPage({
     );
 
   return (
-    <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-24">
+    <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-[calc(112px+env(safe-area-inset-bottom))]">
       <header className="sticky top-0 z-10 border-b border-border bg-card px-5 pb-4 pt-10">
         <button
           type="button"
@@ -305,7 +305,7 @@ export default function CustomerDetailPage({
           </>
         )}
       </main>
-      <BottomNav active="settings" />
+      <BottomNavigation active="more" />
     </div>
   );
 }

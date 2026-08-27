@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@clerk/react";
 import { useGetMyStore } from "@workspace/api-client-react";
-import { BottomNav } from "./Dashboard";
+import { BottomNavigation } from "@/components/BottomNavigation";
 import { getProviderShortName } from "@/lib/logisticsProviders";
 
 interface ImportBatch {
@@ -354,7 +354,7 @@ export default function LogisticsImportHistoryPage() {
   };
 
   return (
-    <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-24">
+    <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-[calc(112px+env(safe-area-inset-bottom))]">
       <header className="bg-card border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
         <h1 className="text-lg font-bold text-foreground">物流匯入紀錄</h1>
         <p className="text-xs text-muted-foreground mt-1">
@@ -645,7 +645,7 @@ export default function LogisticsImportHistoryPage() {
         )}
       </div>
 
-      <BottomNav active="orders" />
+      <BottomNavigation active="orders" />
     </div>
   );
 }
