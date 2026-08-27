@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@clerk/react";
 import { useGetMyStore } from "@workspace/api-client-react";
-import { BottomNav } from "./Dashboard";
+import { BottomNavigation } from "@/components/BottomNavigation";
 import { LogisticsSyncStatusNotice } from "../components/LogisticsSyncStatusNotice";
 
 type Provider = "711" | "familymart";
@@ -267,7 +267,7 @@ export default function LogisticsImportPage() {
   const summary = dryRun?.dryRun;
 
   return (
-    <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-24">
+    <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-[calc(112px+env(safe-area-inset-bottom))]">
       <header className="bg-card border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
         <h1 className="text-lg font-bold text-foreground">物流 Excel 匯入</h1>
         <p className="text-xs text-muted-foreground mt-1">
@@ -494,7 +494,7 @@ export default function LogisticsImportPage() {
         )}
       </div>
 
-      <BottomNav active="orders" />
+      <BottomNavigation active="orders" />
     </div>
   );
 }

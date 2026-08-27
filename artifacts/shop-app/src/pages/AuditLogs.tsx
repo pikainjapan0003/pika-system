@@ -3,7 +3,7 @@ import { useAuth } from "@clerk/react";
 import { useGetMyStore } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
 
-import { BottomNav } from "./Dashboard";
+import { BottomNavigation } from "@/components/BottomNavigation";
 
 interface AuditLogRecord {
   id: number;
@@ -53,7 +53,7 @@ export default function AuditLogsPage() {
   }, [store?.id, getToken]);
 
   return (
-    <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-24">
+    <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-[calc(112px+env(safe-area-inset-bottom))]">
       <header className="sticky top-0 z-10 border-b border-border bg-card px-5 pb-4 pt-10">
         <button
           type="button"
@@ -95,7 +95,7 @@ export default function AuditLogsPage() {
           </p>
         )}
       </main>
-      <BottomNav active="settings" />
+      <BottomNavigation active="more" />
     </div>
   );
 }

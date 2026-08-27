@@ -9,7 +9,7 @@ import { useLocation } from "wouter";
 
 import { ExchangeRateReferenceHint } from "@/components/ExchangeRateReferenceHint";
 import { formatActionableError } from "@/lib/actionableError";
-import { BottomNav } from "./Dashboard";
+import { BottomNavigation } from "@/components/BottomNavigation";
 
 const RATE_PATTERN = /^(?:\d+|\d*\.\d+)$/;
 
@@ -90,7 +90,7 @@ export default function ExchangeRateReferencePage() {
   };
 
   return (
-    <div className="mx-auto min-h-[100dvh] max-w-[480px] bg-background pb-24">
+    <div className="mx-auto min-h-[100dvh] max-w-[480px] bg-background pb-[calc(112px+env(safe-area-inset-bottom))]">
       <header className="sticky top-0 z-10 border-b border-border bg-card px-5 pb-4 pt-10">
         <button
           type="button"
@@ -161,7 +161,7 @@ export default function ExchangeRateReferencePage() {
         </p>
       </main>
 
-      <BottomNav active="settings" />
+      <BottomNavigation active="more" />
     </div>
   );
 }
