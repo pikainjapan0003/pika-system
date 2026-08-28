@@ -1,4 +1,11 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+  type TransitionEvent,
+} from "react";
+import { flushSync } from "react-dom";
 import { useLocation } from "wouter";
 import { AnalysisTabs, type AnalysisCategory } from "./AnalysisTabs";
 import { GoalAchievementCard } from "./GoalAchievementCard";
@@ -6,7 +13,11 @@ import { type KpiDetail } from "./KpiDetailSheet";
 import { KpiSummaryGrid } from "./KpiSummaryGrid";
 import { ModeSegment, type KpiMode } from "./ModeSegment";
 import { SemanticStatePanel } from "./SemanticStatePanel";
-import { SonarBackground } from "./SonarBackground";
+import {
+  SonarBackground,
+  type SonarBackgroundHandle,
+  type SonarMotionProfile,
+} from "./SonarBackground";
 import { TripSelector } from "./TripSelector";
 import { formatApiTwd } from "@/lib/operatingCostDisplay";
 import {
@@ -24,6 +35,84 @@ import { HistoryTrendChart } from "./charts/HistoryTrendChart";
 import { RouteCostRankingChart } from "./charts/RouteCostRankingChart";
 
 const PENDING = "待確認";
+const MO4_TOTAL_MS = 150;
+const MO4_MAX_FRAME_INTERVAL_MS = 25;
+const MO4_CADENCE_SAMPLE_COUNT = 12;
+type Mo4TransitionKind = "mode" | "category";
+type Mo4Cadence = "pending" | "full" | "degraded";
+type Mo4ViewState = {
+  mode: KpiMode;
+  category: AnalysisCategory;
+};
+type ActiveMo4Transition = {
+  kind: Mo4TransitionKind;
+  token: number;
+  from: Mo4ViewState;
+  to: Mo4ViewState;
+  completionLayer: Mo4TransitionKind;
+};
+
+const mo4SanitizedAttributes = new WeakMap<
+  Element,
+  Array<readonly [name: string, value: string]>
+>();
+
+function sanitizeMo4OutgoingLayer(element: HTMLDivElement | null): void {
+  if (!element) return;
+  for (const snapshotElement of element.querySelectorAll("*")) {
+    const removedAttributes: Array<readonly [string, string]> = [];
+    for (const attribute of [...snapshotElement.attributes]) {
+      if (
+        attribute.name === "id" ||
+        attribute.name === "for" ||
+        attribute.name === "name" ||
+        attribute.name === "tabindex" ||
+        attribute.name === "autofocus" ||
+        attribute.name.startsWith("aria-") ||
+        attribute.name.startsWith("data-")
+      ) {
+        removedAttributes.push([attribute.name, attribute.value]);
+        snapshotElement.removeAttribute(attribute.name);
+      }
+    }
+    if (removedAttributes.length > 0) {
+      mo4SanitizedAttributes.set(snapshotElement, removedAttributes);
+    }
+  }
+}
+
+function restoreMo4OutgoingLayer(element: HTMLDivElement | null): void {
+  if (!element) return;
+  for (const snapshotElement of element.querySelectorAll("*")) {
+    const removedAttributes = mo4SanitizedAttributes.get(snapshotElement);
+    if (!removedAttributes) continue;
+    for (const [name, value] of removedAttributes) {
+      snapshotElement.setAttribute(name, value);
+    }
+    mo4SanitizedAttributes.delete(snapshotElement);
+  }
+}
+
+function captureMo4RetargetPresentation(
+  element: HTMLDivElement | null,
+  capturedElements: Set<HTMLDivElement>,
+): void {
+  if (!element) return;
+  const presentation = window.getComputedStyle(element);
+  element.style.setProperty("--mo4-retarget-opacity", presentation.opacity);
+  element.style.setProperty("--mo4-retarget-transform", presentation.transform);
+  capturedElements.add(element);
+}
+
+function clearMo4RetargetPresentation(
+  capturedElements: Set<HTMLDivElement>,
+): void {
+  for (const element of capturedElements) {
+    element.style.removeProperty("--mo4-retarget-opacity");
+    element.style.removeProperty("--mo4-retarget-transform");
+  }
+  capturedElements.clear();
+}
 
 const MODE_LABEL: Record<KpiMode, string> = {
   estimate: "預估",
@@ -163,6 +252,7 @@ export function ProfitKpiBoard({
   presentation = "compact",
   initialCategory = "overview",
   monthlyTrendContent,
+  sonarMotionProfile = "full",
 }: {
   trips: TripListItem[];
   selectedTripId: number | null;
@@ -175,6 +265,7 @@ export function ProfitKpiBoard({
   presentation?: "compact" | "full";
   initialCategory?: AnalysisCategory;
   monthlyTrendContent?: ReactNode;
+  sonarMotionProfile?: SonarMotionProfile;
 }) {
   const [, setLocation] = useLocation();
   const [mode, setMode] = useState<KpiMode>("estimate");
@@ -182,72 +273,163 @@ export function ProfitKpiBoard({
   const [category, setCategory] = useState<AnalysisCategory>(initialCategory);
   const [visibleCategory, setVisibleCategory] =
     useState<AnalysisCategory>(initialCategory);
-  const [modeSwitching, setModeSwitching] = useState(false);
-  const [categorySwitching, setCategorySwitching] = useState(false);
-  const modeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const categoryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const modeFrameRef = useRef<number | null>(null);
-  const categoryFrameRef = useRef<number | null>(null);
-
-  useEffect(
-    () => () => {
-      if (modeTimerRef.current) clearTimeout(modeTimerRef.current);
-      if (categoryTimerRef.current) clearTimeout(categoryTimerRef.current);
-      if (modeFrameRef.current) cancelAnimationFrame(modeFrameRef.current);
-      if (categoryFrameRef.current)
-        cancelAnimationFrame(categoryFrameRef.current);
-    },
-    [],
-  );
+  const [activeMo4Transition, setActiveMo4Transition] =
+    useState<ActiveMo4Transition | null>(null);
+  const [mo4Cadence, setMo4Cadence] = useState<Mo4Cadence>("pending");
+  const modeTransitionRef = useRef<HTMLDivElement>(null);
+  const modeOutgoingRef = useRef<HTMLDivElement>(null);
+  const categoryOutgoingRef = useRef<HTMLDivElement>(null);
+  const mo4RetargetElementsRef = useRef(new Set<HTMLDivElement>());
+  const transitionTokenRef = useRef(0);
+  const mo4CadenceRef = useRef<Mo4Cadence>("pending");
+  const sonarRef = useRef<SonarBackgroundHandle>(null);
 
   useEffect(() => {
-    if (categoryTimerRef.current) clearTimeout(categoryTimerRef.current);
-    if (categoryFrameRef.current)
-      cancelAnimationFrame(categoryFrameRef.current);
-    setCategorySwitching(false);
+    clearMo4RetargetPresentation(mo4RetargetElementsRef.current);
+    setActiveMo4Transition(null);
     setCategory(initialCategory);
     setVisibleCategory(initialCategory);
+    return () => {
+      clearMo4RetargetPresentation(mo4RetargetElementsRef.current);
+    };
   }, [initialCategory]);
+
+  useEffect(() => {
+    let animationFrame = 0;
+    let cancelled = false;
+    let previousTimestamp: number | null = null;
+    const frameIntervals: number[] = [];
+
+    const sampleCadence = (timestamp: number) => {
+      if (cancelled) return;
+      if (previousTimestamp != null) {
+        frameIntervals.push(timestamp - previousTimestamp);
+      }
+      previousTimestamp = timestamp;
+
+      if (frameIntervals.length < MO4_CADENCE_SAMPLE_COUNT) {
+        animationFrame = requestAnimationFrame(sampleCadence);
+        return;
+      }
+
+      const sortedIntervals = [...frameIntervals].sort(
+        (left, right) => left - right,
+      );
+      const medianInterval =
+        sortedIntervals[Math.floor(sortedIntervals.length / 2)];
+      const nextCadence: Mo4Cadence =
+        document.visibilityState === "visible" &&
+        medianInterval <= MO4_MAX_FRAME_INTERVAL_MS
+          ? "full"
+          : "degraded";
+      mo4CadenceRef.current = nextCadence;
+      setMo4Cadence(nextCadence);
+    };
+
+    animationFrame = requestAnimationFrame(sampleCadence);
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(animationFrame);
+    };
+  }, []);
+
+  const startMo4Transition = ({
+    kind,
+    nextView,
+    selectControl,
+  }: {
+    kind: Mo4TransitionKind;
+    nextView: Mo4ViewState;
+    selectControl: () => void;
+  }) => {
+    const from = { mode: visibleMode, category: visibleCategory };
+    const completionLayer: Mo4TransitionKind =
+      kind === "mode" && modeTransitionRef.current ? "mode" : "category";
+
+    // A rapid reversal reuses the current outgoing DOM as the next incoming
+    // layer. Carry its computed presentation through the keyed reorder and
+    // restore attributes while its parent is still aria-hidden + inert, then
+    // sanitize the newly outgoing layer after the synchronous commit.
+    if (activeMo4Transition) {
+      captureMo4RetargetPresentation(
+        modeOutgoingRef.current,
+        mo4RetargetElementsRef.current,
+      );
+      captureMo4RetargetPresentation(
+        categoryOutgoingRef.current,
+        mo4RetargetElementsRef.current,
+      );
+    }
+    restoreMo4OutgoingLayer(modeOutgoingRef.current);
+    restoreMo4OutgoingLayer(categoryOutgoingRef.current);
+
+    if (
+      !motionEnabled() ||
+      mo4CadenceRef.current !== "full" ||
+      typeof window.TransitionEvent !== "function"
+    ) {
+      flushSync(() => {
+        selectControl();
+        setVisibleMode(nextView.mode);
+        setVisibleCategory(nextView.category);
+        setActiveMo4Transition(null);
+      });
+      clearMo4RetargetPresentation(mo4RetargetElementsRef.current);
+      return;
+    }
+
+    const token = transitionTokenRef.current + 1;
+    transitionTokenRef.current = token;
+    sonarRef.current?.pauseForInteraction();
+    flushSync(() => {
+      selectControl();
+      setVisibleMode(nextView.mode);
+      setVisibleCategory(nextView.category);
+      setActiveMo4Transition({
+        kind,
+        token,
+        from,
+        to: nextView,
+        completionLayer,
+      });
+    });
+    sanitizeMo4OutgoingLayer(modeOutgoingRef.current);
+    sanitizeMo4OutgoingLayer(categoryOutgoingRef.current);
+  };
+
+  const handleMo4TransitionSettled = (
+    token: number,
+    event: TransitionEvent<HTMLDivElement>,
+  ) => {
+    if (
+      event.target !== event.currentTarget ||
+      event.propertyName !== "opacity"
+    ) {
+      return;
+    }
+    if (transitionTokenRef.current !== token) return;
+    clearMo4RetargetPresentation(mo4RetargetElementsRef.current);
+    setActiveMo4Transition((active) =>
+      active?.token === token ? null : active,
+    );
+  };
 
   const handleModeChange = (next: KpiMode) => {
     if (next === mode) return;
-    setMode(next);
-    if (modeTimerRef.current) clearTimeout(modeTimerRef.current);
-    if (modeFrameRef.current) cancelAnimationFrame(modeFrameRef.current);
-    if (!motionEnabled()) {
-      setModeSwitching(false);
-      setVisibleMode(next);
-      return;
-    }
-    setModeSwitching(true);
-    modeTimerRef.current = setTimeout(() => {
-      setVisibleMode(next);
-      modeFrameRef.current = requestAnimationFrame(() => {
-        setModeSwitching(false);
-        modeFrameRef.current = null;
-      });
-    }, 100);
+    startMo4Transition({
+      kind: "mode",
+      nextView: { mode: next, category: visibleCategory },
+      selectControl: () => setMode(next),
+    });
   };
 
   const handleCategoryChange = (next: AnalysisCategory) => {
     if (next === category) return;
-    setCategory(next);
-    if (categoryTimerRef.current) clearTimeout(categoryTimerRef.current);
-    if (categoryFrameRef.current)
-      cancelAnimationFrame(categoryFrameRef.current);
-    if (!motionEnabled()) {
-      setCategorySwitching(false);
-      setVisibleCategory(next);
-      return;
-    }
-    setCategorySwitching(true);
-    categoryTimerRef.current = setTimeout(() => {
-      setVisibleCategory(next);
-      categoryFrameRef.current = requestAnimationFrame(() => {
-        setCategorySwitching(false);
-        categoryFrameRef.current = null;
-      });
-    }, 100);
+    startMo4Transition({
+      kind: "category",
+      nextView: { mode: visibleMode, category: next },
+      selectControl: () => setCategory(next),
+    });
   };
 
   let tripStatePanel: ReactNode = null;
@@ -333,24 +515,55 @@ export function ProfitKpiBoard({
     );
   }
 
-  const selectedSummary =
-    visibleMode === "estimate"
-      ? estimate
-      : visibleMode === "actual"
-        ? actual
-        : null;
-  const selectedCards = cardMap(selectedSummary);
-  const projection = selectedSummary?.tripProfit.projections.unit;
-  const outcome: ProfitOutcome | undefined =
-    projection?.status === "ready" ? projection.outcome : undefined;
-  const coreCards = coreKpis(selectedSummary, visibleMode);
-  const modeTransitionClass = modeSwitching
-    ? "opacity-0 translate-y-1"
-    : "opacity-100 translate-y-0";
-  const analysisTransitionClass =
-    modeSwitching || categorySwitching
-      ? "opacity-0 translate-y-1"
-      : "opacity-100 translate-y-0";
+  const summaryForMode = (viewMode: KpiMode) =>
+    viewMode === "estimate" ? estimate : viewMode === "actual" ? actual : null;
+  const renderModeContent = (view: Mo4ViewState) => (
+    <KpiSummaryGrid cards={coreKpis(summaryForMode(view.mode), view.mode)} />
+  );
+  const renderCategoryContent = (view: Mo4ViewState) => {
+    const selectedSummary = summaryForMode(view.mode);
+    const selectedCards = cardMap(selectedSummary);
+    const projection = selectedSummary?.tripProfit.projections.unit;
+    const outcome: ProfitOutcome | undefined =
+      projection?.status === "ready" ? projection.outcome : undefined;
+
+    return (
+      <>
+        <div className="mb-4">
+          <h2 id="kpi-category-title" className="text-lg font-semibold">
+            {CATEGORY_COPY[view.category].title}
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {CATEGORY_COPY[view.category].description}
+          </p>
+        </div>
+
+        {!tripStatePanel && view.category === "overview" ? (
+          <OverviewPanel
+            outcome={outcome}
+            current={cardValue(selectedCards, "finalProfit")}
+            target={cardValue(selectedCards, "salaryTarget")}
+            itemQuantity={cardValue(selectedCards, "itemQuantity")}
+          />
+        ) : null}
+        {!tripStatePanel && view.category === "profit" ? (
+          <ProfitPanel
+            cards={selectedCards}
+            comparisonRows={comparisonRows}
+            mode={view.mode}
+          />
+        ) : null}
+        {!tripStatePanel && view.category === "cost" ? (
+          <CostPanel cards={selectedCards} />
+        ) : null}
+        {view.category === "trend" ? (
+          <TrendPanel monthlyTrendContent={monthlyTrendContent} />
+        ) : null}
+      </>
+    );
+  };
+  const currentView = { mode: visibleMode, category: visibleCategory };
+  const sonarInteractionPaused = activeMo4Transition !== null;
 
   return (
     <section
@@ -359,7 +572,11 @@ export function ProfitKpiBoard({
       aria-label="KPI 分析室"
     >
       <div className="grid items-center gap-4 lg:grid-cols-[320px_minmax(0,1fr)] lg:gap-6">
-        <SonarBackground />
+        <SonarBackground
+          ref={sonarRef}
+          motionProfile={sonarMotionProfile}
+          interactionPaused={sonarInteractionPaused}
+        />
 
         <section className="rounded-[16px] border border-border bg-card p-4 sm:p-5 lg:p-6">
           <div className="mb-5">
@@ -407,9 +624,67 @@ export function ProfitKpiBoard({
             </p>
           </div>
           <div
-            className={`transition-[opacity,transform] duration-100 ease-out motion-reduce:transition-none ${modeTransitionClass}`}
+            ref={modeTransitionRef}
+            className="mo4-content-transition"
+            data-testid="mode-transition"
+            data-motion="MO-4"
+            data-mo4-cadence={mo4Cadence}
+            data-mo4-retarget="current-presentation-value"
+            data-transition-strategy="css-transition"
+            data-transition-state={
+              activeMo4Transition?.kind === "mode" ? "active" : "idle"
+            }
+            data-transition-duration-ms={MO4_TOTAL_MS}
           >
-            <KpiSummaryGrid cards={coreCards} />
+            <div className="mo4-layer-stack">
+              {activeMo4Transition?.kind === "mode" ? (
+                <div
+                  key={`mode-${activeMo4Transition.from.mode}`}
+                  ref={modeOutgoingRef}
+                  className="mo4-layer-outgoing"
+                  aria-hidden="true"
+                  inert
+                >
+                  {renderModeContent(activeMo4Transition.from)}
+                </div>
+              ) : null}
+              <div
+                key={`mode-${
+                  activeMo4Transition?.kind === "mode"
+                    ? activeMo4Transition.to.mode
+                    : currentView.mode
+                }`}
+                className={
+                  activeMo4Transition?.kind === "mode"
+                    ? "mo4-layer-incoming"
+                    : "mo4-layer-live"
+                }
+                onTransitionEnd={
+                  activeMo4Transition?.completionLayer === "mode"
+                    ? (event) =>
+                        handleMo4TransitionSettled(
+                          activeMo4Transition.token,
+                          event,
+                        )
+                    : undefined
+                }
+                onTransitionCancel={
+                  activeMo4Transition?.completionLayer === "mode"
+                    ? (event) =>
+                        handleMo4TransitionSettled(
+                          activeMo4Transition.token,
+                          event,
+                        )
+                    : undefined
+                }
+              >
+                {renderModeContent(
+                  activeMo4Transition?.kind === "mode"
+                    ? activeMo4Transition.to
+                    : currentView,
+                )}
+              </div>
+            </div>
           </div>
         </section>
       ) : null}
@@ -417,38 +692,60 @@ export function ProfitKpiBoard({
       <section aria-labelledby="kpi-category-title">
         <AnalysisTabs value={category} onChange={handleCategoryChange}>
           <div
-            className={`transition-[opacity,transform] duration-100 ease-out motion-reduce:transition-none ${analysisTransitionClass}`}
+            className="mo4-content-transition"
+            data-testid="category-transition"
+            data-motion="MO-4"
+            data-mo4-cadence={mo4Cadence}
+            data-mo4-retarget="current-presentation-value"
+            data-transition-strategy="css-transition"
+            data-transition-state={activeMo4Transition ? "active" : "idle"}
+            data-transition-duration-ms={MO4_TOTAL_MS}
           >
-            <div className="mb-4">
-              <h2 id="kpi-category-title" className="text-lg font-semibold">
-                {CATEGORY_COPY[visibleCategory].title}
-              </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {CATEGORY_COPY[visibleCategory].description}
-              </p>
+            <div className="mo4-layer-stack">
+              {activeMo4Transition ? (
+                <div
+                  key={`category-${activeMo4Transition.from.mode}-${activeMo4Transition.from.category}`}
+                  ref={categoryOutgoingRef}
+                  className="mo4-layer-outgoing"
+                  aria-hidden="true"
+                  inert
+                >
+                  {renderCategoryContent(activeMo4Transition.from)}
+                </div>
+              ) : null}
+              <div
+                key={`category-${
+                  activeMo4Transition
+                    ? `${activeMo4Transition.to.mode}-${activeMo4Transition.to.category}`
+                    : `${currentView.mode}-${currentView.category}`
+                }`}
+                className={
+                  activeMo4Transition ? "mo4-layer-incoming" : "mo4-layer-live"
+                }
+                onTransitionEnd={
+                  activeMo4Transition?.completionLayer === "category"
+                    ? (event) =>
+                        handleMo4TransitionSettled(
+                          activeMo4Transition.token,
+                          event,
+                        )
+                    : undefined
+                }
+                onTransitionCancel={
+                  activeMo4Transition?.completionLayer === "category"
+                    ? (event) =>
+                        handleMo4TransitionSettled(
+                          activeMo4Transition.token,
+                          event,
+                        )
+                    : undefined
+                }
+              >
+                {renderCategoryContent(
+                  activeMo4Transition ? activeMo4Transition.to : currentView,
+                )}
+              </div>
             </div>
-
-            {!tripStatePanel && visibleCategory === "overview" ? (
-              <OverviewPanel
-                outcome={outcome}
-                current={cardValue(selectedCards, "finalProfit")}
-                target={cardValue(selectedCards, "salaryTarget")}
-                itemQuantity={cardValue(selectedCards, "itemQuantity")}
-              />
-            ) : null}
-            {!tripStatePanel && visibleCategory === "profit" ? (
-              <ProfitPanel
-                cards={selectedCards}
-                comparisonRows={comparisonRows}
-                mode={visibleMode}
-              />
-            ) : null}
-            {!tripStatePanel && visibleCategory === "cost" ? (
-              <CostPanel cards={selectedCards} />
-            ) : null}
-            {visibleCategory === "trend" ? (
-              <TrendPanel monthlyTrendContent={monthlyTrendContent} />
-            ) : null}
           </div>
         </AnalysisTabs>
       </section>

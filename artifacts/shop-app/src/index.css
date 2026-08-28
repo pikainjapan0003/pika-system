@@ -345,6 +345,88 @@ body[data-pika-palette="deepsea"]:not([data-pika-brand="enabled"]) {
 }
 
 /* ============================================================================
+   MO 類聲吶裝飾層
+   - MO-1 既有掃描維持 SonarBackground 的 7s linear spin。
+   - MO-2 只改 opacity，0.18 → 0.30，變化幅度 0.12（≤ DESIGN.md 0.15）。
+   - MO-3 固定 6 顆（≤ 8），限制在 clipped 雷達容器內，不覆蓋文字／圖表。
+   ========================================================================== */
+@keyframes sonar-breathe {
+  from {
+    opacity: 0.18;
+  }
+  to {
+    opacity: 0.3;
+  }
+}
+
+.sonar-breathe {
+  background: radial-gradient(
+    circle,
+    hsl(var(--primary) / 0.16) 0%,
+    hsl(var(--primary) / 0.06) 48%,
+    transparent 72%
+  );
+  animation: sonar-breathe 4.8s cubic-bezier(0.77, 0, 0.175, 1) infinite
+    alternate;
+}
+
+@keyframes sonar-particle-drift {
+  0%,
+  100% {
+    transform: translate3d(0, 4px, 0);
+  }
+  50% {
+    transform: translate3d(0, -7px, 0);
+  }
+}
+
+.sonar-particle {
+  background-color: hsl(var(--primary) / 0.14);
+  animation-name: sonar-particle-drift;
+  animation-timing-function: cubic-bezier(0.77, 0, 0.175, 1);
+  animation-iteration-count: infinite;
+}
+
+[data-sonar-interaction-paused="true"] .sonar-sweep,
+[data-sonar-interaction-paused="true"] .sonar-breathe,
+[data-sonar-interaction-paused="true"] .sonar-particle {
+  animation-play-state: paused;
+}
+
+.mo4-layer-stack {
+  position: relative;
+  min-width: 0;
+}
+
+.mo4-layer-live,
+.mo4-layer-outgoing,
+.mo4-layer-incoming {
+  opacity: 1;
+  position: relative;
+  transform: translate3d(0, 0, 0);
+  transition-property: opacity, transform;
+  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0.23, 1, 0.32, 1);
+  will-change: opacity, transform;
+}
+
+.mo4-layer-outgoing {
+  opacity: 0;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  pointer-events: none;
+  transform: translate3d(0, -4px, 0);
+}
+
+@starting-style {
+  .mo4-layer-incoming {
+    opacity: var(--mo4-retarget-opacity, 0);
+    transform: var(--mo4-retarget-transform, translate3d(0, 4px, 0));
+  }
+}
+
+/* ============================================================================
    P｜prefers-reduced-motion 全域降級規則（G5 前置任務）
    source: DESIGN.md「所有動效尊重 prefers-reduced-motion，縮減後仍須保留
    結果文字、符號與狀態」（K 類表下 L326）
@@ -383,6 +465,26 @@ body[data-pika-palette="deepsea"]:not([data-pika-brand="enabled"]) {
   .animate-cs-float,
   .animate-cs-pulse-soft {
     animation: none !important;
+  }
+
+  /* MO-1～MO-3 是純裝飾層：reduce 下直接移除，不留下靜態光點。 */
+  .sonar-sweep,
+  .sonar-breathe,
+  .sonar-particles {
+    display: none !important;
+    animation: none !important;
+  }
+
+  .mo4-layer-outgoing {
+    display: none !important;
+    transition: none !important;
+  }
+
+  .mo4-layer-live,
+  .mo4-layer-incoming {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
   }
 }
 
