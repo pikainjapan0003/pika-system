@@ -69,8 +69,10 @@ mock.module("@workspace/api-client-react", {
 });
 mock.module("../components/SonarBackground.tsx", {
   namedExports: {
-    SonarBackground: () =>
-      React.createElement("div", { "data-testid": "sonar-whale" }),
+    SonarBackground: ({ variant }) =>
+      React.createElement("div", {
+        "data-testid": variant === "ambient" ? "sonar-ambient" : "sonar-whale",
+      }),
   },
 });
 
@@ -280,6 +282,7 @@ test("the dashboard KPI summary stays compact and preserves backend outcome", as
   });
   assert.match(compact?.textContent ?? "", /系統計算結果/);
   assert.match(compact?.textContent ?? "", /開啟 KPI 分析室/);
+  assert.ok(view.container.querySelector("[data-testid='sonar-ambient']"));
   assert.doesNotMatch(compact?.textContent ?? "", /銷售總額/);
   assert.doesNotMatch(compact?.textContent ?? "", /NT\$\s?0/);
 
