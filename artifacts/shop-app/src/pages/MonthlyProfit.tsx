@@ -155,6 +155,7 @@ export default function MonthlyProfitPage() {
         <ProfitKpiBoard
           presentation="full"
           initialCategory={openedFromKpiNavigation ? "overview" : "trend"}
+          sonarMotionProfile={openedFromKpiNavigation ? "full" : "breathe-only"}
           monthlyTrendContent={monthlyTrendContent}
           trips={board.trips}
           selectedTripId={board.selectedTripId}

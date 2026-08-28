@@ -17,6 +17,7 @@ import {
 import { ProfitKpiBoard } from "@/components/ProfitKpiBoard";
 import { PreviewChart } from "@/components/PreviewChart";
 import { BottomNavigation } from "@/components/BottomNavigation";
+import { SonarBackground } from "@/components/SonarBackground";
 import { CostStructureStack } from "@/components/charts/CostStructureStack";
 import { EstimateActualBars } from "@/components/charts/EstimateActualBars";
 import { ProfitWaterfall } from "@/components/charts/ProfitWaterfall";
@@ -226,6 +227,9 @@ export default function DashboardPage() {
       </header>
 
       <div className="px-5 py-5 space-y-5">
+        {/* MO-1～MO-3｜裁切於無文字背景帶；與 KPI 頁 280px 雷達主視覺分開。 */}
+        <SonarBackground variant="ambient" />
+
         {/* 成本利潤 KPI（13 張卡，G0 凍結）；無行程時走 empty 空狀態 */}
         <ProfitKpiBoard
           trips={board.trips}

@@ -1,0 +1,944 @@
+{
+  "schemaVersion": 1,
+  "runId": "final",
+  "startedAt": "2026-08-27T12:31:54.427Z",
+  "baseURL": "http://127.0.0.1:4175/",
+  "targetURL": "http://127.0.0.1:4175/reports/monthly-profit?view=kpi",
+  "monthlyTargetURL": "http://127.0.0.1:4175/reports/monthly-profit",
+  "dashboardTargetURL": "http://127.0.0.1:4175/dashboard",
+  "outputDir": "/mnt/c/Users/Lnovo/Documents/ChatGPT/pika-V1 成本利潤/sonar-motion/artifacts/shop-app/qa-screenshots/phase25-g5-motion",
+  "browserVersion": "140.0.7339.186",
+  "artifacts": {
+    "mobile": "/mnt/c/Users/Lnovo/Documents/ChatGPT/pika-V1 成本利潤/sonar-motion/artifacts/shop-app/qa-screenshots/phase25-g5-motion/phase25-g5-final-mobile-390-full.png",
+    "dashboard": "/mnt/c/Users/Lnovo/Documents/ChatGPT/pika-V1 成本利潤/sonar-motion/artifacts/shop-app/qa-screenshots/phase25-g5-motion/phase25-g5-final-dashboard-ambient.png",
+    "reduceA": "/mnt/c/Users/Lnovo/Documents/ChatGPT/pika-V1 成本利潤/sonar-motion/artifacts/shop-app/qa-screenshots/phase25-g5-motion/phase25-g5-final-reduce-a.png",
+    "reduceB": "/mnt/c/Users/Lnovo/Documents/ChatGPT/pika-V1 成本利潤/sonar-motion/artifacts/shop-app/qa-screenshots/phase25-g5-motion/phase25-g5-final-reduce-b.png",
+    "metrics": "/mnt/c/Users/Lnovo/Documents/ChatGPT/pika-V1 成本利潤/sonar-motion/artifacts/shop-app/qa-screenshots/phase25-g5-motion/phase25-g5-final-metrics.json",
+    "radar": {
+      "0": "/mnt/c/Users/Lnovo/Documents/ChatGPT/pika-V1 成本利潤/sonar-motion/artifacts/shop-app/qa-screenshots/phase25-g5-motion/phase25-g5-final-radar-0000ms.png",
+      "1750": "/mnt/c/Users/Lnovo/Documents/ChatGPT/pika-V1 成本利潤/sonar-motion/artifacts/shop-app/qa-screenshots/phase25-g5-motion/phase25-g5-final-radar-1750ms.png",
+      "3500": "/mnt/c/Users/Lnovo/Documents/ChatGPT/pika-V1 成本利潤/sonar-motion/artifacts/shop-app/qa-screenshots/phase25-g5-motion/phase25-g5-final-radar-3500ms.png",
+      "5250": "/mnt/c/Users/Lnovo/Documents/ChatGPT/pika-V1 成本利潤/sonar-motion/artifacts/shop-app/qa-screenshots/phase25-g5-motion/phase25-g5-final-radar-5250ms.png",
+      "7000": "/mnt/c/Users/Lnovo/Documents/ChatGPT/pika-V1 成本利潤/sonar-motion/artifacts/shop-app/qa-screenshots/phase25-g5-motion/phase25-g5-final-radar-7000ms.png"
+    }
+  },
+  "normalMotion": {
+    "matchMediaReduce": false,
+    "mo1": {
+      "dataDurationMs": 7000,
+      "animationName": "spin",
+      "animationDuration": "7s",
+      "animationTimingFunction": "linear",
+      "animationIterationCount": "infinite",
+      "keyframes": [
+        {
+          "offset": 0,
+          "computedOffset": 0,
+          "easing": "linear",
+          "transform": "none"
+        },
+        {
+          "offset": 1,
+          "computedOffset": 1,
+          "easing": "linear",
+          "transform": "rotate(360deg)"
+        }
+      ],
+      "transformSamples": [
+        {
+          "scheduledMs": 0,
+          "actualMs": 221.3,
+          "transform": "matrix(0.538364, 0.842712, -0.842712, 0.538364, 0, 0)",
+          "opacity": "1",
+          "animationCurrentTimeMs": 1116.6490000006158,
+          "animationPlayState": "running"
+        },
+        {
+          "scheduledMs": 1750,
+          "actualMs": 2092.3,
+          "transform": "matrix(-0.919453, 0.393199, -0.393199, -0.919453, 0, 0)",
+          "opacity": "1",
+          "animationCurrentTimeMs": 3049.789000000616,
+          "animationPlayState": "running"
+        },
+        {
+          "scheduledMs": 3500,
+          "actualMs": 3769.6,
+          "transform": "matrix(-0.487127, -0.873331, 0.873331, -0.487127, 0, 0)",
+          "opacity": "1",
+          "animationCurrentTimeMs": 4683.157000000616,
+          "animationPlayState": "running"
+        },
+        {
+          "scheduledMs": 5250,
+          "actualMs": 5574.5,
+          "transform": "matrix(0.907292, -0.4205, 0.4205, 0.907292, 0, 0)",
+          "opacity": "1",
+          "animationCurrentTimeMs": 6516.491000000615,
+          "animationPlayState": "running"
+        },
+        {
+          "scheduledMs": 7000,
+          "actualMs": 7219.8,
+          "transform": "matrix(0.500189, 0.865916, -0.865916, 0.500189, 0, 0)",
+          "opacity": "1",
+          "animationCurrentTimeMs": 8166.423000000616,
+          "animationPlayState": "running"
+        }
+      ]
+    },
+    "mo2": {
+      "animationName": "sonar-breathe",
+      "animationDuration": "4.8s",
+      "keyframes": [
+        {
+          "offset": 0,
+          "computedOffset": 0,
+          "easing": "cubic-bezier(0.77, 0, 0.175, 1)",
+          "opacity": "0.18"
+        },
+        {
+          "offset": 1,
+          "computedOffset": 1,
+          "easing": "cubic-bezier(0.77, 0, 0.175, 1)",
+          "opacity": "0.3"
+        }
+      ],
+      "minimumOpacity": 0.18,
+      "maximumOpacity": 0.3,
+      "opacityDelta": 0.12
+    },
+    "mo3": {
+      "count": 6,
+      "limit": 8,
+      "hostContainment": {
+        "allWithinHost": true,
+        "allWithinParticleLayer": true
+      },
+      "visibleTextOverlap": {
+        "count": 0,
+        "overlaps": []
+      },
+      "particles": [
+        {
+          "index": 0,
+          "rect": {
+            "left": 100.25,
+            "top": 93.74253845214844,
+            "right": 103.25,
+            "bottom": 96.74253845214844
+          },
+          "withinHost": true,
+          "withinParticleLayer": true,
+          "visibleTextOverlaps": []
+        },
+        {
+          "index": 1,
+          "rect": {
+            "left": 269.828125,
+            "top": 75.7645034790039,
+            "right": 272.828125,
+            "bottom": 78.7645034790039
+          },
+          "withinHost": true,
+          "withinParticleLayer": true,
+          "visibleTextOverlaps": []
+        },
+        {
+          "index": 2,
+          "rect": {
+            "left": 86.359375,
+            "top": 197.55528259277344,
+            "right": 89.359375,
+            "bottom": 200.55528259277344
+          },
+          "withinHost": true,
+          "withinParticleLayer": true,
+          "visibleTextOverlaps": []
+        },
+        {
+          "index": 3,
+          "rect": {
+            "left": 286.515625,
+            "top": 188.40835571289062,
+            "right": 289.515625,
+            "bottom": 191.40835571289062
+          },
+          "withinHost": true,
+          "withinParticleLayer": true,
+          "visibleTextOverlaps": []
+        },
+        {
+          "index": 4,
+          "rect": {
+            "left": 139.171875,
+            "top": 258.7740783691406,
+            "right": 142.171875,
+            "bottom": 261.7740783691406
+          },
+          "withinHost": true,
+          "withinParticleLayer": true,
+          "visibleTextOverlaps": []
+        },
+        {
+          "index": 5,
+          "rect": {
+            "left": 244.8125,
+            "top": 265.47344970703125,
+            "right": 247.8125,
+            "bottom": 268.47344970703125
+          },
+          "withinHost": true,
+          "withinParticleLayer": true,
+          "visibleTextOverlaps": []
+        }
+      ]
+    },
+    "mo4": {
+      "normalWebgl": {
+        "renderer": {
+          "canvasCount": 1,
+          "fallbackCount": 0
+        },
+        "modeSwitch": {
+          "kind": "mode",
+          "sawFade": true,
+          "restored": true,
+          "clickToRestoredOpacityMs": 669,
+          "nominalTotalMs": 150,
+          "declaredPhaseDurationMs": 75,
+          "declaredTotalDurationMs": 150,
+          "compositorActiveDurationMs": 150,
+          "minimumOpacity": 0,
+          "cssTransitionDuration": "0.075s",
+          "cssTransitionProperty": "opacity, transform",
+          "sampleCount": 11,
+          "samples": [
+            {
+              "elapsedMs": 65.7,
+              "opacity": 1,
+              "className": "mo4-content-transition",
+              "phase": "out"
+            },
+            {
+              "elapsedMs": 190.1,
+              "opacity": 1,
+              "className": "mo4-content-transition",
+              "phase": "out"
+            },
+            {
+              "elapsedMs": 193.7,
+              "opacity": 1,
+              "className": "mo4-content-transition",
+              "phase": "out"
+            },
+            {
+              "elapsedMs": 231.2,
+              "opacity": 1,
+              "className": "mo4-content-transition",
+              "phase": "out"
+            },
+            {
+              "elapsedMs": 463.2,
+              "opacity": 0,
+              "className": "mo4-content-transition",
+              "phase": "in"
+            },
+            {
+              "elapsedMs": 496.8,
+              "opacity": 0,
+              "className": "mo4-content-transition",
+              "phase": "in"
+            },
+            {
+              "elapsedMs": 510.1,
+              "opacity": 0,
+              "className": "mo4-content-transition",
+              "phase": "in"
+            },
+            {
+              "elapsedMs": 527.4,
+              "opacity": 0,
+              "className": "mo4-content-transition",
+              "phase": "in"
+            },
+            {
+              "elapsedMs": 549.7,
+              "opacity": 0.727,
+              "className": "mo4-content-transition",
+              "phase": "in"
+            },
+            {
+              "elapsedMs": 635.3,
+              "opacity": 1,
+              "className": "mo4-content-transition",
+              "phase": "in"
+            },
+            {
+              "elapsedMs": 678.5,
+              "opacity": 1,
+              "className": "mo4-content-transition",
+              "phase": "idle"
+            }
+          ],
+          "classChanges": [
+            {
+              "elapsedMs": 0,
+              "className": "mo4-content-transition",
+              "phase": "idle",
+              "opacity": 1,
+              "sonarPaused": false
+            },
+            {
+              "elapsedMs": 43.1,
+              "className": "mo4-content-transition",
+              "phase": "out",
+              "opacity": 1,
+              "sonarPaused": true
+            },
+            {
+              "elapsedMs": 448.3,
+              "className": "mo4-content-transition",
+              "phase": "in",
+              "opacity": 0,
+              "sonarPaused": true
+            },
+            {
+              "elapsedMs": 669,
+              "className": "mo4-content-transition",
+              "phase": "idle",
+              "opacity": 1,
+              "sonarPaused": false
+            }
+          ],
+          "phaseSequence": ["idle", "out", "in", "idle"],
+          "rafMedianMs": 37.5,
+          "selectedState": "實際",
+          "timingEnvironmentValid": false,
+          "transitionEvents": [
+            {
+              "elapsedMs": 408.7,
+              "elapsedTimeMs": 0,
+              "propertyName": "opacity",
+              "type": "transitionrun"
+            },
+            {
+              "elapsedMs": 409.3,
+              "elapsedTimeMs": 0,
+              "propertyName": "opacity",
+              "type": "transitionstart"
+            },
+            {
+              "elapsedMs": 409.5,
+              "elapsedTimeMs": 75,
+              "propertyName": "opacity",
+              "type": "transitionend"
+            },
+            {
+              "elapsedMs": 461.7,
+              "elapsedTimeMs": 0,
+              "propertyName": "transform",
+              "type": "transitionrun"
+            },
+            {
+              "elapsedMs": 462.2,
+              "elapsedTimeMs": 0,
+              "propertyName": "transform",
+              "type": "transitionstart"
+            },
+            {
+              "elapsedMs": 463,
+              "elapsedTimeMs": 75,
+              "propertyName": "transform",
+              "type": "transitionend"
+            },
+            {
+              "elapsedMs": 548.3,
+              "elapsedTimeMs": 0,
+              "propertyName": "opacity",
+              "type": "transitionrun"
+            },
+            {
+              "elapsedMs": 548.7,
+              "elapsedTimeMs": 0,
+              "propertyName": "opacity",
+              "type": "transitionstart"
+            },
+            {
+              "elapsedMs": 549,
+              "elapsedTimeMs": 0,
+              "propertyName": "transform",
+              "type": "transitionrun"
+            },
+            {
+              "elapsedMs": 549.4,
+              "elapsedTimeMs": 0,
+              "propertyName": "transform",
+              "type": "transitionstart"
+            },
+            {
+              "elapsedMs": 633.9,
+              "elapsedTimeMs": 75,
+              "propertyName": "opacity",
+              "type": "transitionend"
+            },
+            {
+              "elapsedMs": 634.7,
+              "elapsedTimeMs": 75,
+              "propertyName": "transform",
+              "type": "transitionend"
+            }
+          ]
+        },
+        "categorySwitch": {
+          "kind": "category",
+          "sawFade": true,
+          "restored": true,
+          "clickToRestoredOpacityMs": 436.9,
+          "nominalTotalMs": 150,
+          "declaredPhaseDurationMs": 75,
+          "declaredTotalDurationMs": 150,
+          "compositorActiveDurationMs": 150,
+          "minimumOpacity": 0,
+          "cssTransitionDuration": "0.075s",
+          "cssTransitionProperty": "opacity, transform",
+          "sampleCount": 13,
+          "samples": [
+            {
+              "elapsedMs": 76.6,
+              "opacity": 1,
+              "className": "mo4-content-transition",
+              "phase": "out"
+            },
+            {
+              "elapsedMs": 94,
+              "opacity": 1,
+              "className": "mo4-content-transition",
+              "phase": "out"
+            },
+            {
+              "elapsedMs": 108.9,
+              "opacity": 0.272,
+              "className": "mo4-content-transition",
+              "phase": "out"
+            },
+            {
+              "elapsedMs": 119.6,
+              "opacity": 0.053,
+              "className": "mo4-content-transition",
+              "phase": "out"
+            },
+            {
+              "elapsedMs": 136.5,
+              "opacity": 0.007,
+              "className": "mo4-content-transition",
+              "phase": "out"
+            },
+            {
+              "elapsedMs": 212.9,
+              "opacity": 0,
+              "className": "mo4-content-transition",
+              "phase": "in"
+            },
+            {
+              "elapsedMs": 258.5,
+              "opacity": 0,
+              "className": "mo4-content-transition",
+              "phase": "in"
+            },
+            {
+              "elapsedMs": 286.5,
+              "opacity": 0,
+              "className": "mo4-content-transition",
+              "phase": "in"
+            },
+            {
+              "elapsedMs": 318.3,
+              "opacity": 0,
+              "className": "mo4-content-transition",
+              "phase": "in"
+            },
+            {
+              "elapsedMs": 361.8,
+              "opacity": 0.947,
+              "className": "mo4-content-transition",
+              "phase": "in"
+            },
+            {
+              "elapsedMs": 385,
+              "opacity": 1,
+              "className": "mo4-content-transition",
+              "phase": "in"
+            },
+            {
+              "elapsedMs": 415.6,
+              "opacity": 1,
+              "className": "mo4-content-transition",
+              "phase": "in"
+            },
+            {
+              "elapsedMs": 446.7,
+              "opacity": 1,
+              "className": "mo4-content-transition",
+              "phase": "idle"
+            }
+          ],
+          "classChanges": [
+            {
+              "elapsedMs": 0,
+              "className": "mo4-content-transition",
+              "phase": "idle",
+              "opacity": 1,
+              "sonarPaused": false
+            },
+            {
+              "elapsedMs": 57.1,
+              "className": "mo4-content-transition",
+              "phase": "out",
+              "opacity": 1,
+              "sonarPaused": true
+            },
+            {
+              "elapsedMs": 206.4,
+              "className": "mo4-content-transition",
+              "phase": "in",
+              "opacity": 0,
+              "sonarPaused": true
+            },
+            {
+              "elapsedMs": 436.9,
+              "className": "mo4-content-transition",
+              "phase": "idle",
+              "opacity": 1,
+              "sonarPaused": false
+            }
+          ],
+          "phaseSequence": ["idle", "out", "in", "idle"],
+          "rafMedianMs": 30.6,
+          "selectedState": "active",
+          "timingEnvironmentValid": false,
+          "transitionEvents": [
+            {
+              "elapsedMs": 108.6,
+              "elapsedTimeMs": 0,
+              "propertyName": "opacity",
+              "type": "transitionrun"
+            },
+            {
+              "elapsedMs": 108.7,
+              "elapsedTimeMs": 0,
+              "propertyName": "opacity",
+              "type": "transitionstart"
+            },
+            {
+              "elapsedMs": 108.8,
+              "elapsedTimeMs": 0,
+              "propertyName": "transform",
+              "type": "transitionrun"
+            },
+            {
+              "elapsedMs": 108.9,
+              "elapsedTimeMs": 0,
+              "propertyName": "transform",
+              "type": "transitionstart"
+            },
+            {
+              "elapsedMs": 180.2,
+              "elapsedTimeMs": 75,
+              "propertyName": "opacity",
+              "type": "transitionend"
+            },
+            {
+              "elapsedMs": 212.8,
+              "elapsedTimeMs": 75,
+              "propertyName": "transform",
+              "type": "transitionend"
+            },
+            {
+              "elapsedMs": 360.8,
+              "elapsedTimeMs": 0,
+              "propertyName": "opacity",
+              "type": "transitionrun"
+            },
+            {
+              "elapsedMs": 361.4,
+              "elapsedTimeMs": 0,
+              "propertyName": "opacity",
+              "type": "transitionstart"
+            },
+            {
+              "elapsedMs": 361.6,
+              "elapsedTimeMs": 0,
+              "propertyName": "transform",
+              "type": "transitionrun"
+            },
+            {
+              "elapsedMs": 361.7,
+              "elapsedTimeMs": 0,
+              "propertyName": "transform",
+              "type": "transitionstart"
+            },
+            {
+              "elapsedMs": 414,
+              "elapsedTimeMs": 75,
+              "propertyName": "opacity",
+              "type": "transitionend"
+            },
+            {
+              "elapsedMs": 415.1,
+              "elapsedTimeMs": 75,
+              "propertyName": "transform",
+              "type": "transitionend"
+            }
+          ]
+        },
+        "rapidRetarget": {
+          "modeSettled": true,
+          "categorySettled": true,
+          "finalMode": "預估",
+          "finalCategory": "概覽",
+          "sonarPaused": "false"
+        }
+      }
+    },
+    "monthlyMotionProfile": {
+      "profile": "breathe-only",
+      "hasBreathe": true,
+      "hasSweep": false,
+      "particleCount": 0
+    },
+    "dashboardAmbient": {
+      "profile": "full",
+      "variant": "ambient",
+      "bandHeight": 80,
+      "bandOverflowX": "hidden",
+      "bandOverflowY": "hidden",
+      "ambientPosition": "absolute",
+      "particleCount": 6,
+      "bandText": "",
+      "whaleRendererCount": 0
+    }
+  },
+  "liveMotionWindow": {
+    "captureWindowMs": 8503.4,
+    "guaranteedMinimumMs": 8500,
+    "rendererIsolation": "The timing browser isolates MO-1 transform samples and closes before the normal browser starts. MO-4 is gated with a real WebGL canvas, where the product pauses decorative sonar work during the 240ms content switch."
+  },
+  "mobile": {
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "fullPage": true,
+    "documentSize": {
+      "width": 390,
+      "height": 1678
+    }
+  },
+  "reducedMotion": {
+    "matchMediaReduce": true,
+    "elements": [
+      {
+        "id": "radar-sweep",
+        "missing": false,
+        "display": "none",
+        "animationName": "none",
+        "animationPlayState": "running",
+        "animationCount": 0
+      },
+      {
+        "id": "sonar-breathe",
+        "missing": false,
+        "display": "none",
+        "animationName": "none",
+        "animationPlayState": "running",
+        "animationCount": 0
+      },
+      {
+        "id": "sonar-particles",
+        "missing": false,
+        "display": "none",
+        "animationName": "none",
+        "animationPlayState": "running",
+        "animationCount": 0
+      }
+    ],
+    "moAnimationCount": 0,
+    "documentAnimationCount": 0,
+    "resultText": "NT$33,791.49",
+    "resultTextStillExists": true,
+    "resultStatusStillExists": true,
+    "switches": {
+      "mode": {
+        "updateMs": 76.2,
+        "selected": true,
+        "resultText": "NT$27,607.49",
+        "updatedBeforeEventReturned": true,
+        "transitionPhase": "idle"
+      },
+      "category": {
+        "updateMs": 173.4,
+        "selected": true,
+        "title": "損益｜收入如何轉成利潤",
+        "updatedBeforeEventReturned": true,
+        "transitionPhase": "idle"
+      },
+      "documentAnimationCountAfterSwitches": 0
+    },
+    "screenshots": {
+      "separationMs": 1000,
+      "aSha256": "0a1074d3f0d947d7b16be574ea1180b62428c0b78a8216abb4d5ea68af713ea8",
+      "bSha256": "0a1074d3f0d947d7b16be574ea1180b62428c0b78a8216abb4d5ea68af713ea8",
+      "sha256Equal": true
+    }
+  },
+  "requests": {
+    "count": 43,
+    "allMocked": true,
+    "log": [
+      {
+        "label": "desktop",
+        "method": "GET",
+        "url": "http://127.0.0.1:4175/api/me/store"
+      },
+      {
+        "label": "desktop",
+        "method": "GET",
+        "url": "http://127.0.0.1:4175/api/stores/1/trips"
+      },
+      {
+        "label": "desktop",
+        "method": "GET",
+        "url": "http://127.0.0.1:4175/api/stores/1/orders/monthly-profit?month=2026-08"
+      },
+      {
+        "label": "desktop",
+        "method": "GET",
+        "url": "http://127.0.0.1:4175/api/stores/1/trips/1/operating-summary?mode=ESTIMATE"
+      },
+      {
+        "label": "desktop",
+        "method": "GET",
+        "url": "http://127.0.0.1:4175/api/stores/1/trips/1/operating-summary?mode=ACTUAL"
+      },
+      {
+        "label": "desktop",
+        "method": "GET",
+        "url": "http://127.0.0.1:4175/api/stores/1/trips/1/fixed-cost-comparison"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4175/api/me/store"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4175/api/stores/1/trips"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4175/api/stores/1/orders/monthly-profit?month=2026-08"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4175/api/stores/1/trips/1/operating-summary?mode=ESTIMATE"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4175/api/stores/1/trips/1/operating-summary?mode=ACTUAL"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4175/api/stores/1/trips/1/fixed-cost-comparison"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4175/api/me/store"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4175/api/stores/1/charts/history-trend"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4175/api/stores/1/charts/area-scatter"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4175/api/stores/1/trips"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4175/api/stores/1/orders/monthly-profit?month=2026-08"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4175/api/stores/1/trips/1/operating-summary?mode=ESTIMATE"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4175/api/stores/1/trips/1/operating-summary?mode=ACTUAL"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4175/api/stores/1/trips/1/fixed-cost-comparison"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4175/api/me/store"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4175/api/stores/1/logistics/exceptions?status=open&limit=100"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4175/api/stores/1/logistics/exceptions?status=reviewing&limit=100"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4175/api/stores/1/stats"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4175/api/stores/1/orders"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4175/api/stores/1/products"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4175/api/stores/1/trips"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4175/api/stores/1/orders/profit-summary"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4175/api/stores/1/trips/1/operating-summary?mode=ESTIMATE"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4175/api/stores/1/trips/1/operating-summary?mode=ACTUAL"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4175/api/stores/1/trips/1/fixed-cost-comparison"
+      },
+      {
+        "label": "mobile-390",
+        "method": "GET",
+        "url": "http://127.0.0.1:4175/api/me/store"
+      },
+      {
+        "label": "mobile-390",
+        "method": "GET",
+        "url": "http://127.0.0.1:4175/api/stores/1/trips"
+      },
+      {
+        "label": "mobile-390",
+        "method": "GET",
+        "url": "http://127.0.0.1:4175/api/stores/1/orders/monthly-profit?month=2026-08"
+      },
+      {
+        "label": "mobile-390",
+        "method": "GET",
+        "url": "http://127.0.0.1:4175/api/stores/1/trips/1/operating-summary?mode=ESTIMATE"
+      },
+      {
+        "label": "mobile-390",
+        "method": "GET",
+        "url": "http://127.0.0.1:4175/api/stores/1/trips/1/operating-summary?mode=ACTUAL"
+      },
+      {
+        "label": "mobile-390",
+        "method": "GET",
+        "url": "http://127.0.0.1:4175/api/stores/1/trips/1/fixed-cost-comparison"
+      },
+      {
+        "label": "reduced",
+        "method": "GET",
+        "url": "http://127.0.0.1:4175/api/me/store"
+      },
+      {
+        "label": "reduced",
+        "method": "GET",
+        "url": "http://127.0.0.1:4175/api/stores/1/trips"
+      },
+      {
+        "label": "reduced",
+        "method": "GET",
+        "url": "http://127.0.0.1:4175/api/stores/1/orders/monthly-profit?month=2026-08"
+      },
+      {
+        "label": "reduced",
+        "method": "GET",
+        "url": "http://127.0.0.1:4175/api/stores/1/trips/1/operating-summary?mode=ESTIMATE"
+      },
+      {
+        "label": "reduced",
+        "method": "GET",
+        "url": "http://127.0.0.1:4175/api/stores/1/trips/1/operating-summary?mode=ACTUAL"
+      },
+      {
+        "label": "reduced",
+        "method": "GET",
+        "url": "http://127.0.0.1:4175/api/stores/1/trips/1/fixed-cost-comparison"
+      }
+    ],
+    "unhandled": []
+  },
+  "diagnostics": {
+    "consoleErrors": [],
+    "pageErrors": []
+  },
+  "checks": {
+    "mo1DurationWithinSixToTenSeconds": true,
+    "mo1IsLinearInfiniteAndActivelyRotating": true,
+    "mo2OpacityDeltaWithinDesignLimit": true,
+    "mo3AtMostEightParticles": true,
+    "mo3ContainedAndNoTextOverlap": true,
+    "mo4ModeWithinOneHundredFiftyToTwoHundredFiftyMilliseconds": true,
+    "mo4CategoryWithinOneHundredFiftyToTwoHundredFiftyMilliseconds": true,
+    "mo4RapidRetargetSettlesOnLatestSelection": true,
+    "monthlyProfileIsBreatheOnly": true,
+    "dashboardAmbientIsClippedAndTextFree": true,
+    "reducedMediaMatched": true,
+    "reducedMoLayersHidden": true,
+    "reducedMoAnimationCountZero": true,
+    "reducedPngsIdentical": true,
+    "reducedResultTextAndStatusRemain": true,
+    "reducedMo4UpdatesImmediatelyWithoutAnimations": true,
+    "liveCaptureWindowAtLeastEightSeconds": true,
+    "everyApiRequestMocked": true,
+    "noPageErrors": true
+  },
+  "passed": true,
+  "finishedAt": "2026-08-27T12:35:06.244Z"
+}
