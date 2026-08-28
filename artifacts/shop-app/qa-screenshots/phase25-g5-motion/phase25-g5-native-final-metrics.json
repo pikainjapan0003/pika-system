@@ -1,0 +1,332 @@
+{
+  "browserVersion": "151.0.7922.174",
+  "category": {
+    "actualMs": 405.7,
+    "compositorActiveDurationMs": 150,
+    "contentSwap": {
+      "elapsedMs": 130,
+      "opacity": 0
+    },
+    "finalPhase": "idle",
+    "minimumOpacity": 0,
+    "nominalMs": 150,
+    "phaseSequence": [
+      {
+        "elapsedMs": 0.1,
+        "opacity": 1,
+        "phase": "idle",
+        "resultText": "",
+        "categoryTitle": "概覽｜目標是否達成",
+        "sonarPaused": "false"
+      },
+      {
+        "elapsedMs": 33.6,
+        "opacity": 1,
+        "phase": "out",
+        "resultText": "",
+        "categoryTitle": "概覽｜目標是否達成",
+        "sonarPaused": "true"
+      },
+      {
+        "elapsedMs": 130,
+        "opacity": 0,
+        "phase": "in",
+        "resultText": "",
+        "categoryTitle": "損益｜收入如何轉成利潤",
+        "sonarPaused": "true"
+      },
+      {
+        "elapsedMs": 391.4,
+        "opacity": 1,
+        "phase": "idle",
+        "resultText": "",
+        "categoryTitle": "損益｜收入如何轉成利潤",
+        "sonarPaused": "false"
+      }
+    ],
+    "rafMedianMs": 25.4,
+    "sampleCount": 11,
+    "sonarPausedThroughoutActive": true,
+    "timingEnvironmentValid": false,
+    "transitionEvents": [
+      {
+        "elapsedMs": 60.5,
+        "elapsedTimeMs": 0,
+        "propertyName": "opacity",
+        "type": "transitionrun"
+      },
+      {
+        "elapsedMs": 60.7,
+        "elapsedTimeMs": 0,
+        "propertyName": "opacity",
+        "type": "transitionstart"
+      },
+      {
+        "elapsedMs": 60.9,
+        "elapsedTimeMs": 0,
+        "propertyName": "transform",
+        "type": "transitionrun"
+      },
+      {
+        "elapsedMs": 61.2,
+        "elapsedTimeMs": 0,
+        "propertyName": "transform",
+        "type": "transitionstart"
+      },
+      {
+        "elapsedMs": 108.1,
+        "elapsedTimeMs": 75,
+        "propertyName": "opacity",
+        "type": "transitionend"
+      },
+      {
+        "elapsedMs": 266.6,
+        "elapsedTimeMs": 75,
+        "propertyName": "transform",
+        "type": "transitionend"
+      },
+      {
+        "elapsedMs": 323.1,
+        "elapsedTimeMs": 0,
+        "propertyName": "opacity",
+        "type": "transitionrun"
+      },
+      {
+        "elapsedMs": 323.4,
+        "elapsedTimeMs": 0,
+        "propertyName": "opacity",
+        "type": "transitionstart"
+      },
+      {
+        "elapsedMs": 323.7,
+        "elapsedTimeMs": 0,
+        "propertyName": "transform",
+        "type": "transitionrun"
+      },
+      {
+        "elapsedMs": 324,
+        "elapsedTimeMs": 0,
+        "propertyName": "transform",
+        "type": "transitionstart"
+      },
+      {
+        "elapsedMs": 371.9,
+        "elapsedTimeMs": 75,
+        "propertyName": "opacity",
+        "type": "transitionend"
+      },
+      {
+        "elapsedMs": 372.8,
+        "elapsedTimeMs": 75,
+        "propertyName": "transform",
+        "type": "transitionend"
+      }
+    ]
+  },
+  "checks": {
+    "categoryCompositorDurationWithin150To250Ms": true,
+    "categoryHasTwoSeventyFiveMsOpacityTransitions": true,
+    "categoryWallClockWithinRangeWhenEnvironmentValid": true,
+    "categoryContentSwapsNearTrough": true,
+    "categoryFadePainted": true,
+    "categoryPhaseSequence": true,
+    "categorySonarPaused": true,
+    "modeCompositorDurationWithin150To250Ms": true,
+    "modeHasTwoSeventyFiveMsOpacityTransitions": true,
+    "modeWallClockWithinRangeWhenEnvironmentValid": true,
+    "modeContentSwapsNearTrough": true,
+    "modeFadePainted": true,
+    "modePhaseSequence": true,
+    "modeSonarPaused": true,
+    "nativeWebglCanvasMounted": true,
+    "nominalContract150Ms": true,
+    "rapidRetargetSettles": true,
+    "reducedMotionAllMoHidden": true,
+    "reducedMotionImmediateState": true,
+    "reducedMotionScreenshotsIdentical": true
+  },
+  "consoleErrors": [],
+  "environment": {
+    "canvasCount": 1,
+    "matchMediaReduce": false,
+    "renderer": "ANGLE (Intel, Intel(R) HD Graphics 4000 (0x00000166) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
+    "webglVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)"
+  },
+  "generatedAt": "2026-08-27T12:06:05.400Z",
+  "mode": {
+    "actualMs": 472.9,
+    "compositorActiveDurationMs": 150,
+    "contentSwap": {
+      "elapsedMs": 179.9,
+      "opacity": 0
+    },
+    "finalPhase": "idle",
+    "minimumOpacity": 0,
+    "nominalMs": 150,
+    "phaseSequence": [
+      {
+        "elapsedMs": 1.1,
+        "opacity": 1,
+        "phase": "idle",
+        "resultText": "NT$33,791.49",
+        "categoryTitle": "概覽｜目標是否達成",
+        "sonarPaused": "false"
+      },
+      {
+        "elapsedMs": 71.5,
+        "opacity": 1,
+        "phase": "out",
+        "resultText": "NT$33,791.49",
+        "categoryTitle": "概覽｜目標是否達成",
+        "sonarPaused": "true"
+      },
+      {
+        "elapsedMs": 179.9,
+        "opacity": 0,
+        "phase": "in",
+        "resultText": "NT$27,607.49",
+        "categoryTitle": "概覽｜目標是否達成",
+        "sonarPaused": "true"
+      },
+      {
+        "elapsedMs": 462.8,
+        "opacity": 1,
+        "phase": "idle",
+        "resultText": "NT$27,607.49",
+        "categoryTitle": "概覽｜目標是否達成",
+        "sonarPaused": "false"
+      }
+    ],
+    "rafMedianMs": 28.8,
+    "sampleCount": 12,
+    "sonarPausedThroughoutActive": true,
+    "timingEnvironmentValid": false,
+    "transitionEvents": [
+      {
+        "elapsedMs": 115.4,
+        "elapsedTimeMs": 0,
+        "propertyName": "opacity",
+        "type": "transitionrun"
+      },
+      {
+        "elapsedMs": 115.8,
+        "elapsedTimeMs": 0,
+        "propertyName": "opacity",
+        "type": "transitionstart"
+      },
+      {
+        "elapsedMs": 116,
+        "elapsedTimeMs": 0,
+        "propertyName": "transform",
+        "type": "transitionrun"
+      },
+      {
+        "elapsedMs": 116.2,
+        "elapsedTimeMs": 0,
+        "propertyName": "transform",
+        "type": "transitionstart"
+      },
+      {
+        "elapsedMs": 164.1,
+        "elapsedTimeMs": 75,
+        "propertyName": "opacity",
+        "type": "transitionend"
+      },
+      {
+        "elapsedMs": 211.3,
+        "elapsedTimeMs": 75,
+        "propertyName": "transform",
+        "type": "transitionend"
+      },
+      {
+        "elapsedMs": 389.7,
+        "elapsedTimeMs": 0,
+        "propertyName": "opacity",
+        "type": "transitionrun"
+      },
+      {
+        "elapsedMs": 390.2,
+        "elapsedTimeMs": 0,
+        "propertyName": "opacity",
+        "type": "transitionstart"
+      },
+      {
+        "elapsedMs": 391.1,
+        "elapsedTimeMs": 0,
+        "propertyName": "transform",
+        "type": "transitionrun"
+      },
+      {
+        "elapsedMs": 391.7,
+        "elapsedTimeMs": 0,
+        "propertyName": "transform",
+        "type": "transitionstart"
+      },
+      {
+        "elapsedMs": 447.1,
+        "elapsedTimeMs": 75,
+        "propertyName": "opacity",
+        "type": "transitionend"
+      },
+      {
+        "elapsedMs": 447.8,
+        "elapsedTimeMs": 75,
+        "propertyName": "transform",
+        "type": "transitionend"
+      }
+    ]
+  },
+  "pageErrors": [],
+  "passed": true,
+  "paths": {
+    "board": "C:\\Users\\Lnovo\\Documents\\ChatGPT\\pika-V1 成本利潤\\sonar-motion\\artifacts\\shop-app\\qa-screenshots\\phase25-g5-motion\\phase25-g5-native-final-board.png",
+    "reduceA": "C:\\Users\\Lnovo\\Documents\\ChatGPT\\pika-V1 成本利潤\\sonar-motion\\artifacts\\shop-app\\qa-screenshots\\phase25-g5-motion\\phase25-g5-native-final-reduce-a.png",
+    "reduceB": "C:\\Users\\Lnovo\\Documents\\ChatGPT\\pika-V1 成本利潤\\sonar-motion\\artifacts\\shop-app\\qa-screenshots\\phase25-g5-motion\\phase25-g5-native-final-reduce-b.png",
+    "metrics": "C:\\Users\\Lnovo\\Documents\\ChatGPT\\pika-V1 成本利潤\\sonar-motion\\artifacts\\shop-app\\qa-screenshots\\phase25-g5-motion\\phase25-g5-native-final-metrics.json"
+  },
+  "reduced": {
+    "before": {
+      "matchMediaReduce": true,
+      "elements": [
+        {
+          "animationCount": 0,
+          "animationName": "none",
+          "display": "none",
+          "id": "radar-sweep"
+        },
+        {
+          "animationCount": 0,
+          "animationName": "none",
+          "display": "none",
+          "id": "sonar-breathe"
+        },
+        {
+          "animationCount": 0,
+          "animationName": "none",
+          "display": "none",
+          "id": "sonar-particles"
+        }
+      ],
+      "moAnimationCount": 0,
+      "resultText": "NT$33,791.49"
+    },
+    "screenshotAHash": "0182256807e1da5c063e3d1ce89d8bc23facee699aeeb445d517f225b3cb7e11",
+    "screenshotBHash": "0182256807e1da5c063e3d1ce89d8bc23facee699aeeb445d517f225b3cb7e11",
+    "switchResult": {
+      "categoryPhase": "idle",
+      "categorySelected": true,
+      "categoryTitle": "損益｜收入如何轉成利潤",
+      "modePhase": "idle",
+      "modeResult": "NT$27,607.49",
+      "modeSelected": true
+    }
+  },
+  "retarget": {
+    "categorySettled": true,
+    "finalCategory": "概覽",
+    "finalMode": "預估",
+    "modeSettled": true,
+    "sonarPaused": "false"
+  }
+}

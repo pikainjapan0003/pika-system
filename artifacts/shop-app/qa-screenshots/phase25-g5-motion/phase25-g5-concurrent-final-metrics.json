@@ -1,0 +1,360 @@
+{
+  "browserVersion": "151.0.7922.174",
+  "checks": {
+    "forcedFullOverrideInstalled": true,
+    "forcedFullActualFinalSource": true,
+    "forcedFullNoCssAnimationsOrKeyframes": true,
+    "forcedFullTransitionDuration150Ms": true,
+    "frame0InitialState": true,
+    "frame75NoBlankTrough": true,
+    "frame150FinalState": true,
+    "rapidMode_cadenceForcedFull": true,
+    "rapidMode_cssAnimationsAndKeyframesZero": true,
+    "rapidMode_finalContent": true,
+    "rapidMode_finalSelected": true,
+    "rapidMode_finalStateIdle": true,
+    "rapidMode_noOutgoingAfterSettle": true,
+    "rapidMode_presentationContinuity": true,
+    "rapidMode_compositeOpacityContinuity": true,
+    "rapidMode_presentationWasMidTransition": true,
+    "rapidMode_sameReactKeysReuseDom": true,
+    "rapidMode_sonarCleanup": true,
+    "rapidMode_transitionPropertiesOnly": true,
+    "rapidCategory_cadenceForcedFull": true,
+    "rapidCategory_cssAnimationsAndKeyframesZero": true,
+    "rapidCategory_finalContent": true,
+    "rapidCategory_finalSelected": true,
+    "rapidCategory_finalStateIdle": true,
+    "rapidCategory_noOutgoingAfterSettle": true,
+    "rapidCategory_presentationContinuity": true,
+    "rapidCategory_compositeOpacityContinuity": true,
+    "rapidCategory_presentationWasMidTransition": true,
+    "rapidCategory_sameReactKeysReuseDom": true,
+    "rapidCategory_sonarCleanup": true,
+    "rapidCategory_transitionPropertiesOnly": true,
+    "nativeCadenceMeasuredDegraded": true,
+    "nativeDegradedImmediate": true,
+    "nativeDegradedSettled": true,
+    "reducedAllAmbientMoHidden": true,
+    "reducedImmediateAndNoMo4": true,
+    "reducedScreenshotsIdentical": true,
+    "reducedLayoutStable": true,
+    "reducedVisibleLayoutNormal": true,
+    "noConsoleErrors": true,
+    "noPageErrors": true
+  },
+  "consoleErrors": [],
+  "forcedFull": {
+    "frames": {
+      "cadenceOverride": {
+        "installed": true,
+        "syntheticFrameCount": 14
+      },
+      "captureMode": "actual-final-source-forced-full-cadence-css-transitions",
+      "setup": {
+        "cssAnimationCount": 0,
+        "transitionCount": 8,
+        "transitionProperties": ["opacity", "transform"],
+        "transitionDurationsMs": [150]
+      },
+      "at0": {
+        "categoryIncoming": {
+          "opacity": 0,
+          "transform": "matrix(1, 0, 0, 1, 0, 4)"
+        },
+        "categoryOutgoing": {
+          "opacity": 1,
+          "transform": "matrix(1, 0, 0, 1, 0, 0)"
+        },
+        "modeIncoming": {
+          "opacity": 0,
+          "transform": "matrix(1, 0, 0, 1, 0, 4)"
+        },
+        "modeOutgoing": {
+          "opacity": 1,
+          "transform": "matrix(1, 0, 0, 1, 0, 0)"
+        },
+        "sampledTimeMs": 0
+      },
+      "at75": {
+        "categoryIncoming": {
+          "opacity": 0.965983,
+          "transform": "matrix(1, 0, 0, 1, 0, 0.13607)"
+        },
+        "categoryOutgoing": {
+          "opacity": 0.0340174,
+          "transform": "matrix(1, 0, 0, 1, 0, -3.86393)"
+        },
+        "modeIncoming": {
+          "opacity": 0.965983,
+          "transform": "matrix(1, 0, 0, 1, 0, 0.13607)"
+        },
+        "modeOutgoing": {
+          "opacity": 0.0340174,
+          "transform": "matrix(1, 0, 0, 1, 0, -3.86393)"
+        },
+        "sampledTimeMs": 75
+      },
+      "at150": {
+        "categoryIncoming": {
+          "opacity": 1,
+          "transform": "matrix(1, 0, 0, 1, 0, 1.39722e-10)"
+        },
+        "categoryOutgoing": {
+          "opacity": 3.49304e-11,
+          "transform": "matrix(1, 0, 0, 1, 0, -4)"
+        },
+        "modeIncoming": {
+          "opacity": 1,
+          "transform": "matrix(1, 0, 0, 1, 0, 1.39722e-10)"
+        },
+        "modeOutgoing": {
+          "opacity": 3.49304e-11,
+          "transform": "matrix(1, 0, 0, 1, 0, -4)"
+        },
+        "sampledTimeMs": 149.9
+      }
+    },
+    "rapidCategory": {
+      "cadenceOverride": {
+        "installed": true,
+        "syntheticFrameCount": 14
+      },
+      "after": {
+        "incoming": {
+          "opacity": 0.199523,
+          "translateY": -3.20191
+        },
+        "outgoing": {
+          "opacity": 0.800477,
+          "translateY": 0.798093
+        }
+      },
+      "before": {
+        "incoming": {
+          "opacity": 0.800477,
+          "translateY": 0.798093
+        },
+        "outgoing": {
+          "opacity": 0.199523,
+          "translateY": -3.20191
+        }
+      },
+      "cadence": "full",
+      "cssAnimationCountAfter": 0,
+      "cssAnimationCountBefore": 0,
+      "finalContent": "概覽｜目標是否達成",
+      "finalSelected": true,
+      "finalSonarPaused": "false",
+      "finalState": "idle",
+      "firstIncomingBecameOutgoing": true,
+      "firstOutgoingBecameIncoming": true,
+      "noOutgoingAfterSettle": true,
+      "retargetDelayMs": 40,
+      "settled": true,
+      "transitionPropertiesAfter": ["opacity", "transform"]
+    },
+    "rapidMode": {
+      "cadenceOverride": {
+        "installed": true,
+        "syntheticFrameCount": 14
+      },
+      "after": {
+        "incoming": {
+          "opacity": 0.199523,
+          "translateY": -3.20191
+        },
+        "outgoing": {
+          "opacity": 0.800477,
+          "translateY": 0.798093
+        }
+      },
+      "before": {
+        "incoming": {
+          "opacity": 0.800477,
+          "translateY": 0.798093
+        },
+        "outgoing": {
+          "opacity": 0.199523,
+          "translateY": -3.20191
+        }
+      },
+      "cadence": "full",
+      "cssAnimationCountAfter": 0,
+      "cssAnimationCountBefore": 0,
+      "finalContent": "NT$33,791.49",
+      "finalSelected": true,
+      "finalSonarPaused": "false",
+      "finalState": "idle",
+      "firstIncomingBecameOutgoing": true,
+      "firstOutgoingBecameIncoming": true,
+      "noOutgoingAfterSettle": true,
+      "retargetDelayMs": 40,
+      "settled": true,
+      "transitionPropertiesAfter": ["opacity", "transform"]
+    }
+  },
+  "generatedAt": "2026-08-27T20:42:37.934Z",
+  "nativeDegraded": {
+    "rafBaseline": {
+      "intervalCount": 30,
+      "maximumMs": 197.1,
+      "medianMs": 25,
+      "minimumMs": 22.1
+    },
+    "cadence": "degraded",
+    "cssAnimationCount": 0,
+    "elapsedMs": 23.700000001117587,
+    "finalContent": "NT$27,607.49",
+    "finalSelected": true,
+    "finalSonarPaused": "false",
+    "finalState": "idle",
+    "outgoingLayerCount": 0,
+    "transitionCount": 0
+  },
+  "pageErrors": [],
+  "passed": true,
+  "paths": {
+    "board": "C:\\Users\\Lnovo\\Documents\\ChatGPT\\pika-V1 成本利潤\\sonar-motion\\artifacts\\shop-app\\qa-screenshots\\phase25-g5-motion\\phase25-g5-concurrent-final-board.png",
+    "frame0": "C:\\Users\\Lnovo\\Documents\\ChatGPT\\pika-V1 成本利潤\\sonar-motion\\artifacts\\shop-app\\qa-screenshots\\phase25-g5-motion\\phase25-g5-concurrent-final-mo4-mode-000ms.png",
+    "frame75": "C:\\Users\\Lnovo\\Documents\\ChatGPT\\pika-V1 成本利潤\\sonar-motion\\artifacts\\shop-app\\qa-screenshots\\phase25-g5-motion\\phase25-g5-concurrent-final-mo4-mode-075ms.png",
+    "frame150": "C:\\Users\\Lnovo\\Documents\\ChatGPT\\pika-V1 成本利潤\\sonar-motion\\artifacts\\shop-app\\qa-screenshots\\phase25-g5-motion\\phase25-g5-concurrent-final-mo4-mode-150ms.png",
+    "metrics": "C:\\Users\\Lnovo\\Documents\\ChatGPT\\pika-V1 成本利潤\\sonar-motion\\artifacts\\shop-app\\qa-screenshots\\phase25-g5-motion\\phase25-g5-concurrent-final-metrics.json",
+    "reduceA": "C:\\Users\\Lnovo\\Documents\\ChatGPT\\pika-V1 成本利潤\\sonar-motion\\artifacts\\shop-app\\qa-screenshots\\phase25-g5-motion\\phase25-g5-concurrent-final-reduce-a.png",
+    "reduceB": "C:\\Users\\Lnovo\\Documents\\ChatGPT\\pika-V1 成本利潤\\sonar-motion\\artifacts\\shop-app\\qa-screenshots\\phase25-g5-motion\\phase25-g5-concurrent-final-reduce-b.png"
+  },
+  "reduced": {
+    "before": {
+      "elements": [
+        {
+          "animationCount": 0,
+          "animationName": "none",
+          "display": "none",
+          "id": "radar-sweep"
+        },
+        {
+          "animationCount": 0,
+          "animationName": "none",
+          "display": "none",
+          "id": "sonar-breathe"
+        },
+        {
+          "animationCount": 0,
+          "animationName": "none",
+          "display": "none",
+          "id": "sonar-particles"
+        }
+      ],
+      "matchMediaReduce": true,
+      "moAnimationCount": 0
+    },
+    "layoutA": {
+      "categoryTitle": "概覽｜目標是否達成",
+      "categoryTitleRendered": true,
+      "documentAnimationCount": 0,
+      "fontsStatus": "loaded",
+      "headingRendered": true,
+      "kpiRects": [
+        {
+          "bottom": 484.8,
+          "height": 35,
+          "left": 125.5,
+          "right": 375.5,
+          "top": 449.8,
+          "width": 250
+        },
+        {
+          "bottom": 484.8,
+          "height": 35,
+          "left": 433.5,
+          "right": 683.5,
+          "top": 449.8,
+          "width": 250
+        },
+        {
+          "bottom": 484.8,
+          "height": 35,
+          "left": 741.5,
+          "right": 991.5,
+          "top": 449.8,
+          "width": 250
+        },
+        {
+          "bottom": 484.8,
+          "height": 35,
+          "left": 1049.5,
+          "right": 1299.5,
+          "top": 449.8,
+          "width": 250
+        }
+      ],
+      "kpiValueCount": 4,
+      "kpiValuesRendered": true,
+      "kpiValueTexts": ["NT$33,791.49", "待確認", "NT$130,000", "待確認"],
+      "outgoingLayerCount": 0,
+      "overlappingKpiPairs": [],
+      "renderedLeafTextCount": 43
+    },
+    "layoutB": {
+      "categoryTitle": "概覽｜目標是否達成",
+      "categoryTitleRendered": true,
+      "documentAnimationCount": 0,
+      "fontsStatus": "loaded",
+      "headingRendered": true,
+      "kpiRects": [
+        {
+          "bottom": 484.8,
+          "height": 35,
+          "left": 125.5,
+          "right": 375.5,
+          "top": 449.8,
+          "width": 250
+        },
+        {
+          "bottom": 484.8,
+          "height": 35,
+          "left": 433.5,
+          "right": 683.5,
+          "top": 449.8,
+          "width": 250
+        },
+        {
+          "bottom": 484.8,
+          "height": 35,
+          "left": 741.5,
+          "right": 991.5,
+          "top": 449.8,
+          "width": 250
+        },
+        {
+          "bottom": 484.8,
+          "height": 35,
+          "left": 1049.5,
+          "right": 1299.5,
+          "top": 449.8,
+          "width": 250
+        }
+      ],
+      "kpiValueCount": 4,
+      "kpiValuesRendered": true,
+      "kpiValueTexts": ["NT$33,791.49", "待確認", "NT$130,000", "待確認"],
+      "outgoingLayerCount": 0,
+      "overlappingKpiPairs": [],
+      "renderedLeafTextCount": 43
+    },
+    "screenshotAHash": "d37989aea1fed2776728b040ae5a1ff5d3ea84dfa6b8f53b969079869170eec2",
+    "screenshotBHash": "d37989aea1fed2776728b040ae5a1ff5d3ea84dfa6b8f53b969079869170eec2",
+    "switchResult": {
+      "categorySelected": true,
+      "categoryState": "idle",
+      "categoryTitle": "損益｜收入如何轉成利潤",
+      "cssAnimationCount": 0,
+      "documentAnimationCount": 0,
+      "hasOutgoingLayer": false,
+      "modeResult": "NT$27,607.49",
+      "modeSelected": true,
+      "modeState": "idle",
+      "transitionCount": 0
+    }
+  }
+}

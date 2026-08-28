@@ -1,0 +1,620 @@
+{
+  "schemaVersion": 1,
+  "runId": "final",
+  "startedAt": "2026-08-27T09:31:05.470Z",
+  "baseURL": "http://127.0.0.1:4174/",
+  "targetURL": "http://127.0.0.1:4174/reports/monthly-profit?view=kpi",
+  "monthlyTargetURL": "http://127.0.0.1:4174/reports/monthly-profit",
+  "dashboardTargetURL": "http://127.0.0.1:4174/dashboard",
+  "outputDir": "/tmp/pika-sonar-motion-run-1787817965069/artifacts/shop-app/qa-screenshots/phase25-g5-motion",
+  "browserVersion": "140.0.7339.186",
+  "artifacts": {
+    "mobile": "/tmp/pika-sonar-motion-run-1787817965069/artifacts/shop-app/qa-screenshots/phase25-g5-motion/phase25-g5-final-mobile-390-full.png",
+    "dashboard": "/tmp/pika-sonar-motion-run-1787817965069/artifacts/shop-app/qa-screenshots/phase25-g5-motion/phase25-g5-final-dashboard-ambient.png",
+    "reduceA": "/tmp/pika-sonar-motion-run-1787817965069/artifacts/shop-app/qa-screenshots/phase25-g5-motion/phase25-g5-final-reduce-a.png",
+    "reduceB": "/tmp/pika-sonar-motion-run-1787817965069/artifacts/shop-app/qa-screenshots/phase25-g5-motion/phase25-g5-final-reduce-b.png",
+    "metrics": "/tmp/pika-sonar-motion-run-1787817965069/artifacts/shop-app/qa-screenshots/phase25-g5-motion/phase25-g5-final-metrics.json",
+    "radar": {
+      "0": "/tmp/pika-sonar-motion-run-1787817965069/artifacts/shop-app/qa-screenshots/phase25-g5-motion/phase25-g5-final-radar-0000ms.png",
+      "1750": "/tmp/pika-sonar-motion-run-1787817965069/artifacts/shop-app/qa-screenshots/phase25-g5-motion/phase25-g5-final-radar-1750ms.png",
+      "3500": "/tmp/pika-sonar-motion-run-1787817965069/artifacts/shop-app/qa-screenshots/phase25-g5-motion/phase25-g5-final-radar-3500ms.png",
+      "5250": "/tmp/pika-sonar-motion-run-1787817965069/artifacts/shop-app/qa-screenshots/phase25-g5-motion/phase25-g5-final-radar-5250ms.png",
+      "7000": "/tmp/pika-sonar-motion-run-1787817965069/artifacts/shop-app/qa-screenshots/phase25-g5-motion/phase25-g5-final-radar-7000ms.png"
+    }
+  },
+  "normalMotion": {
+    "matchMediaReduce": false,
+    "mo1": {
+      "dataDurationMs": 7000,
+      "animationName": "spin",
+      "animationDuration": "7s",
+      "animationTimingFunction": "linear",
+      "animationIterationCount": "infinite",
+      "keyframes": [
+        {
+          "offset": 0,
+          "computedOffset": 0,
+          "easing": "linear",
+          "transform": "none"
+        },
+        {
+          "offset": 1,
+          "computedOffset": 1,
+          "easing": "linear",
+          "transform": "rotate(360deg)"
+        }
+      ],
+      "transformSamples": [
+        {
+          "scheduledMs": 0,
+          "actualMs": 156.9,
+          "transform": "matrix(-0.550837, 0.834613, -0.834613, -0.550837, 0, 0)",
+          "opacity": "1",
+          "animationCurrentTimeMs": 2399.920000004329,
+          "animationPlayState": "running"
+        },
+        {
+          "scheduledMs": 1750,
+          "actualMs": 2128.1,
+          "transform": "matrix(-0.762935, -0.646475, 0.646475, -0.762935, 0, 0)",
+          "opacity": "1",
+          "animationCurrentTimeMs": 4283.152000004328,
+          "animationPlayState": "running"
+        },
+        {
+          "scheduledMs": 3500,
+          "actualMs": 3682.6,
+          "transform": "matrix(0.587607, -0.809147, 0.809147, 0.587607, 0, 0)",
+          "opacity": "1",
+          "animationCurrentTimeMs": 5949.754000004329,
+          "animationPlayState": "running"
+        },
+        {
+          "scheduledMs": 5250,
+          "actualMs": 5329.5,
+          "transform": "matrix(0.858577, 0.512685, -0.512685, 0.858577, 0, 0)",
+          "opacity": "1",
+          "animationCurrentTimeMs": 7599.722000004331,
+          "animationPlayState": "running"
+        },
+        {
+          "scheduledMs": 7000,
+          "actualMs": 7066.8,
+          "transform": "matrix(-0.499707, 0.866195, -0.866195, -0.499707, 0, 0)",
+          "opacity": "1",
+          "animationCurrentTimeMs": 9332.95600000433,
+          "animationPlayState": "running"
+        }
+      ]
+    },
+    "mo2": {
+      "animationName": "sonar-breathe",
+      "animationDuration": "4.8s",
+      "keyframes": [
+        {
+          "offset": 0,
+          "computedOffset": 0,
+          "easing": "cubic-bezier(0.77, 0, 0.175, 1)",
+          "opacity": "0.18"
+        },
+        {
+          "offset": 1,
+          "computedOffset": 1,
+          "easing": "cubic-bezier(0.77, 0, 0.175, 1)",
+          "opacity": "0.3"
+        }
+      ],
+      "minimumOpacity": 0.18,
+      "maximumOpacity": 0.3,
+      "opacityDelta": 0.12
+    },
+    "mo3": {
+      "count": 6,
+      "limit": 8,
+      "hostContainment": {
+        "allWithinHost": true,
+        "allWithinParticleLayer": true
+      },
+      "visibleTextOverlap": {
+        "count": 0,
+        "overlaps": []
+      },
+      "particles": [
+        {
+          "index": 0,
+          "rect": {
+            "left": 100.25,
+            "top": 89.33782958984375,
+            "right": 103.25,
+            "bottom": 92.33782958984375
+          },
+          "withinHost": true,
+          "withinParticleLayer": true,
+          "visibleTextOverlaps": []
+        },
+        {
+          "index": 1,
+          "rect": {
+            "left": 269.828125,
+            "top": 82.84535217285156,
+            "right": 272.828125,
+            "bottom": 85.84535217285156
+          },
+          "withinHost": true,
+          "withinParticleLayer": true,
+          "visibleTextOverlaps": []
+        },
+        {
+          "index": 2,
+          "rect": {
+            "left": 86.359375,
+            "top": 197.78799438476562,
+            "right": 89.359375,
+            "bottom": 200.78799438476562
+          },
+          "withinHost": true,
+          "withinParticleLayer": true,
+          "visibleTextOverlaps": []
+        },
+        {
+          "index": 3,
+          "rect": {
+            "left": 286.515625,
+            "top": 193.89251708984375,
+            "right": 289.515625,
+            "bottom": 196.89251708984375
+          },
+          "withinHost": true,
+          "withinParticleLayer": true,
+          "visibleTextOverlaps": []
+        },
+        {
+          "index": 4,
+          "rect": {
+            "left": 139.171875,
+            "top": 261.204345703125,
+            "right": 142.171875,
+            "bottom": 264.204345703125
+          },
+          "withinHost": true,
+          "withinParticleLayer": true,
+          "visibleTextOverlaps": []
+        },
+        {
+          "index": 5,
+          "rect": {
+            "left": 244.8125,
+            "top": 264.31744384765625,
+            "right": 247.8125,
+            "bottom": 267.31744384765625
+          },
+          "withinHost": true,
+          "withinParticleLayer": true,
+          "visibleTextOverlaps": []
+        }
+      ]
+    },
+    "mo4": {
+      "modeSwitch": {
+        "kind": "mode",
+        "sawFade": true,
+        "restored": true,
+        "clickToRestoredOpacityMs": 349.8,
+        "nominalTotalMs": 200,
+        "minimumOpacity": 1,
+        "cssTransitionDuration": "0.1s",
+        "cssTransitionProperty": "opacity, transform",
+        "sampleCount": 3,
+        "samples": [
+          {
+            "elapsedMs": 74.3,
+            "opacity": 1,
+            "className": "transition-[opacity,transform] duration-100 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none opacity-0 translate-y-1"
+          },
+          {
+            "elapsedMs": 193,
+            "opacity": 1,
+            "className": "transition-[opacity,transform] duration-100 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none opacity-0 translate-y-1"
+          },
+          {
+            "elapsedMs": 349.8,
+            "opacity": 1,
+            "className": "transition-[opacity,transform] duration-100 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none opacity-100 translate-y-0"
+          }
+        ],
+        "classChanges": [
+          {
+            "elapsedMs": 0,
+            "className": "transition-[opacity,transform] duration-100 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none opacity-100 translate-y-0"
+          },
+          {
+            "elapsedMs": 73.6,
+            "className": "transition-[opacity,transform] duration-100 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none opacity-0 translate-y-1"
+          },
+          {
+            "elapsedMs": 344.4,
+            "className": "transition-[opacity,transform] duration-100 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none opacity-100 translate-y-0"
+          }
+        ],
+        "selectedState": "實際"
+      },
+      "categorySwitch": {
+        "kind": "category",
+        "sawFade": true,
+        "restored": true,
+        "clickToRestoredOpacityMs": 653.7,
+        "nominalTotalMs": 200,
+        "minimumOpacity": 1,
+        "cssTransitionDuration": "0.1s",
+        "cssTransitionProperty": "opacity, transform",
+        "sampleCount": 3,
+        "samples": [
+          {
+            "elapsedMs": 151.9,
+            "opacity": 1,
+            "className": "transition-[opacity,transform] duration-100 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none opacity-0 translate-y-1"
+          },
+          {
+            "elapsedMs": 318.2,
+            "opacity": 1,
+            "className": "transition-[opacity,transform] duration-100 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none opacity-0 translate-y-1"
+          },
+          {
+            "elapsedMs": 653.7,
+            "opacity": 1,
+            "className": "transition-[opacity,transform] duration-100 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none opacity-100 translate-y-0"
+          }
+        ],
+        "classChanges": [
+          {
+            "elapsedMs": 0,
+            "className": "transition-[opacity,transform] duration-100 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none opacity-100 translate-y-0"
+          },
+          {
+            "elapsedMs": 147.8,
+            "className": "transition-[opacity,transform] duration-100 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none opacity-0 translate-y-1"
+          },
+          {
+            "elapsedMs": 642.5,
+            "className": "transition-[opacity,transform] duration-100 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none opacity-100 translate-y-0"
+          }
+        ],
+        "selectedState": "active"
+      }
+    },
+    "monthlyMotionProfile": {
+      "profile": "breathe-only",
+      "hasBreathe": true,
+      "hasSweep": false,
+      "particleCount": 0
+    },
+    "dashboardAmbient": {
+      "profile": "full",
+      "variant": "ambient",
+      "bandHeight": 80,
+      "bandOverflowX": "hidden",
+      "bandOverflowY": "hidden",
+      "ambientPosition": "absolute",
+      "particleCount": 6,
+      "bandText": "",
+      "whaleRendererCount": 0
+    }
+  },
+  "liveMotionWindow": {
+    "captureWindowMs": 8503.9,
+    "guaranteedMinimumMs": 8500,
+    "rendererIsolation": "WebGL is disabled only in the timing browser so the frozen particle-whale renderer cannot throttle MO timing samples; full visual screenshots use the normal browser."
+  },
+  "mobile": {
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "fullPage": true,
+    "documentSize": {
+      "width": 390,
+      "height": 1678
+    }
+  },
+  "reducedMotion": {
+    "matchMediaReduce": true,
+    "elements": [
+      {
+        "id": "radar-sweep",
+        "missing": false,
+        "display": "none",
+        "animationName": "none",
+        "animationPlayState": "running",
+        "animationCount": 0
+      },
+      {
+        "id": "sonar-breathe",
+        "missing": false,
+        "display": "none",
+        "animationName": "none",
+        "animationPlayState": "running",
+        "animationCount": 0
+      },
+      {
+        "id": "sonar-particles",
+        "missing": false,
+        "display": "none",
+        "animationName": "none",
+        "animationPlayState": "running",
+        "animationCount": 0
+      }
+    ],
+    "moAnimationCount": 0,
+    "documentAnimationCount": 0,
+    "resultText": "NT$33,791.49",
+    "resultTextStillExists": true,
+    "resultStatusStillExists": true,
+    "switches": {
+      "mode": {
+        "updateMs": 48.9,
+        "selected": true,
+        "resultText": "NT$27,607.49"
+      },
+      "category": {
+        "updateMs": 94.7,
+        "selected": true,
+        "title": "損益｜收入如何轉成利潤"
+      },
+      "documentAnimationCountAfterSwitches": 0
+    },
+    "screenshots": {
+      "separationMs": 1000,
+      "aSha256": "442964c242b38a5101bb639176b4aafa9351850fa686e9b5388e48aa1fed52f4",
+      "bSha256": "442964c242b38a5101bb639176b4aafa9351850fa686e9b5388e48aa1fed52f4",
+      "sha256Equal": true
+    }
+  },
+  "requests": {
+    "count": 43,
+    "allMocked": true,
+    "log": [
+      {
+        "label": "desktop",
+        "method": "GET",
+        "url": "http://127.0.0.1:4174/api/me/store"
+      },
+      {
+        "label": "desktop",
+        "method": "GET",
+        "url": "http://127.0.0.1:4174/api/stores/1/trips"
+      },
+      {
+        "label": "desktop",
+        "method": "GET",
+        "url": "http://127.0.0.1:4174/api/stores/1/orders/monthly-profit?month=2026-08"
+      },
+      {
+        "label": "desktop",
+        "method": "GET",
+        "url": "http://127.0.0.1:4174/api/stores/1/trips/1/operating-summary?mode=ESTIMATE"
+      },
+      {
+        "label": "desktop",
+        "method": "GET",
+        "url": "http://127.0.0.1:4174/api/stores/1/trips/1/operating-summary?mode=ACTUAL"
+      },
+      {
+        "label": "desktop",
+        "method": "GET",
+        "url": "http://127.0.0.1:4174/api/stores/1/trips/1/fixed-cost-comparison"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4174/api/me/store"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4174/api/stores/1/trips"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4174/api/stores/1/orders/monthly-profit?month=2026-08"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4174/api/stores/1/trips/1/operating-summary?mode=ESTIMATE"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4174/api/stores/1/trips/1/operating-summary?mode=ACTUAL"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4174/api/stores/1/trips/1/fixed-cost-comparison"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4174/api/me/store"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4174/api/stores/1/charts/history-trend"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4174/api/stores/1/charts/area-scatter"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4174/api/stores/1/trips"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4174/api/stores/1/orders/monthly-profit?month=2026-08"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4174/api/stores/1/trips/1/operating-summary?mode=ESTIMATE"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4174/api/stores/1/trips/1/operating-summary?mode=ACTUAL"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4174/api/stores/1/trips/1/fixed-cost-comparison"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4174/api/me/store"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4174/api/stores/1/logistics/exceptions?status=open&limit=100"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4174/api/stores/1/logistics/exceptions?status=reviewing&limit=100"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4174/api/stores/1/stats"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4174/api/stores/1/orders"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4174/api/stores/1/products"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4174/api/stores/1/trips"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4174/api/stores/1/orders/profit-summary"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4174/api/stores/1/trips/1/operating-summary?mode=ESTIMATE"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4174/api/stores/1/trips/1/operating-summary?mode=ACTUAL"
+      },
+      {
+        "label": "desktop-evidence",
+        "method": "GET",
+        "url": "http://127.0.0.1:4174/api/stores/1/trips/1/fixed-cost-comparison"
+      },
+      {
+        "label": "mobile-390",
+        "method": "GET",
+        "url": "http://127.0.0.1:4174/api/me/store"
+      },
+      {
+        "label": "mobile-390",
+        "method": "GET",
+        "url": "http://127.0.0.1:4174/api/stores/1/trips"
+      },
+      {
+        "label": "mobile-390",
+        "method": "GET",
+        "url": "http://127.0.0.1:4174/api/stores/1/orders/monthly-profit?month=2026-08"
+      },
+      {
+        "label": "mobile-390",
+        "method": "GET",
+        "url": "http://127.0.0.1:4174/api/stores/1/trips/1/operating-summary?mode=ESTIMATE"
+      },
+      {
+        "label": "mobile-390",
+        "method": "GET",
+        "url": "http://127.0.0.1:4174/api/stores/1/trips/1/operating-summary?mode=ACTUAL"
+      },
+      {
+        "label": "mobile-390",
+        "method": "GET",
+        "url": "http://127.0.0.1:4174/api/stores/1/trips/1/fixed-cost-comparison"
+      },
+      {
+        "label": "reduced",
+        "method": "GET",
+        "url": "http://127.0.0.1:4174/api/me/store"
+      },
+      {
+        "label": "reduced",
+        "method": "GET",
+        "url": "http://127.0.0.1:4174/api/stores/1/trips"
+      },
+      {
+        "label": "reduced",
+        "method": "GET",
+        "url": "http://127.0.0.1:4174/api/stores/1/orders/monthly-profit?month=2026-08"
+      },
+      {
+        "label": "reduced",
+        "method": "GET",
+        "url": "http://127.0.0.1:4174/api/stores/1/trips/1/operating-summary?mode=ESTIMATE"
+      },
+      {
+        "label": "reduced",
+        "method": "GET",
+        "url": "http://127.0.0.1:4174/api/stores/1/trips/1/operating-summary?mode=ACTUAL"
+      },
+      {
+        "label": "reduced",
+        "method": "GET",
+        "url": "http://127.0.0.1:4174/api/stores/1/trips/1/fixed-cost-comparison"
+      }
+    ],
+    "unhandled": []
+  },
+  "diagnostics": {
+    "consoleErrors": [],
+    "pageErrors": []
+  },
+  "checks": {
+    "mo1DurationWithinSixToTenSeconds": true,
+    "mo1IsLinearInfiniteAndActivelyRotating": true,
+    "mo2OpacityDeltaWithinDesignLimit": true,
+    "mo3AtMostEightParticles": true,
+    "mo3ContainedAndNoTextOverlap": true,
+    "mo4ModeWithinOneHundredFiftyToTwoHundredFiftyMilliseconds": true,
+    "mo4CategoryWithinOneHundredFiftyToTwoHundredFiftyMilliseconds": true,
+    "monthlyProfileIsBreatheOnly": true,
+    "dashboardAmbientIsClippedAndTextFree": true,
+    "reducedMediaMatched": true,
+    "reducedMoLayersHidden": true,
+    "reducedMoAnimationCountZero": true,
+    "reducedPngsIdentical": true,
+    "reducedResultTextAndStatusRemain": true,
+    "reducedMo4UpdatesImmediatelyWithoutAnimations": true,
+    "liveCaptureWindowAtLeastEightSeconds": true,
+    "everyApiRequestMocked": true,
+    "noPageErrors": true
+  },
+  "passed": true,
+  "finishedAt": "2026-08-27T09:35:03.781Z"
+}
