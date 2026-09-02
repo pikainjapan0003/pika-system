@@ -16,7 +16,7 @@ import {
   ShieldAlert,
   Upload,
 } from "lucide-react";
-import { BottomNavigation } from "@/components/BottomNavigation";
+import { BottomNav } from "./Dashboard";
 import { InvoiceOcrBenchmarkPanel } from "@/components/invoiceOcr/InvoiceOcrBenchmarkPanel";
 import { InvoiceOcrResultPanel } from "@/components/invoiceOcr/InvoiceOcrResultPanel";
 import {
@@ -670,7 +670,7 @@ export default function InvoiceOcrTestPage() {
         )}
       </main>
 
-      <BottomNavigation active="more" />
+      <BottomNav active="settings" />
 
       <AlertDialog open={rerunOpen} onOpenChange={setRerunOpen}>
         <AlertDialogContent>
