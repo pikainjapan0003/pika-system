@@ -19,3 +19,6 @@ export * from "./auditLogs.ts";
 export * from "./storeSkillStates.ts";
 export * from "./storeCreditTransactions.ts";
 export * from "./orderPickingChecks.ts";
+export * from "./invoiceOcrTestCases.ts";
+export * from "./invoiceOcrRuns.ts";
+export * from "./invoiceOcrReviews.ts";

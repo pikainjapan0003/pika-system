@@ -49,6 +49,7 @@ import PublicOrderPage from "@/pages/PublicOrder";
 import TrackLookupPage from "@/pages/TrackLookup";
 import TrackOrderPage from "@/pages/TrackOrder";
 import SettingsPage from "@/pages/Settings";
+import InvoiceOcrTestPage from "@/pages/InvoiceOcrTest";
 import ExchangeRateReferencePage from "@/pages/ExchangeRateReference";
 import SkillMapPage from "@/pages/SkillMap";
 import AuditLogsPage from "@/pages/AuditLogs";
@@ -409,6 +410,10 @@ function MerchantPortal() {
             </DailySkillPageGate>
           )}
         </Route>
+        <Route
+          path="/settings/invoice-ocr"
+          component={InvoiceOcrTestPage}
+        />
         <Route path="/settings" component={SettingsPage} />
         <Route path="/trips" component={TripsPage} />
         <Route path="/guide">
@@ -479,6 +484,7 @@ function AppRouter() {
       />
       <Route path="/skill-map" component={MerchantPortal} />
       <Route path="/audit-logs" component={MerchantPortal} />
+      <Route path="/settings/invoice-ocr" component={MerchantPortal} />
       <Route path="/settings" component={MerchantPortal} />
       <Route path="/trips" component={MerchantPortal} />
       <Route path="/guide" component={MerchantPortal} />
