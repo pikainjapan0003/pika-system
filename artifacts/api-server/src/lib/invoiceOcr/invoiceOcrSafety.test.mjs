@@ -7,6 +7,18 @@ const supportUrl = new URL(
   "../../routes/invoiceOcrSupport.ts",
   import.meta.url,
 );
+const browserUiUrl = new URL(
+  "../../../../shop-app/src/lib/invoiceOcrUi.ts",
+  import.meta.url,
+);
+const browserPageUrl = new URL(
+  "../../../../shop-app/src/pages/InvoiceOcrTest.tsx",
+  import.meta.url,
+);
+const openApiUrl = new URL(
+  "../../../../../lib/api-spec/openapi.yaml",
+  import.meta.url,
+);
 
 test("every invoice route is protected by Clerk auth and owner/allowlist access", async () => {
   const [route, support] = await Promise.all([
@@ -15,7 +27,7 @@ test("every invoice route is protected by Clerk auth and owner/allowlist access"
   ]);
   const routeDeclarations = route.match(/router\.(?:get|post|patch)\(/g) ?? [];
   const authGuards = route.match(/\n\s*requireAuth,/g) ?? [];
-  assert.equal(routeDeclarations.length, 7);
+  assert.equal(routeDeclarations.length, 8);
   assert.equal(authGuards.length, routeDeclarations.length);
   assert.match(route, /loadInvoiceOcrAccess\(request, response\)/);
   assert.match(support, /verifyStoreOwner/);
@@ -30,7 +42,10 @@ test("Ground Truth is loaded only after the isolated OpenAI call", async () => {
   assert.ok(callIndex > 0);
   assert.ok(groundTruthLoadIndex > callIndex);
   const callBlock = route.slice(callIndex, groundTruthLoadIndex);
-  assert.doesNotMatch(callBlock, /groundTruthMerchantName|groundTruthTotalAmount/);
+  assert.doesNotMatch(
+    callBlock,
+    /groundTruthMerchantName|groundTruthTotalAmount/,
+  );
 });
 
 test("invoice route never imports or writes formal accounting tables", async () => {
@@ -46,20 +61,8 @@ test("invoice route never imports or writes formal accounting tables", async () 
 
 test("API key names and image Base64 are absent from browser files and responses", async () => {
   const browserFiles = await Promise.all([
-    readFile(
-      new URL(
-        "../../../../shop-app/src/lib/invoiceOcrUi.ts",
-        import.meta.url,
-      ),
-      "utf8",
-    ),
-    readFile(
-      new URL(
-        "../../../../shop-app/src/pages/InvoiceOcrTest.tsx",
-        import.meta.url,
-      ),
-      "utf8",
-    ),
+    readFile(browserUiUrl, "utf8"),
+    readFile(browserPageUrl, "utf8"),
   ]);
   const browserSource = browserFiles.join("\n");
   assert.doesNotMatch(browserSource, /OPENAI_API_KEY|sk-[A-Za-z0-9]/);
@@ -68,17 +71,8 @@ test("API key names and image Base64 are absent from browser files and responses
 
 test("a newly selected valid photo resets privacy confirmation and sends its real value", async () => {
   const [page, ui] = await Promise.all([
-    readFile(
-      new URL(
-        "../../../../shop-app/src/pages/InvoiceOcrTest.tsx",
-        import.meta.url,
-      ),
-      "utf8",
-    ),
-    readFile(
-      new URL("../../../../shop-app/src/lib/invoiceOcrUi.ts", import.meta.url),
-      "utf8",
-    ),
+    readFile(browserPageUrl, "utf8"),
+    readFile(browserUiUrl, "utf8"),
   ]);
   const fileHandler = page.slice(
     page.indexOf("function handleFileChange"),
@@ -92,6 +86,92 @@ test("a newly selected valid photo resets privacy confirmation and sends its rea
   assert.match(ui, /privacyConfirmed: boolean/);
   assert.match(ui, /input\.privacyConfirmed \? "true" : "false"/);
   assert.doesNotMatch(ui, /form\.append\("privacyConfirmed", "true"\)/);
+});
+
+test("unlocked saved Ground Truth uses a no-image PATCH and remains editable without a photo", async () => {
+  const [page, ui] = await Promise.all([
+    readFile(browserPageUrl, "utf8"),
+    readFile(browserUiUrl, "utf8"),
+  ]);
+  const saveHandler = page.slice(
+    page.indexOf("async function handleSaveGroundTruth"),
+    page.indexOf("const hasCompletedSelectedModel"),
+  );
+  const updateClient = ui.slice(
+    ui.indexOf("export async function updateInvoiceOcrGroundTruth"),
+    ui.indexOf("export async function analyzeInvoiceOcrTestCase"),
+  );
+
+  assert.match(saveHandler, /if \(!testCase && !file\) return/);
+  assert.match(
+    saveHandler,
+    /if \(testCase\)[\s\S]*updateInvoiceOcrGroundTruth/,
+  );
+  assert.match(page, /"更新人工正確答案"/);
+  assert.match(updateClient, /method: "PATCH"/);
+  assert.match(updateClient, /body: JSON\.stringify\(input\.groundTruth\)/);
+  assert.doesNotMatch(updateClient, /FormData|image|model|predicted/i);
+});
+
+test("the Ground Truth controls follow the persisted AI lock", async () => {
+  const page = await readFile(browserPageUrl, "utf8");
+  const lockedFieldGuards =
+    page.match(/disabled=\{busy \|\| !!testCase\?\.groundTruthLockedAt\}/g) ??
+    [];
+
+  assert.equal(lockedFieldGuards.length, 4);
+  assert.match(page, /"人工正確答案已鎖定"/);
+  assert.match(
+    page,
+    /setTestCase\(\(current\) => \{[\s\S]*list\.testCases\.find/,
+  );
+});
+
+test("Ground Truth PATCH is isolated from OpenAI and AI prediction writes", async () => {
+  const route = await readFile(routeUrl, "utf8");
+  const updateRoute = route.slice(
+    route.indexOf(
+      'router.patch(\n  "/stores/:storeId/invoice-ocr/test-cases/:testCaseId"',
+    ),
+    route.indexOf(
+      'router.post(\n  "/stores/:storeId/invoice-ocr/test-cases/:testCaseId/analyze"',
+    ),
+  );
+
+  assert.match(updateRoute, /requireAuth/);
+  assert.match(updateRoute, /loadInvoiceOcrAccess/);
+  assert.match(updateRoute, /parseGroundTruthInput\(request\.body\)/);
+  assert.match(updateRoute, /isNull\([^)]*groundTruthLockedAt/);
+  assert.match(updateRoute, /code: "ground_truth_locked"/);
+  assert.doesNotMatch(
+    updateRoute,
+    /extractInvoiceWithOpenAI|receiveValidatedImage|invoiceOcrRunsTable/,
+  );
+});
+
+test("OpenAPI documents the strict locked Ground Truth PATCH", async () => {
+  const openApi = await readFile(openApiUrl, "utf8");
+  const testCasePath = openApi.slice(
+    openApi.indexOf("  /stores/{storeId}/invoice-ocr/test-cases/{testCaseId}:"),
+    openApi.indexOf(
+      "  /stores/{storeId}/invoice-ocr/test-cases/{testCaseId}/analyze:",
+    ),
+  );
+  const groundTruthSchema = openApi.slice(
+    openApi.indexOf("    InvoiceOcrGroundTruth:"),
+    openApi.indexOf("    InvoiceOcrNullableFields:"),
+  );
+
+  assert.match(
+    testCasePath,
+    /patch:[\s\S]*operationId: updateInvoiceOcrGroundTruth/,
+  );
+  assert.match(testCasePath, /ground_truth_locked/);
+  assert.match(
+    testCasePath,
+    /schema:\s+\$ref: "#\/components\/schemas\/InvoiceOcrGroundTruthUpdateInput"/,
+  );
+  assert.match(groundTruthSchema, /additionalProperties: false/);
 });
 
 test("invoice route logs a safe record instead of silently swallowing save failures", async () => {
@@ -129,10 +209,7 @@ test("the benchmark migration atomically keeps the first phase to ten distinct m
 
   assert.match(migration, /pg_advisory_xact_lock/);
   assert.match(migration, /invoice_ocr_test_cases_max_ten/);
-  assert.match(
-    migration,
-    /invoice_ocr_test_cases_store_merchant_unique/,
-  );
+  assert.match(migration, /invoice_ocr_test_cases_store_merchant_unique/);
   assert.match(
     rollback,
     /DROP TRIGGER IF EXISTS invoice_ocr_test_cases_validate_insert/,

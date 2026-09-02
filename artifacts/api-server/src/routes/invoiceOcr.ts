@@ -1,14 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { Router } from "express";
-import {
-  and,
-  asc,
-  count,
-  desc,
-  eq,
-  isNull,
-  lt,
-} from "drizzle-orm";
+import { and, asc, count, desc, eq, isNull, lt } from "drizzle-orm";
 import {
   db,
   invoiceOcrReviewsTable,
@@ -16,6 +8,7 @@ import {
   invoiceOcrTestCasesTable,
   type InvoiceOcrReview,
   type InvoiceOcrRun,
+  type InvoiceOcrTestCase,
 } from "@workspace/db";
 import { requireAuth } from "../middlewares/auth.ts";
 import {
@@ -242,9 +235,7 @@ router.post(
     } catch (error) {
       return response.status(400).json({
         error:
-          error instanceof Error
-            ? error.message
-            : "人工正確答案格式不正確。",
+          error instanceof Error ? error.message : "人工正確答案格式不正確。",
         code: "invalid_ground_truth",
         retryable: false,
       });
@@ -330,10 +321,7 @@ router.post(
           retryable: false,
         });
       }
-      if (
-        constraintName ===
-        "invoice_ocr_test_cases_store_merchant_unique"
-      ) {
+      if (constraintName === "invoice_ocr_test_cases_store_merchant_unique") {
         return response.status(409).json({
           error: "第一輪需要 10 個不同商家，這個店名已經建立過測試。",
           code: "duplicate_benchmark_merchant",
@@ -364,6 +352,110 @@ router.post(
         retryable: true,
       });
     }
+  },
+);
+
+router.patch(
+  "/stores/:storeId/invoice-ocr/test-cases/:testCaseId",
+  requireAuth,
+  invoiceOcrMutationLimiter,
+  async (request: AuthenticatedInvoiceRequest, response) => {
+    const access = await loadInvoiceOcrAccess(request, response);
+    if (!access) return;
+
+    const testCaseId = positiveId(request.params.testCaseId);
+    if (testCaseId === null) {
+      return response.status(400).json({
+        error: "測試案例編號不正確。",
+        code: "invalid_test_case_id",
+        retryable: false,
+      });
+    }
+
+    let groundTruth: InvoiceGroundTruth;
+    try {
+      // The strict Ground Truth schema rejects images, model settings,
+      // predictions, and every other field that this route must not update.
+      groundTruth = parseGroundTruthInput(request.body);
+    } catch (error) {
+      return response.status(400).json({
+        error:
+          error instanceof Error ? error.message : "人工正確答案格式不正確。",
+        code: "invalid_ground_truth",
+        retryable: false,
+      });
+    }
+
+    const updatedAt = new Date();
+    let updated: InvoiceOcrTestCase | undefined;
+    try {
+      [updated] = await db
+        .update(invoiceOcrTestCasesTable)
+        .set({
+          groundTruthMerchantName: groundTruth.merchantName,
+          groundTruthInvoiceDate: groundTruth.invoiceDate,
+          groundTruthTotalAmount: groundTruth.totalAmount,
+          groundTruthCurrency: groundTruth.currency,
+          updatedAt,
+        })
+        .where(
+          and(
+            eq(invoiceOcrTestCasesTable.id, testCaseId),
+            eq(invoiceOcrTestCasesTable.storeId, access.storeId),
+            isNull(invoiceOcrTestCasesTable.groundTruthLockedAt),
+          ),
+        )
+        .returning();
+    } catch (error) {
+      if (
+        databaseConstraintName(error) ===
+        "invoice_ocr_test_cases_store_merchant_unique"
+      ) {
+        return response.status(409).json({
+          error: "第一輪需要 10 個不同商家，這個店名已經建立過測試。",
+          code: "duplicate_benchmark_merchant",
+          retryable: false,
+        });
+      }
+      return response.status(500).json({
+        error: "人工正確答案沒有更新，請稍後再試。",
+        code: "ground_truth_update_failed",
+        retryable: true,
+      });
+    }
+
+    if (updated) {
+      return response.json({
+        testCase: serializeInvoiceOcrTestCase(updated),
+      });
+    }
+
+    const [existing] = await db
+      .select({
+        id: invoiceOcrTestCasesTable.id,
+        groundTruthLockedAt: invoiceOcrTestCasesTable.groundTruthLockedAt,
+      })
+      .from(invoiceOcrTestCasesTable)
+      .where(
+        and(
+          eq(invoiceOcrTestCasesTable.id, testCaseId),
+          eq(invoiceOcrTestCasesTable.storeId, access.storeId),
+        ),
+      )
+      .limit(1);
+    if (!existing) {
+      return response.status(404).json({
+        error: "找不到這筆測試案例。",
+        code: "test_case_not_found",
+        retryable: false,
+      });
+    }
+
+    return response.status(409).json({
+      error: "這筆人工正確答案已在第一次 AI 辨識開始時永久鎖定。",
+      code: "ground_truth_locked",
+      retryable: false,
+    });
   },
 );
 
@@ -500,14 +592,8 @@ router.post(
           eq(invoiceOcrRunsTable.testCaseId, testCaseId),
           eq(invoiceOcrRunsTable.storeId, access.storeId),
           eq(invoiceOcrRunsTable.requestedModel, model),
-          eq(
-            invoiceOcrRunsTable.promptVersion,
-            INVOICE_PROMPT_VERSION,
-          ),
-          eq(
-            invoiceOcrRunsTable.imageDetail,
-            access.config.imageDetail,
-          ),
+          eq(invoiceOcrRunsTable.promptVersion, INVOICE_PROMPT_VERSION),
+          eq(invoiceOcrRunsTable.imageDetail, access.config.imageDetail),
           eq(
             invoiceOcrRunsTable.reasoningEffort,
             access.config.reasoningEffort,
@@ -653,8 +739,7 @@ router.post(
             duplicateRequest.requestedModel === model &&
             duplicateRequest.promptVersion === INVOICE_PROMPT_VERSION &&
             duplicateRequest.imageDetail === access.config.imageDetail &&
-            duplicateRequest.reasoningEffort ===
-              access.config.reasoningEffort;
+            duplicateRequest.reasoningEffort === access.config.reasoningEffort;
           if (belongsToThisRequest) {
             return sendExistingRun(response, duplicateRequest);
           }
@@ -696,12 +781,9 @@ router.post(
       // finished. The extractor's input type has no Ground Truth field.
       const [groundTruthRow] = await db
         .select({
-          merchantName:
-            invoiceOcrTestCasesTable.groundTruthMerchantName,
-          invoiceDate:
-            invoiceOcrTestCasesTable.groundTruthInvoiceDate,
-          totalAmount:
-            invoiceOcrTestCasesTable.groundTruthTotalAmount,
+          merchantName: invoiceOcrTestCasesTable.groundTruthMerchantName,
+          invoiceDate: invoiceOcrTestCasesTable.groundTruthInvoiceDate,
+          totalAmount: invoiceOcrTestCasesTable.groundTruthTotalAmount,
           currency: invoiceOcrTestCasesTable.groundTruthCurrency,
         })
         .from(invoiceOcrTestCasesTable)
@@ -715,10 +797,7 @@ router.post(
       if (!groundTruthRow) {
         throw new Error("Ground Truth missing after completed request");
       }
-      const scores = scoreInvoicePrediction(
-        result.prediction,
-        groundTruthRow,
-      );
+      const scores = scoreInvoicePrediction(result.prediction, groundTruthRow);
 
       const completed = await db.transaction(async (transaction) => {
         const [completedRun] = await transaction
@@ -811,8 +890,7 @@ router.post(
         inputTokens: successfulApiResult?.inputTokens ?? null,
         outputTokens: successfulApiResult?.outputTokens ?? null,
         totalTokens: successfulApiResult?.totalTokens ?? null,
-        cachedInputTokens:
-          successfulApiResult?.cachedInputTokens ?? null,
+        cachedInputTokens: successfulApiResult?.cachedInputTokens ?? null,
         reasoningTokens: successfulApiResult?.reasoningTokens ?? null,
       }).catch(() => {
         logInvoiceOcrFailureStateSaveError({
@@ -829,8 +907,7 @@ router.post(
         });
       });
       return response.status(500).json({
-        error:
-          "辨識結果沒有安全儲存，請勿立即重跑，以免重複使用 Token。",
+        error: "辨識結果沒有安全儲存，請勿立即重跑，以免重複使用 Token。",
         code: "invoice_ocr_result_save_failed",
         retryable: false,
       });
@@ -980,9 +1057,7 @@ router.patch(
       } catch (error) {
         return response.status(400).json({
           error:
-            error instanceof Error
-              ? error.message
-              : "人工修正資料格式不正確。",
+            error instanceof Error ? error.message : "人工修正資料格式不正確。",
           code: "invalid_corrected_values",
           retryable: false,
         });
@@ -1094,10 +1169,7 @@ router.get(
         eq(invoiceOcrReviewsTable.runId, invoiceOcrRunsTable.id),
       )
       .where(eq(invoiceOcrRunsTable.storeId, access.storeId))
-      .orderBy(
-        asc(invoiceOcrRunsTable.createdAt),
-        asc(invoiceOcrRunsTable.id),
-      );
+      .orderBy(asc(invoiceOcrRunsTable.createdAt), asc(invoiceOcrRunsTable.id));
 
     const csvRows: InvoiceBenchmarkCsvRow[] = rows.map(
       ({ testCase, run, review }) => {
@@ -1128,8 +1200,7 @@ router.get(
           invoiceDateCorrect: review?.invoiceDateCorrect ?? null,
           totalAmountCorrect: review?.totalAmountCorrect ?? null,
           currencyCorrect: review?.currencyCorrect ?? null,
-          unsafeConfidentError:
-            review?.unsafeConfidentError ?? null,
+          unsafeConfidentError: review?.unsafeConfidentError ?? null,
           correctedMerchantName: corrected?.merchantName ?? null,
           correctedInvoiceDate: corrected?.invoiceDate ?? null,
           correctedTotalAmount: corrected?.totalAmount ?? null,

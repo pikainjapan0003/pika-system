@@ -1096,3 +1096,483 @@ export const GetPublicOrderResponse = zod.object({
 })
 
 
+/**
+ * @summary List the owner's ten Phase 1 invoice test cases and runs
+ */
+
+
+
+export const ListInvoiceOcrTestCasesParams = zod.object({
+  "storeId": zod.coerce.number().min(1)
+})
+
+export const listInvoiceOcrTestCasesResponseTestCasesItemImageSha256RegExp = new RegExp('^[0-9a-f]{64}$');
+export const listInvoiceOcrTestCasesResponseTestCasesItemGroundTruthCurrencyRegExp = new RegExp('^[A-Z]{3}$');
+export const listInvoiceOcrTestCasesResponseTestCasesItemRunsItemRunPredictedOneReviewReasonsMax = 10;
+
+export const listInvoiceOcrTestCasesResponseTestCasesItemRunsItemRunPredictedOneEvidenceMerchantNameMax = 80;
+
+export const listInvoiceOcrTestCasesResponseTestCasesItemRunsItemRunPredictedOneEvidenceInvoiceDateMax = 80;
+
+export const listInvoiceOcrTestCasesResponseTestCasesItemRunsItemRunPredictedOneEvidenceTotalAmountMax = 80;
+
+export const listInvoiceOcrTestCasesResponseTestCasesItemRunsItemRunPredictedOneEvidenceCurrencyMax = 80;
+
+export const listInvoiceOcrTestCasesResponseTestCasesItemRunsItemRunAttemptCountMax = 2;
+
+export const listInvoiceOcrTestCasesResponseTestCasesMax = 10;
+
+
+
+export const ListInvoiceOcrTestCasesResponse = zod.object({
+  "testCases": zod.array(zod.object({
+  "id": zod.number(),
+  "originalFilename": zod.string(),
+  "imageSha256": zod.string().regex(listInvoiceOcrTestCasesResponseTestCasesItemImageSha256RegExp),
+  "groundTruth": zod.object({
+  "merchantName": zod.string(),
+  "invoiceDate": zod.coerce.date(),
+  "totalAmount": zod.string(),
+  "currency": zod.string().regex(listInvoiceOcrTestCasesResponseTestCasesItemGroundTruthCurrencyRegExp)
+}),
+  "groundTruthLockedAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "runs": zod.array(zod.object({
+  "run": zod.object({
+  "id": zod.number(),
+  "testCaseId": zod.number(),
+  "requestedModel": zod.enum(['gpt-5.6-terra', 'gpt-5.6-sol', 'gpt-5.6-luna']),
+  "actualModel": zod.string().nullable(),
+  "promptVersion": zod.string(),
+  "imageDetail": zod.enum(['original', 'high', 'low', 'auto']),
+  "reasoningEffort": zod.string(),
+  "predicted": zod.union([zod.object({
+  "merchantName": zod.string().nullable(),
+  "invoiceDate": zod.string().nullable(),
+  "totalAmount": zod.string().nullable(),
+  "currency": zod.string().nullable(),
+  "reviewRequired": zod.boolean(),
+  "reviewReasons": zod.array(zod.string()).max(listInvoiceOcrTestCasesResponseTestCasesItemRunsItemRunPredictedOneReviewReasonsMax),
+  "evidence": zod.object({
+  "merchantName": zod.string().max(listInvoiceOcrTestCasesResponseTestCasesItemRunsItemRunPredictedOneEvidenceMerchantNameMax).nullable(),
+  "invoiceDate": zod.string().max(listInvoiceOcrTestCasesResponseTestCasesItemRunsItemRunPredictedOneEvidenceInvoiceDateMax).nullable(),
+  "totalAmount": zod.string().max(listInvoiceOcrTestCasesResponseTestCasesItemRunsItemRunPredictedOneEvidenceTotalAmountMax).nullable(),
+  "currency": zod.string().max(listInvoiceOcrTestCasesResponseTestCasesItemRunsItemRunPredictedOneEvidenceCurrencyMax).nullable()
+})
+}),zod.null()]),
+  "inputTokens": zod.number().nullable(),
+  "outputTokens": zod.number().nullable(),
+  "totalTokens": zod.number().nullable(),
+  "cachedInputTokens": zod.number().nullable(),
+  "reasoningTokens": zod.number().nullable(),
+  "latencyMs": zod.number().nullable(),
+  "status": zod.enum(['processing', 'completed', 'failed']),
+  "errorCode": zod.string().nullable(),
+  "retryable": zod.boolean(),
+  "attemptCount": zod.number().min(1).max(listInvoiceOcrTestCasesResponseTestCasesItemRunsItemRunAttemptCountMax),
+  "rerunOfRunId": zod.number().nullable(),
+  "createdAt": zod.coerce.date(),
+  "completedAt": zod.coerce.date().nullable()
+}),
+  "review": zod.union([zod.object({
+  "id": zod.number(),
+  "runId": zod.number(),
+  "merchantNameCorrect": zod.boolean(),
+  "invoiceDateCorrect": zod.boolean(),
+  "totalAmountCorrect": zod.boolean(),
+  "currencyCorrect": zod.boolean(),
+  "unsafeConfidentError": zod.boolean(),
+  "corrected": zod.union([zod.object({
+  "merchantName": zod.string().nullable(),
+  "invoiceDate": zod.string().nullable(),
+  "totalAmount": zod.string().nullable(),
+  "currency": zod.string().nullable()
+}),zod.null()]),
+  "reviewedBy": zod.string().nullable(),
+  "reviewedAt": zod.coerce.date().nullable()
+}),zod.null()])
+}))
+})).max(listInvoiceOcrTestCasesResponseTestCasesMax),
+  "maximumTestCases": zod.number()
+})
+
+
+/**
+ * @summary Save one image fingerprint and human-confirmed Ground Truth
+ */
+
+
+
+export const CreateInvoiceOcrTestCaseParams = zod.object({
+  "storeId": zod.coerce.number().min(1)
+})
+
+export const createInvoiceOcrTestCaseBodyCurrencyRegExp = new RegExp('^[A-Za-z]{3}$');
+
+
+export const CreateInvoiceOcrTestCaseBody = zod.object({
+  "image": zod.instanceof(File),
+  "merchantName": zod.string(),
+  "invoiceDate": zod.coerce.date(),
+  "totalAmount": zod.string(),
+  "currency": zod.string().regex(createInvoiceOcrTestCaseBodyCurrencyRegExp),
+  "privacyConfirmed": zod.boolean()
+})
+
+export const createInvoiceOcrTestCaseResponseTestCaseImageSha256RegExp = new RegExp('^[0-9a-f]{64}$');
+export const createInvoiceOcrTestCaseResponseTestCaseGroundTruthCurrencyRegExp = new RegExp('^[A-Z]{3}$');
+
+
+export const CreateInvoiceOcrTestCaseResponse = zod.object({
+  "testCase": zod.object({
+  "id": zod.number(),
+  "originalFilename": zod.string(),
+  "imageSha256": zod.string().regex(createInvoiceOcrTestCaseResponseTestCaseImageSha256RegExp),
+  "groundTruth": zod.object({
+  "merchantName": zod.string(),
+  "invoiceDate": zod.coerce.date(),
+  "totalAmount": zod.string(),
+  "currency": zod.string().regex(createInvoiceOcrTestCaseResponseTestCaseGroundTruthCurrencyRegExp)
+}),
+  "groundTruthLockedAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}),
+  "existing": zod.boolean()
+})
+
+
+/**
+ * @summary Get one test case and all immutable model runs
+ */
+
+
+
+
+export const GetInvoiceOcrTestCaseParams = zod.object({
+  "storeId": zod.coerce.number().min(1),
+  "testCaseId": zod.coerce.number().min(1)
+})
+
+export const getInvoiceOcrTestCaseResponseTestCaseImageSha256RegExp = new RegExp('^[0-9a-f]{64}$');
+export const getInvoiceOcrTestCaseResponseTestCaseGroundTruthCurrencyRegExp = new RegExp('^[A-Z]{3}$');
+export const getInvoiceOcrTestCaseResponseTestCaseRunsItemRunPredictedOneReviewReasonsMax = 10;
+
+export const getInvoiceOcrTestCaseResponseTestCaseRunsItemRunPredictedOneEvidenceMerchantNameMax = 80;
+
+export const getInvoiceOcrTestCaseResponseTestCaseRunsItemRunPredictedOneEvidenceInvoiceDateMax = 80;
+
+export const getInvoiceOcrTestCaseResponseTestCaseRunsItemRunPredictedOneEvidenceTotalAmountMax = 80;
+
+export const getInvoiceOcrTestCaseResponseTestCaseRunsItemRunPredictedOneEvidenceCurrencyMax = 80;
+
+export const getInvoiceOcrTestCaseResponseTestCaseRunsItemRunAttemptCountMax = 2;
+
+
+
+export const GetInvoiceOcrTestCaseResponse = zod.object({
+  "testCase": zod.object({
+  "id": zod.number(),
+  "originalFilename": zod.string(),
+  "imageSha256": zod.string().regex(getInvoiceOcrTestCaseResponseTestCaseImageSha256RegExp),
+  "groundTruth": zod.object({
+  "merchantName": zod.string(),
+  "invoiceDate": zod.coerce.date(),
+  "totalAmount": zod.string(),
+  "currency": zod.string().regex(getInvoiceOcrTestCaseResponseTestCaseGroundTruthCurrencyRegExp)
+}),
+  "groundTruthLockedAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "runs": zod.array(zod.object({
+  "run": zod.object({
+  "id": zod.number(),
+  "testCaseId": zod.number(),
+  "requestedModel": zod.enum(['gpt-5.6-terra', 'gpt-5.6-sol', 'gpt-5.6-luna']),
+  "actualModel": zod.string().nullable(),
+  "promptVersion": zod.string(),
+  "imageDetail": zod.enum(['original', 'high', 'low', 'auto']),
+  "reasoningEffort": zod.string(),
+  "predicted": zod.union([zod.object({
+  "merchantName": zod.string().nullable(),
+  "invoiceDate": zod.string().nullable(),
+  "totalAmount": zod.string().nullable(),
+  "currency": zod.string().nullable(),
+  "reviewRequired": zod.boolean(),
+  "reviewReasons": zod.array(zod.string()).max(getInvoiceOcrTestCaseResponseTestCaseRunsItemRunPredictedOneReviewReasonsMax),
+  "evidence": zod.object({
+  "merchantName": zod.string().max(getInvoiceOcrTestCaseResponseTestCaseRunsItemRunPredictedOneEvidenceMerchantNameMax).nullable(),
+  "invoiceDate": zod.string().max(getInvoiceOcrTestCaseResponseTestCaseRunsItemRunPredictedOneEvidenceInvoiceDateMax).nullable(),
+  "totalAmount": zod.string().max(getInvoiceOcrTestCaseResponseTestCaseRunsItemRunPredictedOneEvidenceTotalAmountMax).nullable(),
+  "currency": zod.string().max(getInvoiceOcrTestCaseResponseTestCaseRunsItemRunPredictedOneEvidenceCurrencyMax).nullable()
+})
+}),zod.null()]),
+  "inputTokens": zod.number().nullable(),
+  "outputTokens": zod.number().nullable(),
+  "totalTokens": zod.number().nullable(),
+  "cachedInputTokens": zod.number().nullable(),
+  "reasoningTokens": zod.number().nullable(),
+  "latencyMs": zod.number().nullable(),
+  "status": zod.enum(['processing', 'completed', 'failed']),
+  "errorCode": zod.string().nullable(),
+  "retryable": zod.boolean(),
+  "attemptCount": zod.number().min(1).max(getInvoiceOcrTestCaseResponseTestCaseRunsItemRunAttemptCountMax),
+  "rerunOfRunId": zod.number().nullable(),
+  "createdAt": zod.coerce.date(),
+  "completedAt": zod.coerce.date().nullable()
+}),
+  "review": zod.union([zod.object({
+  "id": zod.number(),
+  "runId": zod.number(),
+  "merchantNameCorrect": zod.boolean(),
+  "invoiceDateCorrect": zod.boolean(),
+  "totalAmountCorrect": zod.boolean(),
+  "currencyCorrect": zod.boolean(),
+  "unsafeConfidentError": zod.boolean(),
+  "corrected": zod.union([zod.object({
+  "merchantName": zod.string().nullable(),
+  "invoiceDate": zod.string().nullable(),
+  "totalAmount": zod.string().nullable(),
+  "currency": zod.string().nullable()
+}),zod.null()]),
+  "reviewedBy": zod.string().nullable(),
+  "reviewedAt": zod.coerce.date().nullable()
+}),zod.null()])
+}))
+})
+})
+
+
+/**
+ * This request accepts only the four Ground Truth fields; it never accepts an image, model setting, or AI prediction.
+ * @summary Update Ground Truth before the first AI run permanently locks it
+ */
+
+
+
+
+export const UpdateInvoiceOcrGroundTruthParams = zod.object({
+  "storeId": zod.coerce.number().min(1),
+  "testCaseId": zod.coerce.number().min(1)
+})
+
+export const updateInvoiceOcrGroundTruthBodyCurrencyRegExp = new RegExp('^[A-Z]{3}$');
+
+
+export const UpdateInvoiceOcrGroundTruthBody = zod.object({
+  "merchantName": zod.string(),
+  "invoiceDate": zod.coerce.date(),
+  "totalAmount": zod.string(),
+  "currency": zod.string().regex(updateInvoiceOcrGroundTruthBodyCurrencyRegExp)
+})
+
+export const updateInvoiceOcrGroundTruthResponseTestCaseImageSha256RegExp = new RegExp('^[0-9a-f]{64}$');
+export const updateInvoiceOcrGroundTruthResponseTestCaseGroundTruthCurrencyRegExp = new RegExp('^[A-Z]{3}$');
+
+
+export const UpdateInvoiceOcrGroundTruthResponse = zod.object({
+  "testCase": zod.object({
+  "id": zod.number(),
+  "originalFilename": zod.string(),
+  "imageSha256": zod.string().regex(updateInvoiceOcrGroundTruthResponseTestCaseImageSha256RegExp),
+  "groundTruth": zod.object({
+  "merchantName": zod.string(),
+  "invoiceDate": zod.coerce.date(),
+  "totalAmount": zod.string(),
+  "currency": zod.string().regex(updateInvoiceOcrGroundTruthResponseTestCaseGroundTruthCurrencyRegExp)
+}),
+  "groundTruthLockedAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+})
+
+
+/**
+ * @summary Send the same single image to one explicitly selected model
+ */
+
+
+
+
+export const AnalyzeInvoiceOcrTestCaseParams = zod.object({
+  "storeId": zod.coerce.number().min(1),
+  "testCaseId": zod.coerce.number().min(1)
+})
+
+export const AnalyzeInvoiceOcrTestCaseHeader = zod.object({
+  "x-client-request-id": zod.string().uuid().optional().describe('UUID used to prevent duplicate billing')
+})
+
+export const analyzeInvoiceOcrTestCaseBodyConfirmRerunDefault = false;
+export const analyzeInvoiceOcrTestCaseBodyConfirmUnknownRerunDefault = false;
+
+export const AnalyzeInvoiceOcrTestCaseBody = zod.object({
+  "image": zod.instanceof(File),
+  "model": zod.enum(['gpt-5.6-terra', 'gpt-5.6-sol', 'gpt-5.6-luna']),
+  "confirmRerun": zod.boolean().default(analyzeInvoiceOcrTestCaseBodyConfirmRerunDefault),
+  "confirmUnknownRerun": zod.boolean().default(analyzeInvoiceOcrTestCaseBodyConfirmUnknownRerunDefault).describe('Explicit human confirmation before retrying a run whose billing status is unknown')
+})
+
+export const analyzeInvoiceOcrTestCaseResponseRunPredictedOneReviewReasonsMax = 10;
+
+export const analyzeInvoiceOcrTestCaseResponseRunPredictedOneEvidenceMerchantNameMax = 80;
+
+export const analyzeInvoiceOcrTestCaseResponseRunPredictedOneEvidenceInvoiceDateMax = 80;
+
+export const analyzeInvoiceOcrTestCaseResponseRunPredictedOneEvidenceTotalAmountMax = 80;
+
+export const analyzeInvoiceOcrTestCaseResponseRunPredictedOneEvidenceCurrencyMax = 80;
+
+export const analyzeInvoiceOcrTestCaseResponseRunAttemptCountMax = 2;
+
+
+
+export const AnalyzeInvoiceOcrTestCaseResponse = zod.object({
+  "run": zod.object({
+  "id": zod.number(),
+  "testCaseId": zod.number(),
+  "requestedModel": zod.enum(['gpt-5.6-terra', 'gpt-5.6-sol', 'gpt-5.6-luna']),
+  "actualModel": zod.string().nullable(),
+  "promptVersion": zod.string(),
+  "imageDetail": zod.enum(['original', 'high', 'low', 'auto']),
+  "reasoningEffort": zod.string(),
+  "predicted": zod.union([zod.object({
+  "merchantName": zod.string().nullable(),
+  "invoiceDate": zod.string().nullable(),
+  "totalAmount": zod.string().nullable(),
+  "currency": zod.string().nullable(),
+  "reviewRequired": zod.boolean(),
+  "reviewReasons": zod.array(zod.string()).max(analyzeInvoiceOcrTestCaseResponseRunPredictedOneReviewReasonsMax),
+  "evidence": zod.object({
+  "merchantName": zod.string().max(analyzeInvoiceOcrTestCaseResponseRunPredictedOneEvidenceMerchantNameMax).nullable(),
+  "invoiceDate": zod.string().max(analyzeInvoiceOcrTestCaseResponseRunPredictedOneEvidenceInvoiceDateMax).nullable(),
+  "totalAmount": zod.string().max(analyzeInvoiceOcrTestCaseResponseRunPredictedOneEvidenceTotalAmountMax).nullable(),
+  "currency": zod.string().max(analyzeInvoiceOcrTestCaseResponseRunPredictedOneEvidenceCurrencyMax).nullable()
+})
+}),zod.null()]),
+  "inputTokens": zod.number().nullable(),
+  "outputTokens": zod.number().nullable(),
+  "totalTokens": zod.number().nullable(),
+  "cachedInputTokens": zod.number().nullable(),
+  "reasoningTokens": zod.number().nullable(),
+  "latencyMs": zod.number().nullable(),
+  "status": zod.enum(['processing', 'completed', 'failed']),
+  "errorCode": zod.string().nullable(),
+  "retryable": zod.boolean(),
+  "attemptCount": zod.number().min(1).max(analyzeInvoiceOcrTestCaseResponseRunAttemptCountMax),
+  "rerunOfRunId": zod.number().nullable(),
+  "createdAt": zod.coerce.date(),
+  "completedAt": zod.coerce.date().nullable()
+}),
+  "review": zod.union([zod.object({
+  "id": zod.number(),
+  "runId": zod.number(),
+  "merchantNameCorrect": zod.boolean(),
+  "invoiceDateCorrect": zod.boolean(),
+  "totalAmountCorrect": zod.boolean(),
+  "currencyCorrect": zod.boolean(),
+  "unsafeConfidentError": zod.boolean(),
+  "corrected": zod.union([zod.object({
+  "merchantName": zod.string().nullable(),
+  "invoiceDate": zod.string().nullable(),
+  "totalAmount": zod.string().nullable(),
+  "currency": zod.string().nullable()
+}),zod.null()]),
+  "reviewedBy": zod.string().nullable(),
+  "reviewedAt": zod.coerce.date().nullable()
+}),zod.null()]),
+  "existing": zod.boolean()
+})
+
+
+/**
+ * @summary Save a separate human review without changing AI predictions
+ */
+
+
+
+
+export const ReviewInvoiceOcrRunParams = zod.object({
+  "storeId": zod.coerce.number().min(1),
+  "runId": zod.coerce.number().min(1)
+})
+
+export const ReviewInvoiceOcrRunBody = zod.object({
+  "corrected": zod.union([zod.object({
+  "merchantName": zod.string().nullable(),
+  "invoiceDate": zod.string().nullable(),
+  "totalAmount": zod.string().nullable(),
+  "currency": zod.string().nullable()
+}),zod.null()])
+})
+
+export const ReviewInvoiceOcrRunResponse = zod.object({
+  "review": zod.object({
+  "id": zod.number(),
+  "runId": zod.number(),
+  "merchantNameCorrect": zod.boolean(),
+  "invoiceDateCorrect": zod.boolean(),
+  "totalAmountCorrect": zod.boolean(),
+  "currencyCorrect": zod.boolean(),
+  "unsafeConfidentError": zod.boolean(),
+  "corrected": zod.union([zod.object({
+  "merchantName": zod.string().nullable(),
+  "invoiceDate": zod.string().nullable(),
+  "totalAmount": zod.string().nullable(),
+  "currency": zod.string().nullable()
+}),zod.null()]),
+  "reviewedBy": zod.string().nullable(),
+  "reviewedAt": zod.coerce.date().nullable()
+})
+})
+
+
+/**
+ * @summary Get separated model/configuration benchmark statistics
+ */
+
+
+
+export const GetInvoiceOcrBenchmarkSummaryParams = zod.object({
+  "storeId": zod.coerce.number().min(1)
+})
+
+export const GetInvoiceOcrBenchmarkSummaryResponse = zod.object({
+  "totalTestCases": zod.number(),
+  "totalRuns": zod.number(),
+  "models": zod.array(zod.object({
+  "requestedModel": zod.string(),
+  "promptVersion": zod.string(),
+  "imageDetail": zod.string(),
+  "reasoningEffort": zod.string(),
+  "caseCount": zod.number(),
+  "structuredFormatCount": zod.number(),
+  "merchantNameCorrect": zod.number(),
+  "invoiceDateCorrect": zod.number(),
+  "totalAmountCorrect": zod.number(),
+  "currencyCorrect": zod.number(),
+  "unsafeConfidentErrorCount": zod.number(),
+  "totalTokens": zod.number(),
+  "averageTokens": zod.number().nullable(),
+  "medianTokens": zod.number().nullable(),
+  "averageLatencyMs": zod.number().nullable(),
+  "medianLatencyMs": zod.number().nullable(),
+  "passed": zod.boolean()
+})),
+  "benchmarkRule": zod.string(),
+  "billingNotice": zod.string()
+})
+
+
+/**
+ * @summary Download a report with no images, Base64, keys, or raw errors
+ */
+
+
+
+export const DownloadInvoiceOcrBenchmarkCsvParams = zod.object({
+  "storeId": zod.coerce.number().min(1)
+})
+

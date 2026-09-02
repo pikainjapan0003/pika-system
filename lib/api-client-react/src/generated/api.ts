@@ -22,8 +22,17 @@ import type {
 import type {
   BulkOrderUpdate,
   BulkOrderUpdateResponse,
+  GetInvoiceOcrTestCase200,
   GetSellerAgentSettings200,
   HealthStatus,
+  InvoiceOcrAnalyzeMultipartInput,
+  InvoiceOcrBenchmarkSummary,
+  InvoiceOcrCreateMultipartInput,
+  InvoiceOcrGroundTruthUpdateInput,
+  InvoiceOcrReviewInput,
+  InvoiceOcrRunResult,
+  InvoiceOcrTestCaseList,
+  InvoiceOcrTestCaseResult,
   MerchantOrderInput,
   Order,
   OrderIdsBody,
@@ -38,6 +47,7 @@ import type {
   ProductUpdate,
   PublicOrder,
   PublicProduct,
+  ReviewInvoiceOcrRun200,
   ShippingListResponse,
   Store,
   StoreInput,
@@ -52,6 +62,7 @@ import type {
   TripRouteUpdate,
   TripUpdate,
   TripWithRoutes,
+  UpdateInvoiceOcrGroundTruth200,
   UpdateSellerAgentSettings200,
   UpdateSellerAgentSettingsRequest
 } from './api.schemas';
@@ -2639,6 +2650,630 @@ export function useGetPublicOrder<TData = Awaited<ReturnType<typeof getPublicOrd
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetPublicOrderQueryOptions(publicToken,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getListInvoiceOcrTestCasesUrl = (storeId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/invoice-ocr/test-cases`
+}
+
+/**
+ * @summary List the owner's ten Phase 1 invoice test cases and runs
+ */
+export const listInvoiceOcrTestCases = async (storeId: number, options?: RequestInit): Promise<InvoiceOcrTestCaseList> => {
+
+  return customFetch<InvoiceOcrTestCaseList>(getListInvoiceOcrTestCasesUrl(storeId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListInvoiceOcrTestCasesQueryKey = (storeId: number,) => {
+    return [
+    `/api/stores/${storeId}/invoice-ocr/test-cases`
+    ] as const;
+    }
+
+
+export const getListInvoiceOcrTestCasesQueryOptions = <TData = Awaited<ReturnType<typeof listInvoiceOcrTestCases>>, TError = ErrorType<void>>(storeId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listInvoiceOcrTestCases>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListInvoiceOcrTestCasesQueryKey(storeId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listInvoiceOcrTestCases>>> = ({ signal }) => listInvoiceOcrTestCases(storeId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(storeId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listInvoiceOcrTestCases>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListInvoiceOcrTestCasesQueryResult = NonNullable<Awaited<ReturnType<typeof listInvoiceOcrTestCases>>>
+export type ListInvoiceOcrTestCasesQueryError = ErrorType<void>
+
+
+/**
+ * @summary List the owner's ten Phase 1 invoice test cases and runs
+ */
+
+export function useListInvoiceOcrTestCases<TData = Awaited<ReturnType<typeof listInvoiceOcrTestCases>>, TError = ErrorType<void>>(
+ storeId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listInvoiceOcrTestCases>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListInvoiceOcrTestCasesQueryOptions(storeId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCreateInvoiceOcrTestCaseUrl = (storeId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/invoice-ocr/test-cases`
+}
+
+/**
+ * @summary Save one image fingerprint and human-confirmed Ground Truth
+ */
+export const createInvoiceOcrTestCase = async (storeId: number,
+    invoiceOcrCreateMultipartInput: InvoiceOcrCreateMultipartInput, options?: RequestInit): Promise<InvoiceOcrTestCaseResult> => {
+    const formData = new FormData();
+formData.append(`image`, invoiceOcrCreateMultipartInput.image);
+formData.append(`merchantName`, invoiceOcrCreateMultipartInput.merchantName);
+formData.append(`invoiceDate`, invoiceOcrCreateMultipartInput.invoiceDate);
+formData.append(`totalAmount`, invoiceOcrCreateMultipartInput.totalAmount);
+formData.append(`currency`, invoiceOcrCreateMultipartInput.currency);
+formData.append(`privacyConfirmed`, invoiceOcrCreateMultipartInput.privacyConfirmed.toString())
+
+  return customFetch<InvoiceOcrTestCaseResult>(getCreateInvoiceOcrTestCaseUrl(storeId),
+  {
+    ...options,
+    method: 'POST'
+    ,
+    body:
+      formData,
+  }
+);}
+
+
+
+
+export const getCreateInvoiceOcrTestCaseMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createInvoiceOcrTestCase>>, TError,{storeId: number;data: BodyType<InvoiceOcrCreateMultipartInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createInvoiceOcrTestCase>>, TError,{storeId: number;data: BodyType<InvoiceOcrCreateMultipartInput>}, TContext> => {
+
+const mutationKey = ['createInvoiceOcrTestCase'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createInvoiceOcrTestCase>>, {storeId: number;data: BodyType<InvoiceOcrCreateMultipartInput>}> = (props) => {
+          const {storeId,data} = props ?? {};
+
+          return  createInvoiceOcrTestCase(storeId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateInvoiceOcrTestCaseMutationResult = NonNullable<Awaited<ReturnType<typeof createInvoiceOcrTestCase>>>
+    export type CreateInvoiceOcrTestCaseMutationBody = BodyType<InvoiceOcrCreateMultipartInput>
+    export type CreateInvoiceOcrTestCaseMutationError = ErrorType<void>
+
+    /**
+ * @summary Save one image fingerprint and human-confirmed Ground Truth
+ */
+export const useCreateInvoiceOcrTestCase = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createInvoiceOcrTestCase>>, TError,{storeId: number;data: BodyType<InvoiceOcrCreateMultipartInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createInvoiceOcrTestCase>>,
+        TError,
+        {storeId: number;data: BodyType<InvoiceOcrCreateMultipartInput>},
+        TContext
+      > => {
+      return useMutation(getCreateInvoiceOcrTestCaseMutationOptions(options));
+    }
+
+export const getGetInvoiceOcrTestCaseUrl = (storeId: number,
+    testCaseId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/invoice-ocr/test-cases/${testCaseId}`
+}
+
+/**
+ * @summary Get one test case and all immutable model runs
+ */
+export const getInvoiceOcrTestCase = async (storeId: number,
+    testCaseId: number, options?: RequestInit): Promise<GetInvoiceOcrTestCase200> => {
+
+  return customFetch<GetInvoiceOcrTestCase200>(getGetInvoiceOcrTestCaseUrl(storeId,testCaseId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetInvoiceOcrTestCaseQueryKey = (storeId: number,
+    testCaseId: number,) => {
+    return [
+    `/api/stores/${storeId}/invoice-ocr/test-cases/${testCaseId}`
+    ] as const;
+    }
+
+
+export const getGetInvoiceOcrTestCaseQueryOptions = <TData = Awaited<ReturnType<typeof getInvoiceOcrTestCase>>, TError = ErrorType<void>>(storeId: number,
+    testCaseId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getInvoiceOcrTestCase>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetInvoiceOcrTestCaseQueryKey(storeId,testCaseId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getInvoiceOcrTestCase>>> = ({ signal }) => getInvoiceOcrTestCase(storeId,testCaseId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(storeId && testCaseId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getInvoiceOcrTestCase>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetInvoiceOcrTestCaseQueryResult = NonNullable<Awaited<ReturnType<typeof getInvoiceOcrTestCase>>>
+export type GetInvoiceOcrTestCaseQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get one test case and all immutable model runs
+ */
+
+export function useGetInvoiceOcrTestCase<TData = Awaited<ReturnType<typeof getInvoiceOcrTestCase>>, TError = ErrorType<void>>(
+ storeId: number,
+    testCaseId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getInvoiceOcrTestCase>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetInvoiceOcrTestCaseQueryOptions(storeId,testCaseId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getUpdateInvoiceOcrGroundTruthUrl = (storeId: number,
+    testCaseId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/invoice-ocr/test-cases/${testCaseId}`
+}
+
+/**
+ * This request accepts only the four Ground Truth fields; it never accepts an image, model setting, or AI prediction.
+ * @summary Update Ground Truth before the first AI run permanently locks it
+ */
+export const updateInvoiceOcrGroundTruth = async (storeId: number,
+    testCaseId: number,
+    invoiceOcrGroundTruthUpdateInput: InvoiceOcrGroundTruthUpdateInput, options?: RequestInit): Promise<UpdateInvoiceOcrGroundTruth200> => {
+
+  return customFetch<UpdateInvoiceOcrGroundTruth200>(getUpdateInvoiceOcrGroundTruthUrl(storeId,testCaseId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      invoiceOcrGroundTruthUpdateInput,)
+  }
+);}
+
+
+
+
+export const getUpdateInvoiceOcrGroundTruthMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateInvoiceOcrGroundTruth>>, TError,{storeId: number;testCaseId: number;data: BodyType<InvoiceOcrGroundTruthUpdateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateInvoiceOcrGroundTruth>>, TError,{storeId: number;testCaseId: number;data: BodyType<InvoiceOcrGroundTruthUpdateInput>}, TContext> => {
+
+const mutationKey = ['updateInvoiceOcrGroundTruth'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateInvoiceOcrGroundTruth>>, {storeId: number;testCaseId: number;data: BodyType<InvoiceOcrGroundTruthUpdateInput>}> = (props) => {
+          const {storeId,testCaseId,data} = props ?? {};
+
+          return  updateInvoiceOcrGroundTruth(storeId,testCaseId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateInvoiceOcrGroundTruthMutationResult = NonNullable<Awaited<ReturnType<typeof updateInvoiceOcrGroundTruth>>>
+    export type UpdateInvoiceOcrGroundTruthMutationBody = BodyType<InvoiceOcrGroundTruthUpdateInput>
+    export type UpdateInvoiceOcrGroundTruthMutationError = ErrorType<void>
+
+    /**
+ * @summary Update Ground Truth before the first AI run permanently locks it
+ */
+export const useUpdateInvoiceOcrGroundTruth = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateInvoiceOcrGroundTruth>>, TError,{storeId: number;testCaseId: number;data: BodyType<InvoiceOcrGroundTruthUpdateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateInvoiceOcrGroundTruth>>,
+        TError,
+        {storeId: number;testCaseId: number;data: BodyType<InvoiceOcrGroundTruthUpdateInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateInvoiceOcrGroundTruthMutationOptions(options));
+    }
+
+export const getAnalyzeInvoiceOcrTestCaseUrl = (storeId: number,
+    testCaseId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/invoice-ocr/test-cases/${testCaseId}/analyze`
+}
+
+/**
+ * @summary Send the same single image to one explicitly selected model
+ */
+export const analyzeInvoiceOcrTestCase = async (storeId: number,
+    testCaseId: number,
+    invoiceOcrAnalyzeMultipartInput: InvoiceOcrAnalyzeMultipartInput, options?: RequestInit): Promise<InvoiceOcrRunResult> => {
+    const formData = new FormData();
+formData.append(`image`, invoiceOcrAnalyzeMultipartInput.image);
+formData.append(`model`, invoiceOcrAnalyzeMultipartInput.model);
+if(invoiceOcrAnalyzeMultipartInput.confirmRerun !== undefined) {
+ formData.append(`confirmRerun`, invoiceOcrAnalyzeMultipartInput.confirmRerun.toString())
+ }
+if(invoiceOcrAnalyzeMultipartInput.confirmUnknownRerun !== undefined) {
+ formData.append(`confirmUnknownRerun`, invoiceOcrAnalyzeMultipartInput.confirmUnknownRerun.toString())
+ }
+
+  return customFetch<InvoiceOcrRunResult>(getAnalyzeInvoiceOcrTestCaseUrl(storeId,testCaseId),
+  {
+    ...options,
+    method: 'POST'
+    ,
+    body:
+      formData,
+  }
+);}
+
+
+
+
+export const getAnalyzeInvoiceOcrTestCaseMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof analyzeInvoiceOcrTestCase>>, TError,{storeId: number;testCaseId: number;data: BodyType<InvoiceOcrAnalyzeMultipartInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof analyzeInvoiceOcrTestCase>>, TError,{storeId: number;testCaseId: number;data: BodyType<InvoiceOcrAnalyzeMultipartInput>}, TContext> => {
+
+const mutationKey = ['analyzeInvoiceOcrTestCase'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof analyzeInvoiceOcrTestCase>>, {storeId: number;testCaseId: number;data: BodyType<InvoiceOcrAnalyzeMultipartInput>}> = (props) => {
+          const {storeId,testCaseId,data} = props ?? {};
+
+          return  analyzeInvoiceOcrTestCase(storeId,testCaseId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AnalyzeInvoiceOcrTestCaseMutationResult = NonNullable<Awaited<ReturnType<typeof analyzeInvoiceOcrTestCase>>>
+    export type AnalyzeInvoiceOcrTestCaseMutationBody = BodyType<InvoiceOcrAnalyzeMultipartInput>
+    export type AnalyzeInvoiceOcrTestCaseMutationError = ErrorType<void>
+
+    /**
+ * @summary Send the same single image to one explicitly selected model
+ */
+export const useAnalyzeInvoiceOcrTestCase = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof analyzeInvoiceOcrTestCase>>, TError,{storeId: number;testCaseId: number;data: BodyType<InvoiceOcrAnalyzeMultipartInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof analyzeInvoiceOcrTestCase>>,
+        TError,
+        {storeId: number;testCaseId: number;data: BodyType<InvoiceOcrAnalyzeMultipartInput>},
+        TContext
+      > => {
+      return useMutation(getAnalyzeInvoiceOcrTestCaseMutationOptions(options));
+    }
+
+export const getReviewInvoiceOcrRunUrl = (storeId: number,
+    runId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/invoice-ocr/runs/${runId}/review`
+}
+
+/**
+ * @summary Save a separate human review without changing AI predictions
+ */
+export const reviewInvoiceOcrRun = async (storeId: number,
+    runId: number,
+    invoiceOcrReviewInput: InvoiceOcrReviewInput, options?: RequestInit): Promise<ReviewInvoiceOcrRun200> => {
+
+  return customFetch<ReviewInvoiceOcrRun200>(getReviewInvoiceOcrRunUrl(storeId,runId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      invoiceOcrReviewInput,)
+  }
+);}
+
+
+
+
+export const getReviewInvoiceOcrRunMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewInvoiceOcrRun>>, TError,{storeId: number;runId: number;data: BodyType<InvoiceOcrReviewInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reviewInvoiceOcrRun>>, TError,{storeId: number;runId: number;data: BodyType<InvoiceOcrReviewInput>}, TContext> => {
+
+const mutationKey = ['reviewInvoiceOcrRun'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reviewInvoiceOcrRun>>, {storeId: number;runId: number;data: BodyType<InvoiceOcrReviewInput>}> = (props) => {
+          const {storeId,runId,data} = props ?? {};
+
+          return  reviewInvoiceOcrRun(storeId,runId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReviewInvoiceOcrRunMutationResult = NonNullable<Awaited<ReturnType<typeof reviewInvoiceOcrRun>>>
+    export type ReviewInvoiceOcrRunMutationBody = BodyType<InvoiceOcrReviewInput>
+    export type ReviewInvoiceOcrRunMutationError = ErrorType<void>
+
+    /**
+ * @summary Save a separate human review without changing AI predictions
+ */
+export const useReviewInvoiceOcrRun = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewInvoiceOcrRun>>, TError,{storeId: number;runId: number;data: BodyType<InvoiceOcrReviewInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof reviewInvoiceOcrRun>>,
+        TError,
+        {storeId: number;runId: number;data: BodyType<InvoiceOcrReviewInput>},
+        TContext
+      > => {
+      return useMutation(getReviewInvoiceOcrRunMutationOptions(options));
+    }
+
+export const getGetInvoiceOcrBenchmarkSummaryUrl = (storeId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/invoice-ocr/benchmark-summary`
+}
+
+/**
+ * @summary Get separated model/configuration benchmark statistics
+ */
+export const getInvoiceOcrBenchmarkSummary = async (storeId: number, options?: RequestInit): Promise<InvoiceOcrBenchmarkSummary> => {
+
+  return customFetch<InvoiceOcrBenchmarkSummary>(getGetInvoiceOcrBenchmarkSummaryUrl(storeId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetInvoiceOcrBenchmarkSummaryQueryKey = (storeId: number,) => {
+    return [
+    `/api/stores/${storeId}/invoice-ocr/benchmark-summary`
+    ] as const;
+    }
+
+
+export const getGetInvoiceOcrBenchmarkSummaryQueryOptions = <TData = Awaited<ReturnType<typeof getInvoiceOcrBenchmarkSummary>>, TError = ErrorType<unknown>>(storeId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getInvoiceOcrBenchmarkSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetInvoiceOcrBenchmarkSummaryQueryKey(storeId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getInvoiceOcrBenchmarkSummary>>> = ({ signal }) => getInvoiceOcrBenchmarkSummary(storeId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(storeId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getInvoiceOcrBenchmarkSummary>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetInvoiceOcrBenchmarkSummaryQueryResult = NonNullable<Awaited<ReturnType<typeof getInvoiceOcrBenchmarkSummary>>>
+export type GetInvoiceOcrBenchmarkSummaryQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get separated model/configuration benchmark statistics
+ */
+
+export function useGetInvoiceOcrBenchmarkSummary<TData = Awaited<ReturnType<typeof getInvoiceOcrBenchmarkSummary>>, TError = ErrorType<unknown>>(
+ storeId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getInvoiceOcrBenchmarkSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetInvoiceOcrBenchmarkSummaryQueryOptions(storeId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getDownloadInvoiceOcrBenchmarkCsvUrl = (storeId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/invoice-ocr/benchmark.csv`
+}
+
+/**
+ * @summary Download a report with no images, Base64, keys, or raw errors
+ */
+export const downloadInvoiceOcrBenchmarkCsv = async (storeId: number, options?: RequestInit): Promise<string> => {
+
+  return customFetch<string>(getDownloadInvoiceOcrBenchmarkCsvUrl(storeId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDownloadInvoiceOcrBenchmarkCsvQueryKey = (storeId: number,) => {
+    return [
+    `/api/stores/${storeId}/invoice-ocr/benchmark.csv`
+    ] as const;
+    }
+
+
+export const getDownloadInvoiceOcrBenchmarkCsvQueryOptions = <TData = Awaited<ReturnType<typeof downloadInvoiceOcrBenchmarkCsv>>, TError = ErrorType<unknown>>(storeId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadInvoiceOcrBenchmarkCsv>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDownloadInvoiceOcrBenchmarkCsvQueryKey(storeId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof downloadInvoiceOcrBenchmarkCsv>>> = ({ signal }) => downloadInvoiceOcrBenchmarkCsv(storeId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(storeId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof downloadInvoiceOcrBenchmarkCsv>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type DownloadInvoiceOcrBenchmarkCsvQueryResult = NonNullable<Awaited<ReturnType<typeof downloadInvoiceOcrBenchmarkCsv>>>
+export type DownloadInvoiceOcrBenchmarkCsvQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Download a report with no images, Base64, keys, or raw errors
+ */
+
+export function useDownloadInvoiceOcrBenchmarkCsv<TData = Awaited<ReturnType<typeof downloadInvoiceOcrBenchmarkCsv>>, TError = ErrorType<unknown>>(
+ storeId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadInvoiceOcrBenchmarkCsv>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getDownloadInvoiceOcrBenchmarkCsvQueryOptions(storeId,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

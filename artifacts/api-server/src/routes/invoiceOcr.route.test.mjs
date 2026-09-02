@@ -26,6 +26,8 @@ const UUIDS = {
   confirmed: "44444444-4444-4444-8444-444444444444",
   previous: "55555555-5555-4555-8555-555555555555",
   completed: "66666666-6666-4666-8666-666666666666",
+  locking: "77777777-7777-4777-8777-777777777777",
+  groundTruthIsolation: "88888888-8888-4888-8888-888888888888",
 };
 
 const VALID_PNG = Buffer.from(
@@ -46,6 +48,13 @@ const VALID_PREDICTION = {
     total_amount: "123.00",
     currency: "TWD",
   },
+};
+
+const UPDATED_GROUND_TRUTH = {
+  merchantName: "更新　假商店",
+  invoiceDate: "2026-09-01",
+  totalAmount: "1,234.50",
+  currency: "jpy",
 };
 
 const columnFields = new WeakMap();
@@ -127,6 +136,9 @@ let openAiInputs;
 let openAiGate;
 let nextRunId;
 let nextReviewId;
+let authenticated;
+let storeOwnerAllowed;
+let allowlisted;
 const safeLogs = [];
 
 function resetFakes() {
@@ -157,6 +169,9 @@ function resetFakes() {
   openAiGate = null;
   nextRunId = 100;
   nextReviewId = 500;
+  authenticated = true;
+  storeOwnerAllowed = true;
+  allowlisted = true;
   safeLogs.length = 0;
 }
 
@@ -226,6 +241,23 @@ function collectConditionValues(value, result = []) {
     }
   }
   return result;
+}
+
+function conditionReferencesColumn(value, column) {
+  if (value === column) return true;
+  if (Array.isArray(value)) {
+    return value.some((item) => conditionReferencesColumn(item, column));
+  }
+  if (
+    typeof value === "object" &&
+    value !== null &&
+    Array.isArray(value.queryChunks)
+  ) {
+    return value.queryChunks.some((chunk) =>
+      conditionReferencesColumn(chunk, column),
+    );
+  }
+  return false;
 }
 
 function filteredRows(table, condition) {
@@ -330,7 +362,16 @@ function updateBuilder(table, values) {
   let result;
   const execute = () => {
     if (result) return result;
-    const rows = filteredRows(table, condition);
+    let rows = filteredRows(table, condition);
+    if (
+      table === invoiceOcrTestCasesTable &&
+      conditionReferencesColumn(
+        condition,
+        invoiceOcrTestCasesTable.groundTruthLockedAt,
+      )
+    ) {
+      rows = rows.filter((row) => row.groundTruthLockedAt === null);
+    }
     for (const row of rows) Object.assign(row, values);
     result = rows.map((row) => ({ ...row }));
     return result;
@@ -450,11 +491,21 @@ mock.module("@workspace/db", {
 
 mock.module("../middlewares/auth.ts", {
   namedExports: {
-    requireAuth: (request, _response, next) => {
+    requireAuth: (request, response, next) => {
+      if (!authenticated) {
+        response.status(401).json({ code: "not_authenticated" });
+        return;
+      }
       request.userId = USER_ID;
       next();
     },
-    verifyStoreOwner: async () => true,
+    verifyStoreOwner: async (_request, response) => {
+      if (!storeOwnerAllowed) {
+        response.status(403).json({ code: "not_store_owner" });
+        return false;
+      }
+      return true;
+    },
   },
 });
 
@@ -473,7 +524,10 @@ const fakeConfig = {
 
 mock.module("../lib/invoiceOcr/config.ts", {
   namedExports: {
-    readInvoiceOcrConfig: () => fakeConfig,
+    readInvoiceOcrConfig: () => ({
+      ...fakeConfig,
+      allowedClerkUserIds: allowlisted ? new Set([USER_ID]) : new Set(),
+    }),
     requireInvoiceApiKey: () => "fake-key-never-used",
     parseRequestedInvoiceModel: (value) => {
       if (!fakeConfig.allowedModels.includes(value)) {
@@ -526,6 +580,7 @@ const { default: express } = await import("express");
 const { default: invoiceOcrRouter } = await import("./invoiceOcr.ts");
 
 const app = express();
+app.use(express.json());
 app.use("/api", invoiceOcrRouter);
 
 let server;
@@ -567,12 +622,181 @@ async function analyze(clientRequestId, { confirmUnknownRerun = false } = {}) {
   return { status: response.status, data: await response.json() };
 }
 
+async function updateGroundTruth({
+  body = UPDATED_GROUND_TRUTH,
+  testCaseId = TEST_CASE_ID,
+} = {}) {
+  const response = await fetch(
+    `${baseUrl}/stores/${STORE_ID}/invoice-ocr/test-cases/${testCaseId}`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+  );
+  return { status: response.status, data: await response.json() };
+}
+
 async function waitForOpenAiCall() {
   for (let attempt = 0; attempt < 100 && openAiCalls === 0; attempt++) {
     await new Promise((resolve) => setImmediate(resolve));
   }
   assert.equal(openAiCalls, 1, "fake OpenAI call did not start");
 }
+
+test("an unlocked Ground Truth update saves only human fields without calling fake OpenAI", async () => {
+  const testCase = database.testCases[0];
+  testCase.updatedAt = new Date("2020-01-01T00:00:00.000Z");
+  const unchangedIdentity = {
+    createdByUserId: testCase.createdByUserId,
+    originalFilename: testCase.originalFilename,
+    imageSha256: testCase.imageSha256,
+    groundTruthLockedAt: testCase.groundTruthLockedAt,
+    createdAt: testCase.createdAt,
+  };
+  const predictedRun = addProcessingRun();
+  predictedRun.testCaseId = 999;
+  predictedRun.status = "completed";
+  predictedRun.predictedJson = structuredClone(VALID_PREDICTION);
+  const originalPrediction = structuredClone(predictedRun.predictedJson);
+
+  const response = await updateGroundTruth();
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(response.data.testCase.groundTruth, {
+    merchantName: "更新 假商店",
+    invoiceDate: "2026-09-01",
+    totalAmount: "1234.50",
+    currency: "JPY",
+  });
+  assert.deepEqual(
+    {
+      createdByUserId: testCase.createdByUserId,
+      originalFilename: testCase.originalFilename,
+      imageSha256: testCase.imageSha256,
+      groundTruthLockedAt: testCase.groundTruthLockedAt,
+      createdAt: testCase.createdAt,
+    },
+    unchangedIdentity,
+  );
+  assert.ok(testCase.updatedAt > new Date("2020-01-01T00:00:00.000Z"));
+  assert.deepEqual(predictedRun.predictedJson, originalPrediction);
+  assert.equal(openAiCalls, 0);
+});
+
+test("Ground Truth is permanently locked as soon as the first fake AI request starts", async () => {
+  let releaseOpenAi;
+  openAiGate = new Promise((resolve) => {
+    releaseOpenAi = resolve;
+  });
+
+  const analyzeRequest = analyze(UUIDS.locking);
+  await waitForOpenAiCall();
+  assert.ok(database.testCases[0].groundTruthLockedAt instanceof Date);
+
+  const update = await updateGroundTruth();
+  assert.equal(update.status, 409);
+  assert.equal(update.data.code, "ground_truth_locked");
+  assert.equal(openAiCalls, 1);
+
+  releaseOpenAi();
+  const analyzed = await analyzeRequest;
+  assert.equal(analyzed.status, 201);
+});
+
+test("a locked Ground Truth update is rejected without changing stored values", async () => {
+  const testCase = database.testCases[0];
+  testCase.groundTruthLockedAt = new Date("2026-09-01T00:00:00.000Z");
+  const before = structuredClone(testCase);
+  const completedRun = addProcessingRun();
+  completedRun.status = "completed";
+  completedRun.predictedJson = structuredClone(VALID_PREDICTION);
+  const predictionBefore = structuredClone(completedRun.predictedJson);
+
+  const response = await updateGroundTruth();
+
+  assert.equal(response.status, 409);
+  assert.equal(response.data.code, "ground_truth_locked");
+  assert.deepEqual(testCase, before);
+  assert.deepEqual(completedRun.predictedJson, predictionBefore);
+  assert.equal(openAiCalls, 0);
+});
+
+test("a missing Ground Truth test case returns 404", async () => {
+  database.testCases = [];
+
+  const response = await updateGroundTruth();
+
+  assert.equal(response.status, 404);
+  assert.equal(response.data.code, "test_case_not_found");
+  assert.equal(openAiCalls, 0);
+});
+
+test("Ground Truth updates validate all four fields and reject extra AI fields", async () => {
+  const invalidBodies = [
+    { ...UPDATED_GROUND_TRUTH, merchantName: "   " },
+    { ...UPDATED_GROUND_TRUTH, invoiceDate: "2026-02-30" },
+    { ...UPDATED_GROUND_TRUTH, totalAmount: "0" },
+    { ...UPDATED_GROUND_TRUTH, currency: "12" },
+    { ...UPDATED_GROUND_TRUTH, model: MODEL },
+    { ...UPDATED_GROUND_TRUTH, predicted: VALID_PREDICTION },
+  ];
+
+  for (const body of invalidBodies) {
+    const response = await updateGroundTruth({ body });
+    assert.equal(response.status, 400);
+    assert.equal(response.data.code, "invalid_ground_truth");
+  }
+  assert.equal(openAiCalls, 0);
+});
+
+test("Ground Truth updates require Clerk authentication", async () => {
+  authenticated = false;
+
+  const response = await updateGroundTruth();
+
+  assert.equal(response.status, 401);
+  assert.equal(openAiCalls, 0);
+});
+
+test("Ground Truth updates require store ownership", async () => {
+  storeOwnerAllowed = false;
+
+  const response = await updateGroundTruth();
+
+  assert.equal(response.status, 403);
+  assert.equal(openAiCalls, 0);
+});
+
+test("Ground Truth updates require the personal OCR allowlist", async () => {
+  allowlisted = false;
+
+  const response = await updateGroundTruth();
+
+  assert.equal(response.status, 403);
+  assert.equal(response.data.code, "invoice_ocr_forbidden");
+  assert.equal(openAiCalls, 0);
+});
+
+test("updated Ground Truth never enters the fake analyze request", async () => {
+  const updated = await updateGroundTruth();
+  assert.equal(updated.status, 200);
+
+  const analyzed = await analyze(UUIDS.groundTruthIsolation);
+
+  assert.equal(analyzed.status, 201);
+  assert.equal(openAiCalls, 1);
+  assert.deepEqual(Object.keys(openAiInputs[0]).sort(), [
+    "imageDataUrl",
+    "imageDetail",
+    "model",
+    "reasoningEffort",
+  ]);
+  assert.doesNotMatch(
+    JSON.stringify(openAiInputs[0]),
+    /更新 假商店|2026-09-01|1234\.50|JPY/,
+  );
+});
 
 test("the same clientRequestId returns its processing run and calls fake OpenAI once", async () => {
   let releaseOpenAi;

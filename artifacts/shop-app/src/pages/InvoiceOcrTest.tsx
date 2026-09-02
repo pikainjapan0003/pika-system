@@ -47,6 +47,7 @@ import {
   InvoiceOcrApiError,
   listInvoiceOcrTestCases,
   reviewInvoiceOcrRun,
+  updateInvoiceOcrGroundTruth,
   validateInvoiceFile,
   type InvoiceFields,
   type InvoiceOcrModel,
@@ -82,6 +83,7 @@ export default function InvoiceOcrTestPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const previewUrlRef = useRef<string | null>(null);
   const requestIdRef = useRef<string | null>(null);
+  const fileSelectionModeRef = useRef<"new" | "existing">("new");
 
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -90,8 +92,7 @@ export default function InvoiceOcrTestPage() {
   const [invoiceDate, setInvoiceDate] = useState("");
   const [totalAmount, setTotalAmount] = useState("");
   const [currency, setCurrency] = useState("");
-  const [model, setModel] =
-    useState<InvoiceOcrModel>("gpt-5.6-terra");
+  const [model, setModel] = useState<InvoiceOcrModel>("gpt-5.6-terra");
   const [phase, setPhase] = useState<PagePhase>("idle");
   const [testCase, setTestCase] = useState<InvoiceOcrTestCase | null>(null);
   const [run, setRun] = useState<InvoiceOcrRun | null>(null);
@@ -99,15 +100,14 @@ export default function InvoiceOcrTestPage() {
   const [testCases, setTestCases] = useState<InvoiceOcrTestCase[]>([]);
   const [summary, setSummary] = useState<InvoiceOcrSummary | null>(null);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const [loadingData, setLoadingData] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [rerunOpen, setRerunOpen] = useState(false);
   const [unknownRerunOpen, setUnknownRerunOpen] = useState(false);
 
   const busy =
-    phase === "saving" ||
-    phase === "uploading" ||
-    phase === "analyzing";
+    phase === "saving" || phase === "uploading" || phase === "analyzing";
 
   const releasePreview = useCallback(() => {
     if (previewUrlRef.current) {
@@ -139,6 +139,10 @@ export default function InvoiceOcrTestPage() {
       ]);
       setTestCases(list.testCases);
       setSummary(nextSummary);
+      setTestCase((current) => {
+        if (!current) return current;
+        return list.testCases.find((item) => item.id === current.id) ?? current;
+      });
     } catch (loadError) {
       setError(
         loadError instanceof Error
@@ -160,9 +164,17 @@ export default function InvoiceOcrTestPage() {
     requestIdRef.current = null;
   }
 
+  function openFilePicker(mode: "new" | "existing") {
+    fileSelectionModeRef.current = mode;
+    fileInputRef.current?.click();
+  }
+
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const selected = event.target.files?.[0] ?? null;
     event.target.value = "";
+    const keepSelectedTestCase =
+      fileSelectionModeRef.current === "existing" && testCase !== null;
+    fileSelectionModeRef.current = "new";
     if (!selected) return;
     const validationError = validateInvoiceFile(selected);
     if (validationError) {
@@ -175,15 +187,23 @@ export default function InvoiceOcrTestPage() {
     previewUrlRef.current = nextPreview;
     setPreviewUrl(nextPreview);
     setFile(selected);
-    setTestCase(null);
-    setPhase("idle");
     setError("");
-    resetModelResult();
+    setSuccessMessage("");
+    if (!keepSelectedTestCase) {
+      setTestCase(null);
+      setPhase("idle");
+      resetModelResult();
+    }
   }
 
   async function handleSaveGroundTruth() {
-    if (!store?.id || !file) return;
-    if (!privacyConfirmed) {
+    if (!store?.id) return;
+    if (testCase?.groundTruthLockedAt) {
+      setError("這筆人工正確答案已在第一次 AI 辨識開始時永久鎖定。");
+      return;
+    }
+    if (!testCase && !file) return;
+    if (!testCase && !privacyConfirmed) {
       setError("請先勾選資料分享提醒。");
       return;
     }
@@ -198,34 +218,76 @@ export default function InvoiceOcrTestPage() {
     }
     setPhase("saving");
     setError("");
+    setSuccessMessage("");
+    const groundTruth = {
+      merchantName: merchantName.trim(),
+      invoiceDate,
+      totalAmount: totalAmount.trim(),
+      currency: currency.trim().toUpperCase(),
+    };
     try {
-      const result = await createInvoiceOcrTestCase({
-        storeId: store.id,
-        file,
-        privacyConfirmed,
-        groundTruth: {
-          merchantName: merchantName.trim(),
-          invoiceDate,
-          totalAmount: totalAmount.trim(),
-          currency: currency.trim().toUpperCase(),
-        },
-        getToken,
-      });
-      setTestCase(result.testCase);
-      setMerchantName(result.testCase.groundTruth.merchantName);
-      setInvoiceDate(result.testCase.groundTruth.invoiceDate);
-      setTotalAmount(result.testCase.groundTruth.totalAmount);
-      setCurrency(result.testCase.groundTruth.currency);
+      let savedTestCase: InvoiceOcrTestCase;
+      if (testCase) {
+        const result = await updateInvoiceOcrGroundTruth({
+          storeId: store.id,
+          testCaseId: testCase.id,
+          groundTruth,
+          getToken,
+        });
+        savedTestCase = {
+          ...testCase,
+          ...result.testCase,
+          runs: testCase.runs,
+        };
+        setSuccessMessage("人工正確答案已更新並保存成功。");
+      } else {
+        if (!file) return;
+        const result = await createInvoiceOcrTestCase({
+          storeId: store.id,
+          file,
+          privacyConfirmed,
+          groundTruth,
+          getToken,
+        });
+        savedTestCase = result.testCase;
+        setSuccessMessage("人工正確答案已保存成功。");
+      }
+      setTestCase(savedTestCase);
+      setMerchantName(savedTestCase.groundTruth.merchantName);
+      setInvoiceDate(savedTestCase.groundTruth.invoiceDate);
+      setTotalAmount(savedTestCase.groundTruth.totalAmount);
+      setCurrency(savedTestCase.groundTruth.currency);
       setPhase("saved");
       resetModelResult();
       await refreshData();
     } catch (saveError) {
-      setPhase("idle");
+      if (
+        testCase &&
+        saveError instanceof InvoiceOcrApiError &&
+        saveError.code === "ground_truth_locked"
+      ) {
+        setMerchantName(testCase.groundTruth.merchantName);
+        setInvoiceDate(testCase.groundTruth.invoiceDate);
+        setTotalAmount(testCase.groundTruth.totalAmount);
+        setCurrency(testCase.groundTruth.currency);
+        setTestCase({
+          ...testCase,
+          groundTruthLockedAt:
+            testCase.groundTruthLockedAt ?? new Date().toISOString(),
+        });
+      }
+      setPhase(testCase ? "saved" : "idle");
       setError(
         saveError instanceof Error
           ? saveError.message
           : "人工正確答案沒有儲存。",
       );
+      if (
+        saveError instanceof InvoiceOcrApiError &&
+        saveError.code === "ground_truth_locked"
+      ) {
+        await refreshData();
+      }
     }
   }
 
@@ -234,8 +296,7 @@ export default function InvoiceOcrTestPage() {
       (run?.status === "completed" && run.requestedModel === model) ||
       testCase?.runs?.some(
         (item) =>
-          item.run.status === "completed" &&
-          item.run.requestedModel === model,
+          item.run.status === "completed" && item.run.requestedModel === model,
       ) === true,
     [model, run, testCase],
   );
@@ -245,20 +306,18 @@ export default function InvoiceOcrTestPage() {
     confirmUnknownRerun = false,
   ) {
     if (!store?.id || !file || !testCase) return;
-    if (
-      confirmRerun ||
-      confirmUnknownRerun ||
-      !requestIdRef.current
-    ) {
+    if (!privacyConfirmed) {
+      setError("請先勾選資料分享提醒，再傳送照片進行辨識。");
+      return;
+    }
+    if (confirmRerun || confirmUnknownRerun || !requestIdRef.current) {
       requestIdRef.current = crypto.randomUUID();
     }
     const clientRequestId = requestIdRef.current;
     setPhase("uploading");
     setError("");
-    const analyzingTimer = window.setTimeout(
-      () => setPhase("analyzing"),
-      600,
-    );
+    setSuccessMessage("");
+    const analyzingTimer = window.setTimeout(() => setPhase("analyzing"), 600);
     try {
       const result = await analyzeInvoiceOcrTestCase({
         storeId: store.id,
@@ -336,9 +395,7 @@ export default function InvoiceOcrTestPage() {
         setUnknownRerunOpen(true);
       }
       setError(
-        analyzeError instanceof Error
-          ? analyzeError.message
-          : "發票辨識失敗。",
+        analyzeError instanceof Error ? analyzeError.message : "發票辨識失敗。",
       );
       await refreshData();
     } finally {
@@ -386,11 +443,13 @@ export default function InvoiceOcrTestPage() {
   function handleSelectCase(selected: InvoiceOcrTestCase) {
     releasePreview();
     setFile(null);
+    setPrivacyConfirmed(false);
     setTestCase(selected);
     setMerchantName(selected.groundTruth.merchantName);
     setInvoiceDate(selected.groundTruth.invoiceDate);
     setTotalAmount(selected.groundTruth.totalAmount);
     setCurrency(selected.groundTruth.currency);
+    setSuccessMessage("");
     const latest = selected.runs?.[0] ?? null;
     if (latest?.run.status === "processing") {
       setRun(null);
@@ -416,10 +475,7 @@ export default function InvoiceOcrTestPage() {
   }
 
   function goBack() {
-    if (
-      busy &&
-      !window.confirm("照片仍在處理中，確定要離開這個頁面嗎？")
-    ) {
+    if (busy && !window.confirm("照片仍在處理中，確定要離開這個頁面嗎？")) {
       return;
     }
     setLocation("/settings");
@@ -468,7 +524,8 @@ export default function InvoiceOcrTestPage() {
               <h2 className="font-bold">上傳前請先確認</h2>
               <p className="mt-1 text-sm leading-6">
                 此發票照片會傳送到 OpenAI。此 API Project
-                已開啟資料分享，以取得符合資格的每日免費 Token。請確認你有權上傳此照片，且照片不包含不應分享的敏感資訊。
+                已開啟資料分享，以取得符合資格的每日免費
+                Token。請確認你有權上傳此照片，且照片不包含不應分享的敏感資訊。
               </p>
               <label className="mt-3 flex cursor-pointer items-start gap-2 text-sm font-medium">
                 <input
@@ -495,6 +552,15 @@ export default function InvoiceOcrTestPage() {
           </div>
         )}
 
+        {successMessage && (
+          <div
+            role="status"
+            className="rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"
+          >
+            {successMessage}
+          </div>
+        )}
+
         <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)]">
           <section className="overflow-hidden rounded-2xl border border-border bg-card">
             <div className="border-b border-border p-4 sm:p-5">
@@ -505,15 +571,31 @@ export default function InvoiceOcrTestPage() {
                     JPG、PNG、WebP，最大 12 MB；HEIC 請先轉 JPG。
                   </p>
                 </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={busy || summary?.totalTestCases === 10}
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <Upload className="size-4" />
-                  選擇照片
-                </Button>
+                <div className="flex flex-wrap justify-end gap-2">
+                  {testCase && summary?.totalTestCases !== 10 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      disabled={busy}
+                      onClick={() => openFilePicker("new")}
+                    >
+                      建立新案例
+                    </Button>
+                  )}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={
+                      busy || (!testCase && summary?.totalTestCases === 10)
+                    }
+                    onClick={() =>
+                      openFilePicker(testCase ? "existing" : "new")
+                    }
+                  >
+                    <Upload className="size-4" />
+                    {testCase ? "選回原圖" : "選擇照片"}
+                  </Button>
+                </div>
               </div>
               <input
                 ref={fileInputRef}
@@ -565,9 +647,7 @@ export default function InvoiceOcrTestPage() {
                 <FormField label="店名">
                   <Input
                     value={merchantName}
-                    onChange={(event) =>
-                      setMerchantName(event.target.value)
-                    }
+                    onChange={(event) => setMerchantName(event.target.value)}
                     disabled={busy || !!testCase?.groundTruthLockedAt}
                     placeholder="人工確認的完整店名"
                   />
@@ -576,9 +656,7 @@ export default function InvoiceOcrTestPage() {
                   <Input
                     type="date"
                     value={invoiceDate}
-                    onChange={(event) =>
-                      setInvoiceDate(event.target.value)
-                    }
+                    onChange={(event) => setInvoiceDate(event.target.value)}
                     disabled={busy || !!testCase?.groundTruthLockedAt}
                   />
                 </FormField>
@@ -586,9 +664,7 @@ export default function InvoiceOcrTestPage() {
                   <Input
                     inputMode="decimal"
                     value={totalAmount}
-                    onChange={(event) =>
-                      setTotalAmount(event.target.value)
-                    }
+                    onChange={(event) => setTotalAmount(event.target.value)}
                     disabled={busy || !!testCase?.groundTruthLockedAt}
                     placeholder="例如 1234.50"
                   />
@@ -610,17 +686,18 @@ export default function InvoiceOcrTestPage() {
                 className="mt-4 w-full min-h-11"
                 disabled={
                   busy ||
-                  !file ||
-                  !privacyConfirmed ||
-                  !!testCase?.groundTruthLockedAt
+                  !!testCase?.groundTruthLockedAt ||
+                  (!testCase && (!file || !privacyConfirmed))
                 }
                 onClick={() => void handleSaveGroundTruth()}
               >
                 {phase === "saving"
                   ? "正在保存…"
-                  : testCase
-                    ? "人工正確答案已保存"
-                    : "保存人工正確答案"}
+                  : testCase?.groundTruthLockedAt
+                    ? "人工正確答案已鎖定"
+                    : testCase
+                      ? "更新人工正確答案"
+                      : "保存人工正確答案"}
               </Button>
             </section>
 
@@ -632,9 +709,7 @@ export default function InvoiceOcrTestPage() {
               <div className="mt-4">
                 <Select
                   value={model}
-                  onValueChange={(value) =>
-                    setModel(value as InvoiceOcrModel)
-                  }
+                  onValueChange={(value) => setModel(value as InvoiceOcrModel)}
                   disabled={busy}
                 >
                   <SelectTrigger className="min-h-11">
@@ -662,7 +737,7 @@ export default function InvoiceOcrTestPage() {
               <Button
                 type="button"
                 className="mt-4 w-full min-h-11"
-                disabled={busy || !file || !testCase}
+                disabled={busy || !file || !testCase || !privacyConfirmed}
                 onClick={startAnalyze}
               >
                 {busy && phase !== "saving" ? "處理中，請勿重複按" : "開始辨識"}
