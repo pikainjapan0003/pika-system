@@ -472,6 +472,7 @@ export default function SettingsPage() {
             <CustomersEntry />
             <TripsEntry />
             <AuditLogsEntry />
+            <InvoiceOcrEntry />
             <AgentSettingsEntry />
             {IS_DEV && <DevHandoffEntry />}
           </div>
@@ -1071,6 +1072,34 @@ function AgentSettingsEntry() {
             <p className="text-sm font-semibold text-foreground">AI 代查設定</p>
             <p className="text-xs text-secondary-foreground">
               Seller Agent / 物流自動查詢設定
+            </p>
+          </div>
+        </div>
+        <span className="text-muted-foreground text-sm">›</span>
+      </button>
+    </div>
+  );
+}
+
+function InvoiceOcrEntry() {
+  const [, setLocation] = useLocation();
+  return (
+    <div className="px-5 pb-3">
+      <button
+        type="button"
+        onClick={() => setLocation("/settings/invoice-ocr")}
+        className="w-full bg-card border border-border rounded-2xl px-4 py-4 flex items-center justify-between text-left hover:bg-secondary/50 transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <span className="w-9 h-9 rounded-xl bg-chart-2/10 flex items-center justify-center">
+            <ReceiptText size={18} className="text-chart-2" />
+          </span>
+          <div>
+            <p className="text-sm font-semibold text-foreground">
+              發票 AI 辨識測試
+            </p>
+            <p className="text-xs text-secondary-foreground">
+              僅供你的帳號測試 10 張，不會自動入帳
             </p>
           </div>
         </div>
