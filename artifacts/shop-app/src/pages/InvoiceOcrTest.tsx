@@ -102,6 +102,7 @@ export default function InvoiceOcrTestPage() {
   const [loadingData, setLoadingData] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [rerunOpen, setRerunOpen] = useState(false);
+  const [unknownRerunOpen, setUnknownRerunOpen] = useState(false);
 
   const busy =
     phase === "saving" ||
@@ -168,6 +169,7 @@ export default function InvoiceOcrTestPage() {
       setError(validationError);
       return;
     }
+    setPrivacyConfirmed(false);
     releasePreview();
     const nextPreview = URL.createObjectURL(selected);
     previewUrlRef.current = nextPreview;
@@ -200,6 +202,7 @@ export default function InvoiceOcrTestPage() {
       const result = await createInvoiceOcrTestCase({
         storeId: store.id,
         file,
+        privacyConfirmed,
         groundTruth: {
           merchantName: merchantName.trim(),
           invoiceDate,
@@ -237,9 +240,16 @@ export default function InvoiceOcrTestPage() {
     [model, run, testCase],
   );
 
-  async function handleAnalyze(confirmRerun: boolean) {
+  async function handleAnalyze(
+    confirmRerun: boolean,
+    confirmUnknownRerun = false,
+  ) {
     if (!store?.id || !file || !testCase) return;
-    if (confirmRerun || !requestIdRef.current) {
+    if (
+      confirmRerun ||
+      confirmUnknownRerun ||
+      !requestIdRef.current
+    ) {
       requestIdRef.current = crypto.randomUUID();
     }
     const clientRequestId = requestIdRef.current;
@@ -256,9 +266,22 @@ export default function InvoiceOcrTestPage() {
         file,
         model,
         confirmRerun,
+        confirmUnknownRerun,
         clientRequestId,
         getToken,
       });
+      if (result.requiresUnknownRerunConfirmation) {
+        setRun(null);
+        setReview(null);
+        setPhase("failed");
+        setError(
+          result.warning ??
+            "上一筆辨識狀態不明，可能已有 Token 用量。系統不會自動再次辨識。",
+        );
+        setUnknownRerunOpen(true);
+        await refreshData();
+        return;
+      }
       if (result.run.status === "processing") {
         setRun(null);
         setReview(null);
@@ -297,7 +320,8 @@ export default function InvoiceOcrTestPage() {
         analyzeError instanceof InvoiceOcrApiError &&
         !analyzeError.code.startsWith("browser_") &&
         analyzeError.code !== "openai_timeout_unknown" &&
-        analyzeError.code !== "stale_processing_unknown"
+        analyzeError.code !== "stale_processing_unknown" &&
+        analyzeError.code !== "invoice_ocr_previous_status_unknown"
       ) {
         // The server definitely answered, so a later manual retry must use a
         // fresh id. Browser timeouts/network errors keep the id to avoid a
@@ -305,6 +329,12 @@ export default function InvoiceOcrTestPage() {
         requestIdRef.current = null;
       }
       setPhase("failed");
+      if (
+        analyzeError instanceof InvoiceOcrApiError &&
+        analyzeError.code === "invoice_ocr_previous_status_unknown"
+      ) {
+        setUnknownRerunOpen(true);
+      }
       setError(
         analyzeError instanceof Error
           ? analyzeError.message
@@ -690,6 +720,32 @@ export default function InvoiceOcrTestPage() {
               }}
             >
               確認再次辨識
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={unknownRerunOpen} onOpenChange={setUnknownRerunOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              上一筆狀態不明，仍要再次辨識嗎？
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              上一筆可能已送到 OpenAI 並產生 Token 用量。請先查看 OpenAI
+              Usage；若仍繼續，系統只會使用目前選定的
+              {model}，不會改用其他模型。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setUnknownRerunOpen(false);
+                void handleAnalyze(false, true);
+              }}
+            >
+              確認仍要再次辨識
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

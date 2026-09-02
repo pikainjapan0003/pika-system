@@ -66,6 +66,52 @@ test("API key names and image Base64 are absent from browser files and responses
   assert.doesNotMatch(browserSource, /data:image\/.+;base64/);
 });
 
+test("a newly selected valid photo resets privacy confirmation and sends its real value", async () => {
+  const [page, ui] = await Promise.all([
+    readFile(
+      new URL(
+        "../../../../shop-app/src/pages/InvoiceOcrTest.tsx",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+    readFile(
+      new URL("../../../../shop-app/src/lib/invoiceOcrUi.ts", import.meta.url),
+      "utf8",
+    ),
+  ]);
+  const fileHandler = page.slice(
+    page.indexOf("function handleFileChange"),
+    page.indexOf("async function handleSaveGroundTruth"),
+  );
+  assert.match(
+    fileHandler,
+    /if \(validationError\)[\s\S]*?return;[\s\S]*?setPrivacyConfirmed\(false\)/,
+  );
+  assert.match(page, /createInvoiceOcrTestCase\(\{[\s\S]*?privacyConfirmed,/);
+  assert.match(ui, /privacyConfirmed: boolean/);
+  assert.match(ui, /input\.privacyConfirmed \? "true" : "false"/);
+  assert.doesNotMatch(ui, /form\.append\("privacyConfirmed", "true"\)/);
+});
+
+test("invoice route logs a safe record instead of silently swallowing save failures", async () => {
+  const route = await readFile(routeUrl, "utf8");
+  assert.doesNotMatch(route, /\.catch\(\(\) => \{\}\)/);
+  assert.match(route, /invoice_ocr_failure_state_save_failed/);
+  const safeLogger = route.slice(
+    route.indexOf("function logInvoiceOcrFailureStateSaveError"),
+    route.indexOf("async function markRunFailed"),
+  );
+  assert.match(safeLogger, /runId/);
+  assert.match(safeLogger, /safeErrorCode/);
+  assert.match(safeLogger, /model/);
+  assert.match(safeLogger, /totalTokens/);
+  assert.doesNotMatch(
+    safeLogger,
+    /image|base64|groundTruth|prompt|apiKey|responseId|requestId|error:/i,
+  );
+});
+
 test("the benchmark migration atomically keeps the first phase to ten distinct merchants", async () => {
   const migrationUrl = new URL(
     "../../../../../lib/db/migrations/0041_invoice_ocr_benchmark.sql",

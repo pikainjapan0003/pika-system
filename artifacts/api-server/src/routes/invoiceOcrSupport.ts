@@ -144,6 +144,14 @@ export function requiredBodyString(
   return typeof value === "string" ? value : null;
 }
 
+export function isInvoiceOcrProcessingStatusUnknown(
+  createdAt: Date,
+  timeoutMs: number,
+  now = Date.now(),
+): boolean {
+  return createdAt.getTime() < now - timeoutMs * 2 - 45_000;
+}
+
 export interface InvoiceOcrAccess {
   storeId: number;
   config: InvoiceOcrConfig;
