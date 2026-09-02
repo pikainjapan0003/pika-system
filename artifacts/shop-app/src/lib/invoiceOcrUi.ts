@@ -187,6 +187,7 @@ export function validateInvoiceFile(file: File): string | null {
 export async function createInvoiceOcrTestCase(input: {
   storeId: number;
   file: File;
+  privacyConfirmed: boolean;
   groundTruth: {
     merchantName: string;
     invoiceDate: string;
@@ -201,7 +202,7 @@ export async function createInvoiceOcrTestCase(input: {
   form.append("invoiceDate", input.groundTruth.invoiceDate);
   form.append("totalAmount", input.groundTruth.totalAmount);
   form.append("currency", input.groundTruth.currency);
-  form.append("privacyConfirmed", "true");
+  form.append("privacyConfirmed", input.privacyConfirmed ? "true" : "false");
   const response = await fetchWithTimeout(
     `/api/stores/${input.storeId}/invoice-ocr/test-cases`,
     {
@@ -222,17 +223,24 @@ export async function analyzeInvoiceOcrTestCase(input: {
   file: File;
   model: InvoiceOcrModel;
   confirmRerun: boolean;
+  confirmUnknownRerun: boolean;
   clientRequestId: string;
   getToken: () => Promise<string | null>;
 }): Promise<{
   run: InvoiceOcrRun;
   review: InvoiceOcrReview | null;
   existing: boolean;
+  requiresUnknownRerunConfirmation?: boolean;
+  warning?: string;
 }> {
   const form = new FormData();
   form.append("image", input.file);
   form.append("model", input.model);
   form.append("confirmRerun", input.confirmRerun ? "true" : "false");
+  form.append(
+    "confirmUnknownRerun",
+    input.confirmUnknownRerun ? "true" : "false",
+  );
   const response = await fetchWithTimeout(
     `/api/stores/${input.storeId}/invoice-ocr/test-cases/${input.testCaseId}/analyze`,
     {

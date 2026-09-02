@@ -55,6 +55,7 @@ import {
   databaseErrorCode,
   invoiceOcrAnalyzeLimiter,
   invoiceOcrMutationLimiter,
+  isInvoiceOcrProcessingStatusUnknown,
   loadInvoiceOcrAccess,
   parseInvoiceUpload,
   positiveId,
@@ -65,9 +66,12 @@ import {
   serializeInvoiceOcrTestCase,
   type AuthenticatedInvoiceRequest,
 } from "./invoiceOcrSupport.ts";
+import { logger } from "../lib/logger.ts";
 
 const router = Router();
 const MAX_BENCHMARK_CASES = 10;
+const UNKNOWN_PROCESSING_WARNING =
+  "上一筆辨識狀態不明，OpenAI 可能已收到照片並產生 Token 用量。系統已停止，不會自動再次辨識；請先查看 OpenAI Usage，再按「確認仍要再次辨識」。";
 
 router.use((_request, response, next) => {
   response.setHeader("Cache-Control", "no-store");
@@ -135,12 +139,33 @@ async function reviewForRun(runId: number): Promise<InvoiceOcrReview | null> {
   return review ?? null;
 }
 
-async function sendExistingRun(response: any, run: InvoiceOcrRun) {
+async function sendExistingRun(
+  response: any,
+  run: InvoiceOcrRun,
+  warning?: {
+    requiresUnknownRerunConfirmation: true;
+    warning: string;
+  },
+) {
   response.json({
     run: serializeInvoiceOcrRun(run),
     review: serializeInvoiceOcrReview(await reviewForRun(run.id)),
     existing: true,
+    ...warning,
   });
+}
+
+function logInvoiceOcrFailureStateSaveError(values: {
+  runId: number;
+  safeErrorCode: string;
+  model: string;
+  inputTokens: number | null;
+  outputTokens: number | null;
+  totalTokens: number | null;
+  cachedInputTokens: number | null;
+  reasoningTokens: number | null;
+}): void {
+  logger.error(values, "invoice_ocr_failure_state_save_failed");
 }
 
 async function markRunFailed(
@@ -452,34 +477,17 @@ router.post(
           retryable: false,
         });
       }
-      const staleBefore = new Date(
-        Date.now() - access.config.timeoutMs * 2 - 45_000,
-      );
       if (
         sameRequest.status === "processing" &&
-        sameRequest.createdAt < staleBefore
+        isInvoiceOcrProcessingStatusUnknown(
+          sameRequest.createdAt,
+          access.config.timeoutMs,
+        )
       ) {
-        const [staleRun] = await db
-          .update(invoiceOcrRunsTable)
-          .set({
-            status: "failed",
-            safeErrorCode: "stale_processing_unknown",
-            completedAt: new Date(),
-          })
-          .where(
-            and(
-              eq(invoiceOcrRunsTable.id, sameRequest.id),
-              eq(invoiceOcrRunsTable.status, "processing"),
-            ),
-          )
-          .returning();
-        if (staleRun) return sendExistingRun(response, staleRun);
-        const [currentRun] = await db
-          .select()
-          .from(invoiceOcrRunsTable)
-          .where(eq(invoiceOcrRunsTable.id, sameRequest.id))
-          .limit(1);
-        if (currentRun) return sendExistingRun(response, currentRun);
+        return sendExistingRun(response, sameRequest, {
+          requiresUnknownRerunConfirmation: true,
+          warning: UNKNOWN_PROCESSING_WARNING,
+        });
       }
       return sendExistingRun(response, sameRequest);
     }
@@ -511,7 +519,43 @@ router.post(
       .limit(1);
     const confirmRerun =
       requiredBodyString(request.body, "confirmRerun") === "true";
-    if (previousCompleted && !confirmRerun) {
+
+    const [processingRun] = await db
+      .select()
+      .from(invoiceOcrRunsTable)
+      .where(
+        and(
+          eq(invoiceOcrRunsTable.createdByUserId, request.userId),
+          eq(invoiceOcrRunsTable.status, "processing"),
+        ),
+      )
+      .orderBy(desc(invoiceOcrRunsTable.createdAt))
+      .limit(1);
+    const processingStatusUnknown =
+      processingRun !== undefined &&
+      isInvoiceOcrProcessingStatusUnknown(
+        processingRun.createdAt,
+        access.config.timeoutMs,
+      );
+    const confirmUnknownRerun =
+      requiredBodyString(request.body, "confirmUnknownRerun") === "true";
+    if (processingRun && !processingStatusUnknown) {
+      return response.status(409).json({
+        error:
+          "目前已有一張發票正在辨識，請等待它完成，不會建立第二筆 OpenAI 請求。",
+        code: "invoice_ocr_already_processing",
+        retryable: false,
+      });
+    }
+    if (processingRun && !confirmUnknownRerun) {
+      return response.status(409).json({
+        error: UNKNOWN_PROCESSING_WARNING,
+        code: "invoice_ocr_previous_status_unknown",
+        retryable: false,
+        requiresUnknownRerunConfirmation: true,
+      });
+    }
+    if (previousCompleted && !confirmRerun && !processingRun) {
       return sendExistingRun(response, previousCompleted);
     }
 
@@ -519,23 +563,33 @@ router.post(
     try {
       run = await db.transaction(async (transaction) => {
         const now = new Date();
-        const staleBefore = new Date(
-          now.getTime() - access.config.timeoutMs * 2 - 45_000,
-        );
-        await transaction
-          .update(invoiceOcrRunsTable)
-          .set({
-            status: "failed",
-            safeErrorCode: "stale_processing_request",
-            completedAt: now,
-          })
-          .where(
-            and(
-              eq(invoiceOcrRunsTable.createdByUserId, request.userId),
-              eq(invoiceOcrRunsTable.status, "processing"),
-              lt(invoiceOcrRunsTable.createdAt, staleBefore),
-            ),
+        if (processingRun) {
+          const staleBefore = new Date(
+            now.getTime() - access.config.timeoutMs * 2 - 45_000,
           );
+          const [markedUnknown] = await transaction
+            .update(invoiceOcrRunsTable)
+            .set({
+              status: "failed",
+              safeErrorCode: "stale_processing_unknown",
+              completedAt: now,
+            })
+            .where(
+              and(
+                eq(invoiceOcrRunsTable.id, processingRun.id),
+                eq(invoiceOcrRunsTable.status, "processing"),
+                lt(invoiceOcrRunsTable.createdAt, staleBefore),
+              ),
+            )
+            .returning();
+          if (!markedUnknown) {
+            const stateChanged = new Error(
+              "invoice_ocr_processing_state_changed",
+            );
+            stateChanged.name = "InvoiceOcrProcessingStateChanged";
+            throw stateChanged;
+          }
+        }
         await transaction
           .update(invoiceOcrTestCasesTable)
           .set({
@@ -561,12 +615,30 @@ router.post(
             imageDetail: access.config.imageDetail,
             reasoningEffort: access.config.reasoningEffort,
             status: "processing",
-            rerunOfRunId: previousCompleted?.id ?? null,
+            rerunOfRunId:
+              processingRun?.testCaseId === testCaseId &&
+              processingRun.storeId === access.storeId &&
+              processingRun.requestedModel === model &&
+              processingRun.promptVersion === INVOICE_PROMPT_VERSION &&
+              processingRun.imageDetail === access.config.imageDetail &&
+              processingRun.reasoningEffort === access.config.reasoningEffort
+                ? processingRun.id
+                : (previousCompleted?.id ?? null),
           })
           .returning();
         return createdRun;
       });
     } catch (error) {
+      if (
+        error instanceof Error &&
+        error.name === "InvoiceOcrProcessingStateChanged"
+      ) {
+        return response.status(409).json({
+          error: "上一筆辨識狀態剛剛有變化，照片尚未再次送出；請重新整理確認。",
+          code: "invoice_ocr_processing_state_changed",
+          retryable: false,
+        });
+      }
       if (databaseErrorCode(error) === "23505") {
         const [duplicateRequest] = await db
           .select()
@@ -709,7 +781,18 @@ router.post(
           totalTokens: metadata?.totalTokens ?? null,
           cachedInputTokens: metadata?.cachedInputTokens ?? null,
           reasoningTokens: metadata?.reasoningTokens ?? null,
-        }).catch(() => {});
+        }).catch(() => {
+          logInvoiceOcrFailureStateSaveError({
+            runId: run.id,
+            safeErrorCode: error.failure.code,
+            model: metadata?.actualModel ?? model,
+            inputTokens: metadata?.inputTokens ?? null,
+            outputTokens: metadata?.outputTokens ?? null,
+            totalTokens: metadata?.totalTokens ?? null,
+            cachedInputTokens: metadata?.cachedInputTokens ?? null,
+            reasoningTokens: metadata?.reasoningTokens ?? null,
+          });
+        });
         return response.status(error.failure.httpStatus).json({
           error: error.failure.publicMessage,
           code: error.failure.code,
@@ -717,7 +800,9 @@ router.post(
         });
       }
       await markRunFailed(run.id, {
-        safeErrorCode: "invoice_ocr_internal_error",
+        safeErrorCode: successfulApiResult
+          ? "invoice_ocr_result_save_failed"
+          : "invoice_ocr_internal_error",
         latencyMs: successfulApiResult?.latencyMs ?? 0,
         attemptCount: successfulApiResult?.attemptCount ?? 1,
         actualModel: successfulApiResult?.actualModel ?? null,
@@ -729,7 +814,20 @@ router.post(
         cachedInputTokens:
           successfulApiResult?.cachedInputTokens ?? null,
         reasoningTokens: successfulApiResult?.reasoningTokens ?? null,
-      }).catch(() => {});
+      }).catch(() => {
+        logInvoiceOcrFailureStateSaveError({
+          runId: run.id,
+          safeErrorCode: successfulApiResult
+            ? "invoice_ocr_result_save_failed"
+            : "invoice_ocr_internal_error",
+          model: successfulApiResult?.actualModel ?? model,
+          inputTokens: successfulApiResult?.inputTokens ?? null,
+          outputTokens: successfulApiResult?.outputTokens ?? null,
+          totalTokens: successfulApiResult?.totalTokens ?? null,
+          cachedInputTokens: successfulApiResult?.cachedInputTokens ?? null,
+          reasoningTokens: successfulApiResult?.reasoningTokens ?? null,
+        });
+      });
       return response.status(500).json({
         error:
           "辨識結果沒有安全儲存，請勿立即重跑，以免重複使用 Token。",
