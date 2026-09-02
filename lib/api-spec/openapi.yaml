@@ -901,32 +901,7 @@ paths:
         content:
           multipart/form-data:
             schema:
-              type: object
-              additionalProperties: false
-              required:
-                - image
-                - merchantName
-                - invoiceDate
-                - totalAmount
-                - currency
-                - privacyConfirmed
-              properties:
-                image:
-                  type: string
-                  format: binary
-                merchantName:
-                  type: string
-                invoiceDate:
-                  type: string
-                  format: date
-                totalAmount:
-                  type: string
-                currency:
-                  type: string
-                  pattern: "^[A-Za-z]{3}$"
-                privacyConfirmed:
-                  type: boolean
-                  const: true
+              $ref: "#/components/schemas/InvoiceOcrCreateMultipartInput"
       responses:
         "201":
           description: Test case created
@@ -972,6 +947,47 @@ paths:
                     $ref: "#/components/schemas/InvoiceOcrTestCaseBundle"
         "404":
           description: Test case not found
+    patch:
+      operationId: updateInvoiceOcrGroundTruth
+      tags: [invoiceOcr]
+      summary: Update Ground Truth before the first AI run permanently locks it
+      description: This request accepts only the four Ground Truth fields; it never accepts an image, model setting, or AI prediction.
+      parameters:
+        - $ref: "#/components/parameters/StoreId"
+        - name: testCaseId
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InvoiceOcrGroundTruthUpdateInput"
+      responses:
+        "200":
+          description: Ground Truth updated without changing the image or any AI prediction
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [testCase]
+                properties:
+                  testCase:
+                    $ref: "#/components/schemas/InvoiceOcrTestCase"
+        "400":
+          description: Invalid test case ID, Ground Truth, or additional field
+        "401":
+          description: Not signed in with Clerk
+        "403":
+          description: Not the store owner or not on the personal OCR allowlist
+        "404":
+          description: Test case not found
+        "409":
+          description: Ground Truth is permanently locked (ground_truth_locked) or the merchant is duplicated
 
   /stores/{storeId}/invoice-ocr/test-cases/{testCaseId}/analyze:
     post:
@@ -998,22 +1014,7 @@ paths:
         content:
           multipart/form-data:
             schema:
-              type: object
-              additionalProperties: false
-              required: [image, model]
-              properties:
-                image:
-                  type: string
-                  format: binary
-                model:
-                  type: string
-                  enum:
-                    - gpt-5.6-terra
-                    - gpt-5.6-sol
-                    - gpt-5.6-luna
-                confirmRerun:
-                  type: boolean
-                  default: false
+              $ref: "#/components/schemas/InvoiceOcrAnalyzeMultipartInput"
       responses:
         "201":
           description: New model run completed and scored
@@ -2313,6 +2314,72 @@ components:
         webhookSecret:
           type: ["string", "null"]
           description: Plaintext secret (min 16, max 256 chars). Pass null to clear.
+
+    InvoiceOcrCreateMultipartInput:
+      type: object
+      additionalProperties: false
+      required:
+        - image
+        - merchantName
+        - invoiceDate
+        - totalAmount
+        - currency
+        - privacyConfirmed
+      properties:
+        image:
+          type: string
+          format: binary
+        merchantName:
+          type: string
+        invoiceDate:
+          type: string
+          format: date
+        totalAmount:
+          type: string
+        currency:
+          type: string
+          pattern: "^[A-Za-z]{3}$"
+        privacyConfirmed:
+          type: boolean
+          const: true
+
+    InvoiceOcrAnalyzeMultipartInput:
+      type: object
+      additionalProperties: false
+      required: [image, model]
+      properties:
+        image:
+          type: string
+          format: binary
+        model:
+          type: string
+          enum:
+            - gpt-5.6-terra
+            - gpt-5.6-sol
+            - gpt-5.6-luna
+        confirmRerun:
+          type: boolean
+          default: false
+        confirmUnknownRerun:
+          type: boolean
+          default: false
+          description: Explicit human confirmation before retrying a run whose billing status is unknown
+
+    InvoiceOcrGroundTruthUpdateInput:
+      type: object
+      additionalProperties: false
+      required: [merchantName, invoiceDate, totalAmount, currency]
+      properties:
+        merchantName:
+          type: string
+        invoiceDate:
+          type: string
+          format: date
+        totalAmount:
+          type: string
+        currency:
+          type: string
+          pattern: "^[A-Z]{3}$"
 
     InvoiceOcrGroundTruth:
       type: object

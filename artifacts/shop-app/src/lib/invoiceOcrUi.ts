@@ -56,16 +56,18 @@ export interface InvoiceOcrReview {
   reviewedAt: string | null;
 }
 
+export interface InvoiceOcrGroundTruth {
+  merchantName: string;
+  invoiceDate: string;
+  totalAmount: string;
+  currency: string;
+}
+
 export interface InvoiceOcrTestCase {
   id: number;
   originalFilename: string;
   imageSha256: string;
-  groundTruth: {
-    merchantName: string;
-    invoiceDate: string;
-    totalAmount: string;
-    currency: string;
-  };
+  groundTruth: InvoiceOcrGroundTruth;
   groundTruthLockedAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -188,12 +190,7 @@ export async function createInvoiceOcrTestCase(input: {
   storeId: number;
   file: File;
   privacyConfirmed: boolean;
-  groundTruth: {
-    merchantName: string;
-    invoiceDate: string;
-    totalAmount: string;
-    currency: string;
-  };
+  groundTruth: InvoiceOcrGroundTruth;
   getToken: () => Promise<string | null>;
 }): Promise<{ testCase: InvoiceOcrTestCase; existing: boolean }> {
   const form = new FormData();
@@ -210,6 +207,29 @@ export async function createInvoiceOcrTestCase(input: {
       credentials: "include",
       headers: await authHeaders(input.getToken),
       body: form,
+    },
+    30_000,
+  );
+  if (!response.ok) throw await readError(response);
+  return response.json();
+}
+
+export async function updateInvoiceOcrGroundTruth(input: {
+  storeId: number;
+  testCaseId: number;
+  groundTruth: InvoiceOcrGroundTruth;
+  getToken: () => Promise<string | null>;
+}): Promise<{ testCase: InvoiceOcrTestCase }> {
+  const response = await fetchWithTimeout(
+    `/api/stores/${input.storeId}/invoice-ocr/test-cases/${input.testCaseId}`,
+    {
+      method: "PATCH",
+      credentials: "include",
+      headers: {
+        ...(await authHeaders(input.getToken)),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(input.groundTruth),
     },
     30_000,
   );

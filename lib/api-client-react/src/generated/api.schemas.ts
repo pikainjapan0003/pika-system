@@ -970,6 +970,262 @@ export interface UpdateSellerAgentSettingsRequest {
   webhookSecret?: string | null;
 }
 
+export interface InvoiceOcrCreateMultipartInput {
+  image: Blob;
+  merchantName: string;
+  invoiceDate: string;
+  totalAmount: string;
+  /** @pattern ^[A-Za-z]{3}$ */
+  currency: string;
+  privacyConfirmed: true;
+}
+
+export type InvoiceOcrAnalyzeMultipartInputModel = typeof InvoiceOcrAnalyzeMultipartInputModel[keyof typeof InvoiceOcrAnalyzeMultipartInputModel];
+
+
+export const InvoiceOcrAnalyzeMultipartInputModel = {
+  'gpt-56-terra': 'gpt-5.6-terra',
+  'gpt-56-sol': 'gpt-5.6-sol',
+  'gpt-56-luna': 'gpt-5.6-luna',
+} as const;
+
+export interface InvoiceOcrAnalyzeMultipartInput {
+  image: Blob;
+  model: InvoiceOcrAnalyzeMultipartInputModel;
+  confirmRerun?: boolean;
+  /** Explicit human confirmation before retrying a run whose billing status is unknown */
+  confirmUnknownRerun?: boolean;
+}
+
+export interface InvoiceOcrGroundTruthUpdateInput {
+  merchantName: string;
+  invoiceDate: string;
+  totalAmount: string;
+  /** @pattern ^[A-Z]{3}$ */
+  currency: string;
+}
+
+export interface InvoiceOcrGroundTruth {
+  merchantName: string;
+  invoiceDate: string;
+  totalAmount: string;
+  /** @pattern ^[A-Z]{3}$ */
+  currency: string;
+}
+
+export interface InvoiceOcrNullableFields {
+  /** @nullable */
+  merchantName: string | null;
+  /** @nullable */
+  invoiceDate: string | null;
+  /** @nullable */
+  totalAmount: string | null;
+  /** @nullable */
+  currency: string | null;
+}
+
+export interface InvoiceOcrEvidence {
+  /**
+     * @maxLength 80
+     * @nullable
+     */
+  merchantName: string | null;
+  /**
+     * @maxLength 80
+     * @nullable
+     */
+  invoiceDate: string | null;
+  /**
+     * @maxLength 80
+     * @nullable
+     */
+  totalAmount: string | null;
+  /**
+     * @maxLength 80
+     * @nullable
+     */
+  currency: string | null;
+}
+
+export interface InvoiceOcrPrediction {
+  /** @nullable */
+  merchantName: string | null;
+  /** @nullable */
+  invoiceDate: string | null;
+  /** @nullable */
+  totalAmount: string | null;
+  /** @nullable */
+  currency: string | null;
+  reviewRequired: boolean;
+  /** @maxItems 10 */
+  reviewReasons: string[];
+  evidence: InvoiceOcrEvidence;
+}
+
+export interface InvoiceOcrTestCase {
+  id: number;
+  originalFilename: string;
+  /** @pattern ^[0-9a-f]{64}$ */
+  imageSha256: string;
+  groundTruth: InvoiceOcrGroundTruth;
+  /** @nullable */
+  groundTruthLockedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type InvoiceOcrRunRequestedModel = typeof InvoiceOcrRunRequestedModel[keyof typeof InvoiceOcrRunRequestedModel];
+
+
+export const InvoiceOcrRunRequestedModel = {
+  'gpt-56-terra': 'gpt-5.6-terra',
+  'gpt-56-sol': 'gpt-5.6-sol',
+  'gpt-56-luna': 'gpt-5.6-luna',
+} as const;
+
+export type InvoiceOcrRunImageDetail = typeof InvoiceOcrRunImageDetail[keyof typeof InvoiceOcrRunImageDetail];
+
+
+export const InvoiceOcrRunImageDetail = {
+  original: 'original',
+  high: 'high',
+  low: 'low',
+  auto: 'auto',
+} as const;
+
+export type InvoiceOcrRunStatus = typeof InvoiceOcrRunStatus[keyof typeof InvoiceOcrRunStatus];
+
+
+export const InvoiceOcrRunStatus = {
+  processing: 'processing',
+  completed: 'completed',
+  failed: 'failed',
+} as const;
+
+export interface InvoiceOcrRun {
+  id: number;
+  testCaseId: number;
+  requestedModel: InvoiceOcrRunRequestedModel;
+  /** @nullable */
+  actualModel: string | null;
+  promptVersion: string;
+  imageDetail: InvoiceOcrRunImageDetail;
+  reasoningEffort: string;
+  predicted: InvoiceOcrPrediction | null;
+  /** @nullable */
+  inputTokens: number | null;
+  /** @nullable */
+  outputTokens: number | null;
+  /** @nullable */
+  totalTokens: number | null;
+  /** @nullable */
+  cachedInputTokens: number | null;
+  /** @nullable */
+  reasoningTokens: number | null;
+  /** @nullable */
+  latencyMs: number | null;
+  status: InvoiceOcrRunStatus;
+  /** @nullable */
+  errorCode: string | null;
+  retryable: boolean;
+  /**
+     * @minimum 1
+     * @maximum 2
+     */
+  attemptCount: number;
+  /** @nullable */
+  rerunOfRunId: number | null;
+  createdAt: string;
+  /** @nullable */
+  completedAt: string | null;
+}
+
+export interface InvoiceOcrReview {
+  id: number;
+  runId: number;
+  merchantNameCorrect: boolean;
+  invoiceDateCorrect: boolean;
+  totalAmountCorrect: boolean;
+  currencyCorrect: boolean;
+  unsafeConfidentError: boolean;
+  corrected: InvoiceOcrNullableFields | null;
+  /** @nullable */
+  reviewedBy: string | null;
+  /** @nullable */
+  reviewedAt: string | null;
+}
+
+export interface InvoiceOcrRunWithReview {
+  run: InvoiceOcrRun;
+  review: InvoiceOcrReview | null;
+}
+
+export interface InvoiceOcrTestCaseBundle {
+  id: number;
+  originalFilename: string;
+  /** @pattern ^[0-9a-f]{64}$ */
+  imageSha256: string;
+  groundTruth: InvoiceOcrGroundTruth;
+  /** @nullable */
+  groundTruthLockedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  runs: InvoiceOcrRunWithReview[];
+}
+
+export interface InvoiceOcrTestCaseResult {
+  testCase: InvoiceOcrTestCase;
+  existing: boolean;
+}
+
+export interface InvoiceOcrTestCaseList {
+  /** @maxItems 10 */
+  testCases: InvoiceOcrTestCaseBundle[];
+  maximumTestCases: 10;
+}
+
+export interface InvoiceOcrRunResult {
+  run: InvoiceOcrRun;
+  review: InvoiceOcrReview | null;
+  existing: boolean;
+}
+
+export interface InvoiceOcrReviewInput {
+  corrected: InvoiceOcrNullableFields | null;
+}
+
+export interface InvoiceOcrBenchmarkModelSummary {
+  requestedModel: string;
+  promptVersion: string;
+  imageDetail: string;
+  reasoningEffort: string;
+  caseCount: number;
+  structuredFormatCount: number;
+  merchantNameCorrect: number;
+  invoiceDateCorrect: number;
+  totalAmountCorrect: number;
+  currencyCorrect: number;
+  unsafeConfidentErrorCount: number;
+  totalTokens: number;
+  /** @nullable */
+  averageTokens: number | null;
+  /** @nullable */
+  medianTokens: number | null;
+  /** @nullable */
+  averageLatencyMs: number | null;
+  /** @nullable */
+  medianLatencyMs: number | null;
+  passed: boolean;
+}
+
+export interface InvoiceOcrBenchmarkSummary {
+  totalTestCases: number;
+  totalRuns: number;
+  models: InvoiceOcrBenchmarkModelSummary[];
+  benchmarkRule: string;
+  billingNotice: string;
+}
+
 export type GetSellerAgentSettings200 = {
   data: SellerAgentSettings;
 };
@@ -978,3 +1234,14 @@ export type UpdateSellerAgentSettings200 = {
   data: SellerAgentSettings;
 };
 
+export type GetInvoiceOcrTestCase200 = {
+  testCase: InvoiceOcrTestCaseBundle;
+};
+
+export type UpdateInvoiceOcrGroundTruth200 = {
+  testCase: InvoiceOcrTestCase;
+};
+
+export type ReviewInvoiceOcrRun200 = {
+  review: InvoiceOcrReview;
+};
