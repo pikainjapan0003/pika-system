@@ -475,6 +475,7 @@ export default function SettingsPage() {
             <TripsEntry />
             <SkillMapEntry />
             {skillVisibility.isVisible("audit-logs") && <AuditLogsEntry />}
+            <InvoiceOcrEntry />
             {skillVisibility.isVisible("agent-settings") && (
               <AgentSettingsEntry />
             )}
@@ -1047,6 +1048,34 @@ function ExchangeRateReferenceEntry() {
             </p>
             <p className="text-xs text-muted-foreground">
               比較銀行日圓即期賣出並手動套用
+            </p>
+          </div>
+        </div>
+        <span className="text-muted-foreground text-sm">›</span>
+      </button>
+    </div>
+  );
+}
+
+function InvoiceOcrEntry() {
+  const [, setLocation] = useLocation();
+  return (
+    <div className="px-5 pb-3">
+      <button
+        type="button"
+        onClick={() => setLocation("/settings/invoice-ocr")}
+        className="w-full bg-card border border-border rounded-2xl px-4 py-4 flex items-center justify-between text-left hover:bg-secondary/50 transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <span className="w-9 h-9 rounded-xl bg-chart-2/10 flex items-center justify-center">
+            <ReceiptText size={18} className="text-chart-2" />
+          </span>
+          <div>
+            <p className="text-sm font-semibold text-foreground">
+              發票 AI 辨識測試
+            </p>
+            <p className="text-xs text-secondary-foreground">
+              僅供你的帳號測試 10 張，不會自動入帳
             </p>
           </div>
         </div>
