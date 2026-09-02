@@ -46,6 +46,7 @@ import PublicOrderPage from "@/pages/PublicOrder";
 import TrackLookupPage from "@/pages/TrackLookup";
 import TrackOrderPage from "@/pages/TrackOrder";
 import SettingsPage from "@/pages/Settings";
+import InvoiceOcrTestPage from "@/pages/InvoiceOcrTest";
 import ExchangeRateReferencePage from "@/pages/ExchangeRateReference";
 import AuditLogsPage from "@/pages/AuditLogs";
 import AgentSettingsPage from "@/pages/AgentSettings";
@@ -337,6 +338,10 @@ function MerchantPortal() {
         component={ExchangeRateReferencePage}
       />
       <Route path="/audit-logs" component={AuditLogsPage} />
+      <Route
+        path="/settings/invoice-ocr"
+        component={InvoiceOcrTestPage}
+      />
       <Route path="/settings" component={SettingsPage} />
       <Route path="/trips" component={TripsPage} />
       <Route path="/trips/:tripId/estimate">
@@ -408,6 +413,7 @@ function AppRouter() {
         component={MerchantPortal}
       />
       <Route path="/audit-logs" component={MerchantPortal} />
+      <Route path="/settings/invoice-ocr" component={MerchantPortal} />
       <Route path="/settings" component={MerchantPortal} />
       <Route path="/trips" component={MerchantPortal} />
       <Route path="/trips/:tripId/estimate" component={MerchantPortal} />
