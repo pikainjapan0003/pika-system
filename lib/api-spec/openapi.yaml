@@ -1103,6 +1103,15 @@ paths:
                 type: string
 
 components:
+  parameters:
+    StoreId:
+      name: storeId
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+
   schemas:
     HealthStatus:
       type: object
