@@ -745,21 +745,22 @@ test("existing merchant initialization is separately mocked; calculator adds zer
   expect(evidence.writes.length).toBe(initializationWrites);
   expect(evidence.errors).toEqual([]);
 });
-test("original portal guards and dashboard/settings entries retain five navigation items", async ({
+test("calculator is available from settings only and retains five navigation items", async ({
   page,
 }) => {
   const evidence = await mockCalculator(page);
   await page.goto("/dashboard");
-  await page.getByRole("button", { name: /價格計算機/ }).click();
-  await expect(page).toHaveURL(/\/calculator$/);
   const nav = page.getByRole("navigation", { name: "主要導覽" });
   await expect(nav.getByRole("button")).toHaveCount(5);
+  await expect(page.getByRole("button", { name: /價格計算機/ })).toHaveCount(0);
   await nav.getByRole("button", { name: "更多", exact: true }).click();
   await expect(page).toHaveURL(/\/settings$/);
   await page.getByRole("button", { name: /價格計算機/ }).click();
+  await expect(page).toHaveURL(/\/calculator$/);
   await expect(
     page.getByRole("heading", { name: "價格計算機", exact: true }),
   ).toBeVisible();
+  await expect(nav.getByRole("button")).toHaveCount(5);
   expect(evidence.writes).toEqual([]);
   expect(evidence.errors).toEqual([]);
 });
