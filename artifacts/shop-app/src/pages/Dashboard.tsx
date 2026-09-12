@@ -400,12 +400,6 @@ export default function DashboardPage() {
         {/* Quick actions */}
         <div className="grid grid-cols-2 gap-3">
           <ActionCard
-            label="價格計算機"
-            desc="四模式成本與售價試算"
-            icon="🧮"
-            onClick={() => setLocation("/calculator")}
-          />
-          <ActionCard
             label="管理商品"
             desc="新增、編輯商品"
             icon="📦"
