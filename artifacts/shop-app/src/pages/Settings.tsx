@@ -468,6 +468,7 @@ export default function SettingsPage() {
           )}
 
           <div className="pt-4">
+            <CalculatorEntry />
             <ExchangeRateReferenceEntry />
             <CustomersEntry />
             <TripsEntry />
@@ -1021,6 +1022,26 @@ function TripsEntry() {
           </div>
         </div>
         <span className="text-muted-foreground text-sm">›</span>
+      </button>
+    </div>
+  );
+}
+
+function CalculatorEntry() {
+  const [, navigate] = useLocation();
+  return (
+    <div className="px-5 pb-3">
+      <button
+        type="button"
+        onClick={() => navigate("/calculator")}
+        className="min-h-14 w-full rounded-xl border border-border bg-card px-4 py-3 text-left"
+      >
+        <span className="block text-sm font-semibold text-foreground">
+          價格計算機 ›
+        </span>
+        <span className="text-xs text-muted-foreground">
+          四模式試算 · 匯率僅記住此瀏覽器
+        </span>
       </button>
     </div>
   );
