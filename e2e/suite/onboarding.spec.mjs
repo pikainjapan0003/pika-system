@@ -117,6 +117,10 @@ test("a zero-skill store previews and applies its recommended package before the
   ]);
 
   await page.getByRole("button", { name: "套用推薦" }).click();
+  // The question heading is already gone in preview; wait for apply to finish.
+  await expect(
+    page.getByRole("heading", { name: "你的推薦套餐", exact: true }),
+  ).toHaveCount(0);
   await expect(
     page.getByRole("heading", {
       name: "用 4 題找到適合的技能套餐",
