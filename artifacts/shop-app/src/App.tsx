@@ -35,6 +35,7 @@ import { CUSTOMER_PORTAL_ROUTE_PATTERN } from "@/lib/customerRoutes";
 
 import HomePage from "@/pages/Home";
 import DashboardPage from "@/pages/Dashboard";
+import CalculatorPage from "@/pages/Calculator";
 import ProductsPage from "@/pages/Products";
 import ProductFormPage from "@/pages/ProductForm";
 import OrdersPage from "@/pages/Orders";
@@ -313,6 +314,7 @@ function MerchantPortal() {
     <StoreSkillVisibilityProvider storeId={store.id}>
       <Switch>
         <Route path="/dashboard" component={DashboardPage} />
+        <Route path="/calculator" component={CalculatorPage} />
         <Route path="/products/new">
           {() => (
             <DailySkillPageGate surface="products">
@@ -463,6 +465,7 @@ function AppRouter() {
       <Route path="/setup" component={SetupRoute} />
       <Route path="/dev/handoff" component={DevHandoffPage} />
       <Route path="/dashboard" component={MerchantPortal} />
+      <Route path="/calculator" component={MerchantPortal} />
       <Route path="/products/*?" component={MerchantPortal} />
       <Route path="/categories" component={MerchantPortal} />
       <Route path="/orders" component={MerchantPortal} />
