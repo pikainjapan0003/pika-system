@@ -1040,7 +1040,10 @@ function CalculatorEntry() {
         className="w-full bg-white border border-border rounded-2xl px-4 py-4 flex items-center justify-between text-left hover:bg-secondary/50 transition-colors"
       >
         <div className="flex items-center gap-3 min-w-0">
-          <span aria-hidden="true" className="w-9 h-9 rounded-xl bg-rose-100 flex items-center justify-center text-rose-600 flex-shrink-0">
+          <span
+            aria-hidden="true"
+            className="w-9 h-9 rounded-xl bg-rose-100 flex items-center justify-center text-rose-600 flex-shrink-0"
+          >
             <Calculator size={20} />
           </span>
           <div>
@@ -1050,7 +1053,9 @@ function CalculatorEntry() {
             </p>
           </div>
         </div>
-        <span aria-hidden="true" className="text-muted-foreground text-sm">›</span>
+        <span aria-hidden="true" className="text-muted-foreground text-sm">
+          ›
+        </span>
       </button>
     </div>
   );
