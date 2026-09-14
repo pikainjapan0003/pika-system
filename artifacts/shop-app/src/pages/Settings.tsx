@@ -35,6 +35,7 @@ import {
   Globe,
   Copy,
   Check,
+  Calculator,
 } from "lucide-react";
 
 const IS_DEV = import.meta.env.DEV;
@@ -1036,14 +1037,20 @@ function CalculatorEntry() {
       <button
         type="button"
         onClick={() => navigate("/calculator")}
-        className="min-h-14 w-full rounded-xl border border-border bg-card px-4 py-3 text-left"
+        className="w-full bg-white border border-border rounded-2xl px-4 py-4 flex items-center justify-between text-left hover:bg-secondary/50 transition-colors"
       >
-        <span className="block text-sm font-semibold text-foreground">
-          價格計算機 ›
-        </span>
-        <span className="text-xs text-muted-foreground">
-          四模式試算 · 匯率僅記住此瀏覽器
-        </span>
+        <div className="flex items-center gap-3 min-w-0">
+          <span aria-hidden="true" className="w-9 h-9 rounded-xl bg-rose-100 flex items-center justify-center text-rose-600 flex-shrink-0">
+            <Calculator size={20} />
+          </span>
+          <div>
+            <p className="text-sm font-semibold text-foreground">價格計算機</p>
+            <p className="text-xs text-muted-foreground">
+              四模式試算 · 匯率僅記住此瀏覽器
+            </p>
+          </div>
+        </div>
+        <span aria-hidden="true" className="text-muted-foreground text-sm">›</span>
       </button>
     </div>
   );
