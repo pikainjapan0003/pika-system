@@ -1,0 +1,3 @@
+import {defineConfig} from '@playwright/test';import assert from 'node:assert/strict';
+assert.equal(process.env.PIKA_PHASE78_E2E,'DB-BUILD-07-08');const url=new URL(process.env.E2E_BASE_URL);assert.equal(url.hostname,'127.0.0.1');
+export default defineConfig({testDir:'.',testMatch:['product-import.spec.mjs'],workers:1,fullyParallel:false,retries:0,timeout:180000,expect:{timeout:15000},outputDir:process.env.PIKA_PHASE78_EVIDENCE+'/test-results',reporter:[['line'],['junit',{outputFile:process.env.PIKA_PHASE78_EVIDENCE+'/e2e.junit.xml'}]],use:{baseURL:url.href,browserName:'chromium',headless:true,trace:'on',screenshot:'only-on-failure',launchOptions:{args:['--disable-dev-shm-usage']}}});

@@ -7,6 +7,4368 @@
  */
 import * as zod from 'zod';
 
+import { preprocessCatalogParams } from '../catalogParams';
+import { preprocessListingMatchQuery } from '../listingMatchQuery';
+import { preprocessPreviewPricingParams } from '../previewPricingParams';
+
+export const catalogListingMatchPreviewPathStoreIdMax = 2147483647;
+
+
+
+export const CatalogListingMatchPreviewPathParams = zod.preprocess(preprocessCatalogParams, zod.object({
+  "storeId": zod.coerce.number().min(1).max(catalogListingMatchPreviewPathStoreIdMax)
+}).strict())
+
+export const catalogListingMatchPreviewQueryPageMax = 100000;
+
+
+
+export const CatalogListingMatchPreviewQueryParams = zod.preprocess(preprocessListingMatchQuery, zod.object({
+  "page": zod.number().min(1).max(catalogListingMatchPreviewQueryPageMax).optional()
+}).strict())
+
+export const CatalogListingMatchPreviewResponse = zod.record(zod.string(), zod.unknown())
+
+
+export const catalogListingMatchApplyPathStoreIdMax = 2147483647;
+
+
+
+export const CatalogListingMatchApplyPathParams = zod.preprocess(preprocessCatalogParams, zod.object({
+  "storeId": zod.coerce.number().min(1).max(catalogListingMatchApplyPathStoreIdMax)
+}).strict())
+
+export const catalogListingMatchApplyBodyRequestKeyMin = 8;
+export const catalogListingMatchApplyBodyRequestKeyMax = 128;
+
+export const catalogListingMatchApplyBodyRowsItemProductIdMax = 2147483647;
+
+export const catalogListingMatchApplyBodyRowsItemCatalogProductIdMax = 2147483647;
+
+export const catalogListingMatchApplyBodyRowsItemValuesNameMax = 256;
+
+export const catalogListingMatchApplyBodyRowsItemValuesBarcodeMax = 128;
+
+export const catalogListingMatchApplyBodyRowsItemValuesWeightGramsMax = 64;
+
+
+export const catalogListingMatchApplyBodyRowsItemValuesWeightGramsRegExp = new RegExp('^[0-9]+(\\.[0-9]+)?$');
+export const catalogListingMatchApplyBodyRowsItemValuesOriginalPriceJpyMax = 64;
+
+
+export const catalogListingMatchApplyBodyRowsItemValuesOriginalPriceJpyRegExp = new RegExp('^[0-9]+(\\.[0-9]+)?$');
+export const catalogListingMatchApplyBodyRowsItemValuesEffectiveCostJpyMax = 64;
+
+
+export const catalogListingMatchApplyBodyRowsItemValuesEffectiveCostJpyRegExp = new RegExp('^[0-9]+(\\.[0-9]+)?$');
+export const catalogListingMatchApplyBodyRowsItemValuesPreferredRouteLabelMax = 256;
+
+export const catalogListingMatchApplyBodyRowsItemValuesShopeePriceTwdMax = 64;
+
+
+export const catalogListingMatchApplyBodyRowsItemValuesShopeePriceTwdRegExp = new RegExp('^[0-9]+(\\.[0-9]+)?$');
+export const catalogListingMatchApplyBodyRowsMax = 100;
+
+
+
+export const CatalogListingMatchApplyBody = zod.object({
+  "requestKey": zod.string().min(catalogListingMatchApplyBodyRequestKeyMin).max(catalogListingMatchApplyBodyRequestKeyMax),
+  "rows": zod.array(zod.object({
+  "productId": zod.number().min(1).max(catalogListingMatchApplyBodyRowsItemProductIdMax),
+  "action": zod.enum(['IGNORE', 'LINK', 'CREATE']),
+  "catalogProductId": zod.number().min(1).max(catalogListingMatchApplyBodyRowsItemCatalogProductIdMax).optional(),
+  "values": zod.object({
+  "confirmed": zod.literal(true),
+  "name": zod.string().min(1).max(catalogListingMatchApplyBodyRowsItemValuesNameMax),
+  "barcode": zod.string().max(catalogListingMatchApplyBodyRowsItemValuesBarcodeMax),
+  "barcodeStatus": zod.enum(['REAL', 'NONE']),
+  "weightGrams": zod.string().max(catalogListingMatchApplyBodyRowsItemValuesWeightGramsMax).regex(catalogListingMatchApplyBodyRowsItemValuesWeightGramsRegExp),
+  "originalPriceJpy": zod.string().max(catalogListingMatchApplyBodyRowsItemValuesOriginalPriceJpyMax).regex(catalogListingMatchApplyBodyRowsItemValuesOriginalPriceJpyRegExp),
+  "effectiveCostJpy": zod.string().max(catalogListingMatchApplyBodyRowsItemValuesEffectiveCostJpyMax).regex(catalogListingMatchApplyBodyRowsItemValuesEffectiveCostJpyRegExp),
+  "status": zod.enum(['NORMAL', 'DISCONTINUED']).optional(),
+  "preferredRouteLabel": zod.string().max(catalogListingMatchApplyBodyRowsItemValuesPreferredRouteLabelMax).optional(),
+  "shopeePriceTwd": zod.string().max(catalogListingMatchApplyBodyRowsItemValuesShopeePriceTwdMax).regex(catalogListingMatchApplyBodyRowsItemValuesShopeePriceTwdRegExp).optional(),
+  "forceCreate": zod.boolean().optional()
+}).strict().optional()
+}).strict()).max(catalogListingMatchApplyBodyRowsMax)
+}).strict()
+
+export const CatalogListingMatchApplyResponse = zod.record(zod.string(), zod.unknown())
+
+
+export const catalogImportPreviewPathStoreIdMax = 2147483647;
+
+
+
+export const CatalogImportPreviewPathParams = zod.preprocess(preprocessCatalogParams, zod.object({
+  "storeId": zod.coerce.number().min(1).max(catalogImportPreviewPathStoreIdMax)
+}).strict())
+
+export const catalogImportPreviewBodySpreadsheetTitleMax = 256;
+
+export const catalogImportPreviewBodySpreadsheetIdMax = 256;
+
+export const catalogImportPreviewBodySheetTitleMax = 128;
+
+export const catalogImportPreviewBodyCellsItemRowMax = 500;
+
+export const catalogImportPreviewBodyCellsItemColumnMax = 64;
+
+export const catalogImportPreviewBodyCellsItemValueOneMax = 4096;
+
+export const catalogImportPreviewBodyCellsItemFormulaMax = 2048;
+
+export const catalogImportPreviewBodyCellsItemCachedValueOneMax = 4096;
+
+export const catalogImportPreviewBodyCellsMax = 10000;
+
+
+
+export const CatalogImportPreviewBody = zod.object({
+  "sourceType": zod.enum(['STRUCTURED_CELLS', 'XLSX_UPLOAD']),
+  "spreadsheetTitle": zod.string().min(1).max(catalogImportPreviewBodySpreadsheetTitleMax),
+  "spreadsheetId": zod.string().max(catalogImportPreviewBodySpreadsheetIdMax).optional(),
+  "sheetTitle": zod.string().max(catalogImportPreviewBodySheetTitleMax).optional(),
+  "cells": zod.array(zod.object({
+  "row": zod.number().min(1).max(catalogImportPreviewBodyCellsItemRowMax),
+  "column": zod.number().min(1).max(catalogImportPreviewBodyCellsItemColumnMax),
+  "type": zod.enum(['n', 's', 'str', 'inlineStr', 'b', 'e', 'text', 'number', 'boolean', 'blank']),
+  "value": zod.union([zod.string().max(catalogImportPreviewBodyCellsItemValueOneMax),zod.number(),zod.boolean(),zod.null()]),
+  "formula": zod.string().max(catalogImportPreviewBodyCellsItemFormulaMax).optional(),
+  "cachedValue": zod.union([zod.string().max(catalogImportPreviewBodyCellsItemCachedValueOneMax),zod.number(),zod.boolean(),zod.null()]).optional()
+}).strict()).max(catalogImportPreviewBodyCellsMax).optional()
+}).strict()
+
+export const CatalogImportPreviewResponse = zod.record(zod.string(), zod.unknown())
+
+
+export const catalogImportGetPathStoreIdMax = 2147483647;
+
+export const catalogImportGetPathBatchIdMax = 2147483647;
+
+
+
+export const CatalogImportGetPathParams = zod.preprocess(preprocessCatalogParams, zod.object({
+  "storeId": zod.coerce.number().min(1).max(catalogImportGetPathStoreIdMax),
+  "batchId": zod.coerce.number().min(1).max(catalogImportGetPathBatchIdMax)
+}).strict())
+
+export const CatalogImportGetResponse = zod.record(zod.string(), zod.unknown())
+
+
+export const catalogImportResolvePathStoreIdMax = 2147483647;
+
+export const catalogImportResolvePathBatchIdMax = 2147483647;
+
+
+
+export const CatalogImportResolvePathParams = zod.preprocess(preprocessCatalogParams, zod.object({
+  "storeId": zod.coerce.number().min(1).max(catalogImportResolvePathStoreIdMax),
+  "batchId": zod.coerce.number().min(1).max(catalogImportResolvePathBatchIdMax)
+}).strict())
+
+export const catalogImportResolveBodyExchangeRateMax = 64;
+
+
+export const catalogImportResolveBodyExchangeRateRegExp = new RegExp('^[0-9]+(\\.[0-9]+)?$');
+export const catalogImportResolveBodyRowsItemRowIdMax = 2147483647;
+
+export const catalogImportResolveBodyRowsItemResolutionReasonMax = 1000;
+
+export const catalogImportResolveBodyRowsItemResolutionCatalogProductIdMax = 2147483647;
+
+export const catalogImportResolveBodyRowsItemResolutionValuesNameMax = 256;
+
+export const catalogImportResolveBodyRowsItemResolutionValuesBarcodeMax = 128;
+
+export const catalogImportResolveBodyRowsItemResolutionValuesWeightGramsMax = 64;
+
+
+export const catalogImportResolveBodyRowsItemResolutionValuesWeightGramsRegExp = new RegExp('^[0-9]+(\\.[0-9]+)?$');
+export const catalogImportResolveBodyRowsItemResolutionValuesOriginalPriceJpyMax = 64;
+
+
+export const catalogImportResolveBodyRowsItemResolutionValuesOriginalPriceJpyRegExp = new RegExp('^[0-9]+(\\.[0-9]+)?$');
+export const catalogImportResolveBodyRowsItemResolutionValuesEffectiveCostJpyMax = 64;
+
+
+export const catalogImportResolveBodyRowsItemResolutionValuesEffectiveCostJpyRegExp = new RegExp('^[0-9]+(\\.[0-9]+)?$');
+export const catalogImportResolveBodyRowsItemResolutionValuesPreferredRouteLabelMax = 256;
+
+export const catalogImportResolveBodyRowsItemResolutionValuesShopeePriceTwdMax = 64;
+
+
+export const catalogImportResolveBodyRowsItemResolutionValuesShopeePriceTwdRegExp = new RegExp('^[0-9]+(\\.[0-9]+)?$');
+export const catalogImportResolveBodyRowsMax = 500;
+
+
+
+export const CatalogImportResolveBody = zod.object({
+  "exchangeRate": zod.string().max(catalogImportResolveBodyExchangeRateMax).regex(catalogImportResolveBodyExchangeRateRegExp).optional(),
+  "rows": zod.array(zod.object({
+  "rowId": zod.number().min(1).max(catalogImportResolveBodyRowsItemRowIdMax),
+  "resolution": zod.object({
+  "action": zod.enum(['IGNORE', 'LINK', 'CREATE']),
+  "reason": zod.string().min(1).max(catalogImportResolveBodyRowsItemResolutionReasonMax),
+  "catalogProductId": zod.number().min(1).max(catalogImportResolveBodyRowsItemResolutionCatalogProductIdMax).optional(),
+  "values": zod.object({
+  "confirmed": zod.literal(true),
+  "name": zod.string().min(1).max(catalogImportResolveBodyRowsItemResolutionValuesNameMax),
+  "barcode": zod.string().max(catalogImportResolveBodyRowsItemResolutionValuesBarcodeMax),
+  "barcodeStatus": zod.enum(['REAL', 'NONE']),
+  "weightGrams": zod.string().max(catalogImportResolveBodyRowsItemResolutionValuesWeightGramsMax).regex(catalogImportResolveBodyRowsItemResolutionValuesWeightGramsRegExp),
+  "originalPriceJpy": zod.string().max(catalogImportResolveBodyRowsItemResolutionValuesOriginalPriceJpyMax).regex(catalogImportResolveBodyRowsItemResolutionValuesOriginalPriceJpyRegExp),
+  "effectiveCostJpy": zod.string().max(catalogImportResolveBodyRowsItemResolutionValuesEffectiveCostJpyMax).regex(catalogImportResolveBodyRowsItemResolutionValuesEffectiveCostJpyRegExp),
+  "status": zod.enum(['NORMAL', 'DISCONTINUED']).optional(),
+  "preferredRouteLabel": zod.string().max(catalogImportResolveBodyRowsItemResolutionValuesPreferredRouteLabelMax).optional(),
+  "shopeePriceTwd": zod.string().max(catalogImportResolveBodyRowsItemResolutionValuesShopeePriceTwdMax).regex(catalogImportResolveBodyRowsItemResolutionValuesShopeePriceTwdRegExp).optional(),
+  "forceCreate": zod.boolean().optional()
+}).strict().optional()
+}).strict()
+}).strict()).max(catalogImportResolveBodyRowsMax).optional()
+}).strict()
+
+export const CatalogImportResolveResponse = zod.record(zod.string(), zod.unknown())
+
+
+export const catalogImportApprovePathStoreIdMax = 2147483647;
+
+export const catalogImportApprovePathBatchIdMax = 2147483647;
+
+
+
+export const CatalogImportApprovePathParams = zod.preprocess(preprocessCatalogParams, zod.object({
+  "storeId": zod.coerce.number().min(1).max(catalogImportApprovePathStoreIdMax),
+  "batchId": zod.coerce.number().min(1).max(catalogImportApprovePathBatchIdMax)
+}).strict())
+
+export const catalogImportApproveBodyReviewVersionMin = 0;
+
+
+
+export const CatalogImportApproveBody = zod.object({
+  "confirmed": zod.literal(true),
+  "reviewVersion": zod.number().min(catalogImportApproveBodyReviewVersionMin)
+}).strict()
+
+export const CatalogImportApproveResponse = zod.record(zod.string(), zod.unknown())
+
+
+export const catalogImportCommitPathStoreIdMax = 2147483647;
+
+export const catalogImportCommitPathBatchIdMax = 2147483647;
+
+
+
+export const CatalogImportCommitPathParams = zod.preprocess(preprocessCatalogParams, zod.object({
+  "storeId": zod.coerce.number().min(1).max(catalogImportCommitPathStoreIdMax),
+  "batchId": zod.coerce.number().min(1).max(catalogImportCommitPathBatchIdMax)
+}).strict())
+
+export const CatalogImportCommitBody = zod.object({
+  "confirmed": zod.literal(true)
+}).strict()
+
+export const CatalogImportCommitResponse = zod.record(zod.string(), zod.unknown())
+
+
+export const catalogImportRollbackPathStoreIdMax = 2147483647;
+
+export const catalogImportRollbackPathBatchIdMax = 2147483647;
+
+
+
+export const CatalogImportRollbackPathParams = zod.preprocess(preprocessCatalogParams, zod.object({
+  "storeId": zod.coerce.number().min(1).max(catalogImportRollbackPathStoreIdMax),
+  "batchId": zod.coerce.number().min(1).max(catalogImportRollbackPathBatchIdMax)
+}).strict())
+
+export const CatalogImportRollbackBody = zod.object({
+  "confirmed": zod.literal(true)
+}).strict()
+
+export const CatalogImportRollbackResponse = zod.record(zod.string(), zod.unknown())
+
+
+export const catalogImportReferencesPathStoreIdMax = 2147483647;
+
+export const catalogImportReferencesPathCatalogProductIdMax = 2147483647;
+
+
+
+export const CatalogImportReferencesPathParams = zod.preprocess(preprocessCatalogParams, zod.object({
+  "storeId": zod.coerce.number().min(1).max(catalogImportReferencesPathStoreIdMax),
+  "catalogProductId": zod.coerce.number().min(1).max(catalogImportReferencesPathCatalogProductIdMax)
+}).strict())
+
+export const CatalogImportReferencesResponse = zod.record(zod.string(), zod.unknown())
+
+
+export const captureCatalogOrderItemPathStoreIdMax = 2147483647;
+export const captureCatalogOrderItemPathStoreIdMultipleOf = 1;
+
+export const captureCatalogOrderItemPathOrderIdMax = 2147483647;
+export const captureCatalogOrderItemPathOrderIdMultipleOf = 1;
+
+export const captureCatalogOrderItemPathItemIdMax = 2147483647;
+export const captureCatalogOrderItemPathItemIdMultipleOf = 1;
+
+
+
+export const CaptureCatalogOrderItemParams = zod.object({
+  "storeId": zod.number().min(1).max(captureCatalogOrderItemPathStoreIdMax).multipleOf(captureCatalogOrderItemPathStoreIdMultipleOf),
+  "orderId": zod.number().min(1).max(captureCatalogOrderItemPathOrderIdMax).multipleOf(captureCatalogOrderItemPathOrderIdMultipleOf),
+  "itemId": zod.number().min(1).max(captureCatalogOrderItemPathItemIdMax).multipleOf(captureCatalogOrderItemPathItemIdMultipleOf)
+}).strict()
+
+export const captureCatalogOrderItemBodyTemplateIdMax = 2147483647;
+export const captureCatalogOrderItemBodyTemplateIdMultipleOf = 1;
+
+export const captureCatalogOrderItemBodyShippingProfileIdMax = 2147483647;
+export const captureCatalogOrderItemBodyShippingProfileIdMultipleOf = 1;
+
+export const captureCatalogOrderItemBodyTripRouteIdMax = 2147483647;
+export const captureCatalogOrderItemBodyTripRouteIdMultipleOf = 1;
+
+export const captureCatalogOrderItemBodyOriginalPriceJpyMax = 128;
+
+
+export const captureCatalogOrderItemBodyOriginalPriceJpyRegExp = new RegExp('^[+-]?\\d+(?:\\.\\d+)?$');
+export const captureCatalogOrderItemBodyEffectiveCostJpyMax = 128;
+
+
+export const captureCatalogOrderItemBodyEffectiveCostJpyRegExp = new RegExp('^[+-]?\\d+(?:\\.\\d+)?$');
+export const captureCatalogOrderItemBodyWeightGramsMax = 128;
+
+
+export const captureCatalogOrderItemBodyWeightGramsRegExp = new RegExp('^[+-]?\\d+(?:\\.\\d+)?$');
+export const captureCatalogOrderItemBodyExchangeRateMax = 128;
+
+
+export const captureCatalogOrderItemBodyExchangeRateRegExp = new RegExp('^[+-]?\\d+(?:\\.\\d+)?$');
+export const captureCatalogOrderItemBodyGeneralFinalPriceTwdMax = 128;
+
+
+export const captureCatalogOrderItemBodyGeneralFinalPriceTwdRegExp = new RegExp('^[+-]?\\d+(?:\\.\\d+)?$');
+export const captureCatalogOrderItemBodyVipFinalPriceTwdMax = 128;
+
+
+export const captureCatalogOrderItemBodyVipFinalPriceTwdRegExp = new RegExp('^[+-]?\\d+(?:\\.\\d+)?$');
+export const captureCatalogOrderItemBodyCostAdjustmentRateMax = 128;
+
+
+export const captureCatalogOrderItemBodyCostAdjustmentRateRegExp = new RegExp('^[+-]?\\d+(?:\\.\\d+)?$');
+export const captureCatalogOrderItemBodyDepartmentStoreFeeRateMax = 128;
+
+
+export const captureCatalogOrderItemBodyDepartmentStoreFeeRateRegExp = new RegExp('^[+-]?\\d+(?:\\.\\d+)?$');
+export const captureCatalogOrderItemBodyPurchasePaymentFeeRateMax = 128;
+
+
+export const captureCatalogOrderItemBodyPurchasePaymentFeeRateRegExp = new RegExp('^[+-]?\\d+(?:\\.\\d+)?$');
+export const captureCatalogOrderItemBodyRoutePaymentFeeRateMax = 128;
+
+
+export const captureCatalogOrderItemBodyRoutePaymentFeeRateRegExp = new RegExp('^[+-]?\\d+(?:\\.\\d+)?$');
+export const captureCatalogOrderItemBodyLossProtectionTwdMax = 128;
+
+
+export const captureCatalogOrderItemBodyLossProtectionTwdRegExp = new RegExp('^[+-]?\\d+(?:\\.\\d+)?$');
+export const captureCatalogOrderItemBodyTargetMarginRateMax = 128;
+
+
+export const captureCatalogOrderItemBodyTargetMarginRateRegExp = new RegExp('^[+-]?\\d+(?:\\.\\d+)?$');
+export const captureCatalogOrderItemBodyThresholdsLossMax = 128;
+
+
+export const captureCatalogOrderItemBodyThresholdsLossRegExp = new RegExp('^[+-]?\\d+(?:\\.\\d+)?$');
+export const captureCatalogOrderItemBodyThresholdsLowMax = 128;
+
+
+export const captureCatalogOrderItemBodyThresholdsLowRegExp = new RegExp('^[+-]?\\d+(?:\\.\\d+)?$');
+export const captureCatalogOrderItemBodyThresholdsMediumMax = 128;
+
+
+export const captureCatalogOrderItemBodyThresholdsMediumRegExp = new RegExp('^[+-]?\\d+(?:\\.\\d+)?$');
+
+
+export const CaptureCatalogOrderItemBody = zod.object({
+  "templateId": zod.number().min(1).max(captureCatalogOrderItemBodyTemplateIdMax).multipleOf(captureCatalogOrderItemBodyTemplateIdMultipleOf).optional(),
+  "shippingProfileId": zod.number().min(1).max(captureCatalogOrderItemBodyShippingProfileIdMax).multipleOf(captureCatalogOrderItemBodyShippingProfileIdMultipleOf).optional(),
+  "tripRouteId": zod.number().min(1).max(captureCatalogOrderItemBodyTripRouteIdMax).multipleOf(captureCatalogOrderItemBodyTripRouteIdMultipleOf).optional(),
+  "originalPriceJpy": zod.string().max(captureCatalogOrderItemBodyOriginalPriceJpyMax).regex(captureCatalogOrderItemBodyOriginalPriceJpyRegExp).nullish(),
+  "effectiveCostJpy": zod.string().max(captureCatalogOrderItemBodyEffectiveCostJpyMax).regex(captureCatalogOrderItemBodyEffectiveCostJpyRegExp).nullish(),
+  "weightGrams": zod.string().max(captureCatalogOrderItemBodyWeightGramsMax).regex(captureCatalogOrderItemBodyWeightGramsRegExp).nullish(),
+  "exchangeRate": zod.string().max(captureCatalogOrderItemBodyExchangeRateMax).regex(captureCatalogOrderItemBodyExchangeRateRegExp).nullish(),
+  "generalFinalPriceTwd": zod.string().max(captureCatalogOrderItemBodyGeneralFinalPriceTwdMax).regex(captureCatalogOrderItemBodyGeneralFinalPriceTwdRegExp).nullish(),
+  "vipFinalPriceTwd": zod.string().max(captureCatalogOrderItemBodyVipFinalPriceTwdMax).regex(captureCatalogOrderItemBodyVipFinalPriceTwdRegExp).nullish(),
+  "costAdjustmentRate": zod.string().max(captureCatalogOrderItemBodyCostAdjustmentRateMax).regex(captureCatalogOrderItemBodyCostAdjustmentRateRegExp).optional(),
+  "departmentStoreFeeRate": zod.string().max(captureCatalogOrderItemBodyDepartmentStoreFeeRateMax).regex(captureCatalogOrderItemBodyDepartmentStoreFeeRateRegExp).optional(),
+  "purchasePaymentFeeRate": zod.string().max(captureCatalogOrderItemBodyPurchasePaymentFeeRateMax).regex(captureCatalogOrderItemBodyPurchasePaymentFeeRateRegExp).optional(),
+  "routePaymentFeeRate": zod.string().max(captureCatalogOrderItemBodyRoutePaymentFeeRateMax).regex(captureCatalogOrderItemBodyRoutePaymentFeeRateRegExp).optional(),
+  "lossProtectionTwd": zod.string().max(captureCatalogOrderItemBodyLossProtectionTwdMax).regex(captureCatalogOrderItemBodyLossProtectionTwdRegExp).optional(),
+  "targetMarginRate": zod.string().max(captureCatalogOrderItemBodyTargetMarginRateMax).regex(captureCatalogOrderItemBodyTargetMarginRateRegExp).optional(),
+  "templateCode": zod.enum(['GENERAL', 'LIVE', 'PERFUME', 'CUSTOM']).optional(),
+  "isTransportCostExempt": zod.boolean().optional(),
+  "thresholds": zod.object({
+  "loss": zod.string().max(captureCatalogOrderItemBodyThresholdsLossMax).regex(captureCatalogOrderItemBodyThresholdsLossRegExp),
+  "low": zod.string().max(captureCatalogOrderItemBodyThresholdsLowMax).regex(captureCatalogOrderItemBodyThresholdsLowRegExp),
+  "medium": zod.string().max(captureCatalogOrderItemBodyThresholdsMediumMax).regex(captureCatalogOrderItemBodyThresholdsMediumRegExp)
+}).strict().optional()
+}).strict()
+
+export const captureCatalogOrderItemResponseCreditSpentRegExp = new RegExp('^-?\\d+(?:\\.\\d+)?$');
+export const captureCatalogOrderItemResponsePayableAfterCreditRegExp = new RegExp('^-?\\d+(?:\\.\\d+)?$');
+export const captureCatalogOrderItemResponseRemainingAmountRegExp = new RegExp('^-?\\d+(?:\\.\\d+)?$');
+
+
+export const CaptureCatalogOrderItemResponse = zod.object({
+  "id": zod.number(),
+  "productId": zod.number().nullable(),
+  "orderItems": zod.array(zod.record(zod.string(), zod.unknown())).optional(),
+  "storeId": zod.number(),
+  "productName": zod.string().nullish(),
+  "publicToken": zod.string(),
+  "buyerName": zod.string(),
+  "buyerPhone": zod.string(),
+  "pickupMethod": zod.string(),
+  "notes": zod.string().nullish(),
+  "specValues": zod.object({
+
+}).passthrough().optional(),
+  "quantity": zod.number(),
+  "unitPrice": zod.number().optional(),
+  "shippingFee": zod.number().optional(),
+  "totalPrice": zod.number(),
+  "orderTotal": zod.number().optional(),
+  "creditSpent": zod.string().regex(captureCatalogOrderItemResponseCreditSpentRegExp),
+  "payableAfterCredit": zod.string().regex(captureCatalogOrderItemResponsePayableAfterCreditRegExp),
+  "remainingAmount": zod.string().regex(captureCatalogOrderItemResponseRemainingAmountRegExp),
+  "discountAmount": zod.number().optional(),
+  "discountNote": zod.string().nullish(),
+  "status": zod.enum(['pending', 'awaiting_payment', 'preparing', 'shipped', 'completed', 'cancelled']),
+  "paymentMethod": zod.union([zod.literal('cash'),zod.literal('bank_transfer'),zod.literal('line_pay'),zod.literal('other'),zod.literal(null)]).nullish(),
+  "paymentStatus": zod.enum(['unpaid', 'pending', 'partially_paid', 'paid', 'refunded', 'failed']).optional(),
+  "paidAmount": zod.number().nullish(),
+  "paymentNote": zod.string().nullish(),
+  "shippingMethod": zod.union([zod.literal('self_pickup'),zod.literal('convenience_store'),zod.literal('home_delivery'),zod.literal('other'),zod.literal(null)]).nullish(),
+  "shippingStatus": zod.enum(['not_shipped', 'preparing', 'shipped', 'arrived', 'picked_up', 'returned', 'cancelled']).optional(),
+  "recipientName": zod.string().nullish(),
+  "recipientPhone": zod.string().nullish(),
+  "recipientAddress": zod.string().nullish(),
+  "storeCode": zod.string().nullish(),
+  "storeName": zod.string().nullish(),
+  "cvsStoreAddress": zod.string().nullish(),
+  "cvsStorePhone": zod.string().nullish(),
+  "storeSelectedBy": zod.string().nullish(),
+  "storeSelectedAt": zod.string().nullish(),
+  "trackingCode": zod.string().nullish(),
+  "trackingProvider": zod.string().nullish(),
+  "shippingNote": zod.string().nullish(),
+  "internalNote": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+
+
+export const getCatalogSalesPathStoreIdMax = 2147483647;
+export const getCatalogSalesPathStoreIdMultipleOf = 1;
+
+
+
+export const GetCatalogSalesPathParams = zod.object({
+  "storeId": zod.coerce.number().min(1).max(getCatalogSalesPathStoreIdMax).multipleOf(getCatalogSalesPathStoreIdMultipleOf)
+})
+
+export const getCatalogSalesQueryIdsRegExp = new RegExp('^[1-9][0-9]\*(,[1-9][0-9]\*)\*$');
+
+
+export const GetCatalogSalesQueryParams = zod.object({
+  "ids": zod.coerce.string().regex(getCatalogSalesQueryIdsRegExp)
+})
+
+export const GetCatalogSalesResponse = zod.record(zod.string(), zod.unknown())
+
+
+export const getCatalogSalesReferencePathStoreIdMax = 2147483647;
+export const getCatalogSalesReferencePathStoreIdMultipleOf = 1;
+
+export const getCatalogSalesReferencePathCatalogProductIdMax = 2147483647;
+export const getCatalogSalesReferencePathCatalogProductIdMultipleOf = 1;
+
+
+
+export const GetCatalogSalesReferenceParams = zod.object({
+  "storeId": zod.coerce.number().min(1).max(getCatalogSalesReferencePathStoreIdMax).multipleOf(getCatalogSalesReferencePathStoreIdMultipleOf),
+  "catalogProductId": zod.coerce.number().min(1).max(getCatalogSalesReferencePathCatalogProductIdMax).multipleOf(getCatalogSalesReferencePathCatalogProductIdMultipleOf)
+})
+
+export const GetCatalogSalesReferenceResponse = zod.record(zod.string(), zod.unknown())
+
+
+export const getCatalogOrderCostOptionsPathStoreIdMax = 2147483647;
+export const getCatalogOrderCostOptionsPathStoreIdMultipleOf = 1;
+
+
+
+export const GetCatalogOrderCostOptionsParams = zod.object({
+  "storeId": zod.coerce.number().min(1).max(getCatalogOrderCostOptionsPathStoreIdMax).multipleOf(getCatalogOrderCostOptionsPathStoreIdMultipleOf)
+})
+
+export const GetCatalogOrderCostOptionsResponse = zod.record(zod.string(), zod.unknown())
+
+
+export const createCatalogOrderPathStoreIdMax = 2147483647;
+export const createCatalogOrderPathStoreIdMultipleOf = 1;
+
+
+
+export const CreateCatalogOrderParams = zod.object({
+  "storeId": zod.number().min(1).max(createCatalogOrderPathStoreIdMax).multipleOf(createCatalogOrderPathStoreIdMultipleOf)
+}).strict()
+
+export const createCatalogOrderBodyItemsItemListingProductIdMax = 2147483647;
+export const createCatalogOrderBodyItemsItemListingProductIdMultipleOf = 1;
+
+export const createCatalogOrderBodyItemsItemCatalogProductIdMax = 2147483647;
+export const createCatalogOrderBodyItemsItemCatalogProductIdMultipleOf = 1;
+
+export const createCatalogOrderBodyItemsItemNameMax = 200;
+
+export const createCatalogOrderBodyItemsItemQuantityMax = 2147483647;
+export const createCatalogOrderBodyItemsItemQuantityMultipleOf = 1;
+
+export const createCatalogOrderBodyItemsItemUnitPriceTwdRegExp = new RegExp('^\\d{1,8}(?:\\.\\d{1,2})?$');
+export const createCatalogOrderBodyItemsItemSpecValuesMaxOne = 500;
+
+export const createCatalogOrderBodyItemsItemCostTemplateIdMax = 2147483647;
+export const createCatalogOrderBodyItemsItemCostTemplateIdMultipleOf = 1;
+
+export const createCatalogOrderBodyItemsItemCostShippingProfileIdMax = 2147483647;
+export const createCatalogOrderBodyItemsItemCostShippingProfileIdMultipleOf = 1;
+
+export const createCatalogOrderBodyItemsItemCostTripRouteIdMax = 2147483647;
+export const createCatalogOrderBodyItemsItemCostTripRouteIdMultipleOf = 1;
+
+export const createCatalogOrderBodyItemsItemCostOriginalPriceJpyMax = 128;
+
+
+export const createCatalogOrderBodyItemsItemCostOriginalPriceJpyRegExp = new RegExp('^[+-]?\\d+(?:\\.\\d+)?$');
+export const createCatalogOrderBodyItemsItemCostEffectiveCostJpyMax = 128;
+
+
+export const createCatalogOrderBodyItemsItemCostEffectiveCostJpyRegExp = new RegExp('^[+-]?\\d+(?:\\.\\d+)?$');
+export const createCatalogOrderBodyItemsItemCostWeightGramsMax = 128;
+
+
+export const createCatalogOrderBodyItemsItemCostWeightGramsRegExp = new RegExp('^[+-]?\\d+(?:\\.\\d+)?$');
+export const createCatalogOrderBodyItemsItemCostExchangeRateMax = 128;
+
+
+export const createCatalogOrderBodyItemsItemCostExchangeRateRegExp = new RegExp('^[+-]?\\d+(?:\\.\\d+)?$');
+export const createCatalogOrderBodyItemsItemCostGeneralFinalPriceTwdMax = 128;
+
+
+export const createCatalogOrderBodyItemsItemCostGeneralFinalPriceTwdRegExp = new RegExp('^[+-]?\\d+(?:\\.\\d+)?$');
+export const createCatalogOrderBodyItemsItemCostVipFinalPriceTwdMax = 128;
+
+
+export const createCatalogOrderBodyItemsItemCostVipFinalPriceTwdRegExp = new RegExp('^[+-]?\\d+(?:\\.\\d+)?$');
+export const createCatalogOrderBodyItemsItemCostCostAdjustmentRateMax = 128;
+
+
+export const createCatalogOrderBodyItemsItemCostCostAdjustmentRateRegExp = new RegExp('^[+-]?\\d+(?:\\.\\d+)?$');
+export const createCatalogOrderBodyItemsItemCostDepartmentStoreFeeRateMax = 128;
+
+
+export const createCatalogOrderBodyItemsItemCostDepartmentStoreFeeRateRegExp = new RegExp('^[+-]?\\d+(?:\\.\\d+)?$');
+export const createCatalogOrderBodyItemsItemCostPurchasePaymentFeeRateMax = 128;
+
+
+export const createCatalogOrderBodyItemsItemCostPurchasePaymentFeeRateRegExp = new RegExp('^[+-]?\\d+(?:\\.\\d+)?$');
+export const createCatalogOrderBodyItemsItemCostRoutePaymentFeeRateMax = 128;
+
+
+export const createCatalogOrderBodyItemsItemCostRoutePaymentFeeRateRegExp = new RegExp('^[+-]?\\d+(?:\\.\\d+)?$');
+export const createCatalogOrderBodyItemsItemCostLossProtectionTwdMax = 128;
+
+
+export const createCatalogOrderBodyItemsItemCostLossProtectionTwdRegExp = new RegExp('^[+-]?\\d+(?:\\.\\d+)?$');
+export const createCatalogOrderBodyItemsItemCostTargetMarginRateMax = 128;
+
+
+export const createCatalogOrderBodyItemsItemCostTargetMarginRateRegExp = new RegExp('^[+-]?\\d+(?:\\.\\d+)?$');
+export const createCatalogOrderBodyItemsItemCostThresholdsLossMax = 128;
+
+
+export const createCatalogOrderBodyItemsItemCostThresholdsLossRegExp = new RegExp('^[+-]?\\d+(?:\\.\\d+)?$');
+export const createCatalogOrderBodyItemsItemCostThresholdsLowMax = 128;
+
+
+export const createCatalogOrderBodyItemsItemCostThresholdsLowRegExp = new RegExp('^[+-]?\\d+(?:\\.\\d+)?$');
+export const createCatalogOrderBodyItemsItemCostThresholdsMediumMax = 128;
+
+
+export const createCatalogOrderBodyItemsItemCostThresholdsMediumRegExp = new RegExp('^[+-]?\\d+(?:\\.\\d+)?$');
+export const createCatalogOrderBodyItemsItemSaveCatalogNameMax = 256;
+
+export const createCatalogOrderBodyItemsItemSaveCatalogWeightGramsRegExp = new RegExp('^\\d{1,10}(?:\\.\\d{1,2})?$');
+export const createCatalogOrderBodyItemsItemSaveCatalogCategoryIdMax = 2147483647;
+export const createCatalogOrderBodyItemsItemSaveCatalogCategoryIdMultipleOf = 1;
+
+export const createCatalogOrderBodyItemsItemSaveCatalogImageUrlMax = 2048;
+
+
+export const createCatalogOrderBodyItemsItemSaveCatalogImageUrlRegExp = new RegExp('^https?:\/\/[^\\s]+$');
+export const createCatalogOrderBodyItemsItemSaveCatalogInternalNoteMax = 2000;
+
+export const createCatalogOrderBodyItemsItemSaveCatalogPreferredRouteLabelMax = 256;
+
+export const createCatalogOrderBodyItemsItemSaveCatalogLastUsedTripRouteIdMax = 2147483647;
+export const createCatalogOrderBodyItemsItemSaveCatalogLastUsedTripRouteIdMultipleOf = 1;
+
+export const createCatalogOrderBodyItemsItemSaveCatalogDefaultPricingTemplateIdMax = 2147483647;
+export const createCatalogOrderBodyItemsItemSaveCatalogDefaultPricingTemplateIdMultipleOf = 1;
+
+export const createCatalogOrderBodyItemsItemSaveCatalogDefaultShippingProfileIdMax = 2147483647;
+export const createCatalogOrderBodyItemsItemSaveCatalogDefaultShippingProfileIdMultipleOf = 1;
+
+export const createCatalogOrderBodyItemsItemSaveCatalogDefaultDepartmentStoreFeeRateMax = 32;
+
+
+export const createCatalogOrderBodyItemsItemSaveCatalogDefaultDepartmentStoreFeeRateRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const createCatalogOrderBodyItemsItemSaveCatalogBarcodeMax = 128;
+
+export const createCatalogOrderBodyItemsItemSaveCatalogOriginalPriceJpyMax = 32;
+
+
+export const createCatalogOrderBodyItemsItemSaveCatalogOriginalPriceJpyRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const createCatalogOrderBodyItemsItemSaveCatalogAdjustmentRateMax = 32;
+
+
+export const createCatalogOrderBodyItemsItemSaveCatalogAdjustmentRateRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const createCatalogOrderBodyItemsItemSaveCatalogEffectiveCostJpyMax = 32;
+
+
+export const createCatalogOrderBodyItemsItemSaveCatalogEffectiveCostJpyRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const createCatalogOrderBodyItemsItemSaveCatalogAdjustmentReasonMax = 2000;
+
+export const createCatalogOrderBodyItemsItemSaveCatalogObservedAtRegExp = new RegExp('^(?!0000)(?:\\d{4}-(?:(?:01|03|05|07|08|10|12)-(?:0[1-9]|[12][0-9]|3[01])|(?:04|06|09|11)-(?:0[1-9]|[12][0-9]|30)|02-(?:0[1-9]|1[0-9]|2[0-8]))|(?:\\d{2}(?:0[48]|[2468][048]|[13579][26])|(?:[02468][048]|[13579][26])00)-02-29)$');
+export const createCatalogOrderBodyItemsItemSaveCatalogSupersedesCostRecordIdMax = 2147483647;
+export const createCatalogOrderBodyItemsItemSaveCatalogSupersedesCostRecordIdMultipleOf = 1;
+
+export const createCatalogOrderBodyItemsItemSaveCatalogReasonCodeMax = 64;
+
+export const createCatalogOrderBodyItemsItemSaveCatalogReasonTextMax = 2000;
+
+export const createCatalogOrderBodyItemsMax = 100;
+
+export const createCatalogOrderBodyBuyerNameMax = 200;
+
+export const createCatalogOrderBodyBuyerPhoneMax = 100;
+
+export const createCatalogOrderBodyPickupMethodMax = 100;
+
+export const createCatalogOrderBodyCustomerIdMax = 2147483647;
+export const createCatalogOrderBodyCustomerIdMultipleOf = 1;
+
+export const createCatalogOrderBodyNotesMax = 5000;
+
+export const createCatalogOrderBodyCreditSpentMax = 100;
+
+export const createCatalogOrderBodyPaymentLast5Max = 5;
+
+export const createCatalogOrderBodyRecipientNameMax = 1000;
+
+export const createCatalogOrderBodyRecipientPhoneMax = 1000;
+
+export const createCatalogOrderBodyRecipientAddressMax = 1000;
+
+export const createCatalogOrderBodyStoreCodeMax = 1000;
+
+export const createCatalogOrderBodyStoreNameMax = 1000;
+
+export const createCatalogOrderBodyCvsStoreAddressMax = 1000;
+
+export const createCatalogOrderBodyCvsStorePhoneMax = 1000;
+
+
+
+export const CreateCatalogOrderBody = zod.object({
+  "items": zod.array(zod.object({
+  "listingProductId": zod.number().min(1).max(createCatalogOrderBodyItemsItemListingProductIdMax).multipleOf(createCatalogOrderBodyItemsItemListingProductIdMultipleOf).optional(),
+  "catalogProductId": zod.number().min(1).max(createCatalogOrderBodyItemsItemCatalogProductIdMax).multipleOf(createCatalogOrderBodyItemsItemCatalogProductIdMultipleOf).optional(),
+  "name": zod.string().min(1).max(createCatalogOrderBodyItemsItemNameMax).optional(),
+  "quantity": zod.number().min(1).max(createCatalogOrderBodyItemsItemQuantityMax).multipleOf(createCatalogOrderBodyItemsItemQuantityMultipleOf),
+  "unitPriceTwd": zod.string().regex(createCatalogOrderBodyItemsItemUnitPriceTwdRegExp).optional(),
+  "specValues": zod.record(zod.string(), zod.string().max(createCatalogOrderBodyItemsItemSpecValuesMaxOne)).optional(),
+  "cost": zod.object({
+  "templateId": zod.number().min(1).max(createCatalogOrderBodyItemsItemCostTemplateIdMax).multipleOf(createCatalogOrderBodyItemsItemCostTemplateIdMultipleOf).optional(),
+  "shippingProfileId": zod.number().min(1).max(createCatalogOrderBodyItemsItemCostShippingProfileIdMax).multipleOf(createCatalogOrderBodyItemsItemCostShippingProfileIdMultipleOf).optional(),
+  "tripRouteId": zod.number().min(1).max(createCatalogOrderBodyItemsItemCostTripRouteIdMax).multipleOf(createCatalogOrderBodyItemsItemCostTripRouteIdMultipleOf).optional(),
+  "originalPriceJpy": zod.string().max(createCatalogOrderBodyItemsItemCostOriginalPriceJpyMax).regex(createCatalogOrderBodyItemsItemCostOriginalPriceJpyRegExp).nullish(),
+  "effectiveCostJpy": zod.string().max(createCatalogOrderBodyItemsItemCostEffectiveCostJpyMax).regex(createCatalogOrderBodyItemsItemCostEffectiveCostJpyRegExp).nullish(),
+  "weightGrams": zod.string().max(createCatalogOrderBodyItemsItemCostWeightGramsMax).regex(createCatalogOrderBodyItemsItemCostWeightGramsRegExp).nullish(),
+  "exchangeRate": zod.string().max(createCatalogOrderBodyItemsItemCostExchangeRateMax).regex(createCatalogOrderBodyItemsItemCostExchangeRateRegExp).nullish(),
+  "generalFinalPriceTwd": zod.string().max(createCatalogOrderBodyItemsItemCostGeneralFinalPriceTwdMax).regex(createCatalogOrderBodyItemsItemCostGeneralFinalPriceTwdRegExp).nullish(),
+  "vipFinalPriceTwd": zod.string().max(createCatalogOrderBodyItemsItemCostVipFinalPriceTwdMax).regex(createCatalogOrderBodyItemsItemCostVipFinalPriceTwdRegExp).nullish(),
+  "costAdjustmentRate": zod.string().max(createCatalogOrderBodyItemsItemCostCostAdjustmentRateMax).regex(createCatalogOrderBodyItemsItemCostCostAdjustmentRateRegExp).optional(),
+  "departmentStoreFeeRate": zod.string().max(createCatalogOrderBodyItemsItemCostDepartmentStoreFeeRateMax).regex(createCatalogOrderBodyItemsItemCostDepartmentStoreFeeRateRegExp).optional(),
+  "purchasePaymentFeeRate": zod.string().max(createCatalogOrderBodyItemsItemCostPurchasePaymentFeeRateMax).regex(createCatalogOrderBodyItemsItemCostPurchasePaymentFeeRateRegExp).optional(),
+  "routePaymentFeeRate": zod.string().max(createCatalogOrderBodyItemsItemCostRoutePaymentFeeRateMax).regex(createCatalogOrderBodyItemsItemCostRoutePaymentFeeRateRegExp).optional(),
+  "lossProtectionTwd": zod.string().max(createCatalogOrderBodyItemsItemCostLossProtectionTwdMax).regex(createCatalogOrderBodyItemsItemCostLossProtectionTwdRegExp).optional(),
+  "targetMarginRate": zod.string().max(createCatalogOrderBodyItemsItemCostTargetMarginRateMax).regex(createCatalogOrderBodyItemsItemCostTargetMarginRateRegExp).optional(),
+  "templateCode": zod.enum(['GENERAL', 'LIVE', 'PERFUME', 'CUSTOM']).optional(),
+  "isTransportCostExempt": zod.boolean().optional(),
+  "thresholds": zod.object({
+  "loss": zod.string().max(createCatalogOrderBodyItemsItemCostThresholdsLossMax).regex(createCatalogOrderBodyItemsItemCostThresholdsLossRegExp),
+  "low": zod.string().max(createCatalogOrderBodyItemsItemCostThresholdsLowMax).regex(createCatalogOrderBodyItemsItemCostThresholdsLowRegExp),
+  "medium": zod.string().max(createCatalogOrderBodyItemsItemCostThresholdsMediumMax).regex(createCatalogOrderBodyItemsItemCostThresholdsMediumRegExp)
+}).strict().optional()
+}).strict().optional(),
+  "saveCatalog": zod.object({
+  "name": zod.string().max(createCatalogOrderBodyItemsItemSaveCatalogNameMax),
+  "weightGrams": zod.string().regex(createCatalogOrderBodyItemsItemSaveCatalogWeightGramsRegExp),
+  "categoryId": zod.number().min(1).max(createCatalogOrderBodyItemsItemSaveCatalogCategoryIdMax).multipleOf(createCatalogOrderBodyItemsItemSaveCatalogCategoryIdMultipleOf).nullish(),
+  "status": zod.enum(['NORMAL', 'DISCONTINUED', 'ARCHIVED']).optional(),
+  "imageUrl": zod.string().max(createCatalogOrderBodyItemsItemSaveCatalogImageUrlMax).regex(createCatalogOrderBodyItemsItemSaveCatalogImageUrlRegExp).nullish(),
+  "internalNote": zod.string().max(createCatalogOrderBodyItemsItemSaveCatalogInternalNoteMax).nullish(),
+  "preferredRouteLabel": zod.string().max(createCatalogOrderBodyItemsItemSaveCatalogPreferredRouteLabelMax).nullish(),
+  "lastUsedTripRouteId": zod.number().min(1).max(createCatalogOrderBodyItemsItemSaveCatalogLastUsedTripRouteIdMax).multipleOf(createCatalogOrderBodyItemsItemSaveCatalogLastUsedTripRouteIdMultipleOf).nullish(),
+  "defaultPricingTemplateId": zod.number().min(1).max(createCatalogOrderBodyItemsItemSaveCatalogDefaultPricingTemplateIdMax).multipleOf(createCatalogOrderBodyItemsItemSaveCatalogDefaultPricingTemplateIdMultipleOf).nullish(),
+  "defaultShippingProfileId": zod.number().min(1).max(createCatalogOrderBodyItemsItemSaveCatalogDefaultShippingProfileIdMax).multipleOf(createCatalogOrderBodyItemsItemSaveCatalogDefaultShippingProfileIdMultipleOf).nullish(),
+  "defaultDepartmentStoreFeeRate": zod.string().max(createCatalogOrderBodyItemsItemSaveCatalogDefaultDepartmentStoreFeeRateMax).regex(createCatalogOrderBodyItemsItemSaveCatalogDefaultDepartmentStoreFeeRateRegExp).nullish(),
+  "barcode": zod.string().max(createCatalogOrderBodyItemsItemSaveCatalogBarcodeMax),
+  "barcodeStatus": zod.enum(['REAL', 'NONE']),
+  "forceCreate": zod.boolean().optional(),
+  "originalPriceJpy": zod.string().max(createCatalogOrderBodyItemsItemSaveCatalogOriginalPriceJpyMax).regex(createCatalogOrderBodyItemsItemSaveCatalogOriginalPriceJpyRegExp),
+  "adjustmentMode": zod.enum(['NONE', 'RATE', 'MANUAL']).optional(),
+  "adjustmentRate": zod.string().max(createCatalogOrderBodyItemsItemSaveCatalogAdjustmentRateMax).regex(createCatalogOrderBodyItemsItemSaveCatalogAdjustmentRateRegExp).nullish(),
+  "effectiveCostJpy": zod.string().max(createCatalogOrderBodyItemsItemSaveCatalogEffectiveCostJpyMax).regex(createCatalogOrderBodyItemsItemSaveCatalogEffectiveCostJpyRegExp).nullish(),
+  "adjustmentReason": zod.string().max(createCatalogOrderBodyItemsItemSaveCatalogAdjustmentReasonMax).nullish(),
+  "observedAt": zod.string().regex(createCatalogOrderBodyItemsItemSaveCatalogObservedAtRegExp).nullish(),
+  "supersedesCostRecordId": zod.number().min(1).max(createCatalogOrderBodyItemsItemSaveCatalogSupersedesCostRecordIdMax).multipleOf(createCatalogOrderBodyItemsItemSaveCatalogSupersedesCostRecordIdMultipleOf).optional(),
+  "reasonCode": zod.string().min(1).max(createCatalogOrderBodyItemsItemSaveCatalogReasonCodeMax).optional(),
+  "reasonText": zod.string().max(createCatalogOrderBodyItemsItemSaveCatalogReasonTextMax).nullish()
+}).strict().optional()
+}).strict()).min(1).max(createCatalogOrderBodyItemsMax),
+  "buyerName": zod.string().min(1).max(createCatalogOrderBodyBuyerNameMax),
+  "buyerPhone": zod.string().min(1).max(createCatalogOrderBodyBuyerPhoneMax),
+  "pickupMethod": zod.string().min(1).max(createCatalogOrderBodyPickupMethodMax),
+  "customerId": zod.number().min(1).max(createCatalogOrderBodyCustomerIdMax).multipleOf(createCatalogOrderBodyCustomerIdMultipleOf).nullish(),
+  "notes": zod.string().max(createCatalogOrderBodyNotesMax).nullish(),
+  "creditSpent": zod.string().max(createCatalogOrderBodyCreditSpentMax).optional(),
+  "paymentLast5": zod.string().max(createCatalogOrderBodyPaymentLast5Max).nullish(),
+  "shippingMethod": zod.union([zod.literal('self_pickup'),zod.literal('convenience_store'),zod.literal('home_delivery'),zod.literal('other'),zod.literal(null)]).nullish(),
+  "recipientName": zod.string().max(createCatalogOrderBodyRecipientNameMax).nullish(),
+  "recipientPhone": zod.string().max(createCatalogOrderBodyRecipientPhoneMax).nullish(),
+  "recipientAddress": zod.string().max(createCatalogOrderBodyRecipientAddressMax).nullish(),
+  "storeCode": zod.string().max(createCatalogOrderBodyStoreCodeMax).nullish(),
+  "storeName": zod.string().max(createCatalogOrderBodyStoreNameMax).nullish(),
+  "cvsStoreAddress": zod.string().max(createCatalogOrderBodyCvsStoreAddressMax).nullish(),
+  "cvsStorePhone": zod.string().max(createCatalogOrderBodyCvsStorePhoneMax).nullish(),
+  "storeSelectedBy": zod.union([zod.literal('admin'),zod.literal('manual'),zod.literal('customer_default'),zod.literal(null)]).nullish()
+}).strict()
+
+
+export const createCatalogListingPathStoreIdMax = 2147483647;
+export const createCatalogListingPathStoreIdMultipleOf = 1;
+
+export const createCatalogListingPathCatalogProductIdMax = 2147483647;
+export const createCatalogListingPathCatalogProductIdMultipleOf = 1;
+
+
+
+export const CreateCatalogListingParams = zod.object({
+  "storeId": zod.number().min(1).max(createCatalogListingPathStoreIdMax).multipleOf(createCatalogListingPathStoreIdMultipleOf),
+  "catalogProductId": zod.number().min(1).max(createCatalogListingPathCatalogProductIdMax).multipleOf(createCatalogListingPathCatalogProductIdMultipleOf)
+}).strict()
+
+export const createCatalogListingBodyModeDefault = `PREVIEW`;
+export const createCatalogListingBodyExpectedContextRegExp = new RegExp('^[a-f0-9]{64}$');
+export const createCatalogListingBodyConfirmLowProfitDefault = false;
+export const createCatalogListingBodyUseLatestCostDefault = false;
+export const createCatalogListingBodyNameMax = 256;
+
+export const createCatalogListingBodyDescriptionMax = 2000;
+
+export const createCatalogListingBodyInternalNoteMax = 2000;
+
+export const createCatalogListingBodySkuCodeMax = 2000;
+
+export const createCatalogListingBodyImageUrlMax = 2048;
+
+export const createCatalogListingBodySpecsItemNameMax = 200;
+
+export const createCatalogListingBodySpecsItemValuesItemMax = 200;
+
+export const createCatalogListingBodySpecsItemValuesMax = 100;
+
+export const createCatalogListingBodySpecsMax = 100;
+
+export const createCatalogListingBodyInventoryMin = 0;
+export const createCatalogListingBodyInventoryMax = 2147483647;
+export const createCatalogListingBodyInventoryMultipleOf = 1;
+
+export const createCatalogListingBodyShelfLifeMax = 2000;
+
+export const createCatalogListingBodyCategoryIdMax = 2147483647;
+export const createCatalogListingBodyCategoryIdMultipleOf = 1;
+
+export const createCatalogListingBodyListingBarcodeMax = 128;
+
+export const createCatalogListingBodyOriginalPriceJpyRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const createCatalogListingBodyEffectiveCostJpyRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const createCatalogListingBodyWeightGramsRegExp = new RegExp('^\\d{1,10}(?:\\.\\d{1,2})?$');
+export const createCatalogListingBodyTemplateIdMax = 2147483647;
+export const createCatalogListingBodyTemplateIdMultipleOf = 1;
+
+export const createCatalogListingBodyShippingProfileIdMax = 2147483647;
+export const createCatalogListingBodyShippingProfileIdMultipleOf = 1;
+
+export const createCatalogListingBodyTripRouteIdMax = 2147483647;
+export const createCatalogListingBodyTripRouteIdMultipleOf = 1;
+
+export const createCatalogListingBodyDepartmentStoreFeeRateRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const createCatalogListingBodyGeneralFinalPriceTwdRegExp = new RegExp('^\\d{1,8}(?:\\.\\d{1,2})?$');
+export const createCatalogListingBodyVipFinalPriceTwdRegExp = new RegExp('^\\d{1,8}(?:\\.\\d{1,2})?$');
+export const createCatalogListingBodyWholesalePriceRegExp = new RegExp('^\\d{1,8}(?:\\.\\d{1,2})?$');
+export const createCatalogListingBodyPartnerPriceRegExp = new RegExp('^\\d{1,8}(?:\\.\\d{1,2})?$');
+export const createCatalogListingBodySyncFieldsDefault = [];
+export const createCatalogListingBodySyncFieldsMax = 9;
+
+export const createCatalogListingBodyReasonCodeMax = 64;
+
+export const createCatalogListingBodyReasonTextMax = 2000;
+
+export const createCatalogListingBodyForceBarcodeCorrectionDefault = false;
+
+export const CreateCatalogListingBody = zod.object({
+  "mode": zod.enum(['PREVIEW', 'SAVE']).default(createCatalogListingBodyModeDefault),
+  "expectedContext": zod.string().regex(createCatalogListingBodyExpectedContextRegExp).optional(),
+  "confirmLowProfit": zod.boolean().default(createCatalogListingBodyConfirmLowProfitDefault),
+  "useLatestCost": zod.boolean().default(createCatalogListingBodyUseLatestCostDefault),
+  "name": zod.string().min(1).max(createCatalogListingBodyNameMax).optional(),
+  "description": zod.string().max(createCatalogListingBodyDescriptionMax).nullish(),
+  "internalNote": zod.string().max(createCatalogListingBodyInternalNoteMax).nullish(),
+  "skuCode": zod.string().max(createCatalogListingBodySkuCodeMax).nullish(),
+  "imageUrl": zod.string().max(createCatalogListingBodyImageUrlMax).nullish(),
+  "specs": zod.array(zod.object({
+  "name": zod.string().max(createCatalogListingBodySpecsItemNameMax),
+  "values": zod.array(zod.string().max(createCatalogListingBodySpecsItemValuesItemMax)).max(createCatalogListingBodySpecsItemValuesMax)
+}).strict()).max(createCatalogListingBodySpecsMax).optional(),
+  "inventory": zod.number().min(createCatalogListingBodyInventoryMin).max(createCatalogListingBodyInventoryMax).multipleOf(createCatalogListingBodyInventoryMultipleOf).nullish(),
+  "orderDeadlineAt": zod.coerce.date().nullish(),
+  "storageTemp": zod.union([zod.literal('ambient'),zod.literal('chilled'),zod.literal('frozen'),zod.literal(null)]).nullish(),
+  "storageTempClass": zod.union([zod.literal('normal'),zod.literal('frozen'),zod.literal(null)]).nullish(),
+  "shelfLife": zod.string().max(createCatalogListingBodyShelfLifeMax).nullish(),
+  "categoryId": zod.number().min(1).max(createCatalogListingBodyCategoryIdMax).multipleOf(createCatalogListingBodyCategoryIdMultipleOf).nullish(),
+  "listingBarcode": zod.string().max(createCatalogListingBodyListingBarcodeMax).nullish(),
+  "originalPriceJpy": zod.string().regex(createCatalogListingBodyOriginalPriceJpyRegExp).nullish(),
+  "effectiveCostJpy": zod.string().regex(createCatalogListingBodyEffectiveCostJpyRegExp).nullish(),
+  "weightGrams": zod.string().regex(createCatalogListingBodyWeightGramsRegExp).nullish(),
+  "templateId": zod.number().min(1).max(createCatalogListingBodyTemplateIdMax).multipleOf(createCatalogListingBodyTemplateIdMultipleOf).nullish(),
+  "shippingProfileId": zod.number().min(1).max(createCatalogListingBodyShippingProfileIdMax).multipleOf(createCatalogListingBodyShippingProfileIdMultipleOf).nullish(),
+  "tripRouteId": zod.number().min(1).max(createCatalogListingBodyTripRouteIdMax).multipleOf(createCatalogListingBodyTripRouteIdMultipleOf).nullish(),
+  "isTransportCostExempt": zod.boolean().optional(),
+  "departmentStoreFeeRate": zod.string().regex(createCatalogListingBodyDepartmentStoreFeeRateRegExp).nullish(),
+  "generalFinalPriceTwd": zod.string().regex(createCatalogListingBodyGeneralFinalPriceTwdRegExp).nullish(),
+  "vipFinalPriceTwd": zod.string().regex(createCatalogListingBodyVipFinalPriceTwdRegExp).nullish(),
+  "wholesalePrice": zod.string().regex(createCatalogListingBodyWholesalePriceRegExp).nullish(),
+  "partnerPrice": zod.string().regex(createCatalogListingBodyPartnerPriceRegExp).nullish(),
+  "syncFields": zod.array(zod.enum(['name', 'weightGrams', 'categoryId', 'imageUrl', 'internalNote', 'templateId', 'shippingProfileId', 'cost', 'barcode'])).max(createCatalogListingBodySyncFieldsMax).default(createCatalogListingBodySyncFieldsDefault),
+  "reasonCode": zod.string().max(createCatalogListingBodyReasonCodeMax).optional(),
+  "reasonText": zod.string().max(createCatalogListingBodyReasonTextMax).nullish(),
+  "forceBarcodeCorrection": zod.boolean().default(createCatalogListingBodyForceBarcodeCorrectionDefault)
+}).strict()
+
+export const createCatalogListingResponseCurrentOneCatalogProductIdMax = 2147483647;
+export const createCatalogListingResponseCurrentOneCatalogProductIdMultipleOf = 1;
+
+export const createCatalogListingResponseCurrentOneSourceCostRecordIdMax = 2147483647;
+export const createCatalogListingResponseCurrentOneSourceCostRecordIdMultipleOf = 1;
+
+export const createCatalogListingResponseCurrentOneListingBarcodeMax = 2000;
+
+export const createCatalogListingResponseCurrentOneCreatedByMax = 2000;
+
+export const createCatalogListingResponseCurrentOneTripRouteIdMax = 2147483647;
+export const createCatalogListingResponseCurrentOneTripRouteIdMultipleOf = 1;
+
+export const createCatalogListingResponseCurrentOneWeightGramsRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const createCatalogListingResponseSnapshotCatalogProductIdMax = 2147483647;
+export const createCatalogListingResponseSnapshotCatalogProductIdMultipleOf = 1;
+
+export const createCatalogListingResponseSnapshotSourceCostRecordIdMax = 2147483647;
+export const createCatalogListingResponseSnapshotSourceCostRecordIdMultipleOf = 1;
+
+export const createCatalogListingResponseSnapshotListingBarcodeMax = 2000;
+
+export const createCatalogListingResponseSnapshotCreatedByMax = 2000;
+
+export const createCatalogListingResponseSnapshotTripRouteIdMax = 2147483647;
+export const createCatalogListingResponseSnapshotTripRouteIdMultipleOf = 1;
+
+export const createCatalogListingResponseSnapshotWeightGramsRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const createCatalogListingResponseProductOneCatalogProductIdMax = 2147483647;
+export const createCatalogListingResponseProductOneCatalogProductIdMultipleOf = 1;
+
+export const createCatalogListingResponseProductOnePricingTemplateIdMax = 2147483647;
+export const createCatalogListingResponseProductOnePricingTemplateIdMultipleOf = 1;
+
+export const createCatalogListingResponseProductOneInternationalShippingProfileIdMax = 2147483647;
+export const createCatalogListingResponseProductOneInternationalShippingProfileIdMultipleOf = 1;
+
+export const createCatalogListingResponseProductOneCategoryIdMax = 2147483647;
+export const createCatalogListingResponseProductOneCategoryIdMultipleOf = 1;
+
+export const createCatalogListingResponseProductOneTripRouteIdMax = 2147483647;
+export const createCatalogListingResponseProductOneTripRouteIdMultipleOf = 1;
+
+export const createCatalogListingResponseVipHistoryOneQuantityMax = 200;
+
+export const createCatalogListingResponseVipHistoryOneLatestPriceTwdMax = 200;
+
+export const createCatalogListingResponseVipHistoryOneLatestUnitProfitTwdMax = 200;
+
+export const createCatalogListingResponseVipHistoryOneLatestUnitCostTwdMax = 200;
+
+export const createCatalogListingResponseVipHistoryOneWeightedAverageTwdMax = 200;
+
+export const createCatalogListingResponseVipHistoryOneMinPriceTwdMax = 200;
+
+export const createCatalogListingResponseVipHistoryOneMaxPriceTwdMax = 200;
+
+export const createCatalogListingResponseVipHistoryOneFromAtMax = 200;
+
+export const createCatalogListingResponseVipHistoryOneToAtMax = 200;
+
+export const createCatalogListingResponseVipHistoryOneDateStatusMax = 200;
+
+
+
+export const CreateCatalogListingResponse = zod.object({
+  "preview": zod.object({
+  "status": zod.enum(['READY', 'PENDING_CONFIRMATION']),
+  "reasons": zod.array(zod.string()),
+  "formulaVersion": zod.string(),
+  "settingsVersion": zod.string(),
+  "templateId": zod.number().nullish(),
+  "shippingProfile": zod.record(zod.string(), zod.unknown()).nullish(),
+  "routeMetadata": zod.record(zod.string(), zod.unknown()),
+  "amounts": zod.record(zod.string(), zod.string().nullable()),
+  "display": zod.record(zod.string(), zod.string().nullable()),
+  "general": zod.object({
+  "status": zod.enum(['READY', 'PENDING_CONFIRMATION']),
+  "reasons": zod.array(zod.string()),
+  "profitLevel": zod.string().nullable(),
+  "values": zod.record(zod.string(), zod.string().nullable()),
+  "display": zod.record(zod.string(), zod.string().nullable())
+}),
+  "vip": zod.object({
+  "status": zod.enum(['READY', 'PENDING_CONFIRMATION']),
+  "reasons": zod.array(zod.string()),
+  "profitLevel": zod.string().nullable(),
+  "values": zod.record(zod.string(), zod.string().nullable()),
+  "display": zod.record(zod.string(), zod.string().nullable())
+})
+}),
+  "reference": zod.object({
+  "sourceCostRecordId": zod.number(),
+  "settingsVersion": zod.string(),
+  "context": zod.string(),
+  "latestOriginalPriceJpy": zod.string(),
+  "latestEffectiveCostJpy": zod.string()
+}),
+  "warnings": zod.array(zod.string()),
+  "current": zod.union([zod.object({
+  "id": zod.number().optional(),
+  "storeId": zod.number().optional(),
+  "productId": zod.number().optional(),
+  "catalogProductId": zod.number().min(1).max(createCatalogListingResponseCurrentOneCatalogProductIdMax).multipleOf(createCatalogListingResponseCurrentOneCatalogProductIdMultipleOf).nullish(),
+  "sourceCostRecordId": zod.number().min(1).max(createCatalogListingResponseCurrentOneSourceCostRecordIdMax).multipleOf(createCatalogListingResponseCurrentOneSourceCostRecordIdMultipleOf).nullish(),
+  "listingBarcode": zod.string().max(createCatalogListingResponseCurrentOneListingBarcodeMax).nullish(),
+  "createdBy": zod.string().max(createCatalogListingResponseCurrentOneCreatedByMax).nullish(),
+  "createdAt": zod.string().optional(),
+  "formulaVersion": zod.string().optional(),
+  "settingsVersion": zod.string().optional(),
+  "pricingContext": zod.record(zod.string(), zod.unknown()).nullish(),
+  "internationalShippingProfileSnapshot": zod.record(zod.string(), zod.unknown()).nullish(),
+  "tripRouteId": zod.number().min(1).max(createCatalogListingResponseCurrentOneTripRouteIdMax).multipleOf(createCatalogListingResponseCurrentOneTripRouteIdMultipleOf).nullish(),
+  "weightGrams": zod.string().regex(createCatalogListingResponseCurrentOneWeightGramsRegExp).nullish(),
+  "originalPriceJpy": zod.string().nullish(),
+  "effectiveCostJpy": zod.string().nullish(),
+  "exchangeRate": zod.string().nullish(),
+  "routeCostTwd": zod.string().nullish(),
+  "lossProtectionTwd": zod.string().nullish(),
+  "protectedRouteCostTwd": zod.string().nullish(),
+  "internationalShippingTwd": zod.string().nullish(),
+  "purchasePaymentFeeRate": zod.string().nullish(),
+  "purchasePaymentFeeTwd": zod.string().nullish(),
+  "routePaymentFeeRate": zod.string().nullish(),
+  "departmentStoreFeeRate": zod.string().nullish(),
+  "departmentStoreFeeTwd": zod.string().nullish(),
+  "originalPriceTwd": zod.string().nullish(),
+  "effectiveProductCostTwd": zod.string().nullish(),
+  "totalCostTwd": zod.string().nullish(),
+  "targetPriceTwd": zod.string().nullish(),
+  "generalFinalPriceTwd": zod.string().nullish(),
+  "generalNetProfitTwd": zod.string().nullish(),
+  "generalProfitRate": zod.string().nullish(),
+  "generalContributionProfitTwd": zod.string().nullish(),
+  "generalContributionProfitRate": zod.string().nullish(),
+  "generalPerceivedDifferenceTwd": zod.string().nullish(),
+  "generalProfitLevel": zod.string().nullish(),
+  "vipFinalPriceTwd": zod.string().nullish(),
+  "vipNetProfitTwd": zod.string().nullish(),
+  "vipProfitRate": zod.string().nullish(),
+  "vipContributionProfitTwd": zod.string().nullish(),
+  "vipContributionProfitRate": zod.string().nullish(),
+  "vipPerceivedDifferenceTwd": zod.string().nullish(),
+  "vipProfitLevel": zod.string().nullish()
+}),zod.null()]).optional(),
+  "snapshot": zod.object({
+  "id": zod.number().optional(),
+  "storeId": zod.number().optional(),
+  "productId": zod.number().optional(),
+  "catalogProductId": zod.number().min(1).max(createCatalogListingResponseSnapshotCatalogProductIdMax).multipleOf(createCatalogListingResponseSnapshotCatalogProductIdMultipleOf).nullish(),
+  "sourceCostRecordId": zod.number().min(1).max(createCatalogListingResponseSnapshotSourceCostRecordIdMax).multipleOf(createCatalogListingResponseSnapshotSourceCostRecordIdMultipleOf).nullish(),
+  "listingBarcode": zod.string().max(createCatalogListingResponseSnapshotListingBarcodeMax).nullish(),
+  "createdBy": zod.string().max(createCatalogListingResponseSnapshotCreatedByMax).nullish(),
+  "createdAt": zod.string().optional(),
+  "formulaVersion": zod.string().optional(),
+  "settingsVersion": zod.string().optional(),
+  "pricingContext": zod.record(zod.string(), zod.unknown()).nullish(),
+  "internationalShippingProfileSnapshot": zod.record(zod.string(), zod.unknown()).nullish(),
+  "tripRouteId": zod.number().min(1).max(createCatalogListingResponseSnapshotTripRouteIdMax).multipleOf(createCatalogListingResponseSnapshotTripRouteIdMultipleOf).nullish(),
+  "weightGrams": zod.string().regex(createCatalogListingResponseSnapshotWeightGramsRegExp).nullish(),
+  "originalPriceJpy": zod.string().nullish(),
+  "effectiveCostJpy": zod.string().nullish(),
+  "exchangeRate": zod.string().nullish(),
+  "routeCostTwd": zod.string().nullish(),
+  "lossProtectionTwd": zod.string().nullish(),
+  "protectedRouteCostTwd": zod.string().nullish(),
+  "internationalShippingTwd": zod.string().nullish(),
+  "purchasePaymentFeeRate": zod.string().nullish(),
+  "purchasePaymentFeeTwd": zod.string().nullish(),
+  "routePaymentFeeRate": zod.string().nullish(),
+  "departmentStoreFeeRate": zod.string().nullish(),
+  "departmentStoreFeeTwd": zod.string().nullish(),
+  "originalPriceTwd": zod.string().nullish(),
+  "effectiveProductCostTwd": zod.string().nullish(),
+  "totalCostTwd": zod.string().nullish(),
+  "targetPriceTwd": zod.string().nullish(),
+  "generalFinalPriceTwd": zod.string().nullish(),
+  "generalNetProfitTwd": zod.string().nullish(),
+  "generalProfitRate": zod.string().nullish(),
+  "generalContributionProfitTwd": zod.string().nullish(),
+  "generalContributionProfitRate": zod.string().nullish(),
+  "generalPerceivedDifferenceTwd": zod.string().nullish(),
+  "generalProfitLevel": zod.string().nullish(),
+  "vipFinalPriceTwd": zod.string().nullish(),
+  "vipNetProfitTwd": zod.string().nullish(),
+  "vipProfitRate": zod.string().nullish(),
+  "vipContributionProfitTwd": zod.string().nullish(),
+  "vipContributionProfitRate": zod.string().nullish(),
+  "vipPerceivedDifferenceTwd": zod.string().nullish(),
+  "vipProfitLevel": zod.string().nullish()
+}).optional(),
+  "product": zod.union([zod.object({
+  "id": zod.number(),
+  "storeId": zod.number(),
+  "catalogProductId": zod.number().min(1).max(createCatalogListingResponseProductOneCatalogProductIdMax).multipleOf(createCatalogListingResponseProductOneCatalogProductIdMultipleOf).nullable(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "price": zod.string(),
+  "vipPrice": zod.string().nullish(),
+  "wholesalePrice": zod.string().nullish(),
+  "partnerPrice": zod.string().nullish(),
+  "originalPriceJpy": zod.string().nullish(),
+  "effectiveCostJpy": zod.string().nullish(),
+  "costJpy": zod.string().nullish(),
+  "weightGrams": zod.string().nullish(),
+  "weightKg": zod.string().nullish(),
+  "pricingTemplateId": zod.number().min(1).max(createCatalogListingResponseProductOnePricingTemplateIdMax).multipleOf(createCatalogListingResponseProductOnePricingTemplateIdMultipleOf).nullish(),
+  "internationalShippingProfileId": zod.number().min(1).max(createCatalogListingResponseProductOneInternationalShippingProfileIdMax).multipleOf(createCatalogListingResponseProductOneInternationalShippingProfileIdMultipleOf).nullish(),
+  "categoryId": zod.number().min(1).max(createCatalogListingResponseProductOneCategoryIdMax).multipleOf(createCatalogListingResponseProductOneCategoryIdMultipleOf).nullish(),
+  "tripRouteId": zod.number().min(1).max(createCatalogListingResponseProductOneTripRouteIdMax).multipleOf(createCatalogListingResponseProductOneTripRouteIdMultipleOf).nullish(),
+  "inventory": zod.number().nullish(),
+  "isActive": zod.boolean(),
+  "isTransportCostExempt": zod.boolean().optional(),
+  "imageUrl": zod.string().nullish(),
+  "internalNote": zod.string().nullish(),
+  "skuCode": zod.string().nullish(),
+  "shelfLife": zod.string().nullish(),
+  "storageTemp": zod.string().nullish(),
+  "storageTempClass": zod.string().nullish(),
+  "orderDeadlineAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional(),
+  "shareToken": zod.string(),
+  "specs": zod.array(zod.object({
+  "name": zod.string(),
+  "values": zod.array(zod.string())
+})).optional()
+}),zod.null()]).optional(),
+  "vipHistory": zod.union([zod.object({
+  "quantity": zod.string().max(createCatalogListingResponseVipHistoryOneQuantityMax),
+  "latestPriceTwd": zod.string().max(createCatalogListingResponseVipHistoryOneLatestPriceTwdMax),
+  "latestUnitProfitTwd": zod.string().max(createCatalogListingResponseVipHistoryOneLatestUnitProfitTwdMax),
+  "latestUnitCostTwd": zod.string().max(createCatalogListingResponseVipHistoryOneLatestUnitCostTwdMax).optional(),
+  "weightedAverageTwd": zod.string().max(createCatalogListingResponseVipHistoryOneWeightedAverageTwdMax),
+  "minPriceTwd": zod.string().max(createCatalogListingResponseVipHistoryOneMinPriceTwdMax).optional(),
+  "maxPriceTwd": zod.string().max(createCatalogListingResponseVipHistoryOneMaxPriceTwdMax).optional(),
+  "fromAt": zod.string().max(createCatalogListingResponseVipHistoryOneFromAtMax),
+  "toAt": zod.string().max(createCatalogListingResponseVipHistoryOneToAtMax),
+  "dateStatus": zod.string().max(createCatalogListingResponseVipHistoryOneDateStatusMax)
+}),zod.null()]).optional(),
+  "availableTrips": zod.array(zod.object({
+  "id": zod.number(),
+  "storeId": zod.number(),
+  "name": zod.string(),
+  "routes": zod.array(zod.object({
+  "id": zod.number(),
+  "storeId": zod.number(),
+  "areaTitle": zod.string()
+}))
+})).optional()
+})
+
+
+export const recalculateListingPricingPathStoreIdMax = 2147483647;
+export const recalculateListingPricingPathStoreIdMultipleOf = 1;
+
+export const recalculateListingPricingPathProductIdMax = 2147483647;
+export const recalculateListingPricingPathProductIdMultipleOf = 1;
+
+
+
+export const RecalculateListingPricingParams = zod.object({
+  "storeId": zod.number().min(1).max(recalculateListingPricingPathStoreIdMax).multipleOf(recalculateListingPricingPathStoreIdMultipleOf),
+  "productId": zod.number().min(1).max(recalculateListingPricingPathProductIdMax).multipleOf(recalculateListingPricingPathProductIdMultipleOf)
+}).strict()
+
+export const recalculateListingPricingBodyModeDefault = `PREVIEW`;
+export const recalculateListingPricingBodyExpectedContextRegExp = new RegExp('^[a-f0-9]{64}$');
+export const recalculateListingPricingBodyConfirmLowProfitDefault = false;
+export const recalculateListingPricingBodyUseLatestCostDefault = false;
+export const recalculateListingPricingBodyNameMax = 256;
+
+export const recalculateListingPricingBodyDescriptionMax = 2000;
+
+export const recalculateListingPricingBodyInternalNoteMax = 2000;
+
+export const recalculateListingPricingBodySkuCodeMax = 2000;
+
+export const recalculateListingPricingBodyImageUrlMax = 2048;
+
+export const recalculateListingPricingBodySpecsItemNameMax = 200;
+
+export const recalculateListingPricingBodySpecsItemValuesItemMax = 200;
+
+export const recalculateListingPricingBodySpecsItemValuesMax = 100;
+
+export const recalculateListingPricingBodySpecsMax = 100;
+
+export const recalculateListingPricingBodyInventoryMin = 0;
+export const recalculateListingPricingBodyInventoryMax = 2147483647;
+export const recalculateListingPricingBodyInventoryMultipleOf = 1;
+
+export const recalculateListingPricingBodyShelfLifeMax = 2000;
+
+export const recalculateListingPricingBodyCategoryIdMax = 2147483647;
+export const recalculateListingPricingBodyCategoryIdMultipleOf = 1;
+
+export const recalculateListingPricingBodyListingBarcodeMax = 128;
+
+export const recalculateListingPricingBodyOriginalPriceJpyRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const recalculateListingPricingBodyEffectiveCostJpyRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const recalculateListingPricingBodyWeightGramsRegExp = new RegExp('^\\d{1,10}(?:\\.\\d{1,2})?$');
+export const recalculateListingPricingBodyTemplateIdMax = 2147483647;
+export const recalculateListingPricingBodyTemplateIdMultipleOf = 1;
+
+export const recalculateListingPricingBodyShippingProfileIdMax = 2147483647;
+export const recalculateListingPricingBodyShippingProfileIdMultipleOf = 1;
+
+export const recalculateListingPricingBodyTripRouteIdMax = 2147483647;
+export const recalculateListingPricingBodyTripRouteIdMultipleOf = 1;
+
+export const recalculateListingPricingBodyDepartmentStoreFeeRateRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const recalculateListingPricingBodyGeneralFinalPriceTwdRegExp = new RegExp('^\\d{1,8}(?:\\.\\d{1,2})?$');
+export const recalculateListingPricingBodyVipFinalPriceTwdRegExp = new RegExp('^\\d{1,8}(?:\\.\\d{1,2})?$');
+export const recalculateListingPricingBodyWholesalePriceRegExp = new RegExp('^\\d{1,8}(?:\\.\\d{1,2})?$');
+export const recalculateListingPricingBodyPartnerPriceRegExp = new RegExp('^\\d{1,8}(?:\\.\\d{1,2})?$');
+export const recalculateListingPricingBodySyncFieldsDefault = [];
+export const recalculateListingPricingBodySyncFieldsMax = 9;
+
+export const recalculateListingPricingBodyReasonCodeMax = 64;
+
+export const recalculateListingPricingBodyReasonTextMax = 2000;
+
+export const recalculateListingPricingBodyForceBarcodeCorrectionDefault = false;
+
+export const RecalculateListingPricingBody = zod.object({
+  "mode": zod.enum(['PREVIEW', 'SAVE']).default(recalculateListingPricingBodyModeDefault),
+  "expectedContext": zod.string().regex(recalculateListingPricingBodyExpectedContextRegExp).optional(),
+  "confirmLowProfit": zod.boolean().default(recalculateListingPricingBodyConfirmLowProfitDefault),
+  "useLatestCost": zod.boolean().default(recalculateListingPricingBodyUseLatestCostDefault),
+  "name": zod.string().min(1).max(recalculateListingPricingBodyNameMax).optional(),
+  "description": zod.string().max(recalculateListingPricingBodyDescriptionMax).nullish(),
+  "internalNote": zod.string().max(recalculateListingPricingBodyInternalNoteMax).nullish(),
+  "skuCode": zod.string().max(recalculateListingPricingBodySkuCodeMax).nullish(),
+  "imageUrl": zod.string().max(recalculateListingPricingBodyImageUrlMax).nullish(),
+  "specs": zod.array(zod.object({
+  "name": zod.string().max(recalculateListingPricingBodySpecsItemNameMax),
+  "values": zod.array(zod.string().max(recalculateListingPricingBodySpecsItemValuesItemMax)).max(recalculateListingPricingBodySpecsItemValuesMax)
+}).strict()).max(recalculateListingPricingBodySpecsMax).optional(),
+  "inventory": zod.number().min(recalculateListingPricingBodyInventoryMin).max(recalculateListingPricingBodyInventoryMax).multipleOf(recalculateListingPricingBodyInventoryMultipleOf).nullish(),
+  "orderDeadlineAt": zod.coerce.date().nullish(),
+  "storageTemp": zod.union([zod.literal('ambient'),zod.literal('chilled'),zod.literal('frozen'),zod.literal(null)]).nullish(),
+  "storageTempClass": zod.union([zod.literal('normal'),zod.literal('frozen'),zod.literal(null)]).nullish(),
+  "shelfLife": zod.string().max(recalculateListingPricingBodyShelfLifeMax).nullish(),
+  "categoryId": zod.number().min(1).max(recalculateListingPricingBodyCategoryIdMax).multipleOf(recalculateListingPricingBodyCategoryIdMultipleOf).nullish(),
+  "listingBarcode": zod.string().max(recalculateListingPricingBodyListingBarcodeMax).nullish(),
+  "originalPriceJpy": zod.string().regex(recalculateListingPricingBodyOriginalPriceJpyRegExp).nullish(),
+  "effectiveCostJpy": zod.string().regex(recalculateListingPricingBodyEffectiveCostJpyRegExp).nullish(),
+  "weightGrams": zod.string().regex(recalculateListingPricingBodyWeightGramsRegExp).nullish(),
+  "templateId": zod.number().min(1).max(recalculateListingPricingBodyTemplateIdMax).multipleOf(recalculateListingPricingBodyTemplateIdMultipleOf).nullish(),
+  "shippingProfileId": zod.number().min(1).max(recalculateListingPricingBodyShippingProfileIdMax).multipleOf(recalculateListingPricingBodyShippingProfileIdMultipleOf).nullish(),
+  "tripRouteId": zod.number().min(1).max(recalculateListingPricingBodyTripRouteIdMax).multipleOf(recalculateListingPricingBodyTripRouteIdMultipleOf).nullish(),
+  "isTransportCostExempt": zod.boolean().optional(),
+  "departmentStoreFeeRate": zod.string().regex(recalculateListingPricingBodyDepartmentStoreFeeRateRegExp).nullish(),
+  "generalFinalPriceTwd": zod.string().regex(recalculateListingPricingBodyGeneralFinalPriceTwdRegExp).nullish(),
+  "vipFinalPriceTwd": zod.string().regex(recalculateListingPricingBodyVipFinalPriceTwdRegExp).nullish(),
+  "wholesalePrice": zod.string().regex(recalculateListingPricingBodyWholesalePriceRegExp).nullish(),
+  "partnerPrice": zod.string().regex(recalculateListingPricingBodyPartnerPriceRegExp).nullish(),
+  "syncFields": zod.array(zod.enum(['name', 'weightGrams', 'categoryId', 'imageUrl', 'internalNote', 'templateId', 'shippingProfileId', 'cost', 'barcode'])).max(recalculateListingPricingBodySyncFieldsMax).default(recalculateListingPricingBodySyncFieldsDefault),
+  "reasonCode": zod.string().max(recalculateListingPricingBodyReasonCodeMax).optional(),
+  "reasonText": zod.string().max(recalculateListingPricingBodyReasonTextMax).nullish(),
+  "forceBarcodeCorrection": zod.boolean().default(recalculateListingPricingBodyForceBarcodeCorrectionDefault)
+}).strict()
+
+export const recalculateListingPricingResponseCurrentOneCatalogProductIdMax = 2147483647;
+export const recalculateListingPricingResponseCurrentOneCatalogProductIdMultipleOf = 1;
+
+export const recalculateListingPricingResponseCurrentOneSourceCostRecordIdMax = 2147483647;
+export const recalculateListingPricingResponseCurrentOneSourceCostRecordIdMultipleOf = 1;
+
+export const recalculateListingPricingResponseCurrentOneListingBarcodeMax = 2000;
+
+export const recalculateListingPricingResponseCurrentOneCreatedByMax = 2000;
+
+export const recalculateListingPricingResponseCurrentOneTripRouteIdMax = 2147483647;
+export const recalculateListingPricingResponseCurrentOneTripRouteIdMultipleOf = 1;
+
+export const recalculateListingPricingResponseCurrentOneWeightGramsRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const recalculateListingPricingResponseSnapshotCatalogProductIdMax = 2147483647;
+export const recalculateListingPricingResponseSnapshotCatalogProductIdMultipleOf = 1;
+
+export const recalculateListingPricingResponseSnapshotSourceCostRecordIdMax = 2147483647;
+export const recalculateListingPricingResponseSnapshotSourceCostRecordIdMultipleOf = 1;
+
+export const recalculateListingPricingResponseSnapshotListingBarcodeMax = 2000;
+
+export const recalculateListingPricingResponseSnapshotCreatedByMax = 2000;
+
+export const recalculateListingPricingResponseSnapshotTripRouteIdMax = 2147483647;
+export const recalculateListingPricingResponseSnapshotTripRouteIdMultipleOf = 1;
+
+export const recalculateListingPricingResponseSnapshotWeightGramsRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const recalculateListingPricingResponseProductOneCatalogProductIdMax = 2147483647;
+export const recalculateListingPricingResponseProductOneCatalogProductIdMultipleOf = 1;
+
+export const recalculateListingPricingResponseProductOnePricingTemplateIdMax = 2147483647;
+export const recalculateListingPricingResponseProductOnePricingTemplateIdMultipleOf = 1;
+
+export const recalculateListingPricingResponseProductOneInternationalShippingProfileIdMax = 2147483647;
+export const recalculateListingPricingResponseProductOneInternationalShippingProfileIdMultipleOf = 1;
+
+export const recalculateListingPricingResponseProductOneCategoryIdMax = 2147483647;
+export const recalculateListingPricingResponseProductOneCategoryIdMultipleOf = 1;
+
+export const recalculateListingPricingResponseProductOneTripRouteIdMax = 2147483647;
+export const recalculateListingPricingResponseProductOneTripRouteIdMultipleOf = 1;
+
+export const recalculateListingPricingResponseVipHistoryOneQuantityMax = 200;
+
+export const recalculateListingPricingResponseVipHistoryOneLatestPriceTwdMax = 200;
+
+export const recalculateListingPricingResponseVipHistoryOneLatestUnitProfitTwdMax = 200;
+
+export const recalculateListingPricingResponseVipHistoryOneLatestUnitCostTwdMax = 200;
+
+export const recalculateListingPricingResponseVipHistoryOneWeightedAverageTwdMax = 200;
+
+export const recalculateListingPricingResponseVipHistoryOneMinPriceTwdMax = 200;
+
+export const recalculateListingPricingResponseVipHistoryOneMaxPriceTwdMax = 200;
+
+export const recalculateListingPricingResponseVipHistoryOneFromAtMax = 200;
+
+export const recalculateListingPricingResponseVipHistoryOneToAtMax = 200;
+
+export const recalculateListingPricingResponseVipHistoryOneDateStatusMax = 200;
+
+
+
+export const RecalculateListingPricingResponse = zod.object({
+  "preview": zod.object({
+  "status": zod.enum(['READY', 'PENDING_CONFIRMATION']),
+  "reasons": zod.array(zod.string()),
+  "formulaVersion": zod.string(),
+  "settingsVersion": zod.string(),
+  "templateId": zod.number().nullish(),
+  "shippingProfile": zod.record(zod.string(), zod.unknown()).nullish(),
+  "routeMetadata": zod.record(zod.string(), zod.unknown()),
+  "amounts": zod.record(zod.string(), zod.string().nullable()),
+  "display": zod.record(zod.string(), zod.string().nullable()),
+  "general": zod.object({
+  "status": zod.enum(['READY', 'PENDING_CONFIRMATION']),
+  "reasons": zod.array(zod.string()),
+  "profitLevel": zod.string().nullable(),
+  "values": zod.record(zod.string(), zod.string().nullable()),
+  "display": zod.record(zod.string(), zod.string().nullable())
+}),
+  "vip": zod.object({
+  "status": zod.enum(['READY', 'PENDING_CONFIRMATION']),
+  "reasons": zod.array(zod.string()),
+  "profitLevel": zod.string().nullable(),
+  "values": zod.record(zod.string(), zod.string().nullable()),
+  "display": zod.record(zod.string(), zod.string().nullable())
+})
+}),
+  "reference": zod.object({
+  "sourceCostRecordId": zod.number(),
+  "settingsVersion": zod.string(),
+  "context": zod.string(),
+  "latestOriginalPriceJpy": zod.string(),
+  "latestEffectiveCostJpy": zod.string()
+}),
+  "warnings": zod.array(zod.string()),
+  "current": zod.union([zod.object({
+  "id": zod.number().optional(),
+  "storeId": zod.number().optional(),
+  "productId": zod.number().optional(),
+  "catalogProductId": zod.number().min(1).max(recalculateListingPricingResponseCurrentOneCatalogProductIdMax).multipleOf(recalculateListingPricingResponseCurrentOneCatalogProductIdMultipleOf).nullish(),
+  "sourceCostRecordId": zod.number().min(1).max(recalculateListingPricingResponseCurrentOneSourceCostRecordIdMax).multipleOf(recalculateListingPricingResponseCurrentOneSourceCostRecordIdMultipleOf).nullish(),
+  "listingBarcode": zod.string().max(recalculateListingPricingResponseCurrentOneListingBarcodeMax).nullish(),
+  "createdBy": zod.string().max(recalculateListingPricingResponseCurrentOneCreatedByMax).nullish(),
+  "createdAt": zod.string().optional(),
+  "formulaVersion": zod.string().optional(),
+  "settingsVersion": zod.string().optional(),
+  "pricingContext": zod.record(zod.string(), zod.unknown()).nullish(),
+  "internationalShippingProfileSnapshot": zod.record(zod.string(), zod.unknown()).nullish(),
+  "tripRouteId": zod.number().min(1).max(recalculateListingPricingResponseCurrentOneTripRouteIdMax).multipleOf(recalculateListingPricingResponseCurrentOneTripRouteIdMultipleOf).nullish(),
+  "weightGrams": zod.string().regex(recalculateListingPricingResponseCurrentOneWeightGramsRegExp).nullish(),
+  "originalPriceJpy": zod.string().nullish(),
+  "effectiveCostJpy": zod.string().nullish(),
+  "exchangeRate": zod.string().nullish(),
+  "routeCostTwd": zod.string().nullish(),
+  "lossProtectionTwd": zod.string().nullish(),
+  "protectedRouteCostTwd": zod.string().nullish(),
+  "internationalShippingTwd": zod.string().nullish(),
+  "purchasePaymentFeeRate": zod.string().nullish(),
+  "purchasePaymentFeeTwd": zod.string().nullish(),
+  "routePaymentFeeRate": zod.string().nullish(),
+  "departmentStoreFeeRate": zod.string().nullish(),
+  "departmentStoreFeeTwd": zod.string().nullish(),
+  "originalPriceTwd": zod.string().nullish(),
+  "effectiveProductCostTwd": zod.string().nullish(),
+  "totalCostTwd": zod.string().nullish(),
+  "targetPriceTwd": zod.string().nullish(),
+  "generalFinalPriceTwd": zod.string().nullish(),
+  "generalNetProfitTwd": zod.string().nullish(),
+  "generalProfitRate": zod.string().nullish(),
+  "generalContributionProfitTwd": zod.string().nullish(),
+  "generalContributionProfitRate": zod.string().nullish(),
+  "generalPerceivedDifferenceTwd": zod.string().nullish(),
+  "generalProfitLevel": zod.string().nullish(),
+  "vipFinalPriceTwd": zod.string().nullish(),
+  "vipNetProfitTwd": zod.string().nullish(),
+  "vipProfitRate": zod.string().nullish(),
+  "vipContributionProfitTwd": zod.string().nullish(),
+  "vipContributionProfitRate": zod.string().nullish(),
+  "vipPerceivedDifferenceTwd": zod.string().nullish(),
+  "vipProfitLevel": zod.string().nullish()
+}),zod.null()]).optional(),
+  "snapshot": zod.object({
+  "id": zod.number().optional(),
+  "storeId": zod.number().optional(),
+  "productId": zod.number().optional(),
+  "catalogProductId": zod.number().min(1).max(recalculateListingPricingResponseSnapshotCatalogProductIdMax).multipleOf(recalculateListingPricingResponseSnapshotCatalogProductIdMultipleOf).nullish(),
+  "sourceCostRecordId": zod.number().min(1).max(recalculateListingPricingResponseSnapshotSourceCostRecordIdMax).multipleOf(recalculateListingPricingResponseSnapshotSourceCostRecordIdMultipleOf).nullish(),
+  "listingBarcode": zod.string().max(recalculateListingPricingResponseSnapshotListingBarcodeMax).nullish(),
+  "createdBy": zod.string().max(recalculateListingPricingResponseSnapshotCreatedByMax).nullish(),
+  "createdAt": zod.string().optional(),
+  "formulaVersion": zod.string().optional(),
+  "settingsVersion": zod.string().optional(),
+  "pricingContext": zod.record(zod.string(), zod.unknown()).nullish(),
+  "internationalShippingProfileSnapshot": zod.record(zod.string(), zod.unknown()).nullish(),
+  "tripRouteId": zod.number().min(1).max(recalculateListingPricingResponseSnapshotTripRouteIdMax).multipleOf(recalculateListingPricingResponseSnapshotTripRouteIdMultipleOf).nullish(),
+  "weightGrams": zod.string().regex(recalculateListingPricingResponseSnapshotWeightGramsRegExp).nullish(),
+  "originalPriceJpy": zod.string().nullish(),
+  "effectiveCostJpy": zod.string().nullish(),
+  "exchangeRate": zod.string().nullish(),
+  "routeCostTwd": zod.string().nullish(),
+  "lossProtectionTwd": zod.string().nullish(),
+  "protectedRouteCostTwd": zod.string().nullish(),
+  "internationalShippingTwd": zod.string().nullish(),
+  "purchasePaymentFeeRate": zod.string().nullish(),
+  "purchasePaymentFeeTwd": zod.string().nullish(),
+  "routePaymentFeeRate": zod.string().nullish(),
+  "departmentStoreFeeRate": zod.string().nullish(),
+  "departmentStoreFeeTwd": zod.string().nullish(),
+  "originalPriceTwd": zod.string().nullish(),
+  "effectiveProductCostTwd": zod.string().nullish(),
+  "totalCostTwd": zod.string().nullish(),
+  "targetPriceTwd": zod.string().nullish(),
+  "generalFinalPriceTwd": zod.string().nullish(),
+  "generalNetProfitTwd": zod.string().nullish(),
+  "generalProfitRate": zod.string().nullish(),
+  "generalContributionProfitTwd": zod.string().nullish(),
+  "generalContributionProfitRate": zod.string().nullish(),
+  "generalPerceivedDifferenceTwd": zod.string().nullish(),
+  "generalProfitLevel": zod.string().nullish(),
+  "vipFinalPriceTwd": zod.string().nullish(),
+  "vipNetProfitTwd": zod.string().nullish(),
+  "vipProfitRate": zod.string().nullish(),
+  "vipContributionProfitTwd": zod.string().nullish(),
+  "vipContributionProfitRate": zod.string().nullish(),
+  "vipPerceivedDifferenceTwd": zod.string().nullish(),
+  "vipProfitLevel": zod.string().nullish()
+}).optional(),
+  "product": zod.union([zod.object({
+  "id": zod.number(),
+  "storeId": zod.number(),
+  "catalogProductId": zod.number().min(1).max(recalculateListingPricingResponseProductOneCatalogProductIdMax).multipleOf(recalculateListingPricingResponseProductOneCatalogProductIdMultipleOf).nullable(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "price": zod.string(),
+  "vipPrice": zod.string().nullish(),
+  "wholesalePrice": zod.string().nullish(),
+  "partnerPrice": zod.string().nullish(),
+  "originalPriceJpy": zod.string().nullish(),
+  "effectiveCostJpy": zod.string().nullish(),
+  "costJpy": zod.string().nullish(),
+  "weightGrams": zod.string().nullish(),
+  "weightKg": zod.string().nullish(),
+  "pricingTemplateId": zod.number().min(1).max(recalculateListingPricingResponseProductOnePricingTemplateIdMax).multipleOf(recalculateListingPricingResponseProductOnePricingTemplateIdMultipleOf).nullish(),
+  "internationalShippingProfileId": zod.number().min(1).max(recalculateListingPricingResponseProductOneInternationalShippingProfileIdMax).multipleOf(recalculateListingPricingResponseProductOneInternationalShippingProfileIdMultipleOf).nullish(),
+  "categoryId": zod.number().min(1).max(recalculateListingPricingResponseProductOneCategoryIdMax).multipleOf(recalculateListingPricingResponseProductOneCategoryIdMultipleOf).nullish(),
+  "tripRouteId": zod.number().min(1).max(recalculateListingPricingResponseProductOneTripRouteIdMax).multipleOf(recalculateListingPricingResponseProductOneTripRouteIdMultipleOf).nullish(),
+  "inventory": zod.number().nullish(),
+  "isActive": zod.boolean(),
+  "isTransportCostExempt": zod.boolean().optional(),
+  "imageUrl": zod.string().nullish(),
+  "internalNote": zod.string().nullish(),
+  "skuCode": zod.string().nullish(),
+  "shelfLife": zod.string().nullish(),
+  "storageTemp": zod.string().nullish(),
+  "storageTempClass": zod.string().nullish(),
+  "orderDeadlineAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional(),
+  "shareToken": zod.string(),
+  "specs": zod.array(zod.object({
+  "name": zod.string(),
+  "values": zod.array(zod.string())
+})).optional()
+}),zod.null()]).optional(),
+  "vipHistory": zod.union([zod.object({
+  "quantity": zod.string().max(recalculateListingPricingResponseVipHistoryOneQuantityMax),
+  "latestPriceTwd": zod.string().max(recalculateListingPricingResponseVipHistoryOneLatestPriceTwdMax),
+  "latestUnitProfitTwd": zod.string().max(recalculateListingPricingResponseVipHistoryOneLatestUnitProfitTwdMax),
+  "latestUnitCostTwd": zod.string().max(recalculateListingPricingResponseVipHistoryOneLatestUnitCostTwdMax).optional(),
+  "weightedAverageTwd": zod.string().max(recalculateListingPricingResponseVipHistoryOneWeightedAverageTwdMax),
+  "minPriceTwd": zod.string().max(recalculateListingPricingResponseVipHistoryOneMinPriceTwdMax).optional(),
+  "maxPriceTwd": zod.string().max(recalculateListingPricingResponseVipHistoryOneMaxPriceTwdMax).optional(),
+  "fromAt": zod.string().max(recalculateListingPricingResponseVipHistoryOneFromAtMax),
+  "toAt": zod.string().max(recalculateListingPricingResponseVipHistoryOneToAtMax),
+  "dateStatus": zod.string().max(recalculateListingPricingResponseVipHistoryOneDateStatusMax)
+}),zod.null()]).optional(),
+  "availableTrips": zod.array(zod.object({
+  "id": zod.number(),
+  "storeId": zod.number(),
+  "name": zod.string(),
+  "routes": zod.array(zod.object({
+  "id": zod.number(),
+  "storeId": zod.number(),
+  "areaTitle": zod.string()
+}))
+})).optional()
+})
+
+
+export const getListingPricingHistoryPathStoreIdMax = 2147483647;
+export const getListingPricingHistoryPathStoreIdMultipleOf = 1;
+
+export const getListingPricingHistoryPathProductIdMax = 2147483647;
+export const getListingPricingHistoryPathProductIdMultipleOf = 1;
+
+
+
+export const GetListingPricingHistoryParams = zod.object({
+  "storeId": zod.coerce.number().min(1).max(getListingPricingHistoryPathStoreIdMax).multipleOf(getListingPricingHistoryPathStoreIdMultipleOf),
+  "productId": zod.coerce.number().min(1).max(getListingPricingHistoryPathProductIdMax).multipleOf(getListingPricingHistoryPathProductIdMultipleOf)
+})
+
+export const getListingPricingHistoryResponseItemsItemCatalogProductIdMax = 2147483647;
+export const getListingPricingHistoryResponseItemsItemCatalogProductIdMultipleOf = 1;
+
+export const getListingPricingHistoryResponseItemsItemSourceCostRecordIdMax = 2147483647;
+export const getListingPricingHistoryResponseItemsItemSourceCostRecordIdMultipleOf = 1;
+
+export const getListingPricingHistoryResponseItemsItemListingBarcodeMax = 2000;
+
+export const getListingPricingHistoryResponseItemsItemCreatedByMax = 2000;
+
+export const getListingPricingHistoryResponseItemsItemTripRouteIdMax = 2147483647;
+export const getListingPricingHistoryResponseItemsItemTripRouteIdMultipleOf = 1;
+
+export const getListingPricingHistoryResponseItemsItemWeightGramsRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const getListingPricingHistoryResponseCurrentOneCatalogProductIdMax = 2147483647;
+export const getListingPricingHistoryResponseCurrentOneCatalogProductIdMultipleOf = 1;
+
+export const getListingPricingHistoryResponseCurrentOneSourceCostRecordIdMax = 2147483647;
+export const getListingPricingHistoryResponseCurrentOneSourceCostRecordIdMultipleOf = 1;
+
+export const getListingPricingHistoryResponseCurrentOneListingBarcodeMax = 2000;
+
+export const getListingPricingHistoryResponseCurrentOneCreatedByMax = 2000;
+
+export const getListingPricingHistoryResponseCurrentOneTripRouteIdMax = 2147483647;
+export const getListingPricingHistoryResponseCurrentOneTripRouteIdMultipleOf = 1;
+
+export const getListingPricingHistoryResponseCurrentOneWeightGramsRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const getListingPricingHistoryResponseProductCatalogProductIdMax = 2147483647;
+export const getListingPricingHistoryResponseProductCatalogProductIdMultipleOf = 1;
+
+export const getListingPricingHistoryResponseProductPricingTemplateIdMax = 2147483647;
+export const getListingPricingHistoryResponseProductPricingTemplateIdMultipleOf = 1;
+
+export const getListingPricingHistoryResponseProductInternationalShippingProfileIdMax = 2147483647;
+export const getListingPricingHistoryResponseProductInternationalShippingProfileIdMultipleOf = 1;
+
+export const getListingPricingHistoryResponseProductCategoryIdMax = 2147483647;
+export const getListingPricingHistoryResponseProductCategoryIdMultipleOf = 1;
+
+export const getListingPricingHistoryResponseProductTripRouteIdMax = 2147483647;
+export const getListingPricingHistoryResponseProductTripRouteIdMultipleOf = 1;
+
+export const getListingPricingHistoryResponseCurrentCostRecordIdMax = 2147483647;
+export const getListingPricingHistoryResponseCurrentCostRecordIdMultipleOf = 1;
+
+export const getListingPricingHistoryResponseVipHistoryOneQuantityMax = 200;
+
+export const getListingPricingHistoryResponseVipHistoryOneLatestPriceTwdMax = 200;
+
+export const getListingPricingHistoryResponseVipHistoryOneLatestUnitProfitTwdMax = 200;
+
+export const getListingPricingHistoryResponseVipHistoryOneLatestUnitCostTwdMax = 200;
+
+export const getListingPricingHistoryResponseVipHistoryOneWeightedAverageTwdMax = 200;
+
+export const getListingPricingHistoryResponseVipHistoryOneMinPriceTwdMax = 200;
+
+export const getListingPricingHistoryResponseVipHistoryOneMaxPriceTwdMax = 200;
+
+export const getListingPricingHistoryResponseVipHistoryOneFromAtMax = 200;
+
+export const getListingPricingHistoryResponseVipHistoryOneToAtMax = 200;
+
+export const getListingPricingHistoryResponseVipHistoryOneDateStatusMax = 200;
+
+
+
+export const GetListingPricingHistoryResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "storeId": zod.number().optional(),
+  "productId": zod.number().optional(),
+  "catalogProductId": zod.number().min(1).max(getListingPricingHistoryResponseItemsItemCatalogProductIdMax).multipleOf(getListingPricingHistoryResponseItemsItemCatalogProductIdMultipleOf).nullish(),
+  "sourceCostRecordId": zod.number().min(1).max(getListingPricingHistoryResponseItemsItemSourceCostRecordIdMax).multipleOf(getListingPricingHistoryResponseItemsItemSourceCostRecordIdMultipleOf).nullish(),
+  "listingBarcode": zod.string().max(getListingPricingHistoryResponseItemsItemListingBarcodeMax).nullish(),
+  "createdBy": zod.string().max(getListingPricingHistoryResponseItemsItemCreatedByMax).nullish(),
+  "createdAt": zod.string().optional(),
+  "formulaVersion": zod.string().optional(),
+  "settingsVersion": zod.string().optional(),
+  "pricingContext": zod.record(zod.string(), zod.unknown()).nullish(),
+  "internationalShippingProfileSnapshot": zod.record(zod.string(), zod.unknown()).nullish(),
+  "tripRouteId": zod.number().min(1).max(getListingPricingHistoryResponseItemsItemTripRouteIdMax).multipleOf(getListingPricingHistoryResponseItemsItemTripRouteIdMultipleOf).nullish(),
+  "weightGrams": zod.string().regex(getListingPricingHistoryResponseItemsItemWeightGramsRegExp).nullish(),
+  "originalPriceJpy": zod.string().nullish(),
+  "effectiveCostJpy": zod.string().nullish(),
+  "exchangeRate": zod.string().nullish(),
+  "routeCostTwd": zod.string().nullish(),
+  "lossProtectionTwd": zod.string().nullish(),
+  "protectedRouteCostTwd": zod.string().nullish(),
+  "internationalShippingTwd": zod.string().nullish(),
+  "purchasePaymentFeeRate": zod.string().nullish(),
+  "purchasePaymentFeeTwd": zod.string().nullish(),
+  "routePaymentFeeRate": zod.string().nullish(),
+  "departmentStoreFeeRate": zod.string().nullish(),
+  "departmentStoreFeeTwd": zod.string().nullish(),
+  "originalPriceTwd": zod.string().nullish(),
+  "effectiveProductCostTwd": zod.string().nullish(),
+  "totalCostTwd": zod.string().nullish(),
+  "targetPriceTwd": zod.string().nullish(),
+  "generalFinalPriceTwd": zod.string().nullish(),
+  "generalNetProfitTwd": zod.string().nullish(),
+  "generalProfitRate": zod.string().nullish(),
+  "generalContributionProfitTwd": zod.string().nullish(),
+  "generalContributionProfitRate": zod.string().nullish(),
+  "generalPerceivedDifferenceTwd": zod.string().nullish(),
+  "generalProfitLevel": zod.string().nullish(),
+  "vipFinalPriceTwd": zod.string().nullish(),
+  "vipNetProfitTwd": zod.string().nullish(),
+  "vipProfitRate": zod.string().nullish(),
+  "vipContributionProfitTwd": zod.string().nullish(),
+  "vipContributionProfitRate": zod.string().nullish(),
+  "vipPerceivedDifferenceTwd": zod.string().nullish(),
+  "vipProfitLevel": zod.string().nullish()
+})),
+  "current": zod.union([zod.object({
+  "id": zod.number().optional(),
+  "storeId": zod.number().optional(),
+  "productId": zod.number().optional(),
+  "catalogProductId": zod.number().min(1).max(getListingPricingHistoryResponseCurrentOneCatalogProductIdMax).multipleOf(getListingPricingHistoryResponseCurrentOneCatalogProductIdMultipleOf).nullish(),
+  "sourceCostRecordId": zod.number().min(1).max(getListingPricingHistoryResponseCurrentOneSourceCostRecordIdMax).multipleOf(getListingPricingHistoryResponseCurrentOneSourceCostRecordIdMultipleOf).nullish(),
+  "listingBarcode": zod.string().max(getListingPricingHistoryResponseCurrentOneListingBarcodeMax).nullish(),
+  "createdBy": zod.string().max(getListingPricingHistoryResponseCurrentOneCreatedByMax).nullish(),
+  "createdAt": zod.string().optional(),
+  "formulaVersion": zod.string().optional(),
+  "settingsVersion": zod.string().optional(),
+  "pricingContext": zod.record(zod.string(), zod.unknown()).nullish(),
+  "internationalShippingProfileSnapshot": zod.record(zod.string(), zod.unknown()).nullish(),
+  "tripRouteId": zod.number().min(1).max(getListingPricingHistoryResponseCurrentOneTripRouteIdMax).multipleOf(getListingPricingHistoryResponseCurrentOneTripRouteIdMultipleOf).nullish(),
+  "weightGrams": zod.string().regex(getListingPricingHistoryResponseCurrentOneWeightGramsRegExp).nullish(),
+  "originalPriceJpy": zod.string().nullish(),
+  "effectiveCostJpy": zod.string().nullish(),
+  "exchangeRate": zod.string().nullish(),
+  "routeCostTwd": zod.string().nullish(),
+  "lossProtectionTwd": zod.string().nullish(),
+  "protectedRouteCostTwd": zod.string().nullish(),
+  "internationalShippingTwd": zod.string().nullish(),
+  "purchasePaymentFeeRate": zod.string().nullish(),
+  "purchasePaymentFeeTwd": zod.string().nullish(),
+  "routePaymentFeeRate": zod.string().nullish(),
+  "departmentStoreFeeRate": zod.string().nullish(),
+  "departmentStoreFeeTwd": zod.string().nullish(),
+  "originalPriceTwd": zod.string().nullish(),
+  "effectiveProductCostTwd": zod.string().nullish(),
+  "totalCostTwd": zod.string().nullish(),
+  "targetPriceTwd": zod.string().nullish(),
+  "generalFinalPriceTwd": zod.string().nullish(),
+  "generalNetProfitTwd": zod.string().nullish(),
+  "generalProfitRate": zod.string().nullish(),
+  "generalContributionProfitTwd": zod.string().nullish(),
+  "generalContributionProfitRate": zod.string().nullish(),
+  "generalPerceivedDifferenceTwd": zod.string().nullish(),
+  "generalProfitLevel": zod.string().nullish(),
+  "vipFinalPriceTwd": zod.string().nullish(),
+  "vipNetProfitTwd": zod.string().nullish(),
+  "vipProfitRate": zod.string().nullish(),
+  "vipContributionProfitTwd": zod.string().nullish(),
+  "vipContributionProfitRate": zod.string().nullish(),
+  "vipPerceivedDifferenceTwd": zod.string().nullish(),
+  "vipProfitLevel": zod.string().nullish()
+}),zod.null()]).optional(),
+  "product": zod.object({
+  "id": zod.number(),
+  "storeId": zod.number(),
+  "catalogProductId": zod.number().min(1).max(getListingPricingHistoryResponseProductCatalogProductIdMax).multipleOf(getListingPricingHistoryResponseProductCatalogProductIdMultipleOf).nullable(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "price": zod.string(),
+  "vipPrice": zod.string().nullish(),
+  "wholesalePrice": zod.string().nullish(),
+  "partnerPrice": zod.string().nullish(),
+  "originalPriceJpy": zod.string().nullish(),
+  "effectiveCostJpy": zod.string().nullish(),
+  "costJpy": zod.string().nullish(),
+  "weightGrams": zod.string().nullish(),
+  "weightKg": zod.string().nullish(),
+  "pricingTemplateId": zod.number().min(1).max(getListingPricingHistoryResponseProductPricingTemplateIdMax).multipleOf(getListingPricingHistoryResponseProductPricingTemplateIdMultipleOf).nullish(),
+  "internationalShippingProfileId": zod.number().min(1).max(getListingPricingHistoryResponseProductInternationalShippingProfileIdMax).multipleOf(getListingPricingHistoryResponseProductInternationalShippingProfileIdMultipleOf).nullish(),
+  "categoryId": zod.number().min(1).max(getListingPricingHistoryResponseProductCategoryIdMax).multipleOf(getListingPricingHistoryResponseProductCategoryIdMultipleOf).nullish(),
+  "tripRouteId": zod.number().min(1).max(getListingPricingHistoryResponseProductTripRouteIdMax).multipleOf(getListingPricingHistoryResponseProductTripRouteIdMultipleOf).nullish(),
+  "inventory": zod.number().nullish(),
+  "isActive": zod.boolean(),
+  "isTransportCostExempt": zod.boolean().optional(),
+  "imageUrl": zod.string().nullish(),
+  "internalNote": zod.string().nullish(),
+  "skuCode": zod.string().nullish(),
+  "shelfLife": zod.string().nullish(),
+  "storageTemp": zod.string().nullish(),
+  "storageTempClass": zod.string().nullish(),
+  "orderDeadlineAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional(),
+  "shareToken": zod.string(),
+  "specs": zod.array(zod.object({
+  "name": zod.string(),
+  "values": zod.array(zod.string())
+})).optional()
+}).optional(),
+  "costUpdated": zod.boolean(),
+  "currentCostRecordId": zod.number().min(1).max(getListingPricingHistoryResponseCurrentCostRecordIdMax).multipleOf(getListingPricingHistoryResponseCurrentCostRecordIdMultipleOf).nullable(),
+  "vipHistory": zod.union([zod.object({
+  "quantity": zod.string().max(getListingPricingHistoryResponseVipHistoryOneQuantityMax),
+  "latestPriceTwd": zod.string().max(getListingPricingHistoryResponseVipHistoryOneLatestPriceTwdMax),
+  "latestUnitProfitTwd": zod.string().max(getListingPricingHistoryResponseVipHistoryOneLatestUnitProfitTwdMax),
+  "latestUnitCostTwd": zod.string().max(getListingPricingHistoryResponseVipHistoryOneLatestUnitCostTwdMax).optional(),
+  "weightedAverageTwd": zod.string().max(getListingPricingHistoryResponseVipHistoryOneWeightedAverageTwdMax),
+  "minPriceTwd": zod.string().max(getListingPricingHistoryResponseVipHistoryOneMinPriceTwdMax).optional(),
+  "maxPriceTwd": zod.string().max(getListingPricingHistoryResponseVipHistoryOneMaxPriceTwdMax).optional(),
+  "fromAt": zod.string().max(getListingPricingHistoryResponseVipHistoryOneFromAtMax),
+  "toAt": zod.string().max(getListingPricingHistoryResponseVipHistoryOneToAtMax),
+  "dateStatus": zod.string().max(getListingPricingHistoryResponseVipHistoryOneDateStatusMax)
+}),zod.null()]).optional(),
+  "availableTrips": zod.array(zod.object({
+  "id": zod.number(),
+  "storeId": zod.number(),
+  "name": zod.string(),
+  "routes": zod.array(zod.object({
+  "id": zod.number(),
+  "storeId": zod.number(),
+  "areaTitle": zod.string()
+}))
+})).optional()
+})
+
+
+/**
+ * @summary Owner-only catalogList
+ */
+export const catalogListPathStoreIdMax = 2147483647;
+export const catalogListPathStoreIdMultipleOf = 1;
+
+
+
+export const CatalogListPathParams = zod.preprocess(preprocessCatalogParams, zod.object({
+  "storeId": zod.coerce.number().min(1).max(catalogListPathStoreIdMax).multipleOf(catalogListPathStoreIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647')
+}).strict())
+
+export const catalogListQueryQMax = 256;
+
+export const catalogListQueryCategoryIdRegExp = new RegExp('^(?:[1-9]\\d{0,8}|1\\d{9}|20\\d{8}|21[0-3]\\d{7}|214[0-6]\\d{6}|2147[0-3]\\d{5}|21474[0-7]\\d{4}|214748[0-2]\\d{3}|2147483[0-5]\\d{2}|21474836[0-3]\\d|214748364[0-7])$');
+export const catalogListQueryPageRegExp = new RegExp('^(?:[1-9][0-9]{0,4}|100000)$');
+export const catalogListQueryPageSizeRegExp = new RegExp('^(?:[1-9]|[1-9][0-9]|100)$');
+export const catalogListQuerySimilarNameMax = 256;
+
+export const catalogListQuerySimilarWeightGramsRegExp = new RegExp('^(?:0|[1-9]\\d{0,9})(?:\\.\\d{1,2})?$');
+export const catalogListQuerySimilarOriginalPriceJpyRegExp = new RegExp('^(?:0|[1-9]\\d{0,17})(?:\\.\\d{1,12})?$');
+export const catalogListQueryExactBarcodeMax = 128;
+
+
+export const catalogListQueryExactBarcodeRegExp = new RegExp('^[0-9]{1,128}$');
+
+
+export const CatalogListQueryParams = zod.object({
+  "q": zod.string().max(catalogListQueryQMax).optional(),
+  "status": zod.enum(['NORMAL', 'DISCONTINUED', 'ARCHIVED']).optional(),
+  "categoryId": zod.string().regex(catalogListQueryCategoryIdRegExp).optional(),
+  "barcodeStatus": zod.enum(['REAL', 'NONE']).optional(),
+  "includeArchived": zod.enum(['true', 'false']).optional(),
+  "page": zod.string().regex(catalogListQueryPageRegExp).optional(),
+  "pageSize": zod.string().regex(catalogListQueryPageSizeRegExp).optional(),
+  "filter": zod.enum(['POSSIBLE_DUPLICATE', 'COST_UPDATED', 'MISSING_DATA']).optional(),
+  "similarName": zod.string().min(1).max(catalogListQuerySimilarNameMax).optional(),
+  "similarWeightGrams": zod.string().regex(catalogListQuerySimilarWeightGramsRegExp).optional(),
+  "similarOriginalPriceJpy": zod.string().regex(catalogListQuerySimilarOriginalPriceJpyRegExp).optional(),
+  "exactBarcode": zod.string().min(1).max(catalogListQueryExactBarcodeMax).regex(catalogListQueryExactBarcodeRegExp).optional().describe('Exact scanned barcode lookup; digits only, leading zeros preserved; mutually exclusive with q')
+}).strict()
+
+export const catalogListResponseItemsItemIdMax = 2147483647;
+export const catalogListResponseItemsItemIdMultipleOf = 1;
+
+export const catalogListResponseItemsItemStoreIdMax = 2147483647;
+export const catalogListResponseItemsItemStoreIdMultipleOf = 1;
+
+export const catalogListResponseItemsItemNameMax = 256;
+
+export const catalogListResponseItemsItemWeightGramsRegExp = new RegExp('^\\d{1,10}(?:\\.\\d{1,2})?$');
+export const catalogListResponseItemsItemCategoryIdMax = 2147483647;
+export const catalogListResponseItemsItemCategoryIdMultipleOf = 1;
+
+export const catalogListResponseItemsItemImageUrlMax = 2048;
+
+
+export const catalogListResponseItemsItemImageUrlRegExp = new RegExp('^https?:\/\/[^\\s]+$');
+export const catalogListResponseItemsItemInternalNoteMax = 2000;
+
+export const catalogListResponseItemsItemPreferredRouteLabelMax = 256;
+
+export const catalogListResponseItemsItemLastUsedTripRouteIdMax = 2147483647;
+export const catalogListResponseItemsItemLastUsedTripRouteIdMultipleOf = 1;
+
+export const catalogListResponseItemsItemDefaultPricingTemplateIdMax = 2147483647;
+export const catalogListResponseItemsItemDefaultPricingTemplateIdMultipleOf = 1;
+
+export const catalogListResponseItemsItemDefaultShippingProfileIdMax = 2147483647;
+export const catalogListResponseItemsItemDefaultShippingProfileIdMultipleOf = 1;
+
+export const catalogListResponseItemsItemDefaultDepartmentStoreFeeRateMax = 32;
+
+
+export const catalogListResponseItemsItemDefaultDepartmentStoreFeeRateRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const catalogListResponseItemsItemNormalizedNameMax = 256;
+
+export const catalogListResponseItemsItemBarcodeMax = 128;
+
+export const catalogListResponseItemsItemCreatedAtMax = 2000;
+
+export const catalogListResponseItemsItemUpdatedAtMax = 2000;
+
+export const catalogListResponseItemsItemArchivedAtMax = 2000;
+
+
+
+export const CatalogListResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.number().min(1).max(catalogListResponseItemsItemIdMax).multipleOf(catalogListResponseItemsItemIdMultipleOf),
+  "storeId": zod.number().min(1).max(catalogListResponseItemsItemStoreIdMax).multipleOf(catalogListResponseItemsItemStoreIdMultipleOf),
+  "name": zod.string().max(catalogListResponseItemsItemNameMax),
+  "weightGrams": zod.string().regex(catalogListResponseItemsItemWeightGramsRegExp),
+  "categoryId": zod.number().min(1).max(catalogListResponseItemsItemCategoryIdMax).multipleOf(catalogListResponseItemsItemCategoryIdMultipleOf).nullish(),
+  "status": zod.enum(['NORMAL', 'DISCONTINUED', 'ARCHIVED']),
+  "imageUrl": zod.string().max(catalogListResponseItemsItemImageUrlMax).regex(catalogListResponseItemsItemImageUrlRegExp).nullish(),
+  "internalNote": zod.string().max(catalogListResponseItemsItemInternalNoteMax).nullish(),
+  "preferredRouteLabel": zod.string().max(catalogListResponseItemsItemPreferredRouteLabelMax).nullish(),
+  "lastUsedTripRouteId": zod.number().min(1).max(catalogListResponseItemsItemLastUsedTripRouteIdMax).multipleOf(catalogListResponseItemsItemLastUsedTripRouteIdMultipleOf).nullish(),
+  "defaultPricingTemplateId": zod.number().min(1).max(catalogListResponseItemsItemDefaultPricingTemplateIdMax).multipleOf(catalogListResponseItemsItemDefaultPricingTemplateIdMultipleOf).nullish(),
+  "defaultShippingProfileId": zod.number().min(1).max(catalogListResponseItemsItemDefaultShippingProfileIdMax).multipleOf(catalogListResponseItemsItemDefaultShippingProfileIdMultipleOf).nullish(),
+  "defaultDepartmentStoreFeeRate": zod.string().max(catalogListResponseItemsItemDefaultDepartmentStoreFeeRateMax).regex(catalogListResponseItemsItemDefaultDepartmentStoreFeeRateRegExp).nullish(),
+  "normalizedName": zod.string().max(catalogListResponseItemsItemNormalizedNameMax),
+  "barcode": zod.string().max(catalogListResponseItemsItemBarcodeMax),
+  "barcodeStatus": zod.enum(['REAL', 'NONE']),
+  "createdAt": zod.string().max(catalogListResponseItemsItemCreatedAtMax).optional(),
+  "updatedAt": zod.string().max(catalogListResponseItemsItemUpdatedAtMax).optional(),
+  "archivedAt": zod.string().max(catalogListResponseItemsItemArchivedAtMax).nullish(),
+  "currentCost": zod.union([zod.object({
+  "id": zod.number(),
+  "storeId": zod.number(),
+  "catalogProductId": zod.number(),
+  "originalPriceJpy": zod.string(),
+  "effectiveCostJpy": zod.string(),
+  "adjustmentMode": zod.enum(['NONE', 'RATE', 'MANUAL']),
+  "adjustmentRate": zod.string().nullable(),
+  "adjustmentReason": zod.string().nullable(),
+  "observedAt": zod.string().nullable(),
+  "source": zod.string(),
+  "status": zod.enum(['ACTIVE', 'VOIDED']),
+  "isCurrent": zod.boolean(),
+  "supersedesCostRecordId": zod.number().nullable(),
+  "voidReasonCode": zod.string().nullable(),
+  "voidReasonText": zod.string().nullable(),
+  "voidedAt": zod.string().nullable(),
+  "voidedBy": zod.string().nullable(),
+  "createdAt": zod.string()
+}),zod.null()]).optional()
+})),
+  "total": zod.number(),
+  "page": zod.number(),
+  "pageSize": zod.number()
+})
+
+
+/**
+ * @summary Owner-only catalogCreate
+ */
+export const catalogCreatePathStoreIdMax = 2147483647;
+export const catalogCreatePathStoreIdMultipleOf = 1;
+
+
+
+export const CatalogCreatePathParams = zod.preprocess(preprocessCatalogParams, zod.object({
+  "storeId": zod.coerce.number().min(1).max(catalogCreatePathStoreIdMax).multipleOf(catalogCreatePathStoreIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647')
+}).strict())
+
+export const catalogCreateBodyNameMax = 256;
+
+export const catalogCreateBodyWeightGramsRegExp = new RegExp('^\\d{1,10}(?:\\.\\d{1,2})?$');
+export const catalogCreateBodyCategoryIdMax = 2147483647;
+export const catalogCreateBodyCategoryIdMultipleOf = 1;
+
+export const catalogCreateBodyImageUrlMax = 2048;
+
+
+export const catalogCreateBodyImageUrlRegExp = new RegExp('^https?:\/\/[^\\s]+$');
+export const catalogCreateBodyInternalNoteMax = 2000;
+
+export const catalogCreateBodyPreferredRouteLabelMax = 256;
+
+export const catalogCreateBodyLastUsedTripRouteIdMax = 2147483647;
+export const catalogCreateBodyLastUsedTripRouteIdMultipleOf = 1;
+
+export const catalogCreateBodyDefaultPricingTemplateIdMax = 2147483647;
+export const catalogCreateBodyDefaultPricingTemplateIdMultipleOf = 1;
+
+export const catalogCreateBodyDefaultShippingProfileIdMax = 2147483647;
+export const catalogCreateBodyDefaultShippingProfileIdMultipleOf = 1;
+
+export const catalogCreateBodyDefaultDepartmentStoreFeeRateMax = 32;
+
+
+export const catalogCreateBodyDefaultDepartmentStoreFeeRateRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const catalogCreateBodyBarcodeMax = 128;
+
+export const catalogCreateBodyOriginalPriceJpyMax = 32;
+
+
+export const catalogCreateBodyOriginalPriceJpyRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const catalogCreateBodyAdjustmentRateMax = 32;
+
+
+export const catalogCreateBodyAdjustmentRateRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const catalogCreateBodyEffectiveCostJpyMax = 32;
+
+
+export const catalogCreateBodyEffectiveCostJpyRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const catalogCreateBodyAdjustmentReasonMax = 2000;
+
+export const catalogCreateBodyObservedAtRegExp = new RegExp('^(?!0000)(?:\\d{4}-(?:(?:01|03|05|07|08|10|12)-(?:0[1-9]|[12][0-9]|3[01])|(?:04|06|09|11)-(?:0[1-9]|[12][0-9]|30)|02-(?:0[1-9]|1[0-9]|2[0-8]))|(?:\\d{2}(?:0[48]|[2468][048]|[13579][26])|(?:[02468][048]|[13579][26])00)-02-29)$');
+export const catalogCreateBodySupersedesCostRecordIdMax = 2147483647;
+export const catalogCreateBodySupersedesCostRecordIdMultipleOf = 1;
+
+export const catalogCreateBodyReasonCodeMax = 64;
+
+export const catalogCreateBodyReasonTextMax = 2000;
+
+
+
+export const CatalogCreateBody = zod.object({
+  "name": zod.string().max(catalogCreateBodyNameMax),
+  "weightGrams": zod.string().regex(catalogCreateBodyWeightGramsRegExp),
+  "categoryId": zod.number().min(1).max(catalogCreateBodyCategoryIdMax).multipleOf(catalogCreateBodyCategoryIdMultipleOf).nullish(),
+  "status": zod.enum(['NORMAL', 'DISCONTINUED', 'ARCHIVED']).optional(),
+  "imageUrl": zod.string().max(catalogCreateBodyImageUrlMax).regex(catalogCreateBodyImageUrlRegExp).nullish(),
+  "internalNote": zod.string().max(catalogCreateBodyInternalNoteMax).nullish(),
+  "preferredRouteLabel": zod.string().max(catalogCreateBodyPreferredRouteLabelMax).nullish(),
+  "lastUsedTripRouteId": zod.number().min(1).max(catalogCreateBodyLastUsedTripRouteIdMax).multipleOf(catalogCreateBodyLastUsedTripRouteIdMultipleOf).nullish(),
+  "defaultPricingTemplateId": zod.number().min(1).max(catalogCreateBodyDefaultPricingTemplateIdMax).multipleOf(catalogCreateBodyDefaultPricingTemplateIdMultipleOf).nullish(),
+  "defaultShippingProfileId": zod.number().min(1).max(catalogCreateBodyDefaultShippingProfileIdMax).multipleOf(catalogCreateBodyDefaultShippingProfileIdMultipleOf).nullish(),
+  "defaultDepartmentStoreFeeRate": zod.string().max(catalogCreateBodyDefaultDepartmentStoreFeeRateMax).regex(catalogCreateBodyDefaultDepartmentStoreFeeRateRegExp).nullish(),
+  "barcode": zod.string().max(catalogCreateBodyBarcodeMax),
+  "barcodeStatus": zod.enum(['REAL', 'NONE']),
+  "forceCreate": zod.boolean().optional(),
+  "originalPriceJpy": zod.string().max(catalogCreateBodyOriginalPriceJpyMax).regex(catalogCreateBodyOriginalPriceJpyRegExp),
+  "adjustmentMode": zod.enum(['NONE', 'RATE', 'MANUAL']).optional(),
+  "adjustmentRate": zod.string().max(catalogCreateBodyAdjustmentRateMax).regex(catalogCreateBodyAdjustmentRateRegExp).nullish(),
+  "effectiveCostJpy": zod.string().max(catalogCreateBodyEffectiveCostJpyMax).regex(catalogCreateBodyEffectiveCostJpyRegExp).nullish(),
+  "adjustmentReason": zod.string().max(catalogCreateBodyAdjustmentReasonMax).nullish(),
+  "observedAt": zod.string().regex(catalogCreateBodyObservedAtRegExp).nullish(),
+  "supersedesCostRecordId": zod.number().min(1).max(catalogCreateBodySupersedesCostRecordIdMax).multipleOf(catalogCreateBodySupersedesCostRecordIdMultipleOf).optional(),
+  "reasonCode": zod.string().min(1).max(catalogCreateBodyReasonCodeMax).optional(),
+  "reasonText": zod.string().max(catalogCreateBodyReasonTextMax).nullish()
+}).strict()
+
+export const catalogCreateResponseProductIdMax = 2147483647;
+export const catalogCreateResponseProductIdMultipleOf = 1;
+
+export const catalogCreateResponseProductStoreIdMax = 2147483647;
+export const catalogCreateResponseProductStoreIdMultipleOf = 1;
+
+export const catalogCreateResponseProductNameMax = 256;
+
+export const catalogCreateResponseProductWeightGramsRegExp = new RegExp('^\\d{1,10}(?:\\.\\d{1,2})?$');
+export const catalogCreateResponseProductCategoryIdMax = 2147483647;
+export const catalogCreateResponseProductCategoryIdMultipleOf = 1;
+
+export const catalogCreateResponseProductImageUrlMax = 2048;
+
+
+export const catalogCreateResponseProductImageUrlRegExp = new RegExp('^https?:\/\/[^\\s]+$');
+export const catalogCreateResponseProductInternalNoteMax = 2000;
+
+export const catalogCreateResponseProductPreferredRouteLabelMax = 256;
+
+export const catalogCreateResponseProductLastUsedTripRouteIdMax = 2147483647;
+export const catalogCreateResponseProductLastUsedTripRouteIdMultipleOf = 1;
+
+export const catalogCreateResponseProductDefaultPricingTemplateIdMax = 2147483647;
+export const catalogCreateResponseProductDefaultPricingTemplateIdMultipleOf = 1;
+
+export const catalogCreateResponseProductDefaultShippingProfileIdMax = 2147483647;
+export const catalogCreateResponseProductDefaultShippingProfileIdMultipleOf = 1;
+
+export const catalogCreateResponseProductDefaultDepartmentStoreFeeRateMax = 32;
+
+
+export const catalogCreateResponseProductDefaultDepartmentStoreFeeRateRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const catalogCreateResponseProductNormalizedNameMax = 256;
+
+export const catalogCreateResponseProductBarcodeMax = 128;
+
+export const catalogCreateResponseProductCreatedAtMax = 2000;
+
+export const catalogCreateResponseProductUpdatedAtMax = 2000;
+
+export const catalogCreateResponseProductArchivedAtMax = 2000;
+
+export const catalogCreateResponseCandidatesItemIdMax = 2147483647;
+export const catalogCreateResponseCandidatesItemIdMultipleOf = 1;
+
+export const catalogCreateResponseCandidatesItemStoreIdMax = 2147483647;
+export const catalogCreateResponseCandidatesItemStoreIdMultipleOf = 1;
+
+export const catalogCreateResponseCandidatesItemNameMax = 256;
+
+export const catalogCreateResponseCandidatesItemWeightGramsRegExp = new RegExp('^\\d{1,10}(?:\\.\\d{1,2})?$');
+export const catalogCreateResponseCandidatesItemCategoryIdMax = 2147483647;
+export const catalogCreateResponseCandidatesItemCategoryIdMultipleOf = 1;
+
+export const catalogCreateResponseCandidatesItemImageUrlMax = 2048;
+
+
+export const catalogCreateResponseCandidatesItemImageUrlRegExp = new RegExp('^https?:\/\/[^\\s]+$');
+export const catalogCreateResponseCandidatesItemInternalNoteMax = 2000;
+
+export const catalogCreateResponseCandidatesItemPreferredRouteLabelMax = 256;
+
+export const catalogCreateResponseCandidatesItemLastUsedTripRouteIdMax = 2147483647;
+export const catalogCreateResponseCandidatesItemLastUsedTripRouteIdMultipleOf = 1;
+
+export const catalogCreateResponseCandidatesItemDefaultPricingTemplateIdMax = 2147483647;
+export const catalogCreateResponseCandidatesItemDefaultPricingTemplateIdMultipleOf = 1;
+
+export const catalogCreateResponseCandidatesItemDefaultShippingProfileIdMax = 2147483647;
+export const catalogCreateResponseCandidatesItemDefaultShippingProfileIdMultipleOf = 1;
+
+export const catalogCreateResponseCandidatesItemDefaultDepartmentStoreFeeRateMax = 32;
+
+
+export const catalogCreateResponseCandidatesItemDefaultDepartmentStoreFeeRateRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const catalogCreateResponseCandidatesItemNormalizedNameMax = 256;
+
+export const catalogCreateResponseCandidatesItemBarcodeMax = 128;
+
+export const catalogCreateResponseCandidatesItemCreatedAtMax = 2000;
+
+export const catalogCreateResponseCandidatesItemUpdatedAtMax = 2000;
+
+export const catalogCreateResponseCandidatesItemArchivedAtMax = 2000;
+
+
+
+export const CatalogCreateResponse = zod.object({
+  "product": zod.object({
+  "id": zod.number().min(1).max(catalogCreateResponseProductIdMax).multipleOf(catalogCreateResponseProductIdMultipleOf),
+  "storeId": zod.number().min(1).max(catalogCreateResponseProductStoreIdMax).multipleOf(catalogCreateResponseProductStoreIdMultipleOf),
+  "name": zod.string().max(catalogCreateResponseProductNameMax),
+  "weightGrams": zod.string().regex(catalogCreateResponseProductWeightGramsRegExp),
+  "categoryId": zod.number().min(1).max(catalogCreateResponseProductCategoryIdMax).multipleOf(catalogCreateResponseProductCategoryIdMultipleOf).nullish(),
+  "status": zod.enum(['NORMAL', 'DISCONTINUED', 'ARCHIVED']),
+  "imageUrl": zod.string().max(catalogCreateResponseProductImageUrlMax).regex(catalogCreateResponseProductImageUrlRegExp).nullish(),
+  "internalNote": zod.string().max(catalogCreateResponseProductInternalNoteMax).nullish(),
+  "preferredRouteLabel": zod.string().max(catalogCreateResponseProductPreferredRouteLabelMax).nullish(),
+  "lastUsedTripRouteId": zod.number().min(1).max(catalogCreateResponseProductLastUsedTripRouteIdMax).multipleOf(catalogCreateResponseProductLastUsedTripRouteIdMultipleOf).nullish(),
+  "defaultPricingTemplateId": zod.number().min(1).max(catalogCreateResponseProductDefaultPricingTemplateIdMax).multipleOf(catalogCreateResponseProductDefaultPricingTemplateIdMultipleOf).nullish(),
+  "defaultShippingProfileId": zod.number().min(1).max(catalogCreateResponseProductDefaultShippingProfileIdMax).multipleOf(catalogCreateResponseProductDefaultShippingProfileIdMultipleOf).nullish(),
+  "defaultDepartmentStoreFeeRate": zod.string().max(catalogCreateResponseProductDefaultDepartmentStoreFeeRateMax).regex(catalogCreateResponseProductDefaultDepartmentStoreFeeRateRegExp).nullish(),
+  "normalizedName": zod.string().max(catalogCreateResponseProductNormalizedNameMax),
+  "barcode": zod.string().max(catalogCreateResponseProductBarcodeMax),
+  "barcodeStatus": zod.enum(['REAL', 'NONE']),
+  "createdAt": zod.string().max(catalogCreateResponseProductCreatedAtMax).optional(),
+  "updatedAt": zod.string().max(catalogCreateResponseProductUpdatedAtMax).optional(),
+  "archivedAt": zod.string().max(catalogCreateResponseProductArchivedAtMax).nullish(),
+  "currentCost": zod.union([zod.object({
+  "id": zod.number(),
+  "storeId": zod.number(),
+  "catalogProductId": zod.number(),
+  "originalPriceJpy": zod.string(),
+  "effectiveCostJpy": zod.string(),
+  "adjustmentMode": zod.enum(['NONE', 'RATE', 'MANUAL']),
+  "adjustmentRate": zod.string().nullable(),
+  "adjustmentReason": zod.string().nullable(),
+  "observedAt": zod.string().nullable(),
+  "source": zod.string(),
+  "status": zod.enum(['ACTIVE', 'VOIDED']),
+  "isCurrent": zod.boolean(),
+  "supersedesCostRecordId": zod.number().nullable(),
+  "voidReasonCode": zod.string().nullable(),
+  "voidReasonText": zod.string().nullable(),
+  "voidedAt": zod.string().nullable(),
+  "voidedBy": zod.string().nullable(),
+  "createdAt": zod.string()
+}),zod.null()]).optional()
+}),
+  "candidates": zod.array(zod.object({
+  "id": zod.number().min(1).max(catalogCreateResponseCandidatesItemIdMax).multipleOf(catalogCreateResponseCandidatesItemIdMultipleOf),
+  "storeId": zod.number().min(1).max(catalogCreateResponseCandidatesItemStoreIdMax).multipleOf(catalogCreateResponseCandidatesItemStoreIdMultipleOf),
+  "name": zod.string().max(catalogCreateResponseCandidatesItemNameMax),
+  "weightGrams": zod.string().regex(catalogCreateResponseCandidatesItemWeightGramsRegExp),
+  "categoryId": zod.number().min(1).max(catalogCreateResponseCandidatesItemCategoryIdMax).multipleOf(catalogCreateResponseCandidatesItemCategoryIdMultipleOf).nullish(),
+  "status": zod.enum(['NORMAL', 'DISCONTINUED', 'ARCHIVED']),
+  "imageUrl": zod.string().max(catalogCreateResponseCandidatesItemImageUrlMax).regex(catalogCreateResponseCandidatesItemImageUrlRegExp).nullish(),
+  "internalNote": zod.string().max(catalogCreateResponseCandidatesItemInternalNoteMax).nullish(),
+  "preferredRouteLabel": zod.string().max(catalogCreateResponseCandidatesItemPreferredRouteLabelMax).nullish(),
+  "lastUsedTripRouteId": zod.number().min(1).max(catalogCreateResponseCandidatesItemLastUsedTripRouteIdMax).multipleOf(catalogCreateResponseCandidatesItemLastUsedTripRouteIdMultipleOf).nullish(),
+  "defaultPricingTemplateId": zod.number().min(1).max(catalogCreateResponseCandidatesItemDefaultPricingTemplateIdMax).multipleOf(catalogCreateResponseCandidatesItemDefaultPricingTemplateIdMultipleOf).nullish(),
+  "defaultShippingProfileId": zod.number().min(1).max(catalogCreateResponseCandidatesItemDefaultShippingProfileIdMax).multipleOf(catalogCreateResponseCandidatesItemDefaultShippingProfileIdMultipleOf).nullish(),
+  "defaultDepartmentStoreFeeRate": zod.string().max(catalogCreateResponseCandidatesItemDefaultDepartmentStoreFeeRateMax).regex(catalogCreateResponseCandidatesItemDefaultDepartmentStoreFeeRateRegExp).nullish(),
+  "normalizedName": zod.string().max(catalogCreateResponseCandidatesItemNormalizedNameMax),
+  "barcode": zod.string().max(catalogCreateResponseCandidatesItemBarcodeMax),
+  "barcodeStatus": zod.enum(['REAL', 'NONE']),
+  "createdAt": zod.string().max(catalogCreateResponseCandidatesItemCreatedAtMax).optional(),
+  "updatedAt": zod.string().max(catalogCreateResponseCandidatesItemUpdatedAtMax).optional(),
+  "archivedAt": zod.string().max(catalogCreateResponseCandidatesItemArchivedAtMax).nullish(),
+  "currentCost": zod.union([zod.object({
+  "id": zod.number(),
+  "storeId": zod.number(),
+  "catalogProductId": zod.number(),
+  "originalPriceJpy": zod.string(),
+  "effectiveCostJpy": zod.string(),
+  "adjustmentMode": zod.enum(['NONE', 'RATE', 'MANUAL']),
+  "adjustmentRate": zod.string().nullable(),
+  "adjustmentReason": zod.string().nullable(),
+  "observedAt": zod.string().nullable(),
+  "source": zod.string(),
+  "status": zod.enum(['ACTIVE', 'VOIDED']),
+  "isCurrent": zod.boolean(),
+  "supersedesCostRecordId": zod.number().nullable(),
+  "voidReasonCode": zod.string().nullable(),
+  "voidReasonText": zod.string().nullable(),
+  "voidedAt": zod.string().nullable(),
+  "voidedBy": zod.string().nullable(),
+  "createdAt": zod.string()
+}),zod.null()]).optional()
+})).optional()
+})
+
+
+/**
+ * @summary Owner-only catalogGet
+ */
+export const catalogGetPathStoreIdMax = 2147483647;
+export const catalogGetPathStoreIdMultipleOf = 1;
+
+export const catalogGetPathCatalogProductIdMax = 2147483647;
+export const catalogGetPathCatalogProductIdMultipleOf = 1;
+
+
+
+export const CatalogGetPathParams = zod.preprocess(preprocessCatalogParams, zod.object({
+  "storeId": zod.coerce.number().min(1).max(catalogGetPathStoreIdMax).multipleOf(catalogGetPathStoreIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647'),
+  "catalogProductId": zod.coerce.number().min(1).max(catalogGetPathCatalogProductIdMax).multipleOf(catalogGetPathCatalogProductIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647')
+}).strict())
+
+export const catalogGetResponseProductIdMax = 2147483647;
+export const catalogGetResponseProductIdMultipleOf = 1;
+
+export const catalogGetResponseProductStoreIdMax = 2147483647;
+export const catalogGetResponseProductStoreIdMultipleOf = 1;
+
+export const catalogGetResponseProductNameMax = 256;
+
+export const catalogGetResponseProductWeightGramsRegExp = new RegExp('^\\d{1,10}(?:\\.\\d{1,2})?$');
+export const catalogGetResponseProductCategoryIdMax = 2147483647;
+export const catalogGetResponseProductCategoryIdMultipleOf = 1;
+
+export const catalogGetResponseProductImageUrlMax = 2048;
+
+
+export const catalogGetResponseProductImageUrlRegExp = new RegExp('^https?:\/\/[^\\s]+$');
+export const catalogGetResponseProductInternalNoteMax = 2000;
+
+export const catalogGetResponseProductPreferredRouteLabelMax = 256;
+
+export const catalogGetResponseProductLastUsedTripRouteIdMax = 2147483647;
+export const catalogGetResponseProductLastUsedTripRouteIdMultipleOf = 1;
+
+export const catalogGetResponseProductDefaultPricingTemplateIdMax = 2147483647;
+export const catalogGetResponseProductDefaultPricingTemplateIdMultipleOf = 1;
+
+export const catalogGetResponseProductDefaultShippingProfileIdMax = 2147483647;
+export const catalogGetResponseProductDefaultShippingProfileIdMultipleOf = 1;
+
+export const catalogGetResponseProductDefaultDepartmentStoreFeeRateMax = 32;
+
+
+export const catalogGetResponseProductDefaultDepartmentStoreFeeRateRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const catalogGetResponseProductNormalizedNameMax = 256;
+
+export const catalogGetResponseProductBarcodeMax = 128;
+
+export const catalogGetResponseProductCreatedAtMax = 2000;
+
+export const catalogGetResponseProductUpdatedAtMax = 2000;
+
+export const catalogGetResponseProductArchivedAtMax = 2000;
+
+export const catalogGetResponseCandidatesItemIdMax = 2147483647;
+export const catalogGetResponseCandidatesItemIdMultipleOf = 1;
+
+export const catalogGetResponseCandidatesItemStoreIdMax = 2147483647;
+export const catalogGetResponseCandidatesItemStoreIdMultipleOf = 1;
+
+export const catalogGetResponseCandidatesItemNameMax = 256;
+
+export const catalogGetResponseCandidatesItemWeightGramsRegExp = new RegExp('^\\d{1,10}(?:\\.\\d{1,2})?$');
+export const catalogGetResponseCandidatesItemCategoryIdMax = 2147483647;
+export const catalogGetResponseCandidatesItemCategoryIdMultipleOf = 1;
+
+export const catalogGetResponseCandidatesItemImageUrlMax = 2048;
+
+
+export const catalogGetResponseCandidatesItemImageUrlRegExp = new RegExp('^https?:\/\/[^\\s]+$');
+export const catalogGetResponseCandidatesItemInternalNoteMax = 2000;
+
+export const catalogGetResponseCandidatesItemPreferredRouteLabelMax = 256;
+
+export const catalogGetResponseCandidatesItemLastUsedTripRouteIdMax = 2147483647;
+export const catalogGetResponseCandidatesItemLastUsedTripRouteIdMultipleOf = 1;
+
+export const catalogGetResponseCandidatesItemDefaultPricingTemplateIdMax = 2147483647;
+export const catalogGetResponseCandidatesItemDefaultPricingTemplateIdMultipleOf = 1;
+
+export const catalogGetResponseCandidatesItemDefaultShippingProfileIdMax = 2147483647;
+export const catalogGetResponseCandidatesItemDefaultShippingProfileIdMultipleOf = 1;
+
+export const catalogGetResponseCandidatesItemDefaultDepartmentStoreFeeRateMax = 32;
+
+
+export const catalogGetResponseCandidatesItemDefaultDepartmentStoreFeeRateRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const catalogGetResponseCandidatesItemNormalizedNameMax = 256;
+
+export const catalogGetResponseCandidatesItemBarcodeMax = 128;
+
+export const catalogGetResponseCandidatesItemCreatedAtMax = 2000;
+
+export const catalogGetResponseCandidatesItemUpdatedAtMax = 2000;
+
+export const catalogGetResponseCandidatesItemArchivedAtMax = 2000;
+
+
+
+export const CatalogGetResponse = zod.object({
+  "product": zod.object({
+  "id": zod.number().min(1).max(catalogGetResponseProductIdMax).multipleOf(catalogGetResponseProductIdMultipleOf),
+  "storeId": zod.number().min(1).max(catalogGetResponseProductStoreIdMax).multipleOf(catalogGetResponseProductStoreIdMultipleOf),
+  "name": zod.string().max(catalogGetResponseProductNameMax),
+  "weightGrams": zod.string().regex(catalogGetResponseProductWeightGramsRegExp),
+  "categoryId": zod.number().min(1).max(catalogGetResponseProductCategoryIdMax).multipleOf(catalogGetResponseProductCategoryIdMultipleOf).nullish(),
+  "status": zod.enum(['NORMAL', 'DISCONTINUED', 'ARCHIVED']),
+  "imageUrl": zod.string().max(catalogGetResponseProductImageUrlMax).regex(catalogGetResponseProductImageUrlRegExp).nullish(),
+  "internalNote": zod.string().max(catalogGetResponseProductInternalNoteMax).nullish(),
+  "preferredRouteLabel": zod.string().max(catalogGetResponseProductPreferredRouteLabelMax).nullish(),
+  "lastUsedTripRouteId": zod.number().min(1).max(catalogGetResponseProductLastUsedTripRouteIdMax).multipleOf(catalogGetResponseProductLastUsedTripRouteIdMultipleOf).nullish(),
+  "defaultPricingTemplateId": zod.number().min(1).max(catalogGetResponseProductDefaultPricingTemplateIdMax).multipleOf(catalogGetResponseProductDefaultPricingTemplateIdMultipleOf).nullish(),
+  "defaultShippingProfileId": zod.number().min(1).max(catalogGetResponseProductDefaultShippingProfileIdMax).multipleOf(catalogGetResponseProductDefaultShippingProfileIdMultipleOf).nullish(),
+  "defaultDepartmentStoreFeeRate": zod.string().max(catalogGetResponseProductDefaultDepartmentStoreFeeRateMax).regex(catalogGetResponseProductDefaultDepartmentStoreFeeRateRegExp).nullish(),
+  "normalizedName": zod.string().max(catalogGetResponseProductNormalizedNameMax),
+  "barcode": zod.string().max(catalogGetResponseProductBarcodeMax),
+  "barcodeStatus": zod.enum(['REAL', 'NONE']),
+  "createdAt": zod.string().max(catalogGetResponseProductCreatedAtMax).optional(),
+  "updatedAt": zod.string().max(catalogGetResponseProductUpdatedAtMax).optional(),
+  "archivedAt": zod.string().max(catalogGetResponseProductArchivedAtMax).nullish(),
+  "currentCost": zod.union([zod.object({
+  "id": zod.number(),
+  "storeId": zod.number(),
+  "catalogProductId": zod.number(),
+  "originalPriceJpy": zod.string(),
+  "effectiveCostJpy": zod.string(),
+  "adjustmentMode": zod.enum(['NONE', 'RATE', 'MANUAL']),
+  "adjustmentRate": zod.string().nullable(),
+  "adjustmentReason": zod.string().nullable(),
+  "observedAt": zod.string().nullable(),
+  "source": zod.string(),
+  "status": zod.enum(['ACTIVE', 'VOIDED']),
+  "isCurrent": zod.boolean(),
+  "supersedesCostRecordId": zod.number().nullable(),
+  "voidReasonCode": zod.string().nullable(),
+  "voidReasonText": zod.string().nullable(),
+  "voidedAt": zod.string().nullable(),
+  "voidedBy": zod.string().nullable(),
+  "createdAt": zod.string()
+}),zod.null()]).optional()
+}),
+  "candidates": zod.array(zod.object({
+  "id": zod.number().min(1).max(catalogGetResponseCandidatesItemIdMax).multipleOf(catalogGetResponseCandidatesItemIdMultipleOf),
+  "storeId": zod.number().min(1).max(catalogGetResponseCandidatesItemStoreIdMax).multipleOf(catalogGetResponseCandidatesItemStoreIdMultipleOf),
+  "name": zod.string().max(catalogGetResponseCandidatesItemNameMax),
+  "weightGrams": zod.string().regex(catalogGetResponseCandidatesItemWeightGramsRegExp),
+  "categoryId": zod.number().min(1).max(catalogGetResponseCandidatesItemCategoryIdMax).multipleOf(catalogGetResponseCandidatesItemCategoryIdMultipleOf).nullish(),
+  "status": zod.enum(['NORMAL', 'DISCONTINUED', 'ARCHIVED']),
+  "imageUrl": zod.string().max(catalogGetResponseCandidatesItemImageUrlMax).regex(catalogGetResponseCandidatesItemImageUrlRegExp).nullish(),
+  "internalNote": zod.string().max(catalogGetResponseCandidatesItemInternalNoteMax).nullish(),
+  "preferredRouteLabel": zod.string().max(catalogGetResponseCandidatesItemPreferredRouteLabelMax).nullish(),
+  "lastUsedTripRouteId": zod.number().min(1).max(catalogGetResponseCandidatesItemLastUsedTripRouteIdMax).multipleOf(catalogGetResponseCandidatesItemLastUsedTripRouteIdMultipleOf).nullish(),
+  "defaultPricingTemplateId": zod.number().min(1).max(catalogGetResponseCandidatesItemDefaultPricingTemplateIdMax).multipleOf(catalogGetResponseCandidatesItemDefaultPricingTemplateIdMultipleOf).nullish(),
+  "defaultShippingProfileId": zod.number().min(1).max(catalogGetResponseCandidatesItemDefaultShippingProfileIdMax).multipleOf(catalogGetResponseCandidatesItemDefaultShippingProfileIdMultipleOf).nullish(),
+  "defaultDepartmentStoreFeeRate": zod.string().max(catalogGetResponseCandidatesItemDefaultDepartmentStoreFeeRateMax).regex(catalogGetResponseCandidatesItemDefaultDepartmentStoreFeeRateRegExp).nullish(),
+  "normalizedName": zod.string().max(catalogGetResponseCandidatesItemNormalizedNameMax),
+  "barcode": zod.string().max(catalogGetResponseCandidatesItemBarcodeMax),
+  "barcodeStatus": zod.enum(['REAL', 'NONE']),
+  "createdAt": zod.string().max(catalogGetResponseCandidatesItemCreatedAtMax).optional(),
+  "updatedAt": zod.string().max(catalogGetResponseCandidatesItemUpdatedAtMax).optional(),
+  "archivedAt": zod.string().max(catalogGetResponseCandidatesItemArchivedAtMax).nullish(),
+  "currentCost": zod.union([zod.object({
+  "id": zod.number(),
+  "storeId": zod.number(),
+  "catalogProductId": zod.number(),
+  "originalPriceJpy": zod.string(),
+  "effectiveCostJpy": zod.string(),
+  "adjustmentMode": zod.enum(['NONE', 'RATE', 'MANUAL']),
+  "adjustmentRate": zod.string().nullable(),
+  "adjustmentReason": zod.string().nullable(),
+  "observedAt": zod.string().nullable(),
+  "source": zod.string(),
+  "status": zod.enum(['ACTIVE', 'VOIDED']),
+  "isCurrent": zod.boolean(),
+  "supersedesCostRecordId": zod.number().nullable(),
+  "voidReasonCode": zod.string().nullable(),
+  "voidReasonText": zod.string().nullable(),
+  "voidedAt": zod.string().nullable(),
+  "voidedBy": zod.string().nullable(),
+  "createdAt": zod.string()
+}),zod.null()]).optional()
+})).optional()
+})
+
+
+/**
+ * @summary Owner-only catalogPatch
+ */
+export const catalogPatchPathStoreIdMax = 2147483647;
+export const catalogPatchPathStoreIdMultipleOf = 1;
+
+export const catalogPatchPathCatalogProductIdMax = 2147483647;
+export const catalogPatchPathCatalogProductIdMultipleOf = 1;
+
+
+
+export const CatalogPatchPathParams = zod.preprocess(preprocessCatalogParams, zod.object({
+  "storeId": zod.coerce.number().min(1).max(catalogPatchPathStoreIdMax).multipleOf(catalogPatchPathStoreIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647'),
+  "catalogProductId": zod.coerce.number().min(1).max(catalogPatchPathCatalogProductIdMax).multipleOf(catalogPatchPathCatalogProductIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647')
+}).strict())
+
+export const catalogPatchBodyNameMax = 256;
+
+export const catalogPatchBodyWeightGramsRegExp = new RegExp('^\\d{1,10}(?:\\.\\d{1,2})?$');
+export const catalogPatchBodyCategoryIdMax = 2147483647;
+export const catalogPatchBodyCategoryIdMultipleOf = 1;
+
+export const catalogPatchBodyImageUrlMax = 2048;
+
+
+export const catalogPatchBodyImageUrlRegExp = new RegExp('^https?:\/\/[^\\s]+$');
+export const catalogPatchBodyInternalNoteMax = 2000;
+
+export const catalogPatchBodyPreferredRouteLabelMax = 256;
+
+export const catalogPatchBodyLastUsedTripRouteIdMax = 2147483647;
+export const catalogPatchBodyLastUsedTripRouteIdMultipleOf = 1;
+
+export const catalogPatchBodyDefaultPricingTemplateIdMax = 2147483647;
+export const catalogPatchBodyDefaultPricingTemplateIdMultipleOf = 1;
+
+export const catalogPatchBodyDefaultShippingProfileIdMax = 2147483647;
+export const catalogPatchBodyDefaultShippingProfileIdMultipleOf = 1;
+
+export const catalogPatchBodyDefaultDepartmentStoreFeeRateMax = 32;
+
+
+export const catalogPatchBodyDefaultDepartmentStoreFeeRateRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+
+
+export const CatalogPatchBody = zod.object({
+  "name": zod.string().max(catalogPatchBodyNameMax).optional(),
+  "weightGrams": zod.string().regex(catalogPatchBodyWeightGramsRegExp).optional(),
+  "categoryId": zod.number().min(1).max(catalogPatchBodyCategoryIdMax).multipleOf(catalogPatchBodyCategoryIdMultipleOf).nullish(),
+  "status": zod.enum(['NORMAL', 'DISCONTINUED', 'ARCHIVED']).optional(),
+  "imageUrl": zod.string().max(catalogPatchBodyImageUrlMax).regex(catalogPatchBodyImageUrlRegExp).nullish(),
+  "internalNote": zod.string().max(catalogPatchBodyInternalNoteMax).nullish(),
+  "preferredRouteLabel": zod.string().max(catalogPatchBodyPreferredRouteLabelMax).nullish(),
+  "lastUsedTripRouteId": zod.number().min(1).max(catalogPatchBodyLastUsedTripRouteIdMax).multipleOf(catalogPatchBodyLastUsedTripRouteIdMultipleOf).nullish(),
+  "defaultPricingTemplateId": zod.number().min(1).max(catalogPatchBodyDefaultPricingTemplateIdMax).multipleOf(catalogPatchBodyDefaultPricingTemplateIdMultipleOf).nullish(),
+  "defaultShippingProfileId": zod.number().min(1).max(catalogPatchBodyDefaultShippingProfileIdMax).multipleOf(catalogPatchBodyDefaultShippingProfileIdMultipleOf).nullish(),
+  "defaultDepartmentStoreFeeRate": zod.string().max(catalogPatchBodyDefaultDepartmentStoreFeeRateMax).regex(catalogPatchBodyDefaultDepartmentStoreFeeRateRegExp).nullish()
+}).strict()
+
+export const catalogPatchResponseProductIdMax = 2147483647;
+export const catalogPatchResponseProductIdMultipleOf = 1;
+
+export const catalogPatchResponseProductStoreIdMax = 2147483647;
+export const catalogPatchResponseProductStoreIdMultipleOf = 1;
+
+export const catalogPatchResponseProductNameMax = 256;
+
+export const catalogPatchResponseProductWeightGramsRegExp = new RegExp('^\\d{1,10}(?:\\.\\d{1,2})?$');
+export const catalogPatchResponseProductCategoryIdMax = 2147483647;
+export const catalogPatchResponseProductCategoryIdMultipleOf = 1;
+
+export const catalogPatchResponseProductImageUrlMax = 2048;
+
+
+export const catalogPatchResponseProductImageUrlRegExp = new RegExp('^https?:\/\/[^\\s]+$');
+export const catalogPatchResponseProductInternalNoteMax = 2000;
+
+export const catalogPatchResponseProductPreferredRouteLabelMax = 256;
+
+export const catalogPatchResponseProductLastUsedTripRouteIdMax = 2147483647;
+export const catalogPatchResponseProductLastUsedTripRouteIdMultipleOf = 1;
+
+export const catalogPatchResponseProductDefaultPricingTemplateIdMax = 2147483647;
+export const catalogPatchResponseProductDefaultPricingTemplateIdMultipleOf = 1;
+
+export const catalogPatchResponseProductDefaultShippingProfileIdMax = 2147483647;
+export const catalogPatchResponseProductDefaultShippingProfileIdMultipleOf = 1;
+
+export const catalogPatchResponseProductDefaultDepartmentStoreFeeRateMax = 32;
+
+
+export const catalogPatchResponseProductDefaultDepartmentStoreFeeRateRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const catalogPatchResponseProductNormalizedNameMax = 256;
+
+export const catalogPatchResponseProductBarcodeMax = 128;
+
+export const catalogPatchResponseProductCreatedAtMax = 2000;
+
+export const catalogPatchResponseProductUpdatedAtMax = 2000;
+
+export const catalogPatchResponseProductArchivedAtMax = 2000;
+
+export const catalogPatchResponseCandidatesItemIdMax = 2147483647;
+export const catalogPatchResponseCandidatesItemIdMultipleOf = 1;
+
+export const catalogPatchResponseCandidatesItemStoreIdMax = 2147483647;
+export const catalogPatchResponseCandidatesItemStoreIdMultipleOf = 1;
+
+export const catalogPatchResponseCandidatesItemNameMax = 256;
+
+export const catalogPatchResponseCandidatesItemWeightGramsRegExp = new RegExp('^\\d{1,10}(?:\\.\\d{1,2})?$');
+export const catalogPatchResponseCandidatesItemCategoryIdMax = 2147483647;
+export const catalogPatchResponseCandidatesItemCategoryIdMultipleOf = 1;
+
+export const catalogPatchResponseCandidatesItemImageUrlMax = 2048;
+
+
+export const catalogPatchResponseCandidatesItemImageUrlRegExp = new RegExp('^https?:\/\/[^\\s]+$');
+export const catalogPatchResponseCandidatesItemInternalNoteMax = 2000;
+
+export const catalogPatchResponseCandidatesItemPreferredRouteLabelMax = 256;
+
+export const catalogPatchResponseCandidatesItemLastUsedTripRouteIdMax = 2147483647;
+export const catalogPatchResponseCandidatesItemLastUsedTripRouteIdMultipleOf = 1;
+
+export const catalogPatchResponseCandidatesItemDefaultPricingTemplateIdMax = 2147483647;
+export const catalogPatchResponseCandidatesItemDefaultPricingTemplateIdMultipleOf = 1;
+
+export const catalogPatchResponseCandidatesItemDefaultShippingProfileIdMax = 2147483647;
+export const catalogPatchResponseCandidatesItemDefaultShippingProfileIdMultipleOf = 1;
+
+export const catalogPatchResponseCandidatesItemDefaultDepartmentStoreFeeRateMax = 32;
+
+
+export const catalogPatchResponseCandidatesItemDefaultDepartmentStoreFeeRateRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const catalogPatchResponseCandidatesItemNormalizedNameMax = 256;
+
+export const catalogPatchResponseCandidatesItemBarcodeMax = 128;
+
+export const catalogPatchResponseCandidatesItemCreatedAtMax = 2000;
+
+export const catalogPatchResponseCandidatesItemUpdatedAtMax = 2000;
+
+export const catalogPatchResponseCandidatesItemArchivedAtMax = 2000;
+
+
+
+export const CatalogPatchResponse = zod.object({
+  "product": zod.object({
+  "id": zod.number().min(1).max(catalogPatchResponseProductIdMax).multipleOf(catalogPatchResponseProductIdMultipleOf),
+  "storeId": zod.number().min(1).max(catalogPatchResponseProductStoreIdMax).multipleOf(catalogPatchResponseProductStoreIdMultipleOf),
+  "name": zod.string().max(catalogPatchResponseProductNameMax),
+  "weightGrams": zod.string().regex(catalogPatchResponseProductWeightGramsRegExp),
+  "categoryId": zod.number().min(1).max(catalogPatchResponseProductCategoryIdMax).multipleOf(catalogPatchResponseProductCategoryIdMultipleOf).nullish(),
+  "status": zod.enum(['NORMAL', 'DISCONTINUED', 'ARCHIVED']),
+  "imageUrl": zod.string().max(catalogPatchResponseProductImageUrlMax).regex(catalogPatchResponseProductImageUrlRegExp).nullish(),
+  "internalNote": zod.string().max(catalogPatchResponseProductInternalNoteMax).nullish(),
+  "preferredRouteLabel": zod.string().max(catalogPatchResponseProductPreferredRouteLabelMax).nullish(),
+  "lastUsedTripRouteId": zod.number().min(1).max(catalogPatchResponseProductLastUsedTripRouteIdMax).multipleOf(catalogPatchResponseProductLastUsedTripRouteIdMultipleOf).nullish(),
+  "defaultPricingTemplateId": zod.number().min(1).max(catalogPatchResponseProductDefaultPricingTemplateIdMax).multipleOf(catalogPatchResponseProductDefaultPricingTemplateIdMultipleOf).nullish(),
+  "defaultShippingProfileId": zod.number().min(1).max(catalogPatchResponseProductDefaultShippingProfileIdMax).multipleOf(catalogPatchResponseProductDefaultShippingProfileIdMultipleOf).nullish(),
+  "defaultDepartmentStoreFeeRate": zod.string().max(catalogPatchResponseProductDefaultDepartmentStoreFeeRateMax).regex(catalogPatchResponseProductDefaultDepartmentStoreFeeRateRegExp).nullish(),
+  "normalizedName": zod.string().max(catalogPatchResponseProductNormalizedNameMax),
+  "barcode": zod.string().max(catalogPatchResponseProductBarcodeMax),
+  "barcodeStatus": zod.enum(['REAL', 'NONE']),
+  "createdAt": zod.string().max(catalogPatchResponseProductCreatedAtMax).optional(),
+  "updatedAt": zod.string().max(catalogPatchResponseProductUpdatedAtMax).optional(),
+  "archivedAt": zod.string().max(catalogPatchResponseProductArchivedAtMax).nullish(),
+  "currentCost": zod.union([zod.object({
+  "id": zod.number(),
+  "storeId": zod.number(),
+  "catalogProductId": zod.number(),
+  "originalPriceJpy": zod.string(),
+  "effectiveCostJpy": zod.string(),
+  "adjustmentMode": zod.enum(['NONE', 'RATE', 'MANUAL']),
+  "adjustmentRate": zod.string().nullable(),
+  "adjustmentReason": zod.string().nullable(),
+  "observedAt": zod.string().nullable(),
+  "source": zod.string(),
+  "status": zod.enum(['ACTIVE', 'VOIDED']),
+  "isCurrent": zod.boolean(),
+  "supersedesCostRecordId": zod.number().nullable(),
+  "voidReasonCode": zod.string().nullable(),
+  "voidReasonText": zod.string().nullable(),
+  "voidedAt": zod.string().nullable(),
+  "voidedBy": zod.string().nullable(),
+  "createdAt": zod.string()
+}),zod.null()]).optional()
+}),
+  "candidates": zod.array(zod.object({
+  "id": zod.number().min(1).max(catalogPatchResponseCandidatesItemIdMax).multipleOf(catalogPatchResponseCandidatesItemIdMultipleOf),
+  "storeId": zod.number().min(1).max(catalogPatchResponseCandidatesItemStoreIdMax).multipleOf(catalogPatchResponseCandidatesItemStoreIdMultipleOf),
+  "name": zod.string().max(catalogPatchResponseCandidatesItemNameMax),
+  "weightGrams": zod.string().regex(catalogPatchResponseCandidatesItemWeightGramsRegExp),
+  "categoryId": zod.number().min(1).max(catalogPatchResponseCandidatesItemCategoryIdMax).multipleOf(catalogPatchResponseCandidatesItemCategoryIdMultipleOf).nullish(),
+  "status": zod.enum(['NORMAL', 'DISCONTINUED', 'ARCHIVED']),
+  "imageUrl": zod.string().max(catalogPatchResponseCandidatesItemImageUrlMax).regex(catalogPatchResponseCandidatesItemImageUrlRegExp).nullish(),
+  "internalNote": zod.string().max(catalogPatchResponseCandidatesItemInternalNoteMax).nullish(),
+  "preferredRouteLabel": zod.string().max(catalogPatchResponseCandidatesItemPreferredRouteLabelMax).nullish(),
+  "lastUsedTripRouteId": zod.number().min(1).max(catalogPatchResponseCandidatesItemLastUsedTripRouteIdMax).multipleOf(catalogPatchResponseCandidatesItemLastUsedTripRouteIdMultipleOf).nullish(),
+  "defaultPricingTemplateId": zod.number().min(1).max(catalogPatchResponseCandidatesItemDefaultPricingTemplateIdMax).multipleOf(catalogPatchResponseCandidatesItemDefaultPricingTemplateIdMultipleOf).nullish(),
+  "defaultShippingProfileId": zod.number().min(1).max(catalogPatchResponseCandidatesItemDefaultShippingProfileIdMax).multipleOf(catalogPatchResponseCandidatesItemDefaultShippingProfileIdMultipleOf).nullish(),
+  "defaultDepartmentStoreFeeRate": zod.string().max(catalogPatchResponseCandidatesItemDefaultDepartmentStoreFeeRateMax).regex(catalogPatchResponseCandidatesItemDefaultDepartmentStoreFeeRateRegExp).nullish(),
+  "normalizedName": zod.string().max(catalogPatchResponseCandidatesItemNormalizedNameMax),
+  "barcode": zod.string().max(catalogPatchResponseCandidatesItemBarcodeMax),
+  "barcodeStatus": zod.enum(['REAL', 'NONE']),
+  "createdAt": zod.string().max(catalogPatchResponseCandidatesItemCreatedAtMax).optional(),
+  "updatedAt": zod.string().max(catalogPatchResponseCandidatesItemUpdatedAtMax).optional(),
+  "archivedAt": zod.string().max(catalogPatchResponseCandidatesItemArchivedAtMax).nullish(),
+  "currentCost": zod.union([zod.object({
+  "id": zod.number(),
+  "storeId": zod.number(),
+  "catalogProductId": zod.number(),
+  "originalPriceJpy": zod.string(),
+  "effectiveCostJpy": zod.string(),
+  "adjustmentMode": zod.enum(['NONE', 'RATE', 'MANUAL']),
+  "adjustmentRate": zod.string().nullable(),
+  "adjustmentReason": zod.string().nullable(),
+  "observedAt": zod.string().nullable(),
+  "source": zod.string(),
+  "status": zod.enum(['ACTIVE', 'VOIDED']),
+  "isCurrent": zod.boolean(),
+  "supersedesCostRecordId": zod.number().nullable(),
+  "voidReasonCode": zod.string().nullable(),
+  "voidReasonText": zod.string().nullable(),
+  "voidedAt": zod.string().nullable(),
+  "voidedBy": zod.string().nullable(),
+  "createdAt": zod.string()
+}),zod.null()]).optional()
+})).optional()
+})
+
+
+/**
+ * @summary Owner-only catalogDelete
+ */
+export const catalogDeletePathStoreIdMax = 2147483647;
+export const catalogDeletePathStoreIdMultipleOf = 1;
+
+export const catalogDeletePathCatalogProductIdMax = 2147483647;
+export const catalogDeletePathCatalogProductIdMultipleOf = 1;
+
+
+
+export const CatalogDeletePathParams = zod.preprocess(preprocessCatalogParams, zod.object({
+  "storeId": zod.coerce.number().min(1).max(catalogDeletePathStoreIdMax).multipleOf(catalogDeletePathStoreIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647'),
+  "catalogProductId": zod.coerce.number().min(1).max(catalogDeletePathCatalogProductIdMax).multipleOf(catalogDeletePathCatalogProductIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647')
+}).strict())
+
+export const CatalogDeleteResponse = zod.object({
+  "deleted": zod.boolean()
+})
+
+
+/**
+ * @summary Owner-only catalogCorrectBarcode
+ */
+export const catalogCorrectBarcodePathStoreIdMax = 2147483647;
+export const catalogCorrectBarcodePathStoreIdMultipleOf = 1;
+
+export const catalogCorrectBarcodePathCatalogProductIdMax = 2147483647;
+export const catalogCorrectBarcodePathCatalogProductIdMultipleOf = 1;
+
+
+
+export const CatalogCorrectBarcodePathParams = zod.preprocess(preprocessCatalogParams, zod.object({
+  "storeId": zod.coerce.number().min(1).max(catalogCorrectBarcodePathStoreIdMax).multipleOf(catalogCorrectBarcodePathStoreIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647'),
+  "catalogProductId": zod.coerce.number().min(1).max(catalogCorrectBarcodePathCatalogProductIdMax).multipleOf(catalogCorrectBarcodePathCatalogProductIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647')
+}).strict())
+
+export const catalogCorrectBarcodeBodyBarcodeMax = 128;
+
+export const catalogCorrectBarcodeBodyReasonCodeMax = 64;
+
+export const catalogCorrectBarcodeBodyReasonTextMax = 2000;
+
+
+
+export const CatalogCorrectBarcodeBody = zod.object({
+  "barcode": zod.string().max(catalogCorrectBarcodeBodyBarcodeMax),
+  "barcodeStatus": zod.enum(['REAL', 'NONE']),
+  "forceCreate": zod.boolean().optional(),
+  "reasonCode": zod.string().min(1).max(catalogCorrectBarcodeBodyReasonCodeMax),
+  "reasonText": zod.string().max(catalogCorrectBarcodeBodyReasonTextMax).nullish()
+}).strict()
+
+export const catalogCorrectBarcodeResponseProductIdMax = 2147483647;
+export const catalogCorrectBarcodeResponseProductIdMultipleOf = 1;
+
+export const catalogCorrectBarcodeResponseProductStoreIdMax = 2147483647;
+export const catalogCorrectBarcodeResponseProductStoreIdMultipleOf = 1;
+
+export const catalogCorrectBarcodeResponseProductNameMax = 256;
+
+export const catalogCorrectBarcodeResponseProductWeightGramsRegExp = new RegExp('^\\d{1,10}(?:\\.\\d{1,2})?$');
+export const catalogCorrectBarcodeResponseProductCategoryIdMax = 2147483647;
+export const catalogCorrectBarcodeResponseProductCategoryIdMultipleOf = 1;
+
+export const catalogCorrectBarcodeResponseProductImageUrlMax = 2048;
+
+
+export const catalogCorrectBarcodeResponseProductImageUrlRegExp = new RegExp('^https?:\/\/[^\\s]+$');
+export const catalogCorrectBarcodeResponseProductInternalNoteMax = 2000;
+
+export const catalogCorrectBarcodeResponseProductPreferredRouteLabelMax = 256;
+
+export const catalogCorrectBarcodeResponseProductLastUsedTripRouteIdMax = 2147483647;
+export const catalogCorrectBarcodeResponseProductLastUsedTripRouteIdMultipleOf = 1;
+
+export const catalogCorrectBarcodeResponseProductDefaultPricingTemplateIdMax = 2147483647;
+export const catalogCorrectBarcodeResponseProductDefaultPricingTemplateIdMultipleOf = 1;
+
+export const catalogCorrectBarcodeResponseProductDefaultShippingProfileIdMax = 2147483647;
+export const catalogCorrectBarcodeResponseProductDefaultShippingProfileIdMultipleOf = 1;
+
+export const catalogCorrectBarcodeResponseProductDefaultDepartmentStoreFeeRateMax = 32;
+
+
+export const catalogCorrectBarcodeResponseProductDefaultDepartmentStoreFeeRateRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const catalogCorrectBarcodeResponseProductNormalizedNameMax = 256;
+
+export const catalogCorrectBarcodeResponseProductBarcodeMax = 128;
+
+export const catalogCorrectBarcodeResponseProductCreatedAtMax = 2000;
+
+export const catalogCorrectBarcodeResponseProductUpdatedAtMax = 2000;
+
+export const catalogCorrectBarcodeResponseProductArchivedAtMax = 2000;
+
+export const catalogCorrectBarcodeResponseCandidatesItemIdMax = 2147483647;
+export const catalogCorrectBarcodeResponseCandidatesItemIdMultipleOf = 1;
+
+export const catalogCorrectBarcodeResponseCandidatesItemStoreIdMax = 2147483647;
+export const catalogCorrectBarcodeResponseCandidatesItemStoreIdMultipleOf = 1;
+
+export const catalogCorrectBarcodeResponseCandidatesItemNameMax = 256;
+
+export const catalogCorrectBarcodeResponseCandidatesItemWeightGramsRegExp = new RegExp('^\\d{1,10}(?:\\.\\d{1,2})?$');
+export const catalogCorrectBarcodeResponseCandidatesItemCategoryIdMax = 2147483647;
+export const catalogCorrectBarcodeResponseCandidatesItemCategoryIdMultipleOf = 1;
+
+export const catalogCorrectBarcodeResponseCandidatesItemImageUrlMax = 2048;
+
+
+export const catalogCorrectBarcodeResponseCandidatesItemImageUrlRegExp = new RegExp('^https?:\/\/[^\\s]+$');
+export const catalogCorrectBarcodeResponseCandidatesItemInternalNoteMax = 2000;
+
+export const catalogCorrectBarcodeResponseCandidatesItemPreferredRouteLabelMax = 256;
+
+export const catalogCorrectBarcodeResponseCandidatesItemLastUsedTripRouteIdMax = 2147483647;
+export const catalogCorrectBarcodeResponseCandidatesItemLastUsedTripRouteIdMultipleOf = 1;
+
+export const catalogCorrectBarcodeResponseCandidatesItemDefaultPricingTemplateIdMax = 2147483647;
+export const catalogCorrectBarcodeResponseCandidatesItemDefaultPricingTemplateIdMultipleOf = 1;
+
+export const catalogCorrectBarcodeResponseCandidatesItemDefaultShippingProfileIdMax = 2147483647;
+export const catalogCorrectBarcodeResponseCandidatesItemDefaultShippingProfileIdMultipleOf = 1;
+
+export const catalogCorrectBarcodeResponseCandidatesItemDefaultDepartmentStoreFeeRateMax = 32;
+
+
+export const catalogCorrectBarcodeResponseCandidatesItemDefaultDepartmentStoreFeeRateRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const catalogCorrectBarcodeResponseCandidatesItemNormalizedNameMax = 256;
+
+export const catalogCorrectBarcodeResponseCandidatesItemBarcodeMax = 128;
+
+export const catalogCorrectBarcodeResponseCandidatesItemCreatedAtMax = 2000;
+
+export const catalogCorrectBarcodeResponseCandidatesItemUpdatedAtMax = 2000;
+
+export const catalogCorrectBarcodeResponseCandidatesItemArchivedAtMax = 2000;
+
+
+
+export const CatalogCorrectBarcodeResponse = zod.object({
+  "product": zod.object({
+  "id": zod.number().min(1).max(catalogCorrectBarcodeResponseProductIdMax).multipleOf(catalogCorrectBarcodeResponseProductIdMultipleOf),
+  "storeId": zod.number().min(1).max(catalogCorrectBarcodeResponseProductStoreIdMax).multipleOf(catalogCorrectBarcodeResponseProductStoreIdMultipleOf),
+  "name": zod.string().max(catalogCorrectBarcodeResponseProductNameMax),
+  "weightGrams": zod.string().regex(catalogCorrectBarcodeResponseProductWeightGramsRegExp),
+  "categoryId": zod.number().min(1).max(catalogCorrectBarcodeResponseProductCategoryIdMax).multipleOf(catalogCorrectBarcodeResponseProductCategoryIdMultipleOf).nullish(),
+  "status": zod.enum(['NORMAL', 'DISCONTINUED', 'ARCHIVED']),
+  "imageUrl": zod.string().max(catalogCorrectBarcodeResponseProductImageUrlMax).regex(catalogCorrectBarcodeResponseProductImageUrlRegExp).nullish(),
+  "internalNote": zod.string().max(catalogCorrectBarcodeResponseProductInternalNoteMax).nullish(),
+  "preferredRouteLabel": zod.string().max(catalogCorrectBarcodeResponseProductPreferredRouteLabelMax).nullish(),
+  "lastUsedTripRouteId": zod.number().min(1).max(catalogCorrectBarcodeResponseProductLastUsedTripRouteIdMax).multipleOf(catalogCorrectBarcodeResponseProductLastUsedTripRouteIdMultipleOf).nullish(),
+  "defaultPricingTemplateId": zod.number().min(1).max(catalogCorrectBarcodeResponseProductDefaultPricingTemplateIdMax).multipleOf(catalogCorrectBarcodeResponseProductDefaultPricingTemplateIdMultipleOf).nullish(),
+  "defaultShippingProfileId": zod.number().min(1).max(catalogCorrectBarcodeResponseProductDefaultShippingProfileIdMax).multipleOf(catalogCorrectBarcodeResponseProductDefaultShippingProfileIdMultipleOf).nullish(),
+  "defaultDepartmentStoreFeeRate": zod.string().max(catalogCorrectBarcodeResponseProductDefaultDepartmentStoreFeeRateMax).regex(catalogCorrectBarcodeResponseProductDefaultDepartmentStoreFeeRateRegExp).nullish(),
+  "normalizedName": zod.string().max(catalogCorrectBarcodeResponseProductNormalizedNameMax),
+  "barcode": zod.string().max(catalogCorrectBarcodeResponseProductBarcodeMax),
+  "barcodeStatus": zod.enum(['REAL', 'NONE']),
+  "createdAt": zod.string().max(catalogCorrectBarcodeResponseProductCreatedAtMax).optional(),
+  "updatedAt": zod.string().max(catalogCorrectBarcodeResponseProductUpdatedAtMax).optional(),
+  "archivedAt": zod.string().max(catalogCorrectBarcodeResponseProductArchivedAtMax).nullish(),
+  "currentCost": zod.union([zod.object({
+  "id": zod.number(),
+  "storeId": zod.number(),
+  "catalogProductId": zod.number(),
+  "originalPriceJpy": zod.string(),
+  "effectiveCostJpy": zod.string(),
+  "adjustmentMode": zod.enum(['NONE', 'RATE', 'MANUAL']),
+  "adjustmentRate": zod.string().nullable(),
+  "adjustmentReason": zod.string().nullable(),
+  "observedAt": zod.string().nullable(),
+  "source": zod.string(),
+  "status": zod.enum(['ACTIVE', 'VOIDED']),
+  "isCurrent": zod.boolean(),
+  "supersedesCostRecordId": zod.number().nullable(),
+  "voidReasonCode": zod.string().nullable(),
+  "voidReasonText": zod.string().nullable(),
+  "voidedAt": zod.string().nullable(),
+  "voidedBy": zod.string().nullable(),
+  "createdAt": zod.string()
+}),zod.null()]).optional()
+}),
+  "candidates": zod.array(zod.object({
+  "id": zod.number().min(1).max(catalogCorrectBarcodeResponseCandidatesItemIdMax).multipleOf(catalogCorrectBarcodeResponseCandidatesItemIdMultipleOf),
+  "storeId": zod.number().min(1).max(catalogCorrectBarcodeResponseCandidatesItemStoreIdMax).multipleOf(catalogCorrectBarcodeResponseCandidatesItemStoreIdMultipleOf),
+  "name": zod.string().max(catalogCorrectBarcodeResponseCandidatesItemNameMax),
+  "weightGrams": zod.string().regex(catalogCorrectBarcodeResponseCandidatesItemWeightGramsRegExp),
+  "categoryId": zod.number().min(1).max(catalogCorrectBarcodeResponseCandidatesItemCategoryIdMax).multipleOf(catalogCorrectBarcodeResponseCandidatesItemCategoryIdMultipleOf).nullish(),
+  "status": zod.enum(['NORMAL', 'DISCONTINUED', 'ARCHIVED']),
+  "imageUrl": zod.string().max(catalogCorrectBarcodeResponseCandidatesItemImageUrlMax).regex(catalogCorrectBarcodeResponseCandidatesItemImageUrlRegExp).nullish(),
+  "internalNote": zod.string().max(catalogCorrectBarcodeResponseCandidatesItemInternalNoteMax).nullish(),
+  "preferredRouteLabel": zod.string().max(catalogCorrectBarcodeResponseCandidatesItemPreferredRouteLabelMax).nullish(),
+  "lastUsedTripRouteId": zod.number().min(1).max(catalogCorrectBarcodeResponseCandidatesItemLastUsedTripRouteIdMax).multipleOf(catalogCorrectBarcodeResponseCandidatesItemLastUsedTripRouteIdMultipleOf).nullish(),
+  "defaultPricingTemplateId": zod.number().min(1).max(catalogCorrectBarcodeResponseCandidatesItemDefaultPricingTemplateIdMax).multipleOf(catalogCorrectBarcodeResponseCandidatesItemDefaultPricingTemplateIdMultipleOf).nullish(),
+  "defaultShippingProfileId": zod.number().min(1).max(catalogCorrectBarcodeResponseCandidatesItemDefaultShippingProfileIdMax).multipleOf(catalogCorrectBarcodeResponseCandidatesItemDefaultShippingProfileIdMultipleOf).nullish(),
+  "defaultDepartmentStoreFeeRate": zod.string().max(catalogCorrectBarcodeResponseCandidatesItemDefaultDepartmentStoreFeeRateMax).regex(catalogCorrectBarcodeResponseCandidatesItemDefaultDepartmentStoreFeeRateRegExp).nullish(),
+  "normalizedName": zod.string().max(catalogCorrectBarcodeResponseCandidatesItemNormalizedNameMax),
+  "barcode": zod.string().max(catalogCorrectBarcodeResponseCandidatesItemBarcodeMax),
+  "barcodeStatus": zod.enum(['REAL', 'NONE']),
+  "createdAt": zod.string().max(catalogCorrectBarcodeResponseCandidatesItemCreatedAtMax).optional(),
+  "updatedAt": zod.string().max(catalogCorrectBarcodeResponseCandidatesItemUpdatedAtMax).optional(),
+  "archivedAt": zod.string().max(catalogCorrectBarcodeResponseCandidatesItemArchivedAtMax).nullish(),
+  "currentCost": zod.union([zod.object({
+  "id": zod.number(),
+  "storeId": zod.number(),
+  "catalogProductId": zod.number(),
+  "originalPriceJpy": zod.string(),
+  "effectiveCostJpy": zod.string(),
+  "adjustmentMode": zod.enum(['NONE', 'RATE', 'MANUAL']),
+  "adjustmentRate": zod.string().nullable(),
+  "adjustmentReason": zod.string().nullable(),
+  "observedAt": zod.string().nullable(),
+  "source": zod.string(),
+  "status": zod.enum(['ACTIVE', 'VOIDED']),
+  "isCurrent": zod.boolean(),
+  "supersedesCostRecordId": zod.number().nullable(),
+  "voidReasonCode": zod.string().nullable(),
+  "voidReasonText": zod.string().nullable(),
+  "voidedAt": zod.string().nullable(),
+  "voidedBy": zod.string().nullable(),
+  "createdAt": zod.string()
+}),zod.null()]).optional()
+})).optional()
+})
+
+
+/**
+ * @summary Owner-only catalogClone
+ */
+export const catalogClonePathStoreIdMax = 2147483647;
+export const catalogClonePathStoreIdMultipleOf = 1;
+
+export const catalogClonePathCatalogProductIdMax = 2147483647;
+export const catalogClonePathCatalogProductIdMultipleOf = 1;
+
+
+
+export const CatalogClonePathParams = zod.preprocess(preprocessCatalogParams, zod.object({
+  "storeId": zod.coerce.number().min(1).max(catalogClonePathStoreIdMax).multipleOf(catalogClonePathStoreIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647'),
+  "catalogProductId": zod.coerce.number().min(1).max(catalogClonePathCatalogProductIdMax).multipleOf(catalogClonePathCatalogProductIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647')
+}).strict())
+
+export const catalogCloneBodyNameMax = 256;
+
+export const catalogCloneBodyWeightGramsRegExp = new RegExp('^\\d{1,10}(?:\\.\\d{1,2})?$');
+export const catalogCloneBodyCategoryIdMax = 2147483647;
+export const catalogCloneBodyCategoryIdMultipleOf = 1;
+
+export const catalogCloneBodyImageUrlMax = 2048;
+
+
+export const catalogCloneBodyImageUrlRegExp = new RegExp('^https?:\/\/[^\\s]+$');
+export const catalogCloneBodyInternalNoteMax = 2000;
+
+export const catalogCloneBodyPreferredRouteLabelMax = 256;
+
+export const catalogCloneBodyLastUsedTripRouteIdMax = 2147483647;
+export const catalogCloneBodyLastUsedTripRouteIdMultipleOf = 1;
+
+export const catalogCloneBodyDefaultPricingTemplateIdMax = 2147483647;
+export const catalogCloneBodyDefaultPricingTemplateIdMultipleOf = 1;
+
+export const catalogCloneBodyDefaultShippingProfileIdMax = 2147483647;
+export const catalogCloneBodyDefaultShippingProfileIdMultipleOf = 1;
+
+export const catalogCloneBodyDefaultDepartmentStoreFeeRateMax = 32;
+
+
+export const catalogCloneBodyDefaultDepartmentStoreFeeRateRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const catalogCloneBodyBarcodeMax = 128;
+
+export const catalogCloneBodyOriginalPriceJpyMax = 32;
+
+
+export const catalogCloneBodyOriginalPriceJpyRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const catalogCloneBodyAdjustmentRateMax = 32;
+
+
+export const catalogCloneBodyAdjustmentRateRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const catalogCloneBodyEffectiveCostJpyMax = 32;
+
+
+export const catalogCloneBodyEffectiveCostJpyRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const catalogCloneBodyAdjustmentReasonMax = 2000;
+
+export const catalogCloneBodyObservedAtRegExp = new RegExp('^(?!0000)(?:\\d{4}-(?:(?:01|03|05|07|08|10|12)-(?:0[1-9]|[12][0-9]|3[01])|(?:04|06|09|11)-(?:0[1-9]|[12][0-9]|30)|02-(?:0[1-9]|1[0-9]|2[0-8]))|(?:\\d{2}(?:0[48]|[2468][048]|[13579][26])|(?:[02468][048]|[13579][26])00)-02-29)$');
+export const catalogCloneBodySupersedesCostRecordIdMax = 2147483647;
+export const catalogCloneBodySupersedesCostRecordIdMultipleOf = 1;
+
+export const catalogCloneBodyReasonCodeMax = 64;
+
+export const catalogCloneBodyReasonTextMax = 2000;
+
+
+
+export const CatalogCloneBody = zod.object({
+  "name": zod.string().max(catalogCloneBodyNameMax).optional(),
+  "weightGrams": zod.string().regex(catalogCloneBodyWeightGramsRegExp).optional(),
+  "categoryId": zod.number().min(1).max(catalogCloneBodyCategoryIdMax).multipleOf(catalogCloneBodyCategoryIdMultipleOf).nullish(),
+  "status": zod.enum(['NORMAL', 'DISCONTINUED', 'ARCHIVED']).optional(),
+  "imageUrl": zod.string().max(catalogCloneBodyImageUrlMax).regex(catalogCloneBodyImageUrlRegExp).nullish(),
+  "internalNote": zod.string().max(catalogCloneBodyInternalNoteMax).nullish(),
+  "preferredRouteLabel": zod.string().max(catalogCloneBodyPreferredRouteLabelMax).nullish(),
+  "lastUsedTripRouteId": zod.number().min(1).max(catalogCloneBodyLastUsedTripRouteIdMax).multipleOf(catalogCloneBodyLastUsedTripRouteIdMultipleOf).nullish(),
+  "defaultPricingTemplateId": zod.number().min(1).max(catalogCloneBodyDefaultPricingTemplateIdMax).multipleOf(catalogCloneBodyDefaultPricingTemplateIdMultipleOf).nullish(),
+  "defaultShippingProfileId": zod.number().min(1).max(catalogCloneBodyDefaultShippingProfileIdMax).multipleOf(catalogCloneBodyDefaultShippingProfileIdMultipleOf).nullish(),
+  "defaultDepartmentStoreFeeRate": zod.string().max(catalogCloneBodyDefaultDepartmentStoreFeeRateMax).regex(catalogCloneBodyDefaultDepartmentStoreFeeRateRegExp).nullish(),
+  "barcode": zod.string().max(catalogCloneBodyBarcodeMax),
+  "barcodeStatus": zod.enum(['REAL', 'NONE']),
+  "forceCreate": zod.boolean().optional(),
+  "originalPriceJpy": zod.string().max(catalogCloneBodyOriginalPriceJpyMax).regex(catalogCloneBodyOriginalPriceJpyRegExp),
+  "adjustmentMode": zod.enum(['NONE', 'RATE', 'MANUAL']).optional(),
+  "adjustmentRate": zod.string().max(catalogCloneBodyAdjustmentRateMax).regex(catalogCloneBodyAdjustmentRateRegExp).nullish(),
+  "effectiveCostJpy": zod.string().max(catalogCloneBodyEffectiveCostJpyMax).regex(catalogCloneBodyEffectiveCostJpyRegExp).nullish(),
+  "adjustmentReason": zod.string().max(catalogCloneBodyAdjustmentReasonMax).nullish(),
+  "observedAt": zod.string().regex(catalogCloneBodyObservedAtRegExp).nullish(),
+  "supersedesCostRecordId": zod.number().min(1).max(catalogCloneBodySupersedesCostRecordIdMax).multipleOf(catalogCloneBodySupersedesCostRecordIdMultipleOf).optional(),
+  "reasonCode": zod.string().min(1).max(catalogCloneBodyReasonCodeMax),
+  "reasonText": zod.string().max(catalogCloneBodyReasonTextMax).nullish()
+}).strict()
+
+export const catalogCloneResponseProductIdMax = 2147483647;
+export const catalogCloneResponseProductIdMultipleOf = 1;
+
+export const catalogCloneResponseProductStoreIdMax = 2147483647;
+export const catalogCloneResponseProductStoreIdMultipleOf = 1;
+
+export const catalogCloneResponseProductNameMax = 256;
+
+export const catalogCloneResponseProductWeightGramsRegExp = new RegExp('^\\d{1,10}(?:\\.\\d{1,2})?$');
+export const catalogCloneResponseProductCategoryIdMax = 2147483647;
+export const catalogCloneResponseProductCategoryIdMultipleOf = 1;
+
+export const catalogCloneResponseProductImageUrlMax = 2048;
+
+
+export const catalogCloneResponseProductImageUrlRegExp = new RegExp('^https?:\/\/[^\\s]+$');
+export const catalogCloneResponseProductInternalNoteMax = 2000;
+
+export const catalogCloneResponseProductPreferredRouteLabelMax = 256;
+
+export const catalogCloneResponseProductLastUsedTripRouteIdMax = 2147483647;
+export const catalogCloneResponseProductLastUsedTripRouteIdMultipleOf = 1;
+
+export const catalogCloneResponseProductDefaultPricingTemplateIdMax = 2147483647;
+export const catalogCloneResponseProductDefaultPricingTemplateIdMultipleOf = 1;
+
+export const catalogCloneResponseProductDefaultShippingProfileIdMax = 2147483647;
+export const catalogCloneResponseProductDefaultShippingProfileIdMultipleOf = 1;
+
+export const catalogCloneResponseProductDefaultDepartmentStoreFeeRateMax = 32;
+
+
+export const catalogCloneResponseProductDefaultDepartmentStoreFeeRateRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const catalogCloneResponseProductNormalizedNameMax = 256;
+
+export const catalogCloneResponseProductBarcodeMax = 128;
+
+export const catalogCloneResponseProductCreatedAtMax = 2000;
+
+export const catalogCloneResponseProductUpdatedAtMax = 2000;
+
+export const catalogCloneResponseProductArchivedAtMax = 2000;
+
+export const catalogCloneResponseCandidatesItemIdMax = 2147483647;
+export const catalogCloneResponseCandidatesItemIdMultipleOf = 1;
+
+export const catalogCloneResponseCandidatesItemStoreIdMax = 2147483647;
+export const catalogCloneResponseCandidatesItemStoreIdMultipleOf = 1;
+
+export const catalogCloneResponseCandidatesItemNameMax = 256;
+
+export const catalogCloneResponseCandidatesItemWeightGramsRegExp = new RegExp('^\\d{1,10}(?:\\.\\d{1,2})?$');
+export const catalogCloneResponseCandidatesItemCategoryIdMax = 2147483647;
+export const catalogCloneResponseCandidatesItemCategoryIdMultipleOf = 1;
+
+export const catalogCloneResponseCandidatesItemImageUrlMax = 2048;
+
+
+export const catalogCloneResponseCandidatesItemImageUrlRegExp = new RegExp('^https?:\/\/[^\\s]+$');
+export const catalogCloneResponseCandidatesItemInternalNoteMax = 2000;
+
+export const catalogCloneResponseCandidatesItemPreferredRouteLabelMax = 256;
+
+export const catalogCloneResponseCandidatesItemLastUsedTripRouteIdMax = 2147483647;
+export const catalogCloneResponseCandidatesItemLastUsedTripRouteIdMultipleOf = 1;
+
+export const catalogCloneResponseCandidatesItemDefaultPricingTemplateIdMax = 2147483647;
+export const catalogCloneResponseCandidatesItemDefaultPricingTemplateIdMultipleOf = 1;
+
+export const catalogCloneResponseCandidatesItemDefaultShippingProfileIdMax = 2147483647;
+export const catalogCloneResponseCandidatesItemDefaultShippingProfileIdMultipleOf = 1;
+
+export const catalogCloneResponseCandidatesItemDefaultDepartmentStoreFeeRateMax = 32;
+
+
+export const catalogCloneResponseCandidatesItemDefaultDepartmentStoreFeeRateRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const catalogCloneResponseCandidatesItemNormalizedNameMax = 256;
+
+export const catalogCloneResponseCandidatesItemBarcodeMax = 128;
+
+export const catalogCloneResponseCandidatesItemCreatedAtMax = 2000;
+
+export const catalogCloneResponseCandidatesItemUpdatedAtMax = 2000;
+
+export const catalogCloneResponseCandidatesItemArchivedAtMax = 2000;
+
+
+
+export const CatalogCloneResponse = zod.object({
+  "product": zod.object({
+  "id": zod.number().min(1).max(catalogCloneResponseProductIdMax).multipleOf(catalogCloneResponseProductIdMultipleOf),
+  "storeId": zod.number().min(1).max(catalogCloneResponseProductStoreIdMax).multipleOf(catalogCloneResponseProductStoreIdMultipleOf),
+  "name": zod.string().max(catalogCloneResponseProductNameMax),
+  "weightGrams": zod.string().regex(catalogCloneResponseProductWeightGramsRegExp),
+  "categoryId": zod.number().min(1).max(catalogCloneResponseProductCategoryIdMax).multipleOf(catalogCloneResponseProductCategoryIdMultipleOf).nullish(),
+  "status": zod.enum(['NORMAL', 'DISCONTINUED', 'ARCHIVED']),
+  "imageUrl": zod.string().max(catalogCloneResponseProductImageUrlMax).regex(catalogCloneResponseProductImageUrlRegExp).nullish(),
+  "internalNote": zod.string().max(catalogCloneResponseProductInternalNoteMax).nullish(),
+  "preferredRouteLabel": zod.string().max(catalogCloneResponseProductPreferredRouteLabelMax).nullish(),
+  "lastUsedTripRouteId": zod.number().min(1).max(catalogCloneResponseProductLastUsedTripRouteIdMax).multipleOf(catalogCloneResponseProductLastUsedTripRouteIdMultipleOf).nullish(),
+  "defaultPricingTemplateId": zod.number().min(1).max(catalogCloneResponseProductDefaultPricingTemplateIdMax).multipleOf(catalogCloneResponseProductDefaultPricingTemplateIdMultipleOf).nullish(),
+  "defaultShippingProfileId": zod.number().min(1).max(catalogCloneResponseProductDefaultShippingProfileIdMax).multipleOf(catalogCloneResponseProductDefaultShippingProfileIdMultipleOf).nullish(),
+  "defaultDepartmentStoreFeeRate": zod.string().max(catalogCloneResponseProductDefaultDepartmentStoreFeeRateMax).regex(catalogCloneResponseProductDefaultDepartmentStoreFeeRateRegExp).nullish(),
+  "normalizedName": zod.string().max(catalogCloneResponseProductNormalizedNameMax),
+  "barcode": zod.string().max(catalogCloneResponseProductBarcodeMax),
+  "barcodeStatus": zod.enum(['REAL', 'NONE']),
+  "createdAt": zod.string().max(catalogCloneResponseProductCreatedAtMax).optional(),
+  "updatedAt": zod.string().max(catalogCloneResponseProductUpdatedAtMax).optional(),
+  "archivedAt": zod.string().max(catalogCloneResponseProductArchivedAtMax).nullish(),
+  "currentCost": zod.union([zod.object({
+  "id": zod.number(),
+  "storeId": zod.number(),
+  "catalogProductId": zod.number(),
+  "originalPriceJpy": zod.string(),
+  "effectiveCostJpy": zod.string(),
+  "adjustmentMode": zod.enum(['NONE', 'RATE', 'MANUAL']),
+  "adjustmentRate": zod.string().nullable(),
+  "adjustmentReason": zod.string().nullable(),
+  "observedAt": zod.string().nullable(),
+  "source": zod.string(),
+  "status": zod.enum(['ACTIVE', 'VOIDED']),
+  "isCurrent": zod.boolean(),
+  "supersedesCostRecordId": zod.number().nullable(),
+  "voidReasonCode": zod.string().nullable(),
+  "voidReasonText": zod.string().nullable(),
+  "voidedAt": zod.string().nullable(),
+  "voidedBy": zod.string().nullable(),
+  "createdAt": zod.string()
+}),zod.null()]).optional()
+}),
+  "candidates": zod.array(zod.object({
+  "id": zod.number().min(1).max(catalogCloneResponseCandidatesItemIdMax).multipleOf(catalogCloneResponseCandidatesItemIdMultipleOf),
+  "storeId": zod.number().min(1).max(catalogCloneResponseCandidatesItemStoreIdMax).multipleOf(catalogCloneResponseCandidatesItemStoreIdMultipleOf),
+  "name": zod.string().max(catalogCloneResponseCandidatesItemNameMax),
+  "weightGrams": zod.string().regex(catalogCloneResponseCandidatesItemWeightGramsRegExp),
+  "categoryId": zod.number().min(1).max(catalogCloneResponseCandidatesItemCategoryIdMax).multipleOf(catalogCloneResponseCandidatesItemCategoryIdMultipleOf).nullish(),
+  "status": zod.enum(['NORMAL', 'DISCONTINUED', 'ARCHIVED']),
+  "imageUrl": zod.string().max(catalogCloneResponseCandidatesItemImageUrlMax).regex(catalogCloneResponseCandidatesItemImageUrlRegExp).nullish(),
+  "internalNote": zod.string().max(catalogCloneResponseCandidatesItemInternalNoteMax).nullish(),
+  "preferredRouteLabel": zod.string().max(catalogCloneResponseCandidatesItemPreferredRouteLabelMax).nullish(),
+  "lastUsedTripRouteId": zod.number().min(1).max(catalogCloneResponseCandidatesItemLastUsedTripRouteIdMax).multipleOf(catalogCloneResponseCandidatesItemLastUsedTripRouteIdMultipleOf).nullish(),
+  "defaultPricingTemplateId": zod.number().min(1).max(catalogCloneResponseCandidatesItemDefaultPricingTemplateIdMax).multipleOf(catalogCloneResponseCandidatesItemDefaultPricingTemplateIdMultipleOf).nullish(),
+  "defaultShippingProfileId": zod.number().min(1).max(catalogCloneResponseCandidatesItemDefaultShippingProfileIdMax).multipleOf(catalogCloneResponseCandidatesItemDefaultShippingProfileIdMultipleOf).nullish(),
+  "defaultDepartmentStoreFeeRate": zod.string().max(catalogCloneResponseCandidatesItemDefaultDepartmentStoreFeeRateMax).regex(catalogCloneResponseCandidatesItemDefaultDepartmentStoreFeeRateRegExp).nullish(),
+  "normalizedName": zod.string().max(catalogCloneResponseCandidatesItemNormalizedNameMax),
+  "barcode": zod.string().max(catalogCloneResponseCandidatesItemBarcodeMax),
+  "barcodeStatus": zod.enum(['REAL', 'NONE']),
+  "createdAt": zod.string().max(catalogCloneResponseCandidatesItemCreatedAtMax).optional(),
+  "updatedAt": zod.string().max(catalogCloneResponseCandidatesItemUpdatedAtMax).optional(),
+  "archivedAt": zod.string().max(catalogCloneResponseCandidatesItemArchivedAtMax).nullish(),
+  "currentCost": zod.union([zod.object({
+  "id": zod.number(),
+  "storeId": zod.number(),
+  "catalogProductId": zod.number(),
+  "originalPriceJpy": zod.string(),
+  "effectiveCostJpy": zod.string(),
+  "adjustmentMode": zod.enum(['NONE', 'RATE', 'MANUAL']),
+  "adjustmentRate": zod.string().nullable(),
+  "adjustmentReason": zod.string().nullable(),
+  "observedAt": zod.string().nullable(),
+  "source": zod.string(),
+  "status": zod.enum(['ACTIVE', 'VOIDED']),
+  "isCurrent": zod.boolean(),
+  "supersedesCostRecordId": zod.number().nullable(),
+  "voidReasonCode": zod.string().nullable(),
+  "voidReasonText": zod.string().nullable(),
+  "voidedAt": zod.string().nullable(),
+  "voidedBy": zod.string().nullable(),
+  "createdAt": zod.string()
+}),zod.null()]).optional()
+})).optional()
+})
+
+
+/**
+ * @summary Owner-only catalogAliases
+ */
+export const catalogAliasesPathStoreIdMax = 2147483647;
+export const catalogAliasesPathStoreIdMultipleOf = 1;
+
+export const catalogAliasesPathCatalogProductIdMax = 2147483647;
+export const catalogAliasesPathCatalogProductIdMultipleOf = 1;
+
+
+
+export const CatalogAliasesPathParams = zod.preprocess(preprocessCatalogParams, zod.object({
+  "storeId": zod.coerce.number().min(1).max(catalogAliasesPathStoreIdMax).multipleOf(catalogAliasesPathStoreIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647'),
+  "catalogProductId": zod.coerce.number().min(1).max(catalogAliasesPathCatalogProductIdMax).multipleOf(catalogAliasesPathCatalogProductIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647')
+}).strict())
+
+export const CatalogAliasesResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.number(),
+  "storeId": zod.number(),
+  "catalogProductId": zod.number(),
+  "alias": zod.string(),
+  "normalizedAlias": zod.string(),
+  "source": zod.string(),
+  "createdAt": zod.string()
+}))
+})
+
+
+/**
+ * @summary Owner-only catalogAliasCreate
+ */
+export const catalogAliasCreatePathStoreIdMax = 2147483647;
+export const catalogAliasCreatePathStoreIdMultipleOf = 1;
+
+export const catalogAliasCreatePathCatalogProductIdMax = 2147483647;
+export const catalogAliasCreatePathCatalogProductIdMultipleOf = 1;
+
+
+
+export const CatalogAliasCreatePathParams = zod.preprocess(preprocessCatalogParams, zod.object({
+  "storeId": zod.coerce.number().min(1).max(catalogAliasCreatePathStoreIdMax).multipleOf(catalogAliasCreatePathStoreIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647'),
+  "catalogProductId": zod.coerce.number().min(1).max(catalogAliasCreatePathCatalogProductIdMax).multipleOf(catalogAliasCreatePathCatalogProductIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647')
+}).strict())
+
+export const catalogAliasCreateBodyAliasMax = 256;
+
+
+
+export const CatalogAliasCreateBody = zod.object({
+  "alias": zod.string().max(catalogAliasCreateBodyAliasMax)
+}).strict()
+
+export const CatalogAliasCreateResponse = zod.object({
+  "record": zod.object({
+  "id": zod.number(),
+  "storeId": zod.number(),
+  "catalogProductId": zod.number(),
+  "alias": zod.string(),
+  "normalizedAlias": zod.string(),
+  "source": zod.string(),
+  "createdAt": zod.string()
+})
+})
+
+
+/**
+ * @summary Owner-only catalogAliasDelete
+ */
+export const catalogAliasDeletePathStoreIdMax = 2147483647;
+export const catalogAliasDeletePathStoreIdMultipleOf = 1;
+
+export const catalogAliasDeletePathCatalogProductIdMax = 2147483647;
+export const catalogAliasDeletePathCatalogProductIdMultipleOf = 1;
+
+export const catalogAliasDeletePathAliasIdMax = 2147483647;
+export const catalogAliasDeletePathAliasIdMultipleOf = 1;
+
+
+
+export const CatalogAliasDeletePathParams = zod.preprocess(preprocessCatalogParams, zod.object({
+  "storeId": zod.coerce.number().min(1).max(catalogAliasDeletePathStoreIdMax).multipleOf(catalogAliasDeletePathStoreIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647'),
+  "catalogProductId": zod.coerce.number().min(1).max(catalogAliasDeletePathCatalogProductIdMax).multipleOf(catalogAliasDeletePathCatalogProductIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647'),
+  "aliasId": zod.coerce.number().min(1).max(catalogAliasDeletePathAliasIdMax).multipleOf(catalogAliasDeletePathAliasIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647')
+}).strict())
+
+export const CatalogAliasDeleteResponse = zod.object({
+  "deleted": zod.boolean()
+})
+
+
+/**
+ * @summary Owner-only catalogCosts
+ */
+export const catalogCostsPathStoreIdMax = 2147483647;
+export const catalogCostsPathStoreIdMultipleOf = 1;
+
+export const catalogCostsPathCatalogProductIdMax = 2147483647;
+export const catalogCostsPathCatalogProductIdMultipleOf = 1;
+
+
+
+export const CatalogCostsPathParams = zod.preprocess(preprocessCatalogParams, zod.object({
+  "storeId": zod.coerce.number().min(1).max(catalogCostsPathStoreIdMax).multipleOf(catalogCostsPathStoreIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647'),
+  "catalogProductId": zod.coerce.number().min(1).max(catalogCostsPathCatalogProductIdMax).multipleOf(catalogCostsPathCatalogProductIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647')
+}).strict())
+
+export const CatalogCostsResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.number(),
+  "storeId": zod.number(),
+  "catalogProductId": zod.number(),
+  "originalPriceJpy": zod.string(),
+  "effectiveCostJpy": zod.string(),
+  "adjustmentMode": zod.enum(['NONE', 'RATE', 'MANUAL']),
+  "adjustmentRate": zod.string().nullable(),
+  "adjustmentReason": zod.string().nullable(),
+  "observedAt": zod.string().nullable(),
+  "source": zod.string(),
+  "status": zod.enum(['ACTIVE', 'VOIDED']),
+  "isCurrent": zod.boolean(),
+  "supersedesCostRecordId": zod.number().nullable(),
+  "voidReasonCode": zod.string().nullable(),
+  "voidReasonText": zod.string().nullable(),
+  "voidedAt": zod.string().nullable(),
+  "voidedBy": zod.string().nullable(),
+  "createdAt": zod.string()
+}))
+})
+
+
+/**
+ * @summary Owner-only catalogCostCreate
+ */
+export const catalogCostCreatePathStoreIdMax = 2147483647;
+export const catalogCostCreatePathStoreIdMultipleOf = 1;
+
+export const catalogCostCreatePathCatalogProductIdMax = 2147483647;
+export const catalogCostCreatePathCatalogProductIdMultipleOf = 1;
+
+
+
+export const CatalogCostCreatePathParams = zod.preprocess(preprocessCatalogParams, zod.object({
+  "storeId": zod.coerce.number().min(1).max(catalogCostCreatePathStoreIdMax).multipleOf(catalogCostCreatePathStoreIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647'),
+  "catalogProductId": zod.coerce.number().min(1).max(catalogCostCreatePathCatalogProductIdMax).multipleOf(catalogCostCreatePathCatalogProductIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647')
+}).strict())
+
+export const catalogCostCreateBodyOriginalPriceJpyMax = 32;
+
+
+export const catalogCostCreateBodyOriginalPriceJpyRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const catalogCostCreateBodyAdjustmentRateMax = 32;
+
+
+export const catalogCostCreateBodyAdjustmentRateRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const catalogCostCreateBodyEffectiveCostJpyMax = 32;
+
+
+export const catalogCostCreateBodyEffectiveCostJpyRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const catalogCostCreateBodyAdjustmentReasonMax = 2000;
+
+export const catalogCostCreateBodyObservedAtRegExp = new RegExp('^(?!0000)(?:\\d{4}-(?:(?:01|03|05|07|08|10|12)-(?:0[1-9]|[12][0-9]|3[01])|(?:04|06|09|11)-(?:0[1-9]|[12][0-9]|30)|02-(?:0[1-9]|1[0-9]|2[0-8]))|(?:\\d{2}(?:0[48]|[2468][048]|[13579][26])|(?:[02468][048]|[13579][26])00)-02-29)$');
+export const catalogCostCreateBodySupersedesCostRecordIdMax = 2147483647;
+export const catalogCostCreateBodySupersedesCostRecordIdMultipleOf = 1;
+
+export const catalogCostCreateBodyReasonCodeMax = 64;
+
+export const catalogCostCreateBodyReasonTextMax = 2000;
+
+
+
+export const CatalogCostCreateBody = zod.object({
+  "originalPriceJpy": zod.string().max(catalogCostCreateBodyOriginalPriceJpyMax).regex(catalogCostCreateBodyOriginalPriceJpyRegExp),
+  "adjustmentMode": zod.enum(['NONE', 'RATE', 'MANUAL']).optional(),
+  "adjustmentRate": zod.string().max(catalogCostCreateBodyAdjustmentRateMax).regex(catalogCostCreateBodyAdjustmentRateRegExp).nullish(),
+  "effectiveCostJpy": zod.string().max(catalogCostCreateBodyEffectiveCostJpyMax).regex(catalogCostCreateBodyEffectiveCostJpyRegExp).nullish(),
+  "adjustmentReason": zod.string().max(catalogCostCreateBodyAdjustmentReasonMax).nullish(),
+  "observedAt": zod.string().regex(catalogCostCreateBodyObservedAtRegExp).nullish(),
+  "supersedesCostRecordId": zod.number().min(1).max(catalogCostCreateBodySupersedesCostRecordIdMax).multipleOf(catalogCostCreateBodySupersedesCostRecordIdMultipleOf).optional(),
+  "reasonCode": zod.string().min(1).max(catalogCostCreateBodyReasonCodeMax),
+  "reasonText": zod.string().max(catalogCostCreateBodyReasonTextMax).nullish()
+}).strict()
+
+export const CatalogCostCreateResponse = zod.object({
+  "record": zod.object({
+  "id": zod.number(),
+  "storeId": zod.number(),
+  "catalogProductId": zod.number(),
+  "originalPriceJpy": zod.string(),
+  "effectiveCostJpy": zod.string(),
+  "adjustmentMode": zod.enum(['NONE', 'RATE', 'MANUAL']),
+  "adjustmentRate": zod.string().nullable(),
+  "adjustmentReason": zod.string().nullable(),
+  "observedAt": zod.string().nullable(),
+  "source": zod.string(),
+  "status": zod.enum(['ACTIVE', 'VOIDED']),
+  "isCurrent": zod.boolean(),
+  "supersedesCostRecordId": zod.number().nullable(),
+  "voidReasonCode": zod.string().nullable(),
+  "voidReasonText": zod.string().nullable(),
+  "voidedAt": zod.string().nullable(),
+  "voidedBy": zod.string().nullable(),
+  "createdAt": zod.string()
+})
+})
+
+
+/**
+ * @summary Owner-only catalogCostVoid
+ */
+export const catalogCostVoidPathStoreIdMax = 2147483647;
+export const catalogCostVoidPathStoreIdMultipleOf = 1;
+
+export const catalogCostVoidPathCatalogProductIdMax = 2147483647;
+export const catalogCostVoidPathCatalogProductIdMultipleOf = 1;
+
+export const catalogCostVoidPathRecordIdMax = 2147483647;
+export const catalogCostVoidPathRecordIdMultipleOf = 1;
+
+
+
+export const CatalogCostVoidPathParams = zod.preprocess(preprocessCatalogParams, zod.object({
+  "storeId": zod.coerce.number().min(1).max(catalogCostVoidPathStoreIdMax).multipleOf(catalogCostVoidPathStoreIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647'),
+  "catalogProductId": zod.coerce.number().min(1).max(catalogCostVoidPathCatalogProductIdMax).multipleOf(catalogCostVoidPathCatalogProductIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647'),
+  "recordId": zod.coerce.number().min(1).max(catalogCostVoidPathRecordIdMax).multipleOf(catalogCostVoidPathRecordIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647')
+}).strict())
+
+export const catalogCostVoidBodyReasonCodeMax = 64;
+
+export const catalogCostVoidBodyReasonTextMax = 2000;
+
+
+
+export const CatalogCostVoidBody = zod.object({
+  "reasonCode": zod.string().min(1).max(catalogCostVoidBodyReasonCodeMax),
+  "reasonText": zod.string().max(catalogCostVoidBodyReasonTextMax).nullish()
+}).strict()
+
+export const catalogCostVoidResponseProductIdMax = 2147483647;
+export const catalogCostVoidResponseProductIdMultipleOf = 1;
+
+export const catalogCostVoidResponseProductStoreIdMax = 2147483647;
+export const catalogCostVoidResponseProductStoreIdMultipleOf = 1;
+
+export const catalogCostVoidResponseProductNameMax = 256;
+
+export const catalogCostVoidResponseProductWeightGramsRegExp = new RegExp('^\\d{1,10}(?:\\.\\d{1,2})?$');
+export const catalogCostVoidResponseProductCategoryIdMax = 2147483647;
+export const catalogCostVoidResponseProductCategoryIdMultipleOf = 1;
+
+export const catalogCostVoidResponseProductImageUrlMax = 2048;
+
+
+export const catalogCostVoidResponseProductImageUrlRegExp = new RegExp('^https?:\/\/[^\\s]+$');
+export const catalogCostVoidResponseProductInternalNoteMax = 2000;
+
+export const catalogCostVoidResponseProductPreferredRouteLabelMax = 256;
+
+export const catalogCostVoidResponseProductLastUsedTripRouteIdMax = 2147483647;
+export const catalogCostVoidResponseProductLastUsedTripRouteIdMultipleOf = 1;
+
+export const catalogCostVoidResponseProductDefaultPricingTemplateIdMax = 2147483647;
+export const catalogCostVoidResponseProductDefaultPricingTemplateIdMultipleOf = 1;
+
+export const catalogCostVoidResponseProductDefaultShippingProfileIdMax = 2147483647;
+export const catalogCostVoidResponseProductDefaultShippingProfileIdMultipleOf = 1;
+
+export const catalogCostVoidResponseProductDefaultDepartmentStoreFeeRateMax = 32;
+
+
+export const catalogCostVoidResponseProductDefaultDepartmentStoreFeeRateRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const catalogCostVoidResponseProductNormalizedNameMax = 256;
+
+export const catalogCostVoidResponseProductBarcodeMax = 128;
+
+export const catalogCostVoidResponseProductCreatedAtMax = 2000;
+
+export const catalogCostVoidResponseProductUpdatedAtMax = 2000;
+
+export const catalogCostVoidResponseProductArchivedAtMax = 2000;
+
+export const catalogCostVoidResponseCandidatesItemIdMax = 2147483647;
+export const catalogCostVoidResponseCandidatesItemIdMultipleOf = 1;
+
+export const catalogCostVoidResponseCandidatesItemStoreIdMax = 2147483647;
+export const catalogCostVoidResponseCandidatesItemStoreIdMultipleOf = 1;
+
+export const catalogCostVoidResponseCandidatesItemNameMax = 256;
+
+export const catalogCostVoidResponseCandidatesItemWeightGramsRegExp = new RegExp('^\\d{1,10}(?:\\.\\d{1,2})?$');
+export const catalogCostVoidResponseCandidatesItemCategoryIdMax = 2147483647;
+export const catalogCostVoidResponseCandidatesItemCategoryIdMultipleOf = 1;
+
+export const catalogCostVoidResponseCandidatesItemImageUrlMax = 2048;
+
+
+export const catalogCostVoidResponseCandidatesItemImageUrlRegExp = new RegExp('^https?:\/\/[^\\s]+$');
+export const catalogCostVoidResponseCandidatesItemInternalNoteMax = 2000;
+
+export const catalogCostVoidResponseCandidatesItemPreferredRouteLabelMax = 256;
+
+export const catalogCostVoidResponseCandidatesItemLastUsedTripRouteIdMax = 2147483647;
+export const catalogCostVoidResponseCandidatesItemLastUsedTripRouteIdMultipleOf = 1;
+
+export const catalogCostVoidResponseCandidatesItemDefaultPricingTemplateIdMax = 2147483647;
+export const catalogCostVoidResponseCandidatesItemDefaultPricingTemplateIdMultipleOf = 1;
+
+export const catalogCostVoidResponseCandidatesItemDefaultShippingProfileIdMax = 2147483647;
+export const catalogCostVoidResponseCandidatesItemDefaultShippingProfileIdMultipleOf = 1;
+
+export const catalogCostVoidResponseCandidatesItemDefaultDepartmentStoreFeeRateMax = 32;
+
+
+export const catalogCostVoidResponseCandidatesItemDefaultDepartmentStoreFeeRateRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const catalogCostVoidResponseCandidatesItemNormalizedNameMax = 256;
+
+export const catalogCostVoidResponseCandidatesItemBarcodeMax = 128;
+
+export const catalogCostVoidResponseCandidatesItemCreatedAtMax = 2000;
+
+export const catalogCostVoidResponseCandidatesItemUpdatedAtMax = 2000;
+
+export const catalogCostVoidResponseCandidatesItemArchivedAtMax = 2000;
+
+
+
+export const CatalogCostVoidResponse = zod.object({
+  "product": zod.object({
+  "id": zod.number().min(1).max(catalogCostVoidResponseProductIdMax).multipleOf(catalogCostVoidResponseProductIdMultipleOf),
+  "storeId": zod.number().min(1).max(catalogCostVoidResponseProductStoreIdMax).multipleOf(catalogCostVoidResponseProductStoreIdMultipleOf),
+  "name": zod.string().max(catalogCostVoidResponseProductNameMax),
+  "weightGrams": zod.string().regex(catalogCostVoidResponseProductWeightGramsRegExp),
+  "categoryId": zod.number().min(1).max(catalogCostVoidResponseProductCategoryIdMax).multipleOf(catalogCostVoidResponseProductCategoryIdMultipleOf).nullish(),
+  "status": zod.enum(['NORMAL', 'DISCONTINUED', 'ARCHIVED']),
+  "imageUrl": zod.string().max(catalogCostVoidResponseProductImageUrlMax).regex(catalogCostVoidResponseProductImageUrlRegExp).nullish(),
+  "internalNote": zod.string().max(catalogCostVoidResponseProductInternalNoteMax).nullish(),
+  "preferredRouteLabel": zod.string().max(catalogCostVoidResponseProductPreferredRouteLabelMax).nullish(),
+  "lastUsedTripRouteId": zod.number().min(1).max(catalogCostVoidResponseProductLastUsedTripRouteIdMax).multipleOf(catalogCostVoidResponseProductLastUsedTripRouteIdMultipleOf).nullish(),
+  "defaultPricingTemplateId": zod.number().min(1).max(catalogCostVoidResponseProductDefaultPricingTemplateIdMax).multipleOf(catalogCostVoidResponseProductDefaultPricingTemplateIdMultipleOf).nullish(),
+  "defaultShippingProfileId": zod.number().min(1).max(catalogCostVoidResponseProductDefaultShippingProfileIdMax).multipleOf(catalogCostVoidResponseProductDefaultShippingProfileIdMultipleOf).nullish(),
+  "defaultDepartmentStoreFeeRate": zod.string().max(catalogCostVoidResponseProductDefaultDepartmentStoreFeeRateMax).regex(catalogCostVoidResponseProductDefaultDepartmentStoreFeeRateRegExp).nullish(),
+  "normalizedName": zod.string().max(catalogCostVoidResponseProductNormalizedNameMax),
+  "barcode": zod.string().max(catalogCostVoidResponseProductBarcodeMax),
+  "barcodeStatus": zod.enum(['REAL', 'NONE']),
+  "createdAt": zod.string().max(catalogCostVoidResponseProductCreatedAtMax).optional(),
+  "updatedAt": zod.string().max(catalogCostVoidResponseProductUpdatedAtMax).optional(),
+  "archivedAt": zod.string().max(catalogCostVoidResponseProductArchivedAtMax).nullish(),
+  "currentCost": zod.union([zod.object({
+  "id": zod.number(),
+  "storeId": zod.number(),
+  "catalogProductId": zod.number(),
+  "originalPriceJpy": zod.string(),
+  "effectiveCostJpy": zod.string(),
+  "adjustmentMode": zod.enum(['NONE', 'RATE', 'MANUAL']),
+  "adjustmentRate": zod.string().nullable(),
+  "adjustmentReason": zod.string().nullable(),
+  "observedAt": zod.string().nullable(),
+  "source": zod.string(),
+  "status": zod.enum(['ACTIVE', 'VOIDED']),
+  "isCurrent": zod.boolean(),
+  "supersedesCostRecordId": zod.number().nullable(),
+  "voidReasonCode": zod.string().nullable(),
+  "voidReasonText": zod.string().nullable(),
+  "voidedAt": zod.string().nullable(),
+  "voidedBy": zod.string().nullable(),
+  "createdAt": zod.string()
+}),zod.null()]).optional()
+}),
+  "candidates": zod.array(zod.object({
+  "id": zod.number().min(1).max(catalogCostVoidResponseCandidatesItemIdMax).multipleOf(catalogCostVoidResponseCandidatesItemIdMultipleOf),
+  "storeId": zod.number().min(1).max(catalogCostVoidResponseCandidatesItemStoreIdMax).multipleOf(catalogCostVoidResponseCandidatesItemStoreIdMultipleOf),
+  "name": zod.string().max(catalogCostVoidResponseCandidatesItemNameMax),
+  "weightGrams": zod.string().regex(catalogCostVoidResponseCandidatesItemWeightGramsRegExp),
+  "categoryId": zod.number().min(1).max(catalogCostVoidResponseCandidatesItemCategoryIdMax).multipleOf(catalogCostVoidResponseCandidatesItemCategoryIdMultipleOf).nullish(),
+  "status": zod.enum(['NORMAL', 'DISCONTINUED', 'ARCHIVED']),
+  "imageUrl": zod.string().max(catalogCostVoidResponseCandidatesItemImageUrlMax).regex(catalogCostVoidResponseCandidatesItemImageUrlRegExp).nullish(),
+  "internalNote": zod.string().max(catalogCostVoidResponseCandidatesItemInternalNoteMax).nullish(),
+  "preferredRouteLabel": zod.string().max(catalogCostVoidResponseCandidatesItemPreferredRouteLabelMax).nullish(),
+  "lastUsedTripRouteId": zod.number().min(1).max(catalogCostVoidResponseCandidatesItemLastUsedTripRouteIdMax).multipleOf(catalogCostVoidResponseCandidatesItemLastUsedTripRouteIdMultipleOf).nullish(),
+  "defaultPricingTemplateId": zod.number().min(1).max(catalogCostVoidResponseCandidatesItemDefaultPricingTemplateIdMax).multipleOf(catalogCostVoidResponseCandidatesItemDefaultPricingTemplateIdMultipleOf).nullish(),
+  "defaultShippingProfileId": zod.number().min(1).max(catalogCostVoidResponseCandidatesItemDefaultShippingProfileIdMax).multipleOf(catalogCostVoidResponseCandidatesItemDefaultShippingProfileIdMultipleOf).nullish(),
+  "defaultDepartmentStoreFeeRate": zod.string().max(catalogCostVoidResponseCandidatesItemDefaultDepartmentStoreFeeRateMax).regex(catalogCostVoidResponseCandidatesItemDefaultDepartmentStoreFeeRateRegExp).nullish(),
+  "normalizedName": zod.string().max(catalogCostVoidResponseCandidatesItemNormalizedNameMax),
+  "barcode": zod.string().max(catalogCostVoidResponseCandidatesItemBarcodeMax),
+  "barcodeStatus": zod.enum(['REAL', 'NONE']),
+  "createdAt": zod.string().max(catalogCostVoidResponseCandidatesItemCreatedAtMax).optional(),
+  "updatedAt": zod.string().max(catalogCostVoidResponseCandidatesItemUpdatedAtMax).optional(),
+  "archivedAt": zod.string().max(catalogCostVoidResponseCandidatesItemArchivedAtMax).nullish(),
+  "currentCost": zod.union([zod.object({
+  "id": zod.number(),
+  "storeId": zod.number(),
+  "catalogProductId": zod.number(),
+  "originalPriceJpy": zod.string(),
+  "effectiveCostJpy": zod.string(),
+  "adjustmentMode": zod.enum(['NONE', 'RATE', 'MANUAL']),
+  "adjustmentRate": zod.string().nullable(),
+  "adjustmentReason": zod.string().nullable(),
+  "observedAt": zod.string().nullable(),
+  "source": zod.string(),
+  "status": zod.enum(['ACTIVE', 'VOIDED']),
+  "isCurrent": zod.boolean(),
+  "supersedesCostRecordId": zod.number().nullable(),
+  "voidReasonCode": zod.string().nullable(),
+  "voidReasonText": zod.string().nullable(),
+  "voidedAt": zod.string().nullable(),
+  "voidedBy": zod.string().nullable(),
+  "createdAt": zod.string()
+}),zod.null()]).optional()
+})).optional()
+})
+
+
+/**
+ * @summary Owner-only catalogShopee
+ */
+export const catalogShopeePathStoreIdMax = 2147483647;
+export const catalogShopeePathStoreIdMultipleOf = 1;
+
+export const catalogShopeePathCatalogProductIdMax = 2147483647;
+export const catalogShopeePathCatalogProductIdMultipleOf = 1;
+
+
+
+export const CatalogShopeePathParams = zod.preprocess(preprocessCatalogParams, zod.object({
+  "storeId": zod.coerce.number().min(1).max(catalogShopeePathStoreIdMax).multipleOf(catalogShopeePathStoreIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647'),
+  "catalogProductId": zod.coerce.number().min(1).max(catalogShopeePathCatalogProductIdMax).multipleOf(catalogShopeePathCatalogProductIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647')
+}).strict())
+
+export const CatalogShopeeResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.number(),
+  "storeId": zod.number(),
+  "catalogProductId": zod.number(),
+  "priceTwd": zod.string(),
+  "observedAt": zod.string().nullable(),
+  "sourceUrl": zod.string().nullable(),
+  "note": zod.string().nullable(),
+  "source": zod.string(),
+  "status": zod.enum(['ACTIVE', 'VOIDED']),
+  "createdAt": zod.string()
+}))
+})
+
+
+/**
+ * @summary Owner-only catalogShopeeCreate
+ */
+export const catalogShopeeCreatePathStoreIdMax = 2147483647;
+export const catalogShopeeCreatePathStoreIdMultipleOf = 1;
+
+export const catalogShopeeCreatePathCatalogProductIdMax = 2147483647;
+export const catalogShopeeCreatePathCatalogProductIdMultipleOf = 1;
+
+
+
+export const CatalogShopeeCreatePathParams = zod.preprocess(preprocessCatalogParams, zod.object({
+  "storeId": zod.coerce.number().min(1).max(catalogShopeeCreatePathStoreIdMax).multipleOf(catalogShopeeCreatePathStoreIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647'),
+  "catalogProductId": zod.coerce.number().min(1).max(catalogShopeeCreatePathCatalogProductIdMax).multipleOf(catalogShopeeCreatePathCatalogProductIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647')
+}).strict())
+
+export const catalogShopeeCreateBodyPriceTwdMax = 32;
+
+
+export const catalogShopeeCreateBodyPriceTwdRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const catalogShopeeCreateBodyObservedAtRegExp = new RegExp('^(?!0000)(?:\\d{4}-(?:(?:01|03|05|07|08|10|12)-(?:0[1-9]|[12][0-9]|3[01])|(?:04|06|09|11)-(?:0[1-9]|[12][0-9]|30)|02-(?:0[1-9]|1[0-9]|2[0-8]))|(?:\\d{2}(?:0[48]|[2468][048]|[13579][26])|(?:[02468][048]|[13579][26])00)-02-29)$');
+export const catalogShopeeCreateBodySourceUrlMax = 2048;
+
+
+export const catalogShopeeCreateBodySourceUrlRegExp = new RegExp('^https?:\/\/[^\\s]+$');
+export const catalogShopeeCreateBodyNoteMax = 2000;
+
+export const catalogShopeeCreateBodyReasonCodeMax = 64;
+
+export const catalogShopeeCreateBodyReasonTextMax = 2000;
+
+
+
+export const CatalogShopeeCreateBody = zod.object({
+  "priceTwd": zod.string().max(catalogShopeeCreateBodyPriceTwdMax).regex(catalogShopeeCreateBodyPriceTwdRegExp),
+  "observedAt": zod.string().regex(catalogShopeeCreateBodyObservedAtRegExp),
+  "sourceUrl": zod.string().max(catalogShopeeCreateBodySourceUrlMax).regex(catalogShopeeCreateBodySourceUrlRegExp).nullish(),
+  "note": zod.string().max(catalogShopeeCreateBodyNoteMax).nullish(),
+  "reasonCode": zod.string().min(1).max(catalogShopeeCreateBodyReasonCodeMax),
+  "reasonText": zod.string().max(catalogShopeeCreateBodyReasonTextMax).nullish()
+}).strict()
+
+export const CatalogShopeeCreateResponse = zod.object({
+  "record": zod.object({
+  "id": zod.number(),
+  "storeId": zod.number(),
+  "catalogProductId": zod.number(),
+  "priceTwd": zod.string(),
+  "observedAt": zod.string().nullable(),
+  "sourceUrl": zod.string().nullable(),
+  "note": zod.string().nullable(),
+  "source": zod.string(),
+  "status": zod.enum(['ACTIVE', 'VOIDED']),
+  "createdAt": zod.string()
+})
+})
+
+
+/**
+ * @summary Owner-only catalogShopeeVoid
+ */
+export const catalogShopeeVoidPathStoreIdMax = 2147483647;
+export const catalogShopeeVoidPathStoreIdMultipleOf = 1;
+
+export const catalogShopeeVoidPathCatalogProductIdMax = 2147483647;
+export const catalogShopeeVoidPathCatalogProductIdMultipleOf = 1;
+
+export const catalogShopeeVoidPathRecordIdMax = 2147483647;
+export const catalogShopeeVoidPathRecordIdMultipleOf = 1;
+
+
+
+export const CatalogShopeeVoidPathParams = zod.preprocess(preprocessCatalogParams, zod.object({
+  "storeId": zod.coerce.number().min(1).max(catalogShopeeVoidPathStoreIdMax).multipleOf(catalogShopeeVoidPathStoreIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647'),
+  "catalogProductId": zod.coerce.number().min(1).max(catalogShopeeVoidPathCatalogProductIdMax).multipleOf(catalogShopeeVoidPathCatalogProductIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647'),
+  "recordId": zod.coerce.number().min(1).max(catalogShopeeVoidPathRecordIdMax).multipleOf(catalogShopeeVoidPathRecordIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647')
+}).strict())
+
+export const catalogShopeeVoidBodyReasonCodeMax = 64;
+
+export const catalogShopeeVoidBodyReasonTextMax = 2000;
+
+
+
+export const CatalogShopeeVoidBody = zod.object({
+  "reasonCode": zod.string().min(1).max(catalogShopeeVoidBodyReasonCodeMax),
+  "reasonText": zod.string().max(catalogShopeeVoidBodyReasonTextMax).nullish()
+}).strict()
+
+export const CatalogShopeeVoidResponse = zod.object({
+  "record": zod.object({
+  "id": zod.number()
+})
+})
+
+
+/**
+ * @summary Owner-only catalogRelationships
+ */
+export const catalogRelationshipsPathStoreIdMax = 2147483647;
+export const catalogRelationshipsPathStoreIdMultipleOf = 1;
+
+export const catalogRelationshipsPathCatalogProductIdMax = 2147483647;
+export const catalogRelationshipsPathCatalogProductIdMultipleOf = 1;
+
+
+
+export const CatalogRelationshipsPathParams = zod.preprocess(preprocessCatalogParams, zod.object({
+  "storeId": zod.coerce.number().min(1).max(catalogRelationshipsPathStoreIdMax).multipleOf(catalogRelationshipsPathStoreIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647'),
+  "catalogProductId": zod.coerce.number().min(1).max(catalogRelationshipsPathCatalogProductIdMax).multipleOf(catalogRelationshipsPathCatalogProductIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647')
+}).strict())
+
+export const CatalogRelationshipsResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.number(),
+  "storeId": zod.number(),
+  "sourceCatalogProductId": zod.number(),
+  "targetCatalogProductId": zod.number(),
+  "relationType": zod.string(),
+  "note": zod.string().nullable(),
+  "createdAt": zod.string()
+}))
+})
+
+
+/**
+ * @summary Owner-only catalogRelationshipCreate
+ */
+export const catalogRelationshipCreatePathStoreIdMax = 2147483647;
+export const catalogRelationshipCreatePathStoreIdMultipleOf = 1;
+
+export const catalogRelationshipCreatePathCatalogProductIdMax = 2147483647;
+export const catalogRelationshipCreatePathCatalogProductIdMultipleOf = 1;
+
+
+
+export const CatalogRelationshipCreatePathParams = zod.preprocess(preprocessCatalogParams, zod.object({
+  "storeId": zod.coerce.number().min(1).max(catalogRelationshipCreatePathStoreIdMax).multipleOf(catalogRelationshipCreatePathStoreIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647'),
+  "catalogProductId": zod.coerce.number().min(1).max(catalogRelationshipCreatePathCatalogProductIdMax).multipleOf(catalogRelationshipCreatePathCatalogProductIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647')
+}).strict())
+
+export const catalogRelationshipCreateBodyTargetCatalogProductIdMax = 2147483647;
+export const catalogRelationshipCreateBodyTargetCatalogProductIdMultipleOf = 1;
+
+export const catalogRelationshipCreateBodyNoteMax = 2000;
+
+
+
+export const CatalogRelationshipCreateBody = zod.object({
+  "targetCatalogProductId": zod.number().min(1).max(catalogRelationshipCreateBodyTargetCatalogProductIdMax).multipleOf(catalogRelationshipCreateBodyTargetCatalogProductIdMultipleOf),
+  "relationType": zod.enum(['RELATED', 'POSSIBLE_DUPLICATE']),
+  "note": zod.string().max(catalogRelationshipCreateBodyNoteMax).nullish()
+}).strict()
+
+export const CatalogRelationshipCreateResponse = zod.object({
+  "record": zod.object({
+  "id": zod.number(),
+  "storeId": zod.number(),
+  "sourceCatalogProductId": zod.number(),
+  "targetCatalogProductId": zod.number(),
+  "relationType": zod.string(),
+  "note": zod.string().nullable(),
+  "createdAt": zod.string()
+})
+})
+
+
+/**
+ * @summary Owner-only catalogRelationshipDelete
+ */
+export const catalogRelationshipDeletePathStoreIdMax = 2147483647;
+export const catalogRelationshipDeletePathStoreIdMultipleOf = 1;
+
+export const catalogRelationshipDeletePathCatalogProductIdMax = 2147483647;
+export const catalogRelationshipDeletePathCatalogProductIdMultipleOf = 1;
+
+export const catalogRelationshipDeletePathRelationshipIdMax = 2147483647;
+export const catalogRelationshipDeletePathRelationshipIdMultipleOf = 1;
+
+
+
+export const CatalogRelationshipDeletePathParams = zod.preprocess(preprocessCatalogParams, zod.object({
+  "storeId": zod.coerce.number().min(1).max(catalogRelationshipDeletePathStoreIdMax).multipleOf(catalogRelationshipDeletePathStoreIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647'),
+  "catalogProductId": zod.coerce.number().min(1).max(catalogRelationshipDeletePathCatalogProductIdMax).multipleOf(catalogRelationshipDeletePathCatalogProductIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647'),
+  "relationshipId": zod.coerce.number().min(1).max(catalogRelationshipDeletePathRelationshipIdMax).multipleOf(catalogRelationshipDeletePathRelationshipIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647')
+}).strict())
+
+export const CatalogRelationshipDeleteResponse = zod.object({
+  "deleted": zod.boolean()
+})
+
+
+/**
+ * @summary Owner-only catalogAudit
+ */
+export const catalogAuditPathStoreIdMax = 2147483647;
+export const catalogAuditPathStoreIdMultipleOf = 1;
+
+export const catalogAuditPathCatalogProductIdMax = 2147483647;
+export const catalogAuditPathCatalogProductIdMultipleOf = 1;
+
+
+
+export const CatalogAuditPathParams = zod.preprocess(preprocessCatalogParams, zod.object({
+  "storeId": zod.coerce.number().min(1).max(catalogAuditPathStoreIdMax).multipleOf(catalogAuditPathStoreIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647'),
+  "catalogProductId": zod.coerce.number().min(1).max(catalogAuditPathCatalogProductIdMax).multipleOf(catalogAuditPathCatalogProductIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647')
+}).strict())
+
+export const CatalogAuditResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.number(),
+  "storeId": zod.number(),
+  "catalogProductId": zod.number().nullable(),
+  "actor": zod.string(),
+  "action": zod.string(),
+  "details": zod.record(zod.string(), zod.unknown()),
+  "createdAt": zod.string()
+}))
+})
+
+
+/**
+ * @summary Owner-only catalogSettingsGet
+ */
+export const catalogSettingsGetPathStoreIdMax = 2147483647;
+export const catalogSettingsGetPathStoreIdMultipleOf = 1;
+
+
+
+export const CatalogSettingsGetPathParams = zod.preprocess(preprocessCatalogParams, zod.object({
+  "storeId": zod.coerce.number().min(1).max(catalogSettingsGetPathStoreIdMax).multipleOf(catalogSettingsGetPathStoreIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647')
+}).strict())
+
+export const CatalogSettingsGetResponse = zod.object({
+  "settings": zod.object({
+  "targetMarginRate": zod.string(),
+  "lossProtectionTwd": zod.string(),
+  "purchasePaymentFeeRate": zod.string(),
+  "routePaymentFeeRate": zod.string(),
+  "staleSaleDays": zod.number(),
+  "profitLossMaxTwd": zod.string(),
+  "profitLowMaxTwd": zod.string(),
+  "profitMediumMaxTwd": zod.string(),
+  "settingsVersion": zod.string()
+}),
+  "templates": zod.array(zod.object({
+  "id": zod.number(),
+  "storeId": zod.number(),
+  "name": zod.string(),
+  "code": zod.enum(['GENERAL', 'LIVE', 'PERFUME', 'CUSTOM']),
+  "costAdjustmentMode": zod.enum(['NONE', 'RATE', 'MANUAL']),
+  "costAdjustmentRate": zod.string(),
+  "departmentStoreFeeRate": zod.string(),
+  "defaultShippingProfileId": zod.number().nullable(),
+  "isSystemDefault": zod.boolean(),
+  "isActive": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})),
+  "shippingProfiles": zod.array(zod.object({
+  "id": zod.number(),
+  "storeId": zod.number(),
+  "name": zod.string(),
+  "code": zod.string(),
+  "rateTwd": zod.string(),
+  "basisWeightGrams": zod.string(),
+  "isActive": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})),
+  "initialized": zod.boolean().optional()
+})
+
+
+/**
+ * @summary Owner-only catalogSettingsPatch
+ */
+export const catalogSettingsPatchPathStoreIdMax = 2147483647;
+export const catalogSettingsPatchPathStoreIdMultipleOf = 1;
+
+
+
+export const CatalogSettingsPatchPathParams = zod.preprocess(preprocessCatalogParams, zod.object({
+  "storeId": zod.coerce.number().min(1).max(catalogSettingsPatchPathStoreIdMax).multipleOf(catalogSettingsPatchPathStoreIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647')
+}).strict())
+
+export const catalogSettingsPatchBodyTargetMarginRateMax = 32;
+
+
+export const catalogSettingsPatchBodyTargetMarginRateRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const catalogSettingsPatchBodyLossProtectionTwdMax = 32;
+
+
+export const catalogSettingsPatchBodyLossProtectionTwdRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const catalogSettingsPatchBodyPurchasePaymentFeeRateMax = 32;
+
+
+export const catalogSettingsPatchBodyPurchasePaymentFeeRateRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const catalogSettingsPatchBodyRoutePaymentFeeRateMax = 32;
+
+
+export const catalogSettingsPatchBodyRoutePaymentFeeRateRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const catalogSettingsPatchBodyStaleSaleDaysMax = 2147483647;
+export const catalogSettingsPatchBodyStaleSaleDaysMultipleOf = 1;
+
+export const catalogSettingsPatchBodyProfitLossMaxTwdMax = 33;
+
+
+export const catalogSettingsPatchBodyProfitLossMaxTwdRegExp = new RegExp('^-?\\d{1,18}(?:\\.\\d{1,12})?$');
+export const catalogSettingsPatchBodyProfitLowMaxTwdMax = 33;
+
+
+export const catalogSettingsPatchBodyProfitLowMaxTwdRegExp = new RegExp('^-?\\d{1,18}(?:\\.\\d{1,12})?$');
+export const catalogSettingsPatchBodyProfitMediumMaxTwdMax = 33;
+
+
+export const catalogSettingsPatchBodyProfitMediumMaxTwdRegExp = new RegExp('^-?\\d{1,18}(?:\\.\\d{1,12})?$');
+
+
+export const CatalogSettingsPatchBody = zod.object({
+  "targetMarginRate": zod.string().max(catalogSettingsPatchBodyTargetMarginRateMax).regex(catalogSettingsPatchBodyTargetMarginRateRegExp).optional(),
+  "lossProtectionTwd": zod.string().max(catalogSettingsPatchBodyLossProtectionTwdMax).regex(catalogSettingsPatchBodyLossProtectionTwdRegExp).optional(),
+  "purchasePaymentFeeRate": zod.string().max(catalogSettingsPatchBodyPurchasePaymentFeeRateMax).regex(catalogSettingsPatchBodyPurchasePaymentFeeRateRegExp).optional(),
+  "routePaymentFeeRate": zod.string().max(catalogSettingsPatchBodyRoutePaymentFeeRateMax).regex(catalogSettingsPatchBodyRoutePaymentFeeRateRegExp).optional(),
+  "staleSaleDays": zod.number().min(1).max(catalogSettingsPatchBodyStaleSaleDaysMax).multipleOf(catalogSettingsPatchBodyStaleSaleDaysMultipleOf).optional(),
+  "profitLossMaxTwd": zod.string().max(catalogSettingsPatchBodyProfitLossMaxTwdMax).regex(catalogSettingsPatchBodyProfitLossMaxTwdRegExp).optional(),
+  "profitLowMaxTwd": zod.string().max(catalogSettingsPatchBodyProfitLowMaxTwdMax).regex(catalogSettingsPatchBodyProfitLowMaxTwdRegExp).optional(),
+  "profitMediumMaxTwd": zod.string().max(catalogSettingsPatchBodyProfitMediumMaxTwdMax).regex(catalogSettingsPatchBodyProfitMediumMaxTwdRegExp).optional()
+}).strict()
+
+export const CatalogSettingsPatchResponse = zod.object({
+  "settings": zod.object({
+  "targetMarginRate": zod.string(),
+  "lossProtectionTwd": zod.string(),
+  "purchasePaymentFeeRate": zod.string(),
+  "routePaymentFeeRate": zod.string(),
+  "staleSaleDays": zod.number(),
+  "profitLossMaxTwd": zod.string(),
+  "profitLowMaxTwd": zod.string(),
+  "profitMediumMaxTwd": zod.string(),
+  "settingsVersion": zod.string()
+}),
+  "templates": zod.array(zod.object({
+  "id": zod.number(),
+  "storeId": zod.number(),
+  "name": zod.string(),
+  "code": zod.enum(['GENERAL', 'LIVE', 'PERFUME', 'CUSTOM']),
+  "costAdjustmentMode": zod.enum(['NONE', 'RATE', 'MANUAL']),
+  "costAdjustmentRate": zod.string(),
+  "departmentStoreFeeRate": zod.string(),
+  "defaultShippingProfileId": zod.number().nullable(),
+  "isSystemDefault": zod.boolean(),
+  "isActive": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})),
+  "shippingProfiles": zod.array(zod.object({
+  "id": zod.number(),
+  "storeId": zod.number(),
+  "name": zod.string(),
+  "code": zod.string(),
+  "rateTwd": zod.string(),
+  "basisWeightGrams": zod.string(),
+  "isActive": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})),
+  "initialized": zod.boolean().optional()
+})
+
+
+/**
+ * @summary Owner-only catalogInitialize
+ */
+export const catalogInitializePathStoreIdMax = 2147483647;
+export const catalogInitializePathStoreIdMultipleOf = 1;
+
+
+
+export const CatalogInitializePathParams = zod.preprocess(preprocessCatalogParams, zod.object({
+  "storeId": zod.coerce.number().min(1).max(catalogInitializePathStoreIdMax).multipleOf(catalogInitializePathStoreIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647')
+}).strict())
+
+export const CatalogInitializeBody = zod.object({}).strict()
+
+export const CatalogInitializeResponse = zod.object({
+  "settings": zod.object({
+  "targetMarginRate": zod.string(),
+  "lossProtectionTwd": zod.string(),
+  "purchasePaymentFeeRate": zod.string(),
+  "routePaymentFeeRate": zod.string(),
+  "staleSaleDays": zod.number(),
+  "profitLossMaxTwd": zod.string(),
+  "profitLowMaxTwd": zod.string(),
+  "profitMediumMaxTwd": zod.string(),
+  "settingsVersion": zod.string()
+}),
+  "templates": zod.array(zod.object({
+  "id": zod.number(),
+  "storeId": zod.number(),
+  "name": zod.string(),
+  "code": zod.enum(['GENERAL', 'LIVE', 'PERFUME', 'CUSTOM']),
+  "costAdjustmentMode": zod.enum(['NONE', 'RATE', 'MANUAL']),
+  "costAdjustmentRate": zod.string(),
+  "departmentStoreFeeRate": zod.string(),
+  "defaultShippingProfileId": zod.number().nullable(),
+  "isSystemDefault": zod.boolean(),
+  "isActive": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})),
+  "shippingProfiles": zod.array(zod.object({
+  "id": zod.number(),
+  "storeId": zod.number(),
+  "name": zod.string(),
+  "code": zod.string(),
+  "rateTwd": zod.string(),
+  "basisWeightGrams": zod.string(),
+  "isActive": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})),
+  "initialized": zod.boolean().optional()
+})
+
+
+/**
+ * @summary Owner-only catalogTemplates
+ */
+export const catalogTemplatesPathStoreIdMax = 2147483647;
+export const catalogTemplatesPathStoreIdMultipleOf = 1;
+
+
+
+export const CatalogTemplatesPathParams = zod.preprocess(preprocessCatalogParams, zod.object({
+  "storeId": zod.coerce.number().min(1).max(catalogTemplatesPathStoreIdMax).multipleOf(catalogTemplatesPathStoreIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647')
+}).strict())
+
+export const CatalogTemplatesResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.number(),
+  "storeId": zod.number(),
+  "name": zod.string(),
+  "code": zod.enum(['GENERAL', 'LIVE', 'PERFUME', 'CUSTOM']),
+  "costAdjustmentMode": zod.enum(['NONE', 'RATE', 'MANUAL']),
+  "costAdjustmentRate": zod.string(),
+  "departmentStoreFeeRate": zod.string(),
+  "defaultShippingProfileId": zod.number().nullable(),
+  "isSystemDefault": zod.boolean(),
+  "isActive": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+}))
+})
+
+
+/**
+ * @summary Owner-only catalogTemplateCreate
+ */
+export const catalogTemplateCreatePathStoreIdMax = 2147483647;
+export const catalogTemplateCreatePathStoreIdMultipleOf = 1;
+
+
+
+export const CatalogTemplateCreatePathParams = zod.preprocess(preprocessCatalogParams, zod.object({
+  "storeId": zod.coerce.number().min(1).max(catalogTemplateCreatePathStoreIdMax).multipleOf(catalogTemplateCreatePathStoreIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647')
+}).strict())
+
+export const catalogTemplateCreateBodyNameMax = 256;
+
+export const catalogTemplateCreateBodyCostAdjustmentRateMax = 32;
+
+
+export const catalogTemplateCreateBodyCostAdjustmentRateRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const catalogTemplateCreateBodyDepartmentStoreFeeRateMax = 32;
+
+
+export const catalogTemplateCreateBodyDepartmentStoreFeeRateRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const catalogTemplateCreateBodyDefaultShippingProfileIdMax = 2147483647;
+export const catalogTemplateCreateBodyDefaultShippingProfileIdMultipleOf = 1;
+
+
+
+export const CatalogTemplateCreateBody = zod.object({
+  "code": zod.enum(['GENERAL', 'LIVE', 'PERFUME', 'CUSTOM']),
+  "name": zod.string().max(catalogTemplateCreateBodyNameMax),
+  "costAdjustmentMode": zod.enum(['NONE', 'RATE', 'MANUAL']),
+  "costAdjustmentRate": zod.string().max(catalogTemplateCreateBodyCostAdjustmentRateMax).regex(catalogTemplateCreateBodyCostAdjustmentRateRegExp),
+  "departmentStoreFeeRate": zod.string().max(catalogTemplateCreateBodyDepartmentStoreFeeRateMax).regex(catalogTemplateCreateBodyDepartmentStoreFeeRateRegExp),
+  "defaultShippingProfileId": zod.number().min(1).max(catalogTemplateCreateBodyDefaultShippingProfileIdMax).multipleOf(catalogTemplateCreateBodyDefaultShippingProfileIdMultipleOf).nullish(),
+  "isActive": zod.boolean().optional()
+}).strict()
+
+export const CatalogTemplateCreateResponse = zod.object({
+  "record": zod.object({
+  "id": zod.number(),
+  "storeId": zod.number(),
+  "name": zod.string(),
+  "code": zod.enum(['GENERAL', 'LIVE', 'PERFUME', 'CUSTOM']),
+  "costAdjustmentMode": zod.enum(['NONE', 'RATE', 'MANUAL']),
+  "costAdjustmentRate": zod.string(),
+  "departmentStoreFeeRate": zod.string(),
+  "defaultShippingProfileId": zod.number().nullable(),
+  "isSystemDefault": zod.boolean(),
+  "isActive": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+})
+
+
+/**
+ * @summary Owner-only catalogTemplatePatch
+ */
+export const catalogTemplatePatchPathStoreIdMax = 2147483647;
+export const catalogTemplatePatchPathStoreIdMultipleOf = 1;
+
+export const catalogTemplatePatchPathTemplateIdMax = 2147483647;
+export const catalogTemplatePatchPathTemplateIdMultipleOf = 1;
+
+
+
+export const CatalogTemplatePatchPathParams = zod.preprocess(preprocessCatalogParams, zod.object({
+  "storeId": zod.coerce.number().min(1).max(catalogTemplatePatchPathStoreIdMax).multipleOf(catalogTemplatePatchPathStoreIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647'),
+  "templateId": zod.coerce.number().min(1).max(catalogTemplatePatchPathTemplateIdMax).multipleOf(catalogTemplatePatchPathTemplateIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647')
+}).strict())
+
+export const catalogTemplatePatchBodyNameMax = 256;
+
+export const catalogTemplatePatchBodyCostAdjustmentRateMax = 32;
+
+
+export const catalogTemplatePatchBodyCostAdjustmentRateRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const catalogTemplatePatchBodyDepartmentStoreFeeRateMax = 32;
+
+
+export const catalogTemplatePatchBodyDepartmentStoreFeeRateRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const catalogTemplatePatchBodyDefaultShippingProfileIdMax = 2147483647;
+export const catalogTemplatePatchBodyDefaultShippingProfileIdMultipleOf = 1;
+
+
+
+export const CatalogTemplatePatchBody = zod.object({
+  "name": zod.string().max(catalogTemplatePatchBodyNameMax).optional(),
+  "costAdjustmentMode": zod.enum(['NONE', 'RATE', 'MANUAL']).optional(),
+  "costAdjustmentRate": zod.string().max(catalogTemplatePatchBodyCostAdjustmentRateMax).regex(catalogTemplatePatchBodyCostAdjustmentRateRegExp).optional(),
+  "departmentStoreFeeRate": zod.string().max(catalogTemplatePatchBodyDepartmentStoreFeeRateMax).regex(catalogTemplatePatchBodyDepartmentStoreFeeRateRegExp).optional(),
+  "defaultShippingProfileId": zod.number().min(1).max(catalogTemplatePatchBodyDefaultShippingProfileIdMax).multipleOf(catalogTemplatePatchBodyDefaultShippingProfileIdMultipleOf).nullish(),
+  "isActive": zod.boolean().optional()
+}).strict()
+
+export const CatalogTemplatePatchResponse = zod.object({
+  "record": zod.object({
+  "id": zod.number(),
+  "storeId": zod.number(),
+  "name": zod.string(),
+  "code": zod.enum(['GENERAL', 'LIVE', 'PERFUME', 'CUSTOM']),
+  "costAdjustmentMode": zod.enum(['NONE', 'RATE', 'MANUAL']),
+  "costAdjustmentRate": zod.string(),
+  "departmentStoreFeeRate": zod.string(),
+  "defaultShippingProfileId": zod.number().nullable(),
+  "isSystemDefault": zod.boolean(),
+  "isActive": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+})
+
+
+/**
+ * @summary Owner-only catalogTemplateDelete
+ */
+export const catalogTemplateDeletePathStoreIdMax = 2147483647;
+export const catalogTemplateDeletePathStoreIdMultipleOf = 1;
+
+export const catalogTemplateDeletePathTemplateIdMax = 2147483647;
+export const catalogTemplateDeletePathTemplateIdMultipleOf = 1;
+
+
+
+export const CatalogTemplateDeletePathParams = zod.preprocess(preprocessCatalogParams, zod.object({
+  "storeId": zod.coerce.number().min(1).max(catalogTemplateDeletePathStoreIdMax).multipleOf(catalogTemplateDeletePathStoreIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647'),
+  "templateId": zod.coerce.number().min(1).max(catalogTemplateDeletePathTemplateIdMax).multipleOf(catalogTemplateDeletePathTemplateIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647')
+}).strict())
+
+export const CatalogTemplateDeleteResponse = zod.object({
+  "deleted": zod.boolean()
+})
+
+
+/**
+ * @summary Owner-only catalogShippingProfiles
+ */
+export const catalogShippingProfilesPathStoreIdMax = 2147483647;
+export const catalogShippingProfilesPathStoreIdMultipleOf = 1;
+
+
+
+export const CatalogShippingProfilesPathParams = zod.preprocess(preprocessCatalogParams, zod.object({
+  "storeId": zod.coerce.number().min(1).max(catalogShippingProfilesPathStoreIdMax).multipleOf(catalogShippingProfilesPathStoreIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647')
+}).strict())
+
+export const CatalogShippingProfilesResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.number(),
+  "storeId": zod.number(),
+  "name": zod.string(),
+  "code": zod.string(),
+  "rateTwd": zod.string(),
+  "basisWeightGrams": zod.string(),
+  "isActive": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+}))
+})
+
+
+/**
+ * @summary Owner-only catalogShippingCreate
+ */
+export const catalogShippingCreatePathStoreIdMax = 2147483647;
+export const catalogShippingCreatePathStoreIdMultipleOf = 1;
+
+
+
+export const CatalogShippingCreatePathParams = zod.preprocess(preprocessCatalogParams, zod.object({
+  "storeId": zod.coerce.number().min(1).max(catalogShippingCreatePathStoreIdMax).multipleOf(catalogShippingCreatePathStoreIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647')
+}).strict())
+
+export const catalogShippingCreateBodyCodeRegExp = new RegExp('^[A-Z][A-Z0-9_]{0,63}$');
+export const catalogShippingCreateBodyNameMax = 256;
+
+export const catalogShippingCreateBodyRateTwdMax = 32;
+
+
+export const catalogShippingCreateBodyRateTwdRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const catalogShippingCreateBodyBasisWeightGramsMax = 32;
+
+
+export const catalogShippingCreateBodyBasisWeightGramsRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+
+
+export const CatalogShippingCreateBody = zod.object({
+  "code": zod.string().regex(catalogShippingCreateBodyCodeRegExp),
+  "name": zod.string().max(catalogShippingCreateBodyNameMax),
+  "rateTwd": zod.string().max(catalogShippingCreateBodyRateTwdMax).regex(catalogShippingCreateBodyRateTwdRegExp),
+  "basisWeightGrams": zod.string().max(catalogShippingCreateBodyBasisWeightGramsMax).regex(catalogShippingCreateBodyBasisWeightGramsRegExp),
+  "isActive": zod.boolean().optional()
+}).strict()
+
+export const CatalogShippingCreateResponse = zod.object({
+  "record": zod.object({
+  "id": zod.number(),
+  "storeId": zod.number(),
+  "name": zod.string(),
+  "code": zod.string(),
+  "rateTwd": zod.string(),
+  "basisWeightGrams": zod.string(),
+  "isActive": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+})
+
+
+/**
+ * @summary Owner-only catalogShippingPatch
+ */
+export const catalogShippingPatchPathStoreIdMax = 2147483647;
+export const catalogShippingPatchPathStoreIdMultipleOf = 1;
+
+export const catalogShippingPatchPathShippingProfileIdMax = 2147483647;
+export const catalogShippingPatchPathShippingProfileIdMultipleOf = 1;
+
+
+
+export const CatalogShippingPatchPathParams = zod.preprocess(preprocessCatalogParams, zod.object({
+  "storeId": zod.coerce.number().min(1).max(catalogShippingPatchPathStoreIdMax).multipleOf(catalogShippingPatchPathStoreIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647'),
+  "shippingProfileId": zod.coerce.number().min(1).max(catalogShippingPatchPathShippingProfileIdMax).multipleOf(catalogShippingPatchPathShippingProfileIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647')
+}).strict())
+
+export const catalogShippingPatchBodyNameMax = 256;
+
+export const catalogShippingPatchBodyRateTwdMax = 32;
+
+
+export const catalogShippingPatchBodyRateTwdRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+export const catalogShippingPatchBodyBasisWeightGramsMax = 32;
+
+
+export const catalogShippingPatchBodyBasisWeightGramsRegExp = new RegExp('^\\d{1,18}(?:\\.\\d{1,12})?$');
+
+
+export const CatalogShippingPatchBody = zod.object({
+  "name": zod.string().max(catalogShippingPatchBodyNameMax).optional(),
+  "rateTwd": zod.string().max(catalogShippingPatchBodyRateTwdMax).regex(catalogShippingPatchBodyRateTwdRegExp).optional(),
+  "basisWeightGrams": zod.string().max(catalogShippingPatchBodyBasisWeightGramsMax).regex(catalogShippingPatchBodyBasisWeightGramsRegExp).optional(),
+  "isActive": zod.boolean().optional()
+}).strict()
+
+export const CatalogShippingPatchResponse = zod.object({
+  "record": zod.object({
+  "id": zod.number(),
+  "storeId": zod.number(),
+  "name": zod.string(),
+  "code": zod.string(),
+  "rateTwd": zod.string(),
+  "basisWeightGrams": zod.string(),
+  "isActive": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+})
+
+
+/**
+ * @summary Owner-only catalogShippingDelete
+ */
+export const catalogShippingDeletePathStoreIdMax = 2147483647;
+export const catalogShippingDeletePathStoreIdMultipleOf = 1;
+
+export const catalogShippingDeletePathShippingProfileIdMax = 2147483647;
+export const catalogShippingDeletePathShippingProfileIdMultipleOf = 1;
+
+
+
+export const CatalogShippingDeletePathParams = zod.preprocess(preprocessCatalogParams, zod.object({
+  "storeId": zod.coerce.number().min(1).max(catalogShippingDeletePathStoreIdMax).multipleOf(catalogShippingDeletePathStoreIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647'),
+  "shippingProfileId": zod.coerce.number().min(1).max(catalogShippingDeletePathShippingProfileIdMax).multipleOf(catalogShippingDeletePathShippingProfileIdMultipleOf).describe('Canonical positive decimal integer 1..2147483647')
+}).strict())
+
+export const CatalogShippingDeleteResponse = zod.object({
+  "deleted": zod.boolean()
+})
+
+
+/**
+ * @summary Owner-only exact pricing preview; no database writes
+ */
+export const previewPricingV2PathStoreIdMax = 2147483647;
+export const previewPricingV2PathStoreIdMultipleOf = 1;
+
+
+
+export const PreviewPricingV2Params = zod.preprocess(preprocessPreviewPricingParams, zod.object({
+  "storeId": zod.coerce.number().min(1).max(previewPricingV2PathStoreIdMax).multipleOf(previewPricingV2PathStoreIdMultipleOf)
+}).strict())
+
+export const previewPricingV2BodyTemplateIdMax = 2147483647;
+export const previewPricingV2BodyTemplateIdMultipleOf = 1;
+
+export const previewPricingV2BodyShippingProfileIdMax = 2147483647;
+export const previewPricingV2BodyShippingProfileIdMultipleOf = 1;
+
+export const previewPricingV2BodyTripRouteIdMax = 2147483647;
+export const previewPricingV2BodyTripRouteIdMultipleOf = 1;
+
+export const previewPricingV2BodyOriginalPriceJpyMax = 128;
+
+
+export const previewPricingV2BodyOriginalPriceJpyRegExp = new RegExp('^[+-]?\\d+(?:\\.\\d+)?$');
+export const previewPricingV2BodyEffectiveCostJpyMax = 128;
+
+
+export const previewPricingV2BodyEffectiveCostJpyRegExp = new RegExp('^[+-]?\\d+(?:\\.\\d+)?$');
+export const previewPricingV2BodyWeightGramsMax = 128;
+
+
+export const previewPricingV2BodyWeightGramsRegExp = new RegExp('^[+-]?\\d+(?:\\.\\d+)?$');
+export const previewPricingV2BodyExchangeRateMax = 128;
+
+
+export const previewPricingV2BodyExchangeRateRegExp = new RegExp('^[+-]?\\d+(?:\\.\\d+)?$');
+export const previewPricingV2BodyGeneralFinalPriceTwdMax = 128;
+
+
+export const previewPricingV2BodyGeneralFinalPriceTwdRegExp = new RegExp('^[+-]?\\d+(?:\\.\\d+)?$');
+export const previewPricingV2BodyVipFinalPriceTwdMax = 128;
+
+
+export const previewPricingV2BodyVipFinalPriceTwdRegExp = new RegExp('^[+-]?\\d+(?:\\.\\d+)?$');
+export const previewPricingV2BodyCostAdjustmentRateMax = 128;
+
+
+export const previewPricingV2BodyCostAdjustmentRateRegExp = new RegExp('^[+-]?\\d+(?:\\.\\d+)?$');
+export const previewPricingV2BodyDepartmentStoreFeeRateMax = 128;
+
+
+export const previewPricingV2BodyDepartmentStoreFeeRateRegExp = new RegExp('^[+-]?\\d+(?:\\.\\d+)?$');
+export const previewPricingV2BodyPurchasePaymentFeeRateMax = 128;
+
+
+export const previewPricingV2BodyPurchasePaymentFeeRateRegExp = new RegExp('^[+-]?\\d+(?:\\.\\d+)?$');
+export const previewPricingV2BodyRoutePaymentFeeRateMax = 128;
+
+
+export const previewPricingV2BodyRoutePaymentFeeRateRegExp = new RegExp('^[+-]?\\d+(?:\\.\\d+)?$');
+export const previewPricingV2BodyLossProtectionTwdMax = 128;
+
+
+export const previewPricingV2BodyLossProtectionTwdRegExp = new RegExp('^[+-]?\\d+(?:\\.\\d+)?$');
+export const previewPricingV2BodyTargetMarginRateMax = 128;
+
+
+export const previewPricingV2BodyTargetMarginRateRegExp = new RegExp('^[+-]?\\d+(?:\\.\\d+)?$');
+export const previewPricingV2BodyThresholdsLossMax = 128;
+
+
+export const previewPricingV2BodyThresholdsLossRegExp = new RegExp('^[+-]?\\d+(?:\\.\\d+)?$');
+export const previewPricingV2BodyThresholdsLowMax = 128;
+
+
+export const previewPricingV2BodyThresholdsLowRegExp = new RegExp('^[+-]?\\d+(?:\\.\\d+)?$');
+export const previewPricingV2BodyThresholdsMediumMax = 128;
+
+
+export const previewPricingV2BodyThresholdsMediumRegExp = new RegExp('^[+-]?\\d+(?:\\.\\d+)?$');
+
+
+export const PreviewPricingV2Body = zod.object({
+  "templateId": zod.number().min(1).max(previewPricingV2BodyTemplateIdMax).multipleOf(previewPricingV2BodyTemplateIdMultipleOf).optional(),
+  "shippingProfileId": zod.number().min(1).max(previewPricingV2BodyShippingProfileIdMax).multipleOf(previewPricingV2BodyShippingProfileIdMultipleOf).optional(),
+  "tripRouteId": zod.number().min(1).max(previewPricingV2BodyTripRouteIdMax).multipleOf(previewPricingV2BodyTripRouteIdMultipleOf).optional(),
+  "originalPriceJpy": zod.string().max(previewPricingV2BodyOriginalPriceJpyMax).regex(previewPricingV2BodyOriginalPriceJpyRegExp).nullish(),
+  "effectiveCostJpy": zod.string().max(previewPricingV2BodyEffectiveCostJpyMax).regex(previewPricingV2BodyEffectiveCostJpyRegExp).nullish(),
+  "weightGrams": zod.string().max(previewPricingV2BodyWeightGramsMax).regex(previewPricingV2BodyWeightGramsRegExp).nullish(),
+  "exchangeRate": zod.string().max(previewPricingV2BodyExchangeRateMax).regex(previewPricingV2BodyExchangeRateRegExp).nullish(),
+  "generalFinalPriceTwd": zod.string().max(previewPricingV2BodyGeneralFinalPriceTwdMax).regex(previewPricingV2BodyGeneralFinalPriceTwdRegExp).nullish(),
+  "vipFinalPriceTwd": zod.string().max(previewPricingV2BodyVipFinalPriceTwdMax).regex(previewPricingV2BodyVipFinalPriceTwdRegExp).nullish(),
+  "costAdjustmentRate": zod.string().max(previewPricingV2BodyCostAdjustmentRateMax).regex(previewPricingV2BodyCostAdjustmentRateRegExp).optional(),
+  "departmentStoreFeeRate": zod.string().max(previewPricingV2BodyDepartmentStoreFeeRateMax).regex(previewPricingV2BodyDepartmentStoreFeeRateRegExp).optional(),
+  "purchasePaymentFeeRate": zod.string().max(previewPricingV2BodyPurchasePaymentFeeRateMax).regex(previewPricingV2BodyPurchasePaymentFeeRateRegExp).optional(),
+  "routePaymentFeeRate": zod.string().max(previewPricingV2BodyRoutePaymentFeeRateMax).regex(previewPricingV2BodyRoutePaymentFeeRateRegExp).optional(),
+  "lossProtectionTwd": zod.string().max(previewPricingV2BodyLossProtectionTwdMax).regex(previewPricingV2BodyLossProtectionTwdRegExp).optional(),
+  "targetMarginRate": zod.string().max(previewPricingV2BodyTargetMarginRateMax).regex(previewPricingV2BodyTargetMarginRateRegExp).optional(),
+  "templateCode": zod.enum(['GENERAL', 'LIVE', 'PERFUME', 'CUSTOM']).optional(),
+  "isTransportCostExempt": zod.boolean().optional(),
+  "thresholds": zod.object({
+  "loss": zod.string().max(previewPricingV2BodyThresholdsLossMax).regex(previewPricingV2BodyThresholdsLossRegExp),
+  "low": zod.string().max(previewPricingV2BodyThresholdsLowMax).regex(previewPricingV2BodyThresholdsLowRegExp),
+  "medium": zod.string().max(previewPricingV2BodyThresholdsMediumMax).regex(previewPricingV2BodyThresholdsMediumRegExp)
+}).strict().optional()
+}).strict()
+
+export const PreviewPricingV2Response = zod.object({
+  "status": zod.enum(['READY', 'PENDING_CONFIRMATION']),
+  "reasons": zod.array(zod.string()),
+  "formulaVersion": zod.string(),
+  "settingsVersion": zod.string(),
+  "templateId": zod.number().nullish(),
+  "shippingProfile": zod.record(zod.string(), zod.unknown()).nullish(),
+  "routeMetadata": zod.record(zod.string(), zod.unknown()),
+  "amounts": zod.record(zod.string(), zod.string().nullable()),
+  "display": zod.record(zod.string(), zod.string().nullable()),
+  "general": zod.object({
+  "status": zod.enum(['READY', 'PENDING_CONFIRMATION']),
+  "reasons": zod.array(zod.string()),
+  "profitLevel": zod.string().nullable(),
+  "values": zod.record(zod.string(), zod.string().nullable()),
+  "display": zod.record(zod.string(), zod.string().nullable())
+}),
+  "vip": zod.object({
+  "status": zod.enum(['READY', 'PENDING_CONFIRMATION']),
+  "reasons": zod.array(zod.string()),
+  "profitLevel": zod.string().nullable(),
+  "values": zod.record(zod.string(), zod.string().nullable()),
+  "display": zod.record(zod.string(), zod.string().nullable())
+})
+})
+
 
 /**
  * @summary Health check
@@ -91,6 +4453,12 @@ export const ListProductsParams = zod.object({
 })
 
 export const ListProductsResponseItem = zod.object({
+  "catalogProductId": zod.number().nullish(),
+  "weightGrams": zod.string().nullish(),
+  "originalPriceJpy": zod.string().nullish(),
+  "effectiveCostJpy": zod.string().nullish(),
+  "pricingTemplateId": zod.number().nullish(),
+  "internationalShippingProfileId": zod.number().nullish(),
   "id": zod.number(),
   "storeId": zod.number(),
   "name": zod.string(),
@@ -165,6 +4533,12 @@ export const GetProductParams = zod.object({
 })
 
 export const GetProductResponse = zod.object({
+  "catalogProductId": zod.number().nullish(),
+  "weightGrams": zod.string().nullish(),
+  "originalPriceJpy": zod.string().nullish(),
+  "effectiveCostJpy": zod.string().nullish(),
+  "pricingTemplateId": zod.number().nullish(),
+  "internationalShippingProfileId": zod.number().nullish(),
   "id": zod.number(),
   "storeId": zod.number(),
   "name": zod.string(),
@@ -231,6 +4605,12 @@ export const UpdateProductBody = zod.object({
 })
 
 export const UpdateProductResponse = zod.object({
+  "catalogProductId": zod.number().nullish(),
+  "weightGrams": zod.string().nullish(),
+  "originalPriceJpy": zod.string().nullish(),
+  "effectiveCostJpy": zod.string().nullish(),
+  "pricingTemplateId": zod.number().nullish(),
+  "internationalShippingProfileId": zod.number().nullish(),
   "id": zod.number(),
   "storeId": zod.number(),
   "name": zod.string(),
@@ -815,7 +5195,8 @@ export const listOrdersResponseRemainingAmountRegExp = new RegExp('^-?\\d+(?:\\.
 
 export const ListOrdersResponseItem = zod.object({
   "id": zod.number(),
-  "productId": zod.number(),
+  "productId": zod.number().nullable(),
+  "orderItems": zod.array(zod.record(zod.string(), zod.unknown())).optional(),
   "storeId": zod.number(),
   "productName": zod.string().nullish(),
   "publicToken": zod.string(),
@@ -1062,7 +5443,8 @@ export const updateOrderResponseRemainingAmountRegExp = new RegExp('^-?\\d+(?:\\
 
 export const UpdateOrderResponse = zod.object({
   "id": zod.number(),
-  "productId": zod.number(),
+  "productId": zod.number().nullable(),
+  "orderItems": zod.array(zod.record(zod.string(), zod.unknown())).optional(),
   "storeId": zod.number(),
   "productName": zod.string().nullish(),
   "publicToken": zod.string(),
@@ -1125,7 +5507,8 @@ export const updateOrderStatusResponseRemainingAmountRegExp = new RegExp('^-?\\d
 
 export const UpdateOrderStatusResponse = zod.object({
   "id": zod.number(),
-  "productId": zod.number(),
+  "productId": zod.number().nullable(),
+  "orderItems": zod.array(zod.record(zod.string(), zod.unknown())).optional(),
   "storeId": zod.number(),
   "productName": zod.string().nullish(),
   "publicToken": zod.string(),

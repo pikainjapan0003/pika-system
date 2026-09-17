@@ -138,6 +138,8 @@ export interface TransportCostOverrides {
 }
 
 export interface TransportCostInput {
+  /** Optional v2 rate; omitted v1 callers retain the original 1.5%. */
+  paymentFeeRate?: DecimalInput;
   estQty: QuantityInput;
   exchangeRate: DecimalInput;
   hepTotalJpy?: DecimalInput;
@@ -324,7 +326,7 @@ export function calculateTransportCost(
       .add(trainJpy)
       .add(fuelJpy)
       .add(parkingJpy)
-      .multiply(ExactDecimal.from("0.015")),
+      .multiply(parseOptionalNonNegativeDecimal(input.paymentFeeRate === undefined ? "0.015" : input.paymentFeeRate, "paymentFeeRate")),
     input.overrides?.fee1_5Pct,
   );
   const totalJpy = applyOverride(

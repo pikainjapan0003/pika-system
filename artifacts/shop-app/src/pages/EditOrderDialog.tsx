@@ -101,7 +101,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { Sheet, SheetContent, SheetClose } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetClose, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 
 const SHIPPING_CARD_OPTIONS: Array<{
   value: string;
@@ -335,10 +335,13 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
   }, [order]);
 
   const isPending = updateOrder.isPending;
+  const formalItems=(order as any)?.orderItems as any[]|undefined;
+  const displayItems=formalItems?.length?formalItems.map(i=>({productName:i.productNameSnapshot,quantity:i.quantity,unitPrice:Number(i.unitPriceTwd)})):Array.isArray((order as any)?.items)?(order as any).items:[];
+  const multipleItems=displayItems.length>1;
 
   // 金額預覽 / 驗證共用的當前輸入值（與後端公式保持一致）
   const moneyPreview = calculateMoneyPreview({
-    lines: [{ unitPrice: order?.unitPrice ?? 0, quantity }],
+    lines: multipleItems?displayItems.map((i:any)=>({unitPrice:i.unitPrice,quantity:i.quantity})):[{ unitPrice: order?.unitPrice ?? 0, quantity }],
     shippingFee:
       shippingFeeStr.trim() === "" ? (order?.shippingFee ?? 0) : shippingFeeStr,
     discountAmount: discountAmountStr,
@@ -517,7 +520,7 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
         data: {
           buyerName: buyerName.trim(),
           buyerPhone: buyerPhone.trim(),
-          quantity,
+          ...(!multipleItems?{quantity}:{}),
           pickupMethod: pickupMethod.trim(),
           notes: notes.trim() || null,
           specValues: order.specValues as Record<string, unknown>,
@@ -595,10 +598,10 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
       >
         <div className="flex items-center px-5 pt-4 pb-3 border-b border-border shrink-0 pr-12">
           <div>
-            <h2 className="text-base font-bold text-foreground">編輯訂單</h2>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
+            <SheetTitle className="text-base font-bold text-foreground">編輯訂單</SheetTitle>
+            <SheetDescription className="text-[11px] text-muted-foreground mt-0.5">
               訂單 #{order.id}
-            </p>
+            </SheetDescription>
           </div>
         </div>
 
@@ -703,6 +706,7 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
           {/* 數量 */}
           <div className="space-y-1.5">
             <SectionTitle>數量</SectionTitle>
+            {displayItems.length>0&&<ul className="space-y-2 text-sm">{displayItems.map((item:any,index:number)=><li key={formalItems?.[index]?.id??index}>{item.productName} · {item.quantity} 件 × NT$ {item.unitPrice}</li>)}</ul>}
             <FormSection>
               <div>
                 <FieldLabel icon={Hash}>數量 *</FieldLabel>
@@ -712,6 +716,7 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
                   step={1}
                   className={INPUT}
                   value={quantity}
+                  disabled={multipleItems}
                   onChange={(e) => {
                     const v = parseInt(e.target.value, 10);
                     setQuantity(isNaN(v) ? 1 : Math.max(1, v));
@@ -1522,7 +1527,7 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
               <div className="bg-primary/5 rounded-xl px-3 py-2 flex items-center justify-between">
                 <span className="text-xs text-muted-foreground">預估總額</span>
                 <span className="text-sm font-semibold text-primary">
-                  NT${moneyPreview.unitPrice} × {quantity} ={" "}
+                  {multipleItems?'各品項小計合計':`NT$${moneyPreview.unitPrice} × ${quantity} = `}{" "}
                   <strong>NT${moneyPreview.itemSubtotal}</strong>
                 </span>
               </div>
@@ -1627,7 +1632,7 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
             type="button"
             onClick={handleSubmit}
             disabled={isPending}
-            className="w-full h-10 rounded-xl bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-60 transition-opacity"
+            className="w-full min-h-11 min-w-11 rounded-xl bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-60 transition-opacity"
           >
             {isPending ? "儲存中…" : "儲存變更"}
           </button>
@@ -1635,7 +1640,7 @@ export function EditOrderDialog({ order, storeId, open, onClose }: Props) {
             <button
               type="button"
               disabled={isPending}
-              className="w-full h-10 rounded-xl border border-border text-sm font-medium text-muted-foreground disabled:opacity-50"
+              className="w-full min-h-11 min-w-11 rounded-xl border border-border text-sm font-medium text-muted-foreground disabled:opacity-50"
             >
               取消
             </button>

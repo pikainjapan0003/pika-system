@@ -22,6 +22,12 @@ import fixedCostsRouter from "./fixedCosts.ts";
 import operatingInputsRouter from "./operatingInputs.ts";
 import fixedCostSummaryRouter from "./fixedCostSummary.ts";
 import chartDataRouter from "./chartData.ts";
+import pricingV2Router from "./pricingV2.ts";
+import catalogProductsRouter from "./catalogProducts.ts";
+import catalogListingsRouter from "./catalogListings.ts";
+import catalogPricingSettingsRouter from "./catalogPricingSettings.ts";
+import catalogOrdersRouter from "./catalogOrders.ts";
+import reviewedImportsRouter from "./reviewedImports.ts";
 
 const router: IRouter = Router();
 
@@ -47,6 +53,12 @@ router.use(fixedCostsRouter);
 router.use(operatingInputsRouter);
 router.use(fixedCostSummaryRouter);
 router.use(chartDataRouter);
+router.use(pricingV2Router);
+router.use(catalogProductsRouter);
+router.use(reviewedImportsRouter);
+router.use(catalogOrdersRouter);
+router.use(catalogListingsRouter);
+router.use(catalogPricingSettingsRouter);
 if (process.env.NODE_ENV !== "production") {
   router.use(devHandoffRouter);
 }

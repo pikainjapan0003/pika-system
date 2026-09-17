@@ -12,6 +12,8 @@ import {
   Product,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useListingEditor } from "@/components/product-database/ListingEditor";
+import { focusListingControl, listingErrorFields, useListingRequestScope } from "@/components/product-database/listingFormState";
 import {
   ProductShippingTemperatureField,
   ProductShippingTemperatureClass,
@@ -43,6 +45,8 @@ export default function ProductFormPage({ productId }: Props) {
 
   const { data: store } = useGetMyStore();
   const storeId = store?.id;
+  // Manual image work belongs to the form, not its currently selected Catalog.
+  const uploadScope = useListingRequestScope(`${storeId}:${productId}`);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: existingProduct } = useGetProduct(storeId!, productId!, {
@@ -70,7 +74,21 @@ export default function ProductFormPage({ productId }: Props) {
   const [inventory, setInventory] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [specs, setSpecs] = useState<Spec[]>([]);
-  const [error, setError] = useState("");
+  const [error, setErrorState] = useState("");
+  const [errorFields, setErrorFields] = useState<string[]>([]);
+  const [errorRevision, setErrorRevision] = useState(0);
+  const formRef = useRef<HTMLFormElement>(null);
+  const keyboardNavigation = useRef(false);
+  const errorRef = useRef<HTMLDivElement>(null);
+  const hydratedProduct = useRef("");
+  function setError(message: string, fields = ["預覽目前輸入", "一般售價", "實際計價成本 JPY"]) {
+    setErrorState(message);
+    setErrorFields(fields);
+    if (message) setErrorRevision(value => value + 1);
+  }
+  useEffect(() => {
+    if (errorRevision) focusListingControl(errorRef.current, formRef.current);
+  }, [errorRevision]);
   const [createdProduct, setCreatedProduct] = useState<Product | null>(null);
   const [copied, setCopied] = useState(false);
   const [internalNote, setInternalNote] = useState("");
@@ -85,8 +103,11 @@ export default function ProductFormPage({ productId }: Props) {
   const [costJpy, setCostJpy] = useState("");
   const [isTransportCostExempt, setIsTransportCostExempt] = useState(false);
   const [tripRouteId, setTripRouteId] = useState<number | null>(null);
+  const listing = useListingEditor(storeId, productId, existingProduct, trips ?? [],
+    {name,description,price,vipPrice,wholesalePrice,partnerPrice,weightKg,costJpy,imageUrl,internalNote,categoryId,tripRouteId,isTransportCostExempt},
+    {setName,setDescription,setPrice,setVipPrice,setWholesalePrice,setPartnerPrice,setWeightKg,setCostJpy,setImageUrl,setInternalNote,setCategoryId,setTripRouteId,setIsTransportCostExempt},setError);
 
-  // Order deadline (UI placeholder — not sent to API)
+  // Order deadline is persisted by both manual and linked listing flows.
   const [deadlineEnabled, setDeadlineEnabled] = useState(false);
   const [deadlinePreset, setDeadlinePreset] = useState<DeadlinePreset | null>(
     null,
@@ -150,17 +171,32 @@ export default function ProductFormPage({ productId }: Props) {
   }, [showTimeSheet]);
 
   useEffect(() => {
-    if (existingProduct) {
+    hydratedProduct.current = "";
+    setInventory(""); setSpecs([]); setSkuCode(""); setStorageTemp(null); setStorageTempClass(null); setShelfLife("");
+    setDeadlineEnabled(false); setDeadlinePreset(null); setDeadlineDate(""); setDeadlineTime("23:59");
+    setShowCategorySheet(false); setShowDateSheet(false); setShowTimeSheet(false);
+    setShowUrlInput(false);setPendingDate(null);setPendingAmPm("pm");setPendingHour(11);setPendingMinute(59);
+    setCreatedProduct(null);setCopied(false);keyboardNavigation.current=false;
+    createProduct.reset();updateProduct.reset();
+    if(previewObjectUrlRef.current){URL.revokeObjectURL(previewObjectUrlRef.current);previewObjectUrlRef.current=null;}
+    for(const timer of [ampmScrollTimer,hourScrollTimer,minuteScrollTimer]){if(timer.current)clearTimeout(timer.current);timer.current=null;}
+    setLocalPreviewUrl(null); setUploadStatus("idle"); setUploadError(""); setError("");
+  }, [storeId, productId]);
+
+  useEffect(() => {
+    const key = `${storeId}:${productId}`;
+    if (existingProduct && existingProduct.storeId === storeId && hydratedProduct.current !== key) {
+      hydratedProduct.current = key;
       const tierProduct = existingProduct as typeof existingProduct & {
         vipPrice?: number | string | null;
         wholesalePrice?: number | string | null;
         partnerPrice?: number | string | null;
         storageTempClass?: ProductShippingTemperatureClass;
       };
-      setName(existingProduct.name);
+      if (!listing.isDirty("name")) setName(existingProduct.name);
       setDescription(existingProduct.description ?? "");
-      setPrice(String(existingProduct.price));
-      setVipPrice(
+      if (!listing.isDirty("price")) setPrice(String(existingProduct.price));
+      if (!listing.isDirty("vipPrice")) setVipPrice(
         tierProduct.vipPrice != null ? String(tierProduct.vipPrice) : "",
       );
       setWholesalePrice(
@@ -178,24 +214,24 @@ export default function ProductFormPage({ productId }: Props) {
           ? String(existingProduct.inventory)
           : "",
       );
-      setImageUrl(existingProduct.imageUrl ?? "");
+      if (!listing.isDirty("imageUrl")) setImageUrl(existingProduct.imageUrl ?? "");
       setSpecs((existingProduct.specs as Spec[]) ?? []);
-      setInternalNote(existingProduct.internalNote ?? "");
+      if (!listing.isDirty("internalNote")) setInternalNote(existingProduct.internalNote ?? "");
       setSkuCode(existingProduct.skuCode ?? "");
       setStorageTemp((existingProduct.storageTemp as StorageTemp) ?? null);
       setStorageTempClass(tierProduct.storageTempClass ?? null);
       setShelfLife(existingProduct.shelfLife ?? "");
-      setWeightKg(
+      if (!listing.isDirty("weightKg")) setWeightKg(
         existingProduct.weightKg != null
           ? String(existingProduct.weightKg * 1000)
           : "",
       );
-      setCategoryId(existingProduct.categoryId ?? null);
-      setCostJpy(
+      if (!listing.isDirty("categoryId")) setCategoryId(existingProduct.categoryId ?? null);
+      if (!listing.isDirty("costJpy")) setCostJpy(
         existingProduct.costJpy != null ? String(existingProduct.costJpy) : "",
       );
-      setIsTransportCostExempt(existingProduct.isTransportCostExempt ?? false);
-      setTripRouteId(existingProduct.tripRouteId ?? null);
+      if(!listing.isDirty("isTransportCostExempt"))setIsTransportCostExempt(existingProduct.isTransportCostExempt ?? false);
+      if(!listing.isDirty("tripRouteId"))setTripRouteId(existingProduct.tripRouteId ?? null);
       if (existingProduct.orderDeadlineAt) {
         const dt = new Date(existingProduct.orderDeadlineAt);
         if (!isNaN(dt.getTime())) {
@@ -210,7 +246,7 @@ export default function ProductFormPage({ productId }: Props) {
         }
       }
     }
-  }, [existingProduct]);
+  }, [existingProduct, storeId, productId]);
 
   const addSpec = () => setSpecs([...specs, { name: "", values: [""] }]);
   const removeSpec = (i: number) =>
@@ -243,6 +279,7 @@ export default function ProductFormPage({ productId }: Props) {
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const requestContext=uploadScope.begin("image");
     const file = e.target.files?.[0];
     // Reset so same file can be re-selected
     e.target.value = "";
@@ -262,6 +299,7 @@ export default function ProductFormPage({ productId }: Props) {
     }
 
     // Show local preview immediately
+    listing.markDirty("imageUrl");
     if (previewObjectUrlRef.current)
       URL.revokeObjectURL(previewObjectUrlRef.current);
     const preview = URL.createObjectURL(file);
@@ -280,6 +318,7 @@ export default function ProductFormPage({ productId }: Props) {
       const formData = new FormData();
       formData.append("image", file);
       const token = await getToken();
+      if(!uploadScope.current(requestContext))return;
       const res = await fetch(`/api/stores/${storeId}/products/image`, {
         method: "POST",
         body: formData,
@@ -287,6 +326,7 @@ export default function ProductFormPage({ productId }: Props) {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
 
+      if(!uploadScope.current(requestContext))return;
       if (res.status === 401 || res.status === 403) {
         clearLocalPreview();
         setUploadStatus("error");
@@ -301,6 +341,7 @@ export default function ProductFormPage({ productId }: Props) {
       }
       if (!res.ok) {
         const body = (await res.json().catch(() => ({}))) as { error?: string };
+        if(!uploadScope.current(requestContext))return;
         clearLocalPreview();
         setUploadStatus("error");
         setUploadError(body.error ?? "圖片上傳失敗，請稍後再試");
@@ -308,6 +349,7 @@ export default function ProductFormPage({ productId }: Props) {
       }
 
       const data = (await res.json()) as { imageUrl?: string };
+      if(!uploadScope.current(requestContext))return;
       if (!data.imageUrl) {
         clearLocalPreview();
         setUploadStatus("error");
@@ -315,9 +357,11 @@ export default function ProductFormPage({ productId }: Props) {
         return;
       }
 
+      listing.markDirty("imageUrl");
       setImageUrl(data.imageUrl);
       setUploadStatus("done");
     } catch {
+      if(!uploadScope.current(requestContext))return;
       clearLocalPreview();
       setUploadStatus("error");
       setUploadError("圖片上傳失敗，請稍後再試");
@@ -325,6 +369,7 @@ export default function ProductFormPage({ productId }: Props) {
   };
 
   const handleRemoveImage = () => {
+    listing.markDirty("imageUrl");
     clearLocalPreview();
     setImageUrl("");
     setUploadStatus("idle");
@@ -334,23 +379,24 @@ export default function ProductFormPage({ productId }: Props) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const requestContext=listing.captureContext();
     setError("");
 
     if (!name.trim() || !price) {
-      setError("請填寫商品名稱和售價");
+      setError("請填寫商品名稱和售價", [...(!name.trim() ? ["商品名稱"] : []), ...(!price ? ["一般售價"] : [])]);
       return;
     }
 
     const priceNum = parseFloat(price);
-    if (isNaN(priceNum) || priceNum < 0) {
-      setError("請輸入有效的售價");
+    if (isNaN(priceNum) || priceNum < 0 || !/^\d{1,8}(?:\.\d{1,2})?$/.test(price.trim())) {
+      setError("請輸入有效的售價", ["一般售價"]);
       return;
     }
 
     const normalizeTierPrice = (value: string): string | null => {
       const trimmed = value.trim();
       if (!trimmed) return null;
-      if (!/^\d+(?:\.\d+)?$/.test(trimmed))
+      if (!/^\d{1,8}(?:\.\d{1,2})?$/.test(trimmed))
         throw new TypeError("請輸入有效的分級售價");
       return trimmed;
     };
@@ -366,7 +412,8 @@ export default function ProductFormPage({ productId }: Props) {
         partnerPrice: normalizeTierPrice(partnerPrice),
       };
     } catch (caught) {
-      setError((caught as Error).message);
+      const invalidTier = [["VIP 售價",vipPrice],["批發售價",wholesalePrice],["夥伴售價",partnerPrice]].find(([,value])=>value.trim()&&!/^\d{1,8}(?:\.\d{1,2})?$/.test(value.trim()));
+      setError((caught as Error).message, [invalidTier?.[0] ?? "VIP 售價"]);
       return;
     }
 
@@ -397,9 +444,26 @@ export default function ProductFormPage({ productId }: Props) {
       return isNaN(dt.getTime()) ? null : dt.toISOString();
     };
 
+    if (listing.catalogId || listing.deepPending) {
+      try {
+        const result = await listing.save({
+          specs:specs.filter(s=>s.name&&s.values.length>0),
+          inventory:inventory?Number(inventory):null,
+          skuCode:skuCode.trim()||null,storageTemp,storageTempClass,shelfLife:shelfLife.trim()||null,
+          orderDeadlineAt:computeOrderDeadlineAt(),
+        });
+        if(!result||!listing.isCurrentContext(requestContext))return;
+        qc.invalidateQueries({queryKey:getListProductsQueryKey(storeId!)});
+        qc.invalidateQueries({queryKey:["product-database",storeId]});
+        if(isEdit)setLocation("/products");
+        else {const p=result.product as any;setCreatedProduct({...p,price:Number(p.price)} as Product);}
+      }catch(caught:any){if(listing.isCurrentContext(requestContext))setError(caught?.data?.error??caught?.message??"儲存失敗",listingErrorFields(caught));}
+      return;
+    }
+
     const weightKgNum = weightKg.trim() ? parseFloat(weightKg) / 1000 : null;
     if (weightKg.trim() && (weightKgNum === null || isNaN(weightKgNum))) {
-      setError("請輸入有效的重量");
+      setError("請輸入有效的重量", ["重量 g"]);
       return;
     }
 
@@ -408,7 +472,7 @@ export default function ProductFormPage({ productId }: Props) {
       costJpy.trim() &&
       (costJpyNum === null || isNaN(costJpyNum) || costJpyNum < 0)
     ) {
-      setError("請輸入有效的商品日圓成本");
+      setError("請輸入有效的商品日圓成本", ["實際計價成本 JPY"]);
       return;
     }
 
@@ -443,6 +507,7 @@ export default function ProductFormPage({ productId }: Props) {
           productId: productId!,
           data: data as any,
         });
+        if(!listing.isCurrentContext(requestContext))return;
         qc.invalidateQueries({ queryKey: getListProductsQueryKey(storeId!) });
         setLocation("/products");
       } else {
@@ -468,12 +533,14 @@ export default function ProductFormPage({ productId }: Props) {
           storeId: storeId!,
           data: data as any,
         });
+        if(!listing.isCurrentContext(requestContext))return;
         qc.invalidateQueries({ queryKey: getListProductsQueryKey(storeId!) });
         setCreatedProduct(result);
       }
     } catch (err: unknown) {
+      if(!listing.isCurrentContext(requestContext))return;
       const apiErr = err as { data?: { error?: string } };
-      setError(apiErr?.data?.error || "操作失敗，請稍後再試");
+      setError(apiErr?.data?.error || "操作失敗，請稍後再試",listingErrorFields(apiErr));
     }
   };
 
@@ -485,11 +552,13 @@ export default function ProductFormPage({ productId }: Props) {
 
   const copyShareLink = () => {
     if (!shareUrl || !navigator.clipboard) return;
+    const requestContext=listing.captureContext();
     navigator.clipboard
       .writeText(shareUrl)
       .then(() => {
+        if(!listing.isCurrentContext(requestContext))return;
         setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        setTimeout(() => {if(listing.isCurrentContext(requestContext))setCopied(false);}, 2000);
       })
       .catch(() => {});
   };
@@ -549,7 +618,7 @@ export default function ProductFormPage({ productId }: Props) {
     return `${isPm ? "下午" : "上午"} ${h12}:${String(mm).padStart(2, "0")}`;
   };
 
-  const isPending = createProduct.isPending || updateProduct.isPending;
+  const isPending = createProduct.isPending || updateProduct.isPending || listing.busy;
 
   // Display priority: local blob preview (newly selected) > saved imageUrl
   const displayPreview = localPreviewUrl ?? (imageUrl || null);
@@ -670,7 +739,9 @@ export default function ProductFormPage({ productId }: Props) {
   // ── Main form ────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-[100dvh] bg-background max-w-[480px] mx-auto pb-8">
-      <form onSubmit={handleSubmit}>
+      <form ref={formRef} onSubmit={handleSubmit} noValidate onPointerDownCapture={() => { keyboardNavigation.current = false; }} onKeyDownCapture={() => { keyboardNavigation.current = true; }} onFocusCapture={event => {
+        if (keyboardNavigation.current && !event.target.closest("header")) focusListingControl(event.target, formRef.current);
+      }}>
         {/* Three-column header */}
         <header className="bg-card border-b border-border px-5 pt-10 pb-4 sticky top-0 z-10">
           <div className="flex items-center justify-between">
@@ -686,8 +757,8 @@ export default function ProductFormPage({ productId }: Props) {
             </h1>
             <button
               type="submit"
-              disabled={isPending || uploadStatus === "uploading"}
-              className="text-sm font-semibold text-primary disabled:opacity-40 min-w-[3rem] text-right"
+              disabled={isPending || listing.deepPending || uploadStatus === "uploading"}
+              className="min-h-11 text-sm font-semibold text-primary disabled:opacity-40 min-w-[3rem] text-right"
             >
               {isPending ? "儲存中…" : isEdit ? "儲存" : "建立"}
             </button>
@@ -697,10 +768,18 @@ export default function ProductFormPage({ productId }: Props) {
         <div className="px-4 py-5 space-y-4">
           {/* Error */}
           {error && (
-            <div className="bg-destructive/10 text-destructive text-sm px-4 py-3 rounded-2xl">
-              {error}
+            <div ref={errorRef} role="alert" aria-label="商品儲存錯誤" tabIndex={-1} className="bg-destructive/10 text-destructive text-sm px-4 py-3 rounded-2xl outline-none focus:ring-2 focus:ring-destructive">
+              <p>{error}</p>
+              <div className="flex flex-wrap gap-x-4">
+                {errorFields.map(label => <a key={label} href="#" className="inline-flex min-h-11 items-center underline" onClick={event => {
+                  event.preventDefault();
+                  const node = formRef.current?.querySelector<HTMLElement>(`[aria-label="${CSS.escape(label)}"]`);
+                  focusListingControl(node ?? formRef.current?.querySelector<HTMLElement>('[aria-label="一般售價"]') ?? null, formRef.current);
+                }}>前往{label}</a>)}
+              </div>
             </div>
           )}
+          {listing.panel}
 
           {/* ── 商品圖 ─────────────────────────────── */}
           <div className="bg-card rounded-2xl border border-border overflow-hidden">
@@ -799,8 +878,10 @@ export default function ProductFormPage({ productId }: Props) {
                     </p>
                     <input
                       type="url"
+                      aria-label="圖片網址"
                       value={imageUrl}
                       onChange={(e) => {
+                        listing.markDirty("imageUrl");
                         setImageUrl(e.target.value);
                         if (localPreviewUrl) {
                           clearLocalPreview();
@@ -829,8 +910,9 @@ export default function ProductFormPage({ productId }: Props) {
                 </label>
                 <input
                   type="text"
+                  aria-label="商品名稱"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => { listing.markDirty("name"); setName(e.target.value); }}
                   placeholder="例：日本草莓大福"
                   className={inputClass}
                 />
@@ -935,12 +1017,13 @@ export default function ProductFormPage({ productId }: Props) {
                   重量 g
                 </label>
                 <input
-                  type="number"
+                  type="text"
+                  aria-label="重量 g"
                   value={weightKg}
-                  onChange={(e) => setWeightKg(e.target.value)}
+                  onChange={(e) => { listing.markDirty("weightKg"); setWeightKg(e.target.value); }}
                   placeholder="例：500"
                   min="0"
-                  step="1"
+                  inputMode="decimal"
                   className={inputClass}
                 />
               </div>
@@ -965,12 +1048,13 @@ export default function ProductFormPage({ productId }: Props) {
                     ¥
                   </span>
                   <input
-                    type="number"
+                    type="text"
+                    aria-label="實際計價成本 JPY"
                     value={costJpy}
-                    onChange={(e) => setCostJpy(e.target.value)}
+                    onChange={(e) => { listing.markDirty("costJpy"); setCostJpy(e.target.value); }}
                     placeholder="例：1500"
                     min="0"
-                    step="1"
+                    inputMode="decimal"
                     className={inputClass}
                   />
                 </div>
@@ -981,6 +1065,7 @@ export default function ProductFormPage({ productId }: Props) {
                   type="checkbox"
                   checked={isTransportCostExempt}
                   onChange={(e) => {
+                    listing.markDirty("isTransportCostExempt");listing.markDirty("tripRouteId");
                     setIsTransportCostExempt(e.target.checked);
                     if (e.target.checked) setTripRouteId(null);
                   }}
@@ -995,16 +1080,17 @@ export default function ProductFormPage({ productId }: Props) {
                     行程路線
                   </label>
                   <select
+                    aria-label="行程路線"
                     value={tripRouteId ?? ""}
-                    onChange={(e) =>
-                      setTripRouteId(
+                    onChange={(e) => {
+                      listing.markDirty("tripRouteId");setTripRouteId(
                         e.target.value ? Number(e.target.value) : null,
-                      )
-                    }
+                      );
+                    }}
                     className={inputClass}
                   >
                     <option value="">未選擇</option>
-                    {allRoutes.map((r) => (
+                    {(listing.catalogId?listing.routes:allRoutes).map((r:any) => (
                       <option key={r.id} value={r.id}>
                         {r.tripName} · {r.areaTitle}
                       </option>
@@ -1036,20 +1122,21 @@ export default function ProductFormPage({ productId }: Props) {
                     NT$
                   </span>
                   <input
-                    type="number"
+                    type="text"
+                    aria-label="一般售價"
                     value={price}
-                    onChange={(e) => setPrice(e.target.value)}
+                    onChange={(e) => { listing.markDirty("price"); setPrice(e.target.value); }}
                     placeholder="0"
                     min="0"
-                    step="1"
-                    className="flex-1 h-16 px-4 rounded-xl border border-input bg-background text-foreground text-2xl font-bold placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    inputMode="decimal"
+                    className="min-w-0 flex-1 h-16 px-4 rounded-xl border border-input bg-background text-foreground text-2xl font-bold placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/30"
                   />
                 </div>
               </div>
               <div className="border-t border-border/50 py-4 space-y-3">
                 {(
                   [
-                    ["VIP 售價", vipPrice, setVipPrice],
+                    ["VIP 售價", vipPrice, listing.setVipPrice],
                     ["批發售價", wholesalePrice, setWholesalePrice],
                     ["夥伴售價", partnerPrice, setPartnerPrice],
                   ] as const
@@ -1061,6 +1148,7 @@ export default function ProductFormPage({ productId }: Props) {
                     <input
                       type="text"
                       inputMode="decimal"
+                      aria-label={label}
                       value={value}
                       onChange={(event) => setter(event.target.value)}
                       placeholder="未設定（回落一般價）"
@@ -1289,7 +1377,7 @@ export default function ProductFormPage({ productId }: Props) {
             <div className="px-5 pb-4">
               <textarea
                 value={internalNote}
-                onChange={(e) => setInternalNote(e.target.value)}
+                onChange={(e) => { listing.markDirty("internalNote"); setInternalNote(e.target.value); }}
                 placeholder="可記錄供應商、進貨狀況、直播備註..."
                 rows={4}
                 className={`${inputClass} h-auto resize-none py-3`}
@@ -1630,6 +1718,7 @@ export default function ProductFormPage({ productId }: Props) {
                     label="未分類"
                     selected={categoryId == null}
                     onSelect={() => {
+                      listing.markDirty("categoryId");
                       setCategoryId(null);
                       setShowCategorySheet(false);
                     }}
@@ -1645,6 +1734,7 @@ export default function ProductFormPage({ productId }: Props) {
                       label={cat.name}
                       selected={categoryId === cat.id}
                       onSelect={() => {
+                        listing.markDirty("categoryId");
                         setCategoryId(cat.id);
                         setShowCategorySheet(false);
                       }}

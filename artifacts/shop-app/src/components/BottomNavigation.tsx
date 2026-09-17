@@ -51,7 +51,7 @@ export function BottomNavigation({ active }: { active: BottomNavigationItem }) {
         aria-label="主要導覽"
         className="fixed bottom-2 left-1/2 z-50 min-h-[calc(88px+env(safe-area-inset-bottom))] w-[calc(100%-24px)] max-w-[560px] -translate-x-1/2 rounded-[20px] border border-border bg-card/95 px-2 pb-[max(8px,env(safe-area-inset-bottom))] pt-2 shadow-lg backdrop-blur"
       >
-        <div className="grid grid-cols-5 gap-1">
+        <div className="grid grid-cols-5 gap-2">
           {ITEMS.map((item) => {
             const Icon = item.icon;
             const selected = active === item.key;

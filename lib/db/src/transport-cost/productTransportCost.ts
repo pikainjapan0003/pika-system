@@ -59,6 +59,7 @@ export interface ProductTransportTripInput {
 }
 
 export interface ResolveProductTransportCostInput {
+  paymentFeeRate?: DecimalInput;
   product: ProductTransportReference;
   route: ProductTransportRouteInput | null | undefined;
   trip: ProductTransportTripInput | null | undefined;
@@ -97,8 +98,10 @@ function calculateRouteTransportCost(
   route: ProductTransportRouteInput,
   trip: ProductTransportTripInput,
   areaUnitDomesticTwd: ReadyTransportCost["areaUnitDomesticTwd"] | null,
+  paymentFeeRate?: DecimalInput,
 ): ReadyTransportCost | PendingTransportCost {
   return calculateTransportCost({
+    paymentFeeRate,
     estQty: route.estQty,
     exchangeRate: trip.exchangeRate,
     hepTotalJpy: trip.hepTotalJpy,
@@ -164,7 +167,7 @@ export function resolveProductTransportCost(
     area.id !== tripAreaId ||
     area.tripId !== route.tripId
   ) {
-    return calculateRouteTransportCost(route, trip, null);
+    return calculateRouteTransportCost(route, trip, null, input.paymentFeeRate);
   }
 
   const areaCost = input.areaCost;
@@ -177,6 +180,7 @@ export function resolveProductTransportCost(
   }
 
   const domesticCost = calculateAreaDomesticCost({
+    paymentFeeRate: input.paymentFeeRate,
     cardboardUnitJpy: areaCost.cardboardUnitJpy,
     shippingUnitJpy: areaCost.shippingUnitJpy,
     parcelCount: areaCost.parcelCount,
@@ -187,5 +191,5 @@ export function resolveProductTransportCost(
     return domesticCost;
   }
 
-  return calculateRouteTransportCost(route, trip, domesticCost.unitDomesticTwd);
+  return calculateRouteTransportCost(route, trip, domesticCost.unitDomesticTwd, input.paymentFeeRate);
 }

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { rateLimit } from "express-rate-limit";
 import { randomBytes } from "crypto";
 import {
@@ -55,6 +55,22 @@ const STATUS_LABELS: Record<string, string> = {
   completed: "已完成",
   cancelled: "已取消",
 };
+
+// Keep the public DTO narrow while displaying the same saved payable as the merchant.
+export function publicOrderPayable(order: {
+  payableAfterCredit?: string | number | null;
+  orderTotal?: string | number | null;
+  totalPrice: string | number;
+  shippingFee?: string | number | null;
+  discountAmount?: string | number | null;
+}): number {
+  const saved = order.payableAfterCredit ?? order.orderTotal;
+  if (saved != null) return Number(ExactDecimal.from(String(saved)).toDecimalPlaces(12));
+  const legacy = ExactDecimal.from(String(order.totalPrice))
+    .add(ExactDecimal.from(String(order.shippingFee ?? 0)))
+    .add(ExactDecimal.from(String(order.discountAmount ?? 0)).multiply(ExactDecimal.from("-1")));
+  return Number((legacy.isNegative() ? ExactDecimal.zero() : legacy).toDecimalPlaces(12));
+}
 
 const SHIPPING_STATUS_LABELS: Record<string, string> = {
   not_shipped: "尚未出貨",
@@ -186,6 +202,9 @@ router.post("/p/:shareToken/orders", submitOrderLimiter, async (req, res) => {
     const publicToken = randomBytes(16).toString("hex");
     try {
       const order = await db.transaction(async (tx) => {
+        const [hint] = await tx.select({storeId:productsTable.storeId}).from(productsTable).where(eq(productsTable.shareToken,shareToken));
+        if (!hint) throw Object.assign(new Error('Product not found'),{status:404});
+        await lockOrderStore(tx,hint.storeId);
         // Lock the product row to prevent concurrent over-selling
         const [product] = await tx
           .select()
@@ -246,6 +265,8 @@ router.post("/p/:shareToken/orders", submitOrderLimiter, async (req, res) => {
           unitPrice,
           parsed.data.quantity,
         );
+        orderMoney(totalPrice);
+        const preparedItem = await prepareListingItem(tx,product,parsed.data.quantity,unitPrice,parsed.data.specValues,'general');
         // Snapshot sale price is product.price, the order-time unit price.
         // If discounts later change the actual unit price, pass that order unitPrice here instead.
         const profitSnapshotInput = await loadOrderProfitSnapshotInput(
@@ -306,7 +327,7 @@ router.post("/p/:shareToken/orders", submitOrderLimiter, async (req, res) => {
           .returning();
 
         if (!newOrder) throw new Error("Insert returned no row");
-        return newOrder;
+        return persistOrderItems(tx,newOrder,[preparedItem]);
       });
 
       return res.status(201).json(formatPublicOrderCreatedResponse(order));
@@ -376,6 +397,14 @@ router.post("/cart/orders", submitOrderLimiter, async (req, res) => {
     const publicToken = randomBytes(16).toString("hex");
     try {
       const result = await db.transaction(async (tx) => {
+        const tokens = [...new Set(body.items.map((i:any)=>i.shareToken))] as string[];
+        const hints = await tx.select({id:productsTable.id,storeId:productsTable.storeId}).from(productsTable).where(inArray(productsTable.shareToken,tokens));
+        if(hints.length!==tokens.length)throw Object.assign(new Error('Product not found'),{status:404});
+        const storeIds=[...new Set(hints.map(p=>p.storeId))];
+        if(storeIds.length!==1)throw Object.assign(new Error('購物車只能包含同一店鋪商品'),{status:422});
+        await lockOrderStore(tx,storeIds[0]);
+        const locked=await tx.select().from(productsTable).where(inArray(productsTable.id,hints.map(p=>p.id))).orderBy(productsTable.id).for('update');
+        const preparedItems:any[]=[];
         type ResolvedCartItem = {
           productId: number;
           shareToken: string;
@@ -394,12 +423,7 @@ router.post("/cart/orders", submitOrderLimiter, async (req, res) => {
         const capturedAt = new Date();
 
         for (const item of body.items) {
-          const [product] = await tx
-            .select()
-            .from(productsTable)
-            .where(eq(productsTable.shareToken, item.shareToken))
-            .for("update")
-            .limit(1);
+          const product = locked.find(p=>p.shareToken===item.shareToken);
 
           if (!product || !product.isActive) {
             const err = new Error("Product not found") as any;
@@ -442,7 +466,9 @@ router.post("/cart/orders", submitOrderLimiter, async (req, res) => {
               .update(productsTable)
               .set({ inventory: product.inventory - qty })
               .where(eq(productsTable.id, product.id));
+            product.inventory -= qty;
           }
+          preparedItems.push(await prepareListingItem(tx,product,qty,product.price,item.specValues,'general'));
           const unitPrice = ExactDecimal.from(product.price as string);
           const subtotal = unitPrice.multiply(ExactDecimal.from(String(qty)));
           const resolvedItem = {
@@ -487,6 +513,7 @@ router.post("/cart/orders", submitOrderLimiter, async (req, res) => {
           ExactDecimal.zero(),
         );
 
+        orderMoney(itemsSubtotal.toDecimalPlaces(12));
         const [newOrder] = await tx
           .insert(ordersTable)
           .values({
@@ -527,7 +554,8 @@ router.post("/cart/orders", submitOrderLimiter, async (req, res) => {
           .returning();
 
         if (!newOrder) throw new Error("Insert returned no row");
-        return { order: newOrder, items: resolvedItems };
+        const saved=await persistOrderItems(tx,newOrder,preparedItems);
+        return { order: saved, items: saved.items };
       });
 
       return res.status(201).json({
@@ -617,10 +645,7 @@ router.get(
       unitPrice: parseFloat(order.unitPrice as string),
       shippingFee,
       totalPrice,
-      orderTotal: Math.max(
-        totalPrice + shippingFee - (order.discountAmount ?? 0),
-        0,
-      ),
+      orderTotal: publicOrderPayable(order),
       paymentLast5: order.paymentLast5 ?? null,
       pickupMethod: order.pickupMethod,
       specValues: order.specValues ?? {},
@@ -647,7 +672,7 @@ router.get(
         maskNameStrict(order.recipientName ?? order.buyerName ?? null) || null,
       recipientPhoneMasked: maskPhone(order.recipientPhone ?? null) || null,
       recipientAddressMasked: summarizeAddress(order.recipientAddress ?? null),
-      items: sanitizePublicCartItems(order.items),
+      items: sanitizePublicCartItems((await hydrateItemOrders(db,[order]))[0].items),
       createdAt: order.createdAt,
       // STRICTLY EXCLUDED (private / personal info):
       // internalNote, paymentNote, paidAmount, recipientPhone (full), recipientAddress (full),
@@ -693,3 +718,4 @@ router.patch(
 );
 
 export default router;
+import {lockOrderStore,prepareListingItem,persistOrderItems,hydrateItemOrders,orderMoney} from '../lib/catalogOrder.ts';

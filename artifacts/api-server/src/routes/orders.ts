@@ -122,10 +122,10 @@ router.get(
       return res.status(400).json({ error: "Invalid storeId" });
     if (!(await verifyStoreOwner(req, res, storeId))) return;
 
-    const orders = await db
+const orders = await hydrateItemOrders(db, await db
       .select()
       .from(ordersTable)
-      .where(eq(ordersTable.storeId, storeId));
+      .where(eq(ordersTable.storeId, storeId)));
     return res.json(summarizeOrderProfits(orders));
   },
 );
@@ -147,7 +147,7 @@ router.get(
       return res.status(400).json({ error: (error as Error).message });
     }
 
-    const orders = await db
+const orders = await hydrateItemOrders(db, await db
       .select()
       .from(ordersTable)
       .where(
@@ -156,7 +156,7 @@ router.get(
           gte(ordersTable.createdAt, range.start),
           lt(ordersTable.createdAt, range.end),
         ),
-      );
+      ));
     return res.json(summarizeMonthlyOrderProfits(month, orders));
   },
 );
@@ -175,17 +175,17 @@ async function loadMaihuobianExportPreview(
     conditions.push(inArray(ordersTable.id, requestedOrderIds));
   }
 
-  const orders = await db
+const orders = await hydrateItemOrders(db, await db
     .select()
     .from(ordersTable)
     .where(and(...conditions))
-    .orderBy(ordersTable.createdAt);
+    .orderBy(ordersTable.createdAt));
   const productIds = [
     ...new Set(
       orders.flatMap((order) => {
         const itemIds = Array.isArray(order.items)
           ? order.items
-              .map((item) =>
+              .map((item:any) =>
                 typeof item === "object" && item !== null
                   ? Number((item as Record<string, unknown>).productId)
                   : Number.NaN,
@@ -380,11 +380,11 @@ router.get("/stores/:storeId/orders", requireAuth, async (req: any, res) => {
 
   if (!(await verifyStoreOwner(req, res, storeId))) return;
 
-  const orders = await db
+const orders = await hydrateItemOrders(db, await db
     .select()
     .from(ordersTable)
     .where(eq(ordersTable.storeId, storeId))
-    .orderBy(ordersTable.createdAt);
+    .orderBy(ordersTable.createdAt));
 
   // Active shipment tracking summary per order — single IN query, latest per order.
   const orderIds = orders.map((o) => o.id);
@@ -473,6 +473,7 @@ router.post("/stores/:storeId/orders", requireAuth, async (req: any, res) => {
     const publicToken = randomBytes(16).toString("hex");
     try {
       const order = await db.transaction(async (tx) => {
+        await lockOrderStore(tx, storeId, req.userId);
         const [product] = await tx
           .select()
           .from(productsTable)
@@ -540,6 +541,8 @@ router.post("/stores/:storeId/orders", requireAuth, async (req: any, res) => {
           customerTier,
         }).priceTwd;
         const totalPrice = multiplyMoneyByQuantity(unitPrice, quantity);
+        orderMoney(totalPrice);
+        const preparedItem = await prepareListingItem(tx, product, quantity, unitPrice, specValues, customerTier ?? 'general');
         // Step 7H-3: 與買家端同一套運費規則（黑貓 100 / 郵局 80 / 超商 60 / 自取 0）
         const shippingFee = getShippingFee(pickupMethod);
         let availableCredit = ExactDecimal.zero();
@@ -671,7 +674,7 @@ router.post("/stores/:storeId/orders", requireAuth, async (req: any, res) => {
             }),
           });
         }
-        return newOrder;
+        return persistOrderItems(tx, newOrder, [preparedItem]);
       });
 
       return res.status(201).json(formatOrder(order));
@@ -699,10 +702,10 @@ router.post("/orders/picking-list", requireAuth, async (req: any, res) => {
 
   const { orderIds } = parsed.data;
 
-  const orders = await db
+const orders = await hydrateItemOrders(db, await db
     .select()
     .from(ordersTable)
-    .where(inArray(ordersTable.id, orderIds));
+    .where(inArray(ordersTable.id, orderIds)));
 
   const foundIds = new Set(orders.map((o) => o.id));
   const notFoundIds = orderIds.filter((id) => !foundIds.has(id));
@@ -724,7 +727,7 @@ router.post("/orders/picking-list", requireAuth, async (req: any, res) => {
   const activeOrders = orders.filter((o) => o.status !== "cancelled");
 
   // Fetch product details for all products in active orders
-  const productIds = [...new Set(activeOrders.map((o) => o.productId))];
+  const productIds = [...new Set(flattenOrderLines(activeOrders).map((o) => o.productId).filter((id):id is number=>typeof id==="number"&&id>0))];
   const products =
     productIds.length > 0
       ? await db
@@ -751,9 +754,9 @@ router.post("/orders/picking-list", requireAuth, async (req: any, res) => {
     }
   >();
 
-  for (const order of activeOrders) {
+  for (const order of flattenOrderLines(activeOrders)) {
     const specValues = (order.specValues ?? {}) as Record<string, unknown>;
-    const groupKey = `${order.productId}::${JSON.stringify(specValues)}`;
+    const groupKey = `${order.productId??`item:${order.orderItemId}`}::${JSON.stringify(specValues)}`;
     const product = productMap.get(order.productId);
     const productName =
       order.productName ?? product?.name ?? `Product #${order.productId}`;
@@ -826,7 +829,7 @@ router.post("/orders/picking-list", requireAuth, async (req: any, res) => {
     orderCount: activeOrders.length,
     excludedOrderIds,
     items,
-    orderItems: orderPickingItems.map((item) => {
+    orderItems: orderPickingItems.map((item:any) => {
       const check = checkByOrderItem.get(`${item.orderId}:${item.itemKey}`);
       return {
         ...item,
@@ -942,9 +945,9 @@ router.post("/orders/picking-list.csv", requireAuth, async (req: any, res) => {
     }
   >();
 
-  for (const order of activeOrders) {
+  for (const order of flattenOrderLines(activeOrders)) {
     const specValues = (order.specValues ?? {}) as Record<string, unknown>;
-    const groupKey = `${order.productId}::${JSON.stringify(specValues)}`;
+    const groupKey = `${order.productId??`item:${order.orderItemId}`}::${JSON.stringify(specValues)}`;
     const product = productMap.get(order.productId);
     const productName =
       order.productName ?? product?.name ?? `Product #${order.productId}`;
@@ -1021,10 +1024,10 @@ router.post("/orders/shipping-list", requireAuth, async (req: any, res) => {
 
   const { orderIds } = parsed.data;
 
-  const orders = await db
+const orders = await hydrateItemOrders(db, await db
     .select()
     .from(ordersTable)
-    .where(inArray(ordersTable.id, orderIds));
+    .where(inArray(ordersTable.id, orderIds)));
 
   const foundIds = new Set(orders.map((o) => o.id));
   const notFoundIds = orderIds.filter((id) => !foundIds.has(id));
@@ -1046,7 +1049,7 @@ router.post("/orders/shipping-list", requireAuth, async (req: any, res) => {
   const activeOrders = orders.filter((o) => o.status !== "cancelled");
 
   // Fetch product details for skuCode
-  const productIds = [...new Set(activeOrders.map((o) => o.productId))];
+  const productIds = [...new Set(flattenOrderLines(activeOrders).map((o) => o.productId).filter((id):id is number=>typeof id==="number"&&id>0))];
   const products =
     productIds.length > 0
       ? await db
@@ -1065,7 +1068,7 @@ router.post("/orders/shipping-list", requireAuth, async (req: any, res) => {
         ? specEntries.map(([k, v]) => `${k}: ${v}`).join("、")
         : null;
     const productName = order.productName ?? product?.name ?? null;
-    const itemsText = specLabel
+    const itemsText = Array.isArray(order.items)&&order.items.length?order.items.map((i:any)=>`${i.productName} (${Object.values(i.specValues??{}).join("、")}) × ${i.quantity}`).join("；"):specLabel
       ? `${productName} (${specLabel}) × ${order.quantity}`
       : `${productName} × ${order.quantity}`;
 
@@ -1210,10 +1213,10 @@ router.patch("/orders/bulk", requireAuth, async (req: any, res) => {
     });
   }
 
-  const orders = await db
+const orders = await hydrateItemOrders(db, await db
     .select()
     .from(ordersTable)
-    .where(inArray(ordersTable.id, orderIds));
+    .where(inArray(ordersTable.id, orderIds)));
 
   // Verify all requested orders exist and belong to this merchant's stores
   const foundIds = new Set(orders.map((o) => o.id));
@@ -1387,10 +1390,10 @@ router.post("/orders/tracking-import", requireAuth, async (req: any, res) => {
   // Batch fetch all validated orders
   if (parsedRows.length > 0) {
     const orderIds = parsedRows.map((r) => r.numericOrderId);
-    const orders = await db
+const orders = await hydrateItemOrders(db, await db
       .select()
       .from(ordersTable)
-      .where(inArray(ordersTable.id, orderIds));
+      .where(inArray(ordersTable.id, orderIds)));
 
     const orderMap = new Map(orders.map((o) => [o.id, o]));
 
@@ -1639,11 +1642,9 @@ router.patch("/orders/:orderId", requireAuth, async (req: any, res) => {
     return res.json(formatOrder(order));
   }
 
-  const [updated] = await db
-    .update(ordersTable)
-    .set(updates)
-    .where(eq(ordersTable.id, orderId))
-    .returning();
+  let updated;
+  try { updated=await patchItemOrder(order.storeId,orderId,updates,req.userId); }
+  catch(error:any){if(error.status||['23514','22003'].includes(error.code??error.cause?.code))return res.status(error.status??422).json({error:error.message});throw error;}
 
   // Step 7N-I8B：手動填郵局 / 黑貓貨號時 seed shipment_trackings，
   // 讓 EditOrderDialog 的手動查詢按鈕拿得到 tracking row。
@@ -1677,11 +1678,11 @@ router.get(
 
     if (!(await verifyStoreOwner(req, res, storeId))) return;
 
-    const orders = await db
+const orders = await hydrateItemOrders(db, await db
       .select()
       .from(ordersTable)
       .where(eq(ordersTable.storeId, storeId))
-      .orderBy(ordersTable.createdAt);
+      .orderBy(ordersTable.createdAt));
 
     let mode;
     try {
@@ -1762,15 +1763,20 @@ router.delete(
     }
 
     try {
-      await db
-        .delete(ordersTable)
-        .where(
-          and(eq(ordersTable.id, orderId), eq(ordersTable.storeId, storeId)),
-        );
+      await db.transaction(async tx=>{
+        await lockOrderStore(tx,storeId,req.userId);
+        const [locked]=await tx.select().from(ordersTable).where(and(eq(ordersTable.id,orderId),eq(ordersTable.storeId,storeId))).for('update');
+        if(!locked)throw Object.assign(new Error('找不到訂單'),{status:404});
+        const refs=await tx.execute(sql`SELECT 1 FROM order_completion_events WHERE order_id=${orderId} UNION ALL SELECT 1 FROM shipment_trackings WHERE order_id=${orderId} UNION ALL SELECT 1 FROM store_credit_transactions WHERE related_order_id=${orderId} LIMIT 1`);
+        if(['shipped','completed'].includes(locked.status)||refs.rows.length)throw Object.assign(new Error(BLOCKED_DELETE_MESSAGE),{status:409});
+        await tx.execute(sql`SELECT set_config('pika.order_item_cleanup',${String(orderId)},true)`);
+        await tx.delete(orderItemsTable).where(eq(orderItemsTable.orderId,orderId));
+        await tx.delete(ordersTable).where(eq(ordersTable.id,orderId));
+      });
     } catch (error: any) {
       // A related ledger row can appear after the pre-check. Preserve the same
       // friendly response instead of leaking a PostgreSQL FK error as a 500.
-      if (error?.code === "23503") {
+      if (['23503','23514'].includes(error?.code ?? error?.cause?.code) || error?.status===409) {
         return res.status(409).json({ error: BLOCKED_DELETE_MESSAGE });
       }
       throw error;
@@ -1812,6 +1818,7 @@ router.post(
           throw err;
         }
 
+        if(lockedOrder.orderItemsVersion===1)throw Object.assign(new Error('正式品項請使用各品項的補齊成本操作'),{status:409});
         if (Array.isArray(lockedOrder.items)) {
           if (
             lockedOrder.cartProfitSnapshotStatus !== "pending" &&
@@ -1920,6 +1927,7 @@ router.post(
           return backfilledOrder;
         }
 
+        if(lockedOrder.productId===null)throw Object.assign(new Error('一次性品項請使用補齊成本操作'),{status:409});
         const [product] = await tx
           .select()
           .from(productsTable)
@@ -2029,6 +2037,7 @@ router.patch("/orders/:orderId/status", requireAuth, async (req: any, res) => {
   const nextStatus = parsed.data.status as OrderStatus;
   try {
     const updated = await db.transaction(async (tx) => {
+      await lockOrderStore(tx,order.storeId,req.userId);
       const [lockedOrder] = await tx
         .select()
         .from(ordersTable)
@@ -2141,6 +2150,7 @@ router.patch("/orders/:orderId/status", requireAuth, async (req: any, res) => {
 
     return res.json(formatOrder(updated));
   } catch (error) {
+    if(((error as any)?.code??(error as any)?.cause?.code)==='23514')return res.status(422).json({error:'每個品項須先補齊成本，且完成歷史不可改寫'});
     const status = (error as { status?: number }).status;
     if (status === 404 || status === 422) {
       return res.status(status).json({ error: (error as Error).message });
@@ -2168,10 +2178,10 @@ async function fetchAndValidate(
   activeOrders: any[];
   productMap: Map<number, any>;
 } | null> {
-  const orders = await db
+const orders = await hydrateItemOrders(db, await db
     .select()
     .from(ordersTable)
-    .where(inArray(ordersTable.id, orderIds));
+    .where(inArray(ordersTable.id, orderIds)));
 
   const foundIds = new Set(orders.map((o) => o.id));
   const notFoundIds = orderIds.filter((id) => !foundIds.has(id));
@@ -2192,7 +2202,7 @@ async function fetchAndValidate(
     .map((o) => o.id);
   const activeOrders = orders.filter((o) => o.status !== "cancelled");
 
-  const productIds = [...new Set(activeOrders.map((o) => o.productId))];
+  const productIds = [...new Set(flattenOrderLines(activeOrders).map((o) => o.productId).filter((id):id is number=>typeof id==="number"&&id>0))];
   const products =
     productIds.length > 0
       ? await db
@@ -2226,7 +2236,7 @@ function formatShipmentTracking(t: any) {
   };
 }
 
-function formatOrder(o: any) {
+export function formatOrder(o: any) {
   const shippingFee = parseFloat(o.shippingFee ?? "0");
   const totalPrice = parseFloat(o.totalPrice);
   const creditSpent = ExactDecimal.from(o.creditSpent ?? "0").toDecimalPlaces(
@@ -2286,3 +2296,6 @@ function formatOrder(o: any) {
 }
 
 export default router;
+import {lockOrderStore,prepareListingItem,persistOrderItems,hydrateItemOrders,orderMoney,patchItemOrder} from '../lib/catalogOrder.ts';
+import {orderItemsTable} from '@workspace/db';
+import {flattenOrderLines} from '../lib/catalogOrder.ts';

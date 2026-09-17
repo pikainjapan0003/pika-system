@@ -23,9 +23,67 @@ import type {
   AreaScatterResponse,
   BulkOrderUpdate,
   BulkOrderUpdateResponse,
+  CatalogAliasInput,
+  CatalogAliasList,
+  CatalogAliasResult,
+  CatalogAuditList,
+  CatalogBarcodeInput,
+  CatalogCloneInput,
+  CatalogCostInput,
+  CatalogCostList,
+  CatalogCostResult,
+  CatalogCreateInput,
+  CatalogDeleted,
+  CatalogEmptyInput,
+  CatalogImportApprove200,
+  CatalogImportCommit200,
+  CatalogImportGet200,
+  CatalogImportPreview200,
+  CatalogImportPreviewBodyTwo,
+  CatalogImportReferences200,
+  CatalogImportResolve200,
+  CatalogImportRollback200,
+  CatalogListParams,
+  CatalogListingMatchApply200,
+  CatalogListingMatchPreview200,
+  CatalogListingMatchPreviewParams,
+  CatalogOrderInput,
+  CatalogPage,
+  CatalogPatchInput,
+  CatalogProductResult,
+  CatalogRelationshipInput,
+  CatalogRelationshipList,
+  CatalogRelationshipResult,
+  CatalogSettingsInput,
+  CatalogSettingsResult,
+  CatalogShippingInput,
+  CatalogShippingList,
+  CatalogShippingPatchInput,
+  CatalogShippingResult,
+  CatalogShopeeInput,
+  CatalogShopeeList,
+  CatalogShopeeResult,
+  CatalogTemplateInput,
+  CatalogTemplateList,
+  CatalogTemplatePatchInput,
+  CatalogTemplateResult,
+  CatalogVoidInput,
+  CatalogVoided,
+  GetCatalogOrderCostOptions200,
+  GetCatalogSales200,
+  GetCatalogSalesParams,
+  GetCatalogSalesReference200,
   GetSellerAgentSettings200,
   HealthStatus,
   HistoryTrendResponse,
+  ImportApproveInput,
+  ImportConfirmInput,
+  ImportPreviewInput,
+  ImportResolveInput,
+  ListingMatchInput,
+  ListingPricingHistory,
+  ListingPricingInput,
+  ListingPricingResult,
   MerchantOrderInput,
   Order,
   OrderIdsBody,
@@ -33,6 +91,8 @@ import type {
   OrderStatusUpdate,
   OrderUpdate,
   PickingListResponse,
+  PricingV2Preview,
+  PricingV2PreviewInput,
   Product,
   ProductCategory,
   ProductCategoryInput,
@@ -74,6 +134,3649 @@ type AwaitedInput<T> = PromiseLike<T> | T;
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
+
+export const getCatalogListingMatchPreviewUrl = (storeId: number,
+    params?: CatalogListingMatchPreviewParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/stores/${storeId}/listing-matches/preview?${stringifiedParams}` : `/api/stores/${storeId}/listing-matches/preview`
+}
+
+export const catalogListingMatchPreview = async (storeId: number,
+    params?: CatalogListingMatchPreviewParams, options?: RequestInit): Promise<CatalogListingMatchPreview200> => {
+
+  return customFetch<CatalogListingMatchPreview200>(getCatalogListingMatchPreviewUrl(storeId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getCatalogListingMatchPreviewQueryKey = (storeId: number,
+    params?: CatalogListingMatchPreviewParams,) => {
+    return [
+    `/api/stores/${storeId}/listing-matches/preview`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getCatalogListingMatchPreviewQueryOptions = <TData = Awaited<ReturnType<typeof catalogListingMatchPreview>>, TError = ErrorType<void>>(storeId: number,
+    params?: CatalogListingMatchPreviewParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof catalogListingMatchPreview>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getCatalogListingMatchPreviewQueryKey(storeId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof catalogListingMatchPreview>>> = ({ signal }) => catalogListingMatchPreview(storeId,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(storeId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof catalogListingMatchPreview>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type CatalogListingMatchPreviewQueryResult = NonNullable<Awaited<ReturnType<typeof catalogListingMatchPreview>>>
+export type CatalogListingMatchPreviewQueryError = ErrorType<void>
+
+
+
+export function useCatalogListingMatchPreview<TData = Awaited<ReturnType<typeof catalogListingMatchPreview>>, TError = ErrorType<void>>(
+ storeId: number,
+    params?: CatalogListingMatchPreviewParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof catalogListingMatchPreview>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getCatalogListingMatchPreviewQueryOptions(storeId,params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCatalogListingMatchApplyUrl = (storeId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/listing-matches/apply`
+}
+
+export const catalogListingMatchApply = async (storeId: number,
+    listingMatchInput: ListingMatchInput, options?: RequestInit): Promise<CatalogListingMatchApply200> => {
+
+  return customFetch<CatalogListingMatchApply200>(getCatalogListingMatchApplyUrl(storeId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      listingMatchInput,)
+  }
+);}
+
+
+
+
+export const getCatalogListingMatchApplyMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogListingMatchApply>>, TError,{storeId: number;data: BodyType<ListingMatchInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof catalogListingMatchApply>>, TError,{storeId: number;data: BodyType<ListingMatchInput>}, TContext> => {
+
+const mutationKey = ['catalogListingMatchApply'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof catalogListingMatchApply>>, {storeId: number;data: BodyType<ListingMatchInput>}> = (props) => {
+          const {storeId,data} = props ?? {};
+
+          return  catalogListingMatchApply(storeId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CatalogListingMatchApplyMutationResult = NonNullable<Awaited<ReturnType<typeof catalogListingMatchApply>>>
+    export type CatalogListingMatchApplyMutationBody = BodyType<ListingMatchInput>
+    export type CatalogListingMatchApplyMutationError = ErrorType<void>
+
+    export const useCatalogListingMatchApply = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogListingMatchApply>>, TError,{storeId: number;data: BodyType<ListingMatchInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof catalogListingMatchApply>>,
+        TError,
+        {storeId: number;data: BodyType<ListingMatchInput>},
+        TContext
+      > => {
+      return useMutation(getCatalogListingMatchApplyMutationOptions(options));
+    }
+
+export const getCatalogImportPreviewUrl = (storeId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/sheet-imports/preview`
+}
+
+export const catalogImportPreview = async (storeId: number,
+    catalogImportPreviewBody: ImportPreviewInput | CatalogImportPreviewBodyTwo, options?: RequestInit): Promise<CatalogImportPreview200> => {
+
+  return customFetch<CatalogImportPreview200>(getCatalogImportPreviewUrl(storeId),
+  {
+    ...options,
+    method: 'POST'
+    ,
+    body: JSON.stringify(
+      catalogImportPreviewBody,)
+  }
+);}
+
+
+
+
+export const getCatalogImportPreviewMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogImportPreview>>, TError,{storeId: number;data: BodyType<ImportPreviewInput | CatalogImportPreviewBodyTwo>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof catalogImportPreview>>, TError,{storeId: number;data: BodyType<ImportPreviewInput | CatalogImportPreviewBodyTwo>}, TContext> => {
+
+const mutationKey = ['catalogImportPreview'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof catalogImportPreview>>, {storeId: number;data: BodyType<ImportPreviewInput | CatalogImportPreviewBodyTwo>}> = (props) => {
+          const {storeId,data} = props ?? {};
+
+          return  catalogImportPreview(storeId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CatalogImportPreviewMutationResult = NonNullable<Awaited<ReturnType<typeof catalogImportPreview>>>
+    export type CatalogImportPreviewMutationBody = BodyType<ImportPreviewInput | CatalogImportPreviewBodyTwo>
+    export type CatalogImportPreviewMutationError = ErrorType<void>
+
+    export const useCatalogImportPreview = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogImportPreview>>, TError,{storeId: number;data: BodyType<ImportPreviewInput | CatalogImportPreviewBodyTwo>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof catalogImportPreview>>,
+        TError,
+        {storeId: number;data: BodyType<ImportPreviewInput | CatalogImportPreviewBodyTwo>},
+        TContext
+      > => {
+      return useMutation(getCatalogImportPreviewMutationOptions(options));
+    }
+
+export const getCatalogImportGetUrl = (storeId: number,
+    batchId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/sheet-imports/${batchId}`
+}
+
+export const catalogImportGet = async (storeId: number,
+    batchId: number, options?: RequestInit): Promise<CatalogImportGet200> => {
+
+  return customFetch<CatalogImportGet200>(getCatalogImportGetUrl(storeId,batchId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getCatalogImportGetQueryKey = (storeId: number,
+    batchId: number,) => {
+    return [
+    `/api/stores/${storeId}/sheet-imports/${batchId}`
+    ] as const;
+    }
+
+
+export const getCatalogImportGetQueryOptions = <TData = Awaited<ReturnType<typeof catalogImportGet>>, TError = ErrorType<void>>(storeId: number,
+    batchId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof catalogImportGet>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getCatalogImportGetQueryKey(storeId,batchId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof catalogImportGet>>> = ({ signal }) => catalogImportGet(storeId,batchId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(storeId && batchId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof catalogImportGet>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type CatalogImportGetQueryResult = NonNullable<Awaited<ReturnType<typeof catalogImportGet>>>
+export type CatalogImportGetQueryError = ErrorType<void>
+
+
+
+export function useCatalogImportGet<TData = Awaited<ReturnType<typeof catalogImportGet>>, TError = ErrorType<void>>(
+ storeId: number,
+    batchId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof catalogImportGet>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getCatalogImportGetQueryOptions(storeId,batchId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCatalogImportResolveUrl = (storeId: number,
+    batchId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/sheet-imports/${batchId}/resolve`
+}
+
+export const catalogImportResolve = async (storeId: number,
+    batchId: number,
+    importResolveInput: ImportResolveInput, options?: RequestInit): Promise<CatalogImportResolve200> => {
+
+  return customFetch<CatalogImportResolve200>(getCatalogImportResolveUrl(storeId,batchId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      importResolveInput,)
+  }
+);}
+
+
+
+
+export const getCatalogImportResolveMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogImportResolve>>, TError,{storeId: number;batchId: number;data: BodyType<ImportResolveInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof catalogImportResolve>>, TError,{storeId: number;batchId: number;data: BodyType<ImportResolveInput>}, TContext> => {
+
+const mutationKey = ['catalogImportResolve'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof catalogImportResolve>>, {storeId: number;batchId: number;data: BodyType<ImportResolveInput>}> = (props) => {
+          const {storeId,batchId,data} = props ?? {};
+
+          return  catalogImportResolve(storeId,batchId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CatalogImportResolveMutationResult = NonNullable<Awaited<ReturnType<typeof catalogImportResolve>>>
+    export type CatalogImportResolveMutationBody = BodyType<ImportResolveInput>
+    export type CatalogImportResolveMutationError = ErrorType<void>
+
+    export const useCatalogImportResolve = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogImportResolve>>, TError,{storeId: number;batchId: number;data: BodyType<ImportResolveInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof catalogImportResolve>>,
+        TError,
+        {storeId: number;batchId: number;data: BodyType<ImportResolveInput>},
+        TContext
+      > => {
+      return useMutation(getCatalogImportResolveMutationOptions(options));
+    }
+
+export const getCatalogImportApproveUrl = (storeId: number,
+    batchId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/sheet-imports/${batchId}/approve`
+}
+
+export const catalogImportApprove = async (storeId: number,
+    batchId: number,
+    importApproveInput: ImportApproveInput, options?: RequestInit): Promise<CatalogImportApprove200> => {
+
+  return customFetch<CatalogImportApprove200>(getCatalogImportApproveUrl(storeId,batchId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      importApproveInput,)
+  }
+);}
+
+
+
+
+export const getCatalogImportApproveMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogImportApprove>>, TError,{storeId: number;batchId: number;data: BodyType<ImportApproveInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof catalogImportApprove>>, TError,{storeId: number;batchId: number;data: BodyType<ImportApproveInput>}, TContext> => {
+
+const mutationKey = ['catalogImportApprove'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof catalogImportApprove>>, {storeId: number;batchId: number;data: BodyType<ImportApproveInput>}> = (props) => {
+          const {storeId,batchId,data} = props ?? {};
+
+          return  catalogImportApprove(storeId,batchId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CatalogImportApproveMutationResult = NonNullable<Awaited<ReturnType<typeof catalogImportApprove>>>
+    export type CatalogImportApproveMutationBody = BodyType<ImportApproveInput>
+    export type CatalogImportApproveMutationError = ErrorType<void>
+
+    export const useCatalogImportApprove = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogImportApprove>>, TError,{storeId: number;batchId: number;data: BodyType<ImportApproveInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof catalogImportApprove>>,
+        TError,
+        {storeId: number;batchId: number;data: BodyType<ImportApproveInput>},
+        TContext
+      > => {
+      return useMutation(getCatalogImportApproveMutationOptions(options));
+    }
+
+export const getCatalogImportCommitUrl = (storeId: number,
+    batchId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/sheet-imports/${batchId}/commit`
+}
+
+export const catalogImportCommit = async (storeId: number,
+    batchId: number,
+    importConfirmInput: ImportConfirmInput, options?: RequestInit): Promise<CatalogImportCommit200> => {
+
+  return customFetch<CatalogImportCommit200>(getCatalogImportCommitUrl(storeId,batchId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      importConfirmInput,)
+  }
+);}
+
+
+
+
+export const getCatalogImportCommitMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogImportCommit>>, TError,{storeId: number;batchId: number;data: BodyType<ImportConfirmInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof catalogImportCommit>>, TError,{storeId: number;batchId: number;data: BodyType<ImportConfirmInput>}, TContext> => {
+
+const mutationKey = ['catalogImportCommit'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof catalogImportCommit>>, {storeId: number;batchId: number;data: BodyType<ImportConfirmInput>}> = (props) => {
+          const {storeId,batchId,data} = props ?? {};
+
+          return  catalogImportCommit(storeId,batchId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CatalogImportCommitMutationResult = NonNullable<Awaited<ReturnType<typeof catalogImportCommit>>>
+    export type CatalogImportCommitMutationBody = BodyType<ImportConfirmInput>
+    export type CatalogImportCommitMutationError = ErrorType<void>
+
+    export const useCatalogImportCommit = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogImportCommit>>, TError,{storeId: number;batchId: number;data: BodyType<ImportConfirmInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof catalogImportCommit>>,
+        TError,
+        {storeId: number;batchId: number;data: BodyType<ImportConfirmInput>},
+        TContext
+      > => {
+      return useMutation(getCatalogImportCommitMutationOptions(options));
+    }
+
+export const getCatalogImportRollbackUrl = (storeId: number,
+    batchId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/sheet-imports/${batchId}/rollback`
+}
+
+export const catalogImportRollback = async (storeId: number,
+    batchId: number,
+    importConfirmInput: ImportConfirmInput, options?: RequestInit): Promise<CatalogImportRollback200> => {
+
+  return customFetch<CatalogImportRollback200>(getCatalogImportRollbackUrl(storeId,batchId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      importConfirmInput,)
+  }
+);}
+
+
+
+
+export const getCatalogImportRollbackMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogImportRollback>>, TError,{storeId: number;batchId: number;data: BodyType<ImportConfirmInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof catalogImportRollback>>, TError,{storeId: number;batchId: number;data: BodyType<ImportConfirmInput>}, TContext> => {
+
+const mutationKey = ['catalogImportRollback'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof catalogImportRollback>>, {storeId: number;batchId: number;data: BodyType<ImportConfirmInput>}> = (props) => {
+          const {storeId,batchId,data} = props ?? {};
+
+          return  catalogImportRollback(storeId,batchId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CatalogImportRollbackMutationResult = NonNullable<Awaited<ReturnType<typeof catalogImportRollback>>>
+    export type CatalogImportRollbackMutationBody = BodyType<ImportConfirmInput>
+    export type CatalogImportRollbackMutationError = ErrorType<void>
+
+    export const useCatalogImportRollback = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogImportRollback>>, TError,{storeId: number;batchId: number;data: BodyType<ImportConfirmInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof catalogImportRollback>>,
+        TError,
+        {storeId: number;batchId: number;data: BodyType<ImportConfirmInput>},
+        TContext
+      > => {
+      return useMutation(getCatalogImportRollbackMutationOptions(options));
+    }
+
+export const getCatalogImportReferencesUrl = (storeId: number,
+    catalogProductId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/catalog-products/${catalogProductId}/sheet-references`
+}
+
+export const catalogImportReferences = async (storeId: number,
+    catalogProductId: number, options?: RequestInit): Promise<CatalogImportReferences200> => {
+
+  return customFetch<CatalogImportReferences200>(getCatalogImportReferencesUrl(storeId,catalogProductId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getCatalogImportReferencesQueryKey = (storeId: number,
+    catalogProductId: number,) => {
+    return [
+    `/api/stores/${storeId}/catalog-products/${catalogProductId}/sheet-references`
+    ] as const;
+    }
+
+
+export const getCatalogImportReferencesQueryOptions = <TData = Awaited<ReturnType<typeof catalogImportReferences>>, TError = ErrorType<void>>(storeId: number,
+    catalogProductId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof catalogImportReferences>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getCatalogImportReferencesQueryKey(storeId,catalogProductId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof catalogImportReferences>>> = ({ signal }) => catalogImportReferences(storeId,catalogProductId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(storeId && catalogProductId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof catalogImportReferences>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type CatalogImportReferencesQueryResult = NonNullable<Awaited<ReturnType<typeof catalogImportReferences>>>
+export type CatalogImportReferencesQueryError = ErrorType<void>
+
+
+
+export function useCatalogImportReferences<TData = Awaited<ReturnType<typeof catalogImportReferences>>, TError = ErrorType<void>>(
+ storeId: number,
+    catalogProductId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof catalogImportReferences>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getCatalogImportReferencesQueryOptions(storeId,catalogProductId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCaptureCatalogOrderItemUrl = (storeId: number,
+    orderId: number,
+    itemId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/orders/${orderId}/items/${itemId}/capture`
+}
+
+export const captureCatalogOrderItem = async (storeId: number,
+    orderId: number,
+    itemId: number,
+    pricingV2PreviewInput: PricingV2PreviewInput, options?: RequestInit): Promise<Order> => {
+
+  return customFetch<Order>(getCaptureCatalogOrderItemUrl(storeId,orderId,itemId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      pricingV2PreviewInput,)
+  }
+);}
+
+
+
+
+export const getCaptureCatalogOrderItemMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof captureCatalogOrderItem>>, TError,{storeId: number;orderId: number;itemId: number;data: BodyType<PricingV2PreviewInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof captureCatalogOrderItem>>, TError,{storeId: number;orderId: number;itemId: number;data: BodyType<PricingV2PreviewInput>}, TContext> => {
+
+const mutationKey = ['captureCatalogOrderItem'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof captureCatalogOrderItem>>, {storeId: number;orderId: number;itemId: number;data: BodyType<PricingV2PreviewInput>}> = (props) => {
+          const {storeId,orderId,itemId,data} = props ?? {};
+
+          return  captureCatalogOrderItem(storeId,orderId,itemId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CaptureCatalogOrderItemMutationResult = NonNullable<Awaited<ReturnType<typeof captureCatalogOrderItem>>>
+    export type CaptureCatalogOrderItemMutationBody = BodyType<PricingV2PreviewInput>
+    export type CaptureCatalogOrderItemMutationError = ErrorType<void>
+
+    export const useCaptureCatalogOrderItem = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof captureCatalogOrderItem>>, TError,{storeId: number;orderId: number;itemId: number;data: BodyType<PricingV2PreviewInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof captureCatalogOrderItem>>,
+        TError,
+        {storeId: number;orderId: number;itemId: number;data: BodyType<PricingV2PreviewInput>},
+        TContext
+      > => {
+      return useMutation(getCaptureCatalogOrderItemMutationOptions(options));
+    }
+
+export const getGetCatalogSalesUrl = (storeId: number,
+    params: GetCatalogSalesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/stores/${storeId}/catalog-sales?${stringifiedParams}` : `/api/stores/${storeId}/catalog-sales`
+}
+
+export const getCatalogSales = async (storeId: number,
+    params: GetCatalogSalesParams, options?: RequestInit): Promise<GetCatalogSales200> => {
+
+  return customFetch<GetCatalogSales200>(getGetCatalogSalesUrl(storeId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetCatalogSalesQueryKey = (storeId: number,
+    params?: GetCatalogSalesParams,) => {
+    return [
+    `/api/stores/${storeId}/catalog-sales`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetCatalogSalesQueryOptions = <TData = Awaited<ReturnType<typeof getCatalogSales>>, TError = ErrorType<void>>(storeId: number,
+    params: GetCatalogSalesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCatalogSales>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCatalogSalesQueryKey(storeId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCatalogSales>>> = ({ signal }) => getCatalogSales(storeId,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(storeId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCatalogSales>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetCatalogSalesQueryResult = NonNullable<Awaited<ReturnType<typeof getCatalogSales>>>
+export type GetCatalogSalesQueryError = ErrorType<void>
+
+
+
+export function useGetCatalogSales<TData = Awaited<ReturnType<typeof getCatalogSales>>, TError = ErrorType<void>>(
+ storeId: number,
+    params: GetCatalogSalesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCatalogSales>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetCatalogSalesQueryOptions(storeId,params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetCatalogSalesReferenceUrl = (storeId: number,
+    catalogProductId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/catalog-products/${catalogProductId}/sales-reference`
+}
+
+export const getCatalogSalesReference = async (storeId: number,
+    catalogProductId: number, options?: RequestInit): Promise<GetCatalogSalesReference200> => {
+
+  return customFetch<GetCatalogSalesReference200>(getGetCatalogSalesReferenceUrl(storeId,catalogProductId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetCatalogSalesReferenceQueryKey = (storeId: number,
+    catalogProductId: number,) => {
+    return [
+    `/api/stores/${storeId}/catalog-products/${catalogProductId}/sales-reference`
+    ] as const;
+    }
+
+
+export const getGetCatalogSalesReferenceQueryOptions = <TData = Awaited<ReturnType<typeof getCatalogSalesReference>>, TError = ErrorType<void>>(storeId: number,
+    catalogProductId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCatalogSalesReference>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCatalogSalesReferenceQueryKey(storeId,catalogProductId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCatalogSalesReference>>> = ({ signal }) => getCatalogSalesReference(storeId,catalogProductId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(storeId && catalogProductId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCatalogSalesReference>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetCatalogSalesReferenceQueryResult = NonNullable<Awaited<ReturnType<typeof getCatalogSalesReference>>>
+export type GetCatalogSalesReferenceQueryError = ErrorType<void>
+
+
+
+export function useGetCatalogSalesReference<TData = Awaited<ReturnType<typeof getCatalogSalesReference>>, TError = ErrorType<void>>(
+ storeId: number,
+    catalogProductId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCatalogSalesReference>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetCatalogSalesReferenceQueryOptions(storeId,catalogProductId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetCatalogOrderCostOptionsUrl = (storeId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/order-cost-options`
+}
+
+export const getCatalogOrderCostOptions = async (storeId: number, options?: RequestInit): Promise<GetCatalogOrderCostOptions200> => {
+
+  return customFetch<GetCatalogOrderCostOptions200>(getGetCatalogOrderCostOptionsUrl(storeId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetCatalogOrderCostOptionsQueryKey = (storeId: number,) => {
+    return [
+    `/api/stores/${storeId}/order-cost-options`
+    ] as const;
+    }
+
+
+export const getGetCatalogOrderCostOptionsQueryOptions = <TData = Awaited<ReturnType<typeof getCatalogOrderCostOptions>>, TError = ErrorType<void>>(storeId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCatalogOrderCostOptions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCatalogOrderCostOptionsQueryKey(storeId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCatalogOrderCostOptions>>> = ({ signal }) => getCatalogOrderCostOptions(storeId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(storeId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCatalogOrderCostOptions>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetCatalogOrderCostOptionsQueryResult = NonNullable<Awaited<ReturnType<typeof getCatalogOrderCostOptions>>>
+export type GetCatalogOrderCostOptionsQueryError = ErrorType<void>
+
+
+
+export function useGetCatalogOrderCostOptions<TData = Awaited<ReturnType<typeof getCatalogOrderCostOptions>>, TError = ErrorType<void>>(
+ storeId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCatalogOrderCostOptions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetCatalogOrderCostOptionsQueryOptions(storeId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCreateCatalogOrderUrl = (storeId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/catalog-orders`
+}
+
+export const createCatalogOrder = async (storeId: number,
+    catalogOrderInput: CatalogOrderInput, options?: RequestInit): Promise<Order> => {
+
+  return customFetch<Order>(getCreateCatalogOrderUrl(storeId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      catalogOrderInput,)
+  }
+);}
+
+
+
+
+export const getCreateCatalogOrderMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCatalogOrder>>, TError,{storeId: number;data: BodyType<CatalogOrderInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createCatalogOrder>>, TError,{storeId: number;data: BodyType<CatalogOrderInput>}, TContext> => {
+
+const mutationKey = ['createCatalogOrder'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createCatalogOrder>>, {storeId: number;data: BodyType<CatalogOrderInput>}> = (props) => {
+          const {storeId,data} = props ?? {};
+
+          return  createCatalogOrder(storeId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateCatalogOrderMutationResult = NonNullable<Awaited<ReturnType<typeof createCatalogOrder>>>
+    export type CreateCatalogOrderMutationBody = BodyType<CatalogOrderInput>
+    export type CreateCatalogOrderMutationError = ErrorType<unknown>
+
+    export const useCreateCatalogOrder = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCatalogOrder>>, TError,{storeId: number;data: BodyType<CatalogOrderInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createCatalogOrder>>,
+        TError,
+        {storeId: number;data: BodyType<CatalogOrderInput>},
+        TContext
+      > => {
+      return useMutation(getCreateCatalogOrderMutationOptions(options));
+    }
+
+export const getCreateCatalogListingUrl = (storeId: number,
+    catalogProductId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/catalog-products/${catalogProductId}/create-listing`
+}
+
+export const createCatalogListing = async (storeId: number,
+    catalogProductId: number,
+    listingPricingInput: ListingPricingInput, options?: RequestInit): Promise<ListingPricingResult> => {
+
+  return customFetch<ListingPricingResult>(getCreateCatalogListingUrl(storeId,catalogProductId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      listingPricingInput,)
+  }
+);}
+
+
+
+
+export const getCreateCatalogListingMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCatalogListing>>, TError,{storeId: number;catalogProductId: number;data: BodyType<ListingPricingInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createCatalogListing>>, TError,{storeId: number;catalogProductId: number;data: BodyType<ListingPricingInput>}, TContext> => {
+
+const mutationKey = ['createCatalogListing'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createCatalogListing>>, {storeId: number;catalogProductId: number;data: BodyType<ListingPricingInput>}> = (props) => {
+          const {storeId,catalogProductId,data} = props ?? {};
+
+          return  createCatalogListing(storeId,catalogProductId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateCatalogListingMutationResult = NonNullable<Awaited<ReturnType<typeof createCatalogListing>>>
+    export type CreateCatalogListingMutationBody = BodyType<ListingPricingInput>
+    export type CreateCatalogListingMutationError = ErrorType<void>
+
+    export const useCreateCatalogListing = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCatalogListing>>, TError,{storeId: number;catalogProductId: number;data: BodyType<ListingPricingInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createCatalogListing>>,
+        TError,
+        {storeId: number;catalogProductId: number;data: BodyType<ListingPricingInput>},
+        TContext
+      > => {
+      return useMutation(getCreateCatalogListingMutationOptions(options));
+    }
+
+export const getRecalculateListingPricingUrl = (storeId: number,
+    productId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/products/${productId}/recalculate-pricing`
+}
+
+export const recalculateListingPricing = async (storeId: number,
+    productId: number,
+    listingPricingInput: ListingPricingInput, options?: RequestInit): Promise<ListingPricingResult> => {
+
+  return customFetch<ListingPricingResult>(getRecalculateListingPricingUrl(storeId,productId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      listingPricingInput,)
+  }
+);}
+
+
+
+
+export const getRecalculateListingPricingMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recalculateListingPricing>>, TError,{storeId: number;productId: number;data: BodyType<ListingPricingInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof recalculateListingPricing>>, TError,{storeId: number;productId: number;data: BodyType<ListingPricingInput>}, TContext> => {
+
+const mutationKey = ['recalculateListingPricing'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof recalculateListingPricing>>, {storeId: number;productId: number;data: BodyType<ListingPricingInput>}> = (props) => {
+          const {storeId,productId,data} = props ?? {};
+
+          return  recalculateListingPricing(storeId,productId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RecalculateListingPricingMutationResult = NonNullable<Awaited<ReturnType<typeof recalculateListingPricing>>>
+    export type RecalculateListingPricingMutationBody = BodyType<ListingPricingInput>
+    export type RecalculateListingPricingMutationError = ErrorType<void>
+
+    export const useRecalculateListingPricing = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recalculateListingPricing>>, TError,{storeId: number;productId: number;data: BodyType<ListingPricingInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof recalculateListingPricing>>,
+        TError,
+        {storeId: number;productId: number;data: BodyType<ListingPricingInput>},
+        TContext
+      > => {
+      return useMutation(getRecalculateListingPricingMutationOptions(options));
+    }
+
+export const getGetListingPricingHistoryUrl = (storeId: number,
+    productId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/products/${productId}/pricing-history`
+}
+
+export const getListingPricingHistory = async (storeId: number,
+    productId: number, options?: RequestInit): Promise<ListingPricingHistory> => {
+
+  return customFetch<ListingPricingHistory>(getGetListingPricingHistoryUrl(storeId,productId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetListingPricingHistoryQueryKey = (storeId: number,
+    productId: number,) => {
+    return [
+    `/api/stores/${storeId}/products/${productId}/pricing-history`
+    ] as const;
+    }
+
+
+export const getGetListingPricingHistoryQueryOptions = <TData = Awaited<ReturnType<typeof getListingPricingHistory>>, TError = ErrorType<void>>(storeId: number,
+    productId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getListingPricingHistory>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetListingPricingHistoryQueryKey(storeId,productId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getListingPricingHistory>>> = ({ signal }) => getListingPricingHistory(storeId,productId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(storeId && productId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getListingPricingHistory>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetListingPricingHistoryQueryResult = NonNullable<Awaited<ReturnType<typeof getListingPricingHistory>>>
+export type GetListingPricingHistoryQueryError = ErrorType<void>
+
+
+
+export function useGetListingPricingHistory<TData = Awaited<ReturnType<typeof getListingPricingHistory>>, TError = ErrorType<void>>(
+ storeId: number,
+    productId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getListingPricingHistory>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetListingPricingHistoryQueryOptions(storeId,productId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCatalogListUrl = (storeId: number,
+    params?: CatalogListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/stores/${storeId}/catalog-products?${stringifiedParams}` : `/api/stores/${storeId}/catalog-products`
+}
+
+/**
+ * @summary Owner-only catalogList
+ */
+export const catalogList = async (storeId: number,
+    params?: CatalogListParams, options?: RequestInit): Promise<CatalogPage> => {
+
+  return customFetch<CatalogPage>(getCatalogListUrl(storeId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getCatalogListQueryKey = (storeId: number,
+    params?: CatalogListParams,) => {
+    return [
+    `/api/stores/${storeId}/catalog-products`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getCatalogListQueryOptions = <TData = Awaited<ReturnType<typeof catalogList>>, TError = ErrorType<void>>(storeId: number,
+    params?: CatalogListParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof catalogList>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getCatalogListQueryKey(storeId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof catalogList>>> = ({ signal }) => catalogList(storeId,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(storeId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof catalogList>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type CatalogListQueryResult = NonNullable<Awaited<ReturnType<typeof catalogList>>>
+export type CatalogListQueryError = ErrorType<void>
+
+
+/**
+ * @summary Owner-only catalogList
+ */
+
+export function useCatalogList<TData = Awaited<ReturnType<typeof catalogList>>, TError = ErrorType<void>>(
+ storeId: number,
+    params?: CatalogListParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof catalogList>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getCatalogListQueryOptions(storeId,params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCatalogCreateUrl = (storeId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/catalog-products`
+}
+
+/**
+ * @summary Owner-only catalogCreate
+ */
+export const catalogCreate = async (storeId: number,
+    catalogCreateInput: CatalogCreateInput, options?: RequestInit): Promise<CatalogProductResult> => {
+
+  return customFetch<CatalogProductResult>(getCatalogCreateUrl(storeId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      catalogCreateInput,)
+  }
+);}
+
+
+
+
+export const getCatalogCreateMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogCreate>>, TError,{storeId: number;data: BodyType<CatalogCreateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof catalogCreate>>, TError,{storeId: number;data: BodyType<CatalogCreateInput>}, TContext> => {
+
+const mutationKey = ['catalogCreate'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof catalogCreate>>, {storeId: number;data: BodyType<CatalogCreateInput>}> = (props) => {
+          const {storeId,data} = props ?? {};
+
+          return  catalogCreate(storeId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CatalogCreateMutationResult = NonNullable<Awaited<ReturnType<typeof catalogCreate>>>
+    export type CatalogCreateMutationBody = BodyType<CatalogCreateInput>
+    export type CatalogCreateMutationError = ErrorType<void>
+
+    /**
+ * @summary Owner-only catalogCreate
+ */
+export const useCatalogCreate = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogCreate>>, TError,{storeId: number;data: BodyType<CatalogCreateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof catalogCreate>>,
+        TError,
+        {storeId: number;data: BodyType<CatalogCreateInput>},
+        TContext
+      > => {
+      return useMutation(getCatalogCreateMutationOptions(options));
+    }
+
+export const getCatalogGetUrl = (storeId: number,
+    catalogProductId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/catalog-products/${catalogProductId}`
+}
+
+/**
+ * @summary Owner-only catalogGet
+ */
+export const catalogGet = async (storeId: number,
+    catalogProductId: number, options?: RequestInit): Promise<CatalogProductResult> => {
+
+  return customFetch<CatalogProductResult>(getCatalogGetUrl(storeId,catalogProductId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getCatalogGetQueryKey = (storeId: number,
+    catalogProductId: number,) => {
+    return [
+    `/api/stores/${storeId}/catalog-products/${catalogProductId}`
+    ] as const;
+    }
+
+
+export const getCatalogGetQueryOptions = <TData = Awaited<ReturnType<typeof catalogGet>>, TError = ErrorType<void>>(storeId: number,
+    catalogProductId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof catalogGet>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getCatalogGetQueryKey(storeId,catalogProductId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof catalogGet>>> = ({ signal }) => catalogGet(storeId,catalogProductId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(storeId && catalogProductId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof catalogGet>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type CatalogGetQueryResult = NonNullable<Awaited<ReturnType<typeof catalogGet>>>
+export type CatalogGetQueryError = ErrorType<void>
+
+
+/**
+ * @summary Owner-only catalogGet
+ */
+
+export function useCatalogGet<TData = Awaited<ReturnType<typeof catalogGet>>, TError = ErrorType<void>>(
+ storeId: number,
+    catalogProductId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof catalogGet>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getCatalogGetQueryOptions(storeId,catalogProductId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCatalogPatchUrl = (storeId: number,
+    catalogProductId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/catalog-products/${catalogProductId}`
+}
+
+/**
+ * @summary Owner-only catalogPatch
+ */
+export const catalogPatch = async (storeId: number,
+    catalogProductId: number,
+    catalogPatchInput: CatalogPatchInput, options?: RequestInit): Promise<CatalogProductResult> => {
+
+  return customFetch<CatalogProductResult>(getCatalogPatchUrl(storeId,catalogProductId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      catalogPatchInput,)
+  }
+);}
+
+
+
+
+export const getCatalogPatchMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogPatch>>, TError,{storeId: number;catalogProductId: number;data: BodyType<CatalogPatchInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof catalogPatch>>, TError,{storeId: number;catalogProductId: number;data: BodyType<CatalogPatchInput>}, TContext> => {
+
+const mutationKey = ['catalogPatch'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof catalogPatch>>, {storeId: number;catalogProductId: number;data: BodyType<CatalogPatchInput>}> = (props) => {
+          const {storeId,catalogProductId,data} = props ?? {};
+
+          return  catalogPatch(storeId,catalogProductId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CatalogPatchMutationResult = NonNullable<Awaited<ReturnType<typeof catalogPatch>>>
+    export type CatalogPatchMutationBody = BodyType<CatalogPatchInput>
+    export type CatalogPatchMutationError = ErrorType<void>
+
+    /**
+ * @summary Owner-only catalogPatch
+ */
+export const useCatalogPatch = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogPatch>>, TError,{storeId: number;catalogProductId: number;data: BodyType<CatalogPatchInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof catalogPatch>>,
+        TError,
+        {storeId: number;catalogProductId: number;data: BodyType<CatalogPatchInput>},
+        TContext
+      > => {
+      return useMutation(getCatalogPatchMutationOptions(options));
+    }
+
+export const getCatalogDeleteUrl = (storeId: number,
+    catalogProductId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/catalog-products/${catalogProductId}`
+}
+
+/**
+ * @summary Owner-only catalogDelete
+ */
+export const catalogDelete = async (storeId: number,
+    catalogProductId: number, options?: RequestInit): Promise<CatalogDeleted> => {
+
+  return customFetch<CatalogDeleted>(getCatalogDeleteUrl(storeId,catalogProductId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getCatalogDeleteMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogDelete>>, TError,{storeId: number;catalogProductId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof catalogDelete>>, TError,{storeId: number;catalogProductId: number}, TContext> => {
+
+const mutationKey = ['catalogDelete'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof catalogDelete>>, {storeId: number;catalogProductId: number}> = (props) => {
+          const {storeId,catalogProductId} = props ?? {};
+
+          return  catalogDelete(storeId,catalogProductId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CatalogDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof catalogDelete>>>
+
+    export type CatalogDeleteMutationError = ErrorType<void>
+
+    /**
+ * @summary Owner-only catalogDelete
+ */
+export const useCatalogDelete = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogDelete>>, TError,{storeId: number;catalogProductId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof catalogDelete>>,
+        TError,
+        {storeId: number;catalogProductId: number},
+        TContext
+      > => {
+      return useMutation(getCatalogDeleteMutationOptions(options));
+    }
+
+export const getCatalogCorrectBarcodeUrl = (storeId: number,
+    catalogProductId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/catalog-products/${catalogProductId}/correct-barcode`
+}
+
+/**
+ * @summary Owner-only catalogCorrectBarcode
+ */
+export const catalogCorrectBarcode = async (storeId: number,
+    catalogProductId: number,
+    catalogBarcodeInput: CatalogBarcodeInput, options?: RequestInit): Promise<CatalogProductResult> => {
+
+  return customFetch<CatalogProductResult>(getCatalogCorrectBarcodeUrl(storeId,catalogProductId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      catalogBarcodeInput,)
+  }
+);}
+
+
+
+
+export const getCatalogCorrectBarcodeMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogCorrectBarcode>>, TError,{storeId: number;catalogProductId: number;data: BodyType<CatalogBarcodeInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof catalogCorrectBarcode>>, TError,{storeId: number;catalogProductId: number;data: BodyType<CatalogBarcodeInput>}, TContext> => {
+
+const mutationKey = ['catalogCorrectBarcode'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof catalogCorrectBarcode>>, {storeId: number;catalogProductId: number;data: BodyType<CatalogBarcodeInput>}> = (props) => {
+          const {storeId,catalogProductId,data} = props ?? {};
+
+          return  catalogCorrectBarcode(storeId,catalogProductId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CatalogCorrectBarcodeMutationResult = NonNullable<Awaited<ReturnType<typeof catalogCorrectBarcode>>>
+    export type CatalogCorrectBarcodeMutationBody = BodyType<CatalogBarcodeInput>
+    export type CatalogCorrectBarcodeMutationError = ErrorType<void>
+
+    /**
+ * @summary Owner-only catalogCorrectBarcode
+ */
+export const useCatalogCorrectBarcode = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogCorrectBarcode>>, TError,{storeId: number;catalogProductId: number;data: BodyType<CatalogBarcodeInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof catalogCorrectBarcode>>,
+        TError,
+        {storeId: number;catalogProductId: number;data: BodyType<CatalogBarcodeInput>},
+        TContext
+      > => {
+      return useMutation(getCatalogCorrectBarcodeMutationOptions(options));
+    }
+
+export const getCatalogCloneUrl = (storeId: number,
+    catalogProductId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/catalog-products/${catalogProductId}/clone-with-new-barcode`
+}
+
+/**
+ * @summary Owner-only catalogClone
+ */
+export const catalogClone = async (storeId: number,
+    catalogProductId: number,
+    catalogCloneInput: CatalogCloneInput, options?: RequestInit): Promise<CatalogProductResult> => {
+
+  return customFetch<CatalogProductResult>(getCatalogCloneUrl(storeId,catalogProductId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      catalogCloneInput,)
+  }
+);}
+
+
+
+
+export const getCatalogCloneMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogClone>>, TError,{storeId: number;catalogProductId: number;data: BodyType<CatalogCloneInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof catalogClone>>, TError,{storeId: number;catalogProductId: number;data: BodyType<CatalogCloneInput>}, TContext> => {
+
+const mutationKey = ['catalogClone'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof catalogClone>>, {storeId: number;catalogProductId: number;data: BodyType<CatalogCloneInput>}> = (props) => {
+          const {storeId,catalogProductId,data} = props ?? {};
+
+          return  catalogClone(storeId,catalogProductId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CatalogCloneMutationResult = NonNullable<Awaited<ReturnType<typeof catalogClone>>>
+    export type CatalogCloneMutationBody = BodyType<CatalogCloneInput>
+    export type CatalogCloneMutationError = ErrorType<void>
+
+    /**
+ * @summary Owner-only catalogClone
+ */
+export const useCatalogClone = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogClone>>, TError,{storeId: number;catalogProductId: number;data: BodyType<CatalogCloneInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof catalogClone>>,
+        TError,
+        {storeId: number;catalogProductId: number;data: BodyType<CatalogCloneInput>},
+        TContext
+      > => {
+      return useMutation(getCatalogCloneMutationOptions(options));
+    }
+
+export const getCatalogAliasesUrl = (storeId: number,
+    catalogProductId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/catalog-products/${catalogProductId}/aliases`
+}
+
+/**
+ * @summary Owner-only catalogAliases
+ */
+export const catalogAliases = async (storeId: number,
+    catalogProductId: number, options?: RequestInit): Promise<CatalogAliasList> => {
+
+  return customFetch<CatalogAliasList>(getCatalogAliasesUrl(storeId,catalogProductId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getCatalogAliasesQueryKey = (storeId: number,
+    catalogProductId: number,) => {
+    return [
+    `/api/stores/${storeId}/catalog-products/${catalogProductId}/aliases`
+    ] as const;
+    }
+
+
+export const getCatalogAliasesQueryOptions = <TData = Awaited<ReturnType<typeof catalogAliases>>, TError = ErrorType<void>>(storeId: number,
+    catalogProductId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof catalogAliases>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getCatalogAliasesQueryKey(storeId,catalogProductId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof catalogAliases>>> = ({ signal }) => catalogAliases(storeId,catalogProductId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(storeId && catalogProductId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof catalogAliases>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type CatalogAliasesQueryResult = NonNullable<Awaited<ReturnType<typeof catalogAliases>>>
+export type CatalogAliasesQueryError = ErrorType<void>
+
+
+/**
+ * @summary Owner-only catalogAliases
+ */
+
+export function useCatalogAliases<TData = Awaited<ReturnType<typeof catalogAliases>>, TError = ErrorType<void>>(
+ storeId: number,
+    catalogProductId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof catalogAliases>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getCatalogAliasesQueryOptions(storeId,catalogProductId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCatalogAliasCreateUrl = (storeId: number,
+    catalogProductId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/catalog-products/${catalogProductId}/aliases`
+}
+
+/**
+ * @summary Owner-only catalogAliasCreate
+ */
+export const catalogAliasCreate = async (storeId: number,
+    catalogProductId: number,
+    catalogAliasInput: CatalogAliasInput, options?: RequestInit): Promise<CatalogAliasResult> => {
+
+  return customFetch<CatalogAliasResult>(getCatalogAliasCreateUrl(storeId,catalogProductId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      catalogAliasInput,)
+  }
+);}
+
+
+
+
+export const getCatalogAliasCreateMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogAliasCreate>>, TError,{storeId: number;catalogProductId: number;data: BodyType<CatalogAliasInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof catalogAliasCreate>>, TError,{storeId: number;catalogProductId: number;data: BodyType<CatalogAliasInput>}, TContext> => {
+
+const mutationKey = ['catalogAliasCreate'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof catalogAliasCreate>>, {storeId: number;catalogProductId: number;data: BodyType<CatalogAliasInput>}> = (props) => {
+          const {storeId,catalogProductId,data} = props ?? {};
+
+          return  catalogAliasCreate(storeId,catalogProductId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CatalogAliasCreateMutationResult = NonNullable<Awaited<ReturnType<typeof catalogAliasCreate>>>
+    export type CatalogAliasCreateMutationBody = BodyType<CatalogAliasInput>
+    export type CatalogAliasCreateMutationError = ErrorType<void>
+
+    /**
+ * @summary Owner-only catalogAliasCreate
+ */
+export const useCatalogAliasCreate = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogAliasCreate>>, TError,{storeId: number;catalogProductId: number;data: BodyType<CatalogAliasInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof catalogAliasCreate>>,
+        TError,
+        {storeId: number;catalogProductId: number;data: BodyType<CatalogAliasInput>},
+        TContext
+      > => {
+      return useMutation(getCatalogAliasCreateMutationOptions(options));
+    }
+
+export const getCatalogAliasDeleteUrl = (storeId: number,
+    catalogProductId: number,
+    aliasId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/catalog-products/${catalogProductId}/aliases/${aliasId}`
+}
+
+/**
+ * @summary Owner-only catalogAliasDelete
+ */
+export const catalogAliasDelete = async (storeId: number,
+    catalogProductId: number,
+    aliasId: number, options?: RequestInit): Promise<CatalogDeleted> => {
+
+  return customFetch<CatalogDeleted>(getCatalogAliasDeleteUrl(storeId,catalogProductId,aliasId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getCatalogAliasDeleteMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogAliasDelete>>, TError,{storeId: number;catalogProductId: number;aliasId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof catalogAliasDelete>>, TError,{storeId: number;catalogProductId: number;aliasId: number}, TContext> => {
+
+const mutationKey = ['catalogAliasDelete'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof catalogAliasDelete>>, {storeId: number;catalogProductId: number;aliasId: number}> = (props) => {
+          const {storeId,catalogProductId,aliasId} = props ?? {};
+
+          return  catalogAliasDelete(storeId,catalogProductId,aliasId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CatalogAliasDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof catalogAliasDelete>>>
+
+    export type CatalogAliasDeleteMutationError = ErrorType<void>
+
+    /**
+ * @summary Owner-only catalogAliasDelete
+ */
+export const useCatalogAliasDelete = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogAliasDelete>>, TError,{storeId: number;catalogProductId: number;aliasId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof catalogAliasDelete>>,
+        TError,
+        {storeId: number;catalogProductId: number;aliasId: number},
+        TContext
+      > => {
+      return useMutation(getCatalogAliasDeleteMutationOptions(options));
+    }
+
+export const getCatalogCostsUrl = (storeId: number,
+    catalogProductId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/catalog-products/${catalogProductId}/cost-records`
+}
+
+/**
+ * @summary Owner-only catalogCosts
+ */
+export const catalogCosts = async (storeId: number,
+    catalogProductId: number, options?: RequestInit): Promise<CatalogCostList> => {
+
+  return customFetch<CatalogCostList>(getCatalogCostsUrl(storeId,catalogProductId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getCatalogCostsQueryKey = (storeId: number,
+    catalogProductId: number,) => {
+    return [
+    `/api/stores/${storeId}/catalog-products/${catalogProductId}/cost-records`
+    ] as const;
+    }
+
+
+export const getCatalogCostsQueryOptions = <TData = Awaited<ReturnType<typeof catalogCosts>>, TError = ErrorType<void>>(storeId: number,
+    catalogProductId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof catalogCosts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getCatalogCostsQueryKey(storeId,catalogProductId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof catalogCosts>>> = ({ signal }) => catalogCosts(storeId,catalogProductId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(storeId && catalogProductId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof catalogCosts>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type CatalogCostsQueryResult = NonNullable<Awaited<ReturnType<typeof catalogCosts>>>
+export type CatalogCostsQueryError = ErrorType<void>
+
+
+/**
+ * @summary Owner-only catalogCosts
+ */
+
+export function useCatalogCosts<TData = Awaited<ReturnType<typeof catalogCosts>>, TError = ErrorType<void>>(
+ storeId: number,
+    catalogProductId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof catalogCosts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getCatalogCostsQueryOptions(storeId,catalogProductId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCatalogCostCreateUrl = (storeId: number,
+    catalogProductId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/catalog-products/${catalogProductId}/cost-records`
+}
+
+/**
+ * @summary Owner-only catalogCostCreate
+ */
+export const catalogCostCreate = async (storeId: number,
+    catalogProductId: number,
+    catalogCostInput: CatalogCostInput, options?: RequestInit): Promise<CatalogCostResult> => {
+
+  return customFetch<CatalogCostResult>(getCatalogCostCreateUrl(storeId,catalogProductId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      catalogCostInput,)
+  }
+);}
+
+
+
+
+export const getCatalogCostCreateMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogCostCreate>>, TError,{storeId: number;catalogProductId: number;data: BodyType<CatalogCostInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof catalogCostCreate>>, TError,{storeId: number;catalogProductId: number;data: BodyType<CatalogCostInput>}, TContext> => {
+
+const mutationKey = ['catalogCostCreate'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof catalogCostCreate>>, {storeId: number;catalogProductId: number;data: BodyType<CatalogCostInput>}> = (props) => {
+          const {storeId,catalogProductId,data} = props ?? {};
+
+          return  catalogCostCreate(storeId,catalogProductId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CatalogCostCreateMutationResult = NonNullable<Awaited<ReturnType<typeof catalogCostCreate>>>
+    export type CatalogCostCreateMutationBody = BodyType<CatalogCostInput>
+    export type CatalogCostCreateMutationError = ErrorType<void>
+
+    /**
+ * @summary Owner-only catalogCostCreate
+ */
+export const useCatalogCostCreate = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogCostCreate>>, TError,{storeId: number;catalogProductId: number;data: BodyType<CatalogCostInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof catalogCostCreate>>,
+        TError,
+        {storeId: number;catalogProductId: number;data: BodyType<CatalogCostInput>},
+        TContext
+      > => {
+      return useMutation(getCatalogCostCreateMutationOptions(options));
+    }
+
+export const getCatalogCostVoidUrl = (storeId: number,
+    catalogProductId: number,
+    recordId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/catalog-products/${catalogProductId}/cost-records/${recordId}/void`
+}
+
+/**
+ * @summary Owner-only catalogCostVoid
+ */
+export const catalogCostVoid = async (storeId: number,
+    catalogProductId: number,
+    recordId: number,
+    catalogVoidInput: CatalogVoidInput, options?: RequestInit): Promise<CatalogProductResult> => {
+
+  return customFetch<CatalogProductResult>(getCatalogCostVoidUrl(storeId,catalogProductId,recordId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      catalogVoidInput,)
+  }
+);}
+
+
+
+
+export const getCatalogCostVoidMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogCostVoid>>, TError,{storeId: number;catalogProductId: number;recordId: number;data: BodyType<CatalogVoidInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof catalogCostVoid>>, TError,{storeId: number;catalogProductId: number;recordId: number;data: BodyType<CatalogVoidInput>}, TContext> => {
+
+const mutationKey = ['catalogCostVoid'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof catalogCostVoid>>, {storeId: number;catalogProductId: number;recordId: number;data: BodyType<CatalogVoidInput>}> = (props) => {
+          const {storeId,catalogProductId,recordId,data} = props ?? {};
+
+          return  catalogCostVoid(storeId,catalogProductId,recordId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CatalogCostVoidMutationResult = NonNullable<Awaited<ReturnType<typeof catalogCostVoid>>>
+    export type CatalogCostVoidMutationBody = BodyType<CatalogVoidInput>
+    export type CatalogCostVoidMutationError = ErrorType<void>
+
+    /**
+ * @summary Owner-only catalogCostVoid
+ */
+export const useCatalogCostVoid = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogCostVoid>>, TError,{storeId: number;catalogProductId: number;recordId: number;data: BodyType<CatalogVoidInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof catalogCostVoid>>,
+        TError,
+        {storeId: number;catalogProductId: number;recordId: number;data: BodyType<CatalogVoidInput>},
+        TContext
+      > => {
+      return useMutation(getCatalogCostVoidMutationOptions(options));
+    }
+
+export const getCatalogShopeeUrl = (storeId: number,
+    catalogProductId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/catalog-products/${catalogProductId}/shopee-prices`
+}
+
+/**
+ * @summary Owner-only catalogShopee
+ */
+export const catalogShopee = async (storeId: number,
+    catalogProductId: number, options?: RequestInit): Promise<CatalogShopeeList> => {
+
+  return customFetch<CatalogShopeeList>(getCatalogShopeeUrl(storeId,catalogProductId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getCatalogShopeeQueryKey = (storeId: number,
+    catalogProductId: number,) => {
+    return [
+    `/api/stores/${storeId}/catalog-products/${catalogProductId}/shopee-prices`
+    ] as const;
+    }
+
+
+export const getCatalogShopeeQueryOptions = <TData = Awaited<ReturnType<typeof catalogShopee>>, TError = ErrorType<void>>(storeId: number,
+    catalogProductId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof catalogShopee>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getCatalogShopeeQueryKey(storeId,catalogProductId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof catalogShopee>>> = ({ signal }) => catalogShopee(storeId,catalogProductId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(storeId && catalogProductId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof catalogShopee>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type CatalogShopeeQueryResult = NonNullable<Awaited<ReturnType<typeof catalogShopee>>>
+export type CatalogShopeeQueryError = ErrorType<void>
+
+
+/**
+ * @summary Owner-only catalogShopee
+ */
+
+export function useCatalogShopee<TData = Awaited<ReturnType<typeof catalogShopee>>, TError = ErrorType<void>>(
+ storeId: number,
+    catalogProductId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof catalogShopee>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getCatalogShopeeQueryOptions(storeId,catalogProductId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCatalogShopeeCreateUrl = (storeId: number,
+    catalogProductId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/catalog-products/${catalogProductId}/shopee-prices`
+}
+
+/**
+ * @summary Owner-only catalogShopeeCreate
+ */
+export const catalogShopeeCreate = async (storeId: number,
+    catalogProductId: number,
+    catalogShopeeInput: CatalogShopeeInput, options?: RequestInit): Promise<CatalogShopeeResult> => {
+
+  return customFetch<CatalogShopeeResult>(getCatalogShopeeCreateUrl(storeId,catalogProductId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      catalogShopeeInput,)
+  }
+);}
+
+
+
+
+export const getCatalogShopeeCreateMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogShopeeCreate>>, TError,{storeId: number;catalogProductId: number;data: BodyType<CatalogShopeeInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof catalogShopeeCreate>>, TError,{storeId: number;catalogProductId: number;data: BodyType<CatalogShopeeInput>}, TContext> => {
+
+const mutationKey = ['catalogShopeeCreate'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof catalogShopeeCreate>>, {storeId: number;catalogProductId: number;data: BodyType<CatalogShopeeInput>}> = (props) => {
+          const {storeId,catalogProductId,data} = props ?? {};
+
+          return  catalogShopeeCreate(storeId,catalogProductId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CatalogShopeeCreateMutationResult = NonNullable<Awaited<ReturnType<typeof catalogShopeeCreate>>>
+    export type CatalogShopeeCreateMutationBody = BodyType<CatalogShopeeInput>
+    export type CatalogShopeeCreateMutationError = ErrorType<void>
+
+    /**
+ * @summary Owner-only catalogShopeeCreate
+ */
+export const useCatalogShopeeCreate = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogShopeeCreate>>, TError,{storeId: number;catalogProductId: number;data: BodyType<CatalogShopeeInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof catalogShopeeCreate>>,
+        TError,
+        {storeId: number;catalogProductId: number;data: BodyType<CatalogShopeeInput>},
+        TContext
+      > => {
+      return useMutation(getCatalogShopeeCreateMutationOptions(options));
+    }
+
+export const getCatalogShopeeVoidUrl = (storeId: number,
+    catalogProductId: number,
+    recordId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/catalog-products/${catalogProductId}/shopee-prices/${recordId}/void`
+}
+
+/**
+ * @summary Owner-only catalogShopeeVoid
+ */
+export const catalogShopeeVoid = async (storeId: number,
+    catalogProductId: number,
+    recordId: number,
+    catalogVoidInput: CatalogVoidInput, options?: RequestInit): Promise<CatalogVoided> => {
+
+  return customFetch<CatalogVoided>(getCatalogShopeeVoidUrl(storeId,catalogProductId,recordId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      catalogVoidInput,)
+  }
+);}
+
+
+
+
+export const getCatalogShopeeVoidMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogShopeeVoid>>, TError,{storeId: number;catalogProductId: number;recordId: number;data: BodyType<CatalogVoidInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof catalogShopeeVoid>>, TError,{storeId: number;catalogProductId: number;recordId: number;data: BodyType<CatalogVoidInput>}, TContext> => {
+
+const mutationKey = ['catalogShopeeVoid'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof catalogShopeeVoid>>, {storeId: number;catalogProductId: number;recordId: number;data: BodyType<CatalogVoidInput>}> = (props) => {
+          const {storeId,catalogProductId,recordId,data} = props ?? {};
+
+          return  catalogShopeeVoid(storeId,catalogProductId,recordId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CatalogShopeeVoidMutationResult = NonNullable<Awaited<ReturnType<typeof catalogShopeeVoid>>>
+    export type CatalogShopeeVoidMutationBody = BodyType<CatalogVoidInput>
+    export type CatalogShopeeVoidMutationError = ErrorType<void>
+
+    /**
+ * @summary Owner-only catalogShopeeVoid
+ */
+export const useCatalogShopeeVoid = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogShopeeVoid>>, TError,{storeId: number;catalogProductId: number;recordId: number;data: BodyType<CatalogVoidInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof catalogShopeeVoid>>,
+        TError,
+        {storeId: number;catalogProductId: number;recordId: number;data: BodyType<CatalogVoidInput>},
+        TContext
+      > => {
+      return useMutation(getCatalogShopeeVoidMutationOptions(options));
+    }
+
+export const getCatalogRelationshipsUrl = (storeId: number,
+    catalogProductId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/catalog-products/${catalogProductId}/relationships`
+}
+
+/**
+ * @summary Owner-only catalogRelationships
+ */
+export const catalogRelationships = async (storeId: number,
+    catalogProductId: number, options?: RequestInit): Promise<CatalogRelationshipList> => {
+
+  return customFetch<CatalogRelationshipList>(getCatalogRelationshipsUrl(storeId,catalogProductId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getCatalogRelationshipsQueryKey = (storeId: number,
+    catalogProductId: number,) => {
+    return [
+    `/api/stores/${storeId}/catalog-products/${catalogProductId}/relationships`
+    ] as const;
+    }
+
+
+export const getCatalogRelationshipsQueryOptions = <TData = Awaited<ReturnType<typeof catalogRelationships>>, TError = ErrorType<void>>(storeId: number,
+    catalogProductId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof catalogRelationships>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getCatalogRelationshipsQueryKey(storeId,catalogProductId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof catalogRelationships>>> = ({ signal }) => catalogRelationships(storeId,catalogProductId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(storeId && catalogProductId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof catalogRelationships>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type CatalogRelationshipsQueryResult = NonNullable<Awaited<ReturnType<typeof catalogRelationships>>>
+export type CatalogRelationshipsQueryError = ErrorType<void>
+
+
+/**
+ * @summary Owner-only catalogRelationships
+ */
+
+export function useCatalogRelationships<TData = Awaited<ReturnType<typeof catalogRelationships>>, TError = ErrorType<void>>(
+ storeId: number,
+    catalogProductId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof catalogRelationships>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getCatalogRelationshipsQueryOptions(storeId,catalogProductId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCatalogRelationshipCreateUrl = (storeId: number,
+    catalogProductId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/catalog-products/${catalogProductId}/relationships`
+}
+
+/**
+ * @summary Owner-only catalogRelationshipCreate
+ */
+export const catalogRelationshipCreate = async (storeId: number,
+    catalogProductId: number,
+    catalogRelationshipInput: CatalogRelationshipInput, options?: RequestInit): Promise<CatalogRelationshipResult> => {
+
+  return customFetch<CatalogRelationshipResult>(getCatalogRelationshipCreateUrl(storeId,catalogProductId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      catalogRelationshipInput,)
+  }
+);}
+
+
+
+
+export const getCatalogRelationshipCreateMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogRelationshipCreate>>, TError,{storeId: number;catalogProductId: number;data: BodyType<CatalogRelationshipInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof catalogRelationshipCreate>>, TError,{storeId: number;catalogProductId: number;data: BodyType<CatalogRelationshipInput>}, TContext> => {
+
+const mutationKey = ['catalogRelationshipCreate'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof catalogRelationshipCreate>>, {storeId: number;catalogProductId: number;data: BodyType<CatalogRelationshipInput>}> = (props) => {
+          const {storeId,catalogProductId,data} = props ?? {};
+
+          return  catalogRelationshipCreate(storeId,catalogProductId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CatalogRelationshipCreateMutationResult = NonNullable<Awaited<ReturnType<typeof catalogRelationshipCreate>>>
+    export type CatalogRelationshipCreateMutationBody = BodyType<CatalogRelationshipInput>
+    export type CatalogRelationshipCreateMutationError = ErrorType<void>
+
+    /**
+ * @summary Owner-only catalogRelationshipCreate
+ */
+export const useCatalogRelationshipCreate = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogRelationshipCreate>>, TError,{storeId: number;catalogProductId: number;data: BodyType<CatalogRelationshipInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof catalogRelationshipCreate>>,
+        TError,
+        {storeId: number;catalogProductId: number;data: BodyType<CatalogRelationshipInput>},
+        TContext
+      > => {
+      return useMutation(getCatalogRelationshipCreateMutationOptions(options));
+    }
+
+export const getCatalogRelationshipDeleteUrl = (storeId: number,
+    catalogProductId: number,
+    relationshipId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/catalog-products/${catalogProductId}/relationships/${relationshipId}`
+}
+
+/**
+ * @summary Owner-only catalogRelationshipDelete
+ */
+export const catalogRelationshipDelete = async (storeId: number,
+    catalogProductId: number,
+    relationshipId: number, options?: RequestInit): Promise<CatalogDeleted> => {
+
+  return customFetch<CatalogDeleted>(getCatalogRelationshipDeleteUrl(storeId,catalogProductId,relationshipId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getCatalogRelationshipDeleteMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogRelationshipDelete>>, TError,{storeId: number;catalogProductId: number;relationshipId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof catalogRelationshipDelete>>, TError,{storeId: number;catalogProductId: number;relationshipId: number}, TContext> => {
+
+const mutationKey = ['catalogRelationshipDelete'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof catalogRelationshipDelete>>, {storeId: number;catalogProductId: number;relationshipId: number}> = (props) => {
+          const {storeId,catalogProductId,relationshipId} = props ?? {};
+
+          return  catalogRelationshipDelete(storeId,catalogProductId,relationshipId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CatalogRelationshipDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof catalogRelationshipDelete>>>
+
+    export type CatalogRelationshipDeleteMutationError = ErrorType<void>
+
+    /**
+ * @summary Owner-only catalogRelationshipDelete
+ */
+export const useCatalogRelationshipDelete = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogRelationshipDelete>>, TError,{storeId: number;catalogProductId: number;relationshipId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof catalogRelationshipDelete>>,
+        TError,
+        {storeId: number;catalogProductId: number;relationshipId: number},
+        TContext
+      > => {
+      return useMutation(getCatalogRelationshipDeleteMutationOptions(options));
+    }
+
+export const getCatalogAuditUrl = (storeId: number,
+    catalogProductId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/catalog-products/${catalogProductId}/audit`
+}
+
+/**
+ * @summary Owner-only catalogAudit
+ */
+export const catalogAudit = async (storeId: number,
+    catalogProductId: number, options?: RequestInit): Promise<CatalogAuditList> => {
+
+  return customFetch<CatalogAuditList>(getCatalogAuditUrl(storeId,catalogProductId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getCatalogAuditQueryKey = (storeId: number,
+    catalogProductId: number,) => {
+    return [
+    `/api/stores/${storeId}/catalog-products/${catalogProductId}/audit`
+    ] as const;
+    }
+
+
+export const getCatalogAuditQueryOptions = <TData = Awaited<ReturnType<typeof catalogAudit>>, TError = ErrorType<void>>(storeId: number,
+    catalogProductId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof catalogAudit>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getCatalogAuditQueryKey(storeId,catalogProductId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof catalogAudit>>> = ({ signal }) => catalogAudit(storeId,catalogProductId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(storeId && catalogProductId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof catalogAudit>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type CatalogAuditQueryResult = NonNullable<Awaited<ReturnType<typeof catalogAudit>>>
+export type CatalogAuditQueryError = ErrorType<void>
+
+
+/**
+ * @summary Owner-only catalogAudit
+ */
+
+export function useCatalogAudit<TData = Awaited<ReturnType<typeof catalogAudit>>, TError = ErrorType<void>>(
+ storeId: number,
+    catalogProductId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof catalogAudit>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getCatalogAuditQueryOptions(storeId,catalogProductId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCatalogSettingsGetUrl = (storeId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/pricing-settings`
+}
+
+/**
+ * @summary Owner-only catalogSettingsGet
+ */
+export const catalogSettingsGet = async (storeId: number, options?: RequestInit): Promise<CatalogSettingsResult> => {
+
+  return customFetch<CatalogSettingsResult>(getCatalogSettingsGetUrl(storeId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getCatalogSettingsGetQueryKey = (storeId: number,) => {
+    return [
+    `/api/stores/${storeId}/pricing-settings`
+    ] as const;
+    }
+
+
+export const getCatalogSettingsGetQueryOptions = <TData = Awaited<ReturnType<typeof catalogSettingsGet>>, TError = ErrorType<void>>(storeId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof catalogSettingsGet>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getCatalogSettingsGetQueryKey(storeId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof catalogSettingsGet>>> = ({ signal }) => catalogSettingsGet(storeId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(storeId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof catalogSettingsGet>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type CatalogSettingsGetQueryResult = NonNullable<Awaited<ReturnType<typeof catalogSettingsGet>>>
+export type CatalogSettingsGetQueryError = ErrorType<void>
+
+
+/**
+ * @summary Owner-only catalogSettingsGet
+ */
+
+export function useCatalogSettingsGet<TData = Awaited<ReturnType<typeof catalogSettingsGet>>, TError = ErrorType<void>>(
+ storeId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof catalogSettingsGet>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getCatalogSettingsGetQueryOptions(storeId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCatalogSettingsPatchUrl = (storeId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/pricing-settings`
+}
+
+/**
+ * @summary Owner-only catalogSettingsPatch
+ */
+export const catalogSettingsPatch = async (storeId: number,
+    catalogSettingsInput: CatalogSettingsInput, options?: RequestInit): Promise<CatalogSettingsResult> => {
+
+  return customFetch<CatalogSettingsResult>(getCatalogSettingsPatchUrl(storeId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      catalogSettingsInput,)
+  }
+);}
+
+
+
+
+export const getCatalogSettingsPatchMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogSettingsPatch>>, TError,{storeId: number;data: BodyType<CatalogSettingsInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof catalogSettingsPatch>>, TError,{storeId: number;data: BodyType<CatalogSettingsInput>}, TContext> => {
+
+const mutationKey = ['catalogSettingsPatch'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof catalogSettingsPatch>>, {storeId: number;data: BodyType<CatalogSettingsInput>}> = (props) => {
+          const {storeId,data} = props ?? {};
+
+          return  catalogSettingsPatch(storeId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CatalogSettingsPatchMutationResult = NonNullable<Awaited<ReturnType<typeof catalogSettingsPatch>>>
+    export type CatalogSettingsPatchMutationBody = BodyType<CatalogSettingsInput>
+    export type CatalogSettingsPatchMutationError = ErrorType<void>
+
+    /**
+ * @summary Owner-only catalogSettingsPatch
+ */
+export const useCatalogSettingsPatch = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogSettingsPatch>>, TError,{storeId: number;data: BodyType<CatalogSettingsInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof catalogSettingsPatch>>,
+        TError,
+        {storeId: number;data: BodyType<CatalogSettingsInput>},
+        TContext
+      > => {
+      return useMutation(getCatalogSettingsPatchMutationOptions(options));
+    }
+
+export const getCatalogInitializeUrl = (storeId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/pricing-settings/initialize`
+}
+
+/**
+ * @summary Owner-only catalogInitialize
+ */
+export const catalogInitialize = async (storeId: number,
+    catalogEmptyInput: CatalogEmptyInput, options?: RequestInit): Promise<CatalogSettingsResult> => {
+
+  return customFetch<CatalogSettingsResult>(getCatalogInitializeUrl(storeId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      catalogEmptyInput,)
+  }
+);}
+
+
+
+
+export const getCatalogInitializeMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogInitialize>>, TError,{storeId: number;data: BodyType<CatalogEmptyInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof catalogInitialize>>, TError,{storeId: number;data: BodyType<CatalogEmptyInput>}, TContext> => {
+
+const mutationKey = ['catalogInitialize'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof catalogInitialize>>, {storeId: number;data: BodyType<CatalogEmptyInput>}> = (props) => {
+          const {storeId,data} = props ?? {};
+
+          return  catalogInitialize(storeId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CatalogInitializeMutationResult = NonNullable<Awaited<ReturnType<typeof catalogInitialize>>>
+    export type CatalogInitializeMutationBody = BodyType<CatalogEmptyInput>
+    export type CatalogInitializeMutationError = ErrorType<void>
+
+    /**
+ * @summary Owner-only catalogInitialize
+ */
+export const useCatalogInitialize = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogInitialize>>, TError,{storeId: number;data: BodyType<CatalogEmptyInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof catalogInitialize>>,
+        TError,
+        {storeId: number;data: BodyType<CatalogEmptyInput>},
+        TContext
+      > => {
+      return useMutation(getCatalogInitializeMutationOptions(options));
+    }
+
+export const getCatalogTemplatesUrl = (storeId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/pricing-templates`
+}
+
+/**
+ * @summary Owner-only catalogTemplates
+ */
+export const catalogTemplates = async (storeId: number, options?: RequestInit): Promise<CatalogTemplateList> => {
+
+  return customFetch<CatalogTemplateList>(getCatalogTemplatesUrl(storeId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getCatalogTemplatesQueryKey = (storeId: number,) => {
+    return [
+    `/api/stores/${storeId}/pricing-templates`
+    ] as const;
+    }
+
+
+export const getCatalogTemplatesQueryOptions = <TData = Awaited<ReturnType<typeof catalogTemplates>>, TError = ErrorType<void>>(storeId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof catalogTemplates>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getCatalogTemplatesQueryKey(storeId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof catalogTemplates>>> = ({ signal }) => catalogTemplates(storeId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(storeId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof catalogTemplates>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type CatalogTemplatesQueryResult = NonNullable<Awaited<ReturnType<typeof catalogTemplates>>>
+export type CatalogTemplatesQueryError = ErrorType<void>
+
+
+/**
+ * @summary Owner-only catalogTemplates
+ */
+
+export function useCatalogTemplates<TData = Awaited<ReturnType<typeof catalogTemplates>>, TError = ErrorType<void>>(
+ storeId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof catalogTemplates>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getCatalogTemplatesQueryOptions(storeId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCatalogTemplateCreateUrl = (storeId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/pricing-templates`
+}
+
+/**
+ * @summary Owner-only catalogTemplateCreate
+ */
+export const catalogTemplateCreate = async (storeId: number,
+    catalogTemplateInput: CatalogTemplateInput, options?: RequestInit): Promise<CatalogTemplateResult> => {
+
+  return customFetch<CatalogTemplateResult>(getCatalogTemplateCreateUrl(storeId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      catalogTemplateInput,)
+  }
+);}
+
+
+
+
+export const getCatalogTemplateCreateMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogTemplateCreate>>, TError,{storeId: number;data: BodyType<CatalogTemplateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof catalogTemplateCreate>>, TError,{storeId: number;data: BodyType<CatalogTemplateInput>}, TContext> => {
+
+const mutationKey = ['catalogTemplateCreate'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof catalogTemplateCreate>>, {storeId: number;data: BodyType<CatalogTemplateInput>}> = (props) => {
+          const {storeId,data} = props ?? {};
+
+          return  catalogTemplateCreate(storeId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CatalogTemplateCreateMutationResult = NonNullable<Awaited<ReturnType<typeof catalogTemplateCreate>>>
+    export type CatalogTemplateCreateMutationBody = BodyType<CatalogTemplateInput>
+    export type CatalogTemplateCreateMutationError = ErrorType<void>
+
+    /**
+ * @summary Owner-only catalogTemplateCreate
+ */
+export const useCatalogTemplateCreate = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogTemplateCreate>>, TError,{storeId: number;data: BodyType<CatalogTemplateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof catalogTemplateCreate>>,
+        TError,
+        {storeId: number;data: BodyType<CatalogTemplateInput>},
+        TContext
+      > => {
+      return useMutation(getCatalogTemplateCreateMutationOptions(options));
+    }
+
+export const getCatalogTemplatePatchUrl = (storeId: number,
+    templateId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/pricing-templates/${templateId}`
+}
+
+/**
+ * @summary Owner-only catalogTemplatePatch
+ */
+export const catalogTemplatePatch = async (storeId: number,
+    templateId: number,
+    catalogTemplatePatchInput: CatalogTemplatePatchInput, options?: RequestInit): Promise<CatalogTemplateResult> => {
+
+  return customFetch<CatalogTemplateResult>(getCatalogTemplatePatchUrl(storeId,templateId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      catalogTemplatePatchInput,)
+  }
+);}
+
+
+
+
+export const getCatalogTemplatePatchMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogTemplatePatch>>, TError,{storeId: number;templateId: number;data: BodyType<CatalogTemplatePatchInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof catalogTemplatePatch>>, TError,{storeId: number;templateId: number;data: BodyType<CatalogTemplatePatchInput>}, TContext> => {
+
+const mutationKey = ['catalogTemplatePatch'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof catalogTemplatePatch>>, {storeId: number;templateId: number;data: BodyType<CatalogTemplatePatchInput>}> = (props) => {
+          const {storeId,templateId,data} = props ?? {};
+
+          return  catalogTemplatePatch(storeId,templateId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CatalogTemplatePatchMutationResult = NonNullable<Awaited<ReturnType<typeof catalogTemplatePatch>>>
+    export type CatalogTemplatePatchMutationBody = BodyType<CatalogTemplatePatchInput>
+    export type CatalogTemplatePatchMutationError = ErrorType<void>
+
+    /**
+ * @summary Owner-only catalogTemplatePatch
+ */
+export const useCatalogTemplatePatch = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogTemplatePatch>>, TError,{storeId: number;templateId: number;data: BodyType<CatalogTemplatePatchInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof catalogTemplatePatch>>,
+        TError,
+        {storeId: number;templateId: number;data: BodyType<CatalogTemplatePatchInput>},
+        TContext
+      > => {
+      return useMutation(getCatalogTemplatePatchMutationOptions(options));
+    }
+
+export const getCatalogTemplateDeleteUrl = (storeId: number,
+    templateId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/pricing-templates/${templateId}`
+}
+
+/**
+ * @summary Owner-only catalogTemplateDelete
+ */
+export const catalogTemplateDelete = async (storeId: number,
+    templateId: number, options?: RequestInit): Promise<CatalogDeleted> => {
+
+  return customFetch<CatalogDeleted>(getCatalogTemplateDeleteUrl(storeId,templateId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getCatalogTemplateDeleteMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogTemplateDelete>>, TError,{storeId: number;templateId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof catalogTemplateDelete>>, TError,{storeId: number;templateId: number}, TContext> => {
+
+const mutationKey = ['catalogTemplateDelete'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof catalogTemplateDelete>>, {storeId: number;templateId: number}> = (props) => {
+          const {storeId,templateId} = props ?? {};
+
+          return  catalogTemplateDelete(storeId,templateId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CatalogTemplateDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof catalogTemplateDelete>>>
+
+    export type CatalogTemplateDeleteMutationError = ErrorType<void>
+
+    /**
+ * @summary Owner-only catalogTemplateDelete
+ */
+export const useCatalogTemplateDelete = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogTemplateDelete>>, TError,{storeId: number;templateId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof catalogTemplateDelete>>,
+        TError,
+        {storeId: number;templateId: number},
+        TContext
+      > => {
+      return useMutation(getCatalogTemplateDeleteMutationOptions(options));
+    }
+
+export const getCatalogShippingProfilesUrl = (storeId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/shipping-profiles`
+}
+
+/**
+ * @summary Owner-only catalogShippingProfiles
+ */
+export const catalogShippingProfiles = async (storeId: number, options?: RequestInit): Promise<CatalogShippingList> => {
+
+  return customFetch<CatalogShippingList>(getCatalogShippingProfilesUrl(storeId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getCatalogShippingProfilesQueryKey = (storeId: number,) => {
+    return [
+    `/api/stores/${storeId}/shipping-profiles`
+    ] as const;
+    }
+
+
+export const getCatalogShippingProfilesQueryOptions = <TData = Awaited<ReturnType<typeof catalogShippingProfiles>>, TError = ErrorType<void>>(storeId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof catalogShippingProfiles>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getCatalogShippingProfilesQueryKey(storeId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof catalogShippingProfiles>>> = ({ signal }) => catalogShippingProfiles(storeId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(storeId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof catalogShippingProfiles>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type CatalogShippingProfilesQueryResult = NonNullable<Awaited<ReturnType<typeof catalogShippingProfiles>>>
+export type CatalogShippingProfilesQueryError = ErrorType<void>
+
+
+/**
+ * @summary Owner-only catalogShippingProfiles
+ */
+
+export function useCatalogShippingProfiles<TData = Awaited<ReturnType<typeof catalogShippingProfiles>>, TError = ErrorType<void>>(
+ storeId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof catalogShippingProfiles>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getCatalogShippingProfilesQueryOptions(storeId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCatalogShippingCreateUrl = (storeId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/shipping-profiles`
+}
+
+/**
+ * @summary Owner-only catalogShippingCreate
+ */
+export const catalogShippingCreate = async (storeId: number,
+    catalogShippingInput: CatalogShippingInput, options?: RequestInit): Promise<CatalogShippingResult> => {
+
+  return customFetch<CatalogShippingResult>(getCatalogShippingCreateUrl(storeId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      catalogShippingInput,)
+  }
+);}
+
+
+
+
+export const getCatalogShippingCreateMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogShippingCreate>>, TError,{storeId: number;data: BodyType<CatalogShippingInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof catalogShippingCreate>>, TError,{storeId: number;data: BodyType<CatalogShippingInput>}, TContext> => {
+
+const mutationKey = ['catalogShippingCreate'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof catalogShippingCreate>>, {storeId: number;data: BodyType<CatalogShippingInput>}> = (props) => {
+          const {storeId,data} = props ?? {};
+
+          return  catalogShippingCreate(storeId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CatalogShippingCreateMutationResult = NonNullable<Awaited<ReturnType<typeof catalogShippingCreate>>>
+    export type CatalogShippingCreateMutationBody = BodyType<CatalogShippingInput>
+    export type CatalogShippingCreateMutationError = ErrorType<void>
+
+    /**
+ * @summary Owner-only catalogShippingCreate
+ */
+export const useCatalogShippingCreate = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogShippingCreate>>, TError,{storeId: number;data: BodyType<CatalogShippingInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof catalogShippingCreate>>,
+        TError,
+        {storeId: number;data: BodyType<CatalogShippingInput>},
+        TContext
+      > => {
+      return useMutation(getCatalogShippingCreateMutationOptions(options));
+    }
+
+export const getCatalogShippingPatchUrl = (storeId: number,
+    shippingProfileId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/shipping-profiles/${shippingProfileId}`
+}
+
+/**
+ * @summary Owner-only catalogShippingPatch
+ */
+export const catalogShippingPatch = async (storeId: number,
+    shippingProfileId: number,
+    catalogShippingPatchInput: CatalogShippingPatchInput, options?: RequestInit): Promise<CatalogShippingResult> => {
+
+  return customFetch<CatalogShippingResult>(getCatalogShippingPatchUrl(storeId,shippingProfileId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      catalogShippingPatchInput,)
+  }
+);}
+
+
+
+
+export const getCatalogShippingPatchMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogShippingPatch>>, TError,{storeId: number;shippingProfileId: number;data: BodyType<CatalogShippingPatchInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof catalogShippingPatch>>, TError,{storeId: number;shippingProfileId: number;data: BodyType<CatalogShippingPatchInput>}, TContext> => {
+
+const mutationKey = ['catalogShippingPatch'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof catalogShippingPatch>>, {storeId: number;shippingProfileId: number;data: BodyType<CatalogShippingPatchInput>}> = (props) => {
+          const {storeId,shippingProfileId,data} = props ?? {};
+
+          return  catalogShippingPatch(storeId,shippingProfileId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CatalogShippingPatchMutationResult = NonNullable<Awaited<ReturnType<typeof catalogShippingPatch>>>
+    export type CatalogShippingPatchMutationBody = BodyType<CatalogShippingPatchInput>
+    export type CatalogShippingPatchMutationError = ErrorType<void>
+
+    /**
+ * @summary Owner-only catalogShippingPatch
+ */
+export const useCatalogShippingPatch = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogShippingPatch>>, TError,{storeId: number;shippingProfileId: number;data: BodyType<CatalogShippingPatchInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof catalogShippingPatch>>,
+        TError,
+        {storeId: number;shippingProfileId: number;data: BodyType<CatalogShippingPatchInput>},
+        TContext
+      > => {
+      return useMutation(getCatalogShippingPatchMutationOptions(options));
+    }
+
+export const getCatalogShippingDeleteUrl = (storeId: number,
+    shippingProfileId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/shipping-profiles/${shippingProfileId}`
+}
+
+/**
+ * @summary Owner-only catalogShippingDelete
+ */
+export const catalogShippingDelete = async (storeId: number,
+    shippingProfileId: number, options?: RequestInit): Promise<CatalogDeleted> => {
+
+  return customFetch<CatalogDeleted>(getCatalogShippingDeleteUrl(storeId,shippingProfileId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getCatalogShippingDeleteMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogShippingDelete>>, TError,{storeId: number;shippingProfileId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof catalogShippingDelete>>, TError,{storeId: number;shippingProfileId: number}, TContext> => {
+
+const mutationKey = ['catalogShippingDelete'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof catalogShippingDelete>>, {storeId: number;shippingProfileId: number}> = (props) => {
+          const {storeId,shippingProfileId} = props ?? {};
+
+          return  catalogShippingDelete(storeId,shippingProfileId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CatalogShippingDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof catalogShippingDelete>>>
+
+    export type CatalogShippingDeleteMutationError = ErrorType<void>
+
+    /**
+ * @summary Owner-only catalogShippingDelete
+ */
+export const useCatalogShippingDelete = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof catalogShippingDelete>>, TError,{storeId: number;shippingProfileId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof catalogShippingDelete>>,
+        TError,
+        {storeId: number;shippingProfileId: number},
+        TContext
+      > => {
+      return useMutation(getCatalogShippingDeleteMutationOptions(options));
+    }
+
+export const getPreviewPricingV2Url = (storeId: number,) => {
+
+
+
+
+  return `/api/stores/${storeId}/pricing/preview`
+}
+
+/**
+ * @summary Owner-only exact pricing preview; no database writes
+ */
+export const previewPricingV2 = async (storeId: number,
+    pricingV2PreviewInput: PricingV2PreviewInput, options?: RequestInit): Promise<PricingV2Preview> => {
+
+  return customFetch<PricingV2Preview>(getPreviewPricingV2Url(storeId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      pricingV2PreviewInput,)
+  }
+);}
+
+
+
+
+export const getPreviewPricingV2MutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof previewPricingV2>>, TError,{storeId: number;data: BodyType<PricingV2PreviewInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof previewPricingV2>>, TError,{storeId: number;data: BodyType<PricingV2PreviewInput>}, TContext> => {
+
+const mutationKey = ['previewPricingV2'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof previewPricingV2>>, {storeId: number;data: BodyType<PricingV2PreviewInput>}> = (props) => {
+          const {storeId,data} = props ?? {};
+
+          return  previewPricingV2(storeId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PreviewPricingV2MutationResult = NonNullable<Awaited<ReturnType<typeof previewPricingV2>>>
+    export type PreviewPricingV2MutationBody = BodyType<PricingV2PreviewInput>
+    export type PreviewPricingV2MutationError = ErrorType<void>
+
+    /**
+ * @summary Owner-only exact pricing preview; no database writes
+ */
+export const usePreviewPricingV2 = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof previewPricingV2>>, TError,{storeId: number;data: BodyType<PricingV2PreviewInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof previewPricingV2>>,
+        TError,
+        {storeId: number;data: BodyType<PricingV2PreviewInput>},
+        TContext
+      > => {
+      return useMutation(getPreviewPricingV2MutationOptions(options));
+    }
 
 export const getHealthCheckUrl = () => {
 

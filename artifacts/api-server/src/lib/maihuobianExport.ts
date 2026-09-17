@@ -10,7 +10,7 @@ const MAX_MAIHUOBIAN_EXPORT_ROWS = 500;
 
 export interface MaihuobianExportOrder {
   id: number;
-  productId: number;
+  productId: number | null;
   productName: string | null;
   buyerName: string;
   buyerPhone: string;
@@ -77,7 +77,7 @@ export interface MaihuobianDateRange {
 }
 
 interface CartItem {
-  productId: number;
+  productId: number | null;
   productName: string;
   quantity: number;
   specValues: Record<string, string>;
@@ -105,8 +105,7 @@ function parseCartItems(value: unknown): CartItem[] | null {
       return null;
     const item = rawItem as Record<string, unknown>;
     if (
-      !Number.isSafeInteger(item.productId) ||
-      Number(item.productId) < 1 ||
+      (!(item.productId===null&&Number.isSafeInteger(item.orderItemId)&&Number(item.orderItemId)>0)&&(!Number.isSafeInteger(item.productId) || Number(item.productId) < 1)) ||
       typeof item.productName !== "string" ||
       !Number.isSafeInteger(item.quantity) ||
       Number(item.quantity) < 1 ||
@@ -115,7 +114,7 @@ function parseCartItems(value: unknown): CartItem[] | null {
       return null;
     }
     parsed.push({
-      productId: Number(item.productId),
+      productId: item.productId===null?null:Number(item.productId),
       productName: item.productName.trim(),
       quantity: Number(item.quantity),
       specValues: item.specValues as Record<string, string>,
@@ -219,9 +218,9 @@ export function buildMaihuobianExportPreview(
     }
 
     const cartItems = parseCartItems(order.items);
-    const product = productById.get(order.productId);
+    const product = order.productId===null?undefined:productById.get(order.productId);
     const itemStorageTempClasses = cartItems?.map(
-      (item) => productById.get(item.productId)?.storageTempClass ?? null,
+      (item) => item.productId===null?({'常溫':'normal','冷凍':'frozen'} as Record<string,string>)[item.specValues?.['溫層']]??null:productById.get(item.productId)?.storageTempClass ?? null,
     );
     const productSummary = cartItems
       ? cartItems.map(formatProductPart).join("；")

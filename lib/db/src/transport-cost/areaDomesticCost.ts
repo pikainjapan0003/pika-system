@@ -8,6 +8,7 @@ import {
 const AREA_DOMESTIC_PAYMENT_FEE_RATE = "0.015";
 
 export interface AreaDomesticCostInput {
+  paymentFeeRate?: DecimalInput;
   cardboardUnitJpy: DecimalInput;
   shippingUnitJpy: DecimalInput;
   parcelCount: QuantityInput;
@@ -127,7 +128,7 @@ export function calculateAreaDomesticCost(
   );
   const perParcelJpy = cardboardUnitJpy.add(shippingUnitJpy);
   const fee1_5Pct = perParcelJpy.multiply(
-    ExactDecimal.from(AREA_DOMESTIC_PAYMENT_FEE_RATE),
+    parseNonNegativeDecimal(input.paymentFeeRate === undefined ? AREA_DOMESTIC_PAYMENT_FEE_RATE : input.paymentFeeRate, "paymentFeeRate"),
   );
   const totalTwd = perParcelJpy
     .add(fee1_5Pct)

@@ -9,6 +9,8 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { BottomNavigation } from "@/components/BottomNavigation";
+import { ListingSummary } from "@/components/product-database/ListingSummary";
+import { formatCatalogNumber } from "@/lib/productDatabase";
 
 const ONBOARDING_STEPS = [
   { n: "1", text: "建立商品，設定名稱、售價與庫存" },
@@ -83,6 +85,7 @@ export default function ProductsPage() {
   });
   const updateProduct = useUpdateProduct();
   const deleteProduct = useDeleteProduct();
+  const [deleteError,setDeleteError]=useState<{id:number;message:string}|null>(null);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<
@@ -126,8 +129,11 @@ export default function ProductsPage() {
 
   const handleDelete = async (productId: number) => {
     if (!confirm("確定要刪除這個商品嗎？")) return;
-    await deleteProduct.mutateAsync({ storeId: storeId!, productId });
-    qc.invalidateQueries({ queryKey: getListProductsQueryKey(storeId!) });
+    try{
+      await deleteProduct.mutateAsync({ storeId: storeId!, productId });
+      qc.invalidateQueries({ queryKey: getListProductsQueryKey(storeId!) });
+      setDeleteError(null);
+    }catch(e:any){setDeleteError({id:productId,message:e?.data?.error??e?.message??"無法刪除，請改為下架並保留歷史。"});}
   };
 
   const totalCount = products?.length ?? 0;
@@ -179,6 +185,8 @@ export default function ProductsPage() {
       )}
 
       <div className="px-5 py-5 space-y-4">
+        {deleteError&&<div role="alert" className="rounded-xl border border-border bg-card p-4 text-sm"><p>{deleteError.message}</p><button type="button" className="min-h-11 underline" disabled={updateProduct.isPending} onClick={async()=>{try{await updateProduct.mutateAsync({storeId:storeId!,productId:deleteError.id,data:{isActive:false}});qc.invalidateQueries({queryKey:getListProductsQueryKey(storeId!)});setDeleteError(null);}catch(e:any){setDeleteError({...deleteError,message:e?.data?.error??e?.message??"下架失敗，請重試"});}}}>將此商品下架</button></div>}
+        <button type="button" className="min-h-11 rounded-md border border-border bg-card px-4 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring" onClick={()=>setLocation('/product-database')}>開啟商品資料庫</button>
         {isLoading ? (
           <div className="flex justify-center py-12">
             <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -308,7 +316,7 @@ export default function ProductsPage() {
                             <p className="text-primary font-bold text-base mt-0.5">
                               NT$ {Number(p.price).toLocaleString()}
                             </p>
-                            <p className="text-xs font-medium text-chart-3 mt-1">
+                            {p.catalogProductId ? <ListingSummary s={storeId!} id={p.id}/> : <p className="text-xs font-medium text-chart-3 mt-1">
                               {p.estimatedProfit?.status === "ready"
                                 ? `預估毛利 NT$ ${formatIntegerAmount(p.estimatedProfit.unitProfitTwd)}${
                                     p.estimatedProfit.transportStatus ===
@@ -318,6 +326,7 @@ export default function ProductsPage() {
                                   }`
                                 : "預估毛利 待確認"}
                             </p>
+                            }
                             {/* SKU — monospace 與庫存行區隔 */}
                             {p.skuCode && (
                               <p className="font-mono text-xs text-foreground/70 mt-1">
@@ -329,13 +338,13 @@ export default function ProductsPage() {
                               {p.isActive ? "開放下單" : "已關閉"}
                             </p>
                             {/* 規格資訊：溫層 + 重量 */}
-                            {(p.storageTemp || p.weightKg) && (
+                            {(p.storageTemp || p.weightKg || p.weightGrams != null) && (
                               <p className="text-xs text-muted-foreground mt-0.5">
                                 {[
                                   p.storageTemp
                                     ? STORAGE_TEMP_LABEL[p.storageTemp]
                                     : null,
-                                  formatWeight(p.weightKg),
+                                  p.weightGrams!=null?formatCatalogNumber(p.weightGrams,2)+" g":formatWeight(p.weightKg),
                                 ]
                                   .filter(Boolean)
                                   .join(" · ")}
@@ -406,7 +415,7 @@ export default function ProductsPage() {
 
                       {/* Dropdown menu */}
                       {openMenuId === p.id && (
-                        <div className="absolute right-0 top-full mt-1 z-[20] bg-popover rounded-xl border border-border shadow-lg min-w-[152px] overflow-hidden">
+                        <div className="relative ml-auto mt-1 w-fit z-[20] bg-popover rounded-xl border border-border shadow-lg min-w-[152px] overflow-hidden">
                           <button
                             type="button"
                             onClick={(e) => {
