@@ -10,6 +10,15 @@ import { installTestDom } from "../../test/domBootstrap.mjs";
 const restore = installTestDom();
 const previousReact = globalThis.React;
 globalThis.React = React;
+const dialogGlobals = ["CustomEvent", "NodeFilter", "HTMLInputElement"].map(
+  (key) => [key, Object.getOwnPropertyDescriptor(globalThis, key)],
+);
+for (const [key] of dialogGlobals)
+  Object.defineProperty(globalThis, key, {
+    configurable: true,
+    writable: true,
+    value: window[key],
+  });
 let handler = async () => ({ items: [], total: 0 }),
   calls = [],
   scanned,
@@ -52,6 +61,7 @@ mock.module("../ui/button.tsx", {
 mock.module("../../lib/barcodeCamera.ts", {
   namedExports: {
     startBarcodeCamera: (_video, result) => {
+      assert.ok(_video?.isConnected, "camera starts only after its portal video exists");
       scanned = result;
       return () => {
         stops++;
@@ -131,6 +141,10 @@ afterEach(() => {
 after(() => {
   mock.restoreAll();
   globalThis.React = previousReact;
+  for (const [key, descriptor] of dialogGlobals) {
+    if (descriptor) Object.defineProperty(globalThis, key, descriptor);
+    else delete globalThis[key];
+  }
   restore();
 });
 test("literal leading zeros and long manual codes preserve strings; Enter prevents parent submit", async () => {
@@ -276,19 +290,42 @@ test("late previous query and store results cannot replace new state", async () 
   open(v);
   assert.equal(v.getByLabelText("商品條碼").value, "");
 });
-test("new camera node per session; close/unmount stop camera; manual search does not refocus trigger", () => {
+test("modal camera closes before restart and unmount stops its stream", async () => {
   const v = mount();
   open(v);
   fireEvent.click(v.getByRole("button", { name: "啟動相機" }));
   const first = v.getByLabelText("條碼相機");
+  assert.ok(v.getByRole("dialog", { name: "掃描商品條碼" }));
+  assert.equal(v.queryByRole("button", { name: "查詢條碼" }), null);
+  fireEvent.click(v.getByRole("button", { name: "關閉相機" }));
+  await waitFor(() =>
+    assert.equal(
+      document.activeElement,
+      v.getByRole("button", { name: "啟動相機" }),
+    ),
+  );
   fireEvent.click(v.getByRole("button", { name: "啟動相機" }));
   assert.notEqual(v.getByLabelText("條碼相機"), first);
   assert.equal(stops, 1);
-  fireEvent.click(v.getByRole("button", { name: "手動搜尋名稱" }));
-  assert.equal(manual, 1);
+  fireEvent.click(v.getByRole("button", { name: "改用手動輸入" }));
+  await waitFor(() =>
+    assert.equal(document.activeElement, v.getByLabelText("商品條碼")),
+  );
   assert.equal(stops, 2);
-  open(v);
+  assert.equal(v.queryByRole("dialog"), null);
   fireEvent.click(v.getByRole("button", { name: "啟動相機" }));
   v.unmount();
   assert.equal(stops, 3);
+});
+test("Escape dismisses only the fullscreen camera and preserves lookup input", async () => {
+  const v = mount();
+  open(v);
+  fireEvent.change(v.getByLabelText("商品條碼"), {
+    target: { value: "00123" },
+  });
+  fireEvent.click(v.getByRole("button", { name: "啟動相機" }));
+  fireEvent.keyDown(v.getByRole("dialog"), { key: "Escape" });
+  await waitFor(() => assert.equal(v.queryByRole("dialog"), null));
+  assert.equal(v.getByLabelText("商品條碼").value, "00123");
+  assert.equal(stops, 1);
 });

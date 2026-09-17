@@ -39,6 +39,7 @@ import {
   decimalInput,
 } from "@/lib/productDatabase";
 import { barcodeLookupInput } from "@/lib/barcode-input";
+import { CatalogImageUpload } from "@/components/product-database/CatalogImageUpload";
 
 function initialBarcode(product?: CatalogProduct) {
   if (product) return product.barcode;
@@ -77,6 +78,7 @@ function Form({ s, product }: { s: number; product?: CatalogProduct }) {
   const [errors, setErrors] = useState<Record<string, string>>({}),
     [message, setMessage] = useState(""),
     [pending, setPending] = useState(false),
+    [uploadingImage, setUploadingImage] = useState(false),
     [candidates, setCandidates] = useState<ReturnType<typeof duplicateDetails>>(
       [],
     ),
@@ -118,6 +120,7 @@ function Form({ s, product }: { s: number; product?: CatalogProduct }) {
     (t) => String(t.id) === v.template,
   );
   async function save(forceBody?: CatalogCreateInput) {
+    if (pending || uploadingImage) return;
     const invalid = validateCatalogBasics({
       ...v,
       ...(product ? { originalPriceJpy: undefined } : {}),
@@ -186,6 +189,16 @@ function Form({ s, product }: { s: number; product?: CatalogProduct }) {
         noValidate
       >
         <ErrorSummary errors={errors} message={message} />
+        <section className={`${panel} space-y-4`}>
+          <h2 className="text-lg font-semibold">商品圖片</h2>
+          <CatalogImageUpload
+            storeId={s}
+            value={v.imageUrl}
+            onChange={(url) => update("imageUrl", url)}
+            onUploadingChange={setUploadingImage}
+            disabled={pending || confirmation !== null}
+          />
+        </section>
         <section className={`${panel} space-y-4`}>
           <h2 className="text-lg font-semibold">商品識別</h2>
           <Field
@@ -386,14 +399,6 @@ function Form({ s, product }: { s: number; product?: CatalogProduct }) {
         </section>
         <section className={`${panel} space-y-4`}>
           <h2 className="text-lg font-semibold">補充資料</h2>
-          <Field
-            id="imageUrl"
-            label="圖片網址"
-            value={v.imageUrl}
-            onChange={(x) => update("imageUrl", x)}
-            type="url"
-            help="使用 http 或 https 圖片網址。"
-          />
           <label htmlFor="internalNote" className="block text-sm">
             內部備註
           </label>
@@ -411,7 +416,12 @@ function Form({ s, product }: { s: number; product?: CatalogProduct }) {
             ref={submitTrigger}
             type="submit"
             className={action}
-            disabled={pending || settings.isPending || categories.isPending}
+            disabled={
+              pending ||
+              uploadingImage ||
+              settings.isPending ||
+              categories.isPending
+            }
           >
             {pending ? "儲存中…" : product ? "儲存基本資料" : "新增商品"}
           </Button>
