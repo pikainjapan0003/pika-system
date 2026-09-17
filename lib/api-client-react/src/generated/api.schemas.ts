@@ -5,6 +5,1518 @@
  * 團購/代購訂單管理 API
  * OpenAPI spec version: 0.1.0
  */
+export type ImportConfirmedValuesBarcodeStatus = typeof ImportConfirmedValuesBarcodeStatus[keyof typeof ImportConfirmedValuesBarcodeStatus];
+
+
+export const ImportConfirmedValuesBarcodeStatus = {
+  REAL: 'REAL',
+  NONE: 'NONE',
+} as const;
+
+export type ImportConfirmedValuesStatus = typeof ImportConfirmedValuesStatus[keyof typeof ImportConfirmedValuesStatus];
+
+
+export const ImportConfirmedValuesStatus = {
+  NORMAL: 'NORMAL',
+  DISCONTINUED: 'DISCONTINUED',
+} as const;
+
+export interface ImportConfirmedValues {
+  confirmed: true;
+  /**
+     * @minLength 1
+     * @maxLength 256
+     */
+  name: string;
+  /** @maxLength 128 */
+  barcode: string;
+  barcodeStatus: ImportConfirmedValuesBarcodeStatus;
+  /**
+     * @maxLength 64
+     * @pattern ^[0-9]+(\.[0-9]+)?$
+     */
+  weightGrams: string;
+  /**
+     * @maxLength 64
+     * @pattern ^[0-9]+(\.[0-9]+)?$
+     */
+  originalPriceJpy: string;
+  /**
+     * @maxLength 64
+     * @pattern ^[0-9]+(\.[0-9]+)?$
+     */
+  effectiveCostJpy: string;
+  status?: ImportConfirmedValuesStatus;
+  /** @maxLength 256 */
+  preferredRouteLabel?: string;
+  /**
+     * @maxLength 64
+     * @pattern ^[0-9]+(\.[0-9]+)?$
+     */
+  shopeePriceTwd?: string;
+  forceCreate?: boolean;
+}
+
+export type ImportResolutionAction = typeof ImportResolutionAction[keyof typeof ImportResolutionAction];
+
+
+export const ImportResolutionAction = {
+  IGNORE: 'IGNORE',
+  LINK: 'LINK',
+  CREATE: 'CREATE',
+} as const;
+
+export interface ImportResolution {
+  action: ImportResolutionAction;
+  /**
+     * @minLength 1
+     * @maxLength 1000
+     */
+  reason: string;
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     */
+  catalogProductId?: number;
+  values?: ImportConfirmedValues;
+}
+
+export type ImportCellType = typeof ImportCellType[keyof typeof ImportCellType];
+
+
+export const ImportCellType = {
+  n: 'n',
+  s: 's',
+  str: 'str',
+  inlineStr: 'inlineStr',
+  b: 'b',
+  e: 'e',
+  text: 'text',
+  number: 'number',
+  boolean: 'boolean',
+  blank: 'blank',
+} as const;
+
+export interface ImportCell {
+  /**
+     * @minimum 1
+     * @maximum 500
+     */
+  row: number;
+  /**
+     * @minimum 1
+     * @maximum 64
+     */
+  column: number;
+  type: ImportCellType;
+  value: string | number | boolean | null;
+  /** @maxLength 2048 */
+  formula?: string;
+  cachedValue?: string | number | boolean | null;
+}
+
+export type ImportPreviewInputSourceType = typeof ImportPreviewInputSourceType[keyof typeof ImportPreviewInputSourceType];
+
+
+export const ImportPreviewInputSourceType = {
+  STRUCTURED_CELLS: 'STRUCTURED_CELLS',
+  XLSX_UPLOAD: 'XLSX_UPLOAD',
+} as const;
+
+export interface ImportPreviewInput {
+  sourceType: ImportPreviewInputSourceType;
+  /**
+     * @minLength 1
+     * @maxLength 256
+     */
+  spreadsheetTitle: string;
+  /** @maxLength 256 */
+  spreadsheetId?: string;
+  /** @maxLength 128 */
+  sheetTitle?: string;
+  /** @maxItems 10000 */
+  cells?: ImportCell[];
+}
+
+export type ImportResolveInputRowsItem = {
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     */
+  rowId: number;
+  resolution: ImportResolution;
+};
+
+export interface ImportResolveInput {
+  /**
+     * @maxLength 64
+     * @pattern ^[0-9]+(\.[0-9]+)?$
+     */
+  exchangeRate?: string;
+  /** @maxItems 500 */
+  rows?: ImportResolveInputRowsItem[];
+}
+
+export interface ImportApproveInput {
+  confirmed: true;
+  /** @minimum 0 */
+  reviewVersion: number;
+}
+
+export interface ImportConfirmInput {
+  confirmed: true;
+}
+
+export type ListingMatchInputRowsItemAction = typeof ListingMatchInputRowsItemAction[keyof typeof ListingMatchInputRowsItemAction];
+
+
+export const ListingMatchInputRowsItemAction = {
+  IGNORE: 'IGNORE',
+  LINK: 'LINK',
+  CREATE: 'CREATE',
+} as const;
+
+export type ListingMatchInputRowsItem = {
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     */
+  productId: number;
+  action: ListingMatchInputRowsItemAction;
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     */
+  catalogProductId?: number;
+  values?: ImportConfirmedValues;
+};
+
+export interface ListingMatchInput {
+  /**
+     * @minLength 8
+     * @maxLength 128
+     */
+  requestKey: string;
+  /** @maxItems 100 */
+  rows: ListingMatchInputRowsItem[];
+}
+
+export type CatalogOrderLineInputSpecValues = {[key: string]: string};
+
+export type PricingV2PreviewInputTemplateCode = typeof PricingV2PreviewInputTemplateCode[keyof typeof PricingV2PreviewInputTemplateCode];
+
+
+export const PricingV2PreviewInputTemplateCode = {
+  GENERAL: 'GENERAL',
+  LIVE: 'LIVE',
+  PERFUME: 'PERFUME',
+  CUSTOM: 'CUSTOM',
+} as const;
+
+export type PricingV2PreviewInputThresholds = {
+  /**
+     * @maxLength 128
+     * @pattern ^[+-]?\d+(?:\.\d+)?$
+     */
+  loss: string;
+  /**
+     * @maxLength 128
+     * @pattern ^[+-]?\d+(?:\.\d+)?$
+     */
+  low: string;
+  /**
+     * @maxLength 128
+     * @pattern ^[+-]?\d+(?:\.\d+)?$
+     */
+  medium: string;
+};
+
+export interface PricingV2PreviewInput {
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     */
+  templateId?: number;
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     */
+  shippingProfileId?: number;
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     */
+  tripRouteId?: number;
+  /**
+     * @maxLength 128
+     * @nullable
+     * @pattern ^[+-]?\d+(?:\.\d+)?$
+     */
+  originalPriceJpy?: string | null;
+  /**
+     * @maxLength 128
+     * @nullable
+     * @pattern ^[+-]?\d+(?:\.\d+)?$
+     */
+  effectiveCostJpy?: string | null;
+  /**
+     * @maxLength 128
+     * @nullable
+     * @pattern ^[+-]?\d+(?:\.\d+)?$
+     */
+  weightGrams?: string | null;
+  /**
+     * @maxLength 128
+     * @nullable
+     * @pattern ^[+-]?\d+(?:\.\d+)?$
+     */
+  exchangeRate?: string | null;
+  /**
+     * @maxLength 128
+     * @nullable
+     * @pattern ^[+-]?\d+(?:\.\d+)?$
+     */
+  generalFinalPriceTwd?: string | null;
+  /**
+     * @maxLength 128
+     * @nullable
+     * @pattern ^[+-]?\d+(?:\.\d+)?$
+     */
+  vipFinalPriceTwd?: string | null;
+  /**
+     * @maxLength 128
+     * @pattern ^[+-]?\d+(?:\.\d+)?$
+     */
+  costAdjustmentRate?: string;
+  /**
+     * @maxLength 128
+     * @pattern ^[+-]?\d+(?:\.\d+)?$
+     */
+  departmentStoreFeeRate?: string;
+  /**
+     * @maxLength 128
+     * @pattern ^[+-]?\d+(?:\.\d+)?$
+     */
+  purchasePaymentFeeRate?: string;
+  /**
+     * @maxLength 128
+     * @pattern ^[+-]?\d+(?:\.\d+)?$
+     */
+  routePaymentFeeRate?: string;
+  /**
+     * @maxLength 128
+     * @pattern ^[+-]?\d+(?:\.\d+)?$
+     */
+  lossProtectionTwd?: string;
+  /**
+     * @maxLength 128
+     * @pattern ^[+-]?\d+(?:\.\d+)?$
+     */
+  targetMarginRate?: string;
+  templateCode?: PricingV2PreviewInputTemplateCode;
+  isTransportCostExempt?: boolean;
+  thresholds?: PricingV2PreviewInputThresholds;
+}
+
+export type CatalogCreateInputStatus = typeof CatalogCreateInputStatus[keyof typeof CatalogCreateInputStatus];
+
+
+export const CatalogCreateInputStatus = {
+  NORMAL: 'NORMAL',
+  DISCONTINUED: 'DISCONTINUED',
+  ARCHIVED: 'ARCHIVED',
+} as const;
+
+export type CatalogCreateInputBarcodeStatus = typeof CatalogCreateInputBarcodeStatus[keyof typeof CatalogCreateInputBarcodeStatus];
+
+
+export const CatalogCreateInputBarcodeStatus = {
+  REAL: 'REAL',
+  NONE: 'NONE',
+} as const;
+
+export type CatalogCreateInputAdjustmentMode = typeof CatalogCreateInputAdjustmentMode[keyof typeof CatalogCreateInputAdjustmentMode];
+
+
+export const CatalogCreateInputAdjustmentMode = {
+  NONE: 'NONE',
+  RATE: 'RATE',
+  MANUAL: 'MANUAL',
+} as const;
+
+export interface CatalogCreateInput {
+  /** @maxLength 256 */
+  name: string;
+  /** @pattern ^\d{1,10}(?:\.\d{1,2})?$ */
+  weightGrams: string;
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     * @nullable
+     */
+  categoryId?: number | null;
+  status?: CatalogCreateInputStatus;
+  /**
+     * @maxLength 2048
+     * @nullable
+     * @pattern ^https?://[^\s]+$
+     */
+  imageUrl?: string | null;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  internalNote?: string | null;
+  /**
+     * @maxLength 256
+     * @nullable
+     */
+  preferredRouteLabel?: string | null;
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     * @nullable
+     */
+  lastUsedTripRouteId?: number | null;
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     * @nullable
+     */
+  defaultPricingTemplateId?: number | null;
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     * @nullable
+     */
+  defaultShippingProfileId?: number | null;
+  /**
+     * @maxLength 32
+     * @nullable
+     * @pattern ^\d{1,18}(?:\.\d{1,12})?$
+     */
+  defaultDepartmentStoreFeeRate?: string | null;
+  /** @maxLength 128 */
+  barcode: string;
+  barcodeStatus: CatalogCreateInputBarcodeStatus;
+  forceCreate?: boolean;
+  /**
+     * @maxLength 32
+     * @pattern ^\d{1,18}(?:\.\d{1,12})?$
+     */
+  originalPriceJpy: string;
+  adjustmentMode?: CatalogCreateInputAdjustmentMode;
+  /**
+     * @maxLength 32
+     * @nullable
+     * @pattern ^\d{1,18}(?:\.\d{1,12})?$
+     */
+  adjustmentRate?: string | null;
+  /**
+     * @maxLength 32
+     * @nullable
+     * @pattern ^\d{1,18}(?:\.\d{1,12})?$
+     */
+  effectiveCostJpy?: string | null;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  adjustmentReason?: string | null;
+  /**
+     * @nullable
+     * @pattern ^(?!0000)(?:\d{4}-(?:(?:01|03|05|07|08|10|12)-(?:0[1-9]|[12][0-9]|3[01])|(?:04|06|09|11)-(?:0[1-9]|[12][0-9]|30)|02-(?:0[1-9]|1[0-9]|2[0-8]))|(?:\d{2}(?:0[48]|[2468][048]|[13579][26])|(?:[02468][048]|[13579][26])00)-02-29)$
+     */
+  observedAt?: string | null;
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     */
+  supersedesCostRecordId?: number;
+  /**
+     * @minLength 1
+     * @maxLength 64
+     */
+  reasonCode?: string;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  reasonText?: string | null;
+}
+
+export interface CatalogOrderLineInput {
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     */
+  listingProductId?: number;
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     */
+  catalogProductId?: number;
+  /**
+     * @minLength 1
+     * @maxLength 200
+     */
+  name?: string;
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     */
+  quantity: number;
+  /** @pattern ^\d{1,8}(?:\.\d{1,2})?$ */
+  unitPriceTwd?: string;
+  specValues?: CatalogOrderLineInputSpecValues;
+  cost?: PricingV2PreviewInput;
+  saveCatalog?: CatalogCreateInput;
+}
+
+/**
+ * @nullable
+ */
+export type CatalogOrderInputShippingMethod = typeof CatalogOrderInputShippingMethod[keyof typeof CatalogOrderInputShippingMethod] | null;
+
+
+export const CatalogOrderInputShippingMethod = {
+  self_pickup: 'self_pickup',
+  convenience_store: 'convenience_store',
+  home_delivery: 'home_delivery',
+  other: 'other',
+} as const;
+
+/**
+ * @nullable
+ */
+export type CatalogOrderInputStoreSelectedBy = typeof CatalogOrderInputStoreSelectedBy[keyof typeof CatalogOrderInputStoreSelectedBy] | null;
+
+
+export const CatalogOrderInputStoreSelectedBy = {
+  admin: 'admin',
+  manual: 'manual',
+  customer_default: 'customer_default',
+} as const;
+
+export interface CatalogOrderInput {
+  /**
+     * @minItems 1
+     * @maxItems 100
+     */
+  items: CatalogOrderLineInput[];
+  /**
+     * @minLength 1
+     * @maxLength 200
+     */
+  buyerName: string;
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  buyerPhone: string;
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  pickupMethod: string;
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     * @nullable
+     */
+  customerId?: number | null;
+  /**
+     * @maxLength 5000
+     * @nullable
+     */
+  notes?: string | null;
+  /** @maxLength 100 */
+  creditSpent?: string;
+  /**
+     * @maxLength 5
+     * @nullable
+     */
+  paymentLast5?: string | null;
+  /** @nullable */
+  shippingMethod?: CatalogOrderInputShippingMethod;
+  /**
+     * @maxLength 1000
+     * @nullable
+     */
+  recipientName?: string | null;
+  /**
+     * @maxLength 1000
+     * @nullable
+     */
+  recipientPhone?: string | null;
+  /**
+     * @maxLength 1000
+     * @nullable
+     */
+  recipientAddress?: string | null;
+  /**
+     * @maxLength 1000
+     * @nullable
+     */
+  storeCode?: string | null;
+  /**
+     * @maxLength 1000
+     * @nullable
+     */
+  storeName?: string | null;
+  /**
+     * @maxLength 1000
+     * @nullable
+     */
+  cvsStoreAddress?: string | null;
+  /**
+     * @maxLength 1000
+     * @nullable
+     */
+  cvsStorePhone?: string | null;
+  /** @nullable */
+  storeSelectedBy?: CatalogOrderInputStoreSelectedBy;
+}
+
+export interface CatalogSaleTier {
+  /** @maxLength 200 */
+  quantity: string;
+  /** @maxLength 200 */
+  latestPriceTwd: string;
+  /** @maxLength 200 */
+  latestUnitProfitTwd: string;
+  /** @maxLength 200 */
+  latestUnitCostTwd?: string;
+  /** @maxLength 200 */
+  weightedAverageTwd: string;
+  /** @maxLength 200 */
+  minPriceTwd?: string;
+  /** @maxLength 200 */
+  maxPriceTwd?: string;
+  /** @maxLength 200 */
+  fromAt: string;
+  /** @maxLength 200 */
+  toAt: string;
+  /** @maxLength 200 */
+  dateStatus: string;
+}
+
+export type CatalogPatchInputStatus = typeof CatalogPatchInputStatus[keyof typeof CatalogPatchInputStatus];
+
+
+export const CatalogPatchInputStatus = {
+  NORMAL: 'NORMAL',
+  DISCONTINUED: 'DISCONTINUED',
+  ARCHIVED: 'ARCHIVED',
+} as const;
+
+export interface CatalogPatchInput {
+  /** @maxLength 256 */
+  name?: string;
+  /** @pattern ^\d{1,10}(?:\.\d{1,2})?$ */
+  weightGrams?: string;
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     * @nullable
+     */
+  categoryId?: number | null;
+  status?: CatalogPatchInputStatus;
+  /**
+     * @maxLength 2048
+     * @nullable
+     * @pattern ^https?://[^\s]+$
+     */
+  imageUrl?: string | null;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  internalNote?: string | null;
+  /**
+     * @maxLength 256
+     * @nullable
+     */
+  preferredRouteLabel?: string | null;
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     * @nullable
+     */
+  lastUsedTripRouteId?: number | null;
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     * @nullable
+     */
+  defaultPricingTemplateId?: number | null;
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     * @nullable
+     */
+  defaultShippingProfileId?: number | null;
+  /**
+     * @maxLength 32
+     * @nullable
+     * @pattern ^\d{1,18}(?:\.\d{1,12})?$
+     */
+  defaultDepartmentStoreFeeRate?: string | null;
+}
+
+export type CatalogBarcodeInputBarcodeStatus = typeof CatalogBarcodeInputBarcodeStatus[keyof typeof CatalogBarcodeInputBarcodeStatus];
+
+
+export const CatalogBarcodeInputBarcodeStatus = {
+  REAL: 'REAL',
+  NONE: 'NONE',
+} as const;
+
+export interface CatalogBarcodeInput {
+  /** @maxLength 128 */
+  barcode: string;
+  barcodeStatus: CatalogBarcodeInputBarcodeStatus;
+  forceCreate?: boolean;
+  /**
+     * @minLength 1
+     * @maxLength 64
+     */
+  reasonCode: string;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  reasonText?: string | null;
+}
+
+export type CatalogCloneInputStatus = typeof CatalogCloneInputStatus[keyof typeof CatalogCloneInputStatus];
+
+
+export const CatalogCloneInputStatus = {
+  NORMAL: 'NORMAL',
+  DISCONTINUED: 'DISCONTINUED',
+  ARCHIVED: 'ARCHIVED',
+} as const;
+
+export type CatalogCloneInputBarcodeStatus = typeof CatalogCloneInputBarcodeStatus[keyof typeof CatalogCloneInputBarcodeStatus];
+
+
+export const CatalogCloneInputBarcodeStatus = {
+  REAL: 'REAL',
+  NONE: 'NONE',
+} as const;
+
+export type CatalogCloneInputAdjustmentMode = typeof CatalogCloneInputAdjustmentMode[keyof typeof CatalogCloneInputAdjustmentMode];
+
+
+export const CatalogCloneInputAdjustmentMode = {
+  NONE: 'NONE',
+  RATE: 'RATE',
+  MANUAL: 'MANUAL',
+} as const;
+
+export interface CatalogCloneInput {
+  /** @maxLength 256 */
+  name?: string;
+  /** @pattern ^\d{1,10}(?:\.\d{1,2})?$ */
+  weightGrams?: string;
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     * @nullable
+     */
+  categoryId?: number | null;
+  status?: CatalogCloneInputStatus;
+  /**
+     * @maxLength 2048
+     * @nullable
+     * @pattern ^https?://[^\s]+$
+     */
+  imageUrl?: string | null;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  internalNote?: string | null;
+  /**
+     * @maxLength 256
+     * @nullable
+     */
+  preferredRouteLabel?: string | null;
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     * @nullable
+     */
+  lastUsedTripRouteId?: number | null;
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     * @nullable
+     */
+  defaultPricingTemplateId?: number | null;
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     * @nullable
+     */
+  defaultShippingProfileId?: number | null;
+  /**
+     * @maxLength 32
+     * @nullable
+     * @pattern ^\d{1,18}(?:\.\d{1,12})?$
+     */
+  defaultDepartmentStoreFeeRate?: string | null;
+  /** @maxLength 128 */
+  barcode: string;
+  barcodeStatus: CatalogCloneInputBarcodeStatus;
+  forceCreate?: boolean;
+  /**
+     * @maxLength 32
+     * @pattern ^\d{1,18}(?:\.\d{1,12})?$
+     */
+  originalPriceJpy: string;
+  adjustmentMode?: CatalogCloneInputAdjustmentMode;
+  /**
+     * @maxLength 32
+     * @nullable
+     * @pattern ^\d{1,18}(?:\.\d{1,12})?$
+     */
+  adjustmentRate?: string | null;
+  /**
+     * @maxLength 32
+     * @nullable
+     * @pattern ^\d{1,18}(?:\.\d{1,12})?$
+     */
+  effectiveCostJpy?: string | null;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  adjustmentReason?: string | null;
+  /**
+     * @nullable
+     * @pattern ^(?!0000)(?:\d{4}-(?:(?:01|03|05|07|08|10|12)-(?:0[1-9]|[12][0-9]|3[01])|(?:04|06|09|11)-(?:0[1-9]|[12][0-9]|30)|02-(?:0[1-9]|1[0-9]|2[0-8]))|(?:\d{2}(?:0[48]|[2468][048]|[13579][26])|(?:[02468][048]|[13579][26])00)-02-29)$
+     */
+  observedAt?: string | null;
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     */
+  supersedesCostRecordId?: number;
+  /**
+     * @minLength 1
+     * @maxLength 64
+     */
+  reasonCode: string;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  reasonText?: string | null;
+}
+
+export interface CatalogAliasInput {
+  /** @maxLength 256 */
+  alias: string;
+}
+
+export type CatalogCostInputAdjustmentMode = typeof CatalogCostInputAdjustmentMode[keyof typeof CatalogCostInputAdjustmentMode];
+
+
+export const CatalogCostInputAdjustmentMode = {
+  NONE: 'NONE',
+  RATE: 'RATE',
+  MANUAL: 'MANUAL',
+} as const;
+
+export interface CatalogCostInput {
+  /**
+     * @maxLength 32
+     * @pattern ^\d{1,18}(?:\.\d{1,12})?$
+     */
+  originalPriceJpy: string;
+  adjustmentMode?: CatalogCostInputAdjustmentMode;
+  /**
+     * @maxLength 32
+     * @nullable
+     * @pattern ^\d{1,18}(?:\.\d{1,12})?$
+     */
+  adjustmentRate?: string | null;
+  /**
+     * @maxLength 32
+     * @nullable
+     * @pattern ^\d{1,18}(?:\.\d{1,12})?$
+     */
+  effectiveCostJpy?: string | null;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  adjustmentReason?: string | null;
+  /**
+     * @nullable
+     * @pattern ^(?!0000)(?:\d{4}-(?:(?:01|03|05|07|08|10|12)-(?:0[1-9]|[12][0-9]|3[01])|(?:04|06|09|11)-(?:0[1-9]|[12][0-9]|30)|02-(?:0[1-9]|1[0-9]|2[0-8]))|(?:\d{2}(?:0[48]|[2468][048]|[13579][26])|(?:[02468][048]|[13579][26])00)-02-29)$
+     */
+  observedAt?: string | null;
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     */
+  supersedesCostRecordId?: number;
+  /**
+     * @minLength 1
+     * @maxLength 64
+     */
+  reasonCode: string;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  reasonText?: string | null;
+}
+
+export interface CatalogVoidInput {
+  /**
+     * @minLength 1
+     * @maxLength 64
+     */
+  reasonCode: string;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  reasonText?: string | null;
+}
+
+export interface CatalogShopeeInput {
+  /**
+     * @maxLength 32
+     * @pattern ^\d{1,18}(?:\.\d{1,12})?$
+     */
+  priceTwd: string;
+  /** @pattern ^(?!0000)(?:\d{4}-(?:(?:01|03|05|07|08|10|12)-(?:0[1-9]|[12][0-9]|3[01])|(?:04|06|09|11)-(?:0[1-9]|[12][0-9]|30)|02-(?:0[1-9]|1[0-9]|2[0-8]))|(?:\d{2}(?:0[48]|[2468][048]|[13579][26])|(?:[02468][048]|[13579][26])00)-02-29)$ */
+  observedAt: string;
+  /**
+     * @maxLength 2048
+     * @nullable
+     * @pattern ^https?://[^\s]+$
+     */
+  sourceUrl?: string | null;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  note?: string | null;
+  /**
+     * @minLength 1
+     * @maxLength 64
+     */
+  reasonCode: string;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  reasonText?: string | null;
+}
+
+export type CatalogRelationshipInputRelationType = typeof CatalogRelationshipInputRelationType[keyof typeof CatalogRelationshipInputRelationType];
+
+
+export const CatalogRelationshipInputRelationType = {
+  RELATED: 'RELATED',
+  POSSIBLE_DUPLICATE: 'POSSIBLE_DUPLICATE',
+} as const;
+
+export interface CatalogRelationshipInput {
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     */
+  targetCatalogProductId: number;
+  relationType: CatalogRelationshipInputRelationType;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  note?: string | null;
+}
+
+export interface CatalogSettingsInput {
+  /**
+     * @maxLength 32
+     * @pattern ^\d{1,18}(?:\.\d{1,12})?$
+     */
+  targetMarginRate?: string;
+  /**
+     * @maxLength 32
+     * @pattern ^\d{1,18}(?:\.\d{1,12})?$
+     */
+  lossProtectionTwd?: string;
+  /**
+     * @maxLength 32
+     * @pattern ^\d{1,18}(?:\.\d{1,12})?$
+     */
+  purchasePaymentFeeRate?: string;
+  /**
+     * @maxLength 32
+     * @pattern ^\d{1,18}(?:\.\d{1,12})?$
+     */
+  routePaymentFeeRate?: string;
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     */
+  staleSaleDays?: number;
+  /**
+     * @maxLength 33
+     * @pattern ^-?\d{1,18}(?:\.\d{1,12})?$
+     */
+  profitLossMaxTwd?: string;
+  /**
+     * @maxLength 33
+     * @pattern ^-?\d{1,18}(?:\.\d{1,12})?$
+     */
+  profitLowMaxTwd?: string;
+  /**
+     * @maxLength 33
+     * @pattern ^-?\d{1,18}(?:\.\d{1,12})?$
+     */
+  profitMediumMaxTwd?: string;
+}
+
+export type CatalogTemplateInputCode = typeof CatalogTemplateInputCode[keyof typeof CatalogTemplateInputCode];
+
+
+export const CatalogTemplateInputCode = {
+  GENERAL: 'GENERAL',
+  LIVE: 'LIVE',
+  PERFUME: 'PERFUME',
+  CUSTOM: 'CUSTOM',
+} as const;
+
+export type CatalogTemplateInputCostAdjustmentMode = typeof CatalogTemplateInputCostAdjustmentMode[keyof typeof CatalogTemplateInputCostAdjustmentMode];
+
+
+export const CatalogTemplateInputCostAdjustmentMode = {
+  NONE: 'NONE',
+  RATE: 'RATE',
+  MANUAL: 'MANUAL',
+} as const;
+
+export interface CatalogTemplateInput {
+  code: CatalogTemplateInputCode;
+  /** @maxLength 256 */
+  name: string;
+  costAdjustmentMode: CatalogTemplateInputCostAdjustmentMode;
+  /**
+     * @maxLength 32
+     * @pattern ^\d{1,18}(?:\.\d{1,12})?$
+     */
+  costAdjustmentRate: string;
+  /**
+     * @maxLength 32
+     * @pattern ^\d{1,18}(?:\.\d{1,12})?$
+     */
+  departmentStoreFeeRate: string;
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     * @nullable
+     */
+  defaultShippingProfileId?: number | null;
+  isActive?: boolean;
+}
+
+export type CatalogTemplatePatchInputCostAdjustmentMode = typeof CatalogTemplatePatchInputCostAdjustmentMode[keyof typeof CatalogTemplatePatchInputCostAdjustmentMode];
+
+
+export const CatalogTemplatePatchInputCostAdjustmentMode = {
+  NONE: 'NONE',
+  RATE: 'RATE',
+  MANUAL: 'MANUAL',
+} as const;
+
+export interface CatalogTemplatePatchInput {
+  /** @maxLength 256 */
+  name?: string;
+  costAdjustmentMode?: CatalogTemplatePatchInputCostAdjustmentMode;
+  /**
+     * @maxLength 32
+     * @pattern ^\d{1,18}(?:\.\d{1,12})?$
+     */
+  costAdjustmentRate?: string;
+  /**
+     * @maxLength 32
+     * @pattern ^\d{1,18}(?:\.\d{1,12})?$
+     */
+  departmentStoreFeeRate?: string;
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     * @nullable
+     */
+  defaultShippingProfileId?: number | null;
+  isActive?: boolean;
+}
+
+export interface CatalogShippingInput {
+  /** @pattern ^[A-Z][A-Z0-9_]{0,63}$ */
+  code: string;
+  /** @maxLength 256 */
+  name: string;
+  /**
+     * @maxLength 32
+     * @pattern ^\d{1,18}(?:\.\d{1,12})?$
+     */
+  rateTwd: string;
+  /**
+     * @maxLength 32
+     * @pattern ^\d{1,18}(?:\.\d{1,12})?$
+     */
+  basisWeightGrams: string;
+  isActive?: boolean;
+}
+
+export interface CatalogShippingPatchInput {
+  /** @maxLength 256 */
+  name?: string;
+  /**
+     * @maxLength 32
+     * @pattern ^\d{1,18}(?:\.\d{1,12})?$
+     */
+  rateTwd?: string;
+  /**
+     * @maxLength 32
+     * @pattern ^\d{1,18}(?:\.\d{1,12})?$
+     */
+  basisWeightGrams?: string;
+  isActive?: boolean;
+}
+
+export interface CatalogEmptyInput { [key: string]: unknown }
+
+export type CatalogProductStatus = typeof CatalogProductStatus[keyof typeof CatalogProductStatus];
+
+
+export const CatalogProductStatus = {
+  NORMAL: 'NORMAL',
+  DISCONTINUED: 'DISCONTINUED',
+  ARCHIVED: 'ARCHIVED',
+} as const;
+
+export type CatalogProductBarcodeStatus = typeof CatalogProductBarcodeStatus[keyof typeof CatalogProductBarcodeStatus];
+
+
+export const CatalogProductBarcodeStatus = {
+  REAL: 'REAL',
+  NONE: 'NONE',
+} as const;
+
+export type CatalogCostAdjustmentMode = typeof CatalogCostAdjustmentMode[keyof typeof CatalogCostAdjustmentMode];
+
+
+export const CatalogCostAdjustmentMode = {
+  NONE: 'NONE',
+  RATE: 'RATE',
+  MANUAL: 'MANUAL',
+} as const;
+
+export type CatalogCostStatus = typeof CatalogCostStatus[keyof typeof CatalogCostStatus];
+
+
+export const CatalogCostStatus = {
+  ACTIVE: 'ACTIVE',
+  VOIDED: 'VOIDED',
+} as const;
+
+export interface CatalogCost {
+  id: number;
+  storeId: number;
+  catalogProductId: number;
+  originalPriceJpy: string;
+  effectiveCostJpy: string;
+  adjustmentMode: CatalogCostAdjustmentMode;
+  /** @nullable */
+  adjustmentRate: string | null;
+  /** @nullable */
+  adjustmentReason: string | null;
+  /** @nullable */
+  observedAt: string | null;
+  source: string;
+  status: CatalogCostStatus;
+  isCurrent: boolean;
+  /** @nullable */
+  supersedesCostRecordId: number | null;
+  /** @nullable */
+  voidReasonCode: string | null;
+  /** @nullable */
+  voidReasonText: string | null;
+  /** @nullable */
+  voidedAt: string | null;
+  /** @nullable */
+  voidedBy: string | null;
+  createdAt: string;
+}
+
+export interface CatalogProduct {
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     */
+  id: number;
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     */
+  storeId: number;
+  /** @maxLength 256 */
+  name: string;
+  /** @pattern ^\d{1,10}(?:\.\d{1,2})?$ */
+  weightGrams: string;
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     * @nullable
+     */
+  categoryId?: number | null;
+  status: CatalogProductStatus;
+  /**
+     * @maxLength 2048
+     * @nullable
+     * @pattern ^https?://[^\s]+$
+     */
+  imageUrl?: string | null;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  internalNote?: string | null;
+  /**
+     * @maxLength 256
+     * @nullable
+     */
+  preferredRouteLabel?: string | null;
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     * @nullable
+     */
+  lastUsedTripRouteId?: number | null;
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     * @nullable
+     */
+  defaultPricingTemplateId?: number | null;
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     * @nullable
+     */
+  defaultShippingProfileId?: number | null;
+  /**
+     * @maxLength 32
+     * @nullable
+     * @pattern ^\d{1,18}(?:\.\d{1,12})?$
+     */
+  defaultDepartmentStoreFeeRate?: string | null;
+  /** @maxLength 256 */
+  normalizedName: string;
+  /** @maxLength 128 */
+  barcode: string;
+  barcodeStatus: CatalogProductBarcodeStatus;
+  /** @maxLength 2000 */
+  createdAt?: string;
+  /** @maxLength 2000 */
+  updatedAt?: string;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  archivedAt?: string | null;
+  currentCost?: CatalogCost | null;
+}
+
+export type CatalogResultItemsItem = { [key: string]: unknown };
+
+export type CatalogResultRecord = { [key: string]: unknown };
+
+export type CatalogResultSettings = { [key: string]: unknown };
+
+export type CatalogResultTemplatesItem = { [key: string]: unknown };
+
+export type CatalogResultShippingProfilesItem = { [key: string]: unknown };
+
+export interface CatalogResult {
+  product?: CatalogProduct;
+  items?: CatalogResultItemsItem[];
+  record?: CatalogResultRecord;
+  candidates?: CatalogProduct[];
+  total?: number;
+  page?: number;
+  pageSize?: number;
+  deleted?: boolean;
+  initialized?: boolean;
+  settings?: CatalogResultSettings;
+  templates?: CatalogResultTemplatesItem[];
+  shippingProfiles?: CatalogResultShippingProfilesItem[];
+}
+
+export interface CatalogAlias {
+  id: number;
+  storeId: number;
+  catalogProductId: number;
+  alias: string;
+  normalizedAlias: string;
+  source: string;
+  createdAt: string;
+}
+
+export type CatalogShopeeRecordStatus = typeof CatalogShopeeRecordStatus[keyof typeof CatalogShopeeRecordStatus];
+
+
+export const CatalogShopeeRecordStatus = {
+  ACTIVE: 'ACTIVE',
+  VOIDED: 'VOIDED',
+} as const;
+
+export interface CatalogShopeeRecord {
+  id: number;
+  storeId: number;
+  catalogProductId: number;
+  priceTwd: string;
+  /** @nullable */
+  observedAt: string | null;
+  /** @nullable */
+  sourceUrl: string | null;
+  /** @nullable */
+  note: string | null;
+  source: string;
+  status: CatalogShopeeRecordStatus;
+  createdAt: string;
+}
+
+export interface CatalogRelationship {
+  id: number;
+  storeId: number;
+  sourceCatalogProductId: number;
+  targetCatalogProductId: number;
+  relationType: string;
+  /** @nullable */
+  note: string | null;
+  createdAt: string;
+}
+
+export type CatalogAuditEventDetails = {[key: string]: unknown};
+
+export interface CatalogAuditEvent {
+  id: number;
+  storeId: number;
+  /** @nullable */
+  catalogProductId: number | null;
+  actor: string;
+  action: string;
+  details: CatalogAuditEventDetails;
+  createdAt: string;
+}
+
+export interface CatalogShipping {
+  id: number;
+  storeId: number;
+  name: string;
+  code: string;
+  rateTwd: string;
+  basisWeightGrams: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CatalogTemplateCode = typeof CatalogTemplateCode[keyof typeof CatalogTemplateCode];
+
+
+export const CatalogTemplateCode = {
+  GENERAL: 'GENERAL',
+  LIVE: 'LIVE',
+  PERFUME: 'PERFUME',
+  CUSTOM: 'CUSTOM',
+} as const;
+
+export type CatalogTemplateCostAdjustmentMode = typeof CatalogTemplateCostAdjustmentMode[keyof typeof CatalogTemplateCostAdjustmentMode];
+
+
+export const CatalogTemplateCostAdjustmentMode = {
+  NONE: 'NONE',
+  RATE: 'RATE',
+  MANUAL: 'MANUAL',
+} as const;
+
+export interface CatalogTemplate {
+  id: number;
+  storeId: number;
+  name: string;
+  code: CatalogTemplateCode;
+  costAdjustmentMode: CatalogTemplateCostAdjustmentMode;
+  costAdjustmentRate: string;
+  departmentStoreFeeRate: string;
+  /** @nullable */
+  defaultShippingProfileId: number | null;
+  isSystemDefault: boolean;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CatalogSettings {
+  targetMarginRate: string;
+  lossProtectionTwd: string;
+  purchasePaymentFeeRate: string;
+  routePaymentFeeRate: string;
+  staleSaleDays: number;
+  profitLossMaxTwd: string;
+  profitLowMaxTwd: string;
+  profitMediumMaxTwd: string;
+  settingsVersion: string;
+}
+
+export interface CatalogPage {
+  items: CatalogProduct[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface CatalogProductResult {
+  product: CatalogProduct;
+  candidates?: CatalogProduct[];
+}
+
+export interface CatalogSettingsResult {
+  settings: CatalogSettings;
+  templates: CatalogTemplate[];
+  shippingProfiles: CatalogShipping[];
+  initialized?: boolean;
+}
+
+export interface CatalogAliasList {
+  items: CatalogAlias[];
+}
+
+export interface CatalogAliasResult {
+  record: CatalogAlias;
+}
+
+export interface CatalogCostList {
+  items: CatalogCost[];
+}
+
+export interface CatalogCostResult {
+  record: CatalogCost;
+}
+
+export interface CatalogShopeeList {
+  items: CatalogShopeeRecord[];
+}
+
+export interface CatalogShopeeResult {
+  record: CatalogShopeeRecord;
+}
+
+export interface CatalogRelationshipList {
+  items: CatalogRelationship[];
+}
+
+export interface CatalogRelationshipResult {
+  record: CatalogRelationship;
+}
+
+export interface CatalogAuditList {
+  items: CatalogAuditEvent[];
+}
+
+export interface CatalogAuditResult {
+  record: CatalogAuditEvent;
+}
+
+export interface CatalogTemplateList {
+  items: CatalogTemplate[];
+}
+
+export interface CatalogTemplateResult {
+  record: CatalogTemplate;
+}
+
+export interface CatalogShippingList {
+  items: CatalogShipping[];
+}
+
+export interface CatalogShippingResult {
+  record: CatalogShipping;
+}
+
+export interface CatalogDeleted {
+  deleted: boolean;
+}
+
+export type CatalogVoidedRecord = {
+  id: number;
+};
+
+export interface CatalogVoided {
+  record: CatalogVoidedRecord;
+}
+
+export interface PricingV2Amounts {[key: string]: string | null}
+
+export type PricingV2CustomerStatus = typeof PricingV2CustomerStatus[keyof typeof PricingV2CustomerStatus];
+
+
+export const PricingV2CustomerStatus = {
+  READY: 'READY',
+  PENDING_CONFIRMATION: 'PENDING_CONFIRMATION',
+} as const;
+
+export interface PricingV2Customer {
+  status: PricingV2CustomerStatus;
+  reasons: string[];
+  /** @nullable */
+  profitLevel: string | null;
+  values: PricingV2Amounts;
+  display: PricingV2Amounts;
+}
+
+export type PricingV2PreviewStatus = typeof PricingV2PreviewStatus[keyof typeof PricingV2PreviewStatus];
+
+
+export const PricingV2PreviewStatus = {
+  READY: 'READY',
+  PENDING_CONFIRMATION: 'PENDING_CONFIRMATION',
+} as const;
+
+/**
+ * @nullable
+ */
+export type PricingV2PreviewShippingProfile = { [key: string]: unknown } | null;
+
+export type PricingV2PreviewRouteMetadata = { [key: string]: unknown };
+
+export interface PricingV2Preview {
+  status: PricingV2PreviewStatus;
+  reasons: string[];
+  formulaVersion: string;
+  settingsVersion: string;
+  /** @nullable */
+  templateId?: number | null;
+  /** @nullable */
+  shippingProfile?: PricingV2PreviewShippingProfile;
+  routeMetadata: PricingV2PreviewRouteMetadata;
+  amounts: PricingV2Amounts;
+  display: PricingV2Amounts;
+  general: PricingV2Customer;
+  vip: PricingV2Customer;
+}
+
 export interface HealthStatus {
   status: string;
 }
@@ -49,9 +1561,434 @@ export interface StoreUpdate {
   purchaseExchangeRate?: number | null;
 }
 
+export type ListingPricingInputMode = typeof ListingPricingInputMode[keyof typeof ListingPricingInputMode];
+
+
+export const ListingPricingInputMode = {
+  PREVIEW: 'PREVIEW',
+  SAVE: 'SAVE',
+} as const;
+
+export type ListingPricingInputSpecsItem = {
+  /** @maxLength 200 */
+  name: string;
+  /** @maxItems 100 */
+  values: string[];
+};
+
+/**
+ * @nullable
+ */
+export type ListingPricingInputStorageTemp = typeof ListingPricingInputStorageTemp[keyof typeof ListingPricingInputStorageTemp] | null;
+
+
+export const ListingPricingInputStorageTemp = {
+  ambient: 'ambient',
+  chilled: 'chilled',
+  frozen: 'frozen',
+} as const;
+
+/**
+ * @nullable
+ */
+export type ListingPricingInputStorageTempClass = typeof ListingPricingInputStorageTempClass[keyof typeof ListingPricingInputStorageTempClass] | null;
+
+
+export const ListingPricingInputStorageTempClass = {
+  normal: 'normal',
+  frozen: 'frozen',
+} as const;
+
+export type ListingPricingInputSyncFieldsItem = typeof ListingPricingInputSyncFieldsItem[keyof typeof ListingPricingInputSyncFieldsItem];
+
+
+export const ListingPricingInputSyncFieldsItem = {
+  name: 'name',
+  weightGrams: 'weightGrams',
+  categoryId: 'categoryId',
+  imageUrl: 'imageUrl',
+  internalNote: 'internalNote',
+  templateId: 'templateId',
+  shippingProfileId: 'shippingProfileId',
+  cost: 'cost',
+  barcode: 'barcode',
+} as const;
+
+export interface ListingPricingInput {
+  mode?: ListingPricingInputMode;
+  /** @pattern ^[a-f0-9]{64}$ */
+  expectedContext?: string;
+  confirmLowProfit?: boolean;
+  useLatestCost?: boolean;
+  /**
+     * @minLength 1
+     * @maxLength 256
+     */
+  name?: string;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  description?: string | null;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  internalNote?: string | null;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  skuCode?: string | null;
+  /**
+     * @maxLength 2048
+     * @nullable
+     */
+  imageUrl?: string | null;
+  /** @maxItems 100 */
+  specs?: ListingPricingInputSpecsItem[];
+  /**
+     * @minimum 0
+     * @maximum 2147483647
+     * @nullable
+     */
+  inventory?: number | null;
+  /** @nullable */
+  orderDeadlineAt?: string | null;
+  /** @nullable */
+  storageTemp?: ListingPricingInputStorageTemp;
+  /** @nullable */
+  storageTempClass?: ListingPricingInputStorageTempClass;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  shelfLife?: string | null;
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     * @nullable
+     */
+  categoryId?: number | null;
+  /**
+     * @maxLength 128
+     * @nullable
+     */
+  listingBarcode?: string | null;
+  /**
+     * @nullable
+     * @pattern ^\d{1,18}(?:\.\d{1,12})?$
+     */
+  originalPriceJpy?: string | null;
+  /**
+     * @nullable
+     * @pattern ^\d{1,18}(?:\.\d{1,12})?$
+     */
+  effectiveCostJpy?: string | null;
+  /**
+     * @nullable
+     * @pattern ^\d{1,10}(?:\.\d{1,2})?$
+     */
+  weightGrams?: string | null;
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     * @nullable
+     */
+  templateId?: number | null;
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     * @nullable
+     */
+  shippingProfileId?: number | null;
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     * @nullable
+     */
+  tripRouteId?: number | null;
+  isTransportCostExempt?: boolean;
+  /**
+     * @nullable
+     * @pattern ^\d{1,18}(?:\.\d{1,12})?$
+     */
+  departmentStoreFeeRate?: string | null;
+  /**
+     * @nullable
+     * @pattern ^\d{1,8}(?:\.\d{1,2})?$
+     */
+  generalFinalPriceTwd?: string | null;
+  /**
+     * @nullable
+     * @pattern ^\d{1,8}(?:\.\d{1,2})?$
+     */
+  vipFinalPriceTwd?: string | null;
+  /**
+     * @nullable
+     * @pattern ^\d{1,8}(?:\.\d{1,2})?$
+     */
+  wholesalePrice?: string | null;
+  /**
+     * @nullable
+     * @pattern ^\d{1,8}(?:\.\d{1,2})?$
+     */
+  partnerPrice?: string | null;
+  /** @maxItems 9 */
+  syncFields?: ListingPricingInputSyncFieldsItem[];
+  /** @maxLength 64 */
+  reasonCode?: string;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  reasonText?: string | null;
+  forceBarcodeCorrection?: boolean;
+}
+
+/**
+ * @nullable
+ */
+export type ListingPricingSnapshotPricingContext = { [key: string]: unknown } | null;
+
+/**
+ * @nullable
+ */
+export type ListingPricingSnapshotInternationalShippingProfileSnapshot = { [key: string]: unknown } | null;
+
+export interface ListingPricingSnapshot {
+  id?: number;
+  storeId?: number;
+  productId?: number;
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     * @nullable
+     */
+  catalogProductId?: number | null;
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     * @nullable
+     */
+  sourceCostRecordId?: number | null;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  listingBarcode?: string | null;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  createdBy?: string | null;
+  createdAt?: string;
+  formulaVersion?: string;
+  settingsVersion?: string;
+  /** @nullable */
+  pricingContext?: ListingPricingSnapshotPricingContext;
+  /** @nullable */
+  internationalShippingProfileSnapshot?: ListingPricingSnapshotInternationalShippingProfileSnapshot;
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     * @nullable
+     */
+  tripRouteId?: number | null;
+  /**
+     * @nullable
+     * @pattern ^\d{1,18}(?:\.\d{1,12})?$
+     */
+  weightGrams?: string | null;
+  /** @nullable */
+  originalPriceJpy?: string | null;
+  /** @nullable */
+  effectiveCostJpy?: string | null;
+  /** @nullable */
+  exchangeRate?: string | null;
+  /** @nullable */
+  routeCostTwd?: string | null;
+  /** @nullable */
+  lossProtectionTwd?: string | null;
+  /** @nullable */
+  protectedRouteCostTwd?: string | null;
+  /** @nullable */
+  internationalShippingTwd?: string | null;
+  /** @nullable */
+  purchasePaymentFeeRate?: string | null;
+  /** @nullable */
+  purchasePaymentFeeTwd?: string | null;
+  /** @nullable */
+  routePaymentFeeRate?: string | null;
+  /** @nullable */
+  departmentStoreFeeRate?: string | null;
+  /** @nullable */
+  departmentStoreFeeTwd?: string | null;
+  /** @nullable */
+  originalPriceTwd?: string | null;
+  /** @nullable */
+  effectiveProductCostTwd?: string | null;
+  /** @nullable */
+  totalCostTwd?: string | null;
+  /** @nullable */
+  targetPriceTwd?: string | null;
+  /** @nullable */
+  generalFinalPriceTwd?: string | null;
+  /** @nullable */
+  generalNetProfitTwd?: string | null;
+  /** @nullable */
+  generalProfitRate?: string | null;
+  /** @nullable */
+  generalContributionProfitTwd?: string | null;
+  /** @nullable */
+  generalContributionProfitRate?: string | null;
+  /** @nullable */
+  generalPerceivedDifferenceTwd?: string | null;
+  /** @nullable */
+  generalProfitLevel?: string | null;
+  /** @nullable */
+  vipFinalPriceTwd?: string | null;
+  /** @nullable */
+  vipNetProfitTwd?: string | null;
+  /** @nullable */
+  vipProfitRate?: string | null;
+  /** @nullable */
+  vipContributionProfitTwd?: string | null;
+  /** @nullable */
+  vipContributionProfitRate?: string | null;
+  /** @nullable */
+  vipPerceivedDifferenceTwd?: string | null;
+  /** @nullable */
+  vipProfitLevel?: string | null;
+}
+
+export interface ListingPricingReference {
+  sourceCostRecordId: number;
+  settingsVersion: string;
+  context: string;
+  latestOriginalPriceJpy: string;
+  latestEffectiveCostJpy: string;
+}
+
 export interface ProductSpec {
   name: string;
   values: string[];
+}
+
+export interface ListingProduct {
+  id: number;
+  storeId: number;
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     * @nullable
+     */
+  catalogProductId: number | null;
+  name: string;
+  /** @nullable */
+  description?: string | null;
+  price: string;
+  /** @nullable */
+  vipPrice?: string | null;
+  /** @nullable */
+  wholesalePrice?: string | null;
+  /** @nullable */
+  partnerPrice?: string | null;
+  /** @nullable */
+  originalPriceJpy?: string | null;
+  /** @nullable */
+  effectiveCostJpy?: string | null;
+  /** @nullable */
+  costJpy?: string | null;
+  /** @nullable */
+  weightGrams?: string | null;
+  /** @nullable */
+  weightKg?: string | null;
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     * @nullable
+     */
+  pricingTemplateId?: number | null;
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     * @nullable
+     */
+  internationalShippingProfileId?: number | null;
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     * @nullable
+     */
+  categoryId?: number | null;
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     * @nullable
+     */
+  tripRouteId?: number | null;
+  /** @nullable */
+  inventory?: number | null;
+  isActive: boolean;
+  isTransportCostExempt?: boolean;
+  /** @nullable */
+  imageUrl?: string | null;
+  /** @nullable */
+  internalNote?: string | null;
+  /** @nullable */
+  skuCode?: string | null;
+  /** @nullable */
+  shelfLife?: string | null;
+  /** @nullable */
+  storageTemp?: string | null;
+  /** @nullable */
+  storageTempClass?: string | null;
+  /** @nullable */
+  orderDeadlineAt?: string | null;
+  createdAt: string;
+  updatedAt?: string;
+  shareToken: string;
+  specs?: ProductSpec[];
+}
+
+export type ListingAvailableTripRoutesItem = {
+  id: number;
+  storeId: number;
+  areaTitle: string;
+};
+
+export interface ListingAvailableTrip {
+  id: number;
+  storeId: number;
+  name: string;
+  routes: ListingAvailableTripRoutesItem[];
+}
+
+export interface ListingPricingResult {
+  preview: PricingV2Preview;
+  reference: ListingPricingReference;
+  warnings: string[];
+  current?: ListingPricingSnapshot | null;
+  snapshot?: ListingPricingSnapshot;
+  product?: ListingProduct | null;
+  vipHistory?: CatalogSaleTier | null;
+  availableTrips?: ListingAvailableTrip[];
+}
+
+export interface ListingPricingHistory {
+  items: ListingPricingSnapshot[];
+  current?: ListingPricingSnapshot | null;
+  product?: ListingProduct;
+  costUpdated: boolean;
+  /**
+     * @minimum 1
+     * @maximum 2147483647
+     * @nullable
+     */
+  currentCostRecordId: number | null;
+  vipHistory?: CatalogSaleTier | null;
+  availableTrips?: ListingAvailableTrip[];
 }
 
 /**
@@ -67,6 +2004,18 @@ export const ProductStorageTemp = {
 } as const;
 
 export interface Product {
+  /** @nullable */
+  catalogProductId?: number | null;
+  /** @nullable */
+  weightGrams?: string | null;
+  /** @nullable */
+  originalPriceJpy?: string | null;
+  /** @nullable */
+  effectiveCostJpy?: string | null;
+  /** @nullable */
+  pricingTemplateId?: number | null;
+  /** @nullable */
+  internationalShippingProfileId?: number | null;
   id: number;
   storeId: number;
   name: string;
@@ -473,6 +2422,8 @@ export const ShippingStatus = {
   cancelled: 'cancelled',
 } as const;
 
+export type OrderOrderItemsItem = { [key: string]: unknown };
+
 export type OrderSpecValues = { [key: string]: unknown };
 
 export type OrderStatus = typeof OrderStatus[keyof typeof OrderStatus];
@@ -489,7 +2440,9 @@ export const OrderStatus = {
 
 export interface Order {
   id: number;
-  productId: number;
+  /** @nullable */
+  productId: number | null;
+  orderItems?: OrderOrderItemsItem[];
   storeId: number;
   /** @nullable */
   productName?: string | null;
@@ -1238,6 +3191,138 @@ export interface HistoryTrendResponse {
   mode: HistoryTrendResponseMode;
   items: HistoryTrendItem[];
 }
+
+export type CatalogListingMatchPreviewParams = {
+/**
+ * @minimum 1
+ * @maximum 100000
+ */
+page?: number;
+};
+
+export type CatalogListingMatchPreview200 = { [key: string]: unknown };
+
+export type CatalogListingMatchApply200 = { [key: string]: unknown };
+
+export type CatalogImportPreviewBodyTwoSourceType = typeof CatalogImportPreviewBodyTwoSourceType[keyof typeof CatalogImportPreviewBodyTwoSourceType];
+
+
+export const CatalogImportPreviewBodyTwoSourceType = {
+  XLSX_UPLOAD: 'XLSX_UPLOAD',
+} as const;
+
+export type CatalogImportPreviewBodyTwo = {
+  sourceType: CatalogImportPreviewBodyTwoSourceType;
+  /** @maxLength 256 */
+  spreadsheetTitle: string;
+  /** @maxLength 128 */
+  sheetTitle?: string;
+  file: Blob;
+};
+
+export type CatalogImportPreview200 = { [key: string]: unknown };
+
+export type CatalogImportGet200 = { [key: string]: unknown };
+
+export type CatalogImportResolve200 = { [key: string]: unknown };
+
+export type CatalogImportApprove200 = { [key: string]: unknown };
+
+export type CatalogImportCommit200 = { [key: string]: unknown };
+
+export type CatalogImportRollback200 = { [key: string]: unknown };
+
+export type CatalogImportReferences200 = { [key: string]: unknown };
+
+export type GetCatalogSalesParams = {
+/**
+ * @pattern ^[1-9][0-9]*(,[1-9][0-9]*)*$
+ */
+ids: string;
+};
+
+export type GetCatalogSales200 = { [key: string]: unknown };
+
+export type GetCatalogSalesReference200 = { [key: string]: unknown };
+
+export type GetCatalogOrderCostOptions200 = { [key: string]: unknown };
+
+export type CatalogListParams = {
+/**
+ * @maxLength 256
+ */
+q?: string;
+status?: CatalogListStatus;
+/**
+ * @pattern ^(?:[1-9]\d{0,8}|1\d{9}|20\d{8}|21[0-3]\d{7}|214[0-6]\d{6}|2147[0-3]\d{5}|21474[0-7]\d{4}|214748[0-2]\d{3}|2147483[0-5]\d{2}|21474836[0-3]\d|214748364[0-7])$
+ */
+categoryId?: string;
+barcodeStatus?: CatalogListBarcodeStatus;
+includeArchived?: CatalogListIncludeArchived;
+/**
+ * @pattern ^(?:[1-9][0-9]{0,4}|100000)$
+ */
+page?: string;
+/**
+ * @pattern ^(?:[1-9]|[1-9][0-9]|100)$
+ */
+pageSize?: string;
+filter?: CatalogListFilter;
+/**
+ * @minLength 1
+ * @maxLength 256
+ */
+similarName?: string;
+/**
+ * @pattern ^(?:0|[1-9]\d{0,9})(?:\.\d{1,2})?$
+ */
+similarWeightGrams?: string;
+/**
+ * @pattern ^(?:0|[1-9]\d{0,17})(?:\.\d{1,12})?$
+ */
+similarOriginalPriceJpy?: string;
+/**
+ * Exact scanned barcode lookup; digits only, leading zeros preserved; mutually exclusive with q
+ * @minLength 1
+ * @maxLength 128
+ * @pattern ^[0-9]{1,128}$
+ */
+exactBarcode?: string;
+};
+
+export type CatalogListStatus = typeof CatalogListStatus[keyof typeof CatalogListStatus];
+
+
+export const CatalogListStatus = {
+  NORMAL: 'NORMAL',
+  DISCONTINUED: 'DISCONTINUED',
+  ARCHIVED: 'ARCHIVED',
+} as const;
+
+export type CatalogListBarcodeStatus = typeof CatalogListBarcodeStatus[keyof typeof CatalogListBarcodeStatus];
+
+
+export const CatalogListBarcodeStatus = {
+  REAL: 'REAL',
+  NONE: 'NONE',
+} as const;
+
+export type CatalogListIncludeArchived = typeof CatalogListIncludeArchived[keyof typeof CatalogListIncludeArchived];
+
+
+export const CatalogListIncludeArchived = {
+  true: 'true',
+  false: 'false',
+} as const;
+
+export type CatalogListFilter = typeof CatalogListFilter[keyof typeof CatalogListFilter];
+
+
+export const CatalogListFilter = {
+  POSSIBLE_DUPLICATE: 'POSSIBLE_DUPLICATE',
+  COST_UPDATED: 'COST_UPDATED',
+  MISSING_DATA: 'MISSING_DATA',
+} as const;
 
 export type GetSellerAgentSettings200 = {
   data: SellerAgentSettings;

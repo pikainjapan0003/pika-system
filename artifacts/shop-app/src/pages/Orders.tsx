@@ -278,6 +278,7 @@ interface OrderItem {
 // Returns a normalized items array for multi-item (cart) orders.
 // Falls back to a single item built from legacy scalar fields for old orders.
 function normalizeOrderItems(order: {
+  orderItems?: unknown;
   items?: unknown;
   productName?: string | null;
   specValues?: unknown;
@@ -285,6 +286,7 @@ function normalizeOrderItems(order: {
   unitPrice?: number;
   totalPrice?: number;
 }): OrderItem[] {
+  const formal=formalOrderItems(order);if(formal)return formal;
   const raw = order.items as OrderItem[] | null | undefined;
   if (Array.isArray(raw) && raw.length > 0) return raw;
   const qty = order.quantity ?? 1;
@@ -1392,6 +1394,7 @@ export default function OrdersPage() {
                         </div>
 
                         {/* 成本與單件毛利快照（只顯示訂單建立/補拍時定格值） */}
+                        {(o as any).orderItems?.length?<section className="space-y-3" aria-label="品項成本快照"><SectionLabel>品項成本快照</SectionLabel>{(o as any).orderItems.map((item:any)=><PendingItemCapture key={item.id} s={o.storeId} orderId={o.id} item={item} onSaved={()=>void qc.invalidateQueries({queryKey:getListOrdersQueryKey(o.storeId)})}/>)}<DetailRow label="完整成本合計" value={(o as any).itemCostTotalTwd??'待確認'}/><DetailRow label="完整淨利合計" value={(o as any).itemProfitTotalTwd??'待確認'}/></section>:
                         <div>
                           <SectionLabel>成本與單件毛利</SectionLabel>
                           <div className="bg-card rounded-xl border border-border/50 divide-y divide-border/40">
@@ -1556,6 +1559,7 @@ export default function OrdersPage() {
                           </div>
                         </div>
 
+                        }
                         {/* 付款資訊 */}
                         <div>
                           <SectionLabel>付款資訊</SectionLabel>
@@ -2608,3 +2612,5 @@ function DetailRow({
     </div>
   );
 }
+import {formalOrderItems} from '@/lib/formalOrderItems';
+import {PendingItemCapture} from '@/components/product-database/OrderItemsEditor';

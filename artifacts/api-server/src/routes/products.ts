@@ -196,6 +196,11 @@ router.patch(
       return res.status(400).json({ error: parsed.error.message });
     }
 
+    const [linked] = await db.select({catalogProductId:productsTable.catalogProductId}).from(productsTable).where(and(eq(productsTable.storeId,storeId),eq(productsTable.id,productId)));
+    if (linked?.catalogProductId != null && Object.keys(req.body).some(key=>key!=="isActive")) {
+      return res.status(409).json({error:"此商品已連結資料庫，請使用上架計價編輯，以保留不可變更的估算歷史。"});
+    }
+
     if (parsed.data.categoryId != null) {
       if (
         !(await assertCategoryBelongsToStore(storeId, parsed.data.categoryId))
@@ -304,9 +309,9 @@ router.delete(
       return res.status(204).send();
     } catch (err: any) {
       // Postgres FK violation: orders still reference this product
-      if (err?.code === "23503") {
+      if ((err?.code ?? err?.cause?.code) === "23503") {
         return res.status(409).json({
-          error: "此商品有歷史訂單，無法刪除。請改為將商品設為下架。",
+          error: "此商品有歷史訂單或計價快照，無法刪除。請改為將商品設為下架。",
         });
       }
       throw err;

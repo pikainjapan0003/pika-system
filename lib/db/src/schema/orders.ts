@@ -8,6 +8,7 @@ import {
   jsonb,
   index,
   check,
+  unique,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
@@ -75,8 +76,8 @@ export const ordersTable = pgTable(
   {
     id: serial("id").primaryKey(),
     productId: integer("product_id")
-      .notNull()
       .references(() => productsTable.id),
+    orderItemsVersion: integer("order_items_version"),
     storeId: integer("store_id")
       .notNull()
       .references(() => storesTable.id, { onDelete: "cascade" }),
@@ -182,6 +183,7 @@ export const ordersTable = pgTable(
       .$onUpdate(() => new Date()),
   },
   (t) => [
+    unique("orders_store_id_key").on(t.storeId, t.id),
     index("orders_store_id_idx").on(t.storeId),
     index("orders_customer_id_idx").on(t.customerId),
     index("orders_product_id_idx").on(t.productId),

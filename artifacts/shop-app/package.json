@@ -83,6 +83,8 @@
   "dependencies": {
     "@clerk/react": "^6.7.2",
     "@clerk/themes": "^2.4.57",
+    "@zxing/browser": "0.2.1",
+    "@zxing/library": "0.23.0",
     "decimal.js": "10.6.0",
     "gsap": "^3.15.0",
     "internal": "link:@clerk/react/internal",

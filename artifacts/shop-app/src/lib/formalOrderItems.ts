@@ -1,0 +1,2 @@
+/** Sales-only projection used by owner displays and customer receipt/message builders. */
+export function formalOrderItems(order:any){if(!Array.isArray(order?.orderItems)||!order.orderItems.length)return null;return order.orderItems.map((i:any)=>({orderItemId:i.id,productId:i.listingProductId??null,productName:i.productNameSnapshot,specValues:i.specValues??{},quantity:i.quantity,unitPrice:Number(i.unitPriceTwd),subtotal:Number(i.subtotalTwd),productImageUrl:null}));}

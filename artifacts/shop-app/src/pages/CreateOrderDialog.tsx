@@ -31,12 +31,15 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { filterCustomerOptions } from "@/lib/customerPicker";
 import { formatShippingFeeLabel } from "@workspace/shipping";
-import { Sheet, SheetContent, SheetClose } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetClose, SheetTitle } from "@/components/ui/sheet";
+import {OrderItemsEditor,draftItem,orderDraftPayload,useOrderApi,type DraftItem} from '@/components/product-database/OrderItemsEditor';
+import type {CatalogProduct} from '@workspace/api-client-react';
 
 interface Props {
   storeId: number;
   open: boolean;
   onClose: () => void;
+  initialCatalog?: CatalogProduct;
 }
 
 const INPUT =
@@ -101,7 +104,7 @@ interface CustomerOption {
   cvsStorePhone: string | null;
 }
 
-export function CreateOrderDialog({ storeId, open, onClose }: Props) {
+export function CreateOrderDialog({ storeId, open, onClose, initialCatalog }: Props) {
   const qc = useQueryClient();
   const { getToken } = useAuth();
 
@@ -110,6 +113,10 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
     query: { enabled: open && !!storeId } as any,
   });
   const createOrder = useCreateMerchantOrder();
+  const api=useOrderApi();
+  const [multi,setMulti]=useState(!!initialCatalog),[drafts,setDrafts]=useState<DraftItem[]>(()=>initialCatalog?[draftItem(initialCatalog)]:[]),[savingItems,setSavingItems]=useState(false);
+  useEffect(()=>{if(open&&initialCatalog){setMulti(true);setDrafts(previous=>previous.some(i=>i.catalogProductId===initialCatalog.id)?previous:[...previous,draftItem(initialCatalog)]);}},[open,initialCatalog?.id,storeId]);
+  const saveOrder=async(args:any)=>{if(!multi)return createOrder.mutateAsync(args);setSavingItems(true);try{const {productId,quantity,specValues,creditSpent,...rest}=args.data;return await api(`/stores/${storeId}/catalog-orders`,{...rest,...(creditSpent?{creditSpent}:{}),items:orderDraftPayload(drafts)});}finally{setSavingItems(false);}};
 
   const [productId, setProductId] = useState<number | "">("");
   const [customerId, setCustomerId] = useState<number | "">("");
@@ -169,8 +176,8 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
       : matchingCustomers;
   const selectedProduct = activeProducts.find((p) => p.id === productId);
   const unitPrice = selectedProduct ? Number(selectedProduct.price) : 0;
-  const totalPreview = unitPrice * quantity;
-  const isPending = createOrder.isPending;
+  const totalPreview = multi?drafts.reduce((sum,i)=>sum+Number(i.unitPriceTwd||0)*i.quantity,0):unitPrice * quantity;
+  const isPending = createOrder.isPending || savingItems;
 
   useEffect(() => {
     if (!open || !storeId) return;
@@ -206,6 +213,7 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
   };
 
   const resetForm = () => {
+    setDrafts([]);setMulti(false);
     setProductId("");
     setCustomerId("");
     setCustomerSearch("");
@@ -229,7 +237,7 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
 
   const handleClose = () => {
     if (isPending) return;
-    resetForm();
+    if(!multi)resetForm();
     onClose();
   };
 
@@ -291,7 +299,8 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
 
   const validate = (): boolean => {
     const errs: Record<string, string> = {};
-    if (!productId) errs.productId = "請選擇商品";
+    if (!multi&&!productId) errs.productId = "請選擇商品";
+    if(multi&&(!drafts.length||drafts.some(i=>!i.name.trim()||!Number.isInteger(i.quantity)||i.quantity<1||(!i.listingProductId&&!/^\d{1,8}(?:\.\d{1,2})?$/.test(i.unitPriceTwd)))))errs.productId='請填寫每個品項的品名、正整數數量與售價';
     if (!buyerName.trim()) errs.buyerName = "請輸入買家姓名";
     if (!buyerPhone.trim()) errs.buyerPhone = "請輸入電話";
     if (!quantity || quantity < 1 || !Number.isInteger(quantity))
@@ -337,7 +346,7 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
             ? ShippingMethod.home_delivery
             : ShippingMethod.other;
     try {
-      await createOrder.mutateAsync({
+      await saveOrder({
         storeId,
         data: {
           productId: productId as number,
@@ -396,13 +405,14 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
     >
       <SheetContent
         side="bottom"
+        aria-describedby={undefined}
         className="max-w-[480px] mx-auto rounded-t-2xl p-0 flex flex-col overflow-hidden"
         style={{ maxHeight: "92dvh" }}
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
         {/* Header — built-in X is absolute right-4 top-4; pr-12 avoids overlap */}
         <div className="flex items-center px-5 pt-4 pb-3 border-b border-border shrink-0 pr-12">
-          <h2 className="text-base font-bold text-foreground">新增訂單</h2>
+          <SheetTitle className="text-base font-bold text-foreground">新增訂單</SheetTitle>
         </div>
 
         {/* Scrollable form body */}
@@ -489,6 +499,8 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
           </div>
 
           {/* 商品 */}
+          <button type="button" className="min-h-11 text-sm underline" onClick={()=>setMulti(v=>!v)}>{multi?'切換單一上架商品':'建立多品項／一次性訂單'}</button>
+          {multi?<><OrderItemsEditor s={storeId} items={drafts} onChange={setDrafts} products={activeProducts}/>{fieldErrors.productId&&<p role="alert" className={ERR}>{fieldErrors.productId}</p>}</>:
           <div className="space-y-1.5">
             <SectionTitle>商品</SectionTitle>
             <FormSection>
@@ -517,6 +529,7 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
             </FormSection>
           </div>
 
+          }
           {/* 買家資訊 */}
           <div className="space-y-1.5">
             <SectionTitle>買家資訊</SectionTitle>
@@ -615,6 +628,7 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
           </div>
 
           {/* 數量 */}
+          {!multi&&<>
           <div className="space-y-1.5">
             <SectionTitle>數量</SectionTitle>
             <FormSection>
@@ -638,6 +652,7 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
               </div>
             </FormSection>
           </div>
+          </>}
 
           {/* 物流資訊（與編輯訂單相同的取貨方式卡片 + 門市選擇） */}
           <div className="space-y-2">
@@ -956,8 +971,7 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
                       商品小計
                     </span>
                     <span className="text-sm text-foreground font-medium">
-                      NT$ {totalPreview.toLocaleString()}（NT$
-                      {unitPrice.toLocaleString()} × {quantity}）
+                      NT$ {totalPreview.toLocaleString()}{multi?'（各品項合計）':`（NT$${unitPrice.toLocaleString()} × ${quantity}）`}
                     </span>
                   </div>
                   <div className="flex items-center justify-between px-3 py-2 gap-2">
@@ -1020,7 +1034,7 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
             type="button"
             onClick={handleSubmit}
             disabled={isPending}
-            className="w-full h-10 rounded-xl bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-60 transition-opacity"
+            className="w-full min-h-11 min-w-11 rounded-xl bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-60 transition-opacity"
           >
             {isPending ? "建立中…" : "建立訂單"}
           </button>
@@ -1028,7 +1042,7 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
             <button
               type="button"
               disabled={isPending}
-              className="w-full h-10 rounded-xl border border-border text-sm font-medium text-muted-foreground disabled:opacity-50"
+              className="w-full min-h-11 min-w-11 rounded-xl border border-border text-sm font-medium text-muted-foreground disabled:opacity-50"
             >
               取消
             </button>

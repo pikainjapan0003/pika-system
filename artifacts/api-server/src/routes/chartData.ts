@@ -223,21 +223,7 @@ router.get(
               ),
             );
     const productIds = products.map((product) => product.id);
-    const orders =
-      productIds.length === 0
-        ? []
-        : await db
-            .select()
-            .from(ordersTable)
-            .where(
-              and(
-                eq(ordersTable.storeId, storeId),
-                inArray(ordersTable.productId, productIds),
-                inArray(ordersTable.status, [
-                  ...INCLUDED_ACTUAL_ORDER_STATUSES,
-                ]),
-              ),
-            );
+    const orders = flattenOrderLines(await hydrateItemOrders(db,await db.select().from(ordersTable).where(and(eq(ordersTable.storeId,storeId),inArray(ordersTable.status,[...INCLUDED_ACTUAL_ORDER_STATUSES]))))).filter(o=>productIds.includes(o.productId)||routeIds.includes(o.capturedRouteId));
     const entries =
       routeIds.length === 0
         ? []
@@ -297,10 +283,7 @@ router.get(
     const quantityRollup = calculateActualQuantityRollup(
       orders.map((order) => {
         const product = productsById.get(order.productId);
-        const route =
-          product === undefined
-            ? null
-            : routesById.get(product.tripRouteId ?? -1);
+        const route = routesById.get(order.capturedRouteId??product?.tripRouteId??-1);
         return {
           tripRouteId: route?.id ?? null,
           status: order.status,
@@ -345,11 +328,8 @@ router.get(
     const areaByName = new Map<string, AreaGroup>();
     for (const order of orders) {
       const product = productsById.get(order.productId);
-      const route =
-        product === undefined
-          ? null
-          : routesById.get(product.tripRouteId ?? -1);
-      if (!product || !route) continue;
+      const route = routesById.get(order.capturedRouteId??product?.tripRouteId??-1);
+      if (!route) continue;
       const area = areasById.get(route.tripAreaId ?? -1);
       if (!area) continue;
       addRevenue(area.name, route.tripId, String(order.totalPrice));
@@ -831,3 +811,4 @@ router.get(
 );
 
 export default router;
+import {flattenOrderLines,hydrateItemOrders} from '../lib/catalogOrder.ts';

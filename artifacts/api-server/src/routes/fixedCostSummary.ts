@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { Router } from "express";
 import {
   calculateFixedCostTotals,
@@ -23,6 +23,7 @@ import {
 } from "@workspace/db";
 import { requireAuth } from "../middlewares/auth.ts";
 import { loadTrip } from "./fixedCosts.ts";
+import {hydrateItemOrders,flattenOrderLines} from '../lib/catalogOrder.ts';
 
 const router = Router();
 
@@ -113,26 +114,13 @@ async function loadActualRollup(access: any, rows: any[]) {
       .from(tripRoutesTable)
       .where(eq(tripRoutesTable.tripId, access.tripId))
       .orderBy(asc(tripRoutesTable.id)),
-    db
-      .select({
-        tripRouteId: productsTable.tripRouteId,
-        status: ordersTable.status,
-        quantity: ordersTable.quantity,
-      })
-      .from(ordersTable)
-      .innerJoin(productsTable, eq(ordersTable.productId, productsTable.id))
-      .innerJoin(
-        tripRoutesTable,
-        eq(productsTable.tripRouteId, tripRoutesTable.id),
-      )
-      .where(
-        and(
-          eq(ordersTable.storeId, access.storeId),
-          eq(productsTable.storeId, access.storeId),
-          eq(tripRoutesTable.tripId, access.tripId),
-          inArray(ordersTable.status, [...INCLUDED_ACTUAL_ORDER_STATUSES]),
-        ),
-      ),
+    (async()=>{
+      const orders=await hydrateItemOrders(db,await db.select().from(ordersTable).where(and(eq(ordersTable.storeId,access.storeId),inArray(ordersTable.status,[...INCLUDED_ACTUAL_ORDER_STATUSES]))));
+      const products=await db.select({id:productsTable.id,route:productsTable.tripRouteId}).from(productsTable).innerJoin(tripRoutesTable,eq(productsTable.tripRouteId,tripRoutesTable.id)).where(and(eq(productsTable.storeId,access.storeId),eq(tripRoutesTable.tripId,access.tripId)));
+      const routes=await db.select({id:tripRoutesTable.id}).from(tripRoutesTable).where(and(eq(tripRoutesTable.storeId,access.storeId),eq(tripRoutesTable.tripId,access.tripId)));
+      const allowed=new Set(routes.map(r=>r.id)),byProduct=new Map(products.map(p=>[p.id,p.route]));
+      return flattenOrderLines(orders).map(line=>({tripRouteId:line.orderItemId?line.capturedRouteId:byProduct.get(line.productId),status:line.status,quantity:line.quantity})).filter(line=>allowed.has(line.tripRouteId));
+    })(),
     db
       .select({
         productId: productsTable.id,
