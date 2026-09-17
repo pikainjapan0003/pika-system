@@ -61,7 +61,10 @@ mock.module("../ui/button.tsx", {
 mock.module("../../lib/barcodeCamera.ts", {
   namedExports: {
     startBarcodeCamera: (_video, result) => {
-      assert.ok(_video?.isConnected, "camera starts only after its portal video exists");
+      assert.ok(
+        _video?.isConnected,
+        "camera starts only after its portal video exists",
+      );
       scanned = result;
       return () => {
         stops++;
@@ -128,8 +131,11 @@ const product = (id, name = "商品" + id) => ({
   status: "NORMAL",
   storeId: 1,
 });
-afterEach(() => {
+afterEach(async () => {
   cleanup();
+  // Radix releases its focus scope in a timer after unmount. Finish that
+  // cleanup before the next test mounts another lookup or camera dialog.
+  await new Promise((resolve) => setTimeout(resolve, 0));
   clients.splice(0).forEach((c) => c.clear());
   handler = async () => ({ items: [], total: 0 });
   calls = [];
@@ -299,17 +305,23 @@ test("modal camera closes before restart and unmount stops its stream", async ()
   assert.equal(v.queryByRole("button", { name: "查詢條碼" }), null);
   fireEvent.click(v.getByRole("button", { name: "關閉相機" }));
   await waitFor(() =>
-    assert.equal(
-      document.activeElement,
-      v.getByRole("button", { name: "啟動相機" }),
+    assert.ok(
+      document.activeElement === v.getByRole("button", { name: "啟動相機" }),
+      "closing the camera returns focus to its trigger",
     ),
   );
   fireEvent.click(v.getByRole("button", { name: "啟動相機" }));
-  assert.notEqual(v.getByLabelText("條碼相機"), first);
+  assert.ok(
+    v.getByLabelText("條碼相機") !== first,
+    "restart creates a new video",
+  );
   assert.equal(stops, 1);
   fireEvent.click(v.getByRole("button", { name: "改用手動輸入" }));
   await waitFor(() =>
-    assert.equal(document.activeElement, v.getByLabelText("商品條碼")),
+    assert.ok(
+      document.activeElement === v.getByLabelText("商品條碼"),
+      "manual input returns focus to the barcode field",
+    ),
   );
   assert.equal(stops, 2);
   assert.equal(v.queryByRole("dialog"), null);

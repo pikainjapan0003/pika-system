@@ -22,14 +22,24 @@ function CameraFeed({ onResult, onError }: CameraCallbacks) {
   const callbacks = useRef({ onResult, onError });
   callbacks.current = { onResult, onError };
   useEffect(
-    () => startBarcodeCamera(
-      video.current!,
-      (value) => callbacks.current.onResult(value),
-      (message) => callbacks.current.onError(message),
-    ),
+    () =>
+      startBarcodeCamera(
+        video.current!,
+        (value) => callbacks.current.onResult(value),
+        (message) => callbacks.current.onError(message),
+      ),
     [],
   );
-  return <video ref={video} muted playsInline autoPlay aria-label="條碼相機" className="absolute inset-0 h-full w-full object-cover" />;
+  return (
+    <video
+      ref={video}
+      muted
+      playsInline
+      autoPlay
+      aria-label="條碼相機"
+      className="absolute inset-0 h-full w-full object-cover"
+    />
+  );
 }
 
 export function BarcodeCameraDialog({
