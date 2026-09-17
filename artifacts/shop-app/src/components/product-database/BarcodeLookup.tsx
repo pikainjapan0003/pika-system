@@ -10,7 +10,8 @@ import { useLocation } from "wouter";
 import { catalogList, type CatalogProduct } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { barcodeLookupInput } from "@/lib/barcode-input";
-import { startBarcodeCamera } from "@/lib/barcodeCamera";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { BarcodeCameraDialog } from "./BarcodeCameraDialog";
 import { action, control, panel, Status, useCatalogQuery } from "./shared";
 
 type Input = ReturnType<typeof barcodeLookupInput>;
@@ -23,36 +24,6 @@ type Props = {
   ) => ReactNode;
   renderCreateAction: (barcode: string, close: () => void) => ReactNode;
 };
-function Camera({
-  onResult,
-  onError,
-}: {
-  onResult: (input: Input) => void;
-  onError: (message: string) => void;
-}) {
-  const video = useRef<HTMLVideoElement>(null);
-  const callbacks = useRef({ onResult, onError });
-  callbacks.current = { onResult, onError };
-  useEffect(
-    () =>
-      startBarcodeCamera(
-        video.current!,
-        (value) => callbacks.current.onResult(value),
-        (message) => callbacks.current.onError(message),
-      ),
-    [],
-  );
-  return (
-    <video
-      ref={video}
-      muted
-      playsInline
-      autoPlay
-      aria-label="條碼相機"
-      className="max-h-64 w-full rounded-md bg-black object-contain"
-    />
-  );
-}
 export function BarcodeLookup(props: Props) {
   return <Lookup key={props.s} {...props} />;
 }
@@ -74,7 +45,9 @@ function Lookup({
     [printed, setPrinted] = useState(""),
     [error, setError] = useState("");
   const [camera, setCamera] = useState<number | null>(null),
-    nextCamera = useRef(0);
+    nextCamera = useRef(0),
+    cameraTrigger = useRef<HTMLButtonElement>(null),
+    returnToInput = useRef(false);
   const close = useCallback(() => {
     setCamera(null);
     setOpen(false);
@@ -216,40 +189,52 @@ function Lookup({
             <Button type="button" className={action} onClick={manual}>
               查詢條碼
             </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className={action}
-              onClick={() => {
-                setInput(null);
-                setError("");
-                setPrinted("");
-                setCamera(++nextCamera.current);
+            <Dialog
+              open={camera !== null}
+              onOpenChange={(open) => {
+                if (!open) setCamera(null);
               }}
             >
-              啟動相機
-            </Button>
-            {camera !== null && (
-              <Button
-                type="button"
-                variant="outline"
-                className={action}
-                onClick={() => setCamera(null)}
-              >
-                停止相機
-              </Button>
-            )}
+              <DialogTrigger asChild>
+                <Button
+                  ref={cameraTrigger}
+                  type="button"
+                  variant="outline"
+                  className={action}
+                  onClick={() => {
+                    setInput(null);
+                    setError("");
+                    setPrinted("");
+                    returnToInput.current = false;
+                    setCamera(++nextCamera.current);
+                  }}
+                >
+                  啟動相機
+                </Button>
+              </DialogTrigger>
+              {camera !== null && (
+                <BarcodeCameraDialog
+                  key={camera}
+                  onResult={lookup}
+                  onError={(message) => {
+                    setCamera(null);
+                    setError(message);
+                  }}
+                  onClose={() => setCamera(null)}
+                  onManualInput={() => {
+                    returnToInput.current = true;
+                    setCamera(null);
+                  }}
+                  onReturnFocus={() => {
+                    (returnToInput.current
+                      ? inputRef.current
+                      : cameraTrigger.current
+                    )?.focus();
+                  }}
+                />
+              )}
+            </Dialog>
           </div>
-          {camera !== null && (
-            <Camera
-              key={camera}
-              onResult={lookup}
-              onError={(message) => {
-                setCamera(null);
-                setError(message);
-              }}
-            />
-          )}
           <p className="text-sm text-secondary-foreground">
             保留條碼前導 0；相機最多掃描 45 秒，也可直接手動輸入。
           </p>
