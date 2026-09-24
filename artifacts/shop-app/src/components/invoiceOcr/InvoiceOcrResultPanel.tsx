@@ -115,9 +115,7 @@ export function InvoiceOcrResultPanel({
       await onSaveReview(correctedValues);
       setMessage("人工複查已另外儲存，AI 原答案沒有被修改。");
     } catch (error) {
-      setMessage(
-        error instanceof Error ? error.message : "人工複查沒有儲存。",
-      );
+      setMessage(error instanceof Error ? error.message : "人工複查沒有儲存。");
     } finally {
       setSaving(false);
     }
@@ -205,9 +203,7 @@ export function InvoiceOcrResultPanel({
       {review?.unsafeConfidentError && (
         <div className="flex items-start gap-2 rounded-xl border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
           <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-          <span>
-            嚴重錯誤：AI 填了錯誤答案，卻沒有標示需要特別複查。
-          </span>
+          <span>嚴重錯誤：AI 填了錯誤答案，卻沒有標示需要特別複查。</span>
         </div>
       )}
 
@@ -242,14 +238,8 @@ export function InvoiceOcrResultPanel({
         <Metric label="提示詞版本" value={run.promptVersion} />
         <Metric label="輸入 Token" value={run.inputTokens ?? "未回報"} />
         <Metric label="輸出 Token" value={run.outputTokens ?? "未回報"} />
-        <Metric
-          label="快取 Token"
-          value={run.cachedInputTokens ?? "未回報"}
-        />
-        <Metric
-          label="推理 Token"
-          value={run.reasoningTokens ?? "未回報"}
-        />
+        <Metric label="快取 Token" value={run.cachedInputTokens ?? "未回報"} />
+        <Metric label="推理 Token" value={run.reasoningTokens ?? "未回報"} />
       </div>
 
       <div className="rounded-xl border border-border bg-background p-4">
@@ -306,13 +296,7 @@ export function InvoiceOcrResultPanel({
   );
 }
 
-function Metric({
-  label,
-  value,
-}: {
-  label: string;
-  value: string | number;
-}) {
+function Metric({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="rounded-xl border border-border bg-background p-3">
       <p className="text-xs text-muted-foreground">{label}</p>

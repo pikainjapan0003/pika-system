@@ -1,9 +1,6 @@
 import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type {
-  InvoiceOcrSummary,
-  InvoiceOcrTestCase,
-} from "@/lib/invoiceOcrUi";
+import type { InvoiceOcrSummary, InvoiceOcrTestCase } from "@/lib/invoiceOcrUi";
 
 function modelLabel(model: string): string {
   if (model === "gpt-5.6-terra") return "Terra";
@@ -13,7 +10,9 @@ function modelLabel(model: string): string {
 }
 
 function displayNumber(value: number | null, suffix = ""): string {
-  return value === null ? "尚無資料" : `${Math.round(value).toLocaleString()}${suffix}`;
+  return value === null
+    ? "尚無資料"
+    : `${Math.round(value).toLocaleString()}${suffix}`;
 }
 
 export function InvoiceOcrBenchmarkPanel({
@@ -57,15 +56,11 @@ export function InvoiceOcrBenchmarkPanel({
               value={`${summary.totalTestCases} / 10`}
             />
             <SummaryCard label="辨識紀錄" value={summary.totalRuns} />
-            <SummaryCard
-              label="已測模型"
-              value={summary.models.length}
-            />
+            <SummaryCard label="已測模型" value={summary.models.length} />
             <SummaryCard
               label="嚴重錯誤"
               value={summary.models.reduce(
-                (total, item) =>
-                  total + item.unsafeConfidentErrorCount,
+                (total, item) => total + item.unsafeConfidentErrorCount,
                 0,
               )}
             />

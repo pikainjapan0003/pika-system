@@ -54,9 +54,7 @@ export const invoiceOcrTestCasesTable = pgTable(
       table.storeId,
       table.createdAt,
     ),
-    index("invoice_ocr_test_cases_created_by_idx").on(
-      table.createdByUserId,
-    ),
+    index("invoice_ocr_test_cases_created_by_idx").on(table.createdByUserId),
     check(
       "invoice_ocr_test_cases_creator_non_empty",
       sql`char_length(trim(${table.createdByUserId})) BETWEEN 1 AND 200`,
@@ -94,5 +92,4 @@ export const insertInvoiceOcrTestCaseSchema = createInsertSchema(
 export type InsertInvoiceOcrTestCase = z.infer<
   typeof insertInvoiceOcrTestCaseSchema
 >;
-export type InvoiceOcrTestCase =
-  typeof invoiceOcrTestCasesTable.$inferSelect;
+export type InvoiceOcrTestCase = typeof invoiceOcrTestCasesTable.$inferSelect;

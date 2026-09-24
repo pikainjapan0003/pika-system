@@ -27,10 +27,7 @@ import {
   extractInvoiceWithOpenAI,
   InvoiceExtractionRequestError,
 } from "./openaiInvoiceExtractor.ts";
-import {
-  buildInvoiceBenchmarkCsv,
-  escapeCsvCell,
-} from "./csv.ts";
+import { buildInvoiceBenchmarkCsv, escapeCsvCell } from "./csv.ts";
 import {
   selectCanonicalBenchmarkRuns,
   summarizeInvoiceBenchmark,
@@ -62,11 +59,7 @@ function config(overrides = {}) {
     testMode: true,
     apiKey: null,
     defaultModel: "gpt-5.6-terra",
-    allowedModels: [
-      "gpt-5.6-terra",
-      "gpt-5.6-sol",
-      "gpt-5.6-luna",
-    ],
+    allowedModels: ["gpt-5.6-terra", "gpt-5.6-sol", "gpt-5.6-luna"],
     imageDetail: "original",
     reasoningEffort: "low",
     maxFileBytes: 12 * 1024 * 1024,
@@ -183,10 +176,7 @@ test("model allowlist rejects arbitrary and unconfigured model names", () => {
     parseRequestedInvoiceModel("gpt-5.6-sol", parsed),
     "gpt-5.6-sol",
   );
-  assert.throws(
-    () => parseRequestedInvoiceModel("gpt-4o", parsed),
-    /允許/,
-  );
+  assert.throws(() => parseRequestedInvoiceModel("gpt-4o", parsed), /允許/);
   assert.throws(
     () => parseRequestedInvoiceModel("gpt-5.6-luna", parsed),
     /尚未開放/,
@@ -205,7 +195,10 @@ test("feature flags, personal allowlist, and server-only key fail closed", () =>
     assertInvoiceOcrUserAllowed("user_owner", config()),
   );
   assert.throws(() => requireInvoiceApiKey(config()), /API Key/);
-  assert.equal(requireInvoiceApiKey(config({ apiKey: "server-secret" })), "server-secret");
+  assert.equal(
+    requireInvoiceApiKey(config({ apiKey: "server-secret" })),
+    "server-secret",
+  );
 });
 
 test("valid PNG is accepted and MIME mismatch, fake, and oversized files are rejected", () => {
@@ -380,10 +373,7 @@ test("temporary server errors retry exactly once without model fallback", async 
 });
 
 test("timeout, invalid key, quota, and model errors are not auto-retried", async () => {
-  assert.equal(
-    classifyInvoiceApiError({ status: 401 }).automaticRetry,
-    false,
-  );
+  assert.equal(classifyInvoiceApiError({ status: 401 }).automaticRetry, false);
   assert.equal(
     classifyInvoiceApiError({
       status: 429,
@@ -391,14 +381,8 @@ test("timeout, invalid key, quota, and model errors are not auto-retried", async
     }).automaticRetry,
     false,
   );
-  assert.equal(
-    classifyInvoiceApiError({ status: 403 }).automaticRetry,
-    false,
-  );
-  assert.equal(
-    classifyInvoiceApiError({ status: 404 }).automaticRetry,
-    false,
-  );
+  assert.equal(classifyInvoiceApiError({ status: 403 }).automaticRetry, false);
+  assert.equal(classifyInvoiceApiError({ status: 404 }).automaticRetry, false);
 
   let calls = 0;
   await assert.rejects(

@@ -135,10 +135,7 @@ export function positiveId(value: unknown): number | null {
   return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
 }
 
-export function requiredBodyString(
-  body: unknown,
-  key: string,
-): string | null {
+export function requiredBodyString(body: unknown, key: string): string | null {
   if (typeof body !== "object" || body === null) return null;
   const value = (body as Record<string, unknown>)[key];
   return typeof value === "string" ? value : null;
@@ -252,8 +249,7 @@ export function serializeInvoiceOcrTestCase(testCase: InvoiceOcrTestCase) {
       totalAmount: testCase.groundTruthTotalAmount,
       currency: testCase.groundTruthCurrency,
     },
-    groundTruthLockedAt:
-      testCase.groundTruthLockedAt?.toISOString() ?? null,
+    groundTruthLockedAt: testCase.groundTruthLockedAt?.toISOString() ?? null,
     createdAt: testCase.createdAt.toISOString(),
     updatedAt: testCase.updatedAt.toISOString(),
   };

@@ -23,8 +23,7 @@ export const INVOICE_REASONING_EFFORTS = [
   "xhigh",
   "max",
 ] as const;
-export type InvoiceReasoningEffort =
-  (typeof INVOICE_REASONING_EFFORTS)[number];
+export type InvoiceReasoningEffort = (typeof INVOICE_REASONING_EFFORTS)[number];
 
 const DEFAULT_MODEL: InvoiceOcrModel = "gpt-5.6-terra";
 const DEFAULT_COMPARE_MODELS: readonly InvoiceOcrModel[] = [
@@ -79,11 +78,7 @@ function integerFrom(
     throw new InvoiceOcrConfigError(`${name} 必須是整數`);
   }
   const parsed = Number(value);
-  if (
-    !Number.isSafeInteger(parsed) ||
-    parsed < minimum ||
-    parsed > maximum
-  ) {
+  if (!Number.isSafeInteger(parsed) || parsed < minimum || parsed > maximum) {
     throw new InvoiceOcrConfigError(
       `${name} 必須介於 ${minimum} 與 ${maximum} 之間`,
     );
@@ -124,9 +119,7 @@ function compareModelsFrom(value: string | undefined): InvoiceOcrModel[] {
           .split(",")
           .map((item) => item.trim())
           .filter(Boolean);
-  return raw.map((item) =>
-    modelFrom(item, "OPENAI_INVOICE_COMPARE_MODELS"),
-  );
+  return raw.map((item) => modelFrom(item, "OPENAI_INVOICE_COMPARE_MODELS"));
 }
 
 function userAllowlistFrom(value: string | undefined): ReadonlySet<string> {
@@ -145,9 +138,7 @@ export function readInvoiceOcrConfig(
     env.OPENAI_INVOICE_MODEL?.trim() || DEFAULT_MODEL,
     "OPENAI_INVOICE_MODEL",
   );
-  const compareModels = compareModelsFrom(
-    env.OPENAI_INVOICE_COMPARE_MODELS,
-  );
+  const compareModels = compareModelsFrom(env.OPENAI_INVOICE_COMPARE_MODELS);
   const allowedModels = Array.from(
     new Set<InvoiceOcrModel>([defaultModel, ...compareModels]),
   );
@@ -160,11 +151,7 @@ export function readInvoiceOcrConfig(
   );
 
   return {
-    enabled: booleanFrom(
-      env.INVOICE_OCR_ENABLED,
-      false,
-      "INVOICE_OCR_ENABLED",
-    ),
+    enabled: booleanFrom(env.INVOICE_OCR_ENABLED, false, "INVOICE_OCR_ENABLED"),
     testMode: booleanFrom(
       env.INVOICE_OCR_TEST_MODE,
       false,

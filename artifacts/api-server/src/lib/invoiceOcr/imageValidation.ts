@@ -156,9 +156,9 @@ function crc32(buffer: Buffer): number {
 function isPngStart(buffer: Buffer): boolean {
   return (
     buffer.length >= 8 &&
-    buffer.subarray(0, 8).equals(
-      Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
-    )
+    buffer
+      .subarray(0, 8)
+      .equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))
   );
 }
 
@@ -247,10 +247,7 @@ function readUInt24LE(buffer: Buffer, offset: number): number {
 
 function validateWebp(buffer: Buffer): ImageStructure {
   if (buffer.length < 20 || buffer.readUInt32LE(4) + 8 !== buffer.length) {
-    throw new InvoiceImageValidationError(
-      "damaged_image",
-      "WebP 圖片長度無效",
-    );
+    throw new InvoiceImageValidationError("damaged_image", "WebP 圖片長度無效");
   }
 
   let position = 12;
@@ -315,7 +312,10 @@ function validateWebp(buffer: Buffer): ImageStructure {
         );
       }
       const bits = buffer.readUInt32LE(dataStart + 1);
-      assertReasonableDimensions((bits & 0x3fff) + 1, ((bits >> 14) & 0x3fff) + 1);
+      assertReasonableDimensions(
+        (bits & 0x3fff) + 1,
+        ((bits >> 14) & 0x3fff) + 1,
+      );
       hasImageData = true;
     }
     position = paddedEnd;
@@ -360,7 +360,10 @@ export function validateInvoiceImage(input: {
   maxFileBytes: number;
 }): ValidatedInvoiceImage {
   if (!Buffer.isBuffer(input.buffer) || input.buffer.length === 0) {
-    throw new InvoiceImageValidationError("missing_image", "請選擇一張發票照片");
+    throw new InvoiceImageValidationError(
+      "missing_image",
+      "請選擇一張發票照片",
+    );
   }
   if (input.buffer.length > input.maxFileBytes) {
     throw new InvoiceImageValidationError(
