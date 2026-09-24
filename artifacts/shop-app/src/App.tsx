@@ -410,10 +410,7 @@ function MerchantPortal() {
             </DailySkillPageGate>
           )}
         </Route>
-        <Route
-          path="/settings/invoice-ocr"
-          component={InvoiceOcrTestPage}
-        />
+        <Route path="/settings/invoice-ocr" component={InvoiceOcrTestPage} />
         <Route path="/settings" component={SettingsPage} />
         <Route path="/trips" component={TripsPage} />
         <Route path="/guide">

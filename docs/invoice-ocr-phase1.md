@@ -62,19 +62,19 @@ AI 的預測值保存後不能被覆蓋。人工修正會另外保存，方便�
 
 「環境變數」是放在伺服器設定裡的文字，不必寫死在程式碼。
 
-| 名稱 | 第一階段建議值 | 白話用途 |
-| --- | --- | --- |
-| `OPENAI_API_KEY` | 只放專用 Key | OpenAI API 的密碼，只能放在伺服器 Secrets。 |
-| `OPENAI_INVOICE_MODEL` | `gpt-5.6-terra` | 預設先測 Terra。 |
-| `OPENAI_INVOICE_COMPARE_MODELS` | `gpt-5.6-sol,gpt-5.6-luna` | 允許之後手動比較的模型，不會自動一起呼叫。 |
-| `OPENAI_INVOICE_IMAGE_DETAIL` | `original` | 優先保留小字辨識需要的原圖細節。 |
-| `OPENAI_INVOICE_REASONING_EFFORT` | `low` | 第一輪固定使用低推理量，方便公平比較。 |
-| `INVOICE_OCR_REQUEST_TIMEOUT_MS` | `90000` | 最長等待 90 秒；超時後前端不會一直轉圈。 |
-| `INVOICE_OCR_ENABLED` | 一開始 `false` | 總開關。確認開發資料庫與設定安全後，測試環境才改成 `true`。 |
-| `INVOICE_OCR_TEST_MODE` | `true` | 保證目前只開測試模式。 |
-| `INVOICE_OCR_MAX_FILE_MB` | `12` | 單張圖片最大 12 MB。 |
-| `INVOICE_OCR_ALLOWED_CLERK_USER_IDS` | 你的 `user_...` | 只允許你自己的 Clerk 帳號；多個 ID 才用逗號分開。 |
-| `DATABASE_URL` | 沿用開發資料庫設定 | 資料庫連線密碼；不是新增的 OCR 設定，也不能顯示或貼到聊天。 |
+| 名稱                                 | 第一階段建議值             | 白話用途                                                    |
+| ------------------------------------ | -------------------------- | ----------------------------------------------------------- |
+| `OPENAI_API_KEY`                     | 只放專用 Key               | OpenAI API 的密碼，只能放在伺服器 Secrets。                 |
+| `OPENAI_INVOICE_MODEL`               | `gpt-5.6-terra`            | 預設先測 Terra。                                            |
+| `OPENAI_INVOICE_COMPARE_MODELS`      | `gpt-5.6-sol,gpt-5.6-luna` | 允許之後手動比較的模型，不會自動一起呼叫。                  |
+| `OPENAI_INVOICE_IMAGE_DETAIL`        | `original`                 | 優先保留小字辨識需要的原圖細節。                            |
+| `OPENAI_INVOICE_REASONING_EFFORT`    | `low`                      | 第一輪固定使用低推理量，方便公平比較。                      |
+| `INVOICE_OCR_REQUEST_TIMEOUT_MS`     | `90000`                    | 最長等待 90 秒；超時後前端不會一直轉圈。                    |
+| `INVOICE_OCR_ENABLED`                | 一開始 `false`             | 總開關。確認開發資料庫與設定安全後，測試環境才改成 `true`。 |
+| `INVOICE_OCR_TEST_MODE`              | `true`                     | 保證目前只開測試模式。                                      |
+| `INVOICE_OCR_MAX_FILE_MB`            | `12`                       | 單張圖片最大 12 MB。                                        |
+| `INVOICE_OCR_ALLOWED_CLERK_USER_IDS` | 你的 `user_...`            | 只允許你自己的 Clerk 帳號；多個 ID 才用逗號分開。           |
+| `DATABASE_URL`                       | 沿用開發資料庫設定         | 資料庫連線密碼；不是新增的 OCR 設定，也不能顯示或貼到聊天。 |
 
 不要把上述伺服器秘密命名成 `VITE_...` 或 `REACT_APP_...`，因為這類名稱可能被打包到瀏覽器。`.env.example` 只能留空白範例，不能放真實 Key。
 

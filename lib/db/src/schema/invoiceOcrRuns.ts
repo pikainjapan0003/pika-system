@@ -62,9 +62,8 @@ export const invoiceOcrRunsTable = pgTable(
     predictedJson: jsonb("predicted_json").$type<InvoiceOcrPredictionJson>(),
     reviewRequired: boolean("review_required"),
     reviewReasons: jsonb("review_reasons").$type<string[]>(),
-    evidenceJson: jsonb("evidence_json").$type<
-      InvoiceOcrPredictionJson["evidence"]
-    >(),
+    evidenceJson:
+      jsonb("evidence_json").$type<InvoiceOcrPredictionJson["evidence"]>(),
     openaiResponseId: text("openai_response_id"),
     openaiRequestId: text("openai_request_id"),
     inputTokens: integer("input_tokens"),

@@ -7,14 +7,8 @@ import type {
   InvoiceReasoningEffort,
 } from "./config.ts";
 import { requireInvoiceApiKey } from "./config.ts";
-import {
-  INVOICE_EXTRACTION_PROMPT,
-  INVOICE_PROMPT_VERSION,
-} from "./prompt.ts";
-import {
-  invoiceExtractionSchema,
-  type InvoiceExtraction,
-} from "./schema.ts";
+import { INVOICE_EXTRACTION_PROMPT, INVOICE_PROMPT_VERSION } from "./prompt.ts";
+import { invoiceExtractionSchema, type InvoiceExtraction } from "./schema.ts";
 
 export interface BuildInvoiceRequestInput {
   model: InvoiceOcrModel;
@@ -47,13 +41,9 @@ export function buildInvoiceOpenAIRequest(input: BuildInvoiceRequestInput) {
       },
     ],
     text: {
-      format: zodTextFormat(
-        invoiceExtractionSchema,
-        "invoice_extraction",
-        {
-          description: "單張發票的四個主要欄位與簡短證據",
-        },
-      ),
+      format: zodTextFormat(invoiceExtractionSchema, "invoice_extraction", {
+        description: "單張發票的四個主要欄位與簡短證據",
+      }),
     },
     reasoning: { effort: input.reasoningEffort },
     max_output_tokens: 1_200,
@@ -61,9 +51,7 @@ export function buildInvoiceOpenAIRequest(input: BuildInvoiceRequestInput) {
   };
 }
 
-export type InvoiceOpenAIRequest = ReturnType<
-  typeof buildInvoiceOpenAIRequest
->;
+export type InvoiceOpenAIRequest = ReturnType<typeof buildInvoiceOpenAIRequest>;
 
 export interface InvoiceApiUsage {
   inputTokens: number | null;
@@ -163,18 +151,12 @@ function objectValue(value: unknown): Record<string, unknown> | null {
     : null;
 }
 
-function stringProperty(
-  value: unknown,
-  property: string,
-): string | undefined {
+function stringProperty(value: unknown, property: string): string | undefined {
   const candidate = objectValue(value)?.[property];
   return typeof candidate === "string" ? candidate : undefined;
 }
 
-function numberProperty(
-  value: unknown,
-  property: string,
-): number | undefined {
+function numberProperty(value: unknown, property: string): number | undefined {
   const candidate = objectValue(value)?.[property];
   return typeof candidate === "number" ? candidate : undefined;
 }
@@ -192,9 +174,7 @@ function errorCode(error: unknown): string {
 function headerValue(error: unknown, name: string): string | null {
   const headers = objectValue(error)?.headers;
   if (!headers) return null;
-  if (
-    typeof (headers as { get?: unknown }).get === "function"
-  ) {
+  if (typeof (headers as { get?: unknown }).get === "function") {
     const value = (
       headers as { get: (headerName: string) => string | null }
     ).get(name);
@@ -224,9 +204,7 @@ function retryAfterMs(error: unknown): number {
 
 export function classifyInvoiceApiError(error: unknown): InvoiceApiFailure {
   const status =
-    numberProperty(error, "status") ??
-    numberProperty(error, "statusCode") ??
-    0;
+    numberProperty(error, "status") ?? numberProperty(error, "statusCode") ?? 0;
   const code = errorCode(error).toLowerCase();
   const name = stringProperty(error, "name")?.toLowerCase() ?? "";
 
@@ -462,9 +440,7 @@ export async function extractInvoiceWithOpenAI(
           failureMetadata(envelope),
         );
       }
-      const parsed = invoiceExtractionSchema.safeParse(
-        envelope.outputParsed,
-      );
+      const parsed = invoiceExtractionSchema.safeParse(envelope.outputParsed);
       if (!parsed.success) {
         throw new InvoiceExtractionRequestError(
           localFailure(

@@ -54,8 +54,7 @@ export function selectCanonicalBenchmarkRuns(
   records: readonly InvoiceBenchmarkRecord[],
 ): InvoiceBenchmarkRecord[] {
   const sorted = [...records].sort((left, right) => {
-    const timeDifference =
-      left.createdAt.getTime() - right.createdAt.getTime();
+    const timeDifference = left.createdAt.getTime() - right.createdAt.getTime();
     return timeDifference === 0 ? left.runId - right.runId : timeDifference;
   });
   const selected = new Map<string, InvoiceBenchmarkRecord>();

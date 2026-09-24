@@ -1141,9 +1141,8 @@ router.get(
       totalRuns: records.length,
       confirmedRunCount: records.filter((record) => record.reviewedAt != null)
         .length,
-      pendingReviewCount: records.filter(
-        (record) => record.reviewedAt == null,
-      ).length,
+      pendingReviewCount: records.filter((record) => record.reviewedAt == null)
+        .length,
       models: summarizeInvoiceBenchmark(records),
       benchmarkRule:
         "同一張照片、模型、提示詞、圖片細節與推理設定，只採第一次執行計分；尚未人工確認的成績僅為機器對人工正確答案的比對，不代表最終結果。",

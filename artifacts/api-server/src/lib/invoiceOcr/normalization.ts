@@ -1,8 +1,5 @@
 import { ExactDecimal } from "@workspace/db/transport-cost";
-import type {
-  InvoiceExtraction,
-  InvoiceGroundTruth,
-} from "./schema.ts";
+import type { InvoiceExtraction, InvoiceGroundTruth } from "./schema.ts";
 
 export interface InvoiceFieldScores {
   merchantNameCorrect: boolean;
@@ -24,10 +21,7 @@ export function normalizeCurrencyForComparison(value: string): string {
   return value.normalize("NFKC").trim().toUpperCase();
 }
 
-export function amountsAreExactlyEqual(
-  left: string,
-  right: string,
-): boolean {
+export function amountsAreExactlyEqual(left: string, right: string): boolean {
   try {
     return ExactDecimal.from(left).equals(ExactDecimal.from(right));
   } catch {
@@ -48,10 +42,7 @@ export function scoreInvoicePrediction(
     predicted.invoice_date === groundTruth.invoiceDate;
   const totalAmountCorrect =
     predicted.total_amount !== null &&
-    amountsAreExactlyEqual(
-      predicted.total_amount,
-      groundTruth.totalAmount,
-    );
+    amountsAreExactlyEqual(predicted.total_amount, groundTruth.totalAmount);
   const currencyCorrect =
     predicted.currency !== null &&
     normalizeCurrencyForComparison(predicted.currency) ===
