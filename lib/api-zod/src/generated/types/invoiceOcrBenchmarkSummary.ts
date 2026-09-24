@@ -10,6 +10,8 @@ import type { InvoiceOcrBenchmarkModelSummary } from './invoiceOcrBenchmarkModel
 export interface InvoiceOcrBenchmarkSummary {
   totalTestCases: number;
   totalRuns: number;
+  confirmedRunCount: number;
+  pendingReviewCount: number;
   models: InvoiceOcrBenchmarkModelSummary[];
   benchmarkRule: string;
   billingNotice: string;

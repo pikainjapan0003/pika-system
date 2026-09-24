@@ -100,6 +100,8 @@ export interface InvoiceOcrModelSummary {
 export interface InvoiceOcrSummary {
   totalTestCases: number;
   totalRuns: number;
+  confirmedRunCount: number;
+  pendingReviewCount: number;
   models: InvoiceOcrModelSummary[];
   benchmarkRule: string;
   billingNotice: string;

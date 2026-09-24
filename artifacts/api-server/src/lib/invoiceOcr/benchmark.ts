@@ -17,6 +17,7 @@ export interface InvoiceBenchmarkRecord {
   totalAmountCorrect: boolean | null;
   currencyCorrect: boolean | null;
   unsafeConfidentError: boolean | null;
+  reviewedAt: Date | null;
   createdAt: Date;
 }
 

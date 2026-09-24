@@ -2766,6 +2766,8 @@ components:
       required:
         - totalTestCases
         - totalRuns
+        - confirmedRunCount
+        - pendingReviewCount
         - models
         - benchmarkRule
         - billingNotice
@@ -2773,6 +2775,10 @@ components:
         totalTestCases:
           type: integer
         totalRuns:
+          type: integer
+        confirmedRunCount:
+          type: integer
+        pendingReviewCount:
           type: integer
         models:
           type: array

@@ -71,6 +71,12 @@ export function InvoiceOcrBenchmarkPanel({
             />
           </div>
 
+          <p className="text-xs text-muted-foreground">
+            已人工確認 {summary.confirmedRunCount} / {summary.totalRuns} 筆；
+            尚有 {summary.pendingReviewCount} 筆僅為機器對人工正確答案的比對，
+            未經人工確認的成績不代表最終結果。
+          </p>
+
           <div className="overflow-x-auto rounded-xl border border-border">
             <table className="w-full min-w-[760px] text-left text-sm">
               <thead className="bg-muted/50 text-xs text-muted-foreground">
