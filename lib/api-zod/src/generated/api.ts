@@ -1542,6 +1542,8 @@ export const GetInvoiceOcrBenchmarkSummaryParams = zod.object({
 export const GetInvoiceOcrBenchmarkSummaryResponse = zod.object({
   "totalTestCases": zod.number(),
   "totalRuns": zod.number(),
+  "confirmedRunCount": zod.number(),
+  "pendingReviewCount": zod.number(),
   "models": zod.array(zod.object({
   "requestedModel": zod.string(),
   "promptVersion": zod.string(),

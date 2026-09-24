@@ -1120,6 +1120,7 @@ async function benchmarkRecordsForStore(
     totalAmountCorrect: review?.totalAmountCorrect ?? null,
     currencyCorrect: review?.currencyCorrect ?? null,
     unsafeConfidentError: review?.unsafeConfidentError ?? null,
+    reviewedAt: review?.reviewedAt ?? null,
     createdAt: run.createdAt,
   }));
 }
@@ -1138,9 +1139,14 @@ router.get(
     return response.json({
       totalTestCases: Number(testCaseCount?.value ?? 0),
       totalRuns: records.length,
+      confirmedRunCount: records.filter((record) => record.reviewedAt != null)
+        .length,
+      pendingReviewCount: records.filter(
+        (record) => record.reviewedAt == null,
+      ).length,
       models: summarizeInvoiceBenchmark(records),
       benchmarkRule:
-        "同一張照片、模型、提示詞、圖片細節與推理設定，只採第一次執行計分。",
+        "同一張照片、模型、提示詞、圖片細節與推理設定，只採第一次執行計分；尚未人工確認的成績僅為機器對人工正確答案的比對，不代表最終結果。",
       billingNotice:
         "以下為 API 回報的 Token 用量。實際免費額度與計費結果，請以 OpenAI Usage 和 Costs Dashboard 為準。",
     });
