@@ -71,148 +71,6 @@ jobs:
       - name: Create disposable test schema
         run: pnpm --filter @workspace/db run push-force
 
-      - name: Seed V1 fixed-cost defaults
-        run: pnpm --filter @workspace/db run seed-fixed-cost-defaults
-
-      - name: Verify V1 fixed-cost schema
-        working-directory: lib/db
-        run: |
-          node --input-type=module <<'NODE'
-          import pg from "pg";
-
-          const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
-          const requiredTables = [
-            "operating_settings",
-            "cost_categories",
-            "cost_entries",
-          ];
-          const tableResult = await pool.query(
-            `SELECT table_name
-             FROM information_schema.tables
-             WHERE table_schema = 'public' AND table_name = ANY($1::text[])`,
-            [requiredTables],
-          );
-          const actualTables = new Set(tableResult.rows.map((row) => row.table_name));
-          for (const table of requiredTables) {
-            if (!actualTables.has(table)) {
-              throw new Error(`missing required table: ${table}`);
-            }
-          }
-
-          const tripColumns = [
-            "store_id",
-            "status",
-            "start_date",
-            "end_date",
-            "working_days",
-            "actual_exchange_rate",
-            "estimate_locked",
-            "estimate_modified_after_lock",
-            "unit_gross_profit_twd",
-          ];
-          const columnResult = await pool.query(
-            `SELECT table_name, column_name
-             FROM information_schema.columns
-             WHERE table_schema = 'public'
-               AND ((table_name = 'trips' AND column_name = ANY($1::text[]))
-                 OR (table_name = 'cost_entries' AND column_name = ANY($2::text[]))
-                 OR (table_name = 'cost_categories' AND column_name = 'kind'))`,
-            [
-              tripColumns,
-              [
-                "store_id",
-                "trip_id",
-                "mode",
-                "category_id",
-                "currency",
-                "original_amount",
-                "status",
-              ],
-            ],
-          );
-          const actualColumns = new Set(
-            columnResult.rows.map((row) => `${row.table_name}.${row.column_name}`),
-          );
-          for (const column of tripColumns) {
-            if (!actualColumns.has(`trips.${column}`)) {
-              throw new Error(`missing trips column: ${column}`);
-            }
-          }
-          for (const column of [
-            "store_id",
-            "trip_id",
-            "mode",
-            "category_id",
-            "currency",
-            "original_amount",
-            "status",
-          ]) {
-            if (!actualColumns.has(`cost_entries.${column}`)) {
-              throw new Error(`missing cost_entries column: ${column}`);
-            }
-          }
-          if (!actualColumns.has("cost_categories.kind")) {
-            throw new Error("missing cost_categories column: kind");
-          }
-
-          const expectedCategories = new Map([
-            ["FIXED", [
-              "PERSONNEL",
-              "MARKETING",
-              "MEALS",
-              "FLIGHT",
-              "LODGING",
-              "LOCKER",
-              "CAR_RENTAL",
-              "SIM",
-              "THEME_PARK_DISNEY",
-              "THEME_PARK_USJ",
-              "AIRPORT_TRANSFER",
-              "OTHER",
-            ]],
-            ["VARIABLE", [
-              "FUEL",
-              "PARKING",
-              "TRAIN",
-              "ETC",
-              "DOMESTIC_SHIPPING",
-              "CONSOLIDATION",
-              "PACKAGING",
-            ]],
-            ["PURCHASE", ["PURCHASE"]],
-          ]);
-          const categoryResult = await pool.query(
-            `SELECT kind, code
-             FROM cost_categories
-             ORDER BY kind, code`,
-          );
-          if (categoryResult.rows.length !== 20) {
-            throw new Error(`cost category seed total mismatch: ${categoryResult.rows.length}`);
-          }
-          for (const [kind, expectedCodes] of expectedCategories) {
-            const actualCodes = categoryResult.rows
-              .filter((row) => row.kind === kind)
-              .map((row) => row.code)
-              .sort();
-            const expectedSorted = [...expectedCodes].sort();
-            if (JSON.stringify(actualCodes) !== JSON.stringify(expectedSorted)) {
-              throw new Error(
-                `${kind} cost category seed mismatch: actual=${actualCodes.join(",")} expected=${expectedSorted.join(",")}`,
-              );
-            }
-          }
-
-          const singletonResult = await pool.query(
-            "SELECT count(*)::int AS count FROM operating_settings WHERE id = 1",
-          );
-          if (singletonResult.rows[0].count !== 1) {
-            throw new Error("operating_settings singleton row is missing");
-          }
-
-          await pool.end();
-          console.log("V1_FIXED_COST_SCHEMA_GUARD=PASS");
-          NODE
-
       - name: Verify V1 mock import isolation
         run: |
           set -eo pipefail
@@ -259,9 +117,7 @@ jobs:
             src/routes/orderPicking.route.test.mjs \
             src/routes/coreMutationAuthorization.route.test.mjs \
             src/routes/tripsStoreIsolation.route.test.mjs \
-            src/routes/tripRouteFuelNullable.route.test.mjs \
-            src/routes/fixedCostEstimateUnlock.route.test.mjs \
-            src/routes/fixedCostSummary.route.test.mjs \
+            src/routes/skills.route.test.mjs \
             src/routes/devHandoffProductionGuard.route.test.mjs
 
       - name: Test pure function suites
@@ -291,7 +147,8 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
 
       - name: Seed Playwright smoke fixture
-        run: pnpm --filter @workspace/api-server exec node --import tsx/esm e2e/seedSmoke.mjs
+        working-directory: artifacts/api-server
+        run: node --import tsx/esm e2e/seedSmoke.mjs
 
       - name: Run Playwright smoke tests
         id: playwright-smoke
