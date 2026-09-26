@@ -43,6 +43,7 @@ import {
   createInvoiceOcrTestCase,
   downloadInvoiceOcrCsv,
   getInvoiceOcrSummary,
+  getInvoiceOcrImage,
   INVOICE_OCR_MODELS,
   InvoiceOcrApiError,
   listInvoiceOcrTestCases,
@@ -56,6 +57,8 @@ import {
   type InvoiceOcrSummary,
   type InvoiceOcrTestCase,
 } from "@/lib/invoiceOcrUi";
+
+const privatePoc = import.meta.env.VITE_PRIVATE_POC === "true";
 
 type PagePhase =
   | "idle"
@@ -83,6 +86,7 @@ export default function InvoiceOcrTestPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const previewUrlRef = useRef<string | null>(null);
   const requestIdRef = useRef<string | null>(null);
+  const restoredRef = useRef(false);
   const fileSelectionModeRef = useRef<"new" | "existing">("new");
 
   const [file, setFile] = useState<File | null>(null);
@@ -204,7 +208,7 @@ export default function InvoiceOcrTestPage() {
     }
     if (!testCase && !file) return;
     if (!testCase && !privacyConfirmed) {
-      setError("請先勾選資料分享提醒。");
+      setError("請先確認可以使用這張測試照片。");
       return;
     }
     if (
@@ -305,9 +309,9 @@ export default function InvoiceOcrTestPage() {
     confirmRerun: boolean,
     confirmUnknownRerun = false,
   ) {
-    if (!store?.id || !file || !testCase) return;
+    if (!store?.id || (!privatePoc && !file) || !testCase) return;
     if (!privacyConfirmed) {
-      setError("請先勾選資料分享提醒，再傳送照片進行辨識。");
+      setError("請先確認可以使用這張測試照片，再開始辨識。");
       return;
     }
     if (confirmRerun || confirmUnknownRerun || !requestIdRef.current) {
@@ -379,6 +383,8 @@ export default function InvoiceOcrTestPage() {
         analyzeError instanceof InvoiceOcrApiError &&
         !analyzeError.code.startsWith("browser_") &&
         analyzeError.code !== "openai_timeout_unknown" &&
+        analyzeError.code !== "invoice_ocr_result_save_failed" &&
+        analyzeError.code !== "invoice_ocr_result_recovery_pending" &&
         analyzeError.code !== "stale_processing_unknown" &&
         analyzeError.code !== "invoice_ocr_previous_status_unknown"
       ) {
@@ -451,14 +457,17 @@ export default function InvoiceOcrTestPage() {
     setCurrency(selected.groundTruth.currency);
     setSuccessMessage("");
     const latest = selected.runs?.[0] ?? null;
+    if (privatePoc) requestIdRef.current = latest?.run.clientRequestId ?? null;
     if (latest?.run.status === "processing") {
       setRun(null);
       setReview(null);
       setPhase("failed");
       setError(
-        "前次辨識仍在伺服器處理。請稍後重新整理本頁，不要重新上傳以免重複計費。",
+        latest.run.errorCode === "invoice_ocr_result_save_failed"
+          ? "已取得辨識結果但尚未存入資料庫。按下辨識會恢復同一筆結果，不會重送 OpenAI。"
+          : "前次辨識仍在伺服器處理。請稍後重新整理本頁，不要重新上傳以免重複計費。",
       );
-      requestIdRef.current = null;
+      if (!privatePoc) requestIdRef.current = null;
       return;
     }
     setRun(latest?.run ?? null);
@@ -470,9 +479,33 @@ export default function InvoiceOcrTestPage() {
           ? "failed"
           : "saved",
     );
-    setError("若要再次辨識，請重新選擇這筆案例原本的同一張照片。");
-    requestIdRef.current = null;
+    setError(privatePoc ? "" : "若要再次辨識，請重新選擇這筆案例原本的同一張照片。");
+    if (!privatePoc) requestIdRef.current = null;
   }
+
+  // Restoring a page selects an existing record; it never starts extraction.
+  useEffect(() => {
+    if (!privatePoc || restoredRef.current || !testCases.length) return;
+    restoredRef.current = true;
+    if (!testCase && !file) handleSelectCase(testCases[0]);
+  }, [testCases]);
+
+  useEffect(() => {
+    if (!privatePoc || !store?.id || !testCase?.id || file) return;
+    let cancelled = false;
+    let objectUrl: string | null = null;
+    void getInvoiceOcrImage({ storeId: store.id, testCaseId: testCase.id, getToken }).then(blob => {
+      if (cancelled) return;
+      objectUrl = URL.createObjectURL(blob);
+      previewUrlRef.current = objectUrl;
+      setPreviewUrl(objectUrl);
+    }).catch(() => { if (!cancelled) setError("已保存的收據圖片暫時無法讀取。"); });
+    return () => {
+      cancelled = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      if (previewUrlRef.current === objectUrl) previewUrlRef.current = null;
+    };
+  }, [store?.id, testCase?.id, file, getToken]);
 
   function goBack() {
     if (busy && !window.confirm("照片仍在處理中，確定要離開這個頁面嗎？")) {
@@ -523,9 +556,7 @@ export default function InvoiceOcrTestPage() {
             <div>
               <h2 className="font-bold">上傳前請先確認</h2>
               <p className="mt-1 text-sm leading-6">
-                此發票照片會傳送到 OpenAI。此 API Project
-                已開啟資料分享，以取得符合資格的每日免費
-                Token。請確認你有權上傳此照片，且照片不包含不應分享的敏感資訊。
+                {privatePoc ? "只使用合成收據。圖片保存於私人儲存空間，按下辨識後會傳送到 OpenAI；辨識可能產生 API 費用，結果仍需複核。" : "此發票照片會傳送到 OpenAI。請確認你有權上傳此照片，且照片不包含不應分享的敏感資訊。"}
               </p>
               <label className="mt-3 flex cursor-pointer items-start gap-2 text-sm font-medium">
                 <input
@@ -618,7 +649,7 @@ export default function InvoiceOcrTestPage() {
                   <p className="mt-3 text-sm">
                     {testCase
                       ? "這筆舊案例不保存照片；若要重跑，請重新選擇同一張原圖。"
-                      : "照片只會在這個預覽和本次伺服器記憶體中短暫使用。"}
+                      : privatePoc ? "保存案例時，合成收據會儲存於私人 R2，只有指定店主可以讀取。" : "照片只會在這個預覽和本次伺服器記憶體中短暫使用。"}
                   </p>
                 </div>
               )}
@@ -716,7 +747,7 @@ export default function InvoiceOcrTestPage() {
                     <SelectValue placeholder="選擇模型" />
                   </SelectTrigger>
                   <SelectContent>
-                    {INVOICE_OCR_MODELS.map((item) => (
+                    {INVOICE_OCR_MODELS.filter(item => !privatePoc || item.id === "gpt-5.6-terra").map((item) => (
                       <SelectItem key={item.id} value={item.id}>
                         {item.label}
                       </SelectItem>
@@ -737,12 +768,12 @@ export default function InvoiceOcrTestPage() {
               <Button
                 type="button"
                 className="mt-4 w-full min-h-11"
-                disabled={busy || !file || !testCase || !privacyConfirmed}
+                disabled={busy || (!privatePoc && !file) || !testCase || !privacyConfirmed}
                 onClick={startAnalyze}
               >
                 {busy && phase !== "saving" ? "處理中，請勿重複按" : "開始辨識"}
               </Button>
-              {!file && testCase && (
+              {!privatePoc && !file && testCase && (
                 <p className="mt-2 text-xs text-amber-700">
                   請重新選擇這筆案例的同一張原圖，系統會核對照片指紋。
                 </p>

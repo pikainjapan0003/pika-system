@@ -46,6 +46,7 @@ export function buildInvoiceOpenAIRequest(input: BuildInvoiceRequestInput) {
       }),
     },
     reasoning: { effort: input.reasoningEffort },
+    service_tier: "default" as const,
     max_output_tokens: 1_200,
     store: false,
   };
@@ -411,7 +412,8 @@ export async function extractInvoiceWithOpenAI(
   const startedAt = now();
   let attemptCount = 0;
 
-  while (attemptCount < 2) {
+  const maxAttempts = config.maxAttempts ?? 2;
+  while (attemptCount < maxAttempts) {
     attemptCount++;
     try {
       const envelope = await executeRequest(request);
@@ -441,7 +443,7 @@ export async function extractInvoiceWithOpenAI(
         );
       }
       const parsed = invoiceExtractionSchema.safeParse(envelope.outputParsed);
-      if (!parsed.success) {
+      if (!parsed.success || !envelope.actualModel?.trim() || !envelope.responseId?.trim()) {
         throw new InvoiceExtractionRequestError(
           localFailure(
             "openai_invalid_structured_output",
@@ -468,7 +470,7 @@ export async function extractInvoiceWithOpenAI(
     } catch (error) {
       if (error instanceof InvoiceExtractionRequestError) throw error;
       const failure = classifyInvoiceApiError(error);
-      if (attemptCount < 2 && failure.automaticRetry) {
+      if (attemptCount < maxAttempts && failure.automaticRetry) {
         await sleep(failure.retryAfterMs);
         continue;
       }

@@ -1,7 +1,8 @@
 import { db, storesTable, tripRoutesTable, tripsTable } from "@workspace/db";
 import type { CalculateProductUnitProfitInput } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { inArray } from "drizzle-orm";
+import { privatePocConfig } from "./privatePoc.ts";
 
 type SnapshotQueryExecutor = Pick<typeof db, "select">;
 
@@ -68,6 +69,7 @@ export async function loadOrderProfitSnapshotInputs(
     throw new TypeError("Batch snapshot products must belong to one store");
   }
   const storeId = products[0].storeId;
+  const poc = privatePocConfig();
   const [store] = await executor
     .select({ purchaseExchangeRate: storesTable.purchaseExchangeRate })
     .from(storesTable)
@@ -87,7 +89,7 @@ export async function loadOrderProfitSnapshotInputs(
       ? await executor
           .select()
           .from(tripRoutesTable)
-          .where(inArray(tripRoutesTable.id, routeIds))
+          .where(and(inArray(tripRoutesTable.id, routeIds), poc ? eq(tripRoutesTable.storeId, storeId) : undefined))
       : [];
   const tripIds = [...new Set(routes.map((route) => route.tripId))];
   const trips =
@@ -95,7 +97,7 @@ export async function loadOrderProfitSnapshotInputs(
       ? await executor
           .select()
           .from(tripsTable)
-          .where(inArray(tripsTable.id, tripIds))
+          .where(and(inArray(tripsTable.id, tripIds), poc ? eq(tripsTable.storeId, storeId) : undefined))
       : [];
 
   return assembleOrderProfitSnapshotInputs(

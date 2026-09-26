@@ -22,6 +22,7 @@ export interface InvoicePrediction extends InvoiceFields {
 export interface InvoiceOcrRun {
   id: number;
   testCaseId: number;
+  clientRequestId?: string;
   requestedModel: InvoiceOcrModel;
   actualModel: string | null;
   promptVersion: string;
@@ -242,7 +243,7 @@ export async function updateInvoiceOcrGroundTruth(input: {
 export async function analyzeInvoiceOcrTestCase(input: {
   storeId: number;
   testCaseId: number;
-  file: File;
+  file: File | null;
   model: InvoiceOcrModel;
   confirmRerun: boolean;
   confirmUnknownRerun: boolean;
@@ -256,13 +257,14 @@ export async function analyzeInvoiceOcrTestCase(input: {
   warning?: string;
 }> {
   const form = new FormData();
-  form.append("image", input.file);
+  if (input.file) form.append("image", input.file);
   form.append("model", input.model);
   form.append("confirmRerun", input.confirmRerun ? "true" : "false");
   form.append(
     "confirmUnknownRerun",
     input.confirmUnknownRerun ? "true" : "false",
   );
+  const storedImage = import.meta.env.VITE_PRIVATE_POC === "true";
   const response = await fetchWithTimeout(
     `/api/stores/${input.storeId}/invoice-ocr/test-cases/${input.testCaseId}/analyze`,
     {
@@ -271,9 +273,12 @@ export async function analyzeInvoiceOcrTestCase(input: {
       headers: {
         ...(await authHeaders(input.getToken)),
         "x-client-request-id": input.clientRequestId,
+        ...(storedImage ? { "Content-Type": "application/json" } : {}),
       },
-      body: form,
+      body: storedImage ? JSON.stringify({ model: input.model, confirmRerun: String(input.confirmRerun),
+        confirmUnknownRerun: String(input.confirmUnknownRerun) }) : form,
     },
+    storedImage ? 150_000 : 100_000,
   );
   if (!response.ok) throw await readError(response);
   return response.json();
@@ -362,4 +367,12 @@ export async function downloadInvoiceOcrCsv(input: {
   } finally {
     URL.revokeObjectURL(url);
   }
+}
+
+export async function getInvoiceOcrImage(input: { storeId: number; testCaseId: number; getToken: () => Promise<string | null> }) {
+  const response = await fetchWithTimeout(
+    `/api/stores/${input.storeId}/invoice-ocr/test-cases/${input.testCaseId}/image`,
+    { credentials: "include", headers: await authHeaders(input.getToken) }, 30_000);
+  if (!response.ok) throw await readError(response);
+  return response.blob();
 }

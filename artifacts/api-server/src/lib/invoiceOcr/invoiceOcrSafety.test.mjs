@@ -27,7 +27,7 @@ test("every invoice route is protected by Clerk auth and owner/allowlist access"
   ]);
   const routeDeclarations = route.match(/router\.(?:get|post|patch)\(/g) ?? [];
   const authGuards = route.match(/\n\s*requireAuth,/g) ?? [];
-  assert.equal(routeDeclarations.length, 8);
+  assert.equal(routeDeclarations.length, 9);
   assert.equal(authGuards.length, routeDeclarations.length);
   assert.match(route, /loadInvoiceOcrAccess\(request, response\)/);
   assert.match(support, /verifyStoreOwner/);

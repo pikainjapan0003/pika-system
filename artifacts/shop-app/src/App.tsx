@@ -34,6 +34,7 @@ import {
 import { CUSTOMER_PORTAL_ROUTE_PATTERN } from "@/lib/customerRoutes";
 
 import HomePage from "@/pages/Home";
+import PocShop from "@/pages/PocShop";
 import DashboardPage from "@/pages/Dashboard";
 import ProductsPage from "@/pages/Products";
 import ProductFormPage from "@/pages/ProductForm";
@@ -64,7 +65,8 @@ import PublicCartPage from "@/pages/PublicCart";
 import ReceiptPreviewPage from "@/pages/ReceiptPreview";
 import NotFoundPage from "@/pages/not-found";
 
-const clerkPubKey = publishableKeyFromHost(
+const privatePoc = import.meta.env.VITE_PRIVATE_POC === "true";
+const clerkPubKey = privatePoc ? import.meta.env.VITE_CLERK_PUBLISHABLE_KEY : publishableKeyFromHost(
   window.location.hostname,
   import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,
 );
@@ -138,6 +140,8 @@ function SignInPage() {
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4">
       <SignIn
+        withSignUp={!privatePoc}
+        fallbackRedirectUrl={privatePoc ? `${basePath}/products` : undefined}
         routing="path"
         path={`${basePath}/sign-in`}
         signUpUrl={`${basePath}/sign-up`}
@@ -211,6 +215,7 @@ function MerchantPortal() {
   useEffect(() => {
     if (
       !isSignedIn ||
+      privatePoc ||
       !is404 ||
       storeInitState !== "idle" ||
       createAttemptedRef.current
@@ -245,7 +250,7 @@ function MerchantPortal() {
     !isLoaded ||
     isLoading ||
     storeInitState === "creating" ||
-    (is404 && !!isSignedIn && storeInitState === "idle")
+    (!privatePoc && is404 && !!isSignedIn && storeInitState === "idle")
   ) {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center flex-col gap-3">
@@ -257,7 +262,7 @@ function MerchantPortal() {
     );
   }
 
-  if (!isSignedIn) return <Redirect to="/" />;
+  if (!isSignedIn) return <Redirect to={privatePoc ? "/sign-in" : "/"} />;
 
   if (storeInitState === "failed") {
     return (
@@ -280,7 +285,7 @@ function MerchantPortal() {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center px-5">
         <div className="w-full max-w-sm bg-white rounded-2xl p-6 border border-border space-y-4 text-center">
-          <p className="font-medium text-foreground">登入狀態已失效</p>
+          <p className="font-medium text-foreground">{privatePoc ? "只有指定店主可以管理此店鋪" : "登入狀態已失效"}</p>
           <p className="text-sm text-muted-foreground">
             請重新登入後繼續使用畫夢代購。
           </p>
@@ -295,7 +300,7 @@ function MerchantPortal() {
     );
   }
 
-  if (error && !is404) {
+  if (error && (!is404 || privatePoc)) {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center px-5">
         <div className="w-full max-w-sm bg-white rounded-2xl p-6 border border-border text-center">
@@ -427,6 +432,7 @@ function MerchantPortal() {
 }
 
 function HomeRedirect() {
+  if (privatePoc) return <PocShop />;
   return (
     <>
       <Show when="signed-in">
@@ -441,6 +447,7 @@ function HomeRedirect() {
 
 function SetupRoute() {
   const { isSignedIn } = useUser();
+  if (privatePoc) return <Redirect to="/products" />;
   if (!isSignedIn) return <Redirect to="/" />;
   return <SetupPage />;
 }
@@ -450,7 +457,7 @@ function AppRouter() {
     <Switch>
       <Route path="/" component={HomeRedirect} />
       <Route path="/sign-in/*?" component={SignInPage} />
-      <Route path="/sign-up/*?" component={SignUpPage} />
+      <Route path="/sign-up/*?">{() => privatePoc ? <Redirect to="/sign-in" /> : <SignUpPage />}</Route>
       <Route path="/p/:shareToken">
         {(params) => <PublicOrderPage shareToken={params.shareToken} />}
       </Route>
@@ -461,9 +468,9 @@ function AppRouter() {
       <Route path="/cart" component={PublicCartPage} />
       <Route path="/cvs/711/select" component={Cvs711SelectPage} />
       <Route path="/cvs/711/return" component={Cvs711ReturnPage} />
-      <Route path="/receipt-preview" component={ReceiptPreviewPage} />
+      <Route path="/receipt-preview">{() => privatePoc ? <NotFoundPage /> : <ReceiptPreviewPage />}</Route>
       <Route path="/setup" component={SetupRoute} />
-      <Route path="/dev/handoff" component={DevHandoffPage} />
+      <Route path="/dev/handoff">{() => privatePoc ? <NotFoundPage /> : <DevHandoffPage />}</Route>
       <Route path="/dashboard" component={MerchantPortal} />
       <Route path="/products/*?" component={MerchantPortal} />
       <Route path="/categories" component={MerchantPortal} />
@@ -535,6 +542,7 @@ function ClerkProviderWithRoutes() {
       <QueryClientProvider client={queryClient}>
         <ClerkQueryClientCacheInvalidator />
         <ClerkTokenBridge />
+        {privatePoc && <div className="bg-amber-100 px-4 py-2 text-center text-sm text-amber-950">合成資料私人 POC · 不收款、不出貨 · <a className="underline" href={`${basePath}/`}>模擬客人瀏覽</a> · <a className="underline" href={`${basePath}/settings/invoice-ocr`}>收據辨識</a></div>}
         <AppRouter />
         <Toaster />
       </QueryClientProvider>

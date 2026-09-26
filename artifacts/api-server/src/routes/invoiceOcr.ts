@@ -60,6 +60,7 @@ import {
   type AuthenticatedInvoiceRequest,
 } from "./invoiceOcrSupport.ts";
 import { logger } from "../lib/logger.ts";
+import { loadPrivateInvoiceImage, savePrivateInvoiceImage, savePrivateInvoiceResult, loadPrivateInvoiceResult } from "../lib/invoiceOcr/privateStorage.ts";
 
 const router = Router();
 const MAX_BENCHMARK_CASES = 10;
@@ -167,6 +168,7 @@ async function markRunFailed(
     safeErrorCode: string;
     latencyMs: number;
     attemptCount: number;
+    preserveForRecovery?: boolean;
     actualModel?: string | null;
     openaiResponseId?: string | null;
     openaiRequestId?: string | null;
@@ -180,7 +182,9 @@ async function markRunFailed(
   await db
     .update(invoiceOcrRunsTable)
     .set({
-      status: "failed",
+      // Terminal runs are immutable in the existing DB. A validated provider
+      // result awaiting persistence keeps its original run recoverable.
+      status: values.preserveForRecovery ? "processing" : "failed",
       safeErrorCode: values.safeErrorCode,
       latencyMs: values.latencyMs,
       attemptCount: values.attemptCount,
@@ -192,7 +196,7 @@ async function markRunFailed(
       totalTokens: values.totalTokens,
       cachedInputTokens: values.cachedInputTokens,
       reasoningTokens: values.reasoningTokens,
-      completedAt: new Date(),
+      completedAt: values.preserveForRecovery ? null : new Date(),
     })
     .where(
       and(
@@ -201,6 +205,7 @@ async function markRunFailed(
       ),
     );
 }
+
 
 router.post(
   "/stores/:storeId/invoice-ocr/test-cases",
@@ -251,6 +256,11 @@ router.post(
         ),
       )
       .limit(1);
+    if (process.env.PIKA_PRIVATE_POC === "true") {
+      try { await savePrivateInvoiceImage(access.storeId, image); } catch {
+        return response.status(503).json({ error: "收據圖片無法保存到私人儲存空間。", code: "invoice_image_save_failed", retryable: true });
+      }
+    }
     if (duplicate) {
       return response.json({
         testCase: serializeInvoiceOcrTestCase(duplicate),
@@ -484,12 +494,12 @@ router.post(
         retryable: false,
       });
     }
-    const image = await receiveValidatedImage(
-      request,
-      response,
-      access.config.maxFileBytes,
-    );
-    if (!image) return;
+    const storedImage = process.env.PIKA_PRIVATE_POC === "true";
+    let image: ValidatedInvoiceImage | null = null;
+    if (!storedImage) {
+      image = await receiveValidatedImage(request, response, access.config.maxFileBytes);
+      if (!image) return;
+    }
 
     let model;
     try {
@@ -540,7 +550,7 @@ router.post(
         retryable: false,
       });
     }
-    if (testCaseIdentity.imageSha256 !== image.sha256) {
+    if (image && testCaseIdentity.imageSha256 !== image.sha256) {
       return response.status(400).json({
         error: "這張照片和已儲存的人工正確答案不是同一張。",
         code: "image_hash_mismatch",
@@ -569,6 +579,9 @@ router.post(
           retryable: false,
         });
       }
+      if (storedImage && (sameRequest.safeErrorCode === "invoice_ocr_result_save_failed" ||
+          (sameRequest.status === "processing" && isInvoiceOcrProcessingStatusUnknown(sameRequest.createdAt, access.config.timeoutMs))) &&
+          await recoverPrivateInvoiceRun(response, sameRequest, testCaseIdentity.imageSha256)) return;
       if (
         sameRequest.status === "processing" &&
         isInvoiceOcrProcessingStatusUnknown(
@@ -582,6 +595,19 @@ router.post(
         });
       }
       return sendExistingRun(response, sameRequest);
+    }
+
+    if (storedImage) {
+      const [unsaved] = await db.select().from(invoiceOcrRunsTable).where(and(
+        eq(invoiceOcrRunsTable.testCaseId, testCaseId), eq(invoiceOcrRunsTable.storeId, access.storeId),
+        eq(invoiceOcrRunsTable.createdByUserId, request.userId),
+        eq(invoiceOcrRunsTable.safeErrorCode, "invoice_ocr_result_save_failed"),
+      )).orderBy(desc(invoiceOcrRunsTable.createdAt)).limit(1);
+      if (unsaved) {
+        if (await recoverPrivateInvoiceRun(response, unsaved, testCaseIdentity.imageSha256)) return;
+        return response.status(409).json({ error: "上一筆結果尚待恢復，未建立新的辨識請求。",
+          code: "invoice_ocr_result_recovery_pending", retryable: false });
+      }
     }
 
     const [previousCompleted] = await db
@@ -644,6 +670,13 @@ router.post(
     if (previousCompleted && !confirmRerun && !processingRun) {
       return sendExistingRun(response, previousCompleted);
     }
+
+    if (storedImage) {
+      try { image = await loadPrivateInvoiceImage(access.storeId, testCaseIdentity.imageSha256, access.config.maxFileBytes); }
+      catch { return response.status(503).json({ error: "私人收據圖片無法讀取；尚未呼叫 OpenAI。",
+        code: "invoice_image_unavailable", retryable: false }); }
+    }
+    if (!image) return;
 
     let run: InvoiceOcrRun;
     try {
@@ -776,69 +809,13 @@ router.post(
         access.config,
       );
       successfulApiResult = result;
-
-      // Ground Truth is intentionally loaded only after the OpenAI request has
-      // finished. The extractor's input type has no Ground Truth field.
-      const [groundTruthRow] = await db
-        .select({
-          merchantName: invoiceOcrTestCasesTable.groundTruthMerchantName,
-          invoiceDate: invoiceOcrTestCasesTable.groundTruthInvoiceDate,
-          totalAmount: invoiceOcrTestCasesTable.groundTruthTotalAmount,
-          currency: invoiceOcrTestCasesTable.groundTruthCurrency,
-        })
-        .from(invoiceOcrTestCasesTable)
-        .where(
-          and(
-            eq(invoiceOcrTestCasesTable.id, testCaseId),
-            eq(invoiceOcrTestCasesTable.storeId, access.storeId),
-          ),
-        )
-        .limit(1);
-      if (!groundTruthRow) {
-        throw new Error("Ground Truth missing after completed request");
+      if (storedImage) {
+        await savePrivateInvoiceResult(access.storeId, image.sha256, run.id, result).catch(() => {
+          logger.error({ runId: run.id }, "invoice_ocr_recovery_copy_save_failed");
+        });
       }
-      const scores = scoreInvoicePrediction(result.prediction, groundTruthRow);
 
-      const completed = await db.transaction(async (transaction) => {
-        const [completedRun] = await transaction
-          .update(invoiceOcrRunsTable)
-          .set({
-            actualModel: result.actualModel,
-            predictedJson: result.prediction,
-            reviewRequired: result.prediction.review_required,
-            reviewReasons: result.prediction.review_reasons,
-            evidenceJson: result.prediction.evidence,
-            openaiResponseId: result.responseId,
-            openaiRequestId: result.requestId,
-            inputTokens: result.inputTokens,
-            outputTokens: result.outputTokens,
-            totalTokens: result.totalTokens,
-            cachedInputTokens: result.cachedInputTokens,
-            reasoningTokens: result.reasoningTokens,
-            latencyMs: result.latencyMs,
-            attemptCount: result.attemptCount,
-            status: "completed",
-            completedAt: new Date(),
-          })
-          .where(
-            and(
-              eq(invoiceOcrRunsTable.id, run.id),
-              eq(invoiceOcrRunsTable.status, "processing"),
-            ),
-          )
-          .returning();
-        if (!completedRun) {
-          throw new Error("Invoice OCR run was not processing");
-        }
-        const [review] = await transaction
-          .insert(invoiceOcrReviewsTable)
-          .values({
-            runId: run.id,
-            ...scores,
-          })
-          .returning();
-        return { run: completedRun, review };
-      });
+      const completed = await completeInvoiceRun(run, result);
 
       return response.status(201).json({
         run: serializeInvoiceOcrRun(completed.run),
@@ -879,6 +856,7 @@ router.post(
         });
       }
       await markRunFailed(run.id, {
+        preserveForRecovery: storedImage && successfulApiResult !== null,
         safeErrorCode: successfulApiResult
           ? "invoice_ocr_result_save_failed"
           : "invoice_ocr_internal_error",
@@ -914,6 +892,116 @@ router.post(
     }
   },
 );
+
+router.get("/stores/:storeId/invoice-ocr/test-cases/:testCaseId/image",
+  requireAuth,
+  async (request: AuthenticatedInvoiceRequest, response) => {
+    const access = await loadInvoiceOcrAccess(request, response);
+    if (!access) return;
+    if (process.env.PIKA_PRIVATE_POC !== "true") return response.sendStatus(404);
+    const testCaseId = positiveId(request.params.testCaseId);
+    if (testCaseId === null) return response.sendStatus(400);
+    const [identity] = await db.select({ imageSha256: invoiceOcrTestCasesTable.imageSha256 })
+      .from(invoiceOcrTestCasesTable).where(and(eq(invoiceOcrTestCasesTable.id, testCaseId),
+        eq(invoiceOcrTestCasesTable.storeId, access.storeId))).limit(1);
+    if (!identity) return response.sendStatus(404);
+    try {
+      const image = await loadPrivateInvoiceImage(access.storeId, identity.imageSha256, access.config.maxFileBytes);
+      response.setHeader("X-Content-Type-Options", "nosniff");
+      return response.type(image.mimeType).send(image.buffer);
+    } catch { return response.status(503).json({ error: "私人收據圖片目前無法讀取。", code: "invoice_image_unavailable" }); }
+  });
+
+async function completeInvoiceRun(
+  run: InvoiceOcrRun,
+  result: Awaited<ReturnType<typeof extractInvoiceWithOpenAI>>,
+) {
+      // Ground Truth is intentionally loaded only after the OpenAI request has
+      // finished. The extractor's input type has no Ground Truth field.
+      const [groundTruthRow] = await db
+        .select({
+          merchantName: invoiceOcrTestCasesTable.groundTruthMerchantName,
+          invoiceDate: invoiceOcrTestCasesTable.groundTruthInvoiceDate,
+          totalAmount: invoiceOcrTestCasesTable.groundTruthTotalAmount,
+          currency: invoiceOcrTestCasesTable.groundTruthCurrency,
+        })
+        .from(invoiceOcrTestCasesTable)
+        .where(
+          and(
+            eq(invoiceOcrTestCasesTable.id, run.testCaseId),
+            eq(invoiceOcrTestCasesTable.storeId, run.storeId),
+          ),
+        )
+        .limit(1);
+      if (!groundTruthRow) {
+        throw new Error("Ground Truth missing after completed request");
+      }
+      const scores = scoreInvoicePrediction(result.prediction, groundTruthRow);
+
+      const completed = await db.transaction(async (transaction) => {
+        const [completedRun] = await transaction
+          .update(invoiceOcrRunsTable)
+          .set({
+            actualModel: result.actualModel,
+            predictedJson: result.prediction,
+            reviewRequired: result.prediction.review_required,
+            reviewReasons: result.prediction.review_reasons,
+            evidenceJson: result.prediction.evidence,
+            openaiResponseId: result.responseId,
+            openaiRequestId: result.requestId,
+            inputTokens: result.inputTokens,
+            outputTokens: result.outputTokens,
+            totalTokens: result.totalTokens,
+            cachedInputTokens: result.cachedInputTokens,
+            reasoningTokens: result.reasoningTokens,
+            latencyMs: result.latencyMs,
+            attemptCount: result.attemptCount,
+            status: "completed",
+            safeErrorCode: null,
+            completedAt: new Date(),
+          })
+          .where(
+            and(
+              eq(invoiceOcrRunsTable.id, run.id),
+              eq(invoiceOcrRunsTable.status, run.status),
+            ),
+          )
+          .returning();
+        if (!completedRun) {
+          throw new Error("Invoice OCR run was not processing");
+        }
+        const [review] = await transaction
+          .insert(invoiceOcrReviewsTable)
+          .values({
+            runId: run.id,
+            ...scores,
+          })
+          .returning();
+        return { run: completedRun, review };
+      });
+  return completed;
+}
+
+async function recoverPrivateInvoiceRun(response: any, run: InvoiceOcrRun, sha256: string) {
+  try {
+    const result = await loadPrivateInvoiceResult(run.storeId, sha256, run.id);
+    if (!result) return false;
+    if (result.requestedModel !== run.requestedModel || result.promptVersion !== run.promptVersion ||
+        result.imageDetail !== run.imageDetail || result.reasoningEffort !== run.reasoningEffort) {
+      throw new Error("Stored result does not match run");
+    }
+    const completed = await completeInvoiceRun(run, result);
+    response.json({ run: serializeInvoiceOcrRun(completed.run),
+      review: serializeInvoiceOcrReview(completed.review), existing: true, recovered: true });
+  } catch {
+    // Another recovery may already have committed. Never send another provider request.
+    const [current] = await db.select().from(invoiceOcrRunsTable).where(eq(invoiceOcrRunsTable.id, run.id)).limit(1);
+    if (current?.status === "completed") await sendExistingRun(response, current);
+    else response.status(503).json({ error: "已取得的辨識結果仍待恢復儲存；未重新呼叫 OpenAI。",
+      code: "invoice_ocr_result_recovery_pending", retryable: false });
+  }
+  return true;
+}
 
 async function loadTestCaseBundle(storeId: number, testCaseId: number) {
   const [testCase] = await db

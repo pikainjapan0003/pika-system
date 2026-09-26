@@ -9,6 +9,7 @@ import {
 } from "@workspace/db";
 import { requireAuth, verifyStoreOwner } from "../middlewares/auth.ts";
 import { sanitizeError } from "../lib/sanitizeError.ts";
+import { privatePocConfig } from "../lib/privatePoc.ts";
 import { runFamilyMartTrackingWorker } from "../lib/logistics/workers/familyMartTrackingWorker.ts";
 import { runControlledDbWrite } from "../lib/logistics/workers/multiProviderControlledWriteWorker.ts";
 import {
@@ -84,6 +85,73 @@ const UNSUPPORTED_PROVIDERS = getUnsupportedAutoSyncProviders();
 const SYNC_RUN_TYPES = ["scheduled_worker", "manual_worker", "exception_retry"];
 
 const router = Router();
+
+/** Private POC: bind one approved parcel and reuse the existing read-only carrier worker. */
+router.post(
+  "/stores/:storeId/orders/:orderId/logistics/familymart",
+  requireAuth,
+  async (req: any, res: any) => {
+    const storeId = Number(req.params.storeId);
+    const orderId = Number(req.params.orderId);
+    if (![storeId, orderId].every((id) => Number.isSafeInteger(id) && id > 0)) {
+      return fail(res, 400, "INVALID_ID", "訂單識別不正確。");
+    }
+    if (!(await verifyStoreOwner(req, res, storeId))) return;
+    if (!privatePocConfig()) return fail(res, 404, "NOT_FOUND", "Not found");
+    // The POC must never send invented fixture codes to a production carrier.
+    const approvedCode = process.env.PIKA_POC_FAMILYMART_TRACKING_CODE?.trim();
+    if (!approvedCode || !/^\d{8,20}$/.test(approvedCode)) {
+      return fail(res, 503, "LOGISTICS_TEST_SOURCE_REQUIRED", "尚未設定已授權的全家測試單號；尚未查詢外部物流。");
+    }
+    const code = typeof req.body?.trackingCode === "string" ? req.body.trackingCode.trim() : "";
+    if (code !== approvedCode) {
+      return fail(res, 422, "TRACKING_NOT_AUTHORIZED", "此私人測試版只查詢已授權的全家單號。");
+    }
+    try {
+      const binding = await db.transaction(async (tx) => {
+        const [order] = await tx.select({ id: ordersTable.id }).from(ordersTable)
+          .where(and(eq(ordersTable.id, orderId), eq(ordersTable.storeId, storeId)))
+          .for("update");
+        if (!order) return { error: "ORDER_NOT_FOUND" } as const;
+        const existing = await tx.select().from(shipmentTrackingsTable)
+          .where(or(
+            and(eq(shipmentTrackingsTable.orderId, orderId), eq(shipmentTrackingsTable.isActive, true)),
+            and(eq(shipmentTrackingsTable.trackingProvider, "familymart"), eq(shipmentTrackingsTable.trackingCode, code)),
+          ));
+        if (existing.some((t) => t.orderId !== orderId || !t.isActive ||
+          t.trackingProvider !== "familymart" || t.trackingCode !== code)) {
+          return { error: "TRACKING_CONFLICT" } as const;
+        }
+        if (existing[0]) return { id: existing[0].id };
+        const [created] = await tx.insert(shipmentTrackingsTable).values({
+          orderId, trackingProvider: "familymart", trackingCode: code, sourceType: "manual",
+        }).returning({ id: shipmentTrackingsTable.id });
+        return created;
+      });
+      if ("error" in binding) {
+        return fail(res, binding.error === "ORDER_NOT_FOUND" ? 404 : 409, binding.error!,
+          binding.error === "ORDER_NOT_FOUND" ? "找不到此店鋪的訂單。" : "物流單號已有關聯，未覆蓋原資料。");
+      }
+      const result = await runFamilyMartTrackingWorker({ storeId, trackingIds: [binding.id], limit: 1,
+        timeoutMs: 15_000, runType: "manual_worker", createdBy: req.userId });
+      const job = result.results[0];
+      if (!job || job.status !== "success") {
+        return res.status(502).json({ ok: false, source: "familymart_live", runId: result.runLogId,
+          trackingId: binding.id, errorCode: job?.errorCode ?? "TRACKING_NOT_AVAILABLE",
+          message: "物流查詢未完成，已保留原貨態；請重新讀取訂單查看狀態。" });
+      }
+      return res.json({ ok: true, source: "familymart_live", runId: result.runLogId,
+        trackingId: binding.id, insertedEventCount: job.insertedEventCount,
+        message: "已查詢並保存全家貨態。" });
+    } catch (err: any) {
+      if (err?.code === "23505" || err?.cause?.code === "23505") {
+        return fail(res, 409, "TRACKING_CONFLICT", "物流單號已有關聯，未覆蓋原資料。");
+      }
+      console.error("[logistics-sync] private single-order sync failed:", sanitizeError(err));
+      return fail(res, 500, "SYNC_FAILED", "物流資料未能完成保存，請先重新讀取訂單；未自動重試查詢。");
+    }
+  },
+);
 
 /** 整批手動同步：重用既有 worker，storeId scope，不動訂單狀態。 */
 router.post(

@@ -12,6 +12,10 @@
 import assert from "node:assert/strict";
 import { after, before, beforeEach, mock, test } from "node:test";
 
+// This suite exercises the original multipart route; the private R2 variant has
+// its own PostgreSQL integration suite. Do not inherit the POC container flag.
+process.env.PIKA_PRIVATE_POC = "false";
+
 const { sql } = await import("drizzle-orm");
 
 const STORE_ID = 42;
@@ -522,8 +526,10 @@ const fakeConfig = {
   allowedClerkUserIds: new Set([USER_ID]),
 };
 
+const realConfigExports = await import("../lib/invoiceOcr/config.ts");
 mock.module("../lib/invoiceOcr/config.ts", {
   namedExports: {
+    ...realConfigExports,
     readInvoiceOcrConfig: () => ({
       ...fakeConfig,
       allowedClerkUserIds: allowlisted ? new Set([USER_ID]) : new Set(),

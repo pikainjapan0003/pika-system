@@ -21,6 +21,7 @@ import { configureTrustProxy } from "./lib/trustProxy.ts";
 import { configureSecurityHeaders } from "./lib/securityHeaders.ts";
 import { sendPublicError } from "./lib/publicError.ts";
 import { resolveRequestId, setRequestIdHeader } from "./lib/requestId.ts";
+import { privatePocBoundary } from "./lib/privatePoc.ts";
 
 const app: Express = express();
 configureTrustProxy(app);
@@ -35,7 +36,7 @@ app.use(
         return {
           id: req.id,
           method: req.method,
-          url: req.url?.split("?")[0],
+          url: process.env.PIKA_PRIVATE_POC === "true" ? undefined : req.url?.split("?")[0],
         };
       },
       res(res) {
@@ -50,6 +51,7 @@ app.use(
   }),
 );
 app.use(setRequestIdHeader);
+app.use(privatePocBoundary);
 
 app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
 
@@ -76,7 +78,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(
   clerkMiddleware((req) => ({
-    publishableKey: publishableKeyFromHost(
+    publishableKey: process.env.PIKA_PRIVATE_POC === "true" ? process.env.CLERK_PUBLISHABLE_KEY : publishableKeyFromHost(
       getClerkProxyHost(req) ?? "",
       process.env.CLERK_PUBLISHABLE_KEY,
     ),

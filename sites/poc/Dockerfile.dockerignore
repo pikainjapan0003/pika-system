@@ -1,0 +1,21 @@
+# Narrow build context; test keys and local outputs must never enter the image.
+**
+!package.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
+!.npmrc
+!tsconfig*.json
+!artifacts/
+!artifacts/api-server/
+!artifacts/api-server/**
+!lib/
+!lib/**
+!sites/
+!sites/poc/
+!sites/poc/Dockerfile
+**/node_modules
+**/dist
+**/.env*
+**/.git
+**/.poc
+**/*.tsbuildinfo

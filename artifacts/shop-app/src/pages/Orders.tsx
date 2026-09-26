@@ -51,6 +51,7 @@ import {
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
 import { buttonVariants } from "@/components/ui/button";
+import { FamilyMartTrackingPanel } from "@/components/FamilyMartTrackingPanel";
 
 const DEPRECATED_METHODS: Record<string, string> = {
   "OK Mart": "OK Mart",
@@ -1137,6 +1138,12 @@ export default function OrdersPage() {
                         </span>
                       </div>
                       {/* Row 5: 物流摘要（Step 7G） */}
+                      {import.meta.env.VITE_PRIVATE_POC === "true" && storeId && (
+                        <FamilyMartTrackingPanel storeId={storeId} orderId={o.id}
+                          trackingCode={(o as OrderWithTracking).shipmentTracking?.trackingProvider === "familymart"
+                            ? (o as OrderWithTracking).shipmentTracking?.trackingCode : null}
+                          onSaved={() => qc.invalidateQueries({ queryKey: getListOrdersQueryKey(storeId) })} />
+                      )}
                       {(() => {
                         const t =
                           (o as OrderWithTracking).shipmentTracking ?? null;

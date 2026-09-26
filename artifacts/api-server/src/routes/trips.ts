@@ -8,6 +8,7 @@ import {
   UpdateTripRouteBody,
 } from "@workspace/api-zod";
 import { requireAuth, verifyStoreOwner } from "../middlewares/auth.ts";
+import { privatePocConfig } from "../lib/privatePoc.ts";
 
 const router = Router();
 
@@ -88,7 +89,7 @@ router.patch("/trips/:tripId", requireAuth, async (req: any, res) => {
     .where(eq(tripsTable.id, tripId))
     .limit(1);
   if (!existing) return res.status(404).json({ error: "Trip not found" });
-  if (existing.storeId !== null && existing.storeId !== storeId) {
+  if (!canUseTripStore(existing.storeId, storeId)) {
     return res.status(403).json({ error: "Forbidden" });
   }
 
@@ -125,7 +126,7 @@ router.post("/trips/:tripId/routes", requireAuth, async (req: any, res) => {
     .where(eq(tripsTable.id, tripId))
     .limit(1);
   if (!trip) return res.status(404).json({ error: "Trip not found" });
-  if (trip.storeId !== null && trip.storeId !== storeId) {
+  if (!canUseTripStore(trip.storeId, storeId)) {
     return res.status(403).json({ error: "Forbidden" });
   }
 
@@ -224,8 +225,13 @@ router.patch(
     if (!existing || existing.tripId !== tripId) {
       return res.status(404).json({ error: "Route not found" });
     }
-    if (existing.storeId !== null && existing.storeId !== storeId) {
+    if (!canUseTripStore(existing.storeId, storeId)) {
       return res.status(403).json({ error: "Forbidden" });
+    }
+    if (privatePocConfig()) {
+      const [parent] = await db.select({ storeId: tripsTable.storeId })
+        .from(tripsTable).where(eq(tripsTable.id, tripId)).limit(1);
+      if (parent?.storeId !== storeId) return res.status(403).json({ error: "Forbidden" });
     }
 
     try {
@@ -264,12 +270,22 @@ function formatTrip(t: any) {
 }
 
 function ownedOrAwaitingBackfill(column: any, storeId: number) {
+  if (privatePocConfig()) return eq(column, storeId);
   // Nullable rows are transitional and remain visible until the production
   // backfill has been applied and reviewed.
   return or(eq(column, storeId), isNull(column))!;
 }
 
+function canUseTripStore(actualStoreId: number | null, storeId: number) {
+  return actualStoreId === storeId || (actualStoreId === null && !privatePocConfig());
+}
+
 async function resolveOwnedStoreId(req: any, res: any): Promise<number | null> {
+  const poc = privatePocConfig();
+  if (poc) {
+    if (!(await verifyStoreOwner(req, res, poc.storeId))) return null;
+    return poc.storeId;
+  }
   const [store] = await db
     .select({ id: storesTable.id })
     .from(storesTable)
