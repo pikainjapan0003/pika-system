@@ -25,9 +25,6 @@ test("Maihuobian preview separates eligibility and cleartext export requires con
         },
       });
     }
-    if (path === "/api/stores/1/skills") {
-      return route.fulfill({ json: { catalogVersion: 1, skills: [] } });
-    }
     if (path === "/api/stores/1/orders") {
       return route.fulfill({ json: [] });
     }

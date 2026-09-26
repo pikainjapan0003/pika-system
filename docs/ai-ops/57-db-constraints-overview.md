@@ -1,5 +1,7 @@
 # BATCH-20 包26：資料庫約束總覽
 
+> 歷史盤點：2026-09-27 Sites 遷移產品已決定移除技能地圖；本文的技能入口／狀態表／測試建議不再代表現行功能。現況見 [移除報告](../sites-migration/SKILL-MAP-REMOVAL-REPORT.md)。
+
 盤點日期：2026-08-01  
 範圍：`lib/db/src/schema/` 的 Drizzle schema；本包唯讀，不修改 schema、migration 或路由。下表以 schema 宣告為準，正式資料庫是否已套用各 migration 不在本包驗證。
 

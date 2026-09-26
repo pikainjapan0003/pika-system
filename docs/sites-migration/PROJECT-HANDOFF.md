@@ -1,5 +1,7 @@
 # pika-system｜單一店主・Sites 私人遷移
 
+2026-09-27：現況以 `PHASE1-PLAN.md` 總進度為準。本輪依使用者決定完整移除產品技能地圖，並已明確授權正常推送 `codex/chatgpt-sites-private-poc`；下文不 push／基準 HEAD／本機部署說明屬歷史交接。技能移除結果見 `SKILL-MAP-REMOVAL-REPORT.md`。
+
 2026-09-26 線上化接續：**核心已不依賴本機**。原 PRIVATE Sites 改接 Railway 隔離 Express／持久 PG，雲端合成 store 1、product 2、order 1 的 200 元訂單經直接 SQL、API 重啟及停止本機三容器後查回通過。完整位置、試用額度、58 項本輪測試、限制與回復見 `PHASE2-ONLINE-TEST-REPORT.md`；下文店 8／單 19 是前輪本機歷史成果。人工驗收延後，不再要求使用者逐頁確認。
 
 本輪狀態（2026-09-26）：**B＋Astra 的 PRIVATE POC 第 1 版已可試用，真 Clerk → Sites → 隔離 Express → 獨立 PG 的 HTTP 下單切片通過。** 指定管理帳號已親自登入並精確綁定合成店 8；商品 7、假單 19：100 × 2＋0＝200 元，庫存 3→1，token 查單與後台收單成功，直接 SQL 核對保存。使用者已確認前台商品列表、管理商品與訂單兩頁均可見假商品／200 元假單。CUA 連線逾時，因此證據是 HTTP 全流程＋使用者畫面確認，不能稱為完整自動化瀏覽器 E2E；本輪最小 POC 在此交付，不擴大改造。

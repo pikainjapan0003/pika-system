@@ -22,9 +22,6 @@ test("editing an order keeps the exact 0.1 times 3 preview and rejects excess di
         },
       });
     }
-    if (path === "/api/stores/1/skills") {
-      return route.fulfill({ json: { catalogVersion: 1, skills: [] } });
-    }
     if (path === "/api/stores/1/orders") {
       return route.fulfill({
         json: [

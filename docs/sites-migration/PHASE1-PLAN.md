@@ -6,7 +6,7 @@
 
 | 階段 | 狀態 | 實際成果／證據 | 下一步或阻礙 |
 |---|---|---|---|
-| 技能地圖／問卷／套餐／解鎖機制 | 進行中 | 產品決定移除，不是待搬功能；本輪已核對 GitHub 遷移分支仍在歷史基準，Sites 為第 6 版 | 保存 checkpoint、拆除依賴、自動測試、私人部署及測試專屬表清理；只同步遷移分支 |
+| 技能地圖／問卷／套餐／解鎖機制 | 進行中 | 產品決定移除，不是待搬功能；checkpoint `5d89f4f` 已推送，程式依賴已拆除；24 項 API 回歸及 root typecheck 通過 | 前端建置／私人部署與隔離庫清理進行中；詳見 [移除報告](SKILL-MAP-REMOVAL-REPORT.md) |
 | 最小方案與私人 POC | 已完成 | 本報告 G 節：指定店主、合成商品、下單、token 查單 | 保留既有業務規則與資料結構 |
 | 線上獨立 API／PostgreSQL | 已完成 | [Phase 2 報告](PHASE2-ONLINE-TEST-REPORT.md)：Sites＋Railway，停止本機後仍可讀回 | 沿用隔離資源 |
 | 私有 R2 商品圖片 | 已完成 | [R2 報告](R2-TEST-INTEGRATION-REPORT.md)：pika-sites-poc 真實存取及重啟驗證 | 不動正式 bucket |

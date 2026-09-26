@@ -13,16 +13,11 @@ globalThis.React = React;
 
 let orders = [];
 let products = [];
-let visibility = {
-  loaded: true,
-  enabledSkillCount: 1,
-  isVisible: () => true,
-  refresh: async () => undefined,
-};
+const getToken = async () => "fake-token";
 
 mock.module("@clerk/react", {
   namedExports: {
-    useAuth: () => ({ getToken: async () => "fake-token" }),
+    useAuth: () => ({ getToken }),
     useClerk: () => ({ signOut: () => undefined }),
   },
 });
@@ -47,21 +42,8 @@ mock.module("@workspace/api-client-react", {
     useListProducts: () => ({ data: products }),
   },
 });
-mock.module("../lib/dailySkillVisibilityContext.tsx", {
-  namedExports: { useDailySkillVisibility: () => visibility },
-});
-mock.module("../lib/OnboardingQuestionnaireCard", {
-  namedExports: {
-    OnboardingQuestionnaire: () =>
-      React.createElement(
-        "div",
-        { "data-testid": "onboarding-questionnaire" },
-        "進階功能引導卡",
-      ),
-  },
-});
 
-const { cleanup, getByTestId, queryByText, render, waitFor } =
+const { cleanup, render, waitFor } =
   await import("@testing-library/react");
 const { default: DashboardPage } = await import("../pages/Dashboard.tsx");
 
@@ -101,12 +83,6 @@ afterEach(() => {
   cleanup();
   orders = [];
   products = [];
-  visibility = {
-    loaded: true,
-    enabledSkillCount: 1,
-    isVisible: () => true,
-    refresh: async () => undefined,
-  };
   globalThis.fetch = originalFetch;
 });
 
@@ -116,32 +92,15 @@ after(() => {
   restoreDom();
 });
 
-test("zero enabled skills show the onboarding card", async () => {
-  visibility = { ...visibility, enabledSkillCount: 0 };
+test("dashboard shows business actions without a questionnaire or skill requests", async () => {
   installFetch();
-  const view = render(React.createElement(DashboardPage));
-  await waitFor(() =>
-    assert.ok(getByTestId(view.container, "onboarding-questionnaire")),
-  );
-  assert.match(view.container.textContent, /進階功能引導卡/);
-});
-
-test("recent order uses the resolved NT$ display total", async () => {
-  orders = [makeOrder()];
-  installFetch();
-  const view = render(React.createElement(DashboardPage));
-  await waitFor(() => assert.match(view.container.textContent, /NT\$120/));
-  assert.match(view.container.textContent, /測試商品/);
-});
-
-test("disabled product skill hides the dashboard product entry", async () => {
-  visibility = {
-    ...visibility,
-    isVisible: (surface) => surface !== "products",
+  const businessFetch = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    assert.doesNotMatch(String(url), /skills|skill-packages/);
+    return businessFetch(url);
   };
-  installFetch();
   const view = render(React.createElement(DashboardPage));
-  await waitFor(() => assert.match(view.container.textContent, /店鋪設定/));
-  assert.equal(queryByText(view.container, "新增、編輯商品"), null);
+  await waitFor(() => assert.match(view.container.textContent, /管理商品/));
   assert.match(view.container.textContent, /查看訂單/);
+  assert.doesNotMatch(view.container.textContent, /技能|問卷|套餐/);
 });

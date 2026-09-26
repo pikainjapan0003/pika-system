@@ -22,9 +22,6 @@ test("the monthly report shows rounded snapshot profit and nonzero exception cou
         },
       });
     }
-    if (path === "/api/stores/1/skills") {
-      return route.fulfill({ json: { catalogVersion: 1, skills: [] } });
-    }
     if (path === "/api/stores/1/orders/monthly-profit") {
       return route.fulfill({
         json: {

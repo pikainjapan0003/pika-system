@@ -18,6 +18,7 @@ export async function load(url, context, nextLoad) {
 
   const source = String(loaded.source);
   const transformed = source
+    .replaceAll("import.meta.env.VITE_PRIVATE_POC", '(process.env.VITE_PRIVATE_POC ?? "false")')
     .replaceAll("import.meta.env.BASE_URL", '"/"')
     .replaceAll("import.meta.env.PROD", "false")
     .replaceAll("import.meta.env.DEV", "true")

@@ -18,7 +18,6 @@ import logisticsSyncRouter from "./logisticsSync.ts";
 import internalLogisticsSyncRouter from "./internalLogisticsSync.ts";
 import exchangeRateReferenceRouter from "./exchangeRateReference.ts";
 import auditLogsRouter from "./auditLogs.ts";
-import skillsRouter from "./skills.ts";
 import invoiceOcrRouter from "./invoiceOcr.ts";
 
 const router: IRouter = Router();
@@ -41,7 +40,6 @@ router.use(logisticsSyncRouter);
 router.use(internalLogisticsSyncRouter);
 router.use(exchangeRateReferenceRouter);
 router.use(auditLogsRouter);
-router.use(skillsRouter);
 router.use(invoiceOcrRouter);
 if (process.env.NODE_ENV !== "production") {
   router.use(devHandoffRouter);

@@ -1,5 +1,7 @@
 # API 端點權限矩陣
 
+2026-09-27 遷移分支更新：技能狀態／開通／套餐 API 已移除，正常業務仍受 auth／owner 限制。其餘歷史端點盤點不等同 PRIVATE POC 已放行範圍；以 `privatePoc.ts` 及遷移總進度為準。
+
 - 盤點日：2026-07-31
 - 範圍：`artifacts/api-server/src/routes/*.ts`，所有路由統一掛在 `/api`；agent 路由另有 `/internal/agent` 前綴。
 - 「店主」表示 `requireAuth` 後再以 `verifyStoreOwner`、等價 merchantId 比對，或由資源反查 store 後驗證。
@@ -41,7 +43,7 @@
 | GET `/trips`；POST `/trips`                                                                  | **目前任何登入者** | 只有 `requireAuth`，無店鋪欄位                     | 無；且無法寫出合理跨店測試 |
 | PATCH `/trips/:tripId`；POST `/trips/:tripId/routes`；PATCH `/trips/:tripId/routes/:routeId` | **目前任何登入者** | 只有 `requireAuth`，以全域 id 查寫                 | 無；屬上方 P1              |
 
-## 客戶、技能、audit 與 agent 設定
+## 客戶、audit 與 agent 設定
 
 | 方法與路徑                                                              | 需求    | 實際防線                                                   | 負向測試                                                                        |
 | ----------------------------------------------------------------------- | ------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------- | -------- |
@@ -51,9 +53,6 @@
 | GET `/stores/:storeId/customers/:customerId/store-credit`               | 店主    | `requireAuth`＋`verifyStoreOwner`＋客戶店鋪綁定            | 有：`customerStoreCredit.route.test.mjs`                                        |
 | POST `/stores/:storeId/customers/:customerId/store-credit`              | 店主    | auth→owner→store limiter→二次確認/idempotency              | 有：`customerStoreCredit.route.test.mjs`、`storeCreditLifecycle.route.test.mjs` |
 | GET `/stores/:storeId/audit-logs`；POST `/stores/:storeId/audit-events` | 店主    | `requireAuth`＋`verifyStoreOwner`；action allowlist        | 部分：隔離測試有涵蓋，內容與分頁仍不足                                          |
-| GET `/stores/:storeId/skills`                                           | 店主    | `requireAuth`＋`verifyStoreOwner`                          | 有：`skills.route.test.mjs`                                                     |
-| POST `/stores/:storeId/skills/:skillKey/preview                         | enable` | 店主                                                       | 同上＋catalog/prerequisite/high-risk guard                                      | 有：同上 |
-| POST `/stores/:storeId/skill-packages/:packageKey/preview               | apply`  | 店主                                                       | 同上＋package preview/apply guard                                               | 有：同上 |
 | GET/PATCH `/stores/:storeId/agent/settings`                             | 店主    | `requireAuth`＋`verifyStoreOwner`                          | 有：`sellerAgent.route.test.mjs`、integration test                              |
 
 ## 訂單端點
@@ -115,7 +114,6 @@ This review covers owner-only surfaces outside the earlier core-mutation matrix.
 | ------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
 | Customers list/detail/export                | `requireAuth` + `verifyStoreOwner` + store/customer binding                  | `customersAndProfitIsolation.route.test.mjs`                                    | Covered; unauthenticated and cross-store requests are rejected.                                    |
 | Customer store-credit read/write            | `requireAuth` + owner check + customer store binding + mutation guards       | `customerStoreCredit.route.test.mjs`, `storeCreditLifecycle.route.test.mjs`     | Covered; lifecycle and cross-store cases are isolated.                                             |
-| Skills catalog/preview/enable/package apply | `requireAuth` + `verifyStoreOwner` + catalog/prerequisite/high-risk guards   | `skills.route.test.mjs`                                                         | Covered; invalid catalog, prerequisite, confirmation, and cross-store paths remain negative tests. |
 | Audit log read/event write                  | `requireAuth` + `verifyStoreOwner` + action allowlist                        | `authzGapSecondTier.route.test.mjs`                                             | Covered; unauthenticated and cross-store requests are rejected.                                    |
 | Customer/order and Maichuobian exports      | `requireAuth` + `verifyStoreOwner` + cleartext confirmation where applicable | `customersAndProfitIsolation.route.test.mjs`, `maihuobianExport.route.test.mjs` | Covered; export gates and store scope are preserved.                                               |
 | Logistics import/exception surfaces         | `requireAuth` + `verifyStoreOwner` + batch/store binding                     | `logisticsImports.route.test.mjs`, `authzGapSecondTier.route.test.mjs`          | Covered; malformed, unauthenticated, and cross-store paths are tested.                             |

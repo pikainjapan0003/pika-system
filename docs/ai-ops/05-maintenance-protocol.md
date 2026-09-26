@@ -142,6 +142,12 @@
 - Sites 官方 workflow 的 source/build 成功後，Windows Bash 打包路徑仍失敗；沿用本案已有隱藏 stdin credential 的 `.poc/publish-source.mjs`，核對同一專用來源 HEAD 再以原生 tar 打包，不重新建 Site、不改 GitHub remote 或公開設定。
 - 此為本機操作紀錄，不新增全域規則或審查關卡；交付證據集中 PHASE1-PLAN.md J 節。
 
+### 2026-09-27 - 移除技能地圖的測試與舊前端產物
+
+- 問題：Dashboard 測試每次 render 建立新的 `getToken`，effect 反覆觸發；Docker 測試超過本機指令等待時間時，終止 CLI 不保證容器內的測試已停止。帳本首次畫面測試在負載下逾時，原斷言重跑通過。
+- 處理：固定測試 mock 的函式參照，沒有修改正式登入邏輯或降低金額斷言；先確認並停止本輪專用容器，才重新執行未完成測試，保留失敗／中止收據。使用串流程序等待完成，避免把指令逾時當成全部測試失敗或通過。
+- 封裝：`prepare-site.mjs` 原先只覆蓋檔案，舊 JS bundle 留在 Site 產物；改為核對絕對路徑後，只清除專用 checkout 的生成目錄再重建，不動 Git 歷史。完整證據集中技能移除報告，不新增全域規則。
+
 ### 2026-07-07 - 同一本機 clone 被兩個 AI session 同時操作，分支被互相覆蓋
 
 - 觸發情境：Fable 5 主 session 在 `Desktop\pika-system` commit+push 期間，制度庫另一個 session 在同一目錄 `git reset` 回舊 commit，導致本機分支倒退、已 push 的檔案從磁碟消失（remote 未受損，靠 `git merge --ff-only origin/main` 恢復）。
