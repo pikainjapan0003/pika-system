@@ -14,7 +14,7 @@ mock.module("@clerk/express", { namedExports: {
   clerkMiddleware: () => (_req, _res, next) => next(),
   getAuth: req => ({ userId: req.headers["x-test-clerk-user"] ?? null }),
 } });
-const { db, pool, storesTable, customersTable, tripsTable, tripRoutesTable, storeSkillStatesTable, auditLogsTable } = await import("@workspace/db");
+const { db, pool, storesTable, customersTable, tripsTable, tripRoutesTable, auditLogsTable } = await import("@workspace/db");
 const { eq, inArray } = await import("drizzle-orm");
 const { default: app } = await import("../app.ts");
 let server, origin, store, decoy, customer, otherCustomer, trip, route;
@@ -32,7 +32,7 @@ async function request(method, path, body, { user = process.env.PIKA_OWNER_CLERK
     ...(gateway ? { "x-pika-poc-key": process.env.PIKA_POC_PROXY_SECRET } : {}),
     ...(user ? { "x-test-clerk-user": user } : {}),
   }, body: body === undefined ? undefined : JSON.stringify(body) });
-  return { status: response.status, body: await response.json() };
+  return { status: response.status, body: response.headers.get("content-type")?.includes("application/json") ? await response.json() : await response.text() };
 }
 before(async () => {
   // First row is deliberately not the designated store, even with the same owner.
@@ -65,7 +65,6 @@ after(async () => {
   }
   if (storeIds.length) {
     await db.delete(auditLogsTable).where(inArray(auditLogsTable.storeId, storeIds));
-    await db.delete(storeSkillStatesTable).where(inArray(storeSkillStatesTable.storeId, storeIds));
     await db.delete(customersTable).where(inArray(customersTable.storeId, storeIds));
     await db.delete(storesTable).where(inArray(storesTable.id, storeIds));
   }
@@ -84,6 +83,32 @@ test("management requires the gateway and designated owner; unrelated operations
   assert.equal((await request("DELETE", "/trips/1")).status, 403);
 });
 
+test("business routes work without the removed skill table or legacy operations", async () => {
+  const { rows: [row] } = await pool.query("SELECT to_regclass('public.store_skill_states')::text AS table_name");
+  assert.equal(row.table_name, null, "Apply the forward removal migration to this isolated test DB first");
+  const paths = [
+    ["GET", `/stores/${store.id}/skills`],
+    ["POST", `/stores/${store.id}/skills/S-19/preview`],
+    ["POST", `/stores/${store.id}/skills/S-19/enable`],
+    ["POST", `/stores/${store.id}/skill-packages/beginner/preview`],
+    ["POST", `/stores/${store.id}/skill-packages/beginner/apply`],
+  ];
+  // Authenticated owner requests: test the actual router, not anonymous denial.
+  try {
+    process.env.PIKA_PRIVATE_POC = "false";
+    for (const [method, path] of paths) {
+      assert.equal((await request(method, path, method === "POST" ? { enabled: true } : undefined)).status, 404);
+    }
+  } finally { process.env.PIKA_PRIVATE_POC = "true"; }
+  for (const [method, path] of paths) {
+    const response = await request(method, path, method === "POST" ? { enabled: true } : undefined);
+    assert.equal(response.status, 403);
+    assert.equal(response.body.code, "POC_FEATURE_NOT_ENABLED");
+  }
+  assert.equal((await request("GET", `/stores/${store.id}/products`)).status, 200);
+  assert.equal((await request("GET", `/stores/${store.id}/customers`)).status, 200);
+});
+
 test("owner creates and edits a synthetic customer and reads its detail and empty ledger", async () => {
   const created = await request("POST", `/stores/${store.id}/customers`, customerInput);
   assert.equal(created.status, 201, JSON.stringify(created.body)); customer = created.body;
@@ -94,25 +119,6 @@ test("owner creates and edits a synthetic customer and reads its detail and empt
   assert.equal(ledger.status, 200); assert.equal(ledger.body.balance, "0.000000000000");
   assert.deepEqual(ledger.body.transactions, []);
   assert.deepEqual((await request("GET", `/stores/${store.id}/customers`)).body.map(c => c.id), [customer.id]);
-});
-
-test("customer page uses the existing owner-only feature toggle without enabling other skills", async () => {
-  const current = await request("GET", `/stores/${store.id}/skills`);
-  assert.equal(current.status, 200);
-  assert.equal(current.body.skills.find(s => s.skillKey === "S-19").enabled, false);
-  const path = `/stores/${store.id}/skills/S-19`;
-  const preview = await request("POST", `${path}/preview`, { enabled: true });
-  assert.equal(preview.status, 200); assert.equal(preview.body.prerequisite.ready, true);
-  const body = { enabled: true, catalogVersion: current.body.catalogVersion, confirmImpact: true, confirmRisk: true };
-  assert.equal((await request("POST", `${path}/enable`, { enabled: true, catalogVersion: current.body.catalogVersion })).status, 409);
-  assert.equal((await request("POST", `${path}/enable`, body, { user: null })).status, 401);
-  assert.equal((await request("POST", `/stores/${decoy.id}/skills/S-19/enable`, body)).status, 403);
-  assert.equal((await request("POST", `/stores/${store.id}/skills/S-21/enable`, body)).status, 403);
-  assert.equal((await request("POST", `${path}/enable`, body)).status, 200);
-  const saved = (await request("GET", `/stores/${store.id}/skills`)).body.skills;
-  assert.deepEqual(saved.filter(s => s.enabled).map(s => s.skillKey), ["S-19"]);
-  const [row] = await db.select().from(storeSkillStatesTable).where(eq(storeSkillStatesTable.storeId, store.id));
-  assert.equal(row.skillKey, "S-19"); assert.equal(row.enabledBy, process.env.PIKA_OWNER_CLERK_USER_ID);
 });
 
 test("duplicate and wrong-store customer operations do not overwrite existing rows", async () => {
@@ -172,9 +178,7 @@ test("foreign, NULL and inconsistent trip relations cannot be adopted or edited"
 test("customer and trip data persist across an API restart", async () => {
   const beforeCustomer = await request("GET", `/stores/${store.id}/customers/${customer.id}`);
   const beforeTrips = await request("GET", "/trips");
-  const beforeSkills = await request("GET", `/stores/${store.id}/skills`);
   await new Promise(resolve => server.close(resolve)); await start();
   assert.deepEqual(await request("GET", `/stores/${store.id}/customers/${customer.id}`), beforeCustomer);
   assert.deepEqual(await request("GET", "/trips"), beforeTrips);
-  assert.deepEqual(await request("GET", `/stores/${store.id}/skills`), beforeSkills);
 });

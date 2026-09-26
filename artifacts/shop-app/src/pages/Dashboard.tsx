@@ -1,3 +1,5 @@
+const privatePoc = import.meta.env.VITE_PRIVATE_POC === "true";
+
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import {
@@ -14,8 +16,6 @@ import {
   findLowStockProducts,
   LOW_STOCK_THRESHOLD,
 } from "@/lib/dashboardMetrics";
-import { useDailySkillVisibility } from "@/lib/dailySkillVisibilityContext";
-import { OnboardingQuestionnaire } from "@/lib/OnboardingQuestionnaireCard";
 
 interface ProfitSummary {
   capturedProfitSubtotalDisplayTwd: string;
@@ -90,14 +90,13 @@ function useLogisticsPendingCount(
 export default function DashboardPage() {
   const [, setLocation] = useLocation();
   const { signOut } = useClerk();
-  const skillVisibility = useDailySkillVisibility();
   const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
   const { data: store } = useGetMyStore();
   const storeId = store?.id;
   const pending = useLogisticsPendingCount(
     storeId,
-    skillVisibility.isVisible("logistics"),
+    !privatePoc,
   );
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -183,15 +182,6 @@ export default function DashboardPage() {
             </button>
           </div>
         )}
-
-        {skillVisibility.loaded &&
-          skillVisibility.enabledSkillCount === 0 &&
-          storeId && (
-            <OnboardingQuestionnaire
-              storeId={storeId}
-              onApplied={skillVisibility.refresh}
-            />
-          )}
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3">
@@ -304,29 +294,25 @@ export default function DashboardPage() {
 
         {/* Quick actions */}
         <div className="grid grid-cols-2 gap-3">
-          {skillVisibility.isVisible("products") && (
-            <ActionCard
+          <ActionCard
               label="管理商品"
               desc="新增、編輯商品"
               icon="📦"
               onClick={() => setLocation("/products")}
             />
-          )}
-          {skillVisibility.isVisible("orders") && (
-            <ActionCard
+          <ActionCard
               label="查看訂單"
               desc="管理所有訂單"
               icon="📋"
               onClick={() => setLocation("/orders")}
             />
-          )}
           <ActionCard
             label="店鋪設定"
             desc="名稱、簡介"
             icon="⚙"
             onClick={() => setLocation("/settings")}
           />
-          {skillVisibility.isVisible("logistics") && (
+          {!privatePoc && (
             <ActionCard
               label="物流匯入"
               desc="上傳 7-11 / 全家 Excel"
@@ -334,7 +320,7 @@ export default function DashboardPage() {
               onClick={() => setLocation("/logistics/import")}
             />
           )}
-          {skillVisibility.isVisible("logistics") && (
+          {!privatePoc && (
             <ActionCard
               label="物流異常"
               desc={
@@ -355,14 +341,12 @@ export default function DashboardPage() {
               onClick={() => setLocation("/logistics/exceptions")}
             />
           )}
-          {skillVisibility.isVisible("guide") && (
-            <ActionCard
+          <ActionCard
               label="使用說明"
               desc="如何開始接單"
               icon="📖"
               onClick={() => setLocation("/guide")}
             />
-          )}
         </div>
 
         {/* Recent orders */}
@@ -570,37 +554,32 @@ export function BottomNav({
   active: "dashboard" | "products" | "orders" | "settings";
 }) {
   const [, setLocation] = useLocation();
-  const skillVisibility = useDailySkillVisibility();
   const items = [
     {
       key: "dashboard",
       label: "首頁",
       path: "/dashboard",
       icon: "○",
-      surface: "dashboard" as const,
     },
     {
       key: "products",
       label: "商品",
       path: "/products",
       icon: "◻",
-      surface: "products" as const,
     },
     {
       key: "orders",
       label: "訂單",
       path: "/orders",
       icon: "≡",
-      surface: "orders" as const,
     },
     {
       key: "settings",
       label: "設定",
       path: "/settings",
       icon: "⊙",
-      surface: "settings" as const,
     },
-  ].filter((item) => skillVisibility.isVisible(item.surface));
+  ];
   return (
     <nav className="fixed bottom-0 left-0 right-0 max-w-[480px] mx-auto bg-white border-t border-border px-2 pb-safe">
       <div className="flex">

@@ -27,7 +27,7 @@ const permitted = [
   ["POST", /^\/api\/p\/[^/]+\/orders$/],
   ["POST", /^\/api\/cart\/orders$/],
   ["GET", /^\/api\/orders\/track\/[^/]+$/],
-  ["GET", /^\/api\/stores\/\d+\/(?:products|categories|orders|stats|skills)$/],
+  ["GET", /^\/api\/stores\/\d+\/(?:products|categories|orders|stats)$/],
   ["POST", /^\/api\/stores\/\d+\/products$/],
   ["POST", /^\/api\/stores\/\d+\/products\/image$/],
   ["GET", /^\/api\/stores\/\d+\/(?:products|orders)\/\d+$/],
@@ -36,7 +36,6 @@ const permitted = [
   ["GET", /^\/api\/stores\/\d+\/customers\/export$/],
   ["POST", /^\/api\/stores\/\d+\/customers\/\d+\/store-credit$/],
   ["PATCH", /^\/api\/stores\/\d+$/], // stores.ts limits this to the synthetic purchase rate.
-  ["POST", /^\/api\/stores\/\d+\/skills\/(?:S-09|S-19)\/(?:preview|enable)$/],
   ["POST", /^\/api\/stores\/\d+\/customers$/],
   ["PATCH", /^\/api\/stores\/\d+\/customers\/\d+$/],
   ["GET", /^\/api\/trips$/],

@@ -119,11 +119,6 @@ test("existing trip and purchase rates yield a hand-calculated transport allocat
   // Transport: (100 + 200) / 10 * 0.21 = 6.3. Purchase: 1000 * 0.2 = 200.
   // Profit: 300 - 200 - 6.3 = 93.7; display rounds once to 94.
   assert.deepEqual(listed.estimatedProfit, { status: "ready", transportStatus: "allocated", unitProfitTwd: "94" });
-  const skillState = (await request("GET", `/stores/${store.id}/skills`)).body;
-  const skillPath = `/stores/${store.id}/skills/S-09`;
-  assert.equal((await request("POST", skillPath + "/preview", { enabled: true })).body.prerequisite.ready, true);
-  assert.equal((await request("POST", skillPath + "/enable", { enabled: true, catalogVersion: skillState.catalogVersion, confirmImpact: true, confirmRisk: true })).status, 200);
-  assert.equal((await request("POST", `/stores/${store.id}/skills/S-21/enable`, { enabled: true })).status, 403);
 });
 
 test("products reject foreign, NULL and inconsistent trip ownership on create and update", async () => {

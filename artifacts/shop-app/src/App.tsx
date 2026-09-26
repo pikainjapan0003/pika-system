@@ -27,10 +27,6 @@ import {
   setAuthTokenGetter,
 } from "@workspace/api-client-react";
 import { applyBrandColor, DEFAULT_BRAND_PRIMARY_COLOR } from "@/lib/brandColor";
-import {
-  DailySkillPageGate,
-  StoreSkillVisibilityProvider,
-} from "@/lib/dailySkillVisibilityContext";
 import { CUSTOMER_PORTAL_ROUTE_PATTERN } from "@/lib/customerRoutes";
 
 import HomePage from "@/pages/Home";
@@ -52,7 +48,6 @@ import TrackOrderPage from "@/pages/TrackOrder";
 import SettingsPage from "@/pages/Settings";
 import InvoiceOcrTestPage from "@/pages/InvoiceOcrTest";
 import ExchangeRateReferencePage from "@/pages/ExchangeRateReference";
-import SkillMapPage from "@/pages/SkillMap";
 import AuditLogsPage from "@/pages/AuditLogs";
 import AgentSettingsPage from "@/pages/AgentSettings";
 import TripsPage from "@/pages/Trips";
@@ -316,118 +311,87 @@ function MerchantPortal() {
   if (!store) return null;
 
   return (
-    <StoreSkillVisibilityProvider storeId={store.id}>
       <Switch>
         <Route path="/dashboard" component={DashboardPage} />
         <Route path="/products/new">
           {() => (
-            <DailySkillPageGate surface="products">
               <ProductFormPage />
-            </DailySkillPageGate>
           )}
         </Route>
         <Route path="/products/:productId/edit">
           {(params) => (
-            <DailySkillPageGate surface="products">
               <ProductFormPage productId={Number(params.productId)} />
-            </DailySkillPageGate>
           )}
         </Route>
         <Route path="/products">
           {() => (
-            <DailySkillPageGate surface="products">
               <ProductsPage />
-            </DailySkillPageGate>
           )}
         </Route>
         <Route path="/categories">
           {() => (
-            <DailySkillPageGate surface="categories">
               <ProductCategoriesPage />
-            </DailySkillPageGate>
           )}
         </Route>
         <Route path="/orders">
           {() => (
-            <DailySkillPageGate surface="orders">
               <OrdersPage />
-            </DailySkillPageGate>
           )}
         </Route>
         <Route path="/reports/monthly-profit">
           {() => (
-            <DailySkillPageGate surface="orders">
               <MonthlyProfitPage />
-            </DailySkillPageGate>
           )}
         </Route>
         <Route path="/customers">
           {() => (
-            <DailySkillPageGate surface="customers">
               <CustomersPage />
-            </DailySkillPageGate>
           )}
         </Route>
         <Route path="/customers/:customerId">
           {(params) => (
-            <DailySkillPageGate surface="customers">
               <CustomerDetailPage customerId={Number(params.customerId)} />
-            </DailySkillPageGate>
           )}
         </Route>
-        <Route path="/logistics/import/history">
+        {!privatePoc && (<Route path="/logistics/import/history">
           {() => (
-            <DailySkillPageGate surface="logistics">
               <LogisticsImportHistoryPage />
-            </DailySkillPageGate>
           )}
-        </Route>
-        <Route path="/logistics/import">
+        </Route>)}
+        {!privatePoc && (<Route path="/logistics/import">
           {() => (
-            <DailySkillPageGate surface="logistics">
               <LogisticsImportPage />
-            </DailySkillPageGate>
           )}
-        </Route>
-        <Route path="/logistics/exceptions">
+        </Route>)}
+        {!privatePoc && (<Route path="/logistics/exceptions">
           {() => (
-            <DailySkillPageGate surface="logistics">
               <LogisticsExceptionsPage />
-            </DailySkillPageGate>
           )}
-        </Route>
-        <Route path="/settings/agent">
+        </Route>)}
+        {!privatePoc && (<Route path="/settings/agent">
           {() => (
-            <DailySkillPageGate surface="agent-settings">
               <AgentSettingsPage />
-            </DailySkillPageGate>
           )}
-        </Route>
+        </Route>)}
         <Route
           path="/settings/exchange-rate-reference"
           component={ExchangeRateReferencePage}
         />
-        <Route path="/skill-map" component={SkillMapPage} />
-        <Route path="/audit-logs">
+        {!privatePoc && (<Route path="/audit-logs">
           {() => (
-            <DailySkillPageGate surface="audit-logs">
               <AuditLogsPage />
-            </DailySkillPageGate>
           )}
-        </Route>
+        </Route>)}
         <Route path="/settings/invoice-ocr" component={InvoiceOcrTestPage} />
         <Route path="/settings" component={SettingsPage} />
         <Route path="/trips" component={TripsPage} />
         <Route path="/guide">
           {() => (
-            <DailySkillPageGate surface="guide">
               <GuidePage />
-            </DailySkillPageGate>
           )}
         </Route>
         <Route component={NotFoundPage} />
       </Switch>
-    </StoreSkillVisibilityProvider>
   );
 }
 
@@ -486,7 +450,6 @@ function AppRouter() {
         path="/settings/exchange-rate-reference"
         component={MerchantPortal}
       />
-      <Route path="/skill-map" component={MerchantPortal} />
       <Route path="/audit-logs" component={MerchantPortal} />
       <Route path="/settings/invoice-ocr" component={MerchantPortal} />
       <Route path="/settings" component={MerchantPortal} />

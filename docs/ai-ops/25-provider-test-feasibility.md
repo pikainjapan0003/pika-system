@@ -1,5 +1,7 @@
 # StoreSkillVisibilityProvider 測試可行性
 
+> 歷史盤點：2026-09-27 Sites 遷移產品已決定移除技能地圖；本文的技能入口／狀態表／測試建議不再代表現行功能。現況見 [移除報告](../sites-migration/SKILL-MAP-REMOVAL-REPORT.md)。
+
 日期：2026-07-19  
 範圍：唯讀盤點現有依賴與測試結構；本包未安裝套件、未修改產品碼。
 

@@ -1,3 +1,5 @@
+const privatePoc = import.meta.env.VITE_PRIVATE_POC === "true";
+
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@clerk/react";
@@ -10,7 +12,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { BottomNav } from "./Dashboard";
 import { ExchangeRateReferenceHint } from "@/components/ExchangeRateReferenceHint";
 import { formatActionableError } from "@/lib/actionableError";
-import { useDailySkillVisibility } from "@/lib/dailySkillVisibilityContext";
 import {
   DEFAULT_BRAND_PRIMARY_COLOR,
   isValidHex,
@@ -183,7 +184,6 @@ export default function SettingsPage() {
   const qc = useQueryClient();
   const { getToken } = useAuth();
   const { data: store, isLoading } = useGetMyStore();
-  const skillVisibility = useDailySkillVisibility();
   const updateStore = useUpdateStore();
 
   const [name, setName] = useState("");
@@ -471,12 +471,11 @@ export default function SettingsPage() {
 
           <div className="pt-4">
             <ExchangeRateReferenceEntry />
-            {skillVisibility.isVisible("customers") && <CustomersEntry />}
+            <CustomersEntry />
             <TripsEntry />
-            <SkillMapEntry />
-            {skillVisibility.isVisible("audit-logs") && <AuditLogsEntry />}
+            {!privatePoc && <AuditLogsEntry />}
             <InvoiceOcrEntry />
-            {skillVisibility.isVisible("agent-settings") && (
+            {!privatePoc && (
               <AgentSettingsEntry />
             )}
             {IS_DEV && <DevHandoffEntry />}
@@ -1102,32 +1101,6 @@ function AgentSettingsEntry() {
             <p className="text-sm font-semibold text-foreground">AI 代查設定</p>
             <p className="text-xs text-muted-foreground">
               Seller Agent / 物流自動查詢設定
-            </p>
-          </div>
-        </div>
-        <span className="text-muted-foreground text-sm">›</span>
-      </button>
-    </div>
-  );
-}
-
-function SkillMapEntry() {
-  const [, setLocation] = useLocation();
-  return (
-    <div className="px-5 pb-3">
-      <button
-        type="button"
-        onClick={() => setLocation("/skill-map")}
-        className="w-full bg-white border border-border rounded-2xl px-4 py-4 flex items-center justify-between text-left hover:bg-secondary/50 transition-colors"
-      >
-        <div className="flex items-center gap-3">
-          <span className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center text-lg flex-shrink-0">
-            🗺️
-          </span>
-          <div>
-            <p className="text-sm font-semibold text-foreground">技能地圖</p>
-            <p className="text-xs text-muted-foreground">
-              查看六種套餐、前置條件與目前解鎖狀態
             </p>
           </div>
         </div>

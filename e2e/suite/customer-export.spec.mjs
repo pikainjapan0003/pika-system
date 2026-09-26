@@ -30,22 +30,6 @@ test("customer export defaults to masked and cleartext requires a second confirm
         },
       });
     }
-    if (path === "/api/stores/1/skills") {
-      return route.fulfill({
-        json: {
-          catalogVersion: 1,
-          skills: [
-            {
-              skillKey: "S-19",
-              enabled: true,
-              configured: true,
-              highRisk: true,
-              prerequisite: { ready: true, missing: [] },
-            },
-          ],
-        },
-      });
-    }
     if (path === "/api/stores/1/customers") {
       return route.fulfill({
         json: [
