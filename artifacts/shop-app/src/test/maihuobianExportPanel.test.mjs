@@ -59,7 +59,7 @@ const exportResult = {
   ],
 };
 
-const { cleanup, fireEvent, render, waitFor } =
+const { act, cleanup, fireEvent, render, waitFor } =
   await import("@testing-library/react");
 const { formatMaihuobianCsv, MaihuobianExportPanel } =
   await import("../lib/MaihuobianExportPanel.tsx");
@@ -155,7 +155,9 @@ async function renderCheckedPanel(fetchOptions) {
   fireEvent.change(view.getByLabelText("結束日期"), {
     target: { value: "2026-07-19" },
   });
-  fireEvent.click(view.getByRole("button", { name: "檢查可匯出訂單" }));
+  await act(async () => {
+    fireEvent.click(view.getByRole("button", { name: "檢查可匯出訂單" }));
+  });
   await waitFor(() => assert.match(view.container.textContent, /可匯出（1）/u));
   return view;
 }

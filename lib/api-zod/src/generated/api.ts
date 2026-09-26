@@ -96,6 +96,9 @@ export const ListProductsResponseItem = zod.object({
   "name": zod.string(),
   "description": zod.string().nullish(),
   "price": zod.number(),
+  "vipPrice": zod.number().nullish(),
+  "wholesalePrice": zod.number().nullish(),
+  "partnerPrice": zod.number().nullish(),
   "specs": zod.array(zod.object({
   "name": zod.string(),
   "values": zod.array(zod.string())
@@ -170,6 +173,9 @@ export const GetProductResponse = zod.object({
   "name": zod.string(),
   "description": zod.string().nullish(),
   "price": zod.number(),
+  "vipPrice": zod.number().nullish(),
+  "wholesalePrice": zod.number().nullish(),
+  "partnerPrice": zod.number().nullish(),
   "specs": zod.array(zod.object({
   "name": zod.string(),
   "values": zod.array(zod.string())
@@ -236,6 +242,9 @@ export const UpdateProductResponse = zod.object({
   "name": zod.string(),
   "description": zod.string().nullish(),
   "price": zod.number(),
+  "vipPrice": zod.number().nullish(),
+  "wholesalePrice": zod.number().nullish(),
+  "partnerPrice": zod.number().nullish(),
   "specs": zod.array(zod.object({
   "name": zod.string(),
   "values": zod.array(zod.string())

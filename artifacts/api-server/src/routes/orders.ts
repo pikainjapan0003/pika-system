@@ -1,6 +1,6 @@
 import { Router, type NextFunction, type Response } from "express";
 import { and, eq, gte, inArray, isNull, lt, or, sql } from "drizzle-orm";
-import { randomBytes } from "crypto";
+import { createHash, randomBytes } from "crypto";
 import {
   auditLogsTable,
   backfillPendingCartOrderProfitSnapshot,
@@ -101,7 +101,7 @@ function toStoreCreditLedgerEntries(
     if (direction !== "credit" && direction !== "debit") {
       throw new Error("Invalid store credit direction in ledger");
     }
-    if (type !== "grant" && type !== "spend" && type !== "reversal") {
+    if (type !== "grant" && type !== "adjust" && type !== "spend" && type !== "reversal") {
       throw new Error("Invalid store credit transaction type in ledger");
     }
     return {
@@ -468,11 +468,35 @@ router.post("/stores/:storeId/orders", requireAuth, async (req: any, res) => {
     requestedCredit !== null &&
     !ExactDecimal.from(requestedCredit).equals(ExactDecimal.zero());
 
+  const clientRequestId = req.body?.clientRequestId ?? null;
+  if (clientRequestId !== null && (typeof clientRequestId !== "string" ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(clientRequestId))) {
+    return res.status(422).json({ error: "clientRequestId must be a UUID" });
+  }
+  const clientRequestHash = clientRequestId === null ? null : createHash("sha256")
+    .update(JSON.stringify({ data: parsed.data, customerId, paymentLast5, requestedCredit })).digest("hex");
+
   let retries = 0;
   while (retries <= 3) {
     const publicToken = randomBytes(16).toString("hex");
+    let replayed = false;
     try {
       const order = await db.transaction(async (tx) => {
+        if (clientRequestId !== null) {
+          // Serialize retries before reading price or spending credit; a replay
+          // returns the saved order even if the product has since changed.
+          await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${`${storeId}:${clientRequestId}`}, 0))`);
+          const [existing] = await tx.select().from(ordersTable).where(and(
+            eq(ordersTable.storeId, storeId), eq(ordersTable.clientRequestId, clientRequestId),
+          )).limit(1);
+          if (existing) {
+            if (existing.clientRequestHash !== clientRequestHash) {
+              throw Object.assign(new Error("clientRequestId already belongs to a different order request"), { status: 409 });
+            }
+            replayed = true;
+            return existing;
+          }
+        }
         const [product] = await tx
           .select()
           .from(productsTable)
@@ -600,6 +624,8 @@ router.post("/stores/:storeId/orders", requireAuth, async (req: any, res) => {
             customerId,
             productName: product.name,
             publicToken,
+            clientRequestId,
+            clientRequestHash,
             buyerName,
             buyerPhone,
             pickupMethod,
@@ -674,9 +700,9 @@ router.post("/stores/:storeId/orders", requireAuth, async (req: any, res) => {
         return newOrder;
       });
 
-      return res.status(201).json(formatOrder(order));
+      return res.status(replayed ? 200 : 201).json(formatOrder(order));
     } catch (err: any) {
-      if (err.status === 404 || err.status === 422)
+      if (err.status === 404 || err.status === 409 || err.status === 422)
         return res.status(err.status).json({ error: err.message });
       if (err instanceof TypeError || err instanceof RangeError) {
         return res.status(422).json({ error: err.message });
@@ -1634,6 +1660,18 @@ router.patch("/orders/:orderId", requireAuth, async (req: any, res) => {
   }
   if (discountNote !== undefined)
     updates.discountNote = discountNote === "" ? null : discountNote;
+
+  if ((quantity !== undefined || shippingFee !== undefined || discountAmount !== undefined) &&
+      order.payableAfterCredit !== null) {
+    const payable = ExactDecimal.from(String(updates.totalPrice ?? order.totalPrice))
+      .add(ExactDecimal.from(String(updates.shippingFee ?? order.shippingFee)))
+      .add(ExactDecimal.from(String(updates.discountAmount ?? order.discountAmount ?? 0)).multiply(ExactDecimal.from("-1")))
+      .add(ExactDecimal.from(order.creditSpent ?? "0").multiply(ExactDecimal.from("-1")));
+    if (payable.isNegative()) {
+      return res.status(422).json({ error: "修改後金額不可低於已折抵購物金及折扣；請先取消原訂單回沖" });
+    }
+    updates.payableAfterCredit = payable.toDecimalPlaces(12);
+  }
 
   if (Object.keys(updates).length === 0) {
     return res.json(formatOrder(order));

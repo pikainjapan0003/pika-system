@@ -1,4 +1,3 @@
-const privatePoc = import.meta.env.VITE_PRIVATE_POC === "true";
 
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
@@ -857,7 +856,7 @@ export default function OrdersPage() {
             >
               賣貨便匯出
             </button>
-            {!privatePoc && (
+            {(
               <>
                 <button
                   onClick={() => setLocation("/logistics/import")}

@@ -15,6 +15,12 @@ export interface Product {
   /** @nullable */
   description?: string | null;
   price: number;
+  /** @nullable */
+  vipPrice?: number | null;
+  /** @nullable */
+  wholesalePrice?: number | null;
+  /** @nullable */
+  partnerPrice?: number | null;
   specs?: ProductSpec[];
   /** @nullable */
   inventory: number | null;

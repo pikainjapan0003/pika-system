@@ -1,4 +1,3 @@
-const privatePoc = import.meta.env.VITE_PRIVATE_POC === "true";
 
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
@@ -96,7 +95,7 @@ export default function DashboardPage() {
   const storeId = store?.id;
   const pending = useLogisticsPendingCount(
     storeId,
-    !privatePoc,
+    true,
   );
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -312,7 +311,7 @@ export default function DashboardPage() {
             icon="⚙"
             onClick={() => setLocation("/settings")}
           />
-          {!privatePoc && (
+          {(
             <ActionCard
               label="物流匯入"
               desc="上傳 7-11 / 全家 Excel"
@@ -320,7 +319,7 @@ export default function DashboardPage() {
               onClick={() => setLocation("/logistics/import")}
             />
           )}
-          {!privatePoc && (
+          {(
             <ActionCard
               label="物流異常"
               desc={

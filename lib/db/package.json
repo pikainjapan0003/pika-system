@@ -9,7 +9,8 @@
     "./transport-cost": "./src/transport-cost/index.ts",
     "./order-profit-snapshot": "./src/transport-cost/orderProfitSnapshot.ts",
     "./maihuobian": "./src/maihuobian/validateMaihuobianRow.ts",
-    "./store-credit": "./src/store-credit/index.ts"
+    "./store-credit": "./src/store-credit/index.ts",
+    "./pricing": "./src/pricing/tierPrice.ts"
   },
   "scripts": {
     "push": "drizzle-kit push --config ./drizzle.config.ts",

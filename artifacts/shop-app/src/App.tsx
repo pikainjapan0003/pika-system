@@ -353,21 +353,21 @@ function MerchantPortal() {
               <CustomerDetailPage customerId={Number(params.customerId)} />
           )}
         </Route>
-        {!privatePoc && (<Route path="/logistics/import/history">
+        <Route path="/logistics/import/history">
           {() => (
               <LogisticsImportHistoryPage />
           )}
-        </Route>)}
-        {!privatePoc && (<Route path="/logistics/import">
+        </Route>
+        <Route path="/logistics/import">
           {() => (
               <LogisticsImportPage />
           )}
-        </Route>)}
-        {!privatePoc && (<Route path="/logistics/exceptions">
+        </Route>
+        <Route path="/logistics/exceptions">
           {() => (
               <LogisticsExceptionsPage />
           )}
-        </Route>)}
+        </Route>
         {!privatePoc && (<Route path="/settings/agent">
           {() => (
               <AgentSettingsPage />
@@ -377,11 +377,11 @@ function MerchantPortal() {
           path="/settings/exchange-rate-reference"
           component={ExchangeRateReferencePage}
         />
-        {!privatePoc && (<Route path="/audit-logs">
+        <Route path="/audit-logs">
           {() => (
               <AuditLogsPage />
           )}
-        </Route>)}
+        </Route>
         <Route path="/settings/invoice-ocr" component={InvoiceOcrTestPage} />
         <Route path="/settings" component={SettingsPage} />
         <Route path="/trips" component={TripsPage} />
