@@ -11,7 +11,7 @@ export default {
       // Concatenate onto a fixed trusted origin; no caller-controlled host, cookies,
       // gateway key, forwarded IP/host, or redirect following reaches the upstream.
       const headers = new Headers({ "x-pika-poc-key": env.PIKA_POC_PROXY_SECRET });
-      for (const name of ["authorization", "content-type", "x-client-request-id", "x-confirm-store-credit", "x-confirm-cleartext-export"]) {
+      for (const name of ["authorization", "content-type", "x-client-request-id", "x-confirm-store-credit", "x-confirm-cleartext-export", "x-confirm-maihuobian-export"]) {
         if (request.headers.has(name)) headers.set(name, request.headers.get(name));
       }
       try {
@@ -22,10 +22,12 @@ export default {
           duplex: "half",
         });
         if (upstream.status >= 300 && upstream.status < 400) return Response.json({ error: "Unexpected API redirect" }, { status: 502 });
-        return new Response(upstream.body, { status: upstream.status, headers: {
+        const responseHeaders = {
           "content-type": upstream.headers.get("content-type") ?? "application/json",
           "cache-control": "no-store", "x-content-type-options": "nosniff",
-        } });
+        };
+        if (upstream.headers.has("content-disposition")) responseHeaders["content-disposition"] = upstream.headers.get("content-disposition");
+        return new Response(upstream.body, { status: upstream.status, headers: responseHeaders });
       } catch { return Response.json({ error: "Private POC API unavailable" }, { status: 502 }); }
     }
     if (!["GET", "HEAD"].includes(request.method)) return new Response("Method not allowed", { status: 405 });

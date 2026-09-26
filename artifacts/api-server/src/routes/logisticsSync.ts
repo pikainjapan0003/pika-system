@@ -342,7 +342,23 @@ async function validateManualProviderRequest(
     return null;
   }
 
+  if (!allowPocManualTrackingSource(res, provider, rows)) return null;
   return { storeId, provider, trackingIds, rowById };
+}
+
+// Like the existing FamilyMart POC path, external previews require a known,
+// explicitly authorized test parcel. Synthetic spreadsheet identifiers never
+// reach carrier websites. Missing source data does not disable file imports.
+function allowPocManualTrackingSource(res: any, provider: string, rows: { trackingCode: string }[]) {
+  if (!privatePocConfig()) return true;
+  const setting = ({ "711": "PIKA_POC_711_TRACKING_CODE", tcat: "PIKA_POC_TCAT_TRACKING_CODE",
+    postoffice: "PIKA_POC_POSTOFFICE_TRACKING_CODE" } as Record<string, string>)[provider];
+  const approvedCode = setting ? process.env[setting]?.trim() : undefined;
+  if (!approvedCode || rows.some(row => row.trackingCode !== approvedCode)) {
+    fail(res, 422, "LOGISTICS_TEST_SOURCE_REQUIRED", "等待合法測試單號；本次未向物流商送出查詢。");
+    return false;
+  }
+  return true;
 }
 
 router.post(
@@ -530,6 +546,7 @@ async function handle711Preview(req: any, res: any): Promise<void> {
     return;
   }
 
+  if (!allowPocManualTrackingSource(res, "711", rows)) return;
   const jobs = [];
   for (const id of trackingIds) {
     const row = rowById.get(id)!;

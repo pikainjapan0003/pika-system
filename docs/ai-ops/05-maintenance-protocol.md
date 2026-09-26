@@ -149,6 +149,12 @@
 - 封裝：`prepare-site.mjs` 原先只覆蓋檔案，舊 JS bundle 留在 Site 產物；改為核對絕對路徑後，只清除專用 checkout 的生成目錄再重建，不動 Git 歷史。完整證據集中技能移除報告，不新增全域規則。
 - 雲端清表：CLI SSH 沒有既有 key，改沿用本案一次性 pre-deploy。Railway 會把 JSON log 拆成 attributes，不能只從 message 找結果；複合命令部署 SUCCESS 但僅見 drop 紀錄時，不推定 verify 已完成，另以獨立唯讀指令取得 `absent:true`。最終清空一次性命令再部署。非同步 Node REPL job 放頂層共享物件，避免區塊內變數不可見而遺失回覆；資料操作不因讀取收據失敗而重送。
 
+### 2026-09-27 - 剩餘功能的隔離 fixture 與來源契約
+
+- 舊物流測試依賴 SESSION_SECRET 及特定歷史資料列，另將已存在的「手動查詢摘要保存」誤當純零寫入。改為測試程序內臨時簽章、檢查自己建立的跨店合成資料，並同時斷言摘要保存與 events／run log 不寫入；不讀正式庫、不放寬授權或金額條件。
+- 合成全家與 7-11 門市名稱正規化後相同，同一姓名／電話會得到 ambiguous。先讀隔離庫的 reasons 確認，再給兩家案例不同的合成姓名，以確實測到 tracking code 衝突；沒有改配對器來讓案例過關。
+- 前端原 Product 生成型別漏了 API 已回傳的三個等級售價；補 OpenAPI 並用既有 Orval 生成，不手改生成物。完整結果集中 REMAINING-FUNCTIONS-MIGRATION-REPORT.md，不新增流程或全域限制。
+
 ### 2026-07-07 - 同一本機 clone 被兩個 AI session 同時操作，分支被互相覆蓋
 
 - 觸發情境：Fable 5 主 session 在 `Desktop\pika-system` commit+push 期間，制度庫另一個 session 在同一目錄 `git reset` 回舊 commit，導致本機分支倒退、已 push 的檔案從磁碟消失（remote 未受損，靠 `git merge --ff-only origin/main` 恢復）。

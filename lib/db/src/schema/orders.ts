@@ -7,6 +7,7 @@ import {
   numeric,
   jsonb,
   index,
+  uniqueIndex,
   check,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
@@ -85,6 +86,9 @@ export const ordersTable = pgTable(
     }),
     productName: text("product_name"),
     publicToken: text("public_token").notNull().unique(),
+    // Optional identity for retries of the same owner-created order.
+    clientRequestId: text("client_request_id"),
+    clientRequestHash: text("client_request_hash"),
     buyerName: text("buyer_name").notNull(),
     buyerPhone: text("buyer_phone").notNull(),
     pickupMethod: text("pickup_method").notNull(),
@@ -183,6 +187,9 @@ export const ordersTable = pgTable(
   },
   (t) => [
     index("orders_store_id_idx").on(t.storeId),
+    uniqueIndex("orders_store_client_request_unique")
+      .on(t.storeId, t.clientRequestId)
+      .where(sql`${t.clientRequestId} IS NOT NULL`),
     index("orders_customer_id_idx").on(t.customerId),
     index("orders_product_id_idx").on(t.productId),
     check(

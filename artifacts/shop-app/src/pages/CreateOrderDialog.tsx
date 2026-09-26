@@ -31,6 +31,7 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { filterCustomerOptions } from "@/lib/customerPicker";
 import { formatShippingFeeLabel } from "@workspace/shipping";
+import { resolveTierPrice } from "@workspace/db/pricing";
 import { Sheet, SheetContent, SheetClose } from "@/components/ui/sheet";
 
 interface Props {
@@ -95,6 +96,7 @@ interface CustomerOption {
   code: string;
   name: string;
   phone: string | null;
+  tier?: "general" | "vip" | "wholesale" | "partner";
   cvsStoreId: string | null;
   cvsStoreName: string | null;
   cvsStoreAddress: string | null;
@@ -122,6 +124,7 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
   const [buyerPhone, setBuyerPhone] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [creditSpent, setCreditSpent] = useState("");
+  const [clientRequestId, setClientRequestId] = useState(() => crypto.randomUUID());
   const [pickupMethod, setPickupMethod] = useState("");
   const [notes, setNotes] = useState("");
 
@@ -168,7 +171,13 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
       ? [selectedCustomer, ...matchingCustomers]
       : matchingCustomers;
   const selectedProduct = activeProducts.find((p) => p.id === productId);
-  const unitPrice = selectedProduct ? Number(selectedProduct.price) : 0;
+  const unitPrice = selectedProduct ? Number(resolveTierPrice({
+    generalPrice: String(selectedProduct.price),
+    vipPrice: selectedProduct.vipPrice == null ? null : String(selectedProduct.vipPrice),
+    wholesalePrice: selectedProduct.wholesalePrice == null ? null : String(selectedProduct.wholesalePrice),
+    partnerPrice: selectedProduct.partnerPrice == null ? null : String(selectedProduct.partnerPrice),
+    customerTier: selectedCustomer?.tier,
+  }).priceTwd) : 0;
   const totalPreview = unitPrice * quantity;
   const isPending = createOrder.isPending;
 
@@ -206,6 +215,7 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
   };
 
   const resetForm = () => {
+    setClientRequestId(crypto.randomUUID());
     setProductId("");
     setCustomerId("");
     setCustomerSearch("");
@@ -323,7 +333,7 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
   };
 
   const handleSubmit = async () => {
-    if (!validate()) return;
+    if (isPending || !validate()) return;
     setSubmitError(null);
     const cat = getFulfillmentCategory(pickupMethod);
     const isCvs = cat === "cvs_711" || cat === "cvs_family";
@@ -340,6 +350,7 @@ export function CreateOrderDialog({ storeId, open, onClose }: Props) {
       await createOrder.mutateAsync({
         storeId,
         data: {
+          clientRequestId,
           productId: productId as number,
           customerId: customerId === "" ? null : customerId,
           buyerName: buyerName.trim(),

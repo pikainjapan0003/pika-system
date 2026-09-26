@@ -32,19 +32,21 @@ test("redirects and upstream failures cannot disclose the service credential", a
   try { assert.equal((await worker.fetch(new Request("https://site.test/api/me/store"), env)).status, 502); }
   finally { fetchMock.mock.restore(); }
 });
-test("ledger and cleartext export confirmation headers reach the authenticated API", async () => {
+test("ledger and both Maihuobian export confirmations and filename survive the proxy", async () => {
   const fetchMock = mock.method(globalThis, "fetch", async (_url, options) => {
     assert.equal(options.headers.get("x-confirm-store-credit"), "true");
     assert.equal(options.headers.get("x-confirm-cleartext-export"), "true");
+    assert.equal(options.headers.get("x-confirm-maihuobian-export"), "true");
     assert.equal(options.headers.has("cookie"), false);
     assert.equal(options.headers.get("authorization"), "Bearer synthetic-clerk-token");
-    return new Response('"客戶代號"\r\n"POC-ONLY"', { headers: { "content-type": "text/csv; charset=utf-8" } });
+    return new Response('"客戶代號"\r\n"POC-ONLY"', { headers: { "content-type": "text/csv; charset=utf-8", "content-disposition": 'attachment; filename="maihuobian-orders.csv"' } });
   });
   try {
     const response = await worker.fetch(new Request("https://site.test/api/stores/1/customers/export?mode=cleartext", { headers: {
-      authorization: "Bearer synthetic-clerk-token", "x-confirm-store-credit": "true", "x-confirm-cleartext-export": "true", cookie: "private=1",
+      authorization: "Bearer synthetic-clerk-token", "x-confirm-store-credit": "true", "x-confirm-cleartext-export": "true", "x-confirm-maihuobian-export": "true", cookie: "private=1",
     } }), env);
     assert.match(response.headers.get("content-type"), /text\/csv/);
+    assert.match(response.headers.get("content-disposition"), /maihuobian-orders\.csv/);
     assert.match(await response.text(), /POC-ONLY/);
   } finally { fetchMock.mock.restore(); }
 });

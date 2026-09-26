@@ -1205,6 +1205,12 @@ components:
           type: ["string", "null"]
         price:
           type: number
+        vipPrice:
+          type: ["number", "null"]
+        wholesalePrice:
+          type: ["number", "null"]
+        partnerPrice:
+          type: ["number", "null"]
         specs:
           type: array
           items:

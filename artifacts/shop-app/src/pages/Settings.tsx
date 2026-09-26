@@ -473,7 +473,7 @@ export default function SettingsPage() {
             <ExchangeRateReferenceEntry />
             <CustomersEntry />
             <TripsEntry />
-            {!privatePoc && <AuditLogsEntry />}
+            <AuditLogsEntry />
             <InvoiceOcrEntry />
             {!privatePoc && (
               <AgentSettingsEntry />

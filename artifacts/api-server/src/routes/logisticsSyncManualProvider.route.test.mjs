@@ -3,9 +3,8 @@
  *
  * Pattern follows the other route tests: node:test, Clerk mocked via
  * x-test-user-id header, real dev DB. Test data created in before() and
- * deleted in after()（store cascade）。dryRun 案例不打外部（gate 前就被拒），
- * 200 dryRun 案例以 mock adapter 注入？—— route 不暴露 deps，故 200 dryRun
- * 案例對 postoffice / tcat 用已驗證的真實歷史單號（7M smoke 同款），僅外部讀取不寫 DB。
+ * deleted in after()（store cascade）。所有 provider 以 mock adapter 注入，
+ * 不查真包裹。郵局／黑貓 preview 沿用最新摘要保存，完整 events 需另行 commit。
  *
  * Run via: node scripts/step7/test-manual-provider-route.mjs
  */
@@ -14,6 +13,7 @@ import { mock, describe, test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { randomUUID } from "node:crypto";
 
 const ROOT = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -22,6 +22,8 @@ const ROOT = path.resolve(
 const PREVIOUS_MANUAL_COMMIT_ENABLED =
   process.env.LOGISTICS_MANUAL_COMMIT_ENABLED;
 process.env.LOGISTICS_MANUAL_COMMIT_ENABLED = "true";
+const PREVIOUS_SESSION_SECRET = process.env.SESSION_SECRET;
+process.env.SESSION_SECRET = randomUUID();
 
 mock.module("@clerk/express", {
   namedExports: {
@@ -339,6 +341,8 @@ after(async () => {
   ]);
   await new Promise((resolve) => server.close(resolve));
   await pool.end();
+  if (PREVIOUS_SESSION_SECRET === undefined) delete process.env.SESSION_SECRET;
+  else process.env.SESSION_SECRET = PREVIOUS_SESSION_SECRET;
   if (PREVIOUS_MANUAL_COMMIT_ENABLED === undefined) {
     delete process.env.LOGISTICS_MANUAL_COMMIT_ENABLED;
   } else {
@@ -780,7 +784,7 @@ describe("7N-J2 — /preview endpoint", () => {
     assert.equal(tooMany.status, 400);
   });
 
-  test("postoffice preview：dryRun、DB 不變、回 previewHash / previewExpiresAt", async () => {
+  test("postoffice preview：保存摘要、不寫 events、回 previewHash / previewExpiresAt", async () => {
     const logsBefore = await totalRunLogs();
     const res = await callPreview({
       provider: "postoffice",
@@ -800,14 +804,17 @@ describe("7N-J2 — /preview endpoint", () => {
       typeof job.previewHash === "string" && job.previewHash.length > 0,
     );
     assert.ok(typeof job.previewExpiresAt === "string");
-    // DB 不變
+    // Existing manual-query behavior saves a summary but does not commit events.
     assert.equal(await countEvents(poTrackingId), 0);
     assert.equal(await totalRunLogs(), logsBefore);
     const snap = await pool.query(
-      `SELECT last_checked_at FROM shipment_trackings WHERE id = $1`,
+      `SELECT last_checked_at, latest_event_status, latest_event_description, tracking_status FROM shipment_trackings WHERE id = $1`,
       [poTrackingId],
     );
-    assert.equal(snap.rows[0].last_checked_at, null);
+    assert.ok(snap.rows[0].last_checked_at instanceof Date);
+    assert.equal(snap.rows[0].latest_event_status, "delivered");
+    assert.equal(snap.rows[0].latest_event_description, "投遞成功");
+    assert.equal(snap.rows[0].tracking_status, "pending");
   });
 
   test("tcat preview：dryRun、DB 不變、回 previewHash", async () => {
@@ -1481,27 +1488,27 @@ describe("7N-J4C — /commit J2 regression", () => {
 });
 
 describe("7N-J4C — final safety check", () => {
-  test("commit_1012_row_untouched_by_tests", async () => {
+  test("commit_other_store_synthetic_row_untouched_by_tests", async () => {
     const row = await pool.query(
       `SELECT id, order_id, tracking_provider, tracking_code, tracking_status, is_active
-       FROM shipment_trackings WHERE id = 153`,
+       FROM shipment_trackings WHERE id = $1`, [otherStoreTrackingId],
     );
     assert.equal(
       row.rows.length,
       1,
-      "#1012 tracking row id=153 should still exist",
+      "the other store's synthetic tracking must remain untouched",
     );
     assert.equal(row.rows[0].tracking_provider, "postoffice");
-    assert.equal(row.rows[0].tracking_code, "97300922002170830005");
+    assert.equal(row.rows[0].tracking_code, "97300922002170839998");
     assert.equal(row.rows[0].tracking_status, "pending");
     assert.equal(row.rows[0].is_active, true);
     const events = await pool.query(
-      `SELECT count(*) FROM shipment_tracking_events WHERE shipment_tracking_id = 153`,
+      `SELECT count(*) FROM shipment_tracking_events WHERE shipment_tracking_id = $1`, [otherStoreTrackingId],
     );
     assert.equal(
       Number(events.rows[0].count),
       0,
-      "#1012 events should remain 0",
+      "other-store events should remain 0",
     );
   });
 });
