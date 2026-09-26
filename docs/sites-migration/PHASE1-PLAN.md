@@ -1,12 +1,12 @@
 # pika-system 單一店主・ChatGPT Sites 私人遷移：整合方案與 POC
 
-更新：2026-09-27（Asia/Taipei）。使用者決定完整移除產品技能地圖，正在保存既有成果並拆除依賴；正常業務功能與既有停用決定保留，維持 Codex B＋Astra。**目前狀態以以下總進度及各階段實測報告為準；其餘方案與 G–J 節保留當時紀錄，不代表技能機制仍是未來產品需求。**
+更新：2026-09-27（Asia/Taipei）。產品技能地圖已從現行程式、GitHub 遷移分支、私人 Sites／API 與隔離測試庫移除；正常業務功能與既有停用決定保留，維持 Codex B＋Astra。**目前狀態以以下總進度及各階段實測報告為準；其餘方案與 G–J 節保留當時紀錄，不代表技能機制仍是未來產品需求。**
 
 ## 總進度
 
 | 階段 | 狀態 | 實際成果／證據 | 下一步或阻礙 |
 |---|---|---|---|
-| 技能地圖／問卷／套餐／解鎖機制 | 進行中 | 產品決定移除，不是待搬功能；checkpoint `5d89f4f` 已推送，程式依賴已拆除；24 項 API 回歸及 root typecheck 通過 | 前端建置／私人部署與隔離庫清理進行中；詳見 [移除報告](SKILL-MAP-REMOVAL-REPORT.md) |
+| 技能地圖／問卷／套餐／解鎖機制 | 已完成 | 產品決定移除，不是待搬功能；checkpoint `5d89f4f`、清理 `87b0c50` 已推送；41 項必要案例、typecheck、build 通過；Sites 第 7 版及新版 API 已部署；隔離庫專屬表備份後移除，8 個業務讀取與圖片內容雜湊保持一致 | 本輪收尾；瀏覽器控制逾時而未完成畫面 E2E，人工驗收延後；詳見 [移除報告](SKILL-MAP-REMOVAL-REPORT.md) |
 | 最小方案與私人 POC | 已完成 | 本報告 G 節：指定店主、合成商品、下單、token 查單 | 保留既有業務規則與資料結構 |
 | 線上獨立 API／PostgreSQL | 已完成 | [Phase 2 報告](PHASE2-ONLINE-TEST-REPORT.md)：Sites＋Railway，停止本機後仍可讀回 | 沿用隔離資源 |
 | 私有 R2 商品圖片 | 已完成 | [R2 報告](R2-TEST-INTEGRATION-REPORT.md)：pika-sites-poc 真實存取及重啟驗證 | 不動正式 bucket |

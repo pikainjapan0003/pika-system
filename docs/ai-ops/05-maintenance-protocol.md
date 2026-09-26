@@ -147,6 +147,7 @@
 - 問題：Dashboard 測試每次 render 建立新的 `getToken`，effect 反覆觸發；Docker 測試超過本機指令等待時間時，終止 CLI 不保證容器內的測試已停止。帳本首次畫面測試在負載下逾時，原斷言重跑通過。
 - 處理：固定測試 mock 的函式參照，沒有修改正式登入邏輯或降低金額斷言；先確認並停止本輪專用容器，才重新執行未完成測試，保留失敗／中止收據。使用串流程序等待完成，避免把指令逾時當成全部測試失敗或通過。
 - 封裝：`prepare-site.mjs` 原先只覆蓋檔案，舊 JS bundle 留在 Site 產物；改為核對絕對路徑後，只清除專用 checkout 的生成目錄再重建，不動 Git 歷史。完整證據集中技能移除報告，不新增全域規則。
+- 雲端清表：CLI SSH 沒有既有 key，改沿用本案一次性 pre-deploy。Railway 會把 JSON log 拆成 attributes，不能只從 message 找結果；複合命令部署 SUCCESS 但僅見 drop 紀錄時，不推定 verify 已完成，另以獨立唯讀指令取得 `absent:true`。最終清空一次性命令再部署。非同步 Node REPL job 放頂層共享物件，避免區塊內變數不可見而遺失回覆；資料操作不因讀取收據失敗而重送。
 
 ### 2026-07-07 - 同一本機 clone 被兩個 AI session 同時操作，分支被互相覆蓋
 
