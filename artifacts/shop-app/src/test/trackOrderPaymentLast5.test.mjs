@@ -127,3 +127,19 @@ test("a cancelled order shows its status without payment editing", () => {
   assert.match(view.container.textContent, /Cancelled/);
   assert.equal(view.container.querySelector('input[pattern="[0-9]{5}"]'), null);
 });
+
+for (const [provider, status, label] of [
+  ["7-11", "arrived_store", "已到達取件門市"],
+  ["全家", "exception", "物流資料需要店家確認"],
+]) {
+  test(`saved synthetic ${provider} status is displayed without internal errors`, () => {
+    order = { ...order, trackingCode: "POC-SYNTHETIC-NOT-A-PARCEL",
+      trackingProviderLabel: provider, latestTrackingStatus: status,
+      latestTrackingStatusLabel: label, latestTrackingTime: "2026-09-26T12:00:00.000Z",
+      checkError: "SYNTHETIC_INTERNAL_ERROR", internalNote: "SYNTHETIC_INTERNAL_NOTE" };
+    const view = renderPage();
+    assert.match(view.container.textContent, new RegExp(label));
+    assert.match(view.container.textContent, /POC-SYNTHETIC-NOT-A-PARCEL/);
+    assert.doesNotMatch(view.container.textContent, /SYNTHETIC_INTERNAL_(ERROR|NOTE)/);
+  });
+}
