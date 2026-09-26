@@ -22,6 +22,7 @@ import { loadOrderProfitSnapshotInput } from "../lib/orderProfitSnapshot.ts";
 import { formatPublicOrderCreatedResponse } from "../lib/publicOrderResponse.ts";
 import { parsePaymentLast5 } from "../lib/paymentLast5.ts";
 import { sanitizePublicCartItems } from "../lib/publicCartItems.ts";
+import { isPocStore, privatePocConfig } from "../lib/privatePoc.ts";
 
 const submitOrderLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
@@ -119,6 +120,14 @@ function summarizeAddress(address: string | null): string | null {
 
 const router = Router();
 
+router.get("/poc/catalog", async (_req, res) => {
+  const config = privatePocConfig();
+  if (!config) return res.status(404).json({ error: "Not found" });
+  const products = await db.select({ name: productsTable.name, price: productsTable.price, shareToken: productsTable.shareToken })
+    .from(productsTable).where(and(eq(productsTable.storeId, config.storeId), eq(productsTable.isActive, true)));
+  return res.json({ products });
+});
+
 router.get("/p/:shareToken", async (req, res) => {
   const { shareToken } = req.params;
 
@@ -128,7 +137,7 @@ router.get("/p/:shareToken", async (req, res) => {
     .where(eq(productsTable.shareToken, shareToken))
     .limit(1);
 
-  if (!product || !product.isActive) {
+  if (!product || !product.isActive || !isPocStore(product.storeId)) {
     return res.status(404).json({ error: "Product not found" });
   }
 
@@ -194,7 +203,7 @@ router.post("/p/:shareToken/orders", submitOrderLimiter, async (req, res) => {
           .for("update")
           .limit(1);
 
-        if (!product || !product.isActive) {
+        if (!product || !product.isActive || !isPocStore(product.storeId)) {
           const err = new Error("Product not found") as any;
           err.status = 404;
           throw err;
@@ -401,7 +410,7 @@ router.post("/cart/orders", submitOrderLimiter, async (req, res) => {
             .for("update")
             .limit(1);
 
-          if (!product || !product.isActive) {
+          if (!product || !product.isActive || !isPocStore(product.storeId)) {
             const err = new Error("Product not found") as any;
             err.status = 404;
             throw err;
@@ -569,7 +578,7 @@ router.get(
       .where(eq(ordersTable.publicToken, publicToken))
       .limit(1);
 
-    if (!order || !order.publicToken) {
+    if (!order || !order.publicToken || !isPocStore(order.storeId)) {
       return res.status(404).json({ error: "Order not found" });
     }
 
@@ -664,12 +673,12 @@ router.patch(
   async (req, res) => {
     const publicToken = req.params.publicToken as string;
     const [order] = await db
-      .select({ id: ordersTable.id, status: ordersTable.status })
+      .select({ id: ordersTable.id, status: ordersTable.status, storeId: ordersTable.storeId })
       .from(ordersTable)
       .where(eq(ordersTable.publicToken, publicToken))
       .limit(1);
 
-    if (!order) return res.status(404).json({ error: "Order not found" });
+    if (!order || !isPocStore(order.storeId)) return res.status(404).json({ error: "Order not found" });
     if (order.status !== "pending" && order.status !== "awaiting_payment") {
       return res
         .status(409)

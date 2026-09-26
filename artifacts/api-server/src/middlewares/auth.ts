@@ -1,14 +1,20 @@
 import { getAuth } from "@clerk/express";
 import { eq } from "drizzle-orm";
 import { db, storesTable } from "@workspace/db";
+import { privatePocConfig, isPocStore } from "../lib/privatePoc.ts";
 
-export const requireAuth = (req: any, res: any, next: any) => {
+export const requireAuth = async (req: any, res: any, next: any) => {
   const auth = getAuth(req);
-  const userId = auth?.sessionClaims?.userId || auth?.userId;
+  const config = privatePocConfig();
+  const userId = config ? auth?.userId : auth?.sessionClaims?.userId || auth?.userId;
   if (!userId) {
     return res.status(401).json({ error: "Unauthorized" });
   }
+  if (config && userId !== config.ownerId) {
+    return res.status(403).json({ error: "Only the designated owner may manage this POC" });
+  }
   req.userId = userId;
+  if (config && !(await verifyStoreOwner(req, res, config.storeId))) return;
   next();
 };
 
@@ -18,6 +24,10 @@ export const verifyStoreOwner = async (
   res: any,
   storeId: number,
 ): Promise<boolean> => {
+  if (!isPocStore(storeId)) {
+    res.status(403).json({ error: "Forbidden" });
+    return false;
+  }
   const store = await db
     .select()
     .from(storesTable)

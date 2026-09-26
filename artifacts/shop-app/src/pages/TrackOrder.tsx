@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { useGetPublicOrder } from "@workspace/api-client-react";
 import { STATUS_COLORS, STATUS_STEPS, STATUS_LABELS } from "../lib/orderStatus";
 import { formatActionableError } from "@/lib/actionableError";
+import { getTrackingBadge } from "../lib/trackingStatusDisplay";
 
 interface Props {
   publicToken: string;
@@ -21,40 +22,6 @@ function getStepState(step: StepStatus, currentStatus: string): StepState {
   if (stepIndex < currentIndex) return "done";
   if (stepIndex === currentIndex) return "current";
   return "future";
-}
-
-// 客人端大狀態 badge：依物流最新貨態與訂單狀態歸納
-function getTrackingBadge(order: {
-  status: string;
-  trackingCode?: string | null;
-  latestTrackingStatus?: string | null;
-}): { label: string; className: string } {
-  if (order.status === "cancelled") {
-    return { label: "已取消", className: "bg-gray-100 text-gray-600" };
-  }
-  switch (order.latestTrackingStatus) {
-    case "delivered":
-      return { label: "已送達", className: "bg-green-100 text-green-700" };
-    case "picked_up":
-      return { label: "已取貨", className: "bg-green-100 text-green-700" };
-    case "arrived_store":
-      return { label: "待取貨", className: "bg-blue-100 text-blue-700" };
-    case "in_transit":
-      return { label: "運送中", className: "bg-blue-100 text-blue-700" };
-    case "pending":
-      return { label: "已出貨", className: "bg-blue-100 text-blue-700" };
-    case "returned":
-    case "exception":
-    case "unknown":
-      return { label: "需店家確認", className: "bg-amber-100 text-amber-700" };
-  }
-  if (order.trackingCode) {
-    return { label: "已出貨", className: "bg-blue-100 text-blue-700" };
-  }
-  return {
-    label: "店家處理中",
-    className: "bg-secondary text-muted-foreground",
-  };
 }
 
 // 面交 / 自取同屬 self_pickup，文案與判斷需一致（同 printHelpers 的 fulfillment category 邏輯）
@@ -441,13 +408,13 @@ export default function TrackOrderPage({ publicToken }: Props) {
                 ) : (
                   <InfoRow label="最新貨態" value="等待物流商更新" />
                 )}
-                {(order.latestTrackingTime ?? order.shipmentUpdatedAt) && (
+                {order.latestTrackingTime ? (
                   <InfoRow
                     label="貨態時間"
-                    value={formatDate(
-                      (order.latestTrackingTime ?? order.shipmentUpdatedAt)!,
-                    )}
+                    value={formatDate(order.latestTrackingTime)}
                   />
+                ) : (
+                  <InfoRow label="貨態時間" value="尚無貨態時間" />
                 )}
                 {(order.latestTrackingStatus === "exception" ||
                   order.latestTrackingStatus === "unknown" ||

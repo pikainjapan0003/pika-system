@@ -8,6 +8,16 @@
 代購／團購系統：即時上架商品 → 客人快速下單（含 7-11 店鋪選擇）→ 系統算成本與總額 → 老闆只負責包貨出貨。
 核心不是炫技，而是：**老闆少算、少複製、少漏單；客人快速下單且看得到總額。**
 
+## 本工作樹限定：Sites 私人遷移（2026-09-25）
+
+- 本工作樹依使用者新授權，採 **Codex B＋Astra**；不使用 SWE-2／Devin，不改全域模型分工，不啟用 subagents、openpencil、directory-picker。
+- 先讀 `docs/sites-migration/PROJECT-HANDOFF.md` 與 `docs/sites-migration/PHASE1-PLAN.md`。這是產品遷移工作線，不是 Codex／DSH 維修，也不是 CLAUDE.md 的 Claude A/B 工作身分。
+- 使用者已批准合成資料私人 POC：Sites 前端／輕量轉送＋隔離 Express API＋獨立 PostgreSQL／Drizzle，沿用 Clerk。正式庫、真客資、原 OCR 分支、main、Replit production、GitHub push、公開發布及新增費用仍不在範圍；Site 原生來源同步只用專用產物 checkout，不改原 remote。
+- 固定基準 `33953b1fa8586110863c76304f5b6d3dc9f1ba92`；本地分支 `codex/chatgpt-sites-private-poc`。保留既有 stores／關聯／成本及產品 OCR 設定。
+- 下方 2026-07-07 的「成本／毛利不存在」屬歷史敘述，與本基準程式不符；本輪讀碼差異見方案 A 節，不據此重寫已存在的計算。
+- Desktop 專案已核實；唯一主控與真實 ID 見 `.codex/team-v5/state/BINDING.json`。主控只承接本案規劃與後續使用者明確批准的工作，不重建主控、不自行解鎖產品施工。
+- 協作交付沿用 `C:/Users/Lnovo/.codex/skills/codex-team-onboard/references/local-delivery.md`；官方 read 正文空白時，以本地完整收據與官方新回合 completed 核對，不以自述 PASS 代替證據。
+
 ## 開場流程（每個 session）
 
 1. 讀本檔。

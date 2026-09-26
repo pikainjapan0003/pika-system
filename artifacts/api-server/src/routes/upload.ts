@@ -2,9 +2,10 @@ import { Router } from "express";
 import multer from "multer";
 import { rateLimit } from "express-rate-limit";
 import { randomBytes } from "crypto";
-import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { requireAuth, verifyStoreOwner } from "../middlewares/auth.ts";
 import { getR2Config } from "../lib/r2.ts";
+import { isPocStore, privatePocConfig } from "../lib/privatePoc.ts";
 
 const ALLOWED_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const MAX_SIZE_BYTES = 5 * 1024 * 1024;
@@ -49,6 +50,42 @@ const uploadLimiter = rateLimit({
 });
 
 const router = Router();
+
+// Stable same-origin image URLs work with <img> and the Sites PRIVATE session.
+// The existing POC gateway protects this route; uploads still require the owner.
+router.get("/poc/images/products/:storeId/:filename", async (req, res) => {
+  if (!privatePocConfig()) return res.sendStatus(404);
+  const storeId = Number(req.params.storeId);
+  const filename = req.params.filename;
+  const match = /^(\d{13}-[a-f0-9]{16})\.(jpg|png|webp)$/.exec(filename);
+  if (!Number.isSafeInteger(storeId) || storeId <= 0 ||
+      String(storeId) !== req.params.storeId || !isPocStore(storeId) || !match) {
+    return res.sendStatus(404);
+  }
+  try {
+    const config = getR2Config();
+    const object = await config.client.send(new GetObjectCommand({
+      Bucket: config.bucket,
+      Key: `products/${storeId}/${filename}`,
+    }));
+    if (!object.Body || (object.ContentLength ?? 0) > MAX_SIZE_BYTES) {
+      return res.status(502).json({ error: "Invalid stored image" });
+    }
+    const bytes = Buffer.from(await object.Body.transformToByteArray());
+    if (bytes.length === 0 || bytes.length > MAX_SIZE_BYTES) {
+      return res.status(502).json({ error: "Invalid stored image" });
+    }
+    const type = match[2] === "jpg" ? "image/jpeg" : `image/${match[2]}`;
+    res.setHeader("Content-Type", type);
+    res.setHeader("Cache-Control", "private, no-store");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    return res.send(bytes);
+  } catch (error) {
+    const status = (error as { $metadata?: { httpStatusCode?: number } })?.$metadata?.httpStatusCode;
+    if (status === 404 || (error as Error)?.name === "NoSuchKey") return res.sendStatus(404);
+    return res.status(503).json({ error: "Image storage unavailable" });
+  }
+});
 
 router.post(
   "/stores/:storeId/products/image",

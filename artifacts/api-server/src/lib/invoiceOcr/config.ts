@@ -52,6 +52,7 @@ export interface InvoiceOcrConfig {
   reasoningEffort: InvoiceReasoningEffort;
   maxFileBytes: number;
   timeoutMs: number;
+  maxAttempts?: 1 | 2;
   allowedClerkUserIds: ReadonlySet<string>;
 }
 
@@ -167,6 +168,8 @@ export function readInvoiceOcrConfig(
       env.OPENAI_INVOICE_REASONING_EFFORT?.trim() || "low",
     ),
     maxFileBytes: maxFileMb * 1024 * 1024,
+    // The private POC uses one observable provider attempt, without layered retries.
+    maxAttempts: env.PIKA_PRIVATE_POC === "true" ? 1 : 2,
     timeoutMs: integerFrom(
       env.INVOICE_OCR_REQUEST_TIMEOUT_MS,
       DEFAULT_TIMEOUT_MS,

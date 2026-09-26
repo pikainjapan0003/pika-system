@@ -122,16 +122,11 @@ export async function runFamilyMartTrackingWorker(
   const conditions = [
     eq(shipmentTrackingsTable.trackingProvider, PROVIDER),
     eq(shipmentTrackingsTable.isActive, true),
-    inArray(shipmentTrackingsTable.trackingStatus, [
-      "pending",
-      "checking",
-      "active",
-      "failed",
-    ]),
   ];
   if (input.trackingIds?.length) {
     conditions.push(inArray(shipmentTrackingsTable.id, input.trackingIds));
   } else {
+    conditions.push(inArray(shipmentTrackingsTable.trackingStatus, ["pending", "checking", "active", "failed"]));
     // 指定 trackingIds 時略過 nextCheckAt gate，方便手動重查
     conditions.push(
       or(
@@ -216,19 +211,34 @@ export async function runFamilyMartTrackingWorker(
       let insertedEventCount = 0;
 
       if (!dryRun) {
-        await db
-          .update(shipmentTrackingsTable)
+        try {
+          await db.transaction(async (tx) => {
+            // Serialize the snapshot and events, including concurrent manual requests.
+            const [current] = await tx.select().from(shipmentTrackingsTable)
+              .where(eq(shipmentTrackingsTable.id, job.id)).for("update");
+            if (!current?.isActive || current.trackingCode !== trackingCode) {
+              throw new Error("TRACKING_CHANGED");
+            }
+            const advancesSnapshot = !current.latestEventAt || (latestEventAt !== null &&
+              latestEventAt.getTime() > current.latestEventAt.getTime());
+            const advancesCheck = !current.lastCheckedAt || now >= current.lastCheckedAt;
+            await tx.update(shipmentTrackingsTable)
           .set({
-            trackingStatus: toTrackingStatus(normalized),
-            latestEventStatus: normalized,
-            latestEventDescription: adapterResult.latestStatusText,
-            latestEventAt,
-            lastCheckedAt: now,
-            nextCheckAt: isTerminalStatus(normalized)
-              ? null
-              : new Date(now.getTime() + RECHECK_INTERVAL_MS),
-            failureCount: 0,
-            checkError: null,
+            ...(advancesSnapshot ? {
+              trackingStatus: toTrackingStatus(normalized),
+              latestEventStatus: normalized,
+              latestEventDescription: adapterResult.latestStatusText,
+              latestEventAt,
+            } : {}),
+            ...(advancesCheck ? {
+              // A successful retry clears a query failure even if the event is unchanged.
+              trackingStatus: toTrackingStatus((advancesSnapshot ? normalized : current.latestEventStatus ?? "unknown") as NormalizedTrackingStatus),
+              lastCheckedAt: now,
+              nextCheckAt: isTerminalStatus((advancesSnapshot ? normalized : current.latestEventStatus ?? "unknown") as NormalizedTrackingStatus)
+                ? null : new Date(now.getTime() + RECHECK_INTERVAL_MS),
+              failureCount: 0,
+              checkError: null,
+            } : {}),
           })
           .where(eq(shipmentTrackingsTable.id, job.id));
 
@@ -243,7 +253,7 @@ export async function runFamilyMartTrackingWorker(
               x.occurredAt !== null,
           );
         if (insertable.length > 0) {
-          const inserted = await db
+          const inserted = await tx
             .insert(shipmentTrackingEventsTable)
             .values(
               insertable.map(({ event, occurredAt }) => ({
@@ -269,6 +279,13 @@ export async function runFamilyMartTrackingWorker(
             .returning({ id: shipmentTrackingEventsTable.id });
           insertedEventCount = inserted.length;
         }
+          });
+        } catch {
+          // The provider was already called. Never call it again to repair a DB write.
+          errorCodeCounts.set("SAVE_FAILED", (errorCodeCounts.get("SAVE_FAILED") ?? 0) + 1);
+          results.push({ shipmentTrackingId: job.id, trackingCode, status: "failed", errorCode: "SAVE_FAILED" });
+          continue;
+        }
       }
 
       results.push({
@@ -281,7 +298,9 @@ export async function runFamilyMartTrackingWorker(
         dryRun: dryRun || undefined,
       });
     } else {
-      const { errorCode, message, retryable } = adapterResult;
+      const { errorCode, retryable } = adapterResult;
+      // Provider errors may echo arbitrary input; persist the safe code only.
+      const message = `FamilyMart query failed (${errorCode})`;
       errorCodeCounts.set(errorCode, (errorCodeCounts.get(errorCode) ?? 0) + 1);
       const newFailureCount = job.failureCount + 1;
 

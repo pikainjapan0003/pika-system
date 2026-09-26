@@ -1,0 +1,61 @@
+name: pika-sites-private-poc
+services:
+  db:
+    image: postgres:16-bookworm
+    environment:
+      POSTGRES_USER: pika_poc
+      POSTGRES_PASSWORD: pika_synthetic_only
+      POSTGRES_DB: pika_sites_poc
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U pika_poc -d pika_sites_poc"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    # No host port: only this dedicated Docker network can connect.
+  tools:
+    image: node:24-bookworm-slim
+    working_dir: /workspace
+    entrypoint: [sh, -c, 'corepack enable && corepack prepare pnpm@10.34.4 --activate >/dev/null && exec pnpm "$$@"', poc-tools]
+    environment:
+      DATABASE_URL: postgresql://pika_poc:pika_synthetic_only@db:5432/pika_sites_poc
+      COREPACK_DEFAULT_TO_LATEST: "0"
+      COREPACK_HOME: /pnpm/corepack
+    volumes:
+      - ../..:/workspace
+      - node_modules:/workspace/node_modules
+      - pnpm:/pnpm
+    depends_on:
+      db:
+        condition: service_healthy
+  api:
+    image: node:24-bookworm-slim
+    working_dir: /workspace/artifacts/api-server
+    command: [node, src/poc/start.mjs]
+    env_file:
+      - path: ../../.poc/api.env
+        required: false
+    environment:
+      NODE_ENV: production
+      PORT: "8080"
+      PIKA_PRIVATE_POC: "true"
+      DATABASE_URL: postgresql://pika_poc:pika_synthetic_only@db:5432/pika_sites_poc
+    ports:
+      - "127.0.0.1:8087:8080"
+    volumes:
+      - ../..:/workspace:ro
+      - node_modules:/workspace/node_modules:ro
+    depends_on:
+      db:
+        condition: service_healthy
+volumes:
+  postgres:
+    labels:
+      pika.scope: synthetic-private-poc
+  node_modules:
+    name: pika-sites-poc-node-modules
+    external: true
+  pnpm:
+    name: pika-sites-poc-pnpm
+    external: true

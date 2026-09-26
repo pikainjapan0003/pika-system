@@ -318,6 +318,8 @@ test("OpenAI request contains no Ground Truth, key, or tools", () => {
   });
   const serialized = JSON.stringify(request);
   assert.equal(request.store, false);
+  assert.equal(request.service_tier, "default");
+  assert.equal(request.max_output_tokens, 1_200);
   assert.equal("tools" in request, false);
   assert.equal(request.text.format.strict, true);
   assert.doesNotMatch(serialized, /ground.?truth/i);
@@ -432,6 +434,28 @@ test("exact amount comparison and unsafe confident error scoring are determinist
   );
   assert.equal(score.totalAmountCorrect, false);
   assert.equal(score.unsafeConfidentError, true);
+});
+
+test("private POC never automatically retries provider errors", async () => {
+  const poc = readInvoiceOcrConfig({ PIKA_PRIVATE_POC: "true" });
+  assert.equal(poc.maxAttempts, 1);
+  let calls = 0;
+  await assert.rejects(() => extractInvoiceWithOpenAI({ model: "gpt-5.6-terra",
+    imageDataUrl: "data:image/png;base64,aW1hZ2U=", imageDetail: "original", reasoningEffort: "low" }, poc,
+  { executeRequest: async () => { calls++; throw { status: 500 }; } }),
+  error => error.failure.code === "openai_server_error" && error.attemptCount === 1);
+  assert.equal(calls, 1);
+});
+
+test("HTTP success is rejected for invalid output or missing actual model evidence", async () => {
+  for (const override of [{ outputParsed: { ...VALID_PREDICTION, total_amount: "not-money" } }, { actualModel: "" }]) {
+    await assert.rejects(() => extractInvoiceWithOpenAI({ model: "gpt-5.6-terra",
+      imageDataUrl: "data:image/png;base64,aW1hZ2U=", imageDetail: "original", reasoningEffort: "low" }, config(),
+    { executeRequest: async () => ({ responseId: "resp_fixture", requestId: "req_fixture", actualModel: "actual-fixture",
+      status: "completed", outputParsed: VALID_PREDICTION, output: [], incompleteReason: null,
+      usage: { inputTokens: null, outputTokens: null, totalTokens: null, cachedInputTokens: null, reasoningTokens: null }, ...override }) }),
+    error => error.failure.code === "openai_invalid_structured_output");
+  }
 });
 
 test("CSV escapes formulas and contains no image, Base64, key, or raw error fields", () => {

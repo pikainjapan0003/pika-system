@@ -1,18 +1,20 @@
 import { Router } from "express";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db, storesTable, ordersTable } from "@workspace/db";
 import { CreateStoreBody, UpdateStoreBody } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/auth.ts";
 import { sanitizeError } from "../lib/sanitizeError.ts";
+import { isPocStore, privatePocConfig } from "../lib/privatePoc.ts";
 
 const router = Router();
 
 router.get("/me/store", requireAuth, async (req: any, res) => {
   try {
+    const config = privatePocConfig();
     const store = await db
       .select()
       .from(storesTable)
-      .where(eq(storesTable.merchantId, req.userId))
+      .where(and(eq(storesTable.merchantId, req.userId), config ? eq(storesTable.id, config.storeId) : undefined))
       .limit(1);
 
     if (store.length === 0) {
@@ -26,6 +28,7 @@ router.get("/me/store", requireAuth, async (req: any, res) => {
 });
 
 router.post("/stores", requireAuth, async (req: any, res) => {
+  if (privatePocConfig()) return res.status(403).json({ error: "New store creation is disabled" });
   const parsed = CreateStoreBody.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: parsed.error.message });
@@ -72,6 +75,11 @@ router.patch("/stores/:storeId", requireAuth, async (req: any, res) => {
   const storeId = parseInt(req.params.storeId);
   if (isNaN(storeId)) return res.status(400).json({ error: "Invalid storeId" });
 
+  // Only the existing cost setting is part of this synthetic POC slice.
+  if (privatePocConfig() && (!req.body || Object.keys(req.body).some(key => key !== "purchaseExchangeRate"))) {
+    return res.status(403).json({ error: "此私人測試版僅開放進貨匯率設定", code: "POC_FEATURE_NOT_ENABLED" });
+  }
+
   const parsed = UpdateStoreBody.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: parsed.error.message });
@@ -85,7 +93,7 @@ router.patch("/stores/:storeId", requireAuth, async (req: any, res) => {
 
   if (store.length === 0)
     return res.status(404).json({ error: "Store not found" });
-  if (store[0].merchantId !== req.userId)
+  if (!isPocStore(storeId) || store[0].merchantId !== req.userId)
     return res.status(403).json({ error: "Forbidden" });
 
   const shippingSettings = getShippingSettings(req.body);
@@ -149,7 +157,7 @@ router.get("/stores/:storeId/stats", requireAuth, async (req: any, res) => {
     .limit(1);
   if (store.length === 0)
     return res.status(404).json({ error: "Store not found" });
-  if (store[0].merchantId !== req.userId)
+  if (!isPocStore(storeId) || store[0].merchantId !== req.userId)
     return res.status(403).json({ error: "Forbidden" });
 
   const orders = await db

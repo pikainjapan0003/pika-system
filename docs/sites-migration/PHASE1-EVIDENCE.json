@@ -1,0 +1,581 @@
+{
+  "recordedAt": "2026-09-25T11:22:10.890Z",
+  "scope": "Phase 1: independent worktree and analysis only; no product implementation or deployment",
+  "status": {
+    "localWorkline": "COMPLETE",
+    "architecturePlan": "DELIVERED_FOR_CONFIRMATION",
+    "desktopProject": "BLOCKED_TOOL_UNAVAILABLE",
+    "newController": "NOT_CREATED",
+    "productImplementation": "NOT_AUTHORIZED_THIS_PHASE",
+    "sitesDeployment": "NOT_EXECUTED"
+  },
+  "identity": {
+    "preparingThreadId": "01a0863b-bd9b-76c2-bd35-3e06b52b983e",
+    "preparingHubProjectId": "82ddffba-2bb4-4f25-b339-aa65b0350449",
+    "newProjectId": null,
+    "newControllerThreadId": null,
+    "siteId": null,
+    "requestedMode": "B",
+    "requestedEngineeringModelFamily": "Astra",
+    "clientTurnContext": {
+      "timestamp": "2026-09-25T11:05:38.945Z",
+      "model": "gpt-6-astra",
+      "effort": "max",
+      "cwd": "C:\\Users\\Lnovo\\Documents\\ChatGPT\\codex-collaboration-hub"
+    },
+    "independentBackendModelObservation": null,
+    "delegationCallsThisProject": 0,
+    "sweDevinCallsThisProject": 0
+  },
+  "git": {
+    "repository": "pikainjapan0003/pika-system",
+    "sourceBranch": "codex/invoice-ocr-integration",
+    "migrationBranch": "codex/chatgpt-sites-private-poc",
+    "fixedBase": "33953b1fa8586110863c76304f5b6d3dc9f1ba92",
+    "remoteMigrationTipAtCheck": "33953b1fa8586110863c76304f5b6d3dc9f1ba92",
+    "worktree": "C:/Users/Lnovo/Documents/ChatGPT/pika-system-Sites私人遷移",
+    "sourceWorktree": "C:/Users/Lnovo/Documents/DSH/OCR產品工作樹/invoice-ocr-integration",
+    "sourceStatusBefore": "## codex/invoice-ocr-integration\n",
+    "sourceStatusAfter": "## codex/invoice-ocr-integration\n",
+    "sourceWorktreeUnchanged": true,
+    "protectedRefsBefore": "87b6eaaf2c08c85164e80b72a80f7246e2ebbbd9\n33953b1fa8586110863c76304f5b6d3dc9f1ba92\n",
+    "protectedRefsAfter": "87b6eaaf2c08c85164e80b72a80f7246e2ebbbd9\n33953b1fa8586110863c76304f5b6d3dc9f1ba92\n",
+    "protectedRefsUnchanged": true,
+    "head": "33953b1fa8586110863c76304f5b6d3dc9f1ba92",
+    "initialCheckoutTrackedFileCount": 965,
+    "initialCheckoutTrackedBytes": 17248240,
+    "statusBeforeEvidenceWrite": " M AGENTS.md\n?? docs/sites-migration/LOCAL-CHECKS.txt\n?? docs/sites-migration/PHASE1-PLAN.md\n?? docs/sites-migration/PROJECT-HANDOFF.md\n?? docs/sites-migration/USER-REQUEST.md\n",
+    "mainWorktreeStatusAfter": "## docs/v1-design-deepsea...origin/main [ahead 2, behind 11]\n",
+    "commands": [
+      {
+        "args": [
+          "--no-optional-locks",
+          "-C",
+          "C:/Users/Lnovo/Documents/DSH/OCR產品工作樹/invoice-ocr-integration",
+          "status",
+          "--short",
+          "--branch"
+        ],
+        "exitCode": 0,
+        "stdout": "## codex/invoice-ocr-integration\n",
+        "stderr": ""
+      },
+      {
+        "args": [
+          "--no-optional-locks",
+          "-C",
+          "C:/Users/Lnovo/Desktop/pika-system",
+          "rev-parse",
+          "refs/heads/main",
+          "refs/heads/codex/invoice-ocr-integration"
+        ],
+        "exitCode": 0,
+        "stdout": "87b6eaaf2c08c85164e80b72a80f7246e2ebbbd9\n33953b1fa8586110863c76304f5b6d3dc9f1ba92\n",
+        "stderr": ""
+      },
+      {
+        "args": [
+          "-c",
+          "credential.interactive=false",
+          "-c",
+          "maintenance.auto=false",
+          "-c",
+          "core.hooksPath=C:\\Users\\Lnovo\\Documents\\Codex-backups\\SITES-PHASE1-20260925\\empty-hooks",
+          "-C",
+          "C:/Users/Lnovo/Desktop/pika-system",
+          "fetch",
+          "--no-tags",
+          "--no-write-fetch-head",
+          "https://github.com/pikainjapan0003/pika-system.git",
+          "refs/heads/codex/chatgpt-sites-private-poc:refs/remotes/origin/codex/chatgpt-sites-private-poc"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": "From https://github.com/pikainjapan0003/pika-system\n * [new branch]      codex/chatgpt-sites-private-poc -> origin/codex/chatgpt-sites-private-poc\n"
+      },
+      {
+        "args": [
+          "-C",
+          "C:/Users/Lnovo/Desktop/pika-system",
+          "rev-parse",
+          "refs/remotes/origin/codex/chatgpt-sites-private-poc"
+        ],
+        "exitCode": 0,
+        "stdout": "33953b1fa8586110863c76304f5b6d3dc9f1ba92\n",
+        "stderr": ""
+      },
+      {
+        "args": [
+          "-c",
+          "core.hooksPath=C:\\Users\\Lnovo\\Documents\\Codex-backups\\SITES-PHASE1-20260925\\empty-hooks",
+          "-C",
+          "C:/Users/Lnovo/Desktop/pika-system",
+          "worktree",
+          "add",
+          "-b",
+          "codex/chatgpt-sites-private-poc",
+          "C:/Users/Lnovo/Documents/ChatGPT/pika-system-Sites私人遷移",
+          "refs/remotes/origin/codex/chatgpt-sites-private-poc"
+        ],
+        "exitCode": 0,
+        "stdout": "HEAD is now at 33953b1 align-ci-with-ocr-branch-capabilities\n",
+        "stderr": "Preparing worktree (new branch 'codex/chatgpt-sites-private-poc')\nUpdating files:  10% (98/965)\rUpdating files:  11% (107/965)\rUpdating files:  12% (116/965)\rUpdating files:  13% (126/965)\rUpdating files:  14% (136/965)\rUpdating files:  15% (145/965)\rUpdating files:  16% (155/965)\rUpdating files:  17% (165/965)\rUpdating files:  17% (169/965)\rUpdating files:  18% (174/965)\rUpdating files:  19% (184/965)\rUpdating files:  20% (193/965)\rUpdating files:  21% (203/965)\rUpdating files:  22% (213/965)\rUpdating files:  23% (222/965)\rUpdating files:  24% (232/965)\rUpdating files:  25% (242/965)\rUpdating files:  26% (251/965)\rUpdating files:  27% (261/965)\rUpdating files:  28% (271/965)\rUpdating files:  29% (280/965)\rUpdating files:  30% (290/965)\rUpdating files:  30% (299/965)\rUpdating files:  31% (300/965)\rUpdating files:  32% (309/965)\rUpdating files:  33% (319/965)\rUpdating files:  34% (329/965)\rUpdating files:  35% (338/965)\rUpdating files:  36% (348/965)\rUpdating files:  37% (358/965)\rUpdating files:  38% (367/965)\rUpdating files:  39% (377/965)\rUpdating files:  40% (386/965)\rUpdating files:  40% (395/965)\rUpdating files:  41% (396/965)\rUpdating files:  42% (406/965)\rUpdating files:  43% (415/965)\rUpdating files:  44% (425/965)\rUpdating files:  45% (435/965)\rUpdating files:  46% (444/965)\rUpdating files:  47% (454/965)\rUpdating files:  47% (459/965)\rUpdating files:  48% (464/965)\rUpdating files:  49% (473/965)\rUpdating files:  49% (480/965)\rUpdating files:  50% (483/965)\rUpdating files:  51% (493/965)\rUpdating files:  52% (502/965)\rUpdating files:  53% (512/965)\rUpdating files:  54% (522/965)\rUpdating files:  55% (531/965)\rUpdating files:  56% (541/965)\rUpdating files:  57% (551/965)\rUpdating files:  58% (560/965)\rUpdating files:  59% (570/965)\rUpdating files:  60% (579/965)\rUpdating files:  61% (589/965)\rUpdating files:  62% (599/965)\rUpdating files:  63% (608/965)\rUpdating files:  64% (618/965)\rUpdating files:  65% (628/965)\rUpdating files:  65% (636/965)\rUpdating files:  66% (637/965)\rUpdating files:  67% (647/965)\rUpdating files:  68% (657/965)\rUpdating files:  69% (666/965)\rUpdating files:  70% (676/965)\rUpdating files:  71% (686/965)\rUpdating files:  72% (695/965)\rUpdating files:  73% (705/965)\rUpdating files:  74% (715/965)\rUpdating files:  75% (724/965)\rUpdating files:  76% (734/965)\rUpdating files:  77% (744/965)\rUpdating files:  78% (753/965)\rUpdating files:  78% (754/965)\rUpdating files:  79% (763/965)\rUpdating files:  80% (772/965)\rUpdating files:  81% (782/965)\rUpdating files:  82% (792/965)\rUpdating files:  83% (801/965)\rUpdating files:  84% (811/965)\rUpdating files:  85% (821/965)\rUpdating files:  86% (830/965)\rUpdating files:  87% (840/965)\rUpdating files:  88% (850/965)\rUpdating files:  89% (859/965)\rUpdating files:  90% (869/965)\rUpdating files:  90% (870/965)\rUpdating files:  91% (879/965)\rUpdating files:  92% (888/965)\rUpdating files:  93% (898/965)\rUpdating files:  94% (908/965)\rUpdating files:  95% (917/965)\rUpdating files:  96% (927/965)\rUpdating files:  97% (937/965)\rUpdating files:  98% (946/965)\rUpdating files:  99% (956/965)\rUpdating files: 100% (965/965)\rUpdating files: 100% (965/965), done.\n"
+      },
+      {
+        "args": [
+          "--no-optional-locks",
+          "-C",
+          "C:/Users/Lnovo/Documents/ChatGPT/pika-system-Sites私人遷移",
+          "rev-parse",
+          "HEAD"
+        ],
+        "exitCode": 0,
+        "stdout": "33953b1fa8586110863c76304f5b6d3dc9f1ba92\n",
+        "stderr": ""
+      },
+      {
+        "args": [
+          "--no-optional-locks",
+          "-C",
+          "C:/Users/Lnovo/Documents/ChatGPT/pika-system-Sites私人遷移",
+          "rev-parse",
+          "HEAD"
+        ],
+        "exitCode": 0,
+        "stdout": "33953b1fa8586110863c76304f5b6d3dc9f1ba92\n",
+        "stderr": ""
+      },
+      {
+        "args": [
+          "--no-optional-locks",
+          "-C",
+          "C:/Users/Lnovo/Documents/ChatGPT/pika-system-Sites私人遷移",
+          "branch",
+          "--show-current"
+        ],
+        "exitCode": 0,
+        "stdout": "codex/chatgpt-sites-private-poc\n",
+        "stderr": ""
+      },
+      {
+        "args": [
+          "--no-optional-locks",
+          "-C",
+          "C:/Users/Lnovo/Documents/ChatGPT/pika-system-Sites私人遷移",
+          "status",
+          "--short",
+          "--untracked-files=all"
+        ],
+        "exitCode": 0,
+        "stdout": " M AGENTS.md\n?? docs/sites-migration/LOCAL-CHECKS.txt\n?? docs/sites-migration/PHASE1-PLAN.md\n?? docs/sites-migration/PROJECT-HANDOFF.md\n?? docs/sites-migration/USER-REQUEST.md\n",
+        "stderr": ""
+      },
+      {
+        "args": [
+          "--no-optional-locks",
+          "-C",
+          "C:/Users/Lnovo/Documents/ChatGPT/pika-system-Sites私人遷移",
+          "diff",
+          "--",
+          "AGENTS.md"
+        ],
+        "exitCode": 0,
+        "stdout": "diff --git a/AGENTS.md b/AGENTS.md\nindex c20c95f..5b83049 100644\n--- a/AGENTS.md\n+++ b/AGENTS.md\n@@ -8,6 +8,15 @@\n 代購／團購系統：即時上架商品 → 客人快速下單（含 7-11 店鋪選擇）→ 系統算成本與總額 → 老闆只負責包貨出貨。\n 核心不是炫技，而是：**老闆少算、少複製、少漏單；客人快速下單且看得到總額。**\n \n+## 本工作樹限定：Sites 私人遷移（2026-09-25）\n+\n+- 本工作樹依使用者新授權，採 **Codex B＋Astra**；不使用 SWE-2／Devin，不改全域模型分工，不啟用 subagents、openpencil、directory-picker。\n+- 先讀 `docs/sites-migration/PROJECT-HANDOFF.md` 與 `PHASE1-PLAN.md`。這是產品遷移工作線，不是 Codex／DSH 維修，也不是 CLAUDE.md 的 Claude A/B 工作身分。\n+- 目前只完成建置工作線、讀碼及方案；產品實作、私人 Sites 部署仍待使用者確認方案。正式庫、真實資料、原 OCR 分支、main、Replit production、push 及公開發布均不在本輪範圍。\n+- 固定基準 `33953b1fa8586110863c76304f5b6d3dc9f1ba92`；本地分支 `codex/chatgpt-sites-private-poc`。保留既有 stores／關聯／成本及產品 OCR 設定。\n+- 下方 2026-07-07 的「成本／毛利不存在」屬歷史敘述，與本基準程式不符；本輪讀碼差異見方案 A 節，不據此重寫已存在的計算。\n+- Desktop 專案與新主控尚待官方工具核對／建立；不得將目前維護中心 ID 當成本專案 ID，也不得手造 BINDING、grant 或租用紀錄。\n+\n ## 開場流程（每個 session）\n \n 1. 讀本檔。\n",
+        "stderr": ""
+      },
+      {
+        "args": [
+          "--no-optional-locks",
+          "-C",
+          "C:/Users/Lnovo/Documents/DSH/OCR產品工作樹/invoice-ocr-integration",
+          "status",
+          "--short",
+          "--branch"
+        ],
+        "exitCode": 0,
+        "stdout": "## codex/invoice-ocr-integration\n",
+        "stderr": ""
+      },
+      {
+        "args": [
+          "--no-optional-locks",
+          "-C",
+          "C:/Users/Lnovo/Desktop/pika-system",
+          "rev-parse",
+          "refs/heads/main",
+          "refs/heads/codex/invoice-ocr-integration"
+        ],
+        "exitCode": 0,
+        "stdout": "87b6eaaf2c08c85164e80b72a80f7246e2ebbbd9\n33953b1fa8586110863c76304f5b6d3dc9f1ba92\n",
+        "stderr": ""
+      },
+      {
+        "args": [
+          "--no-optional-locks",
+          "-C",
+          "C:/Users/Lnovo/Desktop/pika-system",
+          "status",
+          "--short",
+          "--branch"
+        ],
+        "exitCode": 0,
+        "stdout": "## docs/v1-design-deepsea...origin/main [ahead 2, behind 11]\n",
+        "stderr": ""
+      }
+    ]
+  },
+  "localTest": {
+    "command": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "--test",
+      "scripts/src/backfillTripStoreSafety.test.mjs"
+    ],
+    "cwd": "C:/Users/Lnovo/Documents/ChatGPT/pika-system-Sites私人遷移",
+    "nodeVersion": "v24.13.1",
+    "environmentKeys": [
+      "SystemRoot",
+      "WINDIR"
+    ],
+    "startedAt": "2026-09-25T11:08:41.612Z",
+    "finishedAt": "2026-09-25T11:08:46.534Z",
+    "exitCode": 0,
+    "passed": 7,
+    "failed": 0,
+    "skipped": 0,
+    "outputFile": "docs/sites-migration/LOCAL-CHECKS.txt",
+    "databaseConnection": false,
+    "note": "Existing pure argument-parser tests; neither DB backfill script nor full product tests were executed."
+  },
+  "notExecuted": [
+    "package installation",
+    "full build/typecheck",
+    "database connection or migration/push/seed",
+    "real Clerk integration",
+    "real OCR/logistics/SMS/email/payment",
+    "Sites create/version/deployment",
+    "remote push/merge",
+    "independent second-session review"
+  ],
+  "backup": {
+    "path": "C:\\Users\\Lnovo\\Documents\\Codex-backups\\SITES-PHASE1-20260925\\AGENTS.md.before",
+    "sha256": "a1a4e56b1cf2a6f79b28fc3df8b7c0234e31032d1aaf436b74b9fec62d63829a",
+    "installedAgentSha256": "2675846e5dcb3a2d9b6dcc1b446b6ae923dbf9c0f6255894aaecd6f0fa51f60e",
+    "revertOnlyIfInstalledHashStillMatches": true
+  },
+  "originalUserRequest": {
+    "path": "C:/Users/Lnovo/.codex/attachments/cddf6fd6-34f7-4811-9722-7cdcb43d923b/貼上的文字.txt",
+    "sha256": "65c7540b5a29c5d6dd4bb9d1375abe4a79c8018d3752954c7b55b77f122bcad2",
+    "copiedTextMatchesIgnoringLineEndings": true
+  },
+  "sourceHashes": [
+    {
+      "path": "package.json",
+      "bytes": 708,
+      "sha256": "3f4bb0eb3cfb65ce686be9569ff11328fad9708a79b86dc78131aa414e459261"
+    },
+    {
+      "path": "pnpm-workspace.yaml",
+      "bytes": 6578,
+      "sha256": "e54c59b0642363fbde2cdaab9c00c85007482d5fc6d8ec2017259eaf20146357"
+    },
+    {
+      "path": ".replit",
+      "bytes": 1540,
+      "sha256": "21d7e2c46286ed46a05b14e426f116a6f3a2441462f22ef1fe12eac080655037"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "bytes": 10340,
+      "sha256": "042c775842da7fa39f08ab4b5574cf21b0c3dc270bbeaf788121cc5bc50650fe"
+    },
+    {
+      "path": ".github/workflows/e2e-pending.yml",
+      "bytes": 1277,
+      "sha256": "bd99767f95b4a5d23f0027dd26d8372e976782adda4ab9738c692627387101d4"
+    },
+    {
+      "path": "artifacts/shop-app/package.json",
+      "bytes": 3046,
+      "sha256": "d9e366ec3dd913426d44a4ffda266faae4aefd9bbcd0d490ac23b25893b57bc0"
+    },
+    {
+      "path": "artifacts/shop-app/vite.config.ts",
+      "bytes": 2166,
+      "sha256": "911c975c9f21205032dd5639e31aae2c7f05a88141f9326d9719e2d4b5bb47af"
+    },
+    {
+      "path": "artifacts/shop-app/src/App.tsx",
+      "bytes": 17995,
+      "sha256": "cba7ad4e4245468204a3e4c6f37c6eba161fe1e5858a1aafa2c5357105f0dc95"
+    },
+    {
+      "path": "artifacts/shop-app/src/pages/Home.tsx",
+      "bytes": 3058,
+      "sha256": "db2ecf020d2a7b4bfc73bd98c806857b67ea6af62ce5eeb03512f7c06d6f024b"
+    },
+    {
+      "path": "artifacts/shop-app/src/pages/Setup.tsx",
+      "bytes": 5075,
+      "sha256": "7ad5794b3eb6048139c7ccd547cff898e5302dea32fe63d6bcb476090f0422b3"
+    },
+    {
+      "path": "artifacts/shop-app/src/pages/TrackLookup.tsx",
+      "bytes": 2140,
+      "sha256": "a28402023cc8cc86d5b6851a0afb55ececc47e285aec4cc7b289486a5f0771b7"
+    },
+    {
+      "path": "artifacts/shop-app/src/lib/OnboardingQuestionnaireCard.tsx",
+      "bytes": 8302,
+      "sha256": "b28fc46b7d473ecbbc2dcb7fd6be3bee5856059f911a7716d20287d801661881"
+    },
+    {
+      "path": "artifacts/api-server/package.json",
+      "bytes": 1316,
+      "sha256": "de018891eb5d0d4c52dd0858a9c653998308e822f00b751113172c7666e88f17"
+    },
+    {
+      "path": "artifacts/api-server/build.mjs",
+      "bytes": 3456,
+      "sha256": "e6b23ca08fec421f35c525db35550d120c7acac8571b9622a87224b1765c7390"
+    },
+    {
+      "path": "artifacts/api-server/src/index.ts",
+      "bytes": 593,
+      "sha256": "5b60f011677e52b594025e7713aea779e00ddcb5729663c11aadce324fd1d6ae"
+    },
+    {
+      "path": "artifacts/api-server/src/app.ts",
+      "bytes": 2782,
+      "sha256": "56bde8a0c3558f2d2495edf2f6908ecc3902bb60bd094289861575f39adbb0a6"
+    },
+    {
+      "path": "artifacts/api-server/src/middlewares/auth.ts",
+      "bytes": 951,
+      "sha256": "9892b7a9ad4e5d6c24a6b559517632fa9f036e283370f1d38b27373bac207098"
+    },
+    {
+      "path": "artifacts/api-server/src/middlewares/agentAuth.ts",
+      "bytes": 2723,
+      "sha256": "30e576c7929919d9a48d96097159b3e1e1e278d9850be124c6a0444fcaa642bc"
+    },
+    {
+      "path": "artifacts/api-server/src/middlewares/clerkProxyMiddleware.ts",
+      "bytes": 3463,
+      "sha256": "a0c0b6ef5a71aecd51f1ba8ce8407de4a4b5d888760f859823d5c0e0d229ff9d"
+    },
+    {
+      "path": "artifacts/api-server/src/routes/index.ts",
+      "bytes": 1802,
+      "sha256": "01db5c2145b2cc9c68293e5e0cd32dba9aa81bb59348f1f003ab8a1fedf4140e"
+    },
+    {
+      "path": "artifacts/api-server/src/routes/stores.ts",
+      "bytes": 5756,
+      "sha256": "45e961ae68c30859eae3d34c63d56b254d869301734440ec99409a8868c1da89"
+    },
+    {
+      "path": "artifacts/api-server/src/routes/public.ts",
+      "bytes": 25531,
+      "sha256": "ae1e5dacd321944684250a07457fda9af552e7b4c0d151cffb4ae3bd92c9aecb"
+    },
+    {
+      "path": "artifacts/api-server/src/routes/upload.ts",
+      "bytes": 2939,
+      "sha256": "9730e6c4b7fee7749da16dd2e3bf9005b5d3776df1ab352099182b8ffe5f14d7"
+    },
+    {
+      "path": "artifacts/api-server/src/routes/sellerAgent.ts",
+      "bytes": 12374,
+      "sha256": "5febed520ccee2c57ffcd12e825c554e5724813ddba7a2e45a2f519ac4de812c"
+    },
+    {
+      "path": "artifacts/api-server/src/routes/agent.ts",
+      "bytes": 21952,
+      "sha256": "1647f35f77eb549ee2f482f3ada9a347d27fb4d779c19772d32e186a22972388"
+    },
+    {
+      "path": "artifacts/api-server/src/routes/internalLogisticsSync.ts",
+      "bytes": 6223,
+      "sha256": "c8e3b2ca29634474b068fac4f67af010c2904314c67f301fdae75f0bceabea7a"
+    },
+    {
+      "path": "artifacts/api-server/src/routes/invoiceOcr.ts",
+      "bytes": 41492,
+      "sha256": "3e52457dfffb1c7536dac607a9f0c284d59d2f6aefc88ba7f1978b829b8e4f09"
+    },
+    {
+      "path": "artifacts/api-server/src/routes/invoiceOcrSupport.ts",
+      "bytes": 8834,
+      "sha256": "cbcf8f7582d3388fb218c910be7aa4b95250804bf7beb715e76d1d70a6b72447"
+    },
+    {
+      "path": "artifacts/api-server/src/lib/invoiceOcr/config.ts",
+      "bytes": 5996,
+      "sha256": "6831d135d2ad2dd4ad1091b10be35d65fa206e25877bc5b65b873c6dfe19a697"
+    },
+    {
+      "path": "artifacts/api-server/src/lib/invoiceOcr/openaiInvoiceExtractor.ts",
+      "bytes": 14598,
+      "sha256": "b891d1790c85f837c9941d76c6b29d95d9a20cdcaffafac32dd504968754604c"
+    },
+    {
+      "path": "artifacts/api-server/src/lib/r2.ts",
+      "bytes": 1085,
+      "sha256": "4c5317adb7f298814abd7aef7114f04972df5091ac7629d331c6757018acadaf"
+    },
+    {
+      "path": "lib/db/src/index.ts",
+      "bytes": 896,
+      "sha256": "f44ab2dea811abef54fd8a22387b56ffff8127eaf1630b18db40163b95fa8d5c"
+    },
+    {
+      "path": "lib/db/drizzle.config.ts",
+      "bytes": 352,
+      "sha256": "57862221556f24a1accd28b283876930c403ad7c86b79d87cfb5c9c200ba6258"
+    },
+    {
+      "path": "lib/db/src/schema/stores.ts",
+      "bytes": 1760,
+      "sha256": "7ce1268b7b051e86ab806598160f6da9f330d93bf420f935ab31a9acb9a10570"
+    },
+    {
+      "path": "lib/db/src/schema/customers.ts",
+      "bytes": 1752,
+      "sha256": "2d2d0f4a1fc27c83cef3b067486fae8602ceb1a71ab8ac6e40d75ce0ab4e8099"
+    },
+    {
+      "path": "lib/db/src/schema/trips.ts",
+      "bytes": 1105,
+      "sha256": "2f3d56a2c50889b00d9a4c79f90f3f990c4a28cd66e09a2f7c9340464f2038cb"
+    },
+    {
+      "path": "lib/db/src/schema/tripRoutes.ts",
+      "bytes": 4814,
+      "sha256": "a6c2e29a494b1747633d0124eaaf82feba46d0ed0ac59e34ed739467d5a569d1"
+    },
+    {
+      "path": "lib/db/src/schema/orders.ts",
+      "bytes": 9962,
+      "sha256": "f3dbe562c2a84931895fe2caf4f6bbd828f6dc4996622cbd542cfa6753d9795a"
+    },
+    {
+      "path": "lib/db/src/schema/products.ts",
+      "bytes": 3397,
+      "sha256": "fde5fec915c14d0b00a68907d89ba265eb4fa6dbecca7be8d5d2b8bc655c39b1"
+    },
+    {
+      "path": "lib/db/src/schema/storeCreditTransactions.ts",
+      "bytes": 3939,
+      "sha256": "43c39339b58f604f17b940d56fdb899e2fb3e6fe8d9e0fa8d4293581d09dea81"
+    },
+    {
+      "path": "lib/db/migrations/0021_store_credit_transactions.sql",
+      "bytes": 2355,
+      "sha256": "3145056aa54ca409820f6249f1d939dad0efcc076b90af61b7f0db39e17852cf"
+    },
+    {
+      "path": "lib/db/migrations/0026_trip_store_ownership_nullable.sql",
+      "bytes": 407,
+      "sha256": "0b3c3f23a07e34412630e0b04ad6931d5375b8872e2e1828e7062c3962349ec1"
+    },
+    {
+      "path": "lib/db/migrations/0041_invoice_ocr_benchmark.sql",
+      "bytes": 9229,
+      "sha256": "61f3237b3d5f5397a1b0af70ddd83196f457c4f58c635d1628aaa43f74d33b48"
+    },
+    {
+      "path": "lib/api-client-react/src/custom-fetch.ts",
+      "bytes": 11412,
+      "sha256": "17db35041628b74e4537a9f1dedd9eabae8eb5767eda61522bcbf018adc5aab9"
+    },
+    {
+      "path": "scripts/src/backfillTripStoreSafety.ts",
+      "bytes": 3147,
+      "sha256": "c03f75a3a7c7f684135c91f601cea347a22cfb05f1157255676ccf65310a9936"
+    },
+    {
+      "path": "scripts/src/backfillTripStoreSafety.test.mjs",
+      "bytes": 2445,
+      "sha256": "1aaa2f763619cd063f65f9c7e93b6c169ecf03e75b13ae1e54d846a53647b463"
+    },
+    {
+      "path": "scripts/step7/run-familymart-worker-scheduled.mjs",
+      "bytes": 3919,
+      "sha256": "70b6c144cfddced6e95d8510b0e1d827da4e8e65d10945d4422873ff4f3a636a"
+    }
+  ],
+  "artifactHashes": [
+    {
+      "path": "AGENTS.md",
+      "bytes": 6496,
+      "sha256": "2675846e5dcb3a2d9b6dcc1b446b6ae923dbf9c0f6255894aaecd6f0fa51f60e"
+    },
+    {
+      "path": "docs/sites-migration/PHASE1-PLAN.md",
+      "bytes": 32400,
+      "sha256": "f7e53bbd3d72bbcd2283b751d63ec0a5e3138c72a9b09006729b1bf7b4a16dd5"
+    },
+    {
+      "path": "docs/sites-migration/PROJECT-HANDOFF.md",
+      "bytes": 3911,
+      "sha256": "6afb019fe42f6b7d258aff9000e144ea557d2b9a6d2be22fa2f3650d3f0530f2"
+    },
+    {
+      "path": "docs/sites-migration/USER-REQUEST.md",
+      "bytes": 15405,
+      "sha256": "76df9f764df383f4cf46fdd1214f0635c32eb040cb1f9b3a2902ebc8871f3cb1"
+    },
+    {
+      "path": "docs/sites-migration/LOCAL-CHECKS.txt",
+      "bytes": 800,
+      "sha256": "5b39b074c7ed4e6093dd68b270028d1b08e78d68a7ed0d835436c0cb0139278b"
+    }
+  ],
+  "artifactHashNote": "This evidence file is excluded from its own hash list to avoid circular hashing.",
+  "agentDiff": "diff --git a/AGENTS.md b/AGENTS.md\nindex c20c95f..79a13a8 100644\n--- a/AGENTS.md\n+++ b/AGENTS.md\n@@ -8,6 +8,15 @@\n 代購／團購系統：即時上架商品 → 客人快速下單（含 7-11 店鋪選擇）→ 系統算成本與總額 → 老闆只負責包貨出貨。\n 核心不是炫技，而是：**老闆少算、少複製、少漏單；客人快速下單且看得到總額。**\n \n+## 本工作樹限定：Sites 私人遷移（2026-09-25）\n+\n+- 本工作樹依使用者新授權，採 **Codex B＋Astra**；不使用 SWE-2／Devin，不改全域模型分工，不啟用 subagents、openpencil、directory-picker。\n+- 先讀 `docs/sites-migration/PROJECT-HANDOFF.md` 與 `docs/sites-migration/PHASE1-PLAN.md`。這是產品遷移工作線，不是 Codex／DSH 維修，也不是 CLAUDE.md 的 Claude A/B 工作身分。\n+- 目前只完成建置工作線、讀碼及方案；產品實作、私人 Sites 部署仍待使用者確認方案。正式庫、真實資料、原 OCR 分支、main、Replit production、push 及公開發布均不在本輪範圍。\n+- 固定基準 `33953b1fa8586110863c76304f5b6d3dc9f1ba92`；本地分支 `codex/chatgpt-sites-private-poc`。保留既有 stores／關聯／成本及產品 OCR 設定。\n+- 下方 2026-07-07 的「成本／毛利不存在」屬歷史敘述，與本基準程式不符；本輪讀碼差異見方案 A 節，不據此重寫已存在的計算。\n+- Desktop 專案與新主控尚待官方工具核對／建立；不得將目前維護中心 ID 當成本專案 ID，也不得手造 BINDING、grant 或租用紀錄。\n+\n ## 開場流程（每個 session）\n \n 1. 讀本檔。\n",
+  "officialReferences": [
+    {
+      "path": "C:\\Users\\Lnovo\\.codex\\plugins\\cache\\openai-curated-remote\\sites\\0.1.71\\skills\\sites-building\\SKILL.md",
+      "role": "Worker output and raw TCP limitations"
+    },
+    {
+      "path": "C:\\Users\\Lnovo\\.codex\\plugins\\cache\\openai-curated-remote\\sites\\0.1.71\\skills\\sites-building\\references\\persistence-and-storage.md",
+      "role": "Native D1/R2 and migration behavior"
+    },
+    {
+      "path": "C:\\Users\\Lnovo\\.codex\\plugins\\cache\\openai-curated-remote\\sites\\0.1.71\\skills\\sites-building\\references\\authentication.md",
+      "role": "Auth is distinct from application access"
+    },
+    {
+      "url": "https://help.openai.com/en/articles/20001339-creating-and-managing-chatgpt-sites"
+    },
+    {
+      "url": "https://help.openai.com/en/articles/20001338-managing-chatgpt-sites-for-your-workspace"
+    },
+    {
+      "url": "https://learn.chatgpt.com/docs/sites"
+    }
+  ],
+  "investigationCorrections": [
+    "Several initial rg paths did not exist; used tracked tree and corrected filenames; no missing-path result was counted as PASS.",
+    "where.exe node did not resolve in node_repl child environment; actual executable obtained from node process.execPath."
+  ],
+  "processScope": "The one test child exited 0; no Site, API server, scheduler, queue, lease or worker was started by this project.",
+  "desktopToolObservation": {
+    "exposedOfficialAppTools": [],
+    "searchTools": []
+  },
+  "sitesToolObservation": {
+    "tool": "mcp__codex_apps__sites_list_sites",
+    "arguments": {
+      "limit": 20,
+      "role": "owner"
+    },
+    "result": {
+      "items": [],
+      "cursor": null
+    },
+    "isError": false,
+    "scope": "Selected connected account owner listing only"
+  }
+}

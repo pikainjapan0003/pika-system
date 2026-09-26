@@ -265,6 +265,7 @@ export function serializeInvoiceOcrRun(run: InvoiceOcrRun) {
   return {
     id: run.id,
     testCaseId: run.testCaseId,
+    clientRequestId: run.clientRequestId,
     requestedModel: run.requestedModel,
     actualModel: run.actualModel,
     promptVersion: run.promptVersion,

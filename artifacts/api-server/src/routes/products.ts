@@ -5,14 +5,26 @@ import {
   db,
   productsTable,
   productCategoriesTable,
+  tripRoutesTable,
+  tripsTable,
 } from "@workspace/db";
 import { CreateProductBody, UpdateProductBody } from "@workspace/api-zod";
 import { randomBytes } from "crypto";
 import { requireAuth, verifyStoreOwner } from "../middlewares/auth.ts";
 import { loadOrderProfitSnapshotInputs } from "../lib/orderProfitSnapshot.ts";
 import { formatProductEstimatedProfit } from "../lib/productEstimatedProfit.ts";
+import { privatePocConfig } from "../lib/privatePoc.ts";
 
 const router = Router();
+
+async function isAllowedPocTripRoute(storeId: number, routeId: number | null | undefined) {
+  if (!privatePocConfig() || routeId == null) return true;
+  const [route] = await db.select({ id: tripRoutesTable.id }).from(tripRoutesTable)
+    .innerJoin(tripsTable, eq(tripsTable.id, tripRoutesTable.tripId))
+    .where(and(eq(tripRoutesTable.id, routeId), eq(tripRoutesTable.storeId, storeId), eq(tripsTable.storeId, storeId)))
+    .limit(1);
+  return !!route;
+}
 
 function parseOptionalTierPrice(value: unknown): string | null | undefined {
   if (value === undefined) return undefined;
@@ -95,6 +107,10 @@ router.post("/stores/:storeId/products", requireAuth, async (req: any, res) => {
   }
 
   const shareToken = randomBytes(12).toString("hex");
+
+  if (!(await isAllowedPocTripRoute(storeId, parsed.data.tripRouteId))) {
+    return res.status(400).json({ error: "Invalid tripRouteId" });
+  }
 
   let tierPrices: {
     vipPrice: string | null;
@@ -205,6 +221,9 @@ router.patch(
     }
 
     const updateData: Record<string, unknown> = {};
+    if (!(await isAllowedPocTripRoute(storeId, parsed.data.tripRouteId))) {
+      return res.status(400).json({ error: "Invalid tripRouteId" });
+    }
     if (parsed.data.name !== undefined) updateData.name = parsed.data.name;
     if (parsed.data.description !== undefined)
       updateData.description = parsed.data.description;

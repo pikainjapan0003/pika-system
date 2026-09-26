@@ -8,6 +8,7 @@ import {
   storeCreditTransactionsTable,
   validateCustomerInput,
 } from "@workspace/db";
+import { ExactDecimal } from "@workspace/db/transport-cost";
 import {
   calculateStoreCreditBalance,
   prepareStoreCreditAdjustment,
@@ -287,15 +288,6 @@ router.post(
         const balance = calculateStoreCreditBalance(
           ledgerRows.map(toStoreCreditLedgerEntry),
         );
-        const prepared =
-          input.type === "grant"
-            ? prepareStoreCreditGrant(input.amount)
-            : prepareStoreCreditAdjustment({
-                amount: input.amount,
-                availableBalance: balance.toDecimalPlaces(12),
-              });
-        const normalizedAmount = prepared.amount.toDecimalPlaces(12);
-
         const [existing] = await tx
           .select()
           .from(storeCreditTransactionsTable)
@@ -310,11 +302,14 @@ router.post(
           )
           .limit(1);
         if (existing) {
+          // A committed debit is not a new spend; today's balance already includes it.
+          const signedExistingAmount = ExactDecimal.from(existing.amount).multiply(
+            ExactDecimal.from(existing.direction === "debit" ? "-1" : "1"),
+          );
           const isSameMutation =
             existing.customerId === customerId &&
-            existing.type === prepared.type &&
-            existing.direction === prepared.direction &&
-            existing.amount === normalizedAmount &&
+            existing.type === input.type &&
+            signedExistingAmount.toDecimalPlaces(12) === ExactDecimal.from(input.amount).toDecimalPlaces(12) &&
             existing.reasonCode === input.reasonCode &&
             existing.note === input.note;
           if (!isSameMutation) {
@@ -328,6 +323,15 @@ router.post(
             idempotent: true,
           };
         }
+
+        const prepared =
+          input.type === "grant"
+            ? prepareStoreCreditGrant(input.amount)
+            : prepareStoreCreditAdjustment({
+                amount: input.amount,
+                availableBalance: balance.toDecimalPlaces(12),
+              });
+        const normalizedAmount = prepared.amount.toDecimalPlaces(12);
 
         const [inserted] = await tx
           .insert(storeCreditTransactionsTable)
@@ -508,7 +512,7 @@ router.post(
         .returning();
       return res.status(201).json(customer);
     } catch (error: any) {
-      if (error?.code === "23505")
+      if (error?.code === "23505" || error?.cause?.code === "23505")
         return res
           .status(409)
           .json({ error: "Customer code already exists in this store" });
@@ -548,7 +552,7 @@ router.patch(
         return res.status(404).json({ error: "Customer not found" });
       return res.json(customer);
     } catch (error: any) {
-      if (error?.code === "23505")
+      if (error?.code === "23505" || error?.cause?.code === "23505")
         return res
           .status(409)
           .json({ error: "Customer code already exists in this store" });

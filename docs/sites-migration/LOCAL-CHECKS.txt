@@ -1,0 +1,23 @@
+Node v24.13.1
+Command: node --test scripts/src/backfillTripStoreSafety.test.mjs
+Working directory: C:/Users/Lnovo/Documents/ChatGPT/pika-system-Sites私人遷移
+Child environment: SystemRoot/WINDIR only; no inherited DATABASE_URL, credentials, NODE_OPTIONS or dotenv.
+Started: 2026-09-25T11:08:41.612Z
+Finished: 2026-09-25T11:08:46.534Z
+Exit: 0
+
+✔ requires an explicit database URL (76.9205ms)
+✔ requires an explicit store id (2.3241ms)
+✔ rejects production and Replit targets (16.3961ms)
+✔ rejects invalid store ids (4.7506ms)
+✔ defaults to dry-run (11.1184ms)
+✔ only an explicit apply flag enables writes (11.6608ms)
+✔ rejects unknown and repeated arguments (2.9863ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3430.6814
