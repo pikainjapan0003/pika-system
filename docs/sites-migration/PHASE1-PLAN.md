@@ -4,19 +4,20 @@
 
 ## 總進度
 
-### Seller Agent 移除與公開商店（2026-09-27，重開機後接續中）
+### Seller Agent 移除與公開商店（2026-09-27，網站已公開／網域待 DNS）
 
-使用者已要求繼續；核對本機 checkpoint `3a713e8463b9fb68c6d354dd8f28a050fcd34bf9` 與工作樹後，接續最後 shop typecheck／build、既有部署及網域工作。沒有重做已通過的整套驗收。
+已從本機 checkpoint `3a713e8463b9fb68c6d354dd8f28a050fcd34bf9` 接續完成最後 shop typecheck／build、GitHub 同步、API／Sites 更新及公開 HTTP 驗證。沒有重做整套驗收或重跑付費 OCR。
 
-**重開機交接**：使用者要求先到安全節點停止。本輪修改保存為本機 checkpoint，尚未 push／更新 Railway／發布 Sites；現行仍為下面記錄的 Sites 第 8 版 PRIVATE 與原 API。兩處前端型別錯誤已修正，但最後前端 typecheck／build 在本輪停止，須續跑。雲端 Agent 表尚未刪除；網域只在 Sites 新增為 pending，DNS 未改。既有合成資料與本機 Docker 資料卷保留。具體恢復位置見 [公開網站報告](PUBLIC-LAUNCH-REPORT.md)，不要回退到歷史基準或重跑已完成項目。
+**目前版本**：GitHub 執行來源 `9737f77`（後續僅文件收尾）；Sites 第 9 版 `207c55d7`，access public；Railway 最終 `632d96db` SUCCESS、preDeployCommand 已清空。Agent 專屬表已刪除，12 個業務表筆數與既有成功案例一致。詳細證據與回復方式見 [公開網站報告](PUBLIC-LAUNCH-REPORT.md)。
 
 使用者已決定 Seller Agent 為「產品決定移除」，不再待決定。沿用 `923fd0899a9c1e99264fd7f678c7c65fce31a672`／Sites 第 8 版，改為公開客人入口＋指定店主後台；合成資料、物流與既有商務功能保留，真資料暫不搬。GitHub 遷移分支 push、公開 Site 及 `pika-jpselects.com` 綁定已獲本輪授權，舊歷史授權敘述不覆蓋此範圍。
 
 | 項目 | 狀態 | 實際進度／下一步 |
 |---|---|---|
-| Seller Agent | 進行中 | 專屬頁面、API、token、schema、生成 client 與 4 份專屬測試已移除；物流 8 項 fixture 回歸及 API build 通過。0044 待新版 API 上線後清空表依賴，沒有 CASCADE |
-| 公開客人入口＋私人後台 | 進行中 | 最終 shop typecheck／build 已通過，API／libs／scripts／mockup 檢查及受影響測試通過。正進入 GitHub 同步、API／Sites 部署；指定 owner、合成資料隔離與退役路由測試維持通過 |
-| pika-jpselects.com | 進行中 | 既有 Site 已受理網域，取得實際 DNS 驗證與 A records；目前 pending，尚未改 DNS |
+| Seller Agent | 已完成移除 | 新網站／GitHub／API／隔離庫皆已移除；三張空表不存在，物流與 12 個業務表不變。正常 Sites API 讀回通過，不是只藏入口 |
+| 公開客人入口＋私人後台 | 已完成發布及 API 驗證 | 第 9 版 public；無 Site 登入可開首頁／商品入口，顯示商品準備中，不列假資料。管理 API 401、合成 token／圖片 404；指定店主可讀原資料。signup／setup／Agent 舊路由 404 |
+| pika-jpselects.com | 受阻：DNS 操作連線 | Site 已受理，pending／TLS pending_validation；A 仍舊位址，TXT 未設。Chrome／內建瀏覽器不可操作，已集中請使用者恢復連線並登入 Namecheap；完整 4 筆紀錄在報告，不重建網域 |
+| 真瀏覽器畫面 | 延後驗收 | 工具不可用；DOM／HTTP／API／SQL 證據已取得，不冒充 Browser E2E、不要求人工逐頁驗收 |
 | 真資料／外部貨態／人工驗收 | 延後 | 本輪不搬資料、不查包裹、不重跑付費 OCR |
 
 詳細證據集中於 [公開網站報告](PUBLIC-LAUNCH-REPORT.md)，每個里程碑繼續在此更新。

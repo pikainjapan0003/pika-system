@@ -1,35 +1,92 @@
 # Seller Agent 移除與公開商店
 
-2026-09-27，B＋Astra，使用者重開機後已要求繼續，從安全 checkpoint `3a713e8463b9fb68c6d354dd8f28a050fcd34bf9` 接續。使用者明確授權移除 Seller Agent、同步遷移分支、公開客人網站與綁定 pika-jpselects.com；不搬真資料、不改 main／原 OCR／Replit。
+更新：2026-09-27。沿用 `codex/chatgpt-sites-private-poc`；未 reset、未改 main／原 OCR／Replit。
 
-## 重開機後接續位置
+## 目前結果
 
-恢復里程碑：最終 shop typecheck 已通過（Docker wait exit 0），刪表腳本語法檢查通過；前端 build 亦 exit 0，產物 `index-CmLCoC3E.js`。既有 shadcn sourcemap 提示及 bundle size 警告不影響本次產物；不擴大重構。乾淨 API source 已重新產生為 `.poc/api-source-Oqfl15`，包含 checkpoint 中的完整 migration。重查 Railway 原部署仍 SUCCESS、無別人 staged changes、preDeployCommand 為空；Sites 仍第 8 版 custom owner-private。以下清單保留暫停時的交接順序。
+- **Seller Agent 已從新產品、GitHub 遷移分支、Sites 第 9 版、Railway API 與隔離庫移除。** 真正物流能力、一般 audit 與店主業務功能保留。
+- **客人品牌入口已公開。** Sites access 為 `public`，公開發布成功；首頁與商品入口顯示「商品準備中／尚未開放下單」，不列出合成商品、假客戶或假訂單。
+- **後台仍只允許指定 Clerk 店主。** 合成商品／訂單 token、私人圖片與測試門市資料也只允許該店主讀寫。註冊、Setup、自動建店、第二店主及 Seller Agent 入口已移除。
+- **pika-jpselects.com 尚未接通。** 已加入原 Site，DNS／TLS 驗證仍 pending；目前 A 仍是舊位址 `152.42.254.130`，驗證 TXT 尚不存在。沒有改 DNS、MX 或郵件。
+- **唯一外部待辦是 DNS 操作連線／登入。** 重開後 CUA 顯示沒有可操作瀏覽器；Chrome 與內建瀏覽器皆回報 unavailable。已提出最少的接回瀏覽器並登入 Namecheap 請求，沒有要求人工功能驗收。
+- 沒有搬真資料、查真包裹、重跑 OCR、真付款／寄件／通知；沒有新增方案、綁卡或充值。既有平台本輪計量費用未另查，不能聲稱為零。
 
-- 本輪修改保存為本機 `checkpoint-public-launch-paused` commit；尚未 push，GitHub／Sites／Railway 執行版仍是下列改前版本。既有未追蹤 `.codex/` 及 controller-recovery 交接材料未納入本輪提交。
-- 已通過：API／libs／scripts／mockup typecheck、API build、物流 8 項、公開 API 5 項、Worker 7 項、品牌／圖片 4 項、單品 5 項、購物車與查單末五碼 9 項。完整 root typecheck 的 shop 部分找到 queryKey 與 null narrowing 兩處型別錯誤，均已修正；最終 shop typecheck／build 因本次安全暫停未完成，不算通過。
-- 本輪本機建置／測試容器停止，資料卷保留。持續輸出的測試紀錄在 `.poc/checks/public-launch-*.txt`。線上原始讀回基準保留 `.poc/checks/public-launch-online-baseline.jsonl`，不要覆蓋。
-- 先續跑 shop typecheck 及 `.poc/checks/build-public-shop.mjs`，必要時重跑受修正影響的小測試。API 清理腳本新增刪表後 `to_regclass` 核對；此更新尚未複製到之前的 `.poc/api-source-plrGju`，部署前以 `sites/poc/prepare-api.mjs` 重新產生乾淨來源。
-- 測試通過後再正常 push 遷移分支、設定隔離 API 的 `PIKA_PUBLIC_SHOP=true`（保留 `PIKA_PRIVATE_POC=true`）並部署。先讓新版 API 不再依賴 Agent，才執行 `src/poc/remove-seller-agent.mjs drop`；僅空的專屬表允許刪除，非空會中止；部署後清空一次性 preDeployCommand。雲端目前尚未執行此清理。
-- 前端 build 後沿用 `sites/prepare-site.mjs` 與既有 Site source checkout，先私人部署新版、用 `publicLaunchOnline.verify.mjs` 比較基準，再改 Sites access 為 public 並發布。不得把 GitHub commit 和 Site 產物 commit 混寫。
-- Site ID `appgprj_6ab69a6062348191809b743a5635f83e`；Railway project `de13e86c-9d70-4396-85be-79cd73cd412f`、environment `143266a9-b10c-4dec-9b8f-f4eec9bec86a`、API service `1068b8cf-3623-4b85-a702-d7bb7b70080e`。重開機後重查 deployment/staged changes；不要套用他人暫存變更。
-- Domain 已新增一次，ID 與 DNS 值見下方，不要重建。瀏覽器控制連線逾時而無法操作 DNS；尚未確認網域商登入狀態。其餘工程完成後，若仍無法操作再集中提出最少 DNS 登入／設定事項。
+目前公開網址：[PIKA JP Selects](https://pika-system-private-poc-20260925.bill831206.chatgpt.site/)。
 
-沒有新增付費、真 OCR、真物流或正式資料操作。此次暫停不代表公開網站或網域綁定完成。
+## 版本與來源
 
-目前基準 `923fd0899a9c1e99264fd7f678c7c65fce31a672`；Sites 第 8 版／來源 `3a9a3c090c142d905b051d36df64f58cf1ef757f`；Railway `39fc9e9f-cfa3-44ed-b0e1-ecd72fb2f27e`。工作樹 tracked 乾淨，既有未追蹤交接材料保留；改前 Git archive 備份在專案外 `Codex-backups/PUBLIC-LAUNCH-2026-09-27T06-48-13-068Z/source.zip`。
+| 層次 | 已核對結果 |
+|---|---|
+| 原可用 checkpoint | `923fd0899a9c1e99264fd7f678c7c65fce31a672`；Sites 第 8 版；Railway `39fc9e9f-cfa3-44ed-b0e1-ecd72fb2f27e` |
+| 本輪程式 checkpoint | `3a713e8463b9fb68c6d354dd8f28a050fcd34bf9`，`checkpoint-public-launch-paused`；重開前保存，沒有回到最初基準 |
+| 已推送及讀回的 GitHub 執行來源 | `9737f77ec5193c432a6e56cfcbe71b29f9db7a65`；執行程式與 3a713e8 相同，另記最終 build／typecheck；本報告收尾提交只更新文件 |
+| Sites source | `207c55d7ef66122df61a96d2995f0b767302c54e`，專用產物 repo；由相同已驗證程式建置，JS `index-CmLCoC3E.js` |
+| Sites 版本 | 第 9 版，`appgprj_6ab69a6062348191809b743a5635f83e~appgver_a2b85df53b188191864d0aad81410c33` |
+| 私人檢查部署 | `appgdep_6ab8f4812eb081918c726050a3fcc34c`，succeeded |
+| 公開部署 | `appgdep_6ab8f5e085f4819190e38c7826700de0`，succeeded；access public、revision 2、env revision 2 |
+| 最終 Railway API | `632d96db-029b-4f7c-80b3-493d4fa8ec6d`，SUCCESS；preDeployCommand 已清空，無其他 staged changes |
+| main／原 OCR | 仍分別為 `6190ef22584d19fb8f2427e76d09d23c7aa88d3c`／`33953b1fa8586110863c76304f5b6d3dc9f1ba92` |
 
-## 依賴與處理
+API 使用原隔離 project `de13e86c-9d70-4396-85be-79cd73cd412f`、environment `143266a9-b10c-4dec-9b8f-f4eec9bec86a`（名稱 production，實際用途仍是 POC）、service `1068b8cf-3623-4b85-a702-d7bb7b70080e`。來源由 `sites/poc/prepare-api.mjs` 產生 `.poc/api-source-Oqfl15` 後上傳，排除 env、keys、node_modules、Git 歷史與本機資料；不是 GitHub 自動部署。
 
-Seller Agent 的 `sellerAgent.ts` 管設定、`agent.ts` 提供舊外部控制 API、`agentAuth.ts` 讀專用 token；三張 Agent 表只供上述入口使用。原物流 adapter 僅在註解提到舊 agent endpoint，沒有呼叫或 import。獨立物流 routes、FamilyMart worker、其他 adapters、匯入、異常、shipment tables／events 與客人查單保留。
+Site 開啟步驟已由 bundled workflow 核對原 source。後續發布時該插件 helper 路徑消失，限定插件目錄搜尋亦無結果；沿用本案既有 `.poc/publish-source.mjs` 核對固定 Site remote、推送 SHA、建置及 archive，再由原生工具 save／deploy。沒有建立新 Site 或改動 GitHub main。
 
-公開前先把合成工程資料與正常品牌入口分開。指定店主 Clerk／store 校驗、隔離 DB 與既有副作用限制維持；不以公開 Sites 為理由開放管理 API。
+## 依賴拆除與保留
 
-## 網域
+| 原依賴 | 處理 |
+|---|---|
+| AgentSettings、Settings 導航 | 刪頁面、導航及直接路由；舊 `/settings/agent` 回 404 |
+| sellerAgent／agent routes、agentAuth | 完整移除設定與外部控制入口、專用 token auth；沒有改成永遠 enabled |
+| Seller Agent OpenAPI／client／zod | 刪專屬定義，Orval 正常重生成；未手改生成物 |
+| sellerAgentSettings、sellerAgentTokens、agentRunLogs | 刪現行 schema／exports，新增正常向前 migration 0044 |
+| 專屬 tests／文件 | 刪 4 份 Agent 專屬測試與 6 份 Agent 設計／API／測試計畫；更新 README、操作手冊、權限表與總進度 |
+| 真正物流 | FamilyMart worker、7-11 preview、黑貓／郵局 adapters、查詢／更新 workers、匯入、異常、tracking tables／events、客人查貨均保留；adapter 只移除過期 Agent 註解 |
+| 其他業務 | 商品、分類、訂單、客戶、價格／購物金、成本、報表、行程、OCR 與 audit 保留；原刻意停用副作用未開啟 |
 
-已使用既有 Site Custom Domain 功能新增 `pika-jpselects.com`，ID `appgdom_6ab8bc58fce481919e81e44c332c0fbd`，目前 pending。DNS authoritative NS 為 `dns1.registrar-servers.com`／`dns2.registrar-servers.com`；不是由既有 R2 帳號自動取得 DNS 管理權限。
+歷史建表 migration、歷史驗收／結果報告及舊分支保留；相關現行文件標明 Agent 已移除。未操作 Codex Skill、AGENTS 工具能力或使用者停用設定。全程直接 B 作業，未呼叫 SWE-2／Devin 或另派模型／子代理；Astra 為本案要求，工具未回傳可獨立核對的本輪 model ID。
 
-Sites 實際要求：
+## 公開與授權設計
+
+`VITE_PUBLIC_SHOP=true` 控制公開品牌入口；`VITE_PRIVATE_POC=true`、`PIKA_PRIVATE_POC=true` 保留單店主、隔離資料與原功能限制。後端新增 `PIKA_PUBLIC_SHOP=true`，在 Clerk 驗證後保護合成 catalog、有效商品／訂單 token、圖片及門市資料。公開不等於開放測試資料。
+
+`Setup.tsx`、SignUp、前端自動 createStore 與後端 `POST /stores` 已移除；沒有第一位登入者自動當店主。管理頁仍經 MerchantPortal，API 經原 requireAuth／指定 owner 與 store 校驗。
+
+原穩定商品圖片網址不變；ProductImage 透過同源 bearer fetch 顯示 blob，不向任意外部 host 傳 token。購物車、查單末五碼及門市搜尋的原生 fetch 補上登入 token，讓店主仍可操作隔離測試資料。
+
+## 隔離資料庫清理
+
+先部署無 Agent 依賴的 API `0078de84-73a0-4e18-8966-3203b1d4b7d4`，SUCCESS 後才執行清理 deployment `978eccf3-ddec-43cd-a39c-74c4309239ac`。
+
+`remove-seller-agent.mjs` 校驗精確 project／environment／service、資料庫 `pika_sites_poc`、帳號 `pika_poc` 及店主，交易內鎖表並檢查依賴。三張 Agent 表刪前各 0 筆；0044 不使用 CASCADE，刪後 `to_regclass` 全部不存在。若有資料會中止而非清空。
+
+12 個業務表前後筆數一致：stores 1、products 4、orders 11、customers 5、store_credit_transactions 6、shipment_trackings 2、shipment_tracking_events 2、shipment_tracking_run_logs 6、shipment_tracking_exceptions 4、logistics_import_batches 6、logistics_import_rows 10、invoice_ocr_runs 1。
+
+一次性 preDeploy 已移除並再部署最終 API；正常啟動不會再次執行刪表。空表回復材料為原 checkpoint 的 schema／migration；沒有 Agent row 需要備份。
+
+## 自動驗證
+
+- Orval 生成及 libs、API、scripts、mockup 型別檢查通過。root 首次在 shop 找到 queryKey／null narrowing 兩處錯誤；修正後單獨 shop typecheck exit 0，其他已通過 workspace 不重跑。
+- API build、最終 shop build、migration 腳本語法檢查通過。Vite 有既有 shadcn sourcemap 與 bundle size 警告，build exit 0，未因本輪擴大重構。
+- 本機物流 8 項、公開 API 5 項、Worker 7 項、品牌／圖片 4 項、單品頁 5 項、購物車／查單末五碼 9 項通過。僅 fixture 測物流與 OCR 錯誤路徑，沒有真外部呼叫。
+- 公開 API 整合測試使用真隔離本機 PostgreSQL，移除 Agent 表後正常讀業務；匿名、非指定帳號、跨店、建店與真副作用拒絕。另關閉本機 POC allowlist 後以已授權測試證明舊 Agent router 真正不存在，沒有把匿名被拒當作移除證據。
+- 刪表後用私人 Sites 正常 API、最終 API 重啟後用公開 Sites 正常 API 分別讀回；公開驗證完全不帶 OAI-Sites-Authorization。均與更版前基準一致：商品 4、訂單 11、原訂單 1 金額 200；商品 1 圖片 417 bytes，SHA-256 `5ebf45e7206f8cfc6dab1a35c320bdd9506cf6f754b3ef8e83d791cfca67048c`。
+- 既存合成物流訂單 9／11 仍為 arrived_store／exception，沒有誤判送達或回傳內部錯誤；客戶、成本、既有 OCR case 1、物流匯入／異常／狀態與 audit 可讀。
+- 無 Site 登入、無 Clerk token 時：`/`、`/shop`、`/cart`、`/track` HTTP 200；管理 API 401；有效測試分享／查單／圖片及下單入口 404；`/sign-up`、`/setup`、`/settings/agent` 404。現場 Agent API 仍先由部署 allowlist 回 403，本機測試補足實際 router 移除證據。
+- 實際瀏覽器畫面尚未驗證。DOM、型別、路由、HTTP、API 與 SQL 證據不冒充 Browser E2E；沒有要求使用者逐頁驗收。
+
+主要命令沿用現有工具：
+`docker compose -f sites/poc/compose.yaml run --rm --no-deps tools --filter @workspace/shop-app run typecheck`、
+`.poc/checks/build-public-shop.mjs`、
+API workspace 的 `node --import tsx/esm --experimental-test-module-mocks --test`、
+`node --test sites/worker.test.mjs`、
+`.poc/checks/run-public-online.mjs private|public`。
+測試回條保存在 ignored `.poc/checks/public-launch-*.txt` 及 baseline／private／public JSONL，只有去敏摘要，無 key 或完整 token。
+
+## pika-jpselects.com 待辦
+
+原 Site 已新增 domain ID `appgdom_6ab8bc58fce481919e81e44c332c0fbd`，不要重建。最新查回 status pending、SSL pending_validation；authoritative NS 是 `dns1.registrar-servers.com`／`dns2.registrar-servers.com`，對應 [Namecheap BasicDNS](https://www.namecheap.com/support/knowledgebase/article.aspx/923/10/what-is-your-basicdns/)。
+
+Sites 實際要求以下 DNS；A 的兩筆取代目前指向舊網站的 apex A，保留 MX／郵件及所有無關紀錄：
 
 | Type | Name | Value |
 |---|---|---|
@@ -38,18 +95,10 @@ Sites 實際要求：
 | TXT | _openai-site-verification | openai-site-verification=bKITDHZy1USHczTFLS6NEPBWjxN-57Vcu_q4XmgBQ_c |
 | TXT | _cf-custom-hostname | 1d69faae-f3c3-408d-ae40-163c3b733914 |
 
-以上為公開 DNS 驗證值，不是 API 密鑰。尚未改 DNS，將先完成程式與測試，再核對可操作的網域管理 session。保留 MX／郵件及其他無關紀錄。
+以上是公開 DNS 驗證值，不是 API secret。DNS 尚未寫入，不能說只是傳播中，也不能說正式網域已由 Sites 提供。接回瀏覽器並登入後，只設定上述紀錄，refresh 同一 domain status，再驗證 HTTPS 與新 Site；不改無關 DNS。
 
-## 驗證與交付
+## 回復與剩餘範圍
 
-已移除 AgentSettings、sellerAgent／agent routes、agentAuth、三份 schema 與 exports、Seller Agent OpenAPI／生成 client、4 份專屬測試。`Setup.tsx`、前端自動建店、SignUp 與 `POST /stores` 也已移除。舊建表 migration 保留；0044 為正常向前刪除，不用 CASCADE。歷史報告加註已移除；一般 audit 保留。
+公開存取若需回復，先把同一 Site 改回原 owner-private，再以既有部署方式回到第 8 版。若同時回復含 Agent 的舊 API，必須先由 checkpoint 的原 schema／migration 還原三張空表，不能只切舊 image。不要 reset 他人修改、不回到最初遷移基準；用正常 revert／新 commit。原始碼額外備份仍在專案外 `Codex-backups/PUBLIC-LAUNCH-2026-09-27T06-48-13-068Z/source.zip`。
 
-`VITE_PUBLIC_SHOP=true` 只改品牌入口與外觀；`VITE_PRIVATE_POC=true`／`PIKA_PRIVATE_POC=true` 維持。`PIKA_PUBLIC_SHOP=true` 在 Clerk 驗證後保護合成 catalog、有效商品／訂單 token、圖片及合成門市資料。指定店主仍可讀取測試紀錄；匿名與其他帳號無法讀取或寫入。商品圖片用同源 bearer fetch 顯示 blob，資料庫仍存原穩定圖片網址。上傳與管理 API 仍校驗指定店主及店鋪。
-
-本機已通過：Orval 生成及 libs typecheck、API build、物流 8 項回歸、公開權限 5 項、worker 7 項、公開品牌／授權圖片 4 項、單品頁 5 項、購物車與查單末五碼 9 項。首次 OCR 讀取案例缺測試旗標、圖片案例因本機負載超過預設等待，修正測試環境後保留原行為斷言通過；沒有放寬權限／金額或重跑真 OCR。最後前端 build/typecheck 待重開機後續跑，部署尚未變更。
-
-線上更版前唯讀基準：4 個商品、11 筆訂單、原訂單 1 總額 200；商品 1 圖片 417 bytes，SHA-256 `5ebf45e7206f8cfc6dab1a35c320bdd9506cf6f754b3ef8e83d791cfca67048c`；訂單 9／11 的已存合成物流顯示 `arrived_store`／`exception`。讀取既有 OCR test case 1，不重新辨識。檢查使用現有 Clerk 測試 owner session 及原 Sites 同源 API，沒有新的登入後門。
-
-目前 DNS apex A 仍為 `152.42.254.130`，MX 是既有 Namecheap forwarding，未更動。NS 對應 [Namecheap BasicDNS 官方說明](https://www.namecheap.com/support/knowledgebase/article.aspx/923/10/what-is-your-basicdns/)。CUA 讀取與 Chrome 開頁逾時，Windows computer-use 初始化也逾時；尚無可操作的 DNS 控制台，不能宣稱已設定或只是 DNS 傳播。瀏覽器畫面驗證目前未完成；DOM、HTTP、API 及資料庫證據分開記錄，不要求人工功能驗收。
-
-待补實際部署、清表及匿名公開讀回；真商品／客戶／訂單／歷史搬移、四家真物流、完整瀏覽器／Excel／正式平台驗收全部延後。
+真商品／客戶／訂單／歷史搬遷、四家物流合法單號、真門市來源、完整 Browser E2E、Excel 實機與正式平台匯入仍延後。舊 Replit、正式資料庫／R2、main、原 OCR 分支及 Git 歷史未改。本輪不自動開始任何上述工作。
