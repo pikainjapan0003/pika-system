@@ -4,7 +4,9 @@
 
 ## 總進度
 
-### Seller Agent 移除與公開商店（2026-09-27，使用者要求安全暫停）
+### Seller Agent 移除與公開商店（2026-09-27，重開機後接續中）
+
+使用者已要求繼續；核對本機 checkpoint `3a713e8463b9fb68c6d354dd8f28a050fcd34bf9` 與工作樹後，接續最後 shop typecheck／build、既有部署及網域工作。沒有重做已通過的整套驗收。
 
 **重開機交接**：使用者要求先到安全節點停止。本輪修改保存為本機 checkpoint，尚未 push／更新 Railway／發布 Sites；現行仍為下面記錄的 Sites 第 8 版 PRIVATE 與原 API。兩處前端型別錯誤已修正，但最後前端 typecheck／build 在本輪停止，須續跑。雲端 Agent 表尚未刪除；網域只在 Sites 新增為 pending，DNS 未改。既有合成資料與本機 Docker 資料卷保留。具體恢復位置見 [公開網站報告](PUBLIC-LAUNCH-REPORT.md)，不要回退到歷史基準或重跑已完成項目。
 
@@ -13,7 +15,7 @@
 | 項目 | 狀態 | 實際進度／下一步 |
 |---|---|---|
 | Seller Agent | 進行中 | 專屬頁面、API、token、schema、生成 client 與 4 份專屬測試已移除；物流 8 項 fixture 回歸及 API build 通過。0044 待新版 API 上線後清空表依賴，沒有 CASCADE |
-| 公開客人入口＋私人後台 | 進行中／暫停 | 品牌／商品準備中入口完成；公開頁不讀合成資料。指定 owner／測試隔離保留，註冊／建店與 Agent 舊連結回 404；轉送 7 項測試通過，最後前端打包與 typecheck 待重開機後續跑 |
+| 公開客人入口＋私人後台 | 進行中 | 最終 shop typecheck／build 已通過，API／libs／scripts／mockup 檢查及受影響測試通過。正進入 GitHub 同步、API／Sites 部署；指定 owner、合成資料隔離與退役路由測試維持通過 |
 | pika-jpselects.com | 進行中 | 既有 Site 已受理網域，取得實際 DNS 驗證與 A records；目前 pending，尚未改 DNS |
 | 真資料／外部貨態／人工驗收 | 延後 | 本輪不搬資料、不查包裹、不重跑付費 OCR |
 
