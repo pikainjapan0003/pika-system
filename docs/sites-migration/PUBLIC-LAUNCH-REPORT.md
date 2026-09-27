@@ -1,8 +1,10 @@
 # Seller Agent 移除與公開商店
 
-2026-09-27，B＋Astra，依使用者要求在安全節點暫停，供重開機釋放記憶體。使用者明確授權移除 Seller Agent、同步遷移分支、公開客人網站與綁定 pika-jpselects.com；不搬真資料、不改 main／原 OCR／Replit。
+2026-09-27，B＋Astra，使用者重開機後已要求繼續，從安全 checkpoint `3a713e8463b9fb68c6d354dd8f28a050fcd34bf9` 接續。使用者明確授權移除 Seller Agent、同步遷移分支、公開客人網站與綁定 pika-jpselects.com；不搬真資料、不改 main／原 OCR／Replit。
 
 ## 重開機後接續位置
+
+恢復里程碑：最終 shop typecheck 已通過（Docker wait exit 0），刪表腳本語法檢查通過；前端 build 亦 exit 0，產物 `index-CmLCoC3E.js`。既有 shadcn sourcemap 提示及 bundle size 警告不影響本次產物；不擴大重構。乾淨 API source 已重新產生為 `.poc/api-source-Oqfl15`，包含 checkpoint 中的完整 migration。重查 Railway 原部署仍 SUCCESS、無別人 staged changes、preDeployCommand 為空；Sites 仍第 8 版 custom owner-private。以下清單保留暫停時的交接順序。
 
 - 本輪修改保存為本機 `checkpoint-public-launch-paused` commit；尚未 push，GitHub／Sites／Railway 執行版仍是下列改前版本。既有未追蹤 `.codex/` 及 controller-recovery 交接材料未納入本輪提交。
 - 已通過：API／libs／scripts／mockup typecheck、API build、物流 8 項、公開 API 5 項、Worker 7 項、品牌／圖片 4 項、單品 5 項、購物車與查單末五碼 9 項。完整 root typecheck 的 shop 部分找到 queryKey 與 null narrowing 兩處型別錯誤，均已修正；最終 shop typecheck／build 因本次安全暫停未完成，不算通過。
