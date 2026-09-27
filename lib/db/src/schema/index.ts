@@ -22,3 +22,6 @@ export * from "./orderPickingChecks.ts";
 export * from "./operatingSettings.ts";
 export * from "./costCategories.ts";
 export * from "./costEntries.ts";
+export * from "./invoiceOcrTestCases.ts";
+export * from "./invoiceOcrRuns.ts";
+export * from "./invoiceOcrReviews.ts";
