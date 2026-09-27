@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { useAuth } from "@clerk/react";
+import ProductImage from "@/components/ProductImage";
 import {
   getCart,
   updateCartQty,
@@ -128,7 +130,7 @@ function CartItemCard({
       {/* Product image */}
       <div className="w-16 h-16 rounded-xl overflow-hidden bg-muted shrink-0">
         {item.productImageUrl ? (
-          <img
+          <ProductImage
             src={item.productImageUrl}
             alt={item.productName}
             className="w-full h-full object-cover"
@@ -282,7 +284,7 @@ function SuccessPage({ order }: { order: CartOrderResult }) {
             return (
               <div key={idx} className="px-4 py-3 flex items-start gap-3">
                 {item.productImageUrl && (
-                  <img
+                  <ProductImage
                     src={item.productImageUrl}
                     alt={item.productName}
                     className="w-12 h-12 rounded-lg object-cover flex-shrink-0 mt-0.5"
@@ -351,6 +353,7 @@ const selectClass =
   "w-full h-12 px-4 rounded-xl border border-input bg-white text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 text-base";
 
 export default function PublicCartPage() {
+  const { getToken } = useAuth();
   const [cartItems, setCartItems] = useState<BuyerCartItem[]>([]);
   const [buyerName, setBuyerName] = useState("");
   const [buyerPhone, setBuyerPhone] = useState("");
@@ -532,10 +535,11 @@ export default function PublicCartPage() {
         })),
       };
 
+      const token = await getToken();
       const resp = await fetch("/api/cart/orders", {
         method: "POST",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify(payload),
       });
       if (!resp.ok) {

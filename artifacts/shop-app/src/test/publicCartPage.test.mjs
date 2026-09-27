@@ -12,6 +12,8 @@ globalThis.React = React;
 
 let cart = [];
 let shippingFee = 0;
+const getToken = async () => "synthetic-owner-token";
+mock.module("@clerk/react", { namedExports: { useAuth: () => ({ getToken, isLoaded: true }) } });
 
 const item = {
   itemKey: "demo-item",

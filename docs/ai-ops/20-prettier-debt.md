@@ -1,5 +1,7 @@
 # Prettier 欠帳盤點
 
+> 歷史盤點補註（2026-09-27）：Seller Agent 已於遷移產品移除，本文 Agent 頁面、設定、token 與專屬表引用僅為歷史。物流業務保留；現況見 [公開網站報告](../sites-migration/PUBLIC-LAUNCH-REPORT.md)。
+
 ## BATCH-14 後現況（2026-07-19）
 
 - BATCH-13 包 13 已完成 `lib/`：75 個可檢查檔全綠，49 個實際 Git 變更均通過舊版重跑 Prettier 的逐位元比對。

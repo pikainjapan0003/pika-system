@@ -22,6 +22,7 @@ import { configureSecurityHeaders } from "./lib/securityHeaders.ts";
 import { sendPublicError } from "./lib/publicError.ts";
 import { resolveRequestId, setRequestIdHeader } from "./lib/requestId.ts";
 import { privatePocBoundary } from "./lib/privatePoc.ts";
+import { publicLaunchBoundary } from "./middlewares/publicLaunch.ts";
 
 const app: Express = express();
 configureTrustProxy(app);
@@ -85,6 +86,7 @@ app.use(
   })),
 );
 
+app.use(publicLaunchBoundary);
 app.use("/api", router);
 
 // JSON 404 for unmatched routes — must be before the error handler

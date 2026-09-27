@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import ProductImage from "@/components/ProductImage";
 import { useLocation } from "wouter";
 import { useAuth } from "@clerk/react";
 import {
@@ -578,7 +579,7 @@ export default function ProductFormPage({ productId }: Props) {
           <div className="bg-white rounded-2xl border border-border overflow-hidden">
             {/* 商品主圖 */}
             {createdProduct.imageUrl ? (
-              <img
+              <ProductImage
                 src={createdProduct.imageUrl}
                 alt={createdProduct.name}
                 className="w-full h-48 object-cover"
@@ -723,7 +724,7 @@ export default function ProductFormPage({ productId }: Props) {
               <div className="flex gap-2 items-start">
                 {displayPreview && (
                   <div className="relative flex-shrink-0">
-                    <img
+                    <ProductImage
                       src={displayPreview}
                       alt="商品圖"
                       className="w-24 h-24 rounded-xl object-cover"

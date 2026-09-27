@@ -1,14 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import {
   ClerkProvider,
   SignIn,
-  SignUp,
-  Show,
   useAuth,
   useClerk,
   useUser,
 } from "@clerk/react";
-import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadcn } from "@clerk/themes";
 import {
   Switch,
@@ -22,15 +19,14 @@ import { Toaster } from "@/components/ui/toaster";
 import { queryClient } from "@/lib/queryClient";
 import {
   useGetMyStore,
-  useCreateStore,
   getGetMyStoreQueryKey,
   setAuthTokenGetter,
 } from "@workspace/api-client-react";
 import { applyBrandColor, DEFAULT_BRAND_PRIMARY_COLOR } from "@/lib/brandColor";
 import { CUSTOMER_PORTAL_ROUTE_PATTERN } from "@/lib/customerRoutes";
 
-import HomePage from "@/pages/Home";
 import PocShop from "@/pages/PocShop";
+import Storefront from "@/pages/Storefront";
 import DashboardPage from "@/pages/Dashboard";
 import ProductsPage from "@/pages/Products";
 import ProductFormPage from "@/pages/ProductForm";
@@ -41,7 +37,6 @@ import CustomerDetailPage from "@/pages/CustomerDetail";
 import LogisticsImportPage from "@/pages/LogisticsImport";
 import LogisticsImportHistoryPage from "@/pages/LogisticsImportHistory";
 import LogisticsExceptionsPage from "@/pages/LogisticsExceptions";
-import SetupPage from "@/pages/Setup";
 import PublicOrderPage from "@/pages/PublicOrder";
 import TrackLookupPage from "@/pages/TrackLookup";
 import TrackOrderPage from "@/pages/TrackOrder";
@@ -49,22 +44,18 @@ import SettingsPage from "@/pages/Settings";
 import InvoiceOcrTestPage from "@/pages/InvoiceOcrTest";
 import ExchangeRateReferencePage from "@/pages/ExchangeRateReference";
 import AuditLogsPage from "@/pages/AuditLogs";
-import AgentSettingsPage from "@/pages/AgentSettings";
 import TripsPage from "@/pages/Trips";
 import GuidePage from "@/pages/Guide";
-import DevHandoffPage from "@/pages/DevHandoff";
 import ProductCategoriesPage from "@/pages/ProductCategories";
 import Cvs711ReturnPage from "@/pages/Cvs711Return";
 import Cvs711SelectPage from "@/pages/Cvs711Select";
 import PublicCartPage from "@/pages/PublicCart";
-import ReceiptPreviewPage from "@/pages/ReceiptPreview";
 import NotFoundPage from "@/pages/not-found";
 
 const privatePoc = import.meta.env.VITE_PRIVATE_POC === "true";
-const clerkPubKey = privatePoc ? import.meta.env.VITE_CLERK_PUBLISHABLE_KEY : publishableKeyFromHost(
-  window.location.hostname,
-  import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,
-);
+// Site visibility is independent of the single-owner / synthetic-data mode.
+const publicShop = import.meta.env.VITE_PUBLIC_SHOP === "true";
+const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
 const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
 
@@ -135,23 +126,10 @@ function SignInPage() {
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4">
       <SignIn
-        withSignUp={!privatePoc}
-        fallbackRedirectUrl={privatePoc ? `${basePath}/products` : undefined}
+        withSignUp={false}
+        fallbackRedirectUrl={`${basePath}/products`}
         routing="path"
         path={`${basePath}/sign-in`}
-        signUpUrl={`${basePath}/sign-up`}
-      />
-    </div>
-  );
-}
-
-function SignUpPage() {
-  return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4">
-      <SignUp
-        routing="path"
-        path={`${basePath}/sign-up`}
-        signInUrl={`${basePath}/sign-in`}
       />
     </div>
   );
@@ -181,108 +159,27 @@ function ClerkQueryClientCacheInvalidator() {
 
 function MerchantPortal() {
   const { isLoaded, isSignedIn } = useUser();
-  const qc = useQueryClient();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const {
-    data: store,
-    isLoading,
-    error,
-  } = useGetMyStore({ query: { enabled: !!isSignedIn } as any });
-  const { mutateAsync: createStoreMutate } = useCreateStore();
-
+  const { data: store, isLoading, error } = useGetMyStore({
+    query: { queryKey: getGetMyStoreQueryKey(), enabled: !!isSignedIn },
+  });
   const { signOut } = useClerk();
-
-  const [storeInitState, setStoreInitState] = useState<
-    "idle" | "creating" | "failed"
-  >("idle");
-  const [storeInitError, setStoreInitError] = useState("");
-
   useEffect(() => {
     applyBrandColor(store?.brandPrimaryColor ?? DEFAULT_BRAND_PRIMARY_COLOR);
   }, [store?.brandPrimaryColor]);
-  const createAttemptedRef = useRef(false);
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const errorStatus = (error as any)?.status as number | undefined;
-  const is404 = !!error && errorStatus === 404;
-  const isAuthError = !!error && (errorStatus === 401 || errorStatus === 403);
-
-  useEffect(() => {
-    if (
-      !isSignedIn ||
-      privatePoc ||
-      !is404 ||
-      storeInitState !== "idle" ||
-      createAttemptedRef.current
-    )
-      return;
-    createAttemptedRef.current = true;
-    setStoreInitState("creating");
-
-    const genSlug = () => `store-${Math.random().toString(36).slice(2, 8)}`;
-    (async () => {
-      for (let attempt = 0; attempt < 3; attempt++) {
-        try {
-          await createStoreMutate({
-            data: { name: "我的代購店", slug: genSlug() },
-          });
-          await qc.invalidateQueries({ queryKey: getGetMyStoreQueryKey() });
-          setStoreInitState("idle");
-          return;
-        } catch (err: any) {
-          if (err?.status !== 409) break;
-        }
-      }
-      setStoreInitState("failed");
-      setStoreInitError("初始化店鋪失敗，請稍後再試");
-      createAttemptedRef.current = false;
-    })();
-    // createStoreMutate and qc are stable React Query references
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSignedIn, is404, storeInitState]);
-
-  if (
-    !isLoaded ||
-    isLoading ||
-    storeInitState === "creating" ||
-    (!privatePoc && is404 && !!isSignedIn && storeInitState === "idle")
-  ) {
-    return (
-      <div className="flex min-h-[100dvh] items-center justify-center flex-col gap-3">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-        {storeInitState === "creating" && (
-          <p className="text-sm text-muted-foreground">正在初始化您的店鋪...</p>
-        )}
-      </div>
-    );
+  const errorStatus = (error as { status?: number } | null)?.status;
+  const isAuthError = errorStatus === 401 || errorStatus === 403;
+  if (!isLoaded || isLoading) {
+    return <div role="status" className="flex min-h-[100dvh] items-center justify-center">載入中…</div>;
   }
-
-  if (!isSignedIn) return <Redirect to={privatePoc ? "/sign-in" : "/"} />;
-
-  if (storeInitState === "failed") {
-    return (
-      <div className="flex min-h-[100dvh] items-center justify-center px-5">
-        <div className="w-full max-w-sm bg-white rounded-2xl p-6 border border-border space-y-4 text-center">
-          <p className="font-medium text-foreground">初始化店鋪失敗</p>
-          <p className="text-sm text-muted-foreground">{storeInitError}</p>
-          <button
-            onClick={() => setStoreInitState("idle")}
-            className="w-full h-11 bg-primary text-white font-semibold rounded-xl text-sm"
-          >
-            重試
-          </button>
-        </div>
-      </div>
-    );
-  }
+  if (!isSignedIn) return <Redirect to="/sign-in" />;
 
   if (isAuthError) {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center px-5">
         <div className="w-full max-w-sm bg-white rounded-2xl p-6 border border-border space-y-4 text-center">
-          <p className="font-medium text-foreground">{privatePoc ? "只有指定店主可以管理此店鋪" : "登入狀態已失效"}</p>
+          <p className="font-medium text-foreground">只有指定店主可以管理此店鋪</p>
           <p className="text-sm text-muted-foreground">
-            請重新登入後繼續使用畫夢代購。
+            請以指定店主帳號登入。
           </p>
           <button
             onClick={() => void signOut({ redirectUrl: basePath || "/" })}
@@ -295,7 +192,7 @@ function MerchantPortal() {
     );
   }
 
-  if (error && (!is404 || privatePoc)) {
+  if (error) {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center px-5">
         <div className="w-full max-w-sm bg-white rounded-2xl p-6 border border-border text-center">
@@ -368,11 +265,6 @@ function MerchantPortal() {
               <LogisticsExceptionsPage />
           )}
         </Route>
-        {!privatePoc && (<Route path="/settings/agent">
-          {() => (
-              <AgentSettingsPage />
-          )}
-        </Route>)}
         <Route
           path="/settings/exchange-rate-reference"
           component={ExchangeRateReferencePage}
@@ -396,32 +288,16 @@ function MerchantPortal() {
 }
 
 function HomeRedirect() {
-  if (privatePoc) return <PocShop />;
-  return (
-    <>
-      <Show when="signed-in">
-        <Redirect to="/dashboard" />
-      </Show>
-      <Show when="signed-out">
-        <HomePage />
-      </Show>
-    </>
-  );
-}
-
-function SetupRoute() {
-  const { isSignedIn } = useUser();
-  if (privatePoc) return <Redirect to="/products" />;
-  if (!isSignedIn) return <Redirect to="/" />;
-  return <SetupPage />;
+  return publicShop ? <Storefront /> : <PocShop />;
 }
 
 function AppRouter() {
   return (
     <Switch>
       <Route path="/" component={HomeRedirect} />
+      <Route path="/shop" component={Storefront} />
       <Route path="/sign-in/*?" component={SignInPage} />
-      <Route path="/sign-up/*?">{() => privatePoc ? <Redirect to="/sign-in" /> : <SignUpPage />}</Route>
+      <Route path="/sign-up/*?" component={NotFoundPage} />
       <Route path="/p/:shareToken">
         {(params) => <PublicOrderPage shareToken={params.shareToken} />}
       </Route>
@@ -432,9 +308,9 @@ function AppRouter() {
       <Route path="/cart" component={PublicCartPage} />
       <Route path="/cvs/711/select" component={Cvs711SelectPage} />
       <Route path="/cvs/711/return" component={Cvs711ReturnPage} />
-      <Route path="/receipt-preview">{() => privatePoc ? <NotFoundPage /> : <ReceiptPreviewPage />}</Route>
-      <Route path="/setup" component={SetupRoute} />
-      <Route path="/dev/handoff">{() => privatePoc ? <NotFoundPage /> : <DevHandoffPage />}</Route>
+      <Route path="/receipt-preview" component={NotFoundPage} />
+      <Route path="/setup" component={NotFoundPage} />
+      <Route path="/dev/handoff" component={NotFoundPage} />
       <Route path="/dashboard" component={MerchantPortal} />
       <Route path="/products/*?" component={MerchantPortal} />
       <Route path="/categories" component={MerchantPortal} />
@@ -445,7 +321,6 @@ function AppRouter() {
       <Route path="/logistics/import/history" component={MerchantPortal} />
       <Route path="/logistics/import" component={MerchantPortal} />
       <Route path="/logistics/exceptions" component={MerchantPortal} />
-      <Route path="/settings/agent" component={MerchantPortal} />
       <Route
         path="/settings/exchange-rate-reference"
         component={MerchantPortal}
@@ -484,18 +359,11 @@ function ClerkProviderWithRoutes() {
       proxyUrl={clerkProxyUrl}
       appearance={clerkAppearance}
       signInUrl={`${basePath}/sign-in`}
-      signUpUrl={`${basePath}/sign-up`}
       localization={{
         signIn: {
           start: {
-            title: "商家登入",
-            subtitle: "登入您的畫夢代購帳號",
-          },
-        },
-        signUp: {
-          start: {
-            title: "建立帳號",
-            subtitle: "開始管理您的團購訂單",
+            title: "店主登入",
+            subtitle: "登入 PIKA JP Selects 管理後台",
           },
         },
       }}
@@ -505,7 +373,7 @@ function ClerkProviderWithRoutes() {
       <QueryClientProvider client={queryClient}>
         <ClerkQueryClientCacheInvalidator />
         <ClerkTokenBridge />
-        {privatePoc && <div className="bg-amber-100 px-4 py-2 text-center text-sm text-amber-950">合成資料私人 POC · 不收款、不出貨 · <a className="underline" href={`${basePath}/`}>模擬客人瀏覽</a> · <a className="underline" href={`${basePath}/settings/invoice-ocr`}>收據辨識</a></div>}
+        {privatePoc && !publicShop && <div className="bg-amber-100 px-4 py-2 text-center text-sm text-amber-950">合成資料私人 POC · 不收款、不出貨 · <a className="underline" href={`${basePath}/`}>模擬客人瀏覽</a> · <a className="underline" href={`${basePath}/settings/invoice-ocr`}>收據辨識</a></div>}
         <AppRouter />
         <Toaster />
       </QueryClientProvider>
@@ -516,7 +384,11 @@ function ClerkProviderWithRoutes() {
 function App() {
   return (
     <WouterRouter base={basePath}>
-      <ClerkProviderWithRoutes />
+      <Switch>
+        {publicShop && <Route path="/" component={Storefront} />}
+        {publicShop && <Route path="/shop" component={Storefront} />}
+        <Route><ClerkProviderWithRoutes /></Route>
+      </Switch>
     </WouterRouter>
   );
 }

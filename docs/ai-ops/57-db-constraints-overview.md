@@ -1,5 +1,7 @@
 # BATCH-20 包26：資料庫約束總覽
 
+> 歷史盤點補註（2026-09-27）：Seller Agent 已於遷移產品移除，本文 Agent 頁面、設定、token 與專屬表引用僅為歷史。物流業務保留；現況見 [公開網站報告](../sites-migration/PUBLIC-LAUNCH-REPORT.md)。
+
 > 歷史盤點：2026-09-27 Sites 遷移產品已決定移除技能地圖；本文的技能入口／狀態表／測試建議不再代表現行功能。現況見 [移除報告](../sites-migration/SKILL-MAP-REMOVAL-REPORT.md)。
 
 盤點日期：2026-08-01  

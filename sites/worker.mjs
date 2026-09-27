@@ -31,6 +31,9 @@ export default {
       } catch { return Response.json({ error: "Private POC API unavailable" }, { status: 502 }); }
     }
     if (!["GET", "HEAD"].includes(request.method)) return new Response("Method not allowed", { status: 405 });
+    if (/^\/(?:sign-up|setup|settings\/agent)(?:\/|$)/.test(url.pathname)) {
+      return new Response("Not found", { status: 404, headers: { "cache-control": "no-store" } });
+    }
     const asset = await env.ASSETS.fetch(request);
     if (asset.status !== 404) return asset;
     if (!request.headers.get("accept")?.includes("text/html")) return asset;

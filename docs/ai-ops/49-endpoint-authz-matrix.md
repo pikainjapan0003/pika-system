@@ -1,9 +1,9 @@
 # API 端點權限矩陣
 
-2026-09-27 遷移分支更新：技能狀態／開通／套餐 API 已移除，正常業務仍受 auth／owner 限制。其餘歷史端點盤點不等同 PRIVATE POC 已放行範圍；以 `privatePoc.ts` 及遷移總進度為準。
+2026-09-27 遷移分支更新：技能 API、Seller Agent 專屬 API／token 與 `POST /stores` 建店均已移除。正常業務仍受指定 owner 限制。公開品牌入口不公開合成資料；`publicLaunch.ts` 額外保護有效測試分享／查單 token 與圖片。其餘歷史端點盤點不等同目前已放行範圍；以 `privatePoc.ts` 及遷移總進度為準。
 
 - 盤點日：2026-07-31
-- 範圍：`artifacts/api-server/src/routes/*.ts`，所有路由統一掛在 `/api`；agent 路由另有 `/internal/agent` 前綴。
+- 範圍：`artifacts/api-server/src/routes/*.ts`，所有路由統一掛在 `/api`；原 `/internal/agent` 已移除。
 - 「店主」表示 `requireAuth` 後再以 `verifyStoreOwner`、等價 merchantId 比對，或由資源反查 store 後驗證。
 - 「負向測試」只在測試明確覆蓋未登入 401、跨店 403/404、token/secret 拒絕時記為有；只測成功路徑不算。
 
@@ -12,7 +12,7 @@
 1. **P1：行程與路線只有登入閘門，沒有店鋪隔離。** `trips`、`trip_routes` schema 沒有 `store_id`／`merchant_id`；任何已登入店主都能讀寫全部行程與路線。原始碼已在 `trips.ts:13-17` 明文警告。這不是少一條測試能修的問題，需要先拍板資料歸屬並做 additive migration。
 2. 其餘帶店鋪或可由資源反查店鋪的後台端點，未發現明顯「只登入、不驗店主」的資料讀寫缺口。缺口主要是負向測試不足。
 
-## 公開、內部與 agent 端點
+## 客人與內部端點
 
 | 方法與路徑                                                                                                      | 需求             | 實際防線                                       | 負向測試                                                      |
 | --------------------------------------------------------------------------------------------------------------- | ---------------- | ---------------------------------------------- | ------------------------------------------------------------- | ---------------------------------------------- |
@@ -25,14 +25,12 @@
 | GET `/cvs/regions`；GET `/cvs/stores`                                                                           | 公開             | 查詢參數限長／資料欄位固定                     | 有：`cvs.route.test.mjs`（以功能與輸入為主）                  |
 | GET/DELETE `/dev/handoff/data[/a                                                                                | /b]`             | 只限非 production                              | production 不掛 router，handler 亦回 404                      | 有：`devHandoffProductionGuard.route.test.mjs` |
 | POST `/internal/logistics/sync/scheduled`；POST `/internal/logistics/manual-snapshot-refresh`                   | 內部排程         | `CRON_SYNC_SECRET` 未設回 404；header 定時比較 | 未見專屬負向測試                                              |
-| GET `/internal/agent/orders/tracking-jobs`                                                                      | agent bearer     | `agentTokenAuth`＋token store scope            | 有：`agent.route.test.mjs`、`agent.integration.test.mjs`      |
-| POST `/internal/agent/shipment-events`；PATCH `/internal/agent/shipment-status`；POST `/internal/agent/run-log` | agent bearer     | `agentTokenAuth`＋資源／store scope            | 有：同上                                                      |
 
 ## 店鋪、商品、分類、行程與共用設定
 
 | 方法與路徑                                                                                   | 需求               | 實際防線                                           | 負向測試                   |
 | -------------------------------------------------------------------------------------------- | ------------------ | -------------------------------------------------- | -------------------------- |
-| GET `/me/store`；POST `/stores`                                                              | 登入本人           | `requireAuth`；以 `req.userId` 查詢／建立          | 未見專屬 401 測試          |
+| GET `/me/store`                                                                              | 指定店主           | `requireAuth`；以 `req.userId` 查詢；建店已移除    | `publicLaunch.integration.test.mjs` |
 | PATCH `/stores/:storeId`；GET `/stores/:storeId/stats`                                       | 店主               | `requireAuth`＋merchantId 等價比對                 | 未見跨店負向測試           |
 | GET/POST `/stores/:storeId/products`                                                         | 店主               | `requireAuth`＋`verifyStoreOwner`                  | 未見專屬負向測試           |
 | GET/PATCH/DELETE `/stores/:storeId/products/:productId`                                      | 店主               | `requireAuth`＋`verifyStoreOwner`＋storeId 查詢    | 未見專屬負向測試           |
@@ -43,7 +41,7 @@
 | GET `/trips`；POST `/trips`                                                                  | **目前任何登入者** | 只有 `requireAuth`，無店鋪欄位                     | 無；且無法寫出合理跨店測試 |
 | PATCH `/trips/:tripId`；POST `/trips/:tripId/routes`；PATCH `/trips/:tripId/routes/:routeId` | **目前任何登入者** | 只有 `requireAuth`，以全域 id 查寫                 | 無；屬上方 P1              |
 
-## 客戶、audit 與 agent 設定
+## 客戶與 audit
 
 | 方法與路徑                                                              | 需求    | 實際防線                                                   | 負向測試                                                                        |
 | ----------------------------------------------------------------------- | ------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------- | -------- |
@@ -53,7 +51,6 @@
 | GET `/stores/:storeId/customers/:customerId/store-credit`               | 店主    | `requireAuth`＋`verifyStoreOwner`＋客戶店鋪綁定            | 有：`customerStoreCredit.route.test.mjs`                                        |
 | POST `/stores/:storeId/customers/:customerId/store-credit`              | 店主    | auth→owner→store limiter→二次確認/idempotency              | 有：`customerStoreCredit.route.test.mjs`、`storeCreditLifecycle.route.test.mjs` |
 | GET `/stores/:storeId/audit-logs`；POST `/stores/:storeId/audit-events` | 店主    | `requireAuth`＋`verifyStoreOwner`；action allowlist        | 部分：隔離測試有涵蓋，內容與分頁仍不足                                          |
-| GET/PATCH `/stores/:storeId/agent/settings`                             | 店主    | `requireAuth`＋`verifyStoreOwner`                          | 有：`sellerAgent.route.test.mjs`、integration test                              |
 
 ## 訂單端點
 

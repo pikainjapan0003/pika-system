@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import ProductImage from "@/components/ProductImage";
 import type { Order } from "@workspace/api-client-react";
 import {
   useGetPublicProduct,
@@ -596,7 +597,7 @@ export default function PublicOrderPage({ shareToken }: Props) {
       {/* Product info */}
       <div className="bg-white">
         {product.imageUrl && (
-          <img
+          <ProductImage
             src={product.imageUrl}
             alt={product.name}
             className="w-full h-56 object-cover"

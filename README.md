@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/pikainjapan0003/pika-system/actions/workflows/ci.yml/badge.svg)](https://github.com/pikainjapan0003/pika-system/actions/workflows/ci.yml)
 
-畫夢代購的店主後台與買家下單系統。本分支為 Sites 私人遷移，使用隔離測試庫與合成資料；實際已接通範圍見 [總進度](docs/sites-migration/PHASE1-PLAN.md)。既有業務程式包含：
+PIKA JP Selects 的店主後台與買家下單系統。本分支沿用 Sites＋Railway＋隔離 PostgreSQL；公開品牌／商品準備中入口與指定店主後台分開，真資料尚未搬入，合成商品及訂單仍僅供店主測試。實際部署狀態見 [總進度](docs/sites-migration/PHASE1-PLAN.md) 與 [公開網站報告](docs/sites-migration/PUBLIC-LAUNCH-REPORT.md)。既有業務程式包含：
 
 - 商品上架、公開分享、單品／購物車下單與訂單追蹤。
 - 行程交通成本分攤、商品日圓成本、店鋪進貨匯率與訂單毛利快照。
@@ -16,6 +16,8 @@
 金額欄遵守精確十進位運算；成本不足時顯示「待確認」，不以 0 代替。訂單快照建立或補拍後定格，之後修改商品成本或匯率不會改動舊單。
 
 商品、訂單、客戶、OCR、物流、成本與報表依既有店主授權使用，不需問卷、套餐或技能解鎖。真付款、真出貨、通知、自動票價／匯率等私人測試版未核准項目仍停用；全家有效外部貨態仍等待合法測試單號。
+
+Seller Agent 已依產品決定移除，包括設定、token 與外部控制 API。物流自己的查詢 worker、四家 adapter、匯入、異常及客人查單保留。seller signup、onboarding、Setup 與自動建店永久停用。公開入口由 `VITE_PUBLIC_SHOP` 控制；後端 `PIKA_PUBLIC_SHOP=true` 保護尚未搬遷的合成資料。`VITE_PRIVATE_POC`／`PIKA_PRIVATE_POC` 繼續保持 `true`，不能用關閉隔離模式的方式公開後台。
 
 店主操作請看 [操作手冊](docs/ai-ops/23-operations-manual.md)。帳本與明文匯出的業務確認仍保留；人工功能驗收延後，不代表已驗證正式出貨。
 

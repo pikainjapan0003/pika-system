@@ -9,6 +9,8 @@ const restoreDom = installTestDom();
 const originalFetch = globalThis.fetch;
 const originalReact = globalThis.React;
 globalThis.React = React;
+const getToken = async () => "synthetic-owner-token";
+mock.module("@clerk/react", { namedExports: { useAuth: () => ({ getToken, isLoaded: true }) } });
 
 let order = {
   publicToken: "fake-public-token",
@@ -85,10 +87,12 @@ test("a rejected last-five update displays the validation message", async () => 
 });
 
 test("a successful update displays the returned last-five value", async () => {
-  globalThis.fetch = async () => ({
+  globalThis.fetch = async (_url, options) => {
+    assert.equal(options.headers.Authorization, "Bearer synthetic-owner-token");
+    return ({
     ok: true,
     json: async () => ({ paymentLast5: "54321" }),
-  });
+  }); };
   const view = renderPage();
   const input = view.container.querySelector('input[pattern="[0-9]{5}"]');
   assert.ok(input);

@@ -4,6 +4,21 @@
 
 ## 總進度
 
+### Seller Agent 移除與公開商店（2026-09-27，使用者要求安全暫停）
+
+**重開機交接**：使用者要求先到安全節點停止。本輪修改保存為本機 checkpoint，尚未 push／更新 Railway／發布 Sites；現行仍為下面記錄的 Sites 第 8 版 PRIVATE 與原 API。兩處前端型別錯誤已修正，但最後前端 typecheck／build 在本輪停止，須續跑。雲端 Agent 表尚未刪除；網域只在 Sites 新增為 pending，DNS 未改。既有合成資料與本機 Docker 資料卷保留。具體恢復位置見 [公開網站報告](PUBLIC-LAUNCH-REPORT.md)，不要回退到歷史基準或重跑已完成項目。
+
+使用者已決定 Seller Agent 為「產品決定移除」，不再待決定。沿用 `923fd0899a9c1e99264fd7f678c7c65fce31a672`／Sites 第 8 版，改為公開客人入口＋指定店主後台；合成資料、物流與既有商務功能保留，真資料暫不搬。GitHub 遷移分支 push、公開 Site 及 `pika-jpselects.com` 綁定已獲本輪授權，舊歷史授權敘述不覆蓋此範圍。
+
+| 項目 | 狀態 | 實際進度／下一步 |
+|---|---|---|
+| Seller Agent | 進行中 | 專屬頁面、API、token、schema、生成 client 與 4 份專屬測試已移除；物流 8 項 fixture 回歸及 API build 通過。0044 待新版 API 上線後清空表依賴，沒有 CASCADE |
+| 公開客人入口＋私人後台 | 進行中／暫停 | 品牌／商品準備中入口完成；公開頁不讀合成資料。指定 owner／測試隔離保留，註冊／建店與 Agent 舊連結回 404；轉送 7 項測試通過，最後前端打包與 typecheck 待重開機後續跑 |
+| pika-jpselects.com | 進行中 | 既有 Site 已受理網域，取得實際 DNS 驗證與 A records；目前 pending，尚未改 DNS |
+| 真資料／外部貨態／人工驗收 | 延後 | 本輪不搬資料、不查包裹、不重跑付費 OCR |
+
+詳細證據集中於 [公開網站報告](PUBLIC-LAUNCH-REPORT.md)，每個里程碑繼續在此更新。
+
 ### 剩餘既有功能遷移（2026-09-27，本輪可完成範圍已交付）
 
 起點已核對：本機與 GitHub 遷移分支同為 `e7238369d5e5ee62ba39293258cfe1cd2ebfb488`，tracked 工作樹乾淨；既有未追蹤交接材料保留。沿用 PRIVATE、指定店主、隔離庫與合成資料。下表逐項更新，詳細證據集中於 [剩餘功能報告](REMAINING-FUNCTIONS-MIGRATION-REPORT.md)。
@@ -20,10 +35,10 @@
 | 全家真貨態 | 待外部資料 | 查詢入口已部署、24 項 fixture／typecheck／build 已通過 | 等待合法測試單號；不重複查詢 |
 | 7-11／黑貓／郵局手動貨態 | 既有接線已部署／待外部資料 | 含本批訂單及 CVS 的 73 項隔離測試通過。黑貓／郵局沿用摘要保存，7-11 preview-only；POC 沒有合法單號設定時拒絕查詢 | 真查詢待合法資料；commit／背景同步維持停用 |
 | 日圓參考匯率、Audit Log、客戶明細／首頁 | 已完成既有入口及線上 API 驗證 | 四家原官方來源 available，手動套用後還原 0.2，原 200 元訂單及毛利快照未變；帳本／匯出 audit、客戶訂單／毛利與 stats 更版後可讀 | 實際瀏覽器延後；完整店鋪設定仍停用，只開原 purchaseExchangeRate |
-| Seller Agent／Agent Settings | 刻意排除 | 是否保留尚未定案；僅沿用物流共用程式 | 不啟用、不整套刪除 |
+| Seller Agent／Agent Settings | 產品決定移除 | 新指示已取代原「未定案」；專屬程式與資料表移除，真正物流保留 | 本輪進度見上方公開商店紀錄 |
 | 畫面與人工驗收 | 延後驗收 | 本輪真瀏覽器控制逾時；28 個不同前端 DOM 案例及 Sites HTTP／雲端資料庫證據已取得，兩者不混稱 | Excel 實機、正式平台匯入及操作偏好也延後；目前不需要使用者操作 |
 
-本輪依原架構完成可用的內部流程後收尾，不新增功能。真貨態／真門市來源、未定案 Seller Agent、正式資料搬遷與正式切換保留上述缺口；本機專用測試容器與 PG 已停止、資料卷保留，雲端私人版本繼續運作。
+上一輪依原架構完成可用的內部流程後收尾，不新增功能。真貨態／真門市來源及真資料搬遷仍保留缺口；Seller Agent 已於本輪決定移除，公開範圍／網域進度見上方。本機專用測試容器按需啟停，資料卷保留。
 
 ### 先前已交付成果
 
@@ -150,7 +165,7 @@ Help Center 同樣明確支持第三方支付例外與站主責任；概述頁�
 | 1 | `routes/public.ts`、PublicOrder／PublicCart／TrackLookup／TrackOrder | 客人分享、下單、付款末五碼、查單 | 保留 token／遮罩／限流；加指定店鋪範圍與混店拒絕 |
 | 1 | `schema/customers.ts`、products 價格級別、customers／orders routes | 客戶及不同售價、歷史／儲值 | 保留；客戶層級不是其他賣家。首 POC 沿用公開普通價格，不新增客戶登入規格 |
 | 1 | trips／tripRoutes、成本 domain、毛利快照及帳本 | 分攤、成本、月報／歷史 | 保留公式、精度、NULL 待確認狀態；不為單店重新計算舊資料 |
-| 1 | `routes/sellerAgent.ts`、`agent.ts`、`agentAuth.ts`、sellerAgentSettings/Tokens | 既有店主物流自動化 | 保留並核對 token 的指定店鋪；名稱 seller 不是停用理由 |
+| 歷史→移除 | `routes/sellerAgent.ts`、`agent.ts`、`agentAuth.ts`、sellerAgentSettings/Tokens | 原外部控制入口，已由產品決定移除 | 2026-09-27 改為移除專屬內容；真正物流自己的 routes／worker 保留 |
 | 1 | `routes/cvs.ts`、cvsStores、前端 CVS 選店頁 | 超商門市與收貨快照 | 保留；維持現有 e-map 匯入停用，不順手開外部服務 |
 | 1 | `invoiceOcr*`、OCR merchantName | 發票上的商家／辨識證據 | 保留原模型與限制；merchantName 不是登入商家帳號 |
 | 1 | `routes/skills.ts:129`、storeSkillStates、`lib/OnboardingQuestionnaireCard.tsx:26` | 店主成本／物流／團購功能建議與啟用 | 與建立新 seller 不同；不要一起刪除，目前保留 |

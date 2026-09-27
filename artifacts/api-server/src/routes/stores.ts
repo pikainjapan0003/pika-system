@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { and, eq } from "drizzle-orm";
 import { db, storesTable, ordersTable } from "@workspace/db";
-import { CreateStoreBody, UpdateStoreBody } from "@workspace/api-zod";
+import { UpdateStoreBody } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/auth.ts";
 import { sanitizeError } from "../lib/sanitizeError.ts";
 import { isPocStore, privatePocConfig } from "../lib/privatePoc.ts";
@@ -27,49 +27,6 @@ router.get("/me/store", requireAuth, async (req: any, res) => {
   }
 });
 
-router.post("/stores", requireAuth, async (req: any, res) => {
-  if (privatePocConfig()) return res.status(403).json({ error: "New store creation is disabled" });
-  const parsed = CreateStoreBody.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({ error: parsed.error.message });
-  }
-
-  const existing = await db
-    .select()
-    .from(storesTable)
-    .where(eq(storesTable.merchantId, req.userId))
-    .limit(1);
-
-  if (existing.length > 0) {
-    return res.status(409).json({ error: "Store already exists" });
-  }
-
-  const shippingSettings = getShippingSettings(req.body);
-  if (!shippingSettings.ok)
-    return res.status(400).json({ error: shippingSettings.error });
-
-  try {
-    const [store] = await db
-      .insert(storesTable)
-      .values({
-        ...parsed.data,
-        merchantId: req.userId,
-        purchaseExchangeRate:
-          parsed.data.purchaseExchangeRate != null
-            ? String(parsed.data.purchaseExchangeRate)
-            : undefined,
-        ...shippingSettings.value,
-      })
-      .returning();
-    return res.status(201).json(formatStore(store));
-  } catch (err: any) {
-    if (err?.code === "23505") {
-      return res.status(409).json({ error: "Slug already taken" });
-    }
-    req.log.error({ err: sanitizeError(err) }, "Failed to create store");
-    return res.status(500).json({ error: "Internal server error" });
-  }
-});
 
 router.patch("/stores/:storeId", requireAuth, async (req: any, res) => {
   const storeId = parseInt(req.params.storeId);

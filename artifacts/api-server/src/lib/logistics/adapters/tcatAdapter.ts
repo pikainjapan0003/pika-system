@@ -7,7 +7,7 @@
  * Response 為 HTML。主要貨態在 <table id="resultTable">，不在其他 table。
  * 第一列因 rowspan=5 包含貨號，其餘列只有貨態欄位。
  *
- * 本檔不寫 DB、不接 worker、不呼叫 /internal/agent/shipment-events。
+ * 本檔不寫 DB、不接 worker。
  */
 
 import type {

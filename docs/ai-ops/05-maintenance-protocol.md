@@ -155,6 +155,13 @@
 - 合成全家與 7-11 門市名稱正規化後相同，同一姓名／電話會得到 ambiguous。先讀隔離庫的 reasons 確認，再給兩家案例不同的合成姓名，以確實測到 tracking code 衝突；沒有改配對器來讓案例過關。
 - 前端原 Product 生成型別漏了 API 已回傳的三個等級售價；補 OpenAPI 並用既有 Orval 生成，不手改生成物。完整結果集中 REMAINING-FUNCTIONS-MIGRATION-REPORT.md，不新增流程或全域限制。
 
+### 2026-09-27 - 公開品牌入口與合成資料分開
+
+- 公開 Sites 不能移除原 POC／指定 owner 防線。品牌頁與合成資料讀取分開；原 `<img>` 不會附 Clerk bearer，需沿用穩定 API 路徑、授權 fetch 後顯示 blob。購物車、付款末五碼與門市搜尋的直接 fetch 也要帶既有登入身分，不能只改後端拒絕規則。
+- 本機 Docker 測試要從有 tsx 的 API workspace 啟動，前端測試另外指定 `TSX_TSCONFIG_PATH`；Vite 仍需原 PORT／BASE_PATH。慢速環境的圖片測試保留內容／header／清理斷言，僅將非同步等待設為 10 秒。OCR 讀取測試須明確帶測試旗標及 owner allowlist，不需真 API key 或呼叫。
+- 電腦控制初始化逾時會重設 Node REPL；背景建置改持續寫入去敏 log，並用現有容器的 logs／wait 接回，不盲目重送。客人物流狀態沿用 `trackingStatus=failed → exception` 的既有投影，不能直接等同原始事件狀態。
+- 本次為局部操作紀錄，不新增全域安全框架或人工驗收。
+
 ### 2026-07-07 - 同一本機 clone 被兩個 AI session 同時操作，分支被互相覆蓋
 
 - 觸發情境：Fable 5 主 session 在 `Desktop\pika-system` commit+push 期間，制度庫另一個 session 在同一目錄 `git reset` 回舊 commit，導致本機分支倒退、已 push 的檔案從磁碟消失（remote 未受損，靠 `git merge --ff-only origin/main` 恢復）。

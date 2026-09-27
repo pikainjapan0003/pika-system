@@ -1,5 +1,7 @@
 # T-19 頁面流程盤點
 
+> 歷史盤點補註（2026-09-27）：Seller Agent 已於遷移產品移除，本文 Agent 頁面、設定、token 與專屬表引用僅為歷史。物流業務保留；現況見 [公開網站報告](../sites-migration/PUBLIC-LAUNCH-REPORT.md)。
+
 > 歷史盤點：2026-09-27 Sites 遷移產品已決定移除技能地圖；本文的技能入口／狀態表／測試建議不再代表現行功能。現況見 [移除報告](../sites-migration/SKILL-MAP-REMOVAL-REPORT.md)。
 
 > 行號基準：文中 `file:line` 以 `663c21d`（包 15／16 全域格式化前）的歷史版本為準；格式化後行號已位移。

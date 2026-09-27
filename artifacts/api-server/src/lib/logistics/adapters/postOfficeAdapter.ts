@@ -9,7 +9,7 @@
  * Response path: [0].body.host_rs.ITEM
  * Fields: DATIME (14-digit yyyyMMddHHmmss → YYYY/MM/DD HH:mm:ss), STATUS (trim), BRHNC (trim)
  *
- * 本檔不寫 DB、不接 worker、不呼叫 /internal/agent/shipment-events。
+ * 本檔不寫 DB、不接 worker。
  */
 
 import { randomUUID } from "node:crypto";
