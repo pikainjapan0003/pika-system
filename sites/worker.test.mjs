@@ -80,3 +80,12 @@ test("SPA deep links fall back to HTML, assets and unsupported methods do not", 
   assert.equal((await worker.fetch(new Request("https://site.test/missing.js"), assetEnv)).status, 404);
   assert.equal((await worker.fetch(new Request("https://site.test/products", { method: "POST" }), assetEnv)).status, 405);
 });
+
+test("retired signup, setup and Seller Agent cannot fall back to an active SPA page", async () => {
+  const assets = { ASSETS: { fetch: async () => new Response("SPA") } };
+  for (const path of ["/sign-up", "/sign-up/verify", "/setup", "/setup/", "/settings/agent", "/settings/agent/enable"]) {
+    const response = await worker.fetch(new Request("https://site.test" + path), assets);
+    assert.equal(response.status, 404, path);
+    assert.equal(response.headers.get("cache-control"), "no-store");
+  }
+});

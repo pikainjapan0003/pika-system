@@ -1,4 +1,5 @@
 import { useState } from "react";
+import ProductImage from "@/components/ProductImage";
 import { useLocation } from "wouter";
 import {
   useGetMyStore,
@@ -288,7 +289,7 @@ export default function ProductsPage() {
                         <div className="flex items-start gap-3 p-4">
                           {/* Image */}
                           {p.imageUrl ? (
-                            <img
+                            <ProductImage
                               src={p.imageUrl}
                               alt={p.name}
                               className="w-14 h-14 rounded-xl object-cover flex-shrink-0 mt-0.5"

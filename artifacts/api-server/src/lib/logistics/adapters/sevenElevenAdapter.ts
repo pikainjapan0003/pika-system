@@ -8,7 +8,7 @@
  * - NCNU-OpenSource/parcel-tracker seven_eleven.py（flow / parser / retry 主架構）
  * - ThanatosDi/E-Tracking（captcha 影像前處理概念）
  *
- * 本檔不寫 DB、不接正式 worker、不呼叫 /internal/agent/shipment-events。
+ * 本檔不寫 DB、不接正式 worker。
  * OCR 以可注入方式設計（deps.solveCaptcha），預設實作以 resolveTesseractBinary 找 binary。
  */
 

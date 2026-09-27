@@ -51,8 +51,8 @@ const uploadLimiter = rateLimit({
 
 const router = Router();
 
-// Stable same-origin image URLs work with <img> and the Sites PRIVATE session.
-// The existing POC gateway protects this route; uploads still require the owner.
+// Stable image identity. The public-launch boundary requires the designated
+// owner's bearer for synthetic images; ProductImage reads them as a blob.
 router.get("/poc/images/products/:storeId/:filename", async (req, res) => {
   if (!privatePocConfig()) return res.sendStatus(404);
   const storeId = Number(req.params.storeId);

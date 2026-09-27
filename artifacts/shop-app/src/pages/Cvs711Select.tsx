@@ -38,7 +38,7 @@ const PROVIDER_CONFIG: Record<
 export default function Cvs711SelectPage() {
   const rawSearch = useSearch();
   const [, setLocation] = useLocation();
-  const { getToken } = useAuth();
+  const { getToken, isLoaded } = useAuth();
 
   const params = new URLSearchParams(rawSearch);
   const source = (params.get("source") ?? "customer") as "customer" | "admin";
@@ -59,10 +59,11 @@ export default function Cvs711SelectPage() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    if (!isLoaded) return;
     doSearch("");
     inputRef.current?.focus();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isLoaded]);
 
   async function doSearch(q: string) {
     setIsLoading(true);
@@ -70,7 +71,10 @@ export default function Cvs711SelectPage() {
     setHasSearched(true);
     try {
       const qs = new URLSearchParams({ provider, q, limit: "20" });
-      const res = await fetch(`/api/cvs/stores?${qs}`);
+      const token = await getToken();
+      const res = await fetch(`/api/cvs/stores?${qs}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       if (!res.ok) {
         setApiError(true);
         setResults([]);

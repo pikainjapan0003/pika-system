@@ -1,5 +1,7 @@
 # API 錯誤訊息與日誌個資掃描
 
+> 歷史紀錄補註（2026-09-27）：Seller Agent 專屬程式、token、表及原待辦已由產品決定移除；不再執行本文 Agent 開通／頻率／稽核工程。一般 audit 與真正物流功能保留，詳見 `docs/sites-migration/PUBLIC-LAUNCH-REPORT.md`。
+
 掃描日期：2026-07-31  
 範圍：`artifacts/api-server/src/**/*.ts`，排除 generated 與測試檔  
 性質：唯讀盤點；本報告不修改回應、日誌或執行期行為

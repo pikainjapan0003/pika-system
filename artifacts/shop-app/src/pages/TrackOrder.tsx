@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useAuth } from "@clerk/react";
 import { useLocation } from "wouter";
 import { useGetPublicOrder } from "@workspace/api-client-react";
 import { STATUS_COLORS, STATUS_STEPS, STATUS_LABELS } from "../lib/orderStatus";
@@ -81,6 +82,7 @@ function formatSpecSummary(specValues: Record<string, string>): string {
 }
 
 export default function TrackOrderPage({ publicToken }: Props) {
+  const { getToken } = useAuth();
   const [, setLocation] = useLocation();
   const [copiedToken, setCopiedToken] = useState(false);
   const [copiedTracking, setCopiedTracking] = useState(false);
@@ -121,11 +123,12 @@ export default function TrackOrderPage({ publicToken }: Props) {
     setSavingPaymentLast5(true);
     setPaymentMessage("");
     try {
+      const token = await getToken();
       const response = await fetch(
         `/api/orders/track/${encodeURIComponent(publicToken)}/payment-last5`,
         {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
           body: JSON.stringify({ paymentLast5: paymentLast5.trim() || null }),
         },
       );
