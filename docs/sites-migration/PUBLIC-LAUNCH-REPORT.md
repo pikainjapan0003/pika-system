@@ -1,23 +1,28 @@
-# Seller Agent 移除與公開商店
+# 公開網站與搬遷收尾（含 Seller Agent 移除紀錄）
 
-更新：2026-09-27。沿用 `codex/chatgpt-sites-private-poc`；未 reset、未改 main／原 OCR／Replit。
+更新：2026-09-28，Codex B＋Astra。沿用 `codex/chatgpt-sites-private-poc`；本輪只更新本報告與 PHASE1-PLAN，不改程式、DNS、Clerk、Railway、R2、資料庫或重新部署。未 reset、未改 main／原 OCR 分支或 Git 歷史，未使用 SWE-2／Devin 或另開審查。
 
 ## 目前結果
 
+- **本次已約定範圍的功能與網站搬遷主體已收尾。** 原有保留功能在私人／合成資料範圍完成遷移；Sites、Railway API、PostgreSQL、R2 與一筆真 OCR 沿用既有完成報告，不代表所有外部整合及正式營運全面驗收。
 - **Seller Agent 已從新產品、GitHub 遷移分支、Sites 第 9 版、Railway API 與隔離庫移除。** 真正物流能力、一般 audit 與店主業務功能保留。
-- **客人品牌入口已公開。** Sites access 為 `public`，公開發布成功；首頁與商品入口顯示「商品準備中／尚未開放下單」，不列出合成商品、假客戶或假訂單。
-- **後台仍只允許指定 Clerk 店主。** 合成商品／訂單 token、私人圖片與測試門市資料也只允許該店主讀寫。註冊、Setup、自動建店、第二店主及 Seller Agent 入口已移除。
-- **pika-jpselects.com 尚未接通。** 已加入原 Site，DNS／TLS 驗證仍 pending；目前 A 仍是舊位址 `152.42.254.130`，驗證 TXT 尚不存在。沒有改 DNS、MX 或郵件。
-- **唯一外部待辦是 DNS 操作連線／登入。** 重開後 CUA 顯示沒有可操作瀏覽器；Chrome 與內建瀏覽器皆回報 unavailable。已提出最少的接回瀏覽器並登入 Namecheap 請求，沒有要求人工功能驗收。
-- 沒有搬真資料、查真包裹、重跑 OCR、真付款／寄件／通知；沒有新增方案、綁卡或充值。既有平台本輪計量費用未另查，不能聲稱為零。
+- **客人品牌入口公開，管理後台受授權保護，測試資料不公開。** 本輪 Sites 查回第 9 版、access `public`；「商品準備中／尚未開放下單」沿用該版來源與先前部署紀錄。本輪沒有上架真商品或開始正式接單。
+- **指定 Clerk 店主與資料邊界沿用 2026-09-27 第 9 版驗收。** 管理 API 401、合成 token／圖片 404、指定 owner 可讀的證據見下方；本輪未重新驗證 Clerk 登入或全部 API。技能地圖／問卷／套餐／解鎖已移除；多賣家註冊、onboarding、Setup、自動建店及第二店主入口維持原移除／停用決定。
+- **pika-jpselects.com 已確認可開啟。** 使用者直接回報可正常看到網站；本輪另唯讀取得 HTTPS 200，Sites 自訂網域／provider／SSL 狀態均為 active，current_live_url 為正式網域。原 DNS 操作／登入待辦已移除；本輪沒有修改 DNS、MX 或郵件。
+- **歷史正式資料搬遷不適用。** 使用者確認目前沒有歷史正式資料需要搬遷；沒有執行搬移，不寫成資料已搬完。
+- **Replit 停機不適用於本輪操作。** 使用者回報因未續費已停止；本輪未操作或獨立核對該帳號，不再把它描述成仍在線或可立即切回的備援。舊程式／Git 歷史仍是來源紀錄，Replit 服務恢復能力未驗證。
+- 不需使用者再截圖或逐頁驗收。外部物流、部分瀏覽器／實機及更多 OCR 驗證保留為後續事項；沒有查真包裹、重跑 OCR、啟用付款／寄件／通知或背景自動化，沒有加購、升級或新增監控。既有平台用量／費用未另查，維持未知。
 
-目前公開網址：[PIKA JP Selects](https://pika-system-private-poc-20260925.bill831206.chatgpt.site/)。
+正式網址：[PIKA JP Selects](https://pika-jpselects.com/)。本次「收尾」只結束約定搬遷工作，不關閉線上服務、不刪合成資料或圖片。
 
 ## 版本與來源
+
+本輪起始本機及 GitHub 遷移分支皆為 `50b47de9006bf0598b6fe2484c06d648397f3aa0`，tracked 工作樹乾淨，既有未追蹤交接材料保留。本次收尾 commit 僅含這兩份文件，正常 push 後另讀回遠端 HEAD。下列部署 SHA、Railway 狀態、表筆數與測試為 2026-09-27 既有證據；本輪只另核對 GitHub、Sites 第 9 版／public、自訂網域與正式 HTTPS，不重跑部署驗收。
 
 | 層次 | 已核對結果 |
 |---|---|
 | 原可用 checkpoint | `923fd0899a9c1e99264fd7f678c7c65fce31a672`；Sites 第 8 版；Railway `39fc9e9f-cfa3-44ed-b0e1-ecd72fb2f27e` |
+| 2026-09-28 收尾前 GitHub 最新版本 | `50b47de9006bf0598b6fe2484c06d648397f3aa0`，與本機相同；其執行程式與下列 9737f77 相同，本輪再追加文件提交 |
 | 本輪程式 checkpoint | `3a713e8463b9fb68c6d354dd8f28a050fcd34bf9`，`checkpoint-public-launch-paused`；重開前保存，沒有回到最初基準 |
 | 已推送及讀回的 GitHub 執行來源 | `9737f77ec5193c432a6e56cfcbe71b29f9db7a65`；執行程式與 3a713e8 相同，另記最終 build／typecheck；本報告收尾提交只更新文件 |
 | Sites source | `207c55d7ef66122df61a96d2995f0b767302c54e`，專用產物 repo；由相同已驗證程式建置，JS `index-CmLCoC3E.js` |
@@ -63,7 +68,7 @@ Site 開啟步驟已由 bundled workflow 核對原 source。後續發布時該�
 
 一次性 preDeploy 已移除並再部署最終 API；正常啟動不會再次執行刪表。空表回復材料為原 checkpoint 的 schema／migration；沒有 Agent row 需要備份。
 
-## 自動驗證
+## 2026-09-27 自動驗證紀錄（本輪引用，未重跑）
 
 - Orval 生成及 libs、API、scripts、mockup 型別檢查通過。root 首次在 shop 找到 queryKey／null narrowing 兩處錯誤；修正後單獨 shop typecheck exit 0，其他已通過 workspace 不重跑。
 - API build、最終 shop build、migration 腳本語法檢查通過。Vite 有既有 shadcn sourcemap 與 bundle size 警告，build exit 0，未因本輪擴大重構。
@@ -82,23 +87,32 @@ API workspace 的 `node --import tsx/esm --experimental-test-module-mocks --test
 `.poc/checks/run-public-online.mjs private|public`。
 測試回條保存在 ignored `.poc/checks/public-launch-*.txt` 及 baseline／private／public JSONL，只有去敏摘要，無 key 或完整 token。
 
-## pika-jpselects.com 待辦
+## pika-jpselects.com 收尾證據（2026-09-28）
 
-原 Site 已新增 domain ID `appgdom_6ab8bc58fce481919e81e44c332c0fbd`，不要重建。最新查回 status pending、SSL pending_validation；authoritative NS 是 `dns1.registrar-servers.com`／`dns2.registrar-servers.com`，對應 [Namecheap BasicDNS](https://www.namecheap.com/support/knowledgebase/article.aspx/923/10/what-is-your-basicdns/)。
-
-Sites 實際要求以下 DNS；A 的兩筆取代目前指向舊網站的 apex A，保留 MX／郵件及所有無關紀錄：
-
-| Type | Name | Value |
+| 來源 | 實際結果 | 證據限制 |
 |---|---|---|
-| A | @ | 162.159.143.30 |
-| A | @ | 172.66.3.26 |
-| TXT | _openai-site-verification | openai-site-verification=bKITDHZy1USHczTFLS6NEPBWjxN-57Vcu_q4XmgBQ_c |
-| TXT | _cf-custom-hostname | 1d69faae-f3c3-408d-ae40-163c3b733914 |
+| 使用者本輪直接回報 | 已實際開啟 https://pika-jpselects.com 並正常看到網站 | 不擴大成全部功能、登入或外部服務已驗收 |
+| 本輪 HTTPS 唯讀 GET | 2026-09-28 15:03（UTC+8；07:03Z），HTTP 200、最終 URL `https://pika-jpselects.com/`、content-type text/html、title PIKA JP Selects；HTML 引用 `/assets/index-CmLCoC3E.js`，與第 9 版資產名稱一致 | 單一本機網路環境的 HTTPS／HTML 證據；未執行瀏覽器互動或登入測試 |
+| Sites list_custom_domains | 原 domain ID `appgdom_6ab8bc58fce481919e81e44c332c0fbd`；hostname pika-jpselects.com；status／provider_status／ssl_status 全為 active，last_error null | 平台查回狀態，沒有宣稱 DNS 全球快取或所有地區 TLS 都逐一測過 |
+| Sites get_site | 原 Site `appgprj_6ab69a6062348191809b743a5635f83e`、第 9 版、access public、current_live_url `https://pika-jpselects.com` | 本輪沒有建立新 Site 或重新部署；後台授權沿用前次證據 |
 
-以上是公開 DNS 驗證值，不是 API secret。DNS 尚未寫入，不能說只是傳播中，也不能說正式網域已由 Sites 提供。接回瀏覽器並登入後，只設定上述紀錄，refresh 同一 domain status，再驗證 HTTPS 與新 Site；不改無關 DNS。
+前次 pending、舊 A 位址與 DNS 登入阻礙是 2026-09-27 的歷史狀態，現在已由上述新證據取代，不再要求使用者填 DNS。紀錄更新不代表本輪曾操作 DNS；本輪只讀取平台現況。
+
+## 後續驗證／未啟用（不阻擋本次收尾）
+
+| 項目 | 保留的實際範圍／缺口 |
+|---|---|
+| 全家有效外部貨態 | 入口、worker、fixture 及合成資料保存流程已有證據；合法單號的真查詢仍未驗證 |
+| 7-11 有效外部貨態 | 仍 preview-only，沒有本輪新增 commit 或 auto sync；真查詢未驗證 |
+| 黑貓／郵局有效外部貨態 | 沿用原手動查詢、預覽、摘要／確認範圍；合法外部貨態未驗證，不做真寄件 |
+| 7-11／全家門市來源 | 合成門市選擇／保存已有證據，真資料來源仍未驗；原 7-11 EMap 外部匯入停用決定不變 |
+| 完整瀏覽器流程 | 新線上環境完整 Browser E2E 延後；使用者看到首頁與本輪 HTTPS 200 不替代全部畫面驗收 |
+| 賣貨便 XLSM | 既有產檔與巨集格式證據保留；Excel 實機開啟、官方平台正式匯入延後 |
+| OCR | 一張合成收據的一次真 OCR 成功紀錄保留；更多收據準確率、人工複核體驗未全面驗證，本輪不再付費呼叫 |
+| 正式副作用／背景自動化 | 真付款、真寄件、真通知與原未啟用自動化維持停用；worker／排程入口存在不等於雲端已定時執行 |
 
 ## 回復與剩餘範圍
 
 公開存取若需回復，先把同一 Site 改回原 owner-private，再以既有部署方式回到第 8 版。若同時回復含 Agent 的舊 API，必須先由 checkpoint 的原 schema／migration 還原三張空表，不能只切舊 image。不要 reset 他人修改、不回到最初遷移基準；用正常 revert／新 commit。原始碼額外備份仍在專案外 `Codex-backups/PUBLIC-LAUNCH-2026-09-27T06-48-13-068Z/source.zip`。
 
-真商品／客戶／訂單／歷史搬遷、四家物流合法單號、真門市來源、完整 Browser E2E、Excel 實機與正式平台匯入仍延後。舊 Replit、正式資料庫／R2、main、原 OCR 分支及 Git 歷史未改。本輪不自動開始任何上述工作。
+歷史正式資料搬遷已改為不適用，不是未完成搬移；Replit 已停止是使用者回報，不是本輪執行結果，也不是可立即切回的在線備援。上述原碼／checkpoint 回復說明僅保留既有來源證據，不保證 Replit 帳號、方案或服務可直接恢復。本輪未改正式資料庫／R2、main、原 OCR 分支或 Git 歷史；合成測試成果保留，不重建空店。後續驗證表不觸發下一輪工程。
