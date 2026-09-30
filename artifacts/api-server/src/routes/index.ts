@@ -17,6 +17,12 @@ import internalLogisticsSyncRouter from "./internalLogisticsSync.ts";
 import exchangeRateReferenceRouter from "./exchangeRateReference.ts";
 import auditLogsRouter from "./auditLogs.ts";
 import invoiceOcrRouter from "./invoiceOcr.ts";
+import pricingV2Router from "./pricingV2.ts";
+import catalogProductsRouter from "./catalogProducts.ts";
+import catalogListingsRouter from "./catalogListings.ts";
+import catalogPricingSettingsRouter from "./catalogPricingSettings.ts";
+import catalogOrdersRouter from "./catalogOrders.ts";
+import reviewedImportsRouter from "./reviewedImports.ts";
 
 const router: IRouter = Router();
 
@@ -37,6 +43,12 @@ router.use(internalLogisticsSyncRouter);
 router.use(exchangeRateReferenceRouter);
 router.use(auditLogsRouter);
 router.use(invoiceOcrRouter);
+router.use(pricingV2Router);
+router.use(catalogProductsRouter);
+router.use(reviewedImportsRouter);
+router.use(catalogOrdersRouter);
+router.use(catalogListingsRouter);
+router.use(catalogPricingSettingsRouter);
 if (process.env.NODE_ENV !== "production") {
   router.use(devHandoffRouter);
 }

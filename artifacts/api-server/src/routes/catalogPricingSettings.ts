@@ -1,0 +1,15 @@
+import {Router} from 'express';
+import {registerCatalog} from '../lib/catalogHttp.ts';
+const router=Router();
+registerCatalog(router,'get','/stores/:storeId/pricing-settings','catalogSettingsGet');
+registerCatalog(router,'patch','/stores/:storeId/pricing-settings','catalogSettingsPatch');
+registerCatalog(router,'post','/stores/:storeId/pricing-settings/initialize','catalogInitialize');
+registerCatalog(router,'get','/stores/:storeId/pricing-templates','catalogTemplates');
+registerCatalog(router,'post','/stores/:storeId/pricing-templates','catalogTemplateCreate');
+registerCatalog(router,'patch','/stores/:storeId/pricing-templates/:templateId','catalogTemplatePatch');
+registerCatalog(router,'delete','/stores/:storeId/pricing-templates/:templateId','catalogTemplateDelete');
+registerCatalog(router,'get','/stores/:storeId/shipping-profiles','catalogShippingProfiles');
+registerCatalog(router,'post','/stores/:storeId/shipping-profiles','catalogShippingCreate');
+registerCatalog(router,'patch','/stores/:storeId/shipping-profiles/:shippingProfileId','catalogShippingPatch');
+registerCatalog(router,'delete','/stores/:storeId/shipping-profiles/:shippingProfileId','catalogShippingDelete');
+export default router;

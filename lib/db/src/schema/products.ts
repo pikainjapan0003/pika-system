@@ -9,6 +9,8 @@ import {
   jsonb,
   index,
   check,
+  unique,
+  foreignKey,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
@@ -16,6 +18,8 @@ import { z } from "zod/v4";
 import { storesTable } from "./stores.ts";
 import { productCategoriesTable } from "./productCategories.ts";
 import { tripRoutesTable } from "./tripRoutes.ts";
+import { catalogProductsTable } from "./catalogProducts.ts";
+import { pricingTemplatesTable, internationalShippingProfilesTable } from "./productDatabasePricing.ts";
 
 export const productsTable = pgTable(
   "products",
@@ -25,6 +29,12 @@ export const productsTable = pgTable(
       .notNull()
       .references(() => storesTable.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
+    catalogProductId: integer("catalog_product_id"),
+    weightGrams: numeric("weight_grams", { precision: 12, scale: 2 }),
+    originalPriceJpy: numeric("original_price_jpy", { precision: 30, scale: 12 }),
+    effectiveCostJpy: numeric("effective_cost_jpy", { precision: 30, scale: 12 }),
+    pricingTemplateId: integer("pricing_template_id"),
+    internationalShippingProfileId: integer("international_shipping_profile_id"),
     description: text("description"),
     price: numeric("price", { precision: 10, scale: 2 }).notNull(),
     vipPrice: numeric("vip_price", { precision: 10, scale: 2 }),
@@ -64,6 +74,10 @@ export const productsTable = pgTable(
     }),
   },
   (t) => [
+    unique("products_store_id_key").on(t.storeId, t.id),
+    foreignKey({ name: "products_pricing_template_fk", columns: [t.storeId, t.pricingTemplateId], foreignColumns: [pricingTemplatesTable.storeId, pricingTemplatesTable.id] }).onDelete("restrict"),
+    foreignKey({ name: "products_shipping_profile_fk", columns: [t.storeId, t.internationalShippingProfileId], foreignColumns: [internationalShippingProfilesTable.storeId, internationalShippingProfilesTable.id] }).onDelete("restrict"),
+    foreignKey({ name: "products_catalog_fk", columns: [t.storeId, t.catalogProductId], foreignColumns: [catalogProductsTable.storeId, catalogProductsTable.id] }).onDelete("restrict"),
     index("products_store_id_idx").on(t.storeId),
     index("products_trip_route_id_idx").on(t.tripRouteId),
     check("inventory_non_negative", sql`${t.inventory} >= 0`),

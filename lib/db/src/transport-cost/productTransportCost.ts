@@ -38,6 +38,7 @@ export interface ProductTransportTripInput {
 }
 
 export interface ResolveProductTransportCostInput {
+  paymentFeeRate?: DecimalInput;
   product: ProductTransportReference;
   route: ProductTransportRouteInput | null | undefined;
   trip: ProductTransportTripInput | null | undefined;
@@ -90,6 +91,7 @@ export function resolveProductTransportCost(
   }
 
   return calculateTransportCost({
+    paymentFeeRate: input.paymentFeeRate,
     estQty: route.estQty,
     exchangeRate: trip.exchangeRate,
     trainJpy: route.trainJpy,

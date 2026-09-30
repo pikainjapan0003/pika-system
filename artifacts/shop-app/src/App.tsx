@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { lazy, Suspense, useEffect, useRef } from "react";
 import {
   ClerkProvider,
   SignIn,
@@ -29,6 +29,11 @@ import PocShop from "@/pages/PocShop";
 import Storefront from "@/pages/Storefront";
 import DashboardPage from "@/pages/Dashboard";
 import ProductsPage from "@/pages/Products";
+import { CatalogBoundary, Loading as CatalogLoading } from '@/components/product-database/shared';
+const ProductDatabasePage=lazy(()=>import('@/pages/ProductDatabase'));
+const ProductDatabaseImportPage=lazy(()=>import('@/pages/ProductDatabaseImport'));
+const ProductDatabaseDetailPage=lazy(()=>import('@/pages/ProductDatabaseDetail'));
+const ProductDatabaseFormPage=lazy(()=>import('@/pages/ProductDatabaseForm'));
 import ProductFormPage from "@/pages/ProductForm";
 import OrdersPage from "@/pages/Orders";
 import MonthlyProfitPage from "@/pages/MonthlyProfit";
@@ -209,6 +214,12 @@ function MerchantPortal() {
 
   return (
       <Switch>
+      <Route path="/product-database/new">{()=> <CatalogBoundary><Suspense fallback={<CatalogLoading/>}><ProductDatabaseFormPage/></Suspense></CatalogBoundary>}</Route>
+      <Route path="/product-database/import">{()=> <CatalogBoundary><Suspense fallback={<CatalogLoading/>}><ProductDatabaseImportPage/></Suspense></CatalogBoundary>}</Route>
+      <Route path="/product-database/matches">{()=> <CatalogBoundary><Suspense fallback={<CatalogLoading/>}><ProductDatabaseImportPage mode="matches"/></Suspense></CatalogBoundary>}</Route>
+      <Route path="/product-database/:id/edit">{params=> <CatalogBoundary><Suspense fallback={<CatalogLoading/>}><ProductDatabaseFormPage productId={/^[1-9]\d*$/.test(params.id)?Number(params.id):0}/></Suspense></CatalogBoundary>}</Route>
+      <Route path="/product-database/:id">{params=> <CatalogBoundary><Suspense fallback={<CatalogLoading/>}><ProductDatabaseDetailPage productId={/^[1-9]\d*$/.test(params.id)?Number(params.id):0}/></Suspense></CatalogBoundary>}</Route>
+      <Route path="/product-database">{()=> <CatalogBoundary><Suspense fallback={<CatalogLoading/>}><ProductDatabasePage/></Suspense></CatalogBoundary>}</Route>
         <Route path="/dashboard" component={DashboardPage} />
         <Route path="/products/new">
           {() => (
@@ -313,6 +324,7 @@ function AppRouter() {
       <Route path="/dev/handoff" component={NotFoundPage} />
       <Route path="/dashboard" component={MerchantPortal} />
       <Route path="/products/*?" component={MerchantPortal} />
+      <Route path="/product-database/*?" component={MerchantPortal} />
       <Route path="/categories" component={MerchantPortal} />
       <Route path="/orders" component={MerchantPortal} />
       <Route path="/reports/monthly-profit" component={MerchantPortal} />

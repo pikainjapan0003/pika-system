@@ -48,6 +48,9 @@ mock.module("../pages/CreateOrderDialog.tsx", {
 mock.module("../pages/EditOrderDialog.tsx", {
   namedExports: { EditOrderDialog: () => null },
 });
+mock.module("../components/product-database/OrderItemsEditor.tsx", {
+  namedExports: { PendingItemCapture: () => null },
+});
 mock.module("../pages/PickingListDialog.tsx", {
   namedExports: { PickingListDialog: () => null },
 });

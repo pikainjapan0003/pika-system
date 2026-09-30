@@ -137,6 +137,8 @@ export interface TransportCostOverrides {
 }
 
 export interface TransportCostInput {
+  /** Catalog v2 override; existing callers retain the Sites 1.5% default. */
+  paymentFeeRate?: DecimalInput;
   estQty: QuantityInput;
   exchangeRate: DecimalInput;
   trainJpy?: DecimalInput;
@@ -278,7 +280,7 @@ export function calculateTransportCost(
 
   const fee1_5Pct = applyOverride(
     "fee1_5Pct",
-    cardboardJpy.add(shippingJpy).multiply(ExactDecimal.from("0.015")),
+    cardboardJpy.add(shippingJpy).multiply(parseOptionalNonNegativeDecimal(input.paymentFeeRate === undefined ? "0.015" : input.paymentFeeRate, "paymentFeeRate")),
     input.overrides?.fee1_5Pct,
   );
   const totalJpy = applyOverride(

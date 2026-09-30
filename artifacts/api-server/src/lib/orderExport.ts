@@ -24,6 +24,25 @@ export interface OrderExportRecord {
   profitSnapshotStatus: string | null;
   cartProfitSnapshotTotalTwd: string | null;
   cartProfitSnapshotStatus: string | null;
+  orderItems?: unknown;
+  items?: unknown;
+  itemCostTotalTwd?: string | null;
+  itemProfitTotalTwd?: string | null;
+}
+
+function exportLines(order: OrderExportRecord) {
+  const formal = Array.isArray(order.orderItems) && order.orderItems.length > 0;
+  const raw = formal ? order.orderItems : order.items;
+  if (!Array.isArray(raw) || raw.length === 0) return [];
+  const lines = raw.map((item) => ({
+    productName: formal ? item?.productNameSnapshot : item?.productName,
+    quantity: item?.quantity,
+    unitPrice: String((formal ? item?.unitPriceTwd : item?.unitPrice) ?? ""),
+    subtotal: String((formal ? item?.subtotalTwd : item?.subtotal) ?? ""),
+    specValues: item?.specValues ?? {},
+  }));
+  if (lines.some((line) => typeof line.productName !== "string" || !Number.isSafeInteger(line.quantity) || line.quantity < 1)) return [];
+  return lines;
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -102,21 +121,24 @@ export function formatOrderExportCsv(
       "單件全毛利快照",
       "購物車整單毛利快照",
       "下單時間",
+      "品項明細",
+      "整單完整成本",
+      "整單完整淨利",
     ],
-    ...orders.map((order) => [
+    ...orders.map((order) => { const lines = exportLines(order); return [
       order.id,
-      order.productName ?? "",
+      lines.length > 1 ? lines.map((line) => `${line.productName} × ${line.quantity}`).join("；") : lines[0]?.productName ?? order.productName ?? "",
       mode === "masked" ? maskName(order.buyerName) : order.buyerName,
       mode === "masked" ? maskPhone(order.buyerPhone) : order.buyerPhone,
       order.pickupMethod,
-      order.quantity,
-      order.unitPrice,
+      lines.length ? lines.reduce((sum, line) => sum + line.quantity, 0) : order.quantity,
+      lines.length > 1 ? "多品項（見品項明細）" : lines[0]?.unitPrice ?? order.unitPrice,
       order.totalPrice,
       order.paymentLast5 ?? "",
       order.discountAmount ?? 0,
       mode === "masked" ? "" : (order.discountNote ?? ""),
       STATUS_LABELS[order.status] ?? order.status,
-      order.specValues ? JSON.stringify(order.specValues) : "",
+      lines.length > 1 ? JSON.stringify(lines.map((line) => ({productName:line.productName,specValues:line.specValues}))) : (lines[0]?.specValues ?? order.specValues) ? JSON.stringify(lines[0]?.specValues ?? order.specValues) : "",
       snapshotStatusLabel(order),
       singleSnapshotValue(order, order.profitSnapshotProductCostTwd),
       singleSnapshotValue(order, order.profitSnapshotTransportCostTwd),
@@ -124,7 +146,10 @@ export function formatOrderExportCsv(
       singleSnapshotValue(order, order.profitSnapshotFullUnitProfitTwd),
       cartSnapshotValue(order),
       order.createdAt?.toISOString() ?? "",
-    ]),
+      lines.length ? JSON.stringify(lines) : "",
+      order.itemCostTotalTwd ?? (Array.isArray(order.orderItems) && order.orderItems.length ? "待確認" : ""),
+      order.itemProfitTotalTwd ?? (Array.isArray(order.orderItems) && order.orderItems.length ? "待確認" : ""),
+    ]; }),
   ];
   return `\uFEFF${rows.map((row) => row.map(csvCell).join(",")).join("\r\n")}`;
 }

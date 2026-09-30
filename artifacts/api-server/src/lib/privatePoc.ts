@@ -19,6 +19,20 @@ export function isPocStore(storeId: number) {
 
 // Only approved synthetic slices are enabled. Keep other modules/schema intact.
 const permitted = [
+  // Product database: still requires the fixed Clerk owner in every route.
+  ["GET", /^\/api\/stores\/\d+\/catalog-products(?:\/\d+(?:\/(?:aliases|cost-records|shopee-prices|relationships|audit|sales-reference|listings))?)?$/],
+  ["POST", /^\/api\/stores\/\d+\/catalog-products(?:\/\d+\/(?:correct-barcode|clone-with-new-barcode|aliases|cost-records|shopee-prices|relationships|create-listing|(?:cost-records|shopee-prices)\/\d+\/void))?$/],
+  ["PATCH", /^\/api\/stores\/\d+\/catalog-products\/\d+$/],
+  ["DELETE", /^\/api\/stores\/\d+\/catalog-products\/\d+(?:\/(?:aliases|relationships)\/\d+)?$/],
+  ["GET", /^\/api\/stores\/\d+\/(?:pricing-settings|pricing-templates|shipping-profiles|catalog-sales|order-cost-options)$/],
+  ["POST", /^\/api\/stores\/\d+\/(?:pricing-settings\/initialize|pricing-templates|shipping-profiles|catalog-orders|pricing\/preview)$/],
+  ["PATCH", /^\/api\/stores\/\d+\/(?:pricing-settings|(?:pricing-templates|shipping-profiles)\/\d+)$/],
+  ["DELETE", /^\/api\/stores\/\d+\/(?:pricing-templates|shipping-profiles)\/\d+$/],
+  ["GET", /^\/api\/stores\/\d+\/products\/\d+\/pricing-history$/],
+  ["POST", /^\/api\/stores\/\d+\/products\/\d+\/recalculate-pricing$/],
+  ["POST", /^\/api\/stores\/\d+\/orders\/\d+\/items\/\d+\/capture$/],
+  ["GET", /^\/api\/stores\/\d+\/(?:listing-matches\/preview|sheet-imports\/\d+|catalog-products\/\d+\/sheet-references)$/],
+  ["POST", /^\/api\/stores\/\d+\/(?:listing-matches\/apply|sheet-imports\/preview|sheet-imports\/\d+\/(?:resolve|approve|commit|rollback))$/],
   ["GET", /^\/api\/healthz$/],
   ["GET", /^\/api\/me\/store$/],
   ["GET", /^\/api\/poc\/catalog$/],

@@ -5,6 +5,7 @@
  * 團購/代購訂單管理 API
  * OpenAPI spec version: 0.1.0
  */
+import type { OrderOrderItemsItem } from './orderOrderItemsItem';
 import type { OrderSpecValues } from './orderSpecValues';
 import type { OrderStatus } from './orderStatus';
 import type { PaymentMethod } from './paymentMethod';
@@ -14,7 +15,9 @@ import type { ShippingStatus } from './shippingStatus';
 
 export interface Order {
   id: number;
-  productId: number;
+  /** @nullable */
+  productId: number | null;
+  orderItems?: OrderOrderItemsItem[];
   storeId: number;
   /** @nullable */
   productName?: string | null;
