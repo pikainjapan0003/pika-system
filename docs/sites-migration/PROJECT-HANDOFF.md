@@ -1,5 +1,7 @@
 # pika-system｜單一店主・Sites 私人遷移
 
+2026-09-30：商品資料庫功能已由 `feat/product-database-v1` 整合進本工作樹並同步 GitHub 遷移分支，Sites 第 10 版及既有 Railway API／隔離資料庫已更新。157 項本機測試、完整 typecheck／build、雲端備份升級、線上保存與更版後讀回均通過；原 4 商品／11 訂單／圖片未變。手機相機實機及完整瀏覽器驗收仍未完成。來源、備份、版本與限制見 [商品資料庫整合報告](PRODUCT-DATABASE-INTEGRATION-REPORT.md)。不重做舊遷移、不再開第二個 Site。
+
 2026-09-27：現況以 `PHASE1-PLAN.md` 總進度為準。本輪依使用者決定完整移除產品技能地圖，並已明確授權正常推送 `codex/chatgpt-sites-private-poc`；下文不 push／基準 HEAD／本機部署說明屬歷史交接。技能移除結果見 `SKILL-MAP-REMOVAL-REPORT.md`。
 
 2026-09-26 線上化接續：**核心已不依賴本機**。原 PRIVATE Sites 改接 Railway 隔離 Express／持久 PG，雲端合成 store 1、product 2、order 1 的 200 元訂單經直接 SQL、API 重啟及停止本機三容器後查回通過。完整位置、試用額度、58 項本輪測試、限制與回復見 `PHASE2-ONLINE-TEST-REPORT.md`；下文店 8／單 19 是前輪本機歷史成果。人工驗收延後，不再要求使用者逐頁確認。
