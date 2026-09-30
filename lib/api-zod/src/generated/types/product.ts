@@ -9,6 +9,18 @@ import type { ProductSpec } from './productSpec';
 import type { ProductStorageTemp } from './productStorageTemp';
 
 export interface Product {
+  /** @nullable */
+  catalogProductId?: number | null;
+  /** @nullable */
+  weightGrams?: string | null;
+  /** @nullable */
+  originalPriceJpy?: string | null;
+  /** @nullable */
+  effectiveCostJpy?: string | null;
+  /** @nullable */
+  pricingTemplateId?: number | null;
+  /** @nullable */
+  internationalShippingProfileId?: number | null;
   id: number;
   storeId: number;
   name: string;

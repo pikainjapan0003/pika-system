@@ -2,11 +2,12 @@ import { createHash } from "node:crypto";
 
 export interface PickingOrderInput {
   id: number;
-  productId: number;
+  productId: number | null;
   productName: string | null;
   specValues: unknown;
   quantity: number;
   items: unknown;
+  orderItems?: unknown;
   status: string;
   shippingStatus: string;
 }
@@ -66,15 +67,16 @@ export function buildOrderPickingItems(
   order: PickingOrderInput,
 ): OrderPickingItemSnapshot[] {
   const readOnly = isPickingReadOnly(order);
-  if (Array.isArray(order.items)) {
-    return order.items.flatMap((rawItem, index) => {
+  const source=Array.isArray(order.orderItems)&&order.orderItems.length?order.orderItems.map((i:any)=>({orderItemId:i.id,productId:i.listingProductId,productName:i.productNameSnapshot,quantity:i.quantity,specValues:i.specValues})):order.items;
+  if (Array.isArray(source)) {
+    return source.flatMap((rawItem, index) => {
       if (!rawItem || typeof rawItem !== "object") return [];
       const item = rawItem as Record<string, unknown>;
       const productId = Number(item.productId);
       const quantity = Number(item.quantity);
+      const formal=Number.isSafeInteger(item.orderItemId)&&Number(item.orderItemId)>0;
       if (
-        !Number.isSafeInteger(productId) ||
-        productId <= 0 ||
+        (!formal&&(!Number.isSafeInteger(productId) || productId <= 0)) ||
         !Number.isSafeInteger(quantity) ||
         quantity <= 0
       ) {
@@ -84,7 +86,7 @@ export function buildOrderPickingItems(
       return [
         {
           orderId: order.id,
-          itemKey: itemKey("cart", index, productId, specs),
+          itemKey: formal?`order-item:${item.orderItemId}`:itemKey("cart", index, productId, specs),
           productName:
             typeof item.productName === "string" && item.productName
               ? item.productName
@@ -100,7 +102,7 @@ export function buildOrderPickingItems(
   return [
     {
       orderId: order.id,
-      itemKey: itemKey("single", 0, order.productId, order.specValues),
+      itemKey: order.productId===null?`manual-order:${order.id}`:itemKey("single", 0, order.productId, order.specValues),
       productName: order.productName ?? `Product #${order.productId}`,
       specLabel: specLabel(order.specValues),
       quantity: order.quantity,

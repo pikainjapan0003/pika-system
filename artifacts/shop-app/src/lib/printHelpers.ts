@@ -27,6 +27,7 @@ type PrintableOrder = Order & {
 };
 
 function normalizeOrderItems(order: PrintableOrder): PrintOrderItem[] {
+  const formal=formalOrderItems(order);if(formal)return formal;
   if (Array.isArray(order.items) && order.items.length > 0) return order.items;
   const qty = order.quantity ?? 1;
   const unitPrice =
@@ -823,3 +824,4 @@ ${orderNotesHtml}
 
   openPrint(receiptHtmlDoc(`銷貨單 — ${esc(storeName)}`, body, brandColor));
 }
+import {formalOrderItems} from './formalOrderItems';

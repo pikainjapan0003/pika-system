@@ -9,6 +9,7 @@ import {
   index,
   uniqueIndex,
   check,
+  unique,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
@@ -76,8 +77,8 @@ export const ordersTable = pgTable(
   {
     id: serial("id").primaryKey(),
     productId: integer("product_id")
-      .notNull()
       .references(() => productsTable.id),
+    orderItemsVersion: integer("order_items_version"),
     storeId: integer("store_id")
       .notNull()
       .references(() => storesTable.id, { onDelete: "cascade" }),
@@ -186,6 +187,7 @@ export const ordersTable = pgTable(
       .$onUpdate(() => new Date()),
   },
   (t) => [
+    unique("orders_store_id_key").on(t.storeId, t.id),
     index("orders_store_id_idx").on(t.storeId),
     uniqueIndex("orders_store_client_request_unique")
       .on(t.storeId, t.clientRequestId)

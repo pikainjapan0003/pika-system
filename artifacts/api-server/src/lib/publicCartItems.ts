@@ -9,7 +9,7 @@ export const PUBLIC_CART_ITEM_RESPONSE_KEYS = [
 ] as const;
 
 export type PublicCartItemResponse = {
-  productId: number;
+  productId: number | null;
   productName: string;
   productImageUrl: string | null;
   specValues: Record<string, string>;
@@ -38,8 +38,7 @@ function sanitizePublicCartItem(value: unknown): PublicCartItemResponse | null {
   const specValues = sanitizeSpecValues(value.specValues);
   const productImageUrl = value.productImageUrl ?? null;
   if (
-    !Number.isInteger(value.productId) ||
-    (value.productId as number) <= 0 ||
+    (value.productId!==null&&(!Number.isInteger(value.productId) || (value.productId as number) <= 0)) ||
     typeof value.productName !== "string" ||
     (typeof productImageUrl !== "string" && productImageUrl !== null) ||
     specValues === null ||
@@ -56,7 +55,7 @@ function sanitizePublicCartItem(value: unknown): PublicCartItemResponse | null {
   }
 
   return {
-    productId: value.productId as number,
+    productId: value.productId as number | null,
     productName: value.productName,
     productImageUrl,
     specValues,

@@ -163,6 +163,14 @@
 - 重開後 Sites bundled helper 一度可用，發布時原路徑已不存在；限定插件 cache 搜尋後確認缺失，沿用本案既有安全 fallback，核對固定 Site remote／實際 pushed SHA／archive 再呼叫原生部署。Chrome／內建瀏覽器 unavailable 與登入過期分開記錄，不能把無控制工具說成使用者沒登入。
 - 本次為局部操作紀錄，不新增全域安全框架或人工驗收。
 
+### 2026-09-30 - 商品資料庫移植的依賴與驗證環境
+
+- 跨分支移植要核對新增元件實際 imports；商品資料庫的金額顯示需要來源原有的 `decimal.js@10.6.0`，不能因目標已有間接依賴就漏掉直接依賴。Orval 產物從合併後規格重新生成。
+- 既有 Sites 訂單使用列表讀回，同狀態更新回 422，原手動訂單防重重送回 200。新測試先對照原契約，保留成交事件唯一、固定手算及原訂單不變的斷言，不改狀態機來配合錯誤測試假設。
+- 原 workspace 只預留 Linux 原生套件。Windows 補精確版本的本機建置套件後，凍結依賴再驗證；不能在正在執行的 `.CMD` 檢查期間重新連結套件。此次只停止本輪過期 typecheck 的程序樹，保留診斷後重驗，沒有停止其他專案。
+- PG template 複製失敗後，改將成功的只讀 dump 還原至新的專用測試庫；原卷與 dump 保留。結構升級在交易內比對原欄位內容 hash 與 sequence，不以「新表存在」取代舊資料保全驗證。
+- 原本機 env 的 store ID 不等於雲端 store ID；線上腳本固定既有 URL，必須由真 Clerk owner 的 `/me/store` 核對雲端店 1 後才測合成資料。完整收據見商品資料庫整合報告，不新增全域規則。
+
 ### 2026-07-07 - 同一本機 clone 被兩個 AI session 同時操作，分支被互相覆蓋
 
 - 觸發情境：Fable 5 主 session 在 `Desktop\pika-system` commit+push 期間，制度庫另一個 session 在同一目錄 `git reset` 回舊 commit，導致本機分支倒退、已 push 的檔案從磁碟消失（remote 未受損，靠 `git merge --ff-only origin/main` 恢復）。
