@@ -165,6 +165,8 @@
 
 ### 2026-09-30 - 商品資料庫移植的依賴與驗證環境
 
+- Sites bundled workflow 的 Node 外層仍會呼叫 Bash 封裝；Windows 的 WSL／Bash 路徑可能不相容。先保留已推送的來源 commit，再使用專案既有的固定 Site／remote／checkout、stdin 短效 credential 封裝器與原生 save／deploy，不更改全域外掛或登入設定；原生部署 succeeded 與線上產物 hash 才是完成證據。
+
 - 跨分支移植要核對新增元件實際 imports；商品資料庫的金額顯示需要來源原有的 `decimal.js@10.6.0`，不能因目標已有間接依賴就漏掉直接依賴。Orval 產物從合併後規格重新生成。
 - 既有 Sites 訂單使用列表讀回，同狀態更新回 422，原手動訂單防重重送回 200。新測試先對照原契約，保留成交事件唯一、固定手算及原訂單不變的斷言，不改狀態機來配合錯誤測試假設。
 - 原 workspace 只預留 Linux 原生套件。Windows 補精確版本的本機建置套件後，凍結依賴再驗證；不能在正在執行的 `.CMD` 檢查期間重新連結套件。此次只停止本輪過期 typecheck 的程序樹，保留診斷後重驗，沒有停止其他專案。
