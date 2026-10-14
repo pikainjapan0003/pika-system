@@ -22,6 +22,8 @@ tags:
     description: Public endpoints (no auth required)
   - name: sellerAgent
     description: Seller agent settings management
+  - name: invoiceOcr
+    description: Owner-only Phase 1 invoice OCR benchmark
 paths:
   /healthz:
     get:
@@ -1106,6 +1108,236 @@ paths:
           description: Not found
         "429":
           description: Too many requests
+
+  /stores/{storeId}/invoice-ocr/test-cases:
+    get:
+      operationId: listInvoiceOcrTestCases
+      tags: [invoiceOcr]
+      summary: List the owner's ten Phase 1 invoice test cases and runs
+      parameters:
+        - $ref: "#/components/parameters/StoreId"
+      responses:
+        "200":
+          description: Test cases and immutable model runs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvoiceOcrTestCaseList"
+        "401":
+          description: Not signed in
+        "403":
+          description: Not the store owner or not on the OCR allowlist
+    post:
+      operationId: createInvoiceOcrTestCase
+      tags: [invoiceOcr]
+      summary: Save one image fingerprint and human-confirmed Ground Truth
+      parameters:
+        - $ref: "#/components/parameters/StoreId"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - image
+                - merchantName
+                - invoiceDate
+                - totalAmount
+                - currency
+                - privacyConfirmed
+              properties:
+                image:
+                  type: string
+                  format: binary
+                merchantName:
+                  type: string
+                invoiceDate:
+                  type: string
+                  format: date
+                totalAmount:
+                  type: string
+                currency:
+                  type: string
+                  pattern: "^[A-Za-z]{3}$"
+                privacyConfirmed:
+                  type: boolean
+                  const: true
+      responses:
+        "201":
+          description: Test case created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvoiceOcrTestCaseResult"
+        "200":
+          description: Existing test case returned for the same image hash
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvoiceOcrTestCaseResult"
+        "400":
+          description: Invalid Ground Truth, privacy confirmation, or image
+        "409":
+          description: Ten-case limit or duplicate merchant
+
+  /stores/{storeId}/invoice-ocr/test-cases/{testCaseId}:
+    get:
+      operationId: getInvoiceOcrTestCase
+      tags: [invoiceOcr]
+      summary: Get one test case and all immutable model runs
+      parameters:
+        - $ref: "#/components/parameters/StoreId"
+        - name: testCaseId
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        "200":
+          description: Test case with runs
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [testCase]
+                properties:
+                  testCase:
+                    $ref: "#/components/schemas/InvoiceOcrTestCaseBundle"
+        "404":
+          description: Test case not found
+
+  /stores/{storeId}/invoice-ocr/test-cases/{testCaseId}/analyze:
+    post:
+      operationId: analyzeInvoiceOcrTestCase
+      tags: [invoiceOcr]
+      summary: Send the same single image to one explicitly selected model
+      parameters:
+        - $ref: "#/components/parameters/StoreId"
+        - name: testCaseId
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+        - name: x-client-request-id
+          in: header
+          required: false
+          description: UUID used to prevent duplicate billing
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [image, model]
+              properties:
+                image:
+                  type: string
+                  format: binary
+                model:
+                  type: string
+                  enum:
+                    - gpt-5.6-terra
+                    - gpt-5.6-sol
+                    - gpt-5.6-luna
+                confirmRerun:
+                  type: boolean
+                  default: false
+      responses:
+        "201":
+          description: New model run completed and scored
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvoiceOcrRunResult"
+        "200":
+          description: Existing run returned without another model call
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvoiceOcrRunResult"
+        "409":
+          description: Another invoice is already processing
+        "422":
+          description: Model refused, stopped, or returned invalid data
+        "429":
+          description: Short-term request limit
+        "503":
+          description: OpenAI configuration, permission, quota, or temporary error
+
+  /stores/{storeId}/invoice-ocr/runs/{runId}/review:
+    patch:
+      operationId: reviewInvoiceOcrRun
+      tags: [invoiceOcr]
+      summary: Save a separate human review without changing AI predictions
+      parameters:
+        - $ref: "#/components/parameters/StoreId"
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InvoiceOcrReviewInput"
+      responses:
+        "200":
+          description: Review saved
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [review]
+                properties:
+                  review:
+                    $ref: "#/components/schemas/InvoiceOcrReview"
+        "400":
+          description: Invalid correction values
+        "404":
+          description: Completed run or review not found
+
+  /stores/{storeId}/invoice-ocr/benchmark-summary:
+    get:
+      operationId: getInvoiceOcrBenchmarkSummary
+      tags: [invoiceOcr]
+      summary: Get separated model/configuration benchmark statistics
+      parameters:
+        - $ref: "#/components/parameters/StoreId"
+      responses:
+        "200":
+          description: Benchmark summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvoiceOcrBenchmarkSummary"
+
+  /stores/{storeId}/invoice-ocr/benchmark.csv:
+    get:
+      operationId: downloadInvoiceOcrBenchmarkCsv
+      tags: [invoiceOcr]
+      summary: Download a report with no images, Base64, keys, or raw errors
+      parameters:
+        - $ref: "#/components/parameters/StoreId"
+      responses:
+        "200":
+          description: UTF-8 CSV benchmark report
+          content:
+            text/csv:
+              schema:
+                type: string
 
 components:
   parameters:
@@ -2613,3 +2845,405 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/HistoryTrendItem"
+
+    InvoiceOcrGroundTruth:
+      type: object
+      additionalProperties: false
+      required: [merchantName, invoiceDate, totalAmount, currency]
+      properties:
+        merchantName:
+          type: string
+        invoiceDate:
+          type: string
+          format: date
+        totalAmount:
+          type: string
+        currency:
+          type: string
+          pattern: "^[A-Z]{3}$"
+
+    InvoiceOcrNullableFields:
+      type: object
+      additionalProperties: false
+      required: [merchantName, invoiceDate, totalAmount, currency]
+      properties:
+        merchantName:
+          type: ["string", "null"]
+        invoiceDate:
+          type: ["string", "null"]
+        totalAmount:
+          type: ["string", "null"]
+        currency:
+          type: ["string", "null"]
+
+    InvoiceOcrEvidence:
+      type: object
+      additionalProperties: false
+      required: [merchantName, invoiceDate, totalAmount, currency]
+      properties:
+        merchantName:
+          type: ["string", "null"]
+          maxLength: 80
+        invoiceDate:
+          type: ["string", "null"]
+          maxLength: 80
+        totalAmount:
+          type: ["string", "null"]
+          maxLength: 80
+        currency:
+          type: ["string", "null"]
+          maxLength: 80
+
+    InvoiceOcrPrediction:
+      type: object
+      additionalProperties: false
+      required:
+        - merchantName
+        - invoiceDate
+        - totalAmount
+        - currency
+        - reviewRequired
+        - reviewReasons
+        - evidence
+      properties:
+        merchantName:
+          type: ["string", "null"]
+        invoiceDate:
+          type: ["string", "null"]
+        totalAmount:
+          type: ["string", "null"]
+        currency:
+          type: ["string", "null"]
+        reviewRequired:
+          type: boolean
+        reviewReasons:
+          type: array
+          maxItems: 10
+          items:
+            type: string
+        evidence:
+          $ref: "#/components/schemas/InvoiceOcrEvidence"
+
+    InvoiceOcrTestCase:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - originalFilename
+        - imageSha256
+        - groundTruth
+        - groundTruthLockedAt
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: integer
+        originalFilename:
+          type: string
+        imageSha256:
+          type: string
+          pattern: "^[0-9a-f]{64}$"
+        groundTruth:
+          $ref: "#/components/schemas/InvoiceOcrGroundTruth"
+        groundTruthLockedAt:
+          type: ["string", "null"]
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    InvoiceOcrRun:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - testCaseId
+        - requestedModel
+        - actualModel
+        - promptVersion
+        - imageDetail
+        - reasoningEffort
+        - predicted
+        - inputTokens
+        - outputTokens
+        - totalTokens
+        - cachedInputTokens
+        - reasoningTokens
+        - latencyMs
+        - status
+        - errorCode
+        - retryable
+        - attemptCount
+        - rerunOfRunId
+        - createdAt
+        - completedAt
+      properties:
+        id:
+          type: integer
+        testCaseId:
+          type: integer
+        requestedModel:
+          type: string
+          enum: [gpt-5.6-terra, gpt-5.6-sol, gpt-5.6-luna]
+        actualModel:
+          type: ["string", "null"]
+        promptVersion:
+          type: string
+        imageDetail:
+          type: string
+          enum: [original, high, low, auto]
+        reasoningEffort:
+          type: string
+        predicted:
+          oneOf:
+            - $ref: "#/components/schemas/InvoiceOcrPrediction"
+            - type: "null"
+        inputTokens:
+          type: ["integer", "null"]
+        outputTokens:
+          type: ["integer", "null"]
+        totalTokens:
+          type: ["integer", "null"]
+        cachedInputTokens:
+          type: ["integer", "null"]
+        reasoningTokens:
+          type: ["integer", "null"]
+        latencyMs:
+          type: ["integer", "null"]
+        status:
+          type: string
+          enum: [processing, completed, failed]
+        errorCode:
+          type: ["string", "null"]
+        retryable:
+          type: boolean
+        attemptCount:
+          type: integer
+          minimum: 1
+          maximum: 2
+        rerunOfRunId:
+          type: ["integer", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: ["string", "null"]
+          format: date-time
+
+    InvoiceOcrReview:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - runId
+        - merchantNameCorrect
+        - invoiceDateCorrect
+        - totalAmountCorrect
+        - currencyCorrect
+        - unsafeConfidentError
+        - corrected
+        - reviewedBy
+        - reviewedAt
+      properties:
+        id:
+          type: integer
+        runId:
+          type: integer
+        merchantNameCorrect:
+          type: boolean
+        invoiceDateCorrect:
+          type: boolean
+        totalAmountCorrect:
+          type: boolean
+        currencyCorrect:
+          type: boolean
+        unsafeConfidentError:
+          type: boolean
+        corrected:
+          oneOf:
+            - $ref: "#/components/schemas/InvoiceOcrNullableFields"
+            - type: "null"
+        reviewedBy:
+          type: ["string", "null"]
+        reviewedAt:
+          type: ["string", "null"]
+          format: date-time
+
+    InvoiceOcrRunWithReview:
+      type: object
+      additionalProperties: false
+      required: [run, review]
+      properties:
+        run:
+          $ref: "#/components/schemas/InvoiceOcrRun"
+        review:
+          oneOf:
+            - $ref: "#/components/schemas/InvoiceOcrReview"
+            - type: "null"
+
+    InvoiceOcrTestCaseBundle:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - originalFilename
+        - imageSha256
+        - groundTruth
+        - groundTruthLockedAt
+        - createdAt
+        - updatedAt
+        - runs
+      properties:
+        id:
+          type: integer
+        originalFilename:
+          type: string
+        imageSha256:
+          type: string
+          pattern: "^[0-9a-f]{64}$"
+        groundTruth:
+          $ref: "#/components/schemas/InvoiceOcrGroundTruth"
+        groundTruthLockedAt:
+          type: ["string", "null"]
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        runs:
+          type: array
+          items:
+            $ref: "#/components/schemas/InvoiceOcrRunWithReview"
+
+    InvoiceOcrTestCaseResult:
+      type: object
+      additionalProperties: false
+      required: [testCase, existing]
+      properties:
+        testCase:
+          $ref: "#/components/schemas/InvoiceOcrTestCase"
+        existing:
+          type: boolean
+
+    InvoiceOcrTestCaseList:
+      type: object
+      additionalProperties: false
+      required: [testCases, maximumTestCases]
+      properties:
+        testCases:
+          type: array
+          maxItems: 10
+          items:
+            $ref: "#/components/schemas/InvoiceOcrTestCaseBundle"
+        maximumTestCases:
+          type: integer
+          const: 10
+
+    InvoiceOcrRunResult:
+      type: object
+      additionalProperties: false
+      required: [run, review, existing]
+      properties:
+        run:
+          $ref: "#/components/schemas/InvoiceOcrRun"
+        review:
+          oneOf:
+            - $ref: "#/components/schemas/InvoiceOcrReview"
+            - type: "null"
+        existing:
+          type: boolean
+
+    InvoiceOcrReviewInput:
+      type: object
+      additionalProperties: false
+      required: [corrected]
+      properties:
+        corrected:
+          oneOf:
+            - $ref: "#/components/schemas/InvoiceOcrNullableFields"
+            - type: "null"
+
+    InvoiceOcrBenchmarkModelSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - requestedModel
+        - promptVersion
+        - imageDetail
+        - reasoningEffort
+        - caseCount
+        - structuredFormatCount
+        - merchantNameCorrect
+        - invoiceDateCorrect
+        - totalAmountCorrect
+        - currencyCorrect
+        - unsafeConfidentErrorCount
+        - totalTokens
+        - averageTokens
+        - medianTokens
+        - averageLatencyMs
+        - medianLatencyMs
+        - passed
+      properties:
+        requestedModel:
+          type: string
+        promptVersion:
+          type: string
+        imageDetail:
+          type: string
+        reasoningEffort:
+          type: string
+        caseCount:
+          type: integer
+        structuredFormatCount:
+          type: integer
+        merchantNameCorrect:
+          type: integer
+        invoiceDateCorrect:
+          type: integer
+        totalAmountCorrect:
+          type: integer
+        currencyCorrect:
+          type: integer
+        unsafeConfidentErrorCount:
+          type: integer
+        totalTokens:
+          type: integer
+        averageTokens:
+          type: ["number", "null"]
+        medianTokens:
+          type: ["number", "null"]
+        averageLatencyMs:
+          type: ["number", "null"]
+        medianLatencyMs:
+          type: ["number", "null"]
+        passed:
+          type: boolean
+
+    InvoiceOcrBenchmarkSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - totalTestCases
+        - totalRuns
+        - models
+        - benchmarkRule
+        - billingNotice
+      properties:
+        totalTestCases:
+          type: integer
+        totalRuns:
+          type: integer
+        models:
+          type: array
+          items:
+            $ref: "#/components/schemas/InvoiceOcrBenchmarkModelSummary"
+        benchmarkRule:
+          type: string
+        billingNotice:
+          type: string
